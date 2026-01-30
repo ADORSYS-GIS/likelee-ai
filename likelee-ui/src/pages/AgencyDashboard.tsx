@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { scoutingService } from "@/services/scoutingService";
+import { ScoutingProspect } from "@/types/scouting";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   LayoutDashboard,
   Users,
@@ -76,6 +79,8 @@ import {
   Menu,
   Image as ImageIcon,
   Mic,
+  Link as LinkIcon,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -90,19 +95,19 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+} from "@/components/ui/sheet";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { BookingsView } from "@/components/Bookings/BookingsView";
-import { GenerateInvoiceViewApi } from "@/components/accounting/GenerateInvoiceView";
 import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
 import FileStorageView from "@/components/dashboard/settings/FileStorageView";
 import {
@@ -113,23 +118,405 @@ import {
   listBookOuts,
   createBookOut,
   getAgencyClients,
+  getAgencyTalents,
   listInvoices,
+  listTalentStatements,
+  listExpenses,
+  createExpense,
+  getAgencyPayoutsAccountStatus,
+  getAgencyStripeOnboardingLink,
   notifyBookingCreatedEmail,
 } from "@/api/functions";
 
-const AddProspectModal = ({
+const STATUS_MAP = {
+  new: "New Lead",
+  contacted: "In Contact",
+  meeting: "Meeting Scheduled",
+  test_shoot: "Test Shoots",
+  offer_sent: "Offer Sent",
+  signed: "Signed",
+  declined: "Declined",
+};
+
+const ConnectBankView = () => {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<{
+    connected: boolean;
+    payouts_enabled: boolean;
+    transfers_enabled: boolean;
+    last_error: string;
+  } | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const resp = await getAgencyPayoutsAccountStatus();
+        const data = (resp as any)?.data ?? resp;
+        if (!mounted) return;
+        setStatus({
+          connected: Boolean((data as any)?.connected),
+          payouts_enabled: Boolean((data as any)?.payouts_enabled),
+          transfers_enabled: Boolean((data as any)?.transfers_enabled),
+          last_error: String((data as any)?.last_error || ""),
+        });
+      } catch (e: any) {
+        toast({
+          title: "Failed to load bank connection status",
+          description: String(e?.message || e),
+          variant: "destructive" as any,
+        });
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [toast]);
+
+  const connect = async () => {
+    setLoading(true);
+    try {
+      const resp = await getAgencyStripeOnboardingLink();
+      const url = String((resp as any)?.data?.url || "");
+      if (!url) {
+        throw new Error("Missing Stripe onboarding URL");
+      }
+      window.location.href = url;
+    } catch (e: any) {
+      toast({
+        title: "Failed to start Stripe onboarding",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const connected = Boolean(status?.connected);
+  const ready = Boolean(status?.payouts_enabled || status?.transfers_enabled);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Connect Your Bank Account</h2>
+          <p className="text-gray-600 font-medium">
+            Link your bank account to receive direct payments from clients and manage payouts to talent
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+          onClick={connect}
+          disabled={loading}
+        >
+          <CreditCard className="w-4 h-4" />
+          Connect Bank Account
+        </Button>
+      </div>
+
+      <Card className="p-8 bg-white border border-gray-100 rounded-2xl">
+        <div className="max-w-3xl mx-auto">
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
+              <CreditCard className="w-8 h-8 text-green-600" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900">Connect Your Bank Account</h3>
+            <p className="text-sm text-gray-600 font-medium mt-1">
+              Link your bank account to receive direct payments from clients and manage payouts to talent
+            </p>
+          </div>
+
+          {connected && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-100 rounded-xl flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-bold text-gray-900">Bank account connected</p>
+                <p className="text-xs text-gray-600 font-medium">
+                  {ready ? "Payouts enabled" : "Connection created — complete onboarding in Stripe to enable payouts"}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {!!status?.last_error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-bold text-gray-900">Last payout error</p>
+                <p className="text-xs text-gray-600 font-medium">{status.last_error}</p>
+              </div>
+            </div>
+          )}
+
+          <div className="p-5 bg-blue-50 border border-blue-100 rounded-xl mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <CheckCircle2 className="w-4 h-4 text-blue-600" />
+              <p className="text-sm font-bold text-gray-900">Why Connect Your Bank?</p>
+            </div>
+            <div className="space-y-2">
+              {[
+                "Receive invoice payments directly to your account",
+                "Automate talent commission payouts",
+                "Track cash flow and reconcile payments",
+                "Bank-level security with 256-bit encryption",
+              ].map((t) => (
+                <div key={t} className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5" />
+                  <p className="text-xs text-gray-700 font-medium">{t}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <Button
+            className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 font-bold flex items-center justify-center gap-2"
+            onClick={connect}
+            disabled={loading}
+          >
+            <Link className="w-4 h-4" />
+            Connect with Stripe
+          </Button>
+
+          <div className="text-center mt-4">
+            <p className="text-xs text-gray-500 font-medium">Powered by Stripe Connect</p>
+            <p className="text-[10px] text-gray-400 font-medium">
+              Bank-level security • SOC 2 certified • PCI DSS compliant
+            </p>
+          </div>
+
+          <Card className="p-4 bg-gray-50 border border-gray-100 rounded-xl mt-6">
+            <p className="text-xs font-bold text-gray-700 mb-2">What you'll need:</p>
+            <div className="text-xs text-gray-600 font-medium space-y-1">
+              <div>Business bank account details (routing & account number)</div>
+              <div>Business tax ID (EIN or SSN)</div>
+              <div>Business address and contact information</div>
+              <div>Government-issued ID for verification</div>
+            </div>
+          </Card>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+const STATUS_COLORS = {
+  new: "bg-blue-50 text-blue-700 border-blue-200",
+  contacted: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  meeting: "bg-purple-50 text-purple-700 border-purple-200",
+  test_shoot: "bg-orange-50 text-orange-700 border-orange-200",
+  offer_sent: "bg-green-50 text-green-700 border-green-200",
+  signed: "bg-green-50 text-green-700 border-green-200",
+  declined: "bg-red-50 text-red-700 border-red-200",
+};
+
+const ProspectModal = ({
   open,
   onOpenChange,
+  prospect = null,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  prospect?: ScoutingProspect | null;
 }) => {
+  const { user } = useAuth();
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [starRating, setStarRating] = useState(3);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    instagram: "",
+    source: "instagram",
+    discoveryDate: new Date().toISOString().split("T")[0],
+    discoveryLocation: "",
+    referredBy: "",
+    status: "new",
+    assignedAgent: "",
+    notes: "",
+    instagramFollowers: 10000,
+    engagementRate: 4.5,
+  });
+
+  useEffect(() => {
+    if (prospect) {
+      setFormData({
+        name: prospect.full_name,
+        email: prospect.email || "",
+        phone: prospect.phone || "",
+        instagram: prospect.instagram_handle || "",
+        source: prospect.source || "instagram",
+        discoveryDate:
+          prospect.discovery_date || new Date().toISOString().split("T")[0],
+        discoveryLocation: prospect.discovery_location || "",
+        referredBy: prospect.referred_by || "",
+        status: prospect.status,
+        assignedAgent: prospect.assigned_agent_name || "",
+        notes: prospect.notes || "",
+        instagramFollowers: prospect.instagram_followers || 10000,
+        engagementRate: prospect.engagement_rate || 4.5,
+      });
+      setSelectedCategories(prospect.categories || []);
+      setStarRating(prospect.rating || 3);
+    } else {
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        instagram: "",
+        source: "instagram",
+        discoveryDate: new Date().toISOString().split("T")[0],
+        discoveryLocation: "",
+        referredBy: "",
+        status: "new",
+        assignedAgent: "",
+        notes: "",
+        instagramFollowers: 10000,
+        engagementRate: 4.5,
+      });
+      setSelectedCategories([]);
+      setStarRating(3);
+    }
+  }, [prospect, open]);
+
+  const { toast } = useToast();
+
+  const handleInputChange = (field: string, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const toggleCategory = (category: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(category)
+        ? prev.filter((c) => c !== category)
+        : [...prev, category],
+    );
+  };
+
+  const queryClient = useQueryClient();
+
+  const handleSaveProspect = async () => {
+    try {
+      if (!formData.name) {
+        toast({
+          title: "Missing Information",
+          description: "Please enter a name for the prospect.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setIsSaving(true);
+
+      const agencyId = await scoutingService.getUserAgencyId();
+      if (!agencyId) {
+        toast({
+          title: "Error",
+          description:
+            "Could not identify your agency. Please try logging in again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!prospect) {
+        // Check for duplicates only when adding new
+        const existing = await scoutingService.checkDuplicate(
+          agencyId,
+          formData.email || undefined,
+          formData.instagram || undefined,
+        );
+
+        if (existing) {
+          toast({
+            title: "Prospect Already Exists",
+            description: `This prospect (${existing.full_name}) is already in your pipeline.`,
+            variant: "destructive",
+          });
+          setIsSaving(false);
+          return;
+        }
+
+        await scoutingService.createProspect({
+          agency_id: agencyId,
+          full_name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          instagram_handle: formData.instagram,
+          categories: selectedCategories,
+          rating: starRating,
+          source: formData.source as any,
+          discovery_date: formData.discoveryDate,
+          discovery_location: formData.discoveryLocation,
+          referred_by: formData.referredBy,
+          status: formData.status as any,
+          assigned_agent_name: formData.assignedAgent,
+          notes: formData.notes,
+          instagram_followers: formData.instagramFollowers,
+          engagement_rate: formData.engagementRate,
+        });
+
+        toast({
+          title: "Prospect Added",
+          description: `${formData.name} has been added to your pipeline.`,
+        });
+      } else {
+        // Update existing prospect
+        await scoutingService.updateProspect(prospect.id, {
+          full_name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          instagram_handle: formData.instagram,
+          categories: selectedCategories,
+          rating: starRating,
+          source: formData.source as any,
+          discovery_date: formData.discoveryDate,
+          discovery_location: formData.discoveryLocation,
+          referred_by: formData.referredBy,
+          status: formData.status as any,
+          assigned_agent_name: formData.assignedAgent,
+          notes: formData.notes,
+          instagram_followers: formData.instagramFollowers,
+          engagement_rate: formData.engagementRate,
+        });
+
+        toast({
+          title: "Prospect Updated",
+          description: `${formData.name}'s information has been updated.`,
+        });
+      }
+
+      // Invalidate the prospects query to trigger a refetch
+      await queryClient.invalidateQueries({
+        queryKey: ["prospects", user?.id],
+      });
+
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error saving prospect:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save prospect. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">
-            Add New Prospect
+            {prospect ? "Edit Prospect" : "Add New Prospect"}
           </DialogTitle>
           <p className="text-sm text-gray-500">
             Track talent before signing them to your roster
@@ -141,19 +528,41 @@ const AddProspectModal = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Name *</Label>
-                <Input id="name" placeholder="Full name" />
+                <Input
+                  id="name"
+                  placeholder="Full name"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" placeholder="email@example.com" />
+                <Input
+                  id="email"
+                  placeholder="email@example.com"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone</Label>
-                <Input id="phone" placeholder="+1 (555) 123-4567" />
+                <Input
+                  id="phone"
+                  placeholder="+1 (555) 123-4567"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="instagram">Instagram Handle</Label>
-                <Input id="instagram" placeholder="@username" />
+                <Input
+                  id="instagram"
+                  placeholder="@username"
+                  value={formData.instagram}
+                  onChange={(e) =>
+                    handleInputChange("instagram", e.target.value)
+                  }
+                />
               </div>
             </div>
           </div>
@@ -171,8 +580,15 @@ const AddProspectModal = ({
               ].map((cat) => (
                 <Button
                   key={cat}
-                  variant="secondary"
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium"
+                  variant={
+                    selectedCategories.includes(cat) ? "default" : "secondary"
+                  }
+                  onClick={() => toggleCategory(cat)}
+                  className={`${
+                    selectedCategories.includes(cat)
+                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                  } font-medium`}
                 >
                   {cat}
                 </Button>
@@ -185,7 +601,10 @@ const AddProspectModal = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Discovery Source</Label>
-                <Select defaultValue="instagram">
+                <Select
+                  value={formData.source}
+                  onValueChange={(val) => handleInputChange("source", val)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select source" />
                   </SelectTrigger>
@@ -193,22 +612,42 @@ const AddProspectModal = ({
                     <SelectItem value="instagram">Instagram</SelectItem>
                     <SelectItem value="tiktok">TikTok</SelectItem>
                     <SelectItem value="street">Street Scouting</SelectItem>
+                    <SelectItem value="referral">Referral</SelectItem>
+                    <SelectItem value="website">Website</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Discovery Date</Label>
                 <div className="relative">
-                  <Input type="date" defaultValue="2026-01-12" />
+                  <Input
+                    type="date"
+                    value={formData.discoveryDate}
+                    onChange={(e) =>
+                      handleInputChange("discoveryDate", e.target.value)
+                    }
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label>Discovery Location</Label>
-                <Input placeholder="New York, NY" />
+                <Input
+                  placeholder="New York, NY"
+                  value={formData.discoveryLocation}
+                  onChange={(e) =>
+                    handleInputChange("discoveryLocation", e.target.value)
+                  }
+                />
               </div>
               <div className="space-y-2">
                 <Label>Referred By</Label>
-                <Input placeholder="Name of referrer" />
+                <Input
+                  placeholder="Name of referrer"
+                  value={formData.referredBy}
+                  onChange={(e) =>
+                    handleInputChange("referredBy", e.target.value)
+                  }
+                />
               </div>
             </div>
           </div>
@@ -220,20 +659,31 @@ const AddProspectModal = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select defaultValue="new">
+                <Select
+                  value={formData.status}
+                  onValueChange={(val) => handleInputChange("status", val)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="new">New Lead</SelectItem>
-                    <SelectItem value="contacted">Contacted</SelectItem>
-                    <SelectItem value="meeting">Meeting Scheduled</SelectItem>
+                    {Object.entries(STATUS_MAP).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Assigned Agent</Label>
-                <Input placeholder="Agent name" />
+                <Input
+                  placeholder="Agent name"
+                  value={formData.assignedAgent}
+                  onChange={(e) =>
+                    handleInputChange("assignedAgent", e.target.value)
+                  }
+                />
               </div>
             </div>
           </div>
@@ -241,14 +691,12 @@ const AddProspectModal = ({
           <div>
             <h3 className="font-bold text-gray-900 mb-2">Star Rating</h3>
             <div className="flex gap-1">
-              {[1, 2, 3].map((i) => (
+              {[1, 2, 3, 4, 5].map((i) => (
                 <Star
                   key={i}
-                  className="w-8 h-8 fill-yellow-400 text-yellow-400"
+                  className={`w-8 h-8 cursor-pointer ${i <= starRating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                  onClick={() => setStarRating(i)}
                 />
-              ))}
-              {[4, 5].map((i) => (
-                <Star key={i} className="w-8 h-8 text-gray-300" />
               ))}
             </div>
           </div>
@@ -258,6 +706,8 @@ const AddProspectModal = ({
             <Textarea
               placeholder="Add notes about this prospect..."
               className="h-32"
+              value={formData.notes}
+              onChange={(e) => handleInputChange("notes", e.target.value)}
             />
           </div>
 
@@ -268,21 +718,56 @@ const AddProspectModal = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Instagram Followers</Label>
-                <Input type="number" defaultValue="10000" />
+                <Input
+                  type="number"
+                  value={formData.instagramFollowers || ""}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "instagramFollowers",
+                      e.target.value === "" ? 0 : parseFloat(e.target.value),
+                    )
+                  }
+                />
               </div>
               <div className="space-y-2">
                 <Label>Engagement Rate (%)</Label>
-                <Input type="number" defaultValue="4.5" />
+                <Input
+                  type="number"
+                  value={formData.engagementRate || ""}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "engagementRate",
+                      e.target.value === "" ? 0 : parseFloat(e.target.value),
+                    )
+                  }
+                />
               </div>
             </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSaving}
+            >
               Cancel
             </Button>
-            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
-              Add Prospect
+            <Button
+              className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-[120px]"
+              onClick={handleSaveProspect}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Saving...
+                </div>
+              ) : prospect ? (
+                "Update Prospect"
+              ) : (
+                "Add Prospect"
+              )}
             </Button>
           </div>
         </div>
@@ -2181,7 +2666,7 @@ const ShareFileModal = ({
                   value={`https://agency.likelee.ai/share/${file.id}`}
                   className="h-12 rounded-xl border-gray-200 bg-white font-medium pl-4 pr-10 shadow-sm focus:ring-2 focus:ring-indigo-500/20"
                 />
-                <Link className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <LinkIcon className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               </div>
               <Button className="h-12 px-5 rounded-xl bg-white border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 shadow-sm flex items-center gap-2">
                 <Copy className="w-4 h-4" />
@@ -2283,6 +2768,66 @@ const ExpenseTrackingView = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [expenseRows, setExpenseRows] = useState<any[]>([]);
+  const [showAddExpense, setShowAddExpense] = useState(false);
+  const [newExpenseName, setNewExpenseName] = useState("");
+  const [newExpenseCategory, setNewExpenseCategory] = useState("Travel");
+  const [newExpenseDate, setNewExpenseDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [newExpenseAmount, setNewExpenseAmount] = useState("0");
+  const [newExpenseStatus, setNewExpenseStatus] = useState("approved");
+  const [newExpenseSubmitter, setNewExpenseSubmitter] = useState("");
+
+  const asArray = (v: any) => {
+    if (Array.isArray(v)) return v;
+    if (Array.isArray(v?.data)) return v.data;
+    if (Array.isArray(v?.items)) return v.items;
+    if (Array.isArray(v?.rows)) return v.rows;
+    return [] as any[];
+  };
+
+  const money = (cents: number, currency: string) => {
+    const n = Math.round(Number(cents || 0)) / 100;
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: String(currency || "USD").toUpperCase(),
+      }).format(n);
+    } catch {
+      return `${String(currency || "USD").toUpperCase()} ${n.toFixed(2)}`;
+    }
+  };
+
+  const formatDate = (s: any) => {
+    const v = String(s || "");
+    if (!v) return "";
+    const d = new Date(v);
+    if (Number.isNaN(d.getTime())) return v;
+    return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  };
+
+  const loadExpenses = async () => {
+    setLoading(true);
+    try {
+      const resp = await listExpenses({});
+      setExpenseRows(asArray(resp));
+    } catch (e: any) {
+      toast({
+        title: "Failed to load expenses",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadExpenses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "approved":
@@ -2309,10 +2854,83 @@ const ExpenseTrackingView = () => {
     }
   };
 
-  const totalExpenses = MOCK_EXPENSES.reduce((sum, expense) => {
-    const amount = parseFloat(expense.amount.replace("$", ""));
-    return sum + amount;
-  }, 0);
+  const normalizedExpenses = useMemo(() => {
+    return expenseRows.map((ex) => ({
+      id: String((ex as any)?.id || ""),
+      name: String((ex as any)?.name || ""),
+      category: String((ex as any)?.category || "Other"),
+      date: formatDate((ex as any)?.expense_date),
+      status: String((ex as any)?.status || "approved"),
+      submitter: String((ex as any)?.submitter || ""),
+      amountCents: Number((ex as any)?.amount_cents || 0) || 0,
+      currency: String((ex as any)?.currency || "USD"),
+    }));
+  }, [expenseRows]);
+
+  const filteredExpenses = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    const cat = categoryFilter;
+    return normalizedExpenses.filter((ex) => {
+      if (q) {
+        const hay = `${ex.name} ${ex.category} ${ex.submitter}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      if (cat !== "all") {
+        const want = cat.toLowerCase();
+        if (String(ex.category || "").toLowerCase() !== want) return false;
+      }
+      return true;
+    });
+  }, [normalizedExpenses, searchTerm, categoryFilter]);
+
+  const totalExpensesByCurrency = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const ex of filteredExpenses) {
+      m.set(ex.currency, (m.get(ex.currency) || 0) + (ex.amountCents || 0));
+    }
+    return m;
+  }, [filteredExpenses]);
+
+  const totalExpensesText = useMemo(() => {
+    const entries = Array.from(totalExpensesByCurrency.entries()).filter(([, v]) => (v || 0) !== 0);
+    if (!entries.length) return money(0, "USD");
+    if (entries.length === 1) {
+      const [cur, cents] = entries[0];
+      return money(cents, cur);
+    }
+    return entries
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([cur, cents]) => money(cents, cur))
+      .join(" + ");
+  }, [money, totalExpensesByCurrency]);
+
+  const submitNewExpense = async () => {
+    const dollars = Number(String(newExpenseAmount || "0").replace(/[^0-9.\-]/g, "")) || 0;
+    const cents = Math.round(dollars * 100);
+    try {
+      await createExpense({
+        name: newExpenseName,
+        category: newExpenseCategory,
+        expense_date: newExpenseDate,
+        amount_cents: cents,
+        currency: "USD",
+        status: newExpenseStatus,
+        submitter: newExpenseSubmitter || undefined,
+      });
+      setShowAddExpense(false);
+      setNewExpenseName("");
+      setNewExpenseAmount("0");
+      setNewExpenseSubmitter("");
+      await loadExpenses();
+      toast({ title: "Expense added" });
+    } catch (e: any) {
+      toast({
+        title: "Failed to add expense",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -2323,7 +2941,10 @@ const ExpenseTrackingView = () => {
             Track and manage agency expenses
           </p>
         </div>
-        <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2">
+        <Button
+          onClick={() => setShowAddExpense(true)}
+          className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
+        >
           <Plus className="w-5 h-5" />
           Add Expense
         </Button>
@@ -2353,7 +2974,10 @@ const ExpenseTrackingView = () => {
       </div>
 
       <div className="space-y-3">
-        {MOCK_EXPENSES.map((expense) => (
+        {loading ? (
+          <div className="text-sm text-gray-600 font-medium">Loading…</div>
+        ) : (
+          filteredExpenses.map((expense) => (
           <Card
             key={expense.id}
             className="p-5 bg-white border border-gray-100 rounded-2xl hover:shadow-sm transition-shadow"
@@ -2381,12 +3005,13 @@ const ExpenseTrackingView = () => {
                   {expense.status}
                 </Badge>
                 <span className="text-lg font-bold text-gray-900">
-                  {expense.amount}
+                  {money(expense.amountCents, expense.currency)}
                 </span>
               </div>
             </div>
           </Card>
-        ))}
+          ))
+        )}
       </div>
 
       <Card className="p-6 bg-gradient-to-br from-orange-50 to-red-50 border border-orange-100 rounded-2xl">
@@ -2396,7 +3021,7 @@ const ExpenseTrackingView = () => {
               Total Expenses
             </p>
             <p className="text-3xl font-bold text-orange-600">
-              ${totalExpenses.toFixed(2)}
+              {totalExpensesText}
             </p>
           </div>
           <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center">
@@ -2404,6 +3029,102 @@ const ExpenseTrackingView = () => {
           </div>
         </div>
       </Card>
+
+      <Dialog open={showAddExpense} onOpenChange={setShowAddExpense}>
+        <DialogContent className="sm:max-w-[520px] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900">Add Expense</DialogTitle>
+            <DialogDescription className="text-gray-500 font-medium">
+              Create a new operating expense for your agency.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-gray-700">Name</Label>
+              <Input
+                value={newExpenseName}
+                onChange={(e) => setNewExpenseName(e.target.value)}
+                className="h-11 rounded-xl"
+                placeholder="e.g. Camera rental"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-700">Category</Label>
+                <Select value={newExpenseCategory} onValueChange={setNewExpenseCategory}>
+                  <SelectTrigger className="h-11 rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="Travel">Travel</SelectItem>
+                    <SelectItem value="Equipment">Equipment</SelectItem>
+                    <SelectItem value="Marketing">Marketing</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-700">Date</Label>
+                <Input
+                  type="date"
+                  value={newExpenseDate}
+                  onChange={(e) => setNewExpenseDate(e.target.value)}
+                  className="h-11 rounded-xl"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-700">Amount (USD)</Label>
+                <Input
+                  value={newExpenseAmount}
+                  onChange={(e) => setNewExpenseAmount(e.target.value)}
+                  className="h-11 rounded-xl"
+                  inputMode="decimal"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-700">Status</Label>
+                <Select value={newExpenseStatus} onValueChange={setNewExpenseStatus}>
+                  <SelectTrigger className="h-11 rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="approved">approved</SelectItem>
+                    <SelectItem value="pending">pending</SelectItem>
+                    <SelectItem value="rejected">rejected</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-gray-700">Submitter (optional)</Label>
+              <Input
+                value={newExpenseSubmitter}
+                onChange={(e) => setNewExpenseSubmitter(e.target.value)}
+                className="h-11 rounded-xl"
+                placeholder="e.g. Emma"
+              />
+            </div>
+          </div>
+          <DialogFooter className="mt-6">
+            <Button
+              variant="outline"
+              onClick={() => setShowAddExpense(false)}
+              className="h-11 rounded-xl font-bold"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={submitNewExpense}
+              disabled={!newExpenseName.trim() || loading}
+              className="h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+            >
+              Add Expense
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -2414,7 +3135,198 @@ const TalentStatementsView = () => {
   const [hasUnpaidEarnings, setHasUnpaidEarnings] = useState(false);
   const [selectedTalent, setSelectedTalent] = useState<any>(null);
 
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [talentRows, setTalentRows] = useState<any[]>([]);
+  const [statementSummaryRows, setStatementSummaryRows] = useState<any[]>([]);
+  const [statementLineRows, setStatementLineRows] = useState<any[]>([]);
+
+  const asArray = (v: any) => {
+    if (Array.isArray(v)) return v;
+    if (Array.isArray(v?.data)) return v.data;
+    if (Array.isArray(v?.items)) return v.items;
+    if (Array.isArray(v?.rows)) return v.rows;
+    return [] as any[];
+  };
+
+  const money = (cents: number, currency: string) => {
+    const n = Math.round(Number(cents || 0)) / 100;
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: String(currency || "USD").toUpperCase(),
+      }).format(n);
+    } catch {
+      return `${String(currency || "USD").toUpperCase()} ${n.toFixed(2)}`;
+    }
+  };
+
+  const formatDate = (s: any) => {
+    const v = String(s || "");
+    if (!v) return "";
+    const d = new Date(v);
+    if (Number.isNaN(d.getTime())) return v;
+    return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const [talents, statements] = await Promise.all([
+          getAgencyTalents({}),
+          listTalentStatements({}),
+        ]);
+        if (!mounted) return;
+        setTalentRows(asArray(talents));
+        setStatementSummaryRows(asArray((statements as any)?.summaries));
+        setStatementLineRows(asArray((statements as any)?.lines));
+      } catch (e: any) {
+        toast({
+          title: "Failed to load talent statements",
+          description: String(e?.message || e),
+          variant: "destructive" as any,
+        });
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [toast]);
+
+  const talentById = useMemo(() => {
+    const m = new Map<string, any>();
+    for (const t of talentRows) {
+      const id = String((t as any)?.id || "");
+      if (!id) continue;
+      m.set(id, t);
+    }
+    return m;
+  }, [talentRows]);
+
+  const summaries = useMemo(() => {
+    // Join backend summaries with talent profile info
+    const rows = asArray(statementSummaryRows).map((s: any) => {
+      const tid = String(s?.talent_id || "");
+      const t = talentById.get(tid);
+      const name =
+        String(t?.full_name || "").trim() ||
+        String(s?.talent_name || "").trim() ||
+        "(unknown)";
+      const photo = String(t?.profile_photo_url || "");
+      return {
+        talentId: tid,
+        name,
+        photo,
+        totalJobs: Number(s?.total_jobs || 0) || 0,
+        totalOwedCents: Number(s?.total_owed_cents || 0) || 0,
+        totalPaidYTDCents: Number(s?.total_paid_ytd_cents || 0) || 0,
+        lastPaymentAt: String(s?.last_payment_at || ""),
+      };
+    });
+
+    const q = searchTerm.trim().toLowerCase();
+    let out = rows;
+    if (q) out = out.filter((r) => r.name.toLowerCase().includes(q));
+    if (hasUnpaidEarnings) out = out.filter((r) => r.totalOwedCents > 0);
+
+    out = out.sort((a, b) => {
+      if (sortBy === "amount-high") return b.totalOwedCents - a.totalOwedCents;
+      if (sortBy === "amount-low") return a.totalOwedCents - b.totalOwedCents;
+      if (sortBy === "total-paid") return b.totalPaidYTDCents - a.totalPaidYTDCents;
+      if (sortBy === "name-az") return a.name.localeCompare(b.name);
+      if (sortBy === "name-za") return b.name.localeCompare(a.name);
+      return 0;
+    });
+    return out;
+  }, [statementSummaryRows, talentById, searchTerm, hasUnpaidEarnings, sortBy]);
+
+  const selectedLines = useMemo(() => {
+    if (!selectedTalent) return [] as any[];
+    const tid = String(selectedTalent?.talentId || selectedTalent?.id || "");
+    return asArray(statementLineRows)
+      .filter((l: any) => String(l?.talent_id || "") === tid)
+      .map((l: any) => ({
+        jobDate: String(l?.invoice_date || ""),
+        client: String(l?.client_name || ""),
+        description: String(l?.description || ""),
+        grossCents: Number(l?.gross_cents || 0) || 0,
+        agencyFeeCents: Number(l?.agency_fee_cents || 0) || 0,
+        netCents: Number(l?.net_cents || 0) || 0,
+        status: String(l?.status || ""),
+        invoiceNumber: String(l?.invoice_number || ""),
+        paidAt: String(l?.paid_at || ""),
+      }));
+  }, [selectedTalent, statementLineRows]);
+
+  const exportAll = () => {
+    const esc = (v: any) => {
+      const s = String(v ?? "");
+      const needs = /[",\n\r]/.test(s);
+      const out = s.replace(/"/g, '""');
+      return needs ? `"${out}"` : out;
+    };
+
+    const allLines = asArray(statementLineRows);
+    if (!allLines.length) {
+      toast({
+        title: "Nothing to export",
+        description: "No statement rows are available yet.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+
+    const header = [
+      "talent_id",
+      "talent_name",
+      "invoice_number",
+      "invoice_date",
+      "client_name",
+      "description",
+      "gross_cents",
+      "agency_fee_cents",
+      "net_cents",
+      "status",
+      "paid_at",
+    ];
+
+    const rows = allLines.map((l: any) => [
+      esc(l?.talent_id),
+      esc(l?.talent_name),
+      esc(l?.invoice_number),
+      esc(l?.invoice_date),
+      esc(l?.client_name),
+      esc(l?.description),
+      esc(l?.gross_cents),
+      esc(l?.agency_fee_cents),
+      esc(l?.net_cents),
+      esc(l?.status),
+      esc(l?.paid_at),
+    ]);
+
+    const csv = [header.join(","), ...rows.map((r: any[]) => r.join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `talent-statements-${stamp}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
   if (selectedTalent) {
+    const totalGrossCents = selectedLines.reduce((sum, l) => sum + (l.grossCents || 0), 0);
+    const totalAgencyFeeCents = selectedLines.reduce((sum, l) => sum + (l.agencyFeeCents || 0), 0);
+    const totalNetCents = selectedLines.reduce((sum, l) => sum + (l.netCents || 0), 0);
+    const unpaidCount = selectedLines.filter((l) => String(l.status) === "sent").length;
+    const paidCount = selectedLines.filter((l) => String(l.status) === "paid").length;
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
@@ -2491,9 +3403,9 @@ const TalentStatementsView = () => {
               <p className="text-sm font-bold text-gray-700">Total Owed</p>
             </div>
             <p className="text-3xl font-bold text-orange-600 mb-1">
-              {selectedTalent.totalOwed}
+              {money(Number(selectedTalent.totalOwedCents || 0) || 0, "USD")}
             </p>
-            <p className="text-xs text-gray-600 font-medium">0 unpaid jobs</p>
+            <p className="text-xs text-gray-600 font-medium">{unpaidCount} unpaid jobs</p>
           </Card>
           <Card className="p-6 bg-green-50 border border-green-100 rounded-2xl">
             <div className="flex items-center gap-2 mb-2">
@@ -2503,9 +3415,9 @@ const TalentStatementsView = () => {
               </p>
             </div>
             <p className="text-3xl font-bold text-green-600 mb-1">
-              {selectedTalent.totalPaidYTD}
+              {money(Number(selectedTalent.totalPaidYTDCents || 0) || 0, "USD")}
             </p>
-            <p className="text-xs text-gray-600 font-medium">1 paid jobs</p>
+            <p className="text-xs text-gray-600 font-medium">{paidCount} paid jobs</p>
           </Card>
           <Card className="p-6 bg-purple-50 border border-purple-100 rounded-2xl">
             <div className="flex items-center gap-2 mb-2">
@@ -2523,7 +3435,7 @@ const TalentStatementsView = () => {
               <p className="text-sm font-bold text-gray-700">Last Payment</p>
             </div>
             <p className="text-lg font-bold text-blue-600 mb-1">
-              {selectedTalent.lastPayment}
+              {selectedTalent.lastPaymentAt ? formatDate(selectedTalent.lastPaymentAt) : "No payments"}
             </p>
           </Card>
         </div>
@@ -2564,37 +3476,46 @@ const TalentStatementsView = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                <tr className="bg-green-50/30">
-                  <td className="px-6 py-4">
-                    <CheckCircle2 className="w-5 h-5 text-green-600" />
-                  </td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-900">
-                    Jan 12, 2026
-                  </td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-700">
-                    Emma
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 font-medium">
-                    Booking for
-                  </td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-900">
-                    $3
-                  </td>
-                  <td className="px-6 py-4 text-sm font-bold text-red-600">
-                    -$0.6
-                  </td>
-                  <td className="px-6 py-4 text-sm font-bold text-green-600">
-                    $2.4
-                  </td>
-                  <td className="px-6 py-4">
-                    <Badge className="bg-green-100 text-green-700 border-green-200 font-bold">
-                      Paid
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 text-sm font-bold text-indigo-600">
-                    2026-1000
-                  </td>
-                </tr>
+                {selectedLines.map((l) => {
+                  const isPaid = String(l.status) === "paid";
+                  return (
+                    <tr key={`${l.invoiceNumber}-${l.description}`} className={isPaid ? "bg-green-50/30" : ""}>
+                      <td className="px-6 py-4">
+                        {isPaid ? (
+                          <CheckCircle2 className="w-5 h-5 text-green-600" />
+                        ) : (
+                          <Clock className="w-5 h-5 text-yellow-600" />
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-bold text-gray-900">
+                        {l.jobDate ? formatDate(l.jobDate) : ""}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-bold text-gray-700">{l.client}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600 font-medium">{l.description}</td>
+                      <td className="px-6 py-4 text-sm font-bold text-gray-900">
+                        {money(l.grossCents, "USD")}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-bold text-red-600">
+                        -{money(l.agencyFeeCents, "USD")}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-bold text-green-600">
+                        {money(l.netCents, "USD")}
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge
+                          className={
+                            isPaid
+                              ? "bg-green-100 text-green-700 border-green-200 font-bold"
+                              : "bg-yellow-100 text-yellow-700 border-yellow-200 font-bold"
+                          }
+                        >
+                          {isPaid ? "Paid" : "Unpaid"}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 text-sm font-bold text-indigo-600">{l.invoiceNumber}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -2603,19 +3524,25 @@ const TalentStatementsView = () => {
               <span className="text-sm text-gray-600 font-bold">
                 Total Gross Amount
               </span>
-              <span className="text-sm font-bold text-gray-900">$3</span>
+              <span className="text-sm font-bold text-gray-900">
+                {money(totalGrossCents, "USD")}
+              </span>
             </div>
             <div className="flex justify-between items-center max-w-md ml-auto">
               <span className="text-sm text-gray-600 font-bold">
                 Total Agency Commission (20%)
               </span>
-              <span className="text-sm font-bold text-red-600">-$0.6</span>
+              <span className="text-sm font-bold text-red-600">
+                -{money(totalAgencyFeeCents, "USD")}
+              </span>
             </div>
             <div className="flex justify-between items-center max-w-md ml-auto pt-3 border-t border-gray-200">
               <span className="text-lg font-bold text-gray-900">
                 Total Talent Net
               </span>
-              <span className="text-lg font-bold text-green-600">$2.4</span>
+              <span className="text-lg font-bold text-green-600">
+                {money(totalNetCents, "USD")}
+              </span>
             </div>
           </div>
         </Card>
@@ -2637,6 +3564,8 @@ const TalentStatementsView = () => {
         <Button
           variant="outline"
           className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+          onClick={exportAll}
+          disabled={loading}
         >
           <Download className="w-5 h-5" />
           Export All
@@ -2688,16 +3617,19 @@ const TalentStatementsView = () => {
       </div>
 
       <div className="space-y-3">
-        {MOCK_TALENT_EARNINGS.map((talent) => (
+        {loading ? (
+          <div className="text-sm text-gray-600 font-medium">Loading…</div>
+        ) : summaries.length ? (
+          summaries.map((talent) => (
           <Card
-            key={talent.id}
+            key={talent.talentId}
             className="p-4 bg-white border border-gray-100 rounded-2xl hover:shadow-sm transition-shadow"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 flex-1">
                 <Checkbox className="rounded-md w-4 h-4 border-gray-300" />
                 <img
-                  src={talent.photo}
+                  src={talent.photo || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop"}
                   alt={talent.name}
                   className="w-12 h-12 rounded-xl object-cover border-2 border-white shadow-sm"
                 />
@@ -2716,10 +3648,10 @@ const TalentStatementsView = () => {
                     Total Owed
                   </p>
                   <p className="text-base font-bold text-orange-600">
-                    {talent.totalOwed}
+                    {money(talent.totalOwedCents, "USD")}
                   </p>
                   <p className="text-[10px] text-gray-400 font-medium">
-                    0 unpaid jobs
+                    {talent.totalOwedCents > 0 ? "Has unpaid" : "No unpaid"}
                   </p>
                 </div>
                 <div className="text-right">
@@ -2727,10 +3659,10 @@ const TalentStatementsView = () => {
                     Total Paid (YTD)
                   </p>
                   <p className="text-base font-bold text-green-600">
-                    {talent.totalPaidYTD}
+                    {money(talent.totalPaidYTDCents, "USD")}
                   </p>
                   <p className="text-[10px] text-gray-400 font-medium">
-                    1 paid jobs
+                    {talent.totalPaidYTDCents > 0 ? "Has paid" : "No paid"}
                   </p>
                 </div>
                 <div className="text-right min-w-[100px]">
@@ -2738,7 +3670,7 @@ const TalentStatementsView = () => {
                     Last Payment
                   </p>
                   <p className="text-xs text-gray-600 font-medium">
-                    {talent.lastPayment}
+                    {talent.lastPaymentAt ? formatDate(talent.lastPaymentAt) : "No payments"}
                   </p>
                 </div>
                 <Button
@@ -2751,7 +3683,10 @@ const TalentStatementsView = () => {
               </div>
             </div>
           </Card>
-        ))}
+          ))
+        ) : (
+          <div className="text-sm text-gray-600 font-medium">No talent statements yet.</div>
+        )}
       </div>
     </div>
   );
@@ -3140,6 +4075,839 @@ const FinancialReportsView = () => {
   const [talentFilter, setTalentFilter] = useState("all");
   const [activeReportTab, setActiveReportTab] = useState("revenue");
 
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [invoiceRows, setInvoiceRows] = useState<any[]>([]);
+  const [clientRows, setClientRows] = useState<any[]>([]);
+  const [talentRows, setTalentRows] = useState<any[]>([]);
+  const [statementLineRows, setStatementLineRows] = useState<any[]>([]);
+  const [expenseRows, setExpenseRows] = useState<any[]>([]);
+
+  const asArray = (v: any) => {
+    if (Array.isArray(v)) return v;
+    if (Array.isArray(v?.data)) return v.data;
+    if (Array.isArray(v?.items)) return v.items;
+    if (Array.isArray(v?.rows)) return v.rows;
+    return [] as any[];
+  };
+
+  const money = (cents: number, currency: string) => {
+    const n = Math.round(Number(cents || 0)) / 100;
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: String(currency || "USD").toUpperCase(),
+      }).format(n);
+    } catch {
+      return `${String(currency || "USD").toUpperCase()} ${n.toFixed(2)}`;
+    }
+  };
+
+  const moneyTotals = (totalsByCurrency: Map<string, number>) => {
+    const entries = Array.from(totalsByCurrency.entries()).filter(([, v]) => (v || 0) !== 0);
+    if (!entries.length) return money(0, "USD");
+    if (entries.length === 1) {
+      const [cur, cents] = entries[0];
+      return money(cents, cur);
+    }
+    return entries
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([cur, cents]) => money(cents, cur))
+      .join(" + ");
+  };
+
+  const parseDate = (s: any) => {
+    const v = String(s || "");
+    if (!v) return null;
+    const d = new Date(v);
+    if (Number.isNaN(d.getTime())) return null;
+    return d;
+  };
+
+  const dateBoundsForPeriod = (period: string) => {
+    const now = new Date();
+    const start = new Date(now);
+    const end = new Date(now);
+    end.setHours(23, 59, 59, 999);
+    start.setHours(0, 0, 0, 0);
+
+    const quarterStartMonth = (m: number) => Math.floor(m / 3) * 3;
+    if (period === "this-year") {
+      start.setMonth(0, 1);
+      return { start, end };
+    }
+    if (period === "last-year") {
+      start.setFullYear(now.getFullYear() - 1, 0, 1);
+      end.setFullYear(now.getFullYear() - 1, 11, 31);
+      end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
+    if (period === "this-month") {
+      start.setDate(1);
+      return { start, end };
+    }
+    if (period === "last-month") {
+      start.setMonth(now.getMonth() - 1, 1);
+      end.setFullYear(start.getFullYear(), start.getMonth() + 1, 0);
+      end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
+    if (period === "this-quarter") {
+      const m = quarterStartMonth(now.getMonth());
+      start.setMonth(m, 1);
+      return { start, end };
+    }
+    if (period === "last-quarter") {
+      const m = quarterStartMonth(now.getMonth()) - 3;
+      const base = new Date(now.getFullYear(), m, 1);
+      start.setFullYear(base.getFullYear(), base.getMonth(), 1);
+      end.setFullYear(base.getFullYear(), base.getMonth() + 3, 0);
+      end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
+    return { start, end };
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const [inv, clients, talents, statements, expenses] = await Promise.all([
+          listInvoices({}),
+          getAgencyClients(),
+          getAgencyTalents({}),
+          listTalentStatements({}),
+          listExpenses({}),
+        ]);
+        if (!mounted) return;
+        setInvoiceRows(asArray(inv));
+        setClientRows(asArray(clients));
+        setTalentRows(asArray(talents));
+        setStatementLineRows(asArray((statements as any)?.lines));
+        setExpenseRows(asArray(expenses));
+      } catch (e: any) {
+        toast({
+          title: "Failed to load financial reports",
+          description: String(e?.message || e),
+          variant: "destructive" as any,
+        });
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [toast]);
+
+  const clientNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const c of clientRows) {
+      const id = String((c as any)?.id || "");
+      const name = String((c as any)?.company || "");
+      if (id) m.set(id, name);
+    }
+    return m;
+  }, [clientRows]);
+
+  const talentNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const t of talentRows) {
+      const id = String((t as any)?.id || "");
+      const name = String((t as any)?.full_name || "");
+      if (id) m.set(id, name);
+    }
+    return m;
+  }, [talentRows]);
+
+  const normalizedInvoices = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return invoiceRows.map((inv) => {
+      const statusRaw = String(
+        (inv as any)?.status ??
+          (inv as any)?.invoice_status ??
+          (inv as any)?.invoice?.status ??
+          "draft",
+      );
+      const dueDateStr = String((inv as any)?.due_date || "");
+      const due = dueDateStr ? new Date(dueDateStr) : null;
+      const paidAt = (inv as any)?.paid_at ?? (inv as any)?.paidAt;
+      const sentAt = (inv as any)?.sent_at ?? (inv as any)?.sentAt;
+      const inferredStatus = (() => {
+        if (statusRaw === "void") return "void";
+        if (paidAt) return "paid";
+        if (sentAt) return "sent";
+        return statusRaw;
+      })();
+      const isOverdue =
+        inferredStatus !== "paid" && inferredStatus !== "void" && due && due < today;
+      return {
+        id: String((inv as any)?.id || ""),
+        invoiceNumber: String((inv as any)?.invoice_number || ""),
+        clientId: String((inv as any)?.client_id || ""),
+        clientName:
+          clientNameById.get(String((inv as any)?.client_id || "")) ||
+          String((inv as any)?.bill_to_company || ""),
+        invoiceDate: String((inv as any)?.invoice_date || ""),
+        dueDate: dueDateStr,
+        currency: String((inv as any)?.currency || "USD"),
+        subtotalCents: Number((inv as any)?.subtotal_cents || 0) || 0,
+        taxCents: Number((inv as any)?.tax_cents || 0) || 0,
+        totalCents: Number((inv as any)?.total_cents || 0) || 0,
+        agencyFeeCents: Number((inv as any)?.agency_fee_cents || 0) || 0,
+        talentNetCents: Number((inv as any)?.talent_net_cents || 0) || 0,
+        status: isOverdue ? "overdue" : inferredStatus,
+      };
+    });
+  }, [clientNameById, invoiceRows]);
+
+  const filteredInvoices = useMemo(() => {
+    const { start, end } = dateBoundsForPeriod(reportPeriod);
+    return normalizedInvoices.filter((inv) => {
+      const d = parseDate(inv.invoiceDate);
+      if (!d) return false;
+      if (d < start || d > end) return false;
+      if (clientFilter !== "all" && inv.clientId !== clientFilter) return false;
+      return true;
+    });
+  }, [normalizedInvoices, reportPeriod, clientFilter]);
+
+  const filteredStatementLines = useMemo(() => {
+    const { start, end } = dateBoundsForPeriod(reportPeriod);
+    return asArray(statementLineRows).filter((l: any) => {
+      const d = parseDate(l?.invoice_date);
+      if (!d) return false;
+      if (d < start || d > end) return false;
+      if (talentFilter !== "all" && String(l?.talent_id || "") !== talentFilter) return false;
+      return true;
+    });
+  }, [statementLineRows, reportPeriod, talentFilter]);
+
+  const summary = useMemo(() => {
+    const paid = filteredInvoices.filter((i) => i.status === "paid");
+    const pending = filteredInvoices.filter((i) => i.status === "sent");
+    const overdue = filteredInvoices.filter((i) => i.status === "overdue");
+
+    const revenueTotals = new Map<string, number>();
+    const pendingTotals = new Map<string, number>();
+    const receivablesTotals = new Map<string, number>();
+    for (const i of paid) {
+      revenueTotals.set(i.currency, (revenueTotals.get(i.currency) || 0) + i.totalCents);
+    }
+    for (const i of pending) {
+      pendingTotals.set(i.currency, (pendingTotals.get(i.currency) || 0) + i.totalCents);
+      receivablesTotals.set(i.currency, (receivablesTotals.get(i.currency) || 0) + i.totalCents);
+    }
+    for (const i of overdue) {
+      receivablesTotals.set(i.currency, (receivablesTotals.get(i.currency) || 0) + i.totalCents);
+    }
+
+    const payablesTotals = new Map<string, number>();
+    for (const l of filteredStatementLines) {
+      if (String((l as any)?.status || "") === "sent") {
+        // line currency not available; assume USD
+        payablesTotals.set("USD", (payablesTotals.get("USD") || 0) + (Number((l as any)?.net_cents || 0) || 0));
+      }
+    }
+
+    const commissionTotals = new Map<string, number>();
+    const talentPaymentsTotals = new Map<string, number>();
+    const taxTotals = new Map<string, number>();
+    const grossServiceTotals = new Map<string, number>();
+    for (const i of paid) {
+      commissionTotals.set(i.currency, (commissionTotals.get(i.currency) || 0) + (i.agencyFeeCents || 0));
+      talentPaymentsTotals.set(i.currency, (talentPaymentsTotals.get(i.currency) || 0) + (i.talentNetCents || 0));
+      taxTotals.set(i.currency, (taxTotals.get(i.currency) || 0) + (i.taxCents || 0));
+      // Service gross (excluding tax/expenses/discount) approximated as stored subtotal
+      grossServiceTotals.set(i.currency, (grossServiceTotals.get(i.currency) || 0) + (i.subtotalCents || 0));
+    }
+
+    return {
+      revenueTotals,
+      pendingTotals,
+      receivablesTotals,
+      payablesTotals,
+      commissionTotals,
+      talentPaymentsTotals,
+      taxTotals,
+      grossServiceTotals,
+      paidCount: paid.length,
+      pendingCount: pending.length,
+      overdueCount: overdue.length,
+    };
+  }, [filteredInvoices, filteredStatementLines]);
+
+  const prevPeriodRevenueTotals = useMemo(() => {
+    const now = new Date();
+    const prev = (() => {
+      if (reportPeriod === "this-year") return "last-year";
+      if (reportPeriod === "this-quarter") return "last-quarter";
+      if (reportPeriod === "this-month") return "last-month";
+      if (reportPeriod === "last-year") return "last-year";
+      if (reportPeriod === "last-quarter") return "last-quarter";
+      if (reportPeriod === "last-month") return "last-month";
+      return reportPeriod;
+    })();
+
+    const { start, end } = dateBoundsForPeriod(prev);
+    // If the user picked a "last-*" period, shift one more back.
+    if (reportPeriod === "last-year") {
+      start.setFullYear(start.getFullYear() - 1);
+      end.setFullYear(end.getFullYear() - 1);
+    }
+    if (reportPeriod === "last-quarter") {
+      start.setMonth(start.getMonth() - 3);
+      end.setMonth(end.getMonth() - 3);
+    }
+    if (reportPeriod === "last-month") {
+      start.setMonth(start.getMonth() - 1);
+      end.setMonth(end.getMonth() - 1);
+    }
+
+    const m = new Map<string, number>();
+    for (const inv of normalizedInvoices) {
+      const d = parseDate(inv.invoiceDate);
+      if (!d) continue;
+      if (d < start || d > end) continue;
+      if (clientFilter !== "all" && inv.clientId !== clientFilter) continue;
+      if (inv.status !== "paid") continue;
+      m.set(inv.currency, (m.get(inv.currency) || 0) + (inv.totalCents || 0));
+    }
+    return m;
+  }, [clientFilter, normalizedInvoices, parseDate, reportPeriod]);
+
+  const growthRatePct = useMemo(() => {
+    const cur = Array.from(summary.revenueTotals.values()).reduce((a, b) => a + b, 0);
+    const prev = Array.from(prevPeriodRevenueTotals.values()).reduce((a, b) => a + b, 0);
+    if (!prev) return 0;
+    return ((cur - prev) / prev) * 100;
+  }, [prevPeriodRevenueTotals, summary.revenueTotals]);
+
+  const revenueByMonth = useMemo(() => {
+    const m = new Map<string, Map<string, number>>();
+    for (const inv of filteredInvoices) {
+      if (inv.status !== "paid") continue;
+      const d = parseDate(inv.invoiceDate);
+      if (!d) continue;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      if (!m.has(key)) m.set(key, new Map());
+      const byCur = m.get(key)!;
+      byCur.set(inv.currency, (byCur.get(inv.currency) || 0) + (inv.totalCents || 0));
+    }
+    return Array.from(m.entries())
+      .map(([key, totals]) => ({ key, totals }))
+      .sort((a, b) => a.key.localeCompare(b.key));
+  }, [filteredInvoices, parseDate]);
+
+  const topClientsByRevenue = useMemo(() => {
+    const totals = new Map<string, Map<string, number>>();
+    for (const inv of filteredInvoices) {
+      if (inv.status !== "paid") continue;
+      const cid = String(inv.clientId || "");
+      if (!cid) continue;
+      if (!totals.has(cid)) totals.set(cid, new Map());
+      const byCur = totals.get(cid)!;
+      byCur.set(inv.currency, (byCur.get(inv.currency) || 0) + (inv.totalCents || 0));
+    }
+    return Array.from(totals.entries())
+      .map(([clientId, byCur]) => ({
+        clientId,
+        clientName: clientNameById.get(clientId) || "(unknown)",
+        totals: byCur,
+        sort: Array.from(byCur.values()).reduce((a, b) => a + b, 0),
+      }))
+      .sort((a, b) => b.sort - a.sort)
+      .slice(0, 5);
+  }, [clientNameById, filteredInvoices]);
+
+  const topTalentByRevenue = useMemo(() => {
+    const totals = new Map<string, number>();
+    const names = new Map<string, string>();
+    for (const l of filteredStatementLines) {
+      if (String((l as any)?.status || "") !== "paid") continue;
+      const tid = String((l as any)?.talent_id || "");
+      if (!tid) continue;
+      totals.set(tid, (totals.get(tid) || 0) + (Number((l as any)?.gross_cents || 0) || 0));
+      const nm = String((l as any)?.talent_name || "");
+      if (nm) names.set(tid, nm);
+    }
+    return Array.from(totals.entries())
+      .map(([talentId, grossCents]) => ({
+        talentId,
+        talentName:
+          String(talentNameById.get(talentId) || "").trim() ||
+          names.get(talentId) ||
+          "(unknown)",
+        grossCents,
+      }))
+      .sort((a, b) => b.grossCents - a.grossCents)
+      .slice(0, 5);
+  }, [filteredStatementLines, talentNameById]);
+
+  const filteredExpenses = useMemo(() => {
+    const { start, end } = dateBoundsForPeriod(reportPeriod);
+    return expenseRows
+      .filter((ex) => {
+        const d = parseDate((ex as any)?.expense_date);
+        if (!d) return false;
+        if (d < start || d > end) return false;
+        const status = String((ex as any)?.status || "approved");
+        if (status !== "approved") return false;
+        return true;
+      })
+      .map((ex) => ({
+        amountCents: Number((ex as any)?.amount_cents || 0) || 0,
+        currency: String((ex as any)?.currency || "USD"),
+      }));
+  }, [expenseRows, reportPeriod]);
+
+  const expensesTotals = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const ex of filteredExpenses) {
+      m.set(ex.currency, (m.get(ex.currency) || 0) + (ex.amountCents || 0));
+    }
+    return m;
+  }, [filteredExpenses]);
+
+  const netIncomeTotals = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const [cur, cents] of summary.revenueTotals.entries()) {
+      m.set(cur, (m.get(cur) || 0) + (cents || 0));
+    }
+    for (const [cur, cents] of expensesTotals.entries()) {
+      m.set(cur, (m.get(cur) || 0) - (cents || 0));
+    }
+    return m;
+  }, [summary.revenueTotals, expensesTotals]);
+
+  const avgInvoiceTotals = useMemo(() => {
+    const count = Math.max(1, filteredInvoices.length);
+    const totals = new Map<string, number>();
+    for (const inv of filteredInvoices) {
+      totals.set(inv.currency, (totals.get(inv.currency) || 0) + (inv.totalCents || 0));
+    }
+    const avg = new Map<string, number>();
+    for (const [cur, cents] of totals.entries()) {
+      avg.set(cur, Math.round((cents || 0) / count));
+    }
+    return avg;
+  }, [filteredInvoices]);
+
+  const receivables = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const open = filteredInvoices.filter((i) => i.status === "sent" || i.status === "overdue");
+    const bucketDefs = [
+      { key: "current", label: "Current (Not Due)", color: "green" },
+      { key: "1_30", label: "1-30 Days Overdue", color: "yellow" },
+      { key: "31_60", label: "31-60 Days Overdue", color: "orange" },
+      { key: "61_90", label: "61-90 Days Overdue", color: "red" },
+      { key: "90_plus", label: "90+ Days Overdue", color: "gray" },
+    ] as const;
+
+    const bucketTotals = new Map<string, Map<string, number>>();
+    const bucketCounts = new Map<string, number>();
+    for (const b of bucketDefs) {
+      bucketTotals.set(b.key, new Map());
+      bucketCounts.set(b.key, 0);
+    }
+
+    const dayDiff = (a: Date, b: Date) =>
+      Math.floor((a.getTime() - b.getTime()) / (24 * 60 * 60 * 1000));
+
+    for (const inv of open) {
+      const due = parseDate(inv.dueDate);
+      const overdueDays = due ? dayDiff(today, due) : 0;
+      const key = (() => {
+        if (!due) return "current";
+        if (overdueDays <= 0) return "current";
+        if (overdueDays <= 30) return "1_30";
+        if (overdueDays <= 60) return "31_60";
+        if (overdueDays <= 90) return "61_90";
+        return "90_plus";
+      })();
+      const totals = bucketTotals.get(key)!;
+      totals.set(inv.currency, (totals.get(inv.currency) || 0) + (inv.totalCents || 0));
+      bucketCounts.set(key, (bucketCounts.get(key) || 0) + 1);
+    }
+
+    const totalReceivablesTotals = new Map<string, number>();
+    for (const inv of open) {
+      totalReceivablesTotals.set(
+        inv.currency,
+        (totalReceivablesTotals.get(inv.currency) || 0) + (inv.totalCents || 0),
+      );
+    }
+
+    const largestByClient = new Map<string, Map<string, number>>();
+    for (const inv of open) {
+      const cid = String(inv.clientId || "");
+      if (!cid) continue;
+      if (!largestByClient.has(cid)) largestByClient.set(cid, new Map());
+      const byCur = largestByClient.get(cid)!;
+      byCur.set(inv.currency, (byCur.get(inv.currency) || 0) + (inv.totalCents || 0));
+    }
+    const largestClients = Array.from(largestByClient.entries())
+      .map(([clientId, totals]) => ({
+        clientId,
+        clientName: clientNameById.get(clientId) || "(unknown)",
+        totals,
+        sort: Array.from(totals.values()).reduce((a, b) => a + b, 0),
+      }))
+      .sort((a, b) => b.sort - a.sort)
+      .slice(0, 5);
+
+    return {
+      bucketDefs,
+      bucketTotals,
+      bucketCounts,
+      totalReceivablesTotals,
+      largestClients,
+    };
+  }, [clientNameById, filteredInvoices, parseDate]);
+
+  const payablesByTalent = useMemo(() => {
+    const m = new Map<string, number>();
+    const names = new Map<string, string>();
+    for (const l of filteredStatementLines) {
+      if (String((l as any)?.status || "") !== "sent") continue;
+      const tid = String((l as any)?.talent_id || "");
+      if (!tid) continue;
+      m.set(tid, (m.get(tid) || 0) + (Number((l as any)?.net_cents || 0) || 0));
+      const nm = String((l as any)?.talent_name || "");
+      if (nm) names.set(tid, nm);
+    }
+    const rows = Array.from(m.entries())
+      .map(([talentId, netCents]) => ({
+        talentId,
+        talentName:
+          String(talentNameById.get(talentId) || "").trim() ||
+          names.get(talentId) ||
+          "(unknown)",
+        netCents,
+      }))
+      .sort((a, b) => b.netCents - a.netCents);
+    const totalNetCents = rows.reduce((s, r) => s + (r.netCents || 0), 0);
+    return { rows, totalNetCents };
+  }, [filteredStatementLines, talentNameById]);
+
+  const commissionByClient = useMemo(() => {
+    const m = new Map<string, Map<string, number>>();
+    for (const inv of filteredInvoices) {
+      if (inv.status !== "paid") continue;
+      const cid = String(inv.clientId || "");
+      if (!cid) continue;
+      if (!m.has(cid)) m.set(cid, new Map());
+      const byCur = m.get(cid)!;
+      byCur.set(inv.currency, (byCur.get(inv.currency) || 0) + (inv.agencyFeeCents || 0));
+    }
+    return Array.from(m.entries())
+      .map(([clientId, totals]) => ({
+        clientId,
+        clientName: clientNameById.get(clientId) || "(unknown)",
+        totals,
+        sort: Array.from(totals.values()).reduce((a, b) => a + b, 0),
+      }))
+      .sort((a, b) => b.sort - a.sort)
+      .slice(0, 5);
+  }, [clientNameById, filteredInvoices]);
+
+  const commissionByTalent = useMemo(() => {
+    const m = new Map<string, number>();
+    const names = new Map<string, string>();
+    for (const l of filteredStatementLines) {
+      if (String((l as any)?.status || "") !== "paid") continue;
+      const tid = String((l as any)?.talent_id || "");
+      if (!tid) continue;
+      m.set(tid, (m.get(tid) || 0) + (Number((l as any)?.agency_fee_cents || 0) || 0));
+      const nm = String((l as any)?.talent_name || "");
+      if (nm) names.set(tid, nm);
+    }
+    return Array.from(m.entries())
+      .map(([talentId, feeCents]) => ({
+        talentId,
+        talentName:
+          String(talentNameById.get(talentId) || "").trim() ||
+          names.get(talentId) ||
+          "(unknown)",
+        feeCents,
+      }))
+      .sort((a, b) => b.feeCents - a.feeCents)
+      .slice(0, 5);
+  }, [filteredStatementLines, talentNameById]);
+
+  const pl = useMemo(() => {
+    const toNum = (map: Map<string, number>) =>
+      Array.from(map.values()).reduce((a, b) => a + (b || 0), 0);
+    const revenue = toNum(summary.grossServiceTotals);
+    const cogs = toNum(summary.talentPaymentsTotals);
+    const commission = toNum(summary.commissionTotals);
+    const expenses = toNum(expensesTotals);
+    const netProfit = commission - expenses;
+    const profitMargin = revenue ? (netProfit / revenue) * 100 : 0;
+    const expenseRatio = revenue ? (expenses / revenue) * 100 : 0;
+    return { revenue, cogs, commission, expenses, netProfit, profitMargin, expenseRatio };
+  }, [expensesTotals, summary.commissionTotals, summary.grossServiceTotals, summary.talentPaymentsTotals]);
+
+  const taxTotals = useMemo(() => {
+    return summary.taxTotals;
+  }, [summary.taxTotals]);
+
+  const escapeCsv = (v: any) => {
+    const s = String(v ?? "");
+    if (/[\n\r,\"]/g.test(s)) return `"${s.replace(/\"/g, '""')}"`;
+    return s;
+  };
+
+  const downloadBlob = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  };
+
+  const exportBaseName = useMemo(() => {
+    const d = new Date();
+    const ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    return `financial-report-${reportPeriod}-${ymd}`;
+  }, [reportPeriod]);
+
+  const buildExportPayload = () => {
+    return {
+      meta: {
+        reportPeriod,
+        clientFilter,
+        talentFilter,
+        generatedAt: new Date().toISOString(),
+      },
+      totals: {
+        revenue: Array.from(summary.revenueTotals.entries()),
+        pending: Array.from(summary.pendingTotals.entries()),
+        receivables: Array.from(summary.receivablesTotals.entries()),
+        expenses: Array.from(expensesTotals.entries()),
+        netIncome: Array.from(netIncomeTotals.entries()),
+        commission: Array.from(summary.commissionTotals.entries()),
+        tax: Array.from(taxTotals.entries()),
+      },
+      topClientsByRevenue: topClientsByRevenue.map((c) => ({
+        clientId: c.clientId,
+        clientName: c.clientName,
+        totals: Array.from(c.totals.entries()),
+      })),
+      topTalentByRevenue: topTalentByRevenue,
+      receivables: {
+        total: Array.from(receivables.totalReceivablesTotals.entries()),
+        agingBuckets: receivables.bucketDefs.map((b) => ({
+          key: b.key,
+          label: b.label,
+          totals: Array.from((receivables.bucketTotals.get(b.key) || new Map()).entries()),
+          count: receivables.bucketCounts.get(b.key) || 0,
+        })),
+        largestClients: receivables.largestClients.map((c) => ({
+          clientId: c.clientId,
+          clientName: c.clientName,
+          totals: Array.from(c.totals.entries()),
+        })),
+      },
+      payablesByTalent: payablesByTalent.rows,
+      commissionByClient,
+      commissionByTalent,
+      profitAndLoss: pl,
+    };
+  };
+
+  const handleExportExcel = () => {
+    const payload = buildExportPayload();
+
+    const lines: string[] = [];
+    const addRow = (...cols: any[]) => lines.push(cols.map(escapeCsv).join(","));
+
+    addRow("Financial Report");
+    addRow("Report Period", payload.meta.reportPeriod);
+    addRow("Client Filter", payload.meta.clientFilter);
+    addRow("Talent Filter", payload.meta.talentFilter);
+    addRow("Generated At", payload.meta.generatedAt);
+    lines.push("");
+
+    addRow("Section", "Metric", "Value");
+    addRow("Overview", "Total Revenue", moneyTotals(summary.revenueTotals));
+    addRow("Overview", "Pending", moneyTotals(summary.pendingTotals));
+    addRow("Overview", "Outstanding Receivables", moneyTotals(summary.receivablesTotals));
+    addRow("Overview", "Expenses", moneyTotals(expensesTotals));
+    addRow("Overview", "Net Income", moneyTotals(netIncomeTotals));
+    addRow("Overview", "Commission", moneyTotals(summary.commissionTotals));
+    addRow("Overview", "Sales Tax", moneyTotals(taxTotals));
+    lines.push("");
+
+    addRow("Top Clients by Revenue");
+    addRow("Client", "Revenue");
+    for (const c of topClientsByRevenue) addRow(c.clientName, moneyTotals(c.totals));
+    lines.push("");
+
+    addRow("Top Talent by Revenue");
+    addRow("Talent", "Gross Revenue");
+    for (const t of topTalentByRevenue) addRow(t.talentName, money(t.grossCents, "USD"));
+    lines.push("");
+
+    addRow("Outstanding Receivables Aging");
+    addRow("Bucket", "Amount", "Invoices");
+    for (const b of receivables.bucketDefs) {
+      addRow(
+        b.label,
+        moneyTotals(receivables.bucketTotals.get(b.key) || new Map()),
+        receivables.bucketCounts.get(b.key) || 0,
+      );
+    }
+    lines.push("");
+
+    addRow("Talent Payables");
+    addRow("Talent", "Amount");
+    for (const r of payablesByTalent.rows) addRow(r.talentName, money(r.netCents, "USD"));
+    lines.push("");
+
+    addRow("Commission by Client");
+    addRow("Client", "Commission");
+    for (const c of commissionByClient) addRow(c.clientName, moneyTotals(c.totals));
+    lines.push("");
+
+    addRow("Commission by Talent");
+    addRow("Talent", "Commission");
+    for (const t of commissionByTalent) addRow(t.talentName, money(t.feeCents, "USD"));
+    lines.push("");
+
+    addRow("Profit & Loss");
+    addRow("Revenue", money(pl.revenue, "USD"));
+    addRow("COGS (Talent Payments)", money(pl.cogs, "USD"));
+    addRow("Gross Profit (Commission)", money(pl.commission, "USD"));
+    addRow("Operating Expenses", money(pl.expenses, "USD"));
+    addRow("Net Profit", money(pl.netProfit, "USD"));
+    addRow("Profit Margin %", pl.profitMargin.toFixed(2));
+    addRow("Expense Ratio %", pl.expenseRatio.toFixed(2));
+
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    downloadBlob(blob, `${exportBaseName}.csv`);
+  };
+
+  const handleExportPdf = () => {
+    const title = "Financial Report";
+    const meta = `Period: ${reportPeriod} | Client: ${clientFilter} | Talent: ${talentFilter}`;
+
+    const tableRows = (rows: Array<[string, string]>) =>
+      rows
+        .map(
+          ([a, b]) =>
+            `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${a}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${b}</td></tr>`,
+        )
+        .join("");
+
+    const html = `
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>${title}</title>
+    <style>
+      body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; padding: 24px; color:#111827; }
+      h1 { font-size: 18px; margin: 0 0 6px; }
+      .meta { color:#6b7280; font-size: 12px; margin-bottom: 18px; }
+      h2 { font-size: 14px; margin: 18px 0 8px; }
+      table { width: 100%; border-collapse: collapse; font-size: 12px; }
+      th { text-align:left; background:#f9fafb; padding:6px 8px; border:1px solid #e5e7eb; }
+    </style>
+  </head>
+  <body>
+    <h1>${title}</h1>
+    <div class="meta">${meta}</div>
+
+    <h2>Overview</h2>
+    <table>
+      <thead><tr><th>Metric</th><th style="text-align:right;">Value</th></tr></thead>
+      <tbody>
+        ${tableRows([
+          ["Total Revenue", moneyTotals(summary.revenueTotals)],
+          ["Pending", moneyTotals(summary.pendingTotals)],
+          ["Outstanding Receivables", moneyTotals(summary.receivablesTotals)],
+          ["Expenses", moneyTotals(expensesTotals)],
+          ["Net Income", moneyTotals(netIncomeTotals)],
+          ["Commission", moneyTotals(summary.commissionTotals)],
+          ["Sales Tax", moneyTotals(taxTotals)],
+        ])}
+      </tbody>
+    </table>
+
+    <h2>Top Clients by Revenue</h2>
+    <table>
+      <thead><tr><th>Client</th><th style="text-align:right;">Revenue</th></tr></thead>
+      <tbody>
+        ${topClientsByRevenue
+          .map(
+            (c) =>
+              `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${c.clientName}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${moneyTotals(c.totals)}</td></tr>`,
+          )
+          .join("")}
+      </tbody>
+    </table>
+
+    <h2>Top Talent by Revenue</h2>
+    <table>
+      <thead><tr><th>Talent</th><th style="text-align:right;">Gross</th></tr></thead>
+      <tbody>
+        ${topTalentByRevenue
+          .map(
+            (t) =>
+              `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${t.talentName}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${money(t.grossCents, "USD")}</td></tr>`,
+          )
+          .join("")}
+      </tbody>
+    </table>
+
+    <h2>Outstanding Receivables</h2>
+    <table>
+      <thead><tr><th>Aging Bucket</th><th style="text-align:right;">Amount</th><th style="text-align:right;">Invoices</th></tr></thead>
+      <tbody>
+        ${receivables.bucketDefs
+          .map(
+            (b) =>
+              `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${b.label}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${moneyTotals(receivables.bucketTotals.get(b.key) || new Map())}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${receivables.bucketCounts.get(b.key) || 0}</td></tr>`,
+          )
+          .join("")}
+      </tbody>
+    </table>
+
+    <h2>Profit &amp; Loss</h2>
+    <table>
+      <thead><tr><th>Line</th><th style="text-align:right;">Amount</th></tr></thead>
+      <tbody>
+        ${tableRows([
+          ["Revenue", money(pl.revenue, "USD")],
+          ["COGS (Talent Payments)", `-${money(pl.cogs, "USD")}`],
+          ["Gross Profit (Commission)", money(pl.commission, "USD")],
+          ["Operating Expenses", `-${money(pl.expenses, "USD")}`],
+          ["Net Profit", money(pl.netProfit, "USD")],
+        ])}
+      </tbody>
+    </table>
+
+    <script>
+      window.onload = () => { window.focus(); window.print(); };
+    </script>
+  </body>
+</html>`;
+
+    const w = window.open("", "_blank");
+    if (!w) return;
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -3155,32 +4923,36 @@ const FinancialReportsView = () => {
             <DollarSign className="w-5 h-5 text-green-600" />
             <p className="text-sm font-bold text-gray-700">Total Revenue</p>
           </div>
-          <p className="text-3xl font-bold text-green-600 mb-1">$3</p>
-          <p className="text-xs text-gray-600 font-medium">1 paid invoices</p>
+          <p className="text-3xl font-bold text-green-600 mb-1">
+            {moneyTotals(summary.revenueTotals)}
+          </p>
+          <p className="text-xs text-gray-600 font-medium">{summary.paidCount} paid invoices</p>
         </Card>
         <Card className="p-6 bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-2">
             <Clock className="w-5 h-5 text-yellow-600" />
             <p className="text-sm font-bold text-gray-700">Pending</p>
           </div>
-          <p className="text-3xl font-bold text-yellow-600 mb-1">$0</p>
-          <p className="text-xs text-gray-600 font-medium">0 invoices</p>
+          <p className="text-3xl font-bold text-yellow-600 mb-1">
+            {moneyTotals(summary.pendingTotals)}
+          </p>
+          <p className="text-xs text-gray-600 font-medium">{summary.pendingCount} invoices</p>
         </Card>
         <Card className="p-6 bg-gradient-to-br from-red-50 to-pink-50 border border-red-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-2">
             <TrendingDown className="w-5 h-5 text-red-600" />
             <p className="text-sm font-bold text-gray-700">Expenses</p>
           </div>
-          <p className="text-3xl font-bold text-red-600 mb-1">$775</p>
-          <p className="text-xs text-gray-600 font-medium">4 expenses</p>
+          <p className="text-3xl font-bold text-red-600 mb-1">{moneyTotals(expensesTotals)}</p>
+          <p className="text-xs text-gray-600 font-medium">{filteredExpenses.length} expenses</p>
         </Card>
         <Card className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-2">
             <TrendingUp className="w-5 h-5 text-indigo-600" />
             <p className="text-sm font-bold text-gray-700">Net Income</p>
           </div>
-          <p className="text-3xl font-bold text-indigo-600 mb-1">-$772</p>
-          <p className="text-xs text-gray-600 font-medium">past month</p>
+          <p className="text-3xl font-bold text-indigo-600 mb-1">{moneyTotals(netIncomeTotals)}</p>
+          <p className="text-xs text-gray-600 font-medium">selected period</p>
         </Card>
       </div>
 
@@ -3191,6 +4963,7 @@ const FinancialReportsView = () => {
             <Button
               variant="outline"
               className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+              onClick={handleExportPdf}
             >
               <FileDown className="w-4 h-4" />
               Export to PDF
@@ -3198,6 +4971,7 @@ const FinancialReportsView = () => {
             <Button
               variant="outline"
               className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+              onClick={handleExportExcel}
             >
               <Download className="w-4 h-4" />
               Export to Excel
@@ -3234,8 +5008,11 @@ const FinancialReportsView = () => {
               </SelectTrigger>
               <SelectContent className="rounded-xl">
                 <SelectItem value="all">All Clients</SelectItem>
-                <SelectItem value="nike">Nike Global</SelectItem>
-                <SelectItem value="adidas">Adidas</SelectItem>
+                {asArray(clientRows).map((c: any) => (
+                  <SelectItem key={String(c?.id)} value={String(c?.id)}>
+                    {String(c?.company || "(unknown)")}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -3249,8 +5026,11 @@ const FinancialReportsView = () => {
               </SelectTrigger>
               <SelectContent className="rounded-xl">
                 <SelectItem value="all">All Talent</SelectItem>
-                <SelectItem value="emma">Emma</SelectItem>
-                <SelectItem value="milan">Milan</SelectItem>
+                {asArray(talentRows).map((t: any) => (
+                  <SelectItem key={String(t?.id)} value={String(t?.id)}>
+                    {String(t?.full_name || "(unknown)")}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -3289,9 +5069,11 @@ const FinancialReportsView = () => {
                     Total Revenue
                   </p>
                 </div>
-                <p className="text-2xl font-bold text-green-600 mb-1">$3</p>
+                <p className="text-2xl font-bold text-green-600 mb-1">
+                  {moneyTotals(summary.revenueTotals)}
+                </p>
                 <p className="text-[10px] text-gray-600 font-medium">
-                  1 paid invoices
+                  {summary.paidCount} paid invoices
                 </p>
               </Card>
               <Card className="p-5 bg-blue-50 border border-blue-100 rounded-xl">
@@ -3301,9 +5083,11 @@ const FinancialReportsView = () => {
                     Pending Revenue
                   </p>
                 </div>
-                <p className="text-2xl font-bold text-blue-600 mb-1">$0</p>
+                <p className="text-2xl font-bold text-blue-600 mb-1">
+                  {moneyTotals(summary.receivablesTotals)}
+                </p>
                 <p className="text-[10px] text-gray-600 font-medium">
-                  0 outstanding invoices
+                  {summary.pendingCount + summary.overdueCount} outstanding invoices
                 </p>
               </Card>
               <Card className="p-5 bg-purple-50 border border-purple-100 rounded-xl">
@@ -3311,7 +5095,9 @@ const FinancialReportsView = () => {
                   <Receipt className="w-4 h-4 text-purple-600" />
                   <p className="text-xs font-bold text-gray-700">Avg Invoice</p>
                 </div>
-                <p className="text-2xl font-bold text-purple-600 mb-1">$3</p>
+                <p className="text-2xl font-bold text-purple-600 mb-1">
+                  {moneyTotals(avgInvoiceTotals)}
+                </p>
                 <p className="text-[10px] text-gray-600 font-medium">
                   per invoice
                 </p>
@@ -3322,7 +5108,8 @@ const FinancialReportsView = () => {
                   <p className="text-xs font-bold text-gray-700">Growth Rate</p>
                 </div>
                 <p className="text-2xl font-bold text-orange-600 mb-1">
-                  +15.3%
+                  {growthRatePct >= 0 ? "+" : ""}
+                  {growthRatePct.toFixed(1)}%
                 </p>
                 <p className="text-[10px] text-gray-600 font-medium">
                   vs previous period
@@ -3335,10 +5122,30 @@ const FinancialReportsView = () => {
                 Revenue by Month
               </h4>
               <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 w-1/12"></div>
+                <div
+                  className="h-full bg-gradient-to-r from-green-500 to-emerald-500"
+                  style={{
+                    width: (() => {
+                      const last = revenueByMonth[revenueByMonth.length - 1];
+                      if (!last) return "0%";
+                      const max = Math.max(
+                        1,
+                        ...revenueByMonth.map((x) =>
+                          Array.from(x.totals.values()).reduce((a, b) => a + b, 0),
+                        ),
+                      );
+                      const v = Array.from(last.totals.values()).reduce((a, b) => a + b, 0);
+                      return `${Math.round((v / max) * 100)}%`;
+                    })(),
+                  }}
+                ></div>
               </div>
               <p className="text-xs text-gray-600 font-medium mt-2">
-                Jan 2026: $3
+                {(() => {
+                  const last = revenueByMonth[revenueByMonth.length - 1];
+                  if (!last) return "No paid invoices";
+                  return `${last.key}: ${moneyTotals(last.totals)}`;
+                })()}
               </p>
             </div>
 
@@ -3347,31 +5154,45 @@ const FinancialReportsView = () => {
                 <h4 className="text-sm font-bold text-gray-900 mb-4">
                   Top Clients by Revenue
                 </h4>
-                <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
-                  <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-                    <Building2 className="w-4 h-4 text-indigo-600" />
+                {topClientsByRevenue.length ? (
+                  <div className="space-y-2">
+                    {topClientsByRevenue.map((c) => (
+                      <div key={c.clientId} className="flex items-center gap-3 p-3 bg-white rounded-lg">
+                        <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                          <Building2 className="w-4 h-4 text-indigo-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-bold text-gray-900">{c.clientName}</p>
+                        </div>
+                        <span className="text-sm font-bold text-green-600">{moneyTotals(c.totals)}</span>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-gray-900">
-                      Nike Global
-                    </p>
-                  </div>
-                  <span className="text-sm font-bold text-green-600">$3</span>
-                </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-400 font-medium">No revenue yet</div>
+                )}
               </Card>
               <Card className="p-5 bg-gray-50 border border-gray-100 rounded-xl">
                 <h4 className="text-sm font-bold text-gray-900 mb-4">
                   Top Talent by Revenue
                 </h4>
-                <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
-                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <User className="w-4 h-4 text-purple-600" />
+                {topTalentByRevenue.length ? (
+                  <div className="space-y-2">
+                    {topTalentByRevenue.map((t) => (
+                      <div key={t.talentId} className="flex items-center gap-3 p-3 bg-white rounded-lg">
+                        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                          <User className="w-4 h-4 text-purple-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-bold text-gray-900">{t.talentName}</p>
+                        </div>
+                        <span className="text-sm font-bold text-green-600">{money(t.grossCents, "USD")}</span>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-gray-900">Emma</p>
-                  </div>
-                  <span className="text-sm font-bold text-green-600">$3</span>
-                </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-400 font-medium">No revenue yet</div>
+                )}
               </Card>
             </div>
           </>
@@ -3384,19 +5205,15 @@ const FinancialReportsView = () => {
                 <p className="text-sm font-bold text-gray-700 mb-2">
                   Total Outstanding Receivables
                 </p>
-                <p className="text-5xl font-bold text-red-600">$0</p>
+                <p className="text-5xl font-bold text-red-600">
+                  {moneyTotals(receivables.totalReceivablesTotals)}
+                </p>
               </div>
               <AlertCircle className="w-12 h-12 text-red-600" />
             </Card>
 
             <div className="grid grid-cols-5 gap-4">
-              {[
-                { label: "Current (Not Due)", color: "green" },
-                { label: "1-30 Days Overdue", color: "yellow" },
-                { label: "31-60 Days Overdue", color: "orange" },
-                { label: "61-90 Days Overdue", color: "red" },
-                { label: "90+ Days Overdue", color: "gray" },
-              ].map((aging) => (
+              {receivables.bucketDefs.map((aging) => (
                 <Card
                   key={aging.label}
                   className={`p-4 bg-${aging.color}-50 border border-${aging.color}-100 rounded-xl`}
@@ -3405,10 +5222,10 @@ const FinancialReportsView = () => {
                     {aging.label}
                   </p>
                   <p className={`text-xl font-bold text-${aging.color}-600`}>
-                    $0
+                    {moneyTotals(receivables.bucketTotals.get(aging.key) || new Map())}
                   </p>
                   <p className="text-[10px] text-gray-500 font-medium">
-                    0 invoices
+                    {receivables.bucketCounts.get(aging.key) || 0} invoices
                   </p>
                 </Card>
               ))}
@@ -3418,9 +5235,23 @@ const FinancialReportsView = () => {
               <h4 className="text-base font-bold text-gray-900 mb-4">
                 Largest Outstanding Clients
               </h4>
-              <div className="text-center py-8 text-gray-400 font-medium">
-                No outstanding receivables
-              </div>
+              {receivables.largestClients.length ? (
+                <div className="space-y-2">
+                  {receivables.largestClients.map((c) => (
+                    <div key={c.clientId} className="flex items-center justify-between p-3 bg-white rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                          <Building2 className="w-4 h-4 text-indigo-600" />
+                        </div>
+                        <p className="text-sm font-bold text-gray-900">{c.clientName}</p>
+                      </div>
+                      <span className="text-sm font-bold text-red-600">{moneyTotals(c.totals)}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-400 font-medium">No outstanding receivables</div>
+              )}
             </Card>
           </div>
         )}
@@ -3432,7 +5263,9 @@ const FinancialReportsView = () => {
                 <p className="text-sm font-bold text-gray-700 mb-2">
                   Total Owed to All Talent
                 </p>
-                <p className="text-5xl font-bold text-orange-600">$0</p>
+                <p className="text-5xl font-bold text-orange-600">
+                  {money(payablesByTalent.totalNetCents, "USD")}
+                </p>
               </div>
               <Users className="w-12 h-12 text-orange-600" />
             </Card>
@@ -3441,9 +5274,23 @@ const FinancialReportsView = () => {
               <h4 className="text-base font-bold text-gray-900 mb-4">
                 Breakdown by Talent
               </h4>
-              <div className="text-center py-8 text-gray-400 font-medium">
-                No pending talent payables
-              </div>
+              {payablesByTalent.rows.length ? (
+                <div className="space-y-2">
+                  {payablesByTalent.rows.slice(0, 10).map((r) => (
+                    <div key={r.talentId} className="flex items-center justify-between p-3 bg-white rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                          <User className="w-4 h-4 text-purple-600" />
+                        </div>
+                        <p className="text-sm font-bold text-gray-900">{r.talentName}</p>
+                      </div>
+                      <span className="text-sm font-bold text-orange-600">{money(r.netCents, "USD")}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-400 font-medium">No pending talent payables</div>
+              )}
             </Card>
           </div>
         )}
@@ -3458,7 +5305,9 @@ const FinancialReportsView = () => {
                     Total Commission Earned
                   </p>
                 </div>
-                <p className="text-3xl font-bold text-indigo-600 mb-1">$0</p>
+                <p className="text-3xl font-bold text-indigo-600 mb-1">
+                  {moneyTotals(summary.commissionTotals)}
+                </p>
                 <p className="text-xs text-gray-600 font-medium">
                   20% of revenue
                 </p>
@@ -3470,7 +5319,16 @@ const FinancialReportsView = () => {
                     Avg Commission per Deal
                   </p>
                 </div>
-                <p className="text-3xl font-bold text-purple-600 mb-1">$0</p>
+                <p className="text-3xl font-bold text-purple-600 mb-1">
+                  {(() => {
+                    const deals = Math.max(1, summary.paidCount);
+                    const totals = new Map<string, number>();
+                    for (const [cur, cents] of summary.commissionTotals.entries()) {
+                      totals.set(cur, Math.round((cents || 0) / deals));
+                    }
+                    return moneyTotals(totals);
+                  })()}
+                </p>
                 <p className="text-xs text-gray-600 font-medium">
                   Average earned
                 </p>
@@ -3494,17 +5352,35 @@ const FinancialReportsView = () => {
                 <h4 className="text-base font-bold text-gray-900 mb-4">
                   Commission by Client
                 </h4>
-                <div className="text-center py-8 text-gray-400 font-medium">
-                  No commission data available
-                </div>
+                {commissionByClient.length ? (
+                  <div className="space-y-2">
+                    {commissionByClient.map((c) => (
+                      <div key={c.clientId} className="flex items-center justify-between p-3 bg-white rounded-lg">
+                        <p className="text-sm font-bold text-gray-900">{c.clientName}</p>
+                        <span className="text-sm font-bold text-indigo-600">{moneyTotals(c.totals)}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-400 font-medium">No commission data available</div>
+                )}
               </Card>
               <Card className="p-6 bg-gray-50 border border-gray-100 rounded-xl">
                 <h4 className="text-base font-bold text-gray-900 mb-4">
                   Commission by Talent
                 </h4>
-                <div className="text-center py-8 text-gray-400 font-medium">
-                  No commission data available
-                </div>
+                {commissionByTalent.length ? (
+                  <div className="space-y-2">
+                    {commissionByTalent.map((t) => (
+                      <div key={t.talentId} className="flex items-center justify-between p-3 bg-white rounded-lg">
+                        <p className="text-sm font-bold text-gray-900">{t.talentName}</p>
+                        <span className="text-sm font-bold text-indigo-600">{money(t.feeCents, "USD")}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-400 font-medium">No commission data available</div>
+                )}
               </Card>
             </div>
           </div>
@@ -3521,34 +5397,32 @@ const FinancialReportsView = () => {
                   <span className="text-base font-bold text-gray-900">
                     Revenue (Gross from Invoices)
                   </span>
-                  <span className="text-xl font-bold text-green-600">$0</span>
+                  <span className="text-xl font-bold text-green-600">{money(pl.revenue, "USD")}</span>
                 </div>
                 <div className="flex justify-between items-center p-4 bg-red-50 rounded-xl border border-red-100">
                   <span className="text-base font-bold text-gray-900">
                     Less: Talent Payments (COGS)
                   </span>
-                  <span className="text-xl font-bold text-red-600">-$0</span>
+                  <span className="text-xl font-bold text-red-600">-{money(pl.cogs, "USD")}</span>
                 </div>
                 <div className="flex justify-between items-center p-4 bg-blue-50 rounded-xl border border-blue-100">
                   <span className="text-base font-bold text-gray-900">
                     Gross Profit (Agency Commission)
                   </span>
-                  <span className="text-xl font-bold text-blue-600">$0</span>
+                  <span className="text-xl font-bold text-blue-600">{money(pl.commission, "USD")}</span>
                 </div>
                 <div className="flex justify-between items-center p-4 bg-orange-50 rounded-xl border border-orange-100">
                   <span className="text-base font-bold text-gray-900">
                     Less: Operating Expenses
                   </span>
-                  <span className="text-xl font-bold text-orange-600">
-                    -$1,095
-                  </span>
+                  <span className="text-xl font-bold text-orange-600">-{money(pl.expenses, "USD")}</span>
                 </div>
                 <div className="flex justify-between items-center p-6 bg-green-50 rounded-2xl border-4 border-green-400 mt-6">
                   <span className="text-2xl font-bold text-gray-900">
                     Net Profit
                   </span>
                   <span className="text-4xl font-bold text-green-600">
-                    $-1,095
+                    {money(pl.netProfit, "USD")}
                   </span>
                 </div>
               </div>
@@ -3558,13 +5432,13 @@ const FinancialReportsView = () => {
                   <p className="text-xs font-bold text-gray-500 mb-1">
                     Profit Margin
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">0%</p>
+                  <p className="text-2xl font-bold text-gray-900">{pl.profitMargin.toFixed(1)}%</p>
                 </Card>
                 <Card className="p-4 bg-gray-50 border border-gray-100 rounded-xl text-center">
                   <p className="text-xs font-bold text-gray-500 mb-1">
                     Expense Ratio
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">0%</p>
+                  <p className="text-2xl font-bold text-gray-900">{pl.expenseRatio.toFixed(1)}%</p>
                 </Card>
               </div>
             </Card>
@@ -3577,30 +5451,21 @@ const FinancialReportsView = () => {
               <h4 className="text-lg font-bold text-gray-900 mb-6">
                 Tax Summary
               </h4>
-              <div className="grid grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-2 gap-6 mb-8">
                 <Card className="p-6 bg-blue-50 border border-blue-100 rounded-xl">
                   <p className="text-sm font-bold text-gray-700 mb-2">
                     Sales Tax Collected
                   </p>
-                  <p className="text-3xl font-bold text-blue-600 mb-1">$0.00</p>
-                  <p className="text-xs text-gray-500 font-medium">By state</p>
-                </Card>
-                <Card className="p-6 bg-purple-50 border border-purple-100 rounded-xl">
-                  <p className="text-sm font-bold text-gray-700 mb-2">
-                    VAT Collected
-                  </p>
-                  <p className="text-3xl font-bold text-purple-600 mb-1">
-                    $0.00
-                  </p>
-                  <p className="text-xs text-gray-500 font-medium">
-                    By country
-                  </p>
+                  <p className="text-3xl font-bold text-blue-600 mb-1">{moneyTotals(taxTotals)}</p>
+                  <p className="text-xs text-gray-500 font-medium">Sales tax only</p>
                 </Card>
                 <Card className="p-6 bg-orange-50 border border-orange-100 rounded-xl">
                   <p className="text-sm font-bold text-gray-700 mb-2">
                     1099 Eligible Payments
                   </p>
-                  <p className="text-3xl font-bold text-orange-600 mb-1">$0</p>
+                  <p className="text-3xl font-bold text-orange-600 mb-1">
+                    {money(payablesByTalent.totalNetCents, "USD")}
+                  </p>
                   <p className="text-xs text-gray-500 font-medium">
                     US talent payments
                   </p>
@@ -4249,8 +6114,10 @@ const GenerateInvoiceView = () => {
 
 const InvoiceManagementView = ({
   setActiveSubTab,
+  activeSubTab,
 }: {
   setActiveSubTab: (tab: string) => void;
+  activeSubTab: string;
 }) => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
@@ -4528,6 +6395,7 @@ const InvoiceManagementView = ({
     { id: "Talent Statements", label: "Talent Statements", icon: Receipt },
     { id: "Financial Reports", label: "Financial Reports", icon: BarChart2 },
     { id: "Expense Tracking", label: "Expense Tracking", icon: CreditCard },
+    { id: "Connect Bank", label: "Connect Bank", icon: CreditCard },
   ];
 
   return (
@@ -4537,7 +6405,7 @@ const InvoiceManagementView = ({
         <div className="flex items-center gap-2">
           {accountingTabs.map((tab) => {
             const Icon = tab.icon;
-            const isActive = tab.id === "Invoice Management";
+            const isActive = tab.id === activeSubTab;
             return (
               <button
                 key={tab.id}
@@ -5683,7 +7551,10 @@ const ScoutingHubView = ({
   activeTab: string;
   setActiveTab: (tab: string) => void;
 }) => {
-  const [isAddProspectOpen, setIsAddProspectOpen] = useState(false);
+  const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
+  const [prospectToEdit, setProspectToEdit] = useState<ScoutingProspect | null>(
+    null,
+  );
 
   const tabs = [
     "Prospect Pipeline",
@@ -5710,7 +7581,10 @@ const ScoutingHubView = ({
           <Button
             variant="outline"
             className="flex items-center gap-2 border-gray-300 font-bold text-gray-700 bg-white shadow-sm rounded-lg h-9 text-sm"
-            onClick={() => setIsAddProspectOpen(true)}
+            onClick={() => {
+              setProspectToEdit(null);
+              setIsProspectModalOpen(true);
+            }}
           >
             <Plus className="w-4 h-4 text-gray-400" /> Add Prospect
           </Button>
@@ -5742,7 +7616,14 @@ const ScoutingHubView = ({
       <div className="mt-8">
         {activeTab === "Prospect Pipeline" && (
           <ProspectPipelineTab
-            onAddProspect={() => setIsAddProspectOpen(true)}
+            onAddProspect={() => {
+              setProspectToEdit(null);
+              setIsProspectModalOpen(true);
+            }}
+            onEditProspect={(prospect) => {
+              setProspectToEdit(prospect);
+              setIsProspectModalOpen(true);
+            }}
           />
         )}
         {activeTab === "Social Discovery" && <SocialDiscoveryTab />}
@@ -5752,34 +7633,336 @@ const ScoutingHubView = ({
         {activeTab === "Open Calls" && <OpenCallsTab />}
         {activeTab === "Analytics" && <ScoutingAnalyticsTab />}
       </div>
-      <AddProspectModal
-        open={isAddProspectOpen}
-        onOpenChange={setIsAddProspectOpen}
+      <ProspectModal
+        open={isProspectModalOpen}
+        onOpenChange={setIsProspectModalOpen}
+        prospect={prospectToEdit}
       />
     </div>
   );
 };
 
+const ProspectDetailsSheet = ({
+  prospect,
+  onClose,
+  onEdit,
+}: {
+  prospect: ScoutingProspect | null;
+  onClose: () => void;
+  onEdit: (prospect: ScoutingProspect) => void;
+}) => {
+  if (!prospect) return null;
+
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const handleStatusChange = async (newStatus: string) => {
+    try {
+      await scoutingService.updateProspect(prospect.id, {
+        status: newStatus as any,
+      });
+      await queryClient.invalidateQueries({ queryKey: ["prospects"] });
+      toast({
+        title: "Status Updated",
+        description: `Prospect status changed to ${STATUS_MAP[newStatus as keyof typeof STATUS_MAP] || newStatus}.`,
+      });
+    } catch (error) {
+      console.error("Error updating status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update status. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <Sheet open={!!prospect} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent className="w-[650px] sm:max-w-none bg-white p-0 flex flex-col">
+        <SheetHeader className="p-6 border-b">
+          <SheetTitle className="text-xl font-bold">
+            Prospect Details
+          </SheetTitle>
+        </SheetHeader>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Main Info */}
+          <div className="space-y-6 border-b pb-6">
+            <div className="flex items-start space-x-6">
+              <div
+                className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center border cursor-pointer hover:bg-gray-200 transition-colors group relative"
+                onClick={() => onEdit(prospect)}
+              >
+                <User className="w-12 h-12 text-gray-400 group-hover:text-gray-500" />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Pencil className="w-6 h-6 text-white" />
+                </div>
+              </div>
+              <div className="flex-1 pt-2">
+                <h2 className="text-3xl font-bold text-gray-900">
+                  {prospect.full_name}
+                </h2>
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+                  {prospect.categories?.map((cat) => (
+                    <Badge key={cat} variant="outline" className="font-medium">
+                      {cat}
+                    </Badge>
+                  ))}
+                </div>
+                <div className="flex items-center gap-1 mt-3 text-yellow-500">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`w-5 h-5 ${i < (prospect.rating || 0) ? "fill-current" : "text-gray-300"}`}
+                    />
+                  ))}
+                  <span className="text-sm text-gray-500 ml-1">
+                    ({prospect.rating || 0}/5 rating)
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="p-4 rounded-xl border bg-gray-50/70">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="font-semibold text-gray-700">Status</h3>
+                <Badge
+                  className={`capitalize border ${STATUS_COLORS[prospect.status as keyof typeof STATUS_COLORS] || "bg-gray-100 text-gray-700"}`}
+                >
+                  {STATUS_MAP[prospect.status as keyof typeof STATUS_MAP] ||
+                    prospect.status.replace("_", " ")}
+                </Badge>
+              </div>
+              <Select
+                defaultValue={prospect.status}
+                onValueChange={handleStatusChange}
+              >
+                <SelectTrigger className="h-11 text-base bg-white border-gray-200">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(STATUS_MAP).map(([value, label]) => (
+                    <SelectItem
+                      key={value}
+                      value={value}
+                      className="font-medium"
+                    >
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <Section title="Contact Information">
+            <InfoRow icon={Mail} text={prospect.email} />
+            <InfoRow icon={Phone} text={prospect.phone} />
+            <InfoRow
+              icon={Instagram}
+              text={prospect.instagram_handle}
+              subtext={`(${prospect.instagram_followers?.toLocaleString()} followers)`}
+            />
+          </Section>
+
+          <Section title="Discovery Details">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm p-4 bg-gray-50/70 rounded-xl border">
+              <DetailItem label="Source" value={prospect.source} />
+              <DetailItem
+                label="Date"
+                value={new Date(prospect.discovery_date).toLocaleDateString()}
+              />
+              <DetailItem
+                label="Location"
+                value={prospect.discovery_location}
+              />
+              <DetailItem label="Referred By" value={prospect.referred_by} />
+            </div>
+          </Section>
+
+          <Section title="Assignment">
+            <div className="p-4 bg-gray-50/70 rounded-xl border font-medium text-gray-800">
+              {prospect.assigned_agent_name || "Not Assigned"}
+            </div>
+          </Section>
+
+          <Section title="Internal Notes">
+            <div className="p-4 bg-gray-50/70 rounded-xl border text-gray-700 text-sm whitespace-pre-wrap min-h-[60px]">
+              {prospect.notes || (
+                <span className="text-gray-500 italic">
+                  No internal notes added.
+                </span>
+              )}
+            </div>
+          </Section>
+
+          <Section title="Social Metrics">
+            <div className="grid grid-cols-2 gap-4">
+              <MetricBox
+                label="Instagram Followers"
+                value={prospect.instagram_followers?.toLocaleString() || "N/A"}
+              />
+              <MetricBox
+                label="Engagement Rate"
+                value={`${prospect.engagement_rate || "N/A"}%`}
+              />
+            </div>
+          </Section>
+
+          <Button
+            className="w-full h-11 text-base font-bold flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700"
+            onClick={() => onEdit(prospect)}
+          >
+            <Pencil className="w-4 h-4" /> Edit Prospect
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full h-11 text-base flex items-center gap-2"
+            onClick={() => {
+              if (prospect.email) {
+                window.location.href = `mailto:${prospect.email}`;
+              } else {
+                toast({
+                  title: "No Email Found",
+                  description:
+                    "This prospect does not have an email address associated with them.",
+                  variant: "destructive",
+                });
+              }
+            }}
+          >
+            <Send className="w-4 h-4" /> Send Email
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full h-11 text-base flex items-center gap-2"
+            onClick={() => window.open("https://calendar.google.com", "_blank")}
+          >
+            <Calendar className="w-4 h-4" /> Schedule Meeting
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full h-11 text-base flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+          >
+            <Trash2 className="w-4 h-4" /> Delete Prospect
+          </Button>
+          <p className="text-xs text-gray-400 text-center pt-2">
+            Added {new Date(prospect.created_at).toLocaleDateString()} | Last
+            updated {new Date(prospect.updated_at).toLocaleDateString()}
+          </p>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+};
+
+const Section = ({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) => (
+  <div className="space-y-3">
+    <h3 className="font-semibold text-gray-700 flex items-center gap-2">
+      <MapPin className="w-4 h-4 text-gray-400" /> {title}
+    </h3>
+    {children}
+  </div>
+);
+
+const InfoRow = ({
+  icon: Icon,
+  text,
+  subtext,
+}: {
+  icon: React.ElementType;
+  text?: string | null;
+  subtext?: string;
+}) => (
+  <div className="flex items-center justify-between p-3.5 bg-gray-50/70 rounded-xl border">
+    <div className="flex items-center gap-3">
+      <Icon className="w-5 h-5 text-gray-400" />
+      <span className="font-medium text-gray-800">{text || "-"}</span>
+      {subtext && <span className="text-xs text-gray-500">{subtext}</span>}
+    </div>
+    <LinkIcon className="w-4 h-4 text-gray-400 cursor-pointer hover:text-indigo-600" />
+  </div>
+);
+
+const DetailItem = ({
+  label,
+  value,
+}: {
+  label: string;
+  value?: string | null;
+}) => (
+  <div>
+    <div className="text-xs text-gray-500">{label}</div>
+    <div className="font-semibold text-gray-800">{value || "-"}</div>
+  </div>
+);
+
+const MetricBox = ({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) => (
+  <div className="p-4 bg-gray-50/70 rounded-xl border">
+    <div className="text-xs text-gray-500 mb-1">{label}</div>
+    <div className="text-2xl font-bold text-gray-900">{value}</div>
+  </div>
+);
+
 const ProspectPipelineTab = ({
   onAddProspect,
+  onEditProspect,
 }: {
   onAddProspect: () => void;
+  onEditProspect: (prospect: ScoutingProspect) => void;
 }) => {
+  const { user } = useAuth();
+  const [selectedProspect, setSelectedProspect] =
+    useState<ScoutingProspect | null>(null);
+  const { data: prospects, isLoading } = useQuery({
+    queryKey: ["prospects", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const agencyId = await scoutingService.getUserAgencyId();
+      if (!agencyId) return [];
+      return scoutingService.getProspects(agencyId);
+    },
+    enabled: !!user,
+  });
+
+  useEffect(() => {
+    if (selectedProspect && prospects) {
+      const updated = prospects.find((p) => p.id === selectedProspect.id);
+      if (updated) setSelectedProspect(updated);
+    }
+  }, [prospects]);
+
   const stats = [
-    { label: "New Leads", count: 0, color: "border-blue-200 bg-blue-50/30" },
+    {
+      label: "New Leads",
+      count: prospects?.filter((p) => p.status === "new").length || 0,
+      color: "border-blue-200 bg-blue-50/30",
+    },
     {
       label: "In Contact",
-      count: 0,
+      count: prospects?.filter((p) => p.status === "contacted").length || 0,
       color: "border-yellow-200 bg-yellow-50/30",
     },
     {
       label: "Test Shoots",
-      count: 0,
+      count: prospects?.filter((p) => p.status === "test_shoot").length || 0,
       color: "border-purple-200 bg-purple-50/30",
     },
     {
       label: "Offers Sent",
-      count: 0,
+      count: prospects?.filter((p) => p.status === "offer_sent").length || 0,
       color: "border-green-200 bg-green-50/30",
     },
   ];
@@ -5803,11 +7986,11 @@ const ProspectPipelineTab = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="new">New Lead</SelectItem>
-                <SelectItem value="contacted">Contacted</SelectItem>
-                <SelectItem value="meeting">Meeting Scheduled</SelectItem>
-                <SelectItem value="test_shoot">Test Shoot Pending</SelectItem>
-                <SelectItem value="offer_sent">Offer Sent</SelectItem>
+                {Object.entries(STATUS_MAP).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -5829,24 +8012,121 @@ const ProspectPipelineTab = ({
           ))}
         </div>
 
-        <div className="border border-dashed border-gray-200 rounded-2xl p-24 flex flex-col items-center justify-center text-center">
-          <div className="p-6 bg-gray-50 rounded-full mb-4">
-            <Users className="w-10 h-10 text-gray-300" />
+        {isLoading ? (
+          <div className="text-center py-24">Loading prospects...</div>
+        ) : !prospects || prospects.length === 0 ? (
+          <div className="border border-dashed border-gray-200 rounded-2xl p-24 flex flex-col items-center justify-center text-center">
+            <div className="p-6 bg-gray-50 rounded-full mb-4">
+              <Users className="w-10 h-10 text-gray-300" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              No prospects yet
+            </h3>
+            <p className="text-gray-500 mb-6 max-w-xs font-medium text-sm">
+              Start building your pipeline by adding discovered talent
+            </p>
+            <Button
+              onClick={onAddProspect}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 h-10 px-8 rounded-lg shadow-sm"
+            >
+              <Plus className="w-4 h-4" /> Add First Prospect
+            </Button>
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">
-            No prospects yet
-          </h3>
-          <p className="text-gray-500 mb-6 max-w-xs font-medium text-sm">
-            Start building your pipeline by adding discovered talent
-          </p>
-          <Button
-            onClick={onAddProspect}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 h-10 px-8 rounded-lg shadow-sm"
-          >
-            <Plus className="w-4 h-4" /> Add First Prospect
-          </Button>
-        </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">
+                    PHOTO
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">
+                    NAME
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">
+                    CONTACT
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">
+                    NEW LEAD
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">
+                    IN CONTACT
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">
+                    TEST SHOOTS
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">
+                    OFFERS SENT
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600">
+                    SOURCE
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-600"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {prospects.map((p) => (
+                  <tr
+                    key={p.id}
+                    className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
+                    onClick={() => setSelectedProspect(p)}
+                  >
+                    <td className="px-4 py-3">
+                      <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                        <User className="w-5 h-5 text-gray-400" />
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 font-bold text-gray-900">
+                      {p.full_name}
+                      <div className="text-xs font-normal text-gray-500">
+                        {p.categories?.join(", ")}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">
+                      {p.email}
+                      <div className="text-xs">{p.phone}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      {p.status === "new" ? (
+                        <CheckCircle2 className="w-5 h-5 text-blue-500" />
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3">
+                      {p.status === "contacted" ? (
+                        <CheckCircle2 className="w-5 h-5 text-yellow-500" />
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3">
+                      {p.status === "test_shoot" ? (
+                        <CheckCircle2 className="w-5 h-5 text-purple-500" />
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3">
+                      {p.status === "offer_sent" ? (
+                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 font-medium">
+                      {p.source}
+                    </td>
+                    <td className="px-4 py-3">
+                      <ChevronRight className="w-5 h-5 text-gray-400" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
+      <ProspectDetailsSheet
+        prospect={selectedProspect}
+        onClose={() => setSelectedProspect(null)}
+        onEdit={(p) => {
+          setSelectedProspect(null);
+          onEditProspect(p);
+        }}
+      />
     </div>
   );
 };
@@ -13543,11 +15823,19 @@ const PlaceholderView = ({ title }: { title: string }) => (
 export default function AgencyDashboard() {
   const { logout, user, authenticated } = useAuth();
   const navigate = useNavigate();
-  const [agencyMode, setAgencyMode] = useState<"AI" | "IRL">("AI");
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Initialize state from URL params
+  const [agencyMode, setAgencyModeState] = useState<"AI" | "IRL">(
+    (searchParams.get("mode") as "AI" | "IRL") || "AI",
+  );
+  const [activeTab, setActiveTabState] = useState(
+    searchParams.get("tab") || "dashboard",
+  );
   const [activeSubTab, setActiveSubTab] = useState("All Talent");
-  const [activeScoutingTab, setActiveScoutingTab] =
-    useState("Prospect Pipeline");
+  const [activeScoutingTab, setActiveScoutingTabState] = useState(
+    searchParams.get("scoutingTab") || "Prospect Pipeline",
+  );
   const [expandedItems, setExpandedItems] = useState<string[]>([
     "roster",
     "licensing",
@@ -13700,6 +15988,34 @@ export default function AgencyDashboard() {
     }
   };
 
+  // Wrapper functions to update both state and URL params
+  const setAgencyMode = (mode: "AI" | "IRL") => {
+    setAgencyModeState(mode);
+    setSearchParams((prev) => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set("mode", mode);
+      return newParams;
+    });
+  };
+
+  const setActiveTab = (tab: string) => {
+    setActiveTabState(tab);
+    setSearchParams((prev) => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set("tab", tab);
+      return newParams;
+    });
+  };
+
+  const setActiveScoutingTab = (tab: string) => {
+    setActiveScoutingTabState(tab);
+    setSearchParams((prev) => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set("scoutingTab", tab);
+      return newParams;
+    });
+  };
+
   // Helper for API URLs
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
   const API_BASE_ABS = (() => {
@@ -13768,6 +16084,22 @@ export default function AgencyDashboard() {
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
   };
+
+  useEffect(() => {
+    if (activeTab !== "accounting") return;
+    const validAccountingSubTabs = new Set([
+      "Connect Bank",
+      "Invoice Generation",
+      "Invoice Management",
+      "Payment Tracking",
+      "Talent Statements",
+      "Financial Reports",
+      "Expense Tracking",
+    ]);
+    if (!validAccountingSubTabs.has(activeSubTab)) {
+      setActiveSubTab("Connect Bank");
+    }
+  }, [activeSubTab, activeTab]);
 
   // Sidebar Items
   interface SidebarItem {
@@ -13852,6 +16184,7 @@ export default function AgencyDashboard() {
               "Talent Statements",
               "Financial Reports",
               "Expense Tracking",
+              "Connect Bank",
             ],
           },
           {
@@ -14145,7 +16478,7 @@ export default function AgencyDashboard() {
                       </div>
                     </button>
                     <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group">
-                      <Link className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
+                      <LinkIcon className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
                         <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
                           Integrations
@@ -14239,9 +16572,13 @@ export default function AgencyDashboard() {
           )}
           {activeTab === "accounting" && (
             <div>
-              {activeSubTab === "Invoice Generation" && <GenerateInvoiceViewApi />}
+              {activeSubTab === "Connect Bank" && <ConnectBankView />}
+              {activeSubTab === "Invoice Generation" && <GenerateInvoiceView />}
               {activeSubTab === "Invoice Management" && (
-                <InvoiceManagementView setActiveSubTab={setActiveSubTab} />
+                <InvoiceManagementView
+                  setActiveSubTab={setActiveSubTab}
+                  activeSubTab={activeSubTab}
+                />
               )}
               {activeSubTab === "Payment Tracking" && <PaymentTrackingView />}
               {activeSubTab === "Talent Statements" && <TalentStatementsView />}

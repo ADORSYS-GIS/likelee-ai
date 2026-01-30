@@ -86,45 +86,17 @@ export const getOrganizationKycStatus = (organization_id: string) =>
     `/api/kyc/organization/status?organization_id=${organization_id}`,
   );
 
-export const getOrganizationProfileByUserId = () =>
-  base44Client.get(`/api/organization-profile/user`);
-
 export const getBrandProfile = () =>
   base44Client.get(`/api/brand-profile/user`);
 
 export const getAgencyProfile = () =>
   base44Client.get(`/api/agency-profile/user`);
 
-// Organization profile CRUD
-export const createOrganizationProfile = (data: any) =>
-  base44Client.post(`/api/organization-profile`, data);
-
-export const updateOrganizationProfile = (id: string, data: any) =>
-  base44Client.post(`/api/organization-profile/${id}`, data);
-
 export const updateBrandProfile = (data: any) =>
   base44Client.post(`/api/brand-profile`, data);
 
 export const updateAgencyProfile = (data: any) =>
   base44Client.post(`/api/agency-profile`, data);
-
-// Organization registration (creates user + organization and links ownership)
-export const registerOrganization = (
-  data: {
-    email: string;
-    password: string;
-    organization_name: string;
-    contact_name?: string;
-    contact_title?: string;
-    organization_type?: string;
-    website?: string;
-    phone_number?: string;
-  },
-  userId?: string,
-) =>
-  base44Client.post(`/api/organization-register`, data, {
-    headers: userId ? { "x-user-id": userId } : {},
-  });
 
 export const registerBrand = (data: any) =>
   base44Client.post(`/api/brand-register`, data);
@@ -140,6 +112,12 @@ export const getPayoutsAccountStatus = async (profileId: string) => {
   const resp = await base44Client.get(`/api/payouts/account_status`, {
     params: { profile_id: profileId },
   });
+  return { data: resp } as any;
+};
+
+// Agency Stripe Connect (Accounting)
+export const getAgencyPayoutsAccountStatus = async () => {
+  const resp = await base44Client.get(`/api/agency/payouts/account_status`);
   return { data: resp } as any;
 };
 
@@ -159,6 +137,11 @@ export const getStripeOAuthUrl = async (profileId: string) => {
     },
   );
   // Backend returns { url }, adapt to UI expectations
+  return { data: { status: "ok", url: (resp as any)?.url } } as any;
+};
+
+export const getAgencyStripeOnboardingLink = async () => {
+  const resp = await base44Client.post(`/api/agency/payouts/onboarding_link`, {});
   return { data: { status: "ok", url: (resp as any)?.url } } as any;
 };
 
@@ -212,6 +195,20 @@ export const listInvoices = (params?: {
 }) => base44Client.get(`/api/invoices`, { params: params || {} });
 
 export const getInvoice = (id: string) => base44Client.get(`/api/invoices/${id}`);
+
+// Talent Statements (Agency Dashboard)
+export const listTalentStatements = (params?: { talent_id?: string; year?: number }) =>
+  base44Client.get(`/api/talent-statements`, { params: params || {} });
+
+// Expenses (Agency Dashboard)
+export const listExpenses = (params?: {
+  date_start?: string;
+  date_end?: string;
+  category?: string;
+  status?: string;
+}) => base44Client.get(`/api/expenses`, { params: params || {} });
+
+export const createExpense = (data: any) => base44Client.post(`/api/expenses`, data);
 
 export const createInvoice = (data: any) => base44Client.post(`/api/invoices`, data);
 

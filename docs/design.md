@@ -48,7 +48,7 @@
    - `invoice_number` (text)
    - `status` (text enum-like constraint: `draft`, `sent`, `paid`, `void`)
  - **Dates**
-   - `invoice_date` (date)
+   - `invoice_date` (date) b
    - `due_date` (date)
    - `sent_at` (timestamptz, nullable)
    - `paid_at` (timestamptz, nullable)
@@ -150,15 +150,26 @@
  - Invoice Generation page supports:
    - Create from Existing Booking
    - Manual Entry
-   - Line items
-   - Optional expenses
-   - Commission %, currency, tax rate, discount
-   - Save as draft / Mark as sent / Preview
  
- ## Configuration Management
- 
- - No new environment variables are required for the initial Accounting & Invoicing MVP.
- - If/when we add PDF rendering, emailing, or payment providers:
-   - Add new variables to `likelee-server/src/config.rs` using `envconfig`.
-   - Keep `likelee-server/.env.example` in sync.
-   - Document the variables here under this section.
+## Configuration Management
+
+- No new environment variables are required for the initial Accounting & Invoicing MVP.
+- If/when we add PDF rendering, emailing, or payment providers:
+  - Add new variables to `likelee-server/src/config.rs` using `envconfig`.
+  - Keep `likelee-server/.env.example` in sync.
+  - Document the variables here under this section.
+
+### Stripe Connect (Agency Bank Connection)
+
+- `PAYOUTS_ENABLED` (bool)
+  - Enables Stripe Connect onboarding endpoints.
+- `STRIPE_SECRET_KEY`
+  - Stripe secret key used server-side.
+- `STRIPE_CLIENT_ID`
+  - Stripe Connect client id (kept for future OAuth flows; current implementation uses Account Links).
+- `STRIPE_RETURN_URL`
+  - URL Stripe redirects to after a successful onboarding.
+- `STRIPE_REFRESH_URL`
+  - URL Stripe redirects to if the user abandons or needs to restart onboarding.
+- `STRIPE_WEBHOOK_SECRET`
+  - Used to validate Stripe webhook signatures.

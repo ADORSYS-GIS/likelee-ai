@@ -70,7 +70,7 @@ The solution strategy remains: SPA frontend consuming API(s), modular services a
 - **Brand Service**: Catalog discovery, contracts, entitlements.
 - **Experience Service**: Runtime orchestration of AI experiences and sessions.
 - **AI Service**: Providers integration, model/catalog management, guardrails.
-- **Identity/Access**: Authentication, authorization, roles, permissions via Keycloak.
+- **Identity/Access**: Authentication, authorization, roles, permissions via Supabase Auth.
 - **Billing/Payments**: Monetization flows, metering. TODO: confirm provider.
 - **Storage**: Asset and result storage; signed URLs/CDN.
 
@@ -79,7 +79,7 @@ The solution strategy remains: SPA frontend consuming API(s), modular services a
 - UI ↔ BFF/API: HTTPS JSON (REST/GraphQL). TODO: specify.
 - Services ↔ AI providers: HTTPS; provider SDKs. TODO: list providers.
 - Services ↔ Storage: Object store APIs.
-- Services ↔ IdP (Keycloak): OIDC/OAuth2 flows.
+- Services ↔ IdP (Supabase): OIDC/OAuth2/Email flows.
 
 ### 5.3 Key System Services
 
@@ -146,7 +146,7 @@ To reinforce the advanced royalty model: Likelee’s royalty system works like a
 ## 9. Architecture Decisions
 
 - ADR-001: Use Vite + React for web UI (existing). Status: Accepted.
-- ADR-002: Adopt Keycloak as IdP (OIDC/OAuth2). Status: Accepted.
+- ADR-002: Adopt Supabase Auth as IdP. Status: Accepted.
 - ADR-003: Select AI provider(s) and guardrail approach. Status: Proposed. TODO.
 
 ## 10. Quality Requirements
