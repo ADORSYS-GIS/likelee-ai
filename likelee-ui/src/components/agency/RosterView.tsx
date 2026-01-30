@@ -765,9 +765,17 @@ const RosterView = ({
   }, [historyRows]);
 
   const formatCurrency = (valCents: number) => {
-    const dollars = valCents / 100;
-    if (dollars >= 1000) return `$${(dollars / 1000).toFixed(1)}K`;
-    return `$${dollars.toFixed(0)}`;
+    const cents = Number(valCents);
+    if (!Number.isFinite(cents)) return "$0";
+    const abs = Math.abs(cents);
+    const minFractionDigits = abs % 100 === 0 ? 0 : 2;
+    const dollars = cents / 100;
+    return dollars.toLocaleString("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: minFractionDigits,
+      maximumFractionDigits: 2,
+    });
   };
 
   return (
@@ -1182,7 +1190,7 @@ const RosterView = ({
                             {talent.expiry || "—"}
                           </td>
                           <td className="px-6 py-4 text-sm font-bold text-gray-900">
-                            {talent.earnings || "$0"}
+                            {formatCurrency(Number(talent?.earnings_val ?? 0))}
                           </td>
                         </tr>
                       ))}

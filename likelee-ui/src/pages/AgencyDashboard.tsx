@@ -7524,6 +7524,13 @@ const LicensingRequestsView = () => {
   const openPayModal = async (group: any) => {
     setSelectedGroup(group);
     setPayModalOpen(true);
+    if (!group?.pay_set) {
+      setTotalPaymentAmount("");
+      setAgencyPercent("");
+      setPayModalLoading(false);
+      return;
+    }
+
     setPayModalLoading(true);
     try {
       const ids = (group?.talents || [])
