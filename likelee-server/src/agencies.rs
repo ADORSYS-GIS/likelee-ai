@@ -506,8 +506,11 @@ pub async fn list_clients(
     for b in bookings {
         if let Some(cid) = b.get("client_id").and_then(|v| v.as_str()) {
             let rate = b.get("rate_cents").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
-            let date = b.get("date").and_then(|v| v.as_str()).map(|s| s.to_string());
-            
+            let date = b
+                .get("date")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+
             let entry = metrics_map.entry(cid.to_string()).or_insert((0, 0, None));
             entry.0 += 1; // count
             entry.1 += rate; // revenue
@@ -530,7 +533,7 @@ pub async fn list_clients(
     for client in &mut clients {
         if let Some(id) = client.get("id").and_then(|v| v.as_str()) {
             let c_count = contacts_count_map.get(id).copied().unwrap_or(0);
-            
+
             if let Some((count, revenue, last_date)) = metrics_map.get(id) {
                 let formatted_revenue = if *revenue >= 100000 {
                     let k_value = (*revenue as f64) / 100000.0;
@@ -543,21 +546,27 @@ pub async fn list_clients(
                     format!("${}", revenue / 100)
                 };
 
-                client.as_object_mut().unwrap().insert("metrics".to_string(), json!({
-                    "bookings": count,
-                    "revenue": formatted_revenue,
-                    "revenue_cents": revenue,
-                    "lastBookingDate": last_date.clone().unwrap_or_else(|| "Never".to_string()),
-                    "contacts": c_count,
-                }));
+                client.as_object_mut().unwrap().insert(
+                    "metrics".to_string(),
+                    json!({
+                        "bookings": count,
+                        "revenue": formatted_revenue,
+                        "revenue_cents": revenue,
+                        "lastBookingDate": last_date.clone().unwrap_or_else(|| "Never".to_string()),
+                        "contacts": c_count,
+                    }),
+                );
             } else {
-                client.as_object_mut().unwrap().insert("metrics".to_string(), json!({
-                    "bookings": 0,
-                    "revenue": "$0",
-                    "revenue_cents": 0,
-                    "lastBookingDate": "Never",
-                    "contacts": c_count,
-                }));
+                client.as_object_mut().unwrap().insert(
+                    "metrics".to_string(),
+                    json!({
+                        "bookings": 0,
+                        "revenue": "$0",
+                        "revenue_cents": 0,
+                        "lastBookingDate": "Never",
+                        "contacts": c_count,
+                    }),
+                );
             }
         }
     }
@@ -631,7 +640,7 @@ pub async fn update_client(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let mut v =
         serde_json::to_value(&payload).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
-    
+
     // Remove nulls to allow partial updates
     if let serde_json::Value::Object(ref mut map) = v {
         let null_keys: Vec<String> = map
@@ -654,7 +663,7 @@ pub async fn update_client(
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        
+
     let text = resp
         .text()
         .await
@@ -678,7 +687,7 @@ pub async fn delete_client(
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        
+
     let text = resp
         .text()
         .await
