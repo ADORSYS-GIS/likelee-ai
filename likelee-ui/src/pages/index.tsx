@@ -90,6 +90,8 @@ import SportsAgency from "./SportsAgency";
 
 import SportsAgencyDashboard from "./SportsAgencyDashboard";
 
+import ScoutingOffers from "./ScoutingOffers";
+
 import CreatorSignupOptions from "./CreatorSignupOptions";
 
 import SAGAFTRAAlignment from "./SAGAFTRAAlignment";
@@ -211,6 +213,8 @@ const PAGES = {
   SportsAgency: SportsAgency,
 
   SportsAgencyDashboard: SportsAgencyDashboard,
+
+  ScoutingOffers: ScoutingOffers,
 
   CreatorSignupOptions: CreatorSignupOptions,
 
@@ -419,6 +423,15 @@ function PagesContent() {
           element={
             <ProtectedRoute allowedRoles={["agency"]}>
               <SportsAgencyDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/scoutingoffers"
+          element={
+            <ProtectedRoute allowedRoles={["agency"]}>
+              <ScoutingOffers />
             </ProtectedRoute>
           }
         />

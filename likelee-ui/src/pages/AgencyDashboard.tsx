@@ -1,13 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { scoutingService } from "@/services/scoutingService";
-import { ScoutingProspect } from "@/types/scouting";
+import { ScoutingProspect, ScoutingEvent } from "@/types/scouting";
+import { CreateEventModal } from "@/components/scouting/ScoutingComponents";
+import { PlanTripModal } from "@/components/scouting/map/PlanTripModal";
+import { ScoutingMap } from "@/components/scouting/map/ScoutingMap";
+import { ScoutingTrips } from "@/components/scouting/ScoutingTrips";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useDebounce } from "@/hooks/useDebounce";
+import { searchLocations } from "@/components/scouting/map/geocoding";
+
 import {
   LayoutDashboard,
   Users,
   FileText,
   Shield,
+  Navigation,
   BarChart2,
   Settings,
   LogOut,
@@ -109,6 +117,7 @@ import { Switch } from "@/components/ui/switch";
 import { BookingsView } from "@/components/Bookings/BookingsView";
 import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
 import FileStorageView from "@/components/dashboard/settings/FileStorageView";
+import { useAuth } from "../auth/AuthProvider";
 import {
   listBookings,
   createBooking as apiCreateBooking,
@@ -119,24 +128,48 @@ import {
   notifyBookingCreatedEmail,
 } from "@/api/functions";
 
-const STATUS_MAP = {
-  new: "New Lead",
-  contacted: "In Contact",
-  meeting: "Meeting Scheduled",
-  test_shoot: "Test Shoots",
+const STATUS_MAP: { [key: string]: string } = {
+  new_lead: "New Lead",
+  in_contact: "In Contact",
+  test_shoot_pending: "Test Shoot (Pending)",
+  test_shoot_success: "Test Shoot (Success)",
+  test_shoot_failed: "Test Shoot (Failed)",
   offer_sent: "Offer Sent",
+  opened: "Offer Opened",
   signed: "Signed",
   declined: "Declined",
 };
 
-const STATUS_COLORS = {
-  new: "bg-blue-50 text-blue-700 border-blue-200",
-  contacted: "bg-yellow-50 text-yellow-700 border-yellow-200",
-  meeting: "bg-purple-50 text-purple-700 border-purple-200",
-  test_shoot: "bg-orange-50 text-orange-700 border-orange-200",
-  offer_sent: "bg-green-50 text-green-700 border-green-200",
+const MANUAL_STATUSES = [
+  "new_lead",
+  "in_contact",
+  "test_shoot_pending",
+  "test_shoot_success",
+  "test_shoot_failed",
+  "offer_sent",
+];
+
+const STATUS_COLORS: { [key: string]: string } = {
+  new_lead: "bg-blue-50 text-blue-700 border-blue-200",
+  in_contact: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  test_shoot_pending: "bg-orange-50 text-orange-700 border-orange-200",
+  test_shoot_success: "bg-teal-50 text-teal-700 border-teal-200",
+  test_shoot_failed: "bg-rose-50 text-rose-700 border-rose-200",
+  offer_sent: "bg-purple-50 text-purple-700 border-purple-200",
+  opened: "bg-yellow-50 text-yellow-700 border-yellow-200",
   signed: "bg-green-50 text-green-700 border-green-200",
   declined: "bg-red-50 text-red-700 border-red-200",
+};
+
+const STATUS_DOT_COLORS: { [key: string]: string } = {
+  new_lead: "bg-blue-500",
+  in_contact: "bg-yellow-500",
+  test_shoot_pending: "bg-orange-500",
+  test_shoot_success: "bg-teal-500",
+  test_shoot_failed: "bg-rose-500",
+  offer_sent: "bg-purple-500",
+  signed: "bg-green-500",
+  declined: "bg-red-500",
 };
 
 const ProspectModal = ({
@@ -152,6 +185,30 @@ const ProspectModal = ({
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [starRating, setStarRating] = useState(3);
   const [isSaving, setIsSaving] = useState(false);
+  const [locationSuggestions, setLocationSuggestions] = useState<
+    { name: string; lat: number; lng: number }[]
+  >([]);
+  const [isSearchingLocation, setIsSearchingLocation] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const handleLocationSearch = async (query: string) => {
+    handleInputChange("discoveryLocation", query);
+    if (query.length >= 3) {
+      setIsSearchingLocation(true);
+      try {
+        const results = await searchLocations(query);
+        setLocationSuggestions(results);
+        setShowSuggestions(true);
+      } catch (error) {
+        console.error("Location search error:", error);
+      } finally {
+        setIsSearchingLocation(false);
+      }
+    } else {
+      setLocationSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
 
   const [formData, setFormData] = useState({
     name: "",
@@ -453,15 +510,46 @@ const ProspectModal = ({
                   />
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 relative">
                 <Label>Discovery Location</Label>
-                <Input
-                  placeholder="New York, NY"
-                  value={formData.discoveryLocation}
-                  onChange={(e) =>
-                    handleInputChange("discoveryLocation", e.target.value)
-                  }
-                />
+                <div className="relative">
+                  <Input
+                    placeholder="New York, NY"
+                    value={formData.discoveryLocation}
+                    onChange={(e) => handleLocationSearch(e.target.value)}
+                    onFocus={() =>
+                      formData.discoveryLocation.length >= 3 &&
+                      setShowSuggestions(true)
+                    }
+                    onBlur={() =>
+                      setTimeout(() => setShowSuggestions(false), 200)
+                    }
+                  />
+                  {isSearchingLocation && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
+                    </div>
+                  )}
+                </div>
+                {showSuggestions && locationSuggestions.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto">
+                    {locationSuggestions.map((suggestion, index) => (
+                      <div
+                        key={index}
+                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm border-b last:border-0"
+                        onClick={() => {
+                          handleInputChange(
+                            "discoveryLocation",
+                            suggestion.name,
+                          );
+                          setShowSuggestions(false);
+                        }}
+                      >
+                        {suggestion.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Referred By</Label>
@@ -491,11 +579,35 @@ const ProspectModal = ({
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(STATUS_MAP).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
+                    <SelectItem value="new_lead">
+                      {STATUS_MAP.new_lead}
+                    </SelectItem>
+                    <SelectItem value="in_contact">
+                      {STATUS_MAP.in_contact}
+                    </SelectItem>
+                    <SelectGroup>
+                      <SelectLabel className="px-2 py-1.5 text-xs font-semibold text-gray-500">
+                        Test Shoot
+                      </SelectLabel>
+                      <SelectItem
+                        value="test_shoot_pending"
+                        className="bg-gray-50/50 pl-8"
+                      >
+                        Pending
                       </SelectItem>
-                    ))}
+                      <SelectItem
+                        value="test_shoot_success"
+                        className="bg-gray-50/50 pl-8"
+                      >
+                        Success
+                      </SelectItem>
+                      <SelectItem
+                        value="test_shoot_failed"
+                        className="bg-gray-50/50 pl-8"
+                      >
+                        Failed
+                      </SelectItem>
+                    </SelectGroup>
                   </SelectContent>
                 </Select>
               </div>
@@ -603,7 +715,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -629,7 +743,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAuth } from "../auth/AuthProvider";
 
 // --- Mock Data (Based on Reference) ---
 
@@ -5452,23 +5565,28 @@ const ScoutingHubView = ({
   activeTab: string;
   setActiveTab: (tab: string) => void;
 }) => {
+  const queryClient = useQueryClient();
   const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
   const [prospectToEdit, setProspectToEdit] = useState<ScoutingProspect | null>(
     null,
   );
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+  const [eventToEdit, setEventToEdit] = useState<ScoutingEvent | null>(null);
+  const [isPlanTripModalOpen, setIsPlanTripModalOpen] = useState(false);
 
   const tabs = [
     "Prospect Pipeline",
     "Social Discovery",
     "Marketplace",
     "Scouting Map",
+    "Plan Trip",
     "Submissions",
     "Open Calls",
     "Analytics",
   ];
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <div className="space-y-8 max-w-8xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
@@ -5492,21 +5610,31 @@ const ScoutingHubView = ({
           <Button
             variant="default"
             className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 shadow-sm rounded-lg h-9 text-sm"
+            onClick={() => {
+              setEventToEdit(null);
+              setIsEventModalOpen(true);
+            }}
+          >
+            <Calendar className="w-4 h-4" /> Create Event
+          </Button>
+          <Button
+            onClick={() => setIsPlanTripModalOpen(true)}
+            className="h-10 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2"
           >
             <MapPin className="w-4 h-4" /> Plan Scouting Trip
           </Button>
         </div>
       </div>
 
-      <div className="bg-gray-100 p-0.5 rounded-lg inline-flex gap-0.5 overflow-x-auto max-w-full">
+      <div className="bg-gray-100 p-0.5 rounded-lg inline-flex gap-0.5 overflow-x-auto w-full">
         {tabs.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-3 py-1.5 rounded-md text-sm font-semibold whitespace-nowrap transition-all ${
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
               activeTab === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/50"
+                ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+                : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
             }`}
           >
             {tab}
@@ -5514,7 +5642,7 @@ const ScoutingHubView = ({
         ))}
       </div>
 
-      <div className="mt-8">
+      <div className={`mt-8 w-full`}>
         {activeTab === "Prospect Pipeline" && (
           <ProspectPipelineTab
             onAddProspect={() => {
@@ -5529,15 +5657,62 @@ const ScoutingHubView = ({
         )}
         {activeTab === "Social Discovery" && <SocialDiscoveryTab />}
         {activeTab === "Marketplace" && <MarketplaceTab />}
-        {activeTab === "Scouting Map" && <ScoutingMapTab />}
+        <div className={activeTab === "Scouting Map" ? "block" : "hidden"}>
+          <ScoutingMapTab
+            onEditEvent={(event) => {
+              setEventToEdit(event);
+              setIsEventModalOpen(true);
+            }}
+            onViewProspect={(prospect) => {
+              setProspectToEdit(prospect);
+              setIsProspectModalOpen(true);
+            }}
+            onAddEvent={() => {
+              setEventToEdit(null);
+              setIsEventModalOpen(true);
+            }}
+            isVisible={activeTab === "Scouting Map"}
+          />
+        </div>
+        <div className={activeTab === "Plan Trip" ? "block" : "hidden"}>
+          <ScoutingTrips />
+        </div>
         {activeTab === "Submissions" && <SubmissionsTab />}
-        {activeTab === "Open Calls" && <OpenCallsTab />}
+        {activeTab === "Open Calls" && (
+          <OpenCallsTab
+            onCreateEvent={() => {
+              setEventToEdit(null);
+              setIsEventModalOpen(true);
+            }}
+            onEditEvent={(event) => {
+              setEventToEdit(event);
+              setIsEventModalOpen(true);
+            }}
+          />
+        )}
         {activeTab === "Analytics" && <ScoutingAnalyticsTab />}
       </div>
       <ProspectModal
         open={isProspectModalOpen}
         onOpenChange={setIsProspectModalOpen}
         prospect={prospectToEdit}
+      />
+      <CreateEventModal
+        open={isEventModalOpen}
+        onOpenChange={setIsEventModalOpen}
+        event={eventToEdit}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ["scouting-events"] });
+        }}
+      />
+      <PlanTripModal
+        isOpen={isPlanTripModalOpen}
+        onClose={() => setIsPlanTripModalOpen(false)}
+        onPlan={async (trip) => {
+          console.log("Planning trip:", trip);
+          setIsPlanTripModalOpen(false);
+          refreshScoutingData();
+        }}
       />
     </div>
   );
@@ -5552,16 +5727,14 @@ const ProspectDetailsSheet = ({
   onClose: () => void;
   onEdit: (prospect: ScoutingProspect) => void;
 }) => {
-  if (!prospect) return null;
-
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleStatusChange = async (newStatus: string) => {
+    if (!prospect) return;
     try {
-      await scoutingService.updateProspect(prospect.id, {
-        status: newStatus as any,
-      });
+      await scoutingService.updateProspect(prospect.id, { status: newStatus });
       await queryClient.invalidateQueries({ queryKey: ["prospects"] });
       toast({
         title: "Status Updated",
@@ -5569,21 +5742,108 @@ const ProspectDetailsSheet = ({
       });
     } catch (error) {
       console.error("Error updating status:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update status. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to update status." });
     }
   };
 
+  if (!prospect) return null;
+
   return (
     <Sheet open={!!prospect} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="w-[650px] sm:max-w-none bg-white p-0 flex flex-col">
-        <SheetHeader className="p-6 border-b">
-          <SheetTitle className="text-xl font-bold">
-            Prospect Details
-          </SheetTitle>
+      <SheetContent className="max-w-none sm:max-w-none md:max-w-none lg:max-w-none w-[75vw] lg:w-[860px] xl:w-[960px] p-0 flex flex-col">
+        <SheetHeader className="p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 bg-gray-50/70 border rounded-xl p-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-bold text-gray-600">
+                  Status
+                </Label>
+                <Badge
+                  className={`capitalize border px-3 py-1 ${STATUS_COLORS[prospect.status] || "bg-gray-100 text-gray-700 border-gray-200"}`}
+                >
+                  {STATUS_MAP[prospect.status] || prospect.status}
+                </Badge>
+              </div>
+              <Select
+                onValueChange={handleStatusChange}
+                defaultValue={prospect.status}
+                disabled={["offer_sent", "signed", "declined"].includes(
+                  prospect.status,
+                )}
+              >
+                <SelectTrigger className="w-full h-10 text-sm font-semibold mt-2 bg-white">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS[prospect.status] || "bg-gray-400"}`}
+                    ></span>
+                    <SelectValue />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem
+                    value="new_lead"
+                    className="text-sm font-semibold"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.new_lead}`}
+                      ></span>
+                      <span>{STATUS_MAP.new_lead}</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem
+                    value="in_contact"
+                    className="text-sm font-semibold"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.in_contact}`}
+                      ></span>
+                      <span>{STATUS_MAP.in_contact}</span>
+                    </div>
+                  </SelectItem>
+                  <SelectGroup>
+                    <SelectLabel className="px-2 py-1.5 text-xs font-semibold text-gray-500">
+                      Test Shoot
+                    </SelectLabel>
+                    <SelectItem
+                      value="test_shoot_pending"
+                      className="text-sm font-semibold bg-gray-50/50"
+                    >
+                      <div className="flex items-center gap-2 pl-6">
+                        <span
+                          className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.test_shoot_pending}`}
+                        ></span>
+                        <span>Pending</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem
+                      value="test_shoot_success"
+                      className="text-sm font-semibold bg-gray-50/50"
+                    >
+                      <div className="flex items-center gap-2 pl-6">
+                        <span
+                          className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.test_shoot_success}`}
+                        ></span>
+                        <span>Success</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem
+                      value="test_shoot_failed"
+                      className="text-sm font-semibold bg-gray-50/50"
+                    >
+                      <div className="flex items-center gap-2 pl-6">
+                        <span
+                          className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.test_shoot_failed}`}
+                        ></span>
+                        <span>Failed</span>
+                      </div>
+                    </SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </SheetHeader>
 
         {/* Scrollable content */}
@@ -5601,9 +5861,47 @@ const ProspectDetailsSheet = ({
                 </div>
               </div>
               <div className="flex-1 pt-2">
-                <h2 className="text-3xl font-bold text-gray-900">
-                  {prospect.full_name}
-                </h2>
+                <div className="flex justify-between items-start">
+                  <h2 className="text-3xl font-bold text-gray-900">
+                    {prospect.full_name}
+                  </h2>
+                  {prospect.status === "test_shoot_success" ? (
+                    <Button
+                      onClick={() =>
+                        (window.location.href = `/scoutingoffers?prospectId=${prospect.id}`)
+                      }
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-6 rounded-lg shadow-sm flex items-center gap-2"
+                    >
+                      <FileText className="w-4 h-4" />
+                      Send Offer
+                    </Button>
+                  ) : ["offer_sent", "opened", "signed", "declined"].includes(
+                      prospect.status,
+                    ) ? (
+                    <div className="flex items-center gap-3">
+                      <Button
+                        onClick={() =>
+                          (window.location.href = `/scoutingoffers?prospectId=${prospect.id}`)
+                        }
+                        className="bg-white hover:bg-gray-50 border text-gray-700 font-bold h-9 px-4 rounded-lg shadow-sm flex items-center gap-2"
+                      >
+                        <FileText className="w-4 h-4" />
+                        View Offers
+                      </Button>
+                      {prospect.status === "signed" && (
+                        <Button
+                          onClick={() =>
+                            navigate("/addtalent", { state: { prospect } })
+                          }
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-9 px-4 rounded-lg shadow-sm flex items-center gap-2"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Add Talent
+                        </Button>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
                 <div className="flex flex-wrap items-center gap-2 mt-3">
                   {prospect.categories?.map((cat) => (
                     <Badge key={cat} variant="outline" className="font-medium">
@@ -5623,36 +5921,6 @@ const ProspectDetailsSheet = ({
                   </span>
                 </div>
               </div>
-            </div>
-            <div className="p-4 rounded-xl border bg-gray-50/70">
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="font-semibold text-gray-700">Status</h3>
-                <Badge
-                  className={`capitalize border ${STATUS_COLORS[prospect.status as keyof typeof STATUS_COLORS] || "bg-gray-100 text-gray-700"}`}
-                >
-                  {STATUS_MAP[prospect.status as keyof typeof STATUS_MAP] ||
-                    prospect.status.replace("_", " ")}
-                </Badge>
-              </div>
-              <Select
-                defaultValue={prospect.status}
-                onValueChange={handleStatusChange}
-              >
-                <SelectTrigger className="h-11 text-base bg-white border-gray-200">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(STATUS_MAP).map(([value, label]) => (
-                    <SelectItem
-                      key={value}
-                      value={value}
-                      className="font-medium"
-                    >
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
           </div>
 
@@ -5825,10 +6093,27 @@ const ProspectPipelineTab = ({
   onEditProspect: (prospect: ScoutingProspect) => void;
 }) => {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedProspect, setSelectedProspect] =
     useState<ScoutingProspect | null>(null);
-  const { data: prospects, isLoading } = useQuery({
-    queryKey: ["prospects", user?.id],
+
+  // Filter states - initialize from URL
+  const [searchInput, setSearchInput] = useState(
+    searchParams.get("search") || "",
+  );
+  const [statusFilter, setStatusFilter] = useState(
+    searchParams.get("status") || "all",
+  );
+  const [sourceFilter, setSourceFilter] = useState(
+    searchParams.get("source") || "all",
+  );
+
+  // Debounce search input
+  const debouncedSearch = useDebounce(searchInput, 300);
+
+  // Fetch all prospects for stats (unfiltered)
+  const { data: allProspects } = useQuery({
+    queryKey: ["prospects-all", user?.id],
     queryFn: async () => {
       if (!user) return [];
       const agencyId = await scoutingService.getUserAgencyId();
@@ -5838,6 +6123,44 @@ const ProspectPipelineTab = ({
     enabled: !!user,
   });
 
+  // Fetch filtered prospects
+  const { data: prospects, isLoading } = useQuery({
+    queryKey: [
+      "prospects",
+      user?.id,
+      debouncedSearch,
+      statusFilter,
+      sourceFilter,
+    ],
+    queryFn: async () => {
+      if (!user) return [];
+      const agencyId = await scoutingService.getUserAgencyId();
+      if (!agencyId) return [];
+      return scoutingService.getProspects(agencyId, {
+        searchQuery: debouncedSearch,
+        statusFilter,
+        sourceFilter,
+      });
+    },
+    enabled: !!user,
+    refetchInterval: 5000, // Poll every 5 seconds for real-time pipeline updates
+  });
+
+  // Update URL when filters change
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (debouncedSearch) params.set("search", debouncedSearch);
+    else params.delete("search");
+
+    if (statusFilter !== "all") params.set("status", statusFilter);
+    else params.delete("status");
+
+    if (sourceFilter !== "all") params.set("source", sourceFilter);
+    else params.delete("source");
+
+    setSearchParams(params, { replace: true });
+  }, [debouncedSearch, statusFilter, sourceFilter, setSearchParams]);
+
   useEffect(() => {
     if (selectedProspect && prospects) {
       const updated = prospects.find((p) => p.id === selectedProspect.id);
@@ -5845,28 +6168,46 @@ const ProspectPipelineTab = ({
     }
   }, [prospects]);
 
+  // Calculate stats from all prospects (not filtered)
   const stats = [
     {
       label: "New Leads",
-      count: prospects?.filter((p) => p.status === "new").length || 0,
+      count: allProspects?.filter((p) => p.status === "new_lead").length || 0,
       color: "border-blue-200 bg-blue-50/30",
     },
     {
       label: "In Contact",
-      count: prospects?.filter((p) => p.status === "contacted").length || 0,
+      count: allProspects?.filter((p) => p.status === "in_contact").length || 0,
       color: "border-yellow-200 bg-yellow-50/30",
     },
     {
       label: "Test Shoots",
-      count: prospects?.filter((p) => p.status === "test_shoot").length || 0,
-      color: "border-purple-200 bg-purple-50/30",
+      count:
+        allProspects?.filter((p) => p.status.startsWith("test_shoot")).length ||
+        0,
+      color: "border-orange-200 bg-orange-50/30",
     },
     {
-      label: "Offers Sent",
-      count: prospects?.filter((p) => p.status === "offer_sent").length || 0,
+      label: "Offers",
+      count:
+        allProspects?.filter(
+          (p) =>
+            p.status === "offer_sent" ||
+            p.status === "signed" ||
+            p.status === "declined",
+        ).length || 0,
       color: "border-green-200 bg-green-50/30",
     },
   ];
+
+  const hasActiveFilters =
+    debouncedSearch || statusFilter !== "all" || sourceFilter !== "all";
+
+  const clearFilters = () => {
+    setSearchInput("");
+    setStatusFilter("all");
+    setSourceFilter("all");
+  };
 
   return (
     <div className="space-y-6">
@@ -5878,10 +6219,20 @@ const ProspectPipelineTab = ({
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input
                 placeholder="Search prospects..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 className="pl-10 h-10 border-gray-200 bg-white"
               />
+              {searchInput && (
+                <button
+                  onClick={() => setSearchInput("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-red-600 hover:text-red-800"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
-            <Select defaultValue="all">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[140px] h-10 border-gray-200">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -5894,10 +6245,107 @@ const ProspectPipelineTab = ({
                 ))}
               </SelectContent>
             </Select>
+            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+              <SelectTrigger className="w-[140px] h-10 border-gray-200">
+                <SelectValue placeholder="Source" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Sources</SelectItem>
+                <SelectItem value="instagram">Instagram</SelectItem>
+                <SelectItem value="tiktok">TikTok</SelectItem>
+                <SelectItem value="street">Street Scouting</SelectItem>
+                <SelectItem value="referral">Referral</SelectItem>
+                <SelectItem value="website">Website</SelectItem>
+              </SelectContent>
+            </Select>
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                onClick={clearFilters}
+                className="h-10 text-red-600 hover:text-red-800 font-bold"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Clear Filters
+              </Button>
+            )}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {/* Active Filter Chips */}
+        {hasActiveFilters && (
+          <div className="flex flex-wrap gap-2 mb-6">
+            {debouncedSearch && (
+              <Badge
+                variant="secondary"
+                className="bg-indigo-50 text-indigo-700 border-indigo-200 px-3 py-1 flex items-center gap-2"
+              >
+                Search: "{debouncedSearch}"
+                <button
+                  onClick={() => setSearchInput("")}
+                  className="hover:text-indigo-900"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            )}
+            {statusFilter !== "all" && (
+              <Badge
+                variant="secondary"
+                className="bg-blue-50 text-blue-700 border-blue-200 px-3 py-1 flex items-center gap-2"
+              >
+                Status: {STATUS_MAP[statusFilter]}
+                <button
+                  onClick={() => setStatusFilter("all")}
+                  className="hover:text-blue-900"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            )}
+            {sourceFilter !== "all" && (
+              <Badge
+                variant="secondary"
+                className="bg-purple-50 text-purple-700 border-purple-200 px-3 py-1 flex items-center gap-2"
+              >
+                Source: {sourceFilter}
+                <button
+                  onClick={() => setSourceFilter("all")}
+                  className="hover:text-purple-900"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            )}
+          </div>
+        )}
+
+        <div className="hidden lg:flex items-stretch gap-0 mb-8">
+          {stats.map((stat, idx) => (
+            <React.Fragment key={stat.label}>
+              <div
+                className={`flex-1 p-6 border rounded-2xl ${stat.color} transition-all hover:shadow-sm`}
+              >
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-tight mb-2">
+                  {stat.label}
+                </p>
+                <p className="text-4xl font-black text-gray-900 tracking-tight">
+                  {stat.count}
+                </p>
+              </div>
+              {idx < stats.length - 1 && (
+                <div className="flex items-center justify-center px-4">
+                  <svg width="32" height="32" viewBox="0 0 24 24">
+                    <path
+                      d="M4 11h12.17l-5.58-5.59L12 4l8 8-8 8-1.41-1.41L16.17 13H4v-2z"
+                      fill="#d1d5db"
+                    />
+                  </svg>
+                </div>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:hidden gap-4 mb-8">
           {stats.map((stat) => (
             <div
               key={stat.label}
@@ -5912,6 +6360,13 @@ const ProspectPipelineTab = ({
             </div>
           ))}
         </div>
+
+        {/* Results count */}
+        {hasActiveFilters && prospects && (
+          <div className="mb-4 text-sm text-gray-600">
+            Showing {prospects.length} of {allProspects?.length || 0} prospects
+          </div>
+        )}
 
         {isLoading ? (
           <div className="text-center py-24">Loading prospects...</div>
@@ -5957,7 +6412,7 @@ const ProspectPipelineTab = ({
                     TEST SHOOTS
                   </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-600">
-                    OFFERS SENT
+                    OFFERS
                   </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-600">
                     SOURCE
@@ -5988,23 +6443,47 @@ const ProspectPipelineTab = ({
                       <div className="text-xs">{p.phone}</div>
                     </td>
                     <td className="px-4 py-3">
-                      {p.status === "new" ? (
+                      {p.status === "new_lead" ? (
                         <CheckCircle2 className="w-5 h-5 text-blue-500" />
                       ) : null}
                     </td>
                     <td className="px-4 py-3">
-                      {p.status === "contacted" ? (
+                      {p.status === "in_contact" ? (
                         <CheckCircle2 className="w-5 h-5 text-yellow-500" />
                       ) : null}
                     </td>
                     <td className="px-4 py-3">
-                      {p.status === "test_shoot" ? (
-                        <CheckCircle2 className="w-5 h-5 text-purple-500" />
-                      ) : null}
+                      {p.status.startsWith("test_shoot") && (
+                        <Badge
+                          className={`capitalize border ${STATUS_COLORS[p.status] || "bg-gray-100 text-gray-700 border-gray-200"}`}
+                        >
+                          {p.status.replace("test_shoot_", "")}
+                        </Badge>
+                      )}
                     </td>
                     <td className="px-4 py-3">
-                      {p.status === "offer_sent" ? (
-                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      {p.status === "signed" ? (
+                        <Badge
+                          className={`capitalize border ${STATUS_COLORS.signed}`}
+                        >
+                          {STATUS_MAP.signed}
+                        </Badge>
+                      ) : p.status === "declined" ? (
+                        <Badge
+                          className={`capitalize border ${STATUS_COLORS.declined}`}
+                        >
+                          {STATUS_MAP.declined}
+                        </Badge>
+                      ) : p.status === "opened" ? (
+                        <Badge
+                          className={`capitalize border ${STATUS_COLORS.opened}`}
+                        >
+                          Opened
+                        </Badge>
+                      ) : p.status === "offer_sent" ? (
+                        <Badge className="capitalize border bg-gray-100 text-gray-700 border-gray-200">
+                          Awaiting
+                        </Badge>
                       ) : null}
                     </td>
                     <td className="px-4 py-3 text-gray-600 font-medium">
@@ -6220,36 +6699,23 @@ const MarketplaceTab = () => (
   </Card>
 );
 
-const ScoutingMapTab = () => (
-  <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-      <h2 className="text-xl font-bold text-gray-900">Scouting Map</h2>
-      <div className="flex items-center gap-3">
-        <Button
-          variant="outline"
-          className="font-bold text-gray-700 px-6 h-11 rounded-xl shadow-sm border-gray-300"
-        >
-          View Trip History
-        </Button>
-        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 h-11 rounded-xl shadow-sm">
-          Plan New Trip
-        </Button>
-      </div>
-    </div>
-
-    <div className="bg-gray-50 rounded-2xl h-[500px] border border-gray-200 flex flex-col items-center justify-center text-center relative overflow-hidden group">
-      <div className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:20px_20px]" />
-      <div className="relative z-10 p-6 bg-white rounded-full mb-4 shadow-sm">
-        <MapPin className="w-12 h-12 text-gray-200" />
-      </div>
-      <h3 className="relative z-10 text-xl font-bold text-gray-900 mb-2">
-        Interactive Map Coming Soon
-      </h3>
-      <p className="relative z-10 text-gray-500 max-w-sm font-medium">
-        Track discoveries, plan trips, and visualize your scouting activity
-      </p>
-    </div>
-  </Card>
+const ScoutingMapTab = ({
+  onEditEvent,
+  onViewProspect,
+  onAddEvent,
+  isVisible = true,
+}: {
+  onEditEvent: (event: ScoutingEvent) => void;
+  onViewProspect: (prospect: ScoutingProspect) => void;
+  onAddEvent: () => void;
+  isVisible?: boolean;
+}) => (
+  <ScoutingMap
+    onEditEvent={onEditEvent}
+    onViewProspect={onViewProspect}
+    onAddEvent={onAddEvent}
+    isVisible={isVisible}
+  />
 );
 
 const SubmissionsTab = () => (
@@ -6291,64 +6757,206 @@ const SubmissionsTab = () => (
   </Card>
 );
 
-const OpenCallsTab = () => (
-  <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-      <div>
-        <h2 className="text-xl font-bold text-gray-900">
-          Open Calls & Casting Events
-        </h2>
-      </div>
-      <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 h-10 px-6 rounded-lg shadow-sm">
-        <Plus className="w-4 h-4" /> Create Event
-      </Button>
-    </div>
+const OpenCallsTab = ({
+  onCreateEvent,
+  onEditEvent,
+}: {
+  onCreateEvent: () => void;
+  onEditEvent: (event: ScoutingEvent) => void;
+}) => {
+  const { user } = useAuth();
+  const { data: events, isLoading } = useQuery({
+    queryKey: ["scouting-events", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const agencyId = await scoutingService.getUserAgencyId();
+      if (!agencyId) return [];
+      return scoutingService.getEvents(agencyId);
+    },
+    enabled: !!user,
+  });
 
-    <div className="border border-dashed border-gray-200 rounded-2xl p-32 flex flex-col items-center justify-center text-center">
-      <div className="p-8 bg-gray-50 rounded-full mb-6">
-        <Calendar className="w-12 h-12 text-gray-400" />
+  return (
+    <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">
+            Open Calls & Casting Events
+          </h2>
+          <p className="text-xs text-gray-500 font-medium">
+            Manage your upcoming talent search events
+          </p>
+        </div>
       </div>
-      <h3 className="text-xl font-bold text-gray-900 mb-2">
-        No upcoming events
-      </h3>
-      <p className="text-gray-500 max-w-sm font-medium mb-6">
-        Organize open calls and virtual castings
-      </p>
-      <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 h-10 px-8 rounded-lg shadow-sm">
-        <Plus className="w-4 h-4" /> Create First Event
-      </Button>
-    </div>
-  </Card>
-);
+
+      {isLoading ? (
+        <div className="text-center py-12 text-xs text-gray-500">
+          Loading events...
+        </div>
+      ) : !events || events.length === 0 ? (
+        <div className="border border-dashed border-gray-200 rounded-xl p-16 flex flex-col items-center justify-center text-center">
+          <div className="p-6 bg-gray-50 rounded-full mb-4">
+            <Calendar className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mb-1">
+            No upcoming events
+          </h3>
+          <p className="text-xs text-gray-500 max-w-sm font-medium mb-4">
+            Organize open calls and virtual castings to find new talent
+          </p>
+          <Button
+            onClick={onCreateEvent}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 h-9 px-6 rounded-lg shadow-sm text-xs"
+          >
+            <Plus className="w-3.5 h-3.5" /> Create First Event
+          </Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {events.map((event) => (
+            <Card
+              key={event.id}
+              className="overflow-hidden border border-gray-100 hover:shadow-xl hover:border-indigo-200 transition-all duration-300 group cursor-pointer rounded-xl bg-slate-50/30 hover:bg-white hover:-translate-y-1"
+              onClick={() => onEditEvent(event)}
+            >
+              <div className="p-4">
+                <div className="flex justify-between items-start mb-3">
+                  <Badge
+                    className={`rounded-md font-bold px-2 py-0.5 text-[10px] border shadow-sm ${
+                      event.status === "published"
+                        ? "bg-green-50 text-green-700 border-green-100"
+                        : event.status === "draft"
+                          ? "bg-gray-50 text-gray-600 border-gray-100"
+                          : event.status === "scheduled"
+                            ? "bg-blue-50 text-blue-700 border-blue-100"
+                            : event.status === "completed"
+                              ? "bg-indigo-50 text-indigo-700 border-indigo-100"
+                              : event.status === "cancelled"
+                                ? "bg-red-50 text-red-700 border-red-100"
+                                : "bg-gray-50 text-gray-600 border-gray-100"
+                    }`}
+                  >
+                    {event.status.toUpperCase()}
+                  </Badge>
+                  <div className="flex items-center gap-1 text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">
+                    <Clock className="w-3 h-3" />
+                    <span className="text-[10px] font-bold">
+                      {event.start_time || "TBD"}
+                    </span>
+                  </div>
+                </div>
+                <h3 className="text-sm font-bold text-gray-900 mb-1.5 group-hover:text-indigo-600 transition-colors line-clamp-1">
+                  {event.name}
+                </h3>
+                <p className="text-xs text-gray-500 font-medium line-clamp-2 mb-4 min-h-[2rem]">
+                  {event.description || "No description provided."}
+                </p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-gray-600 bg-gray-50/80 p-2 rounded-lg border border-gray-100/50 group-hover:bg-indigo-50/30 transition-colors">
+                    <Calendar className="w-3.5 h-3.5 text-indigo-500" />
+                    <span className="text-[11px] font-bold">
+                      {new Date(event.event_date).toLocaleDateString(
+                        undefined,
+                        { month: "short", day: "numeric", year: "numeric" },
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-gray-600 bg-gray-50/80 p-2 rounded-lg border border-gray-100/50 group-hover:bg-indigo-50/30 transition-colors">
+                    <MapPin className="w-3.5 h-3.5 text-indigo-500" />
+                    <span className="text-[11px] font-bold truncate">
+                      {event.location}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="px-4 py-3 bg-gray-50/30 border-t border-gray-100 flex justify-between items-center group-hover:bg-gray-50/80 transition-colors">
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest bg-white px-2 py-0.5 rounded border border-gray-100">
+                  {event.event_type || "EVENT"}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-indigo-600 font-bold hover:bg-indigo-600 hover:text-white transition-all text-[11px] px-3 rounded-md border border-transparent hover:border-indigo-600"
+                >
+                  Edit Details
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+};
 
 const ScoutingAnalyticsTab = () => {
+  const { user } = useAuth();
+  const {
+    data: analytics,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["scouting-analytics", user?.id],
+    queryFn: async () => {
+      const agencyId = await scoutingService.getUserAgencyId();
+      if (!agencyId) return null;
+      return scoutingService.getAnalytics(agencyId);
+    },
+    enabled: !!user?.id,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <RefreshCw className="w-8 h-8 animate-spin text-indigo-600" />
+      </div>
+    );
+  }
+
+  if (error || !analytics) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+        <AlertCircle className="w-12 h-12 mb-4 text-red-500" />
+        <p>Failed to load analytics data.</p>
+      </div>
+    );
+  }
+
   const stats = [
     {
       label: "TOTAL PROSPECTS",
-      value: "127",
-      sub: "+23 this month",
-      subColor: "text-green-600",
+      value: analytics.totalProspects.toString(),
+      sub: "All time",
+      subColor: "text-gray-500",
     },
     {
       label: "CONVERSION RATE",
-      value: "18%",
+      value: `${analytics.conversionRate}%`,
       sub: "Prospects → Signed",
       subColor: "text-gray-500",
     },
     {
       label: "AVG. TIME TO SIGN",
-      value: "34d",
+      value: `${analytics.avgTimeToSign}d`,
       sub: "From discovery",
       subColor: "text-gray-500",
     },
   ];
 
-  const sources = [
-    { name: "Instagram", value: 42 },
-    { name: "Street Scouting", value: 28 },
-    { name: "Referrals", value: 18 },
-    { name: "Website Submissions", value: 12 },
-  ];
+  const sourceLabels: Record<string, string> = {
+    instagram: "Instagram",
+    tiktok: "TikTok",
+    street: "Street Scouting",
+    referral: "Referral",
+    website: "Website Submissions",
+  };
+
+  const sources = Object.entries(analytics.sources)
+    .map(([key, count]) => ({
+      name: sourceLabels[key] || key,
+      value: Math.round((count / analytics.totalProspects) * 100),
+    }))
+    .sort((a, b) => b.value - a.value);
 
   return (
     <div className="space-y-6">
@@ -6376,24 +6984,30 @@ const ScoutingAnalyticsTab = () => {
           Discovery Sources
         </h3>
         <div className="space-y-6">
-          {sources.map((source) => (
-            <div key={source.name}>
-              <div className="flex justify-between items-end mb-2">
-                <span className="text-sm font-semibold text-gray-900">
-                  {source.name}
-                </span>
-                <span className="text-xs font-bold text-gray-900">
-                  {source.value}%
-                </span>
+          {sources.length > 0 ? (
+            sources.map((source) => (
+              <div key={source.name}>
+                <div className="flex justify-between items-end mb-2">
+                  <span className="text-sm font-semibold text-gray-900">
+                    {source.name}
+                  </span>
+                  <span className="text-xs font-bold text-gray-900">
+                    {source.value}%
+                  </span>
+                </div>
+                <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gray-900 rounded-full"
+                    style={{ width: `${source.value}%` }}
+                  />
+                </div>
               </div>
-              <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gray-900 rounded-full"
-                  style={{ width: `${source.value}%` }}
-                />
-              </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p className="text-sm text-gray-500 text-center py-4">
+              No source data available.
+            </p>
+          )}
         </div>
       </Card>
     </div>

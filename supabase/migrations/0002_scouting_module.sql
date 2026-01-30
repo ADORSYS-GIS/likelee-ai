@@ -1,5 +1,8 @@
--- 20260115_scouting_module.sql
+-- 0002_scouting_module.sql
 -- Scouting Module: Prospects, Trips, Events, and Submissions
+-- Enable trigram extension for full-text search
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
 
 BEGIN;
 
@@ -54,6 +57,23 @@ CREATE TABLE IF NOT EXISTS public.scouting_trips (
   end_date date,
   status text DEFAULT 'planned', -- planned, ongoing, completed
   description text,
+
+  -- Consolidated fields
+  trip_type text,
+  start_time text,
+  end_time text,
+  scout_ids text[],
+  scout_names text[],
+  weather text,
+  prospects_approached integer DEFAULT 0,
+  prospects_added integer DEFAULT 0,
+  prospects_agreed integer DEFAULT 0, -- Number of prospects who agreed/submitted during the trip
+  conversion_rate numeric(5,2) DEFAULT 0,
+  total_cost numeric(12,2) DEFAULT 0,
+  photos text[],
+  latitude numeric(10,7),
+  longitude numeric(10,7),
+  locations_visited jsonb DEFAULT '[]'::jsonb,
   
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
@@ -71,6 +91,29 @@ CREATE TABLE IF NOT EXISTS public.scouting_events (
   location text NOT NULL,
   description text,
   status text DEFAULT 'scheduled', -- scheduled, completed, cancelled
+  
+  -- Expanded fields
+  event_type text,
+  casting_for text,
+  start_time text,
+  end_time text,
+  looking_for text[],
+  min_age integer DEFAULT 18,
+  max_age integer DEFAULT 30,
+  gender_preference text DEFAULT 'all',
+  special_skills text,
+  what_to_bring text,
+  dress_code text,
+  location_details text,
+  virtual_link text,
+  max_attendees integer,
+  registration_required boolean DEFAULT false,
+  internal_notes text,
+  contact_name text,
+  contact_email text,
+  contact_phone text,
+  targeted_talent_goal integer,
+  registration_fee numeric(10,2),
   
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
@@ -96,69 +139,11 @@ CREATE TABLE IF NOT EXISTS public.scouting_submissions (
 
 CREATE INDEX IF NOT EXISTS idx_scouting_submissions_agency_id ON public.scouting_submissions(agency_id);
 
--- Fix Existing Constraints (if tables already exist with wrong FK)
-DO $$
-BEGIN
-    -- 1. Scouting Prospects
-    -- Clean up orphan rows first
-    DELETE FROM public.scouting_prospects WHERE agency_id NOT IN (SELECT id FROM public.agencies);
-
-    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'scouting_prospects_agency_id_fkey') THEN
-        ALTER TABLE public.scouting_prospects DROP CONSTRAINT scouting_prospects_agency_id_fkey;
-    END IF;
-    
-    ALTER TABLE public.scouting_prospects 
-    ADD CONSTRAINT scouting_prospects_agency_id_fkey 
-    FOREIGN KEY (agency_id) REFERENCES public.agencies(id) ON DELETE CASCADE;
-
-    -- 2. Scouting Trips
-    DELETE FROM public.scouting_trips WHERE agency_id NOT IN (SELECT id FROM public.agencies);
-
-    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'scouting_trips_agency_id_fkey') THEN
-        ALTER TABLE public.scouting_trips DROP CONSTRAINT scouting_trips_agency_id_fkey;
-    END IF;
-
-    ALTER TABLE public.scouting_trips
-    ADD CONSTRAINT scouting_trips_agency_id_fkey
-    FOREIGN KEY (agency_id) REFERENCES public.agencies(id) ON DELETE CASCADE;
-
-    -- 3. Scouting Events
-    DELETE FROM public.scouting_events WHERE agency_id NOT IN (SELECT id FROM public.agencies);
-
-    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'scouting_events_agency_id_fkey') THEN
-        ALTER TABLE public.scouting_events DROP CONSTRAINT scouting_events_agency_id_fkey;
-    END IF;
-
-    ALTER TABLE public.scouting_events
-    ADD CONSTRAINT scouting_events_agency_id_fkey
-    FOREIGN KEY (agency_id) REFERENCES public.agencies(id) ON DELETE CASCADE;
-
-    -- 4. Scouting Submissions
-    DELETE FROM public.scouting_submissions WHERE agency_id NOT IN (SELECT id FROM public.agencies);
-
-    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'scouting_submissions_agency_id_fkey') THEN
-        ALTER TABLE public.scouting_submissions DROP CONSTRAINT scouting_submissions_agency_id_fkey;
-    END IF;
-
-    ALTER TABLE public.scouting_submissions
-    ADD CONSTRAINT scouting_submissions_agency_id_fkey
-    FOREIGN KEY (agency_id) REFERENCES public.agencies(id) ON DELETE CASCADE;
-
-EXCEPTION
-    WHEN duplicate_object THEN NULL;
-END $$;
-
 -- RLS Policies
-
--- Enable RLS
 ALTER TABLE public.scouting_prospects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.scouting_trips ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.scouting_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.scouting_submissions ENABLE ROW LEVEL SECURITY;
-
--- Policy Helper: Check if user is a member of the agency
--- We reuse the logic from agency_users policies:
--- User must be the owner OR exist in agency_users for that agency
 
 -- Prospects Policies
 DROP POLICY IF EXISTS "Agency members can select prospects" ON public.scouting_prospects;
@@ -177,9 +162,6 @@ DROP POLICY IF EXISTS "Agency members can delete prospects" ON public.scouting_p
 CREATE POLICY "Agency members can delete prospects" ON public.scouting_prospects
   FOR DELETE USING (agency_id = auth.uid());
 
--- Repeat similar policies for Trips, Events, and Submissions
--- (Simplified for brevity, assuming same access pattern)
-
 -- Trips
 DROP POLICY IF EXISTS "Agency members can all trips" ON public.scouting_trips;
 CREATE POLICY "Agency members can all trips" ON public.scouting_trips
@@ -194,5 +176,41 @@ CREATE POLICY "Agency members can all events" ON public.scouting_events
 DROP POLICY IF EXISTS "Agency members can all submissions" ON public.scouting_submissions;
 CREATE POLICY "Agency members can all submissions" ON public.scouting_submissions
   FOR ALL USING (agency_id = auth.uid());
+
+
+-- Add indexes for search and filter performance
+-- This migration adds indexes to improve query performance for the scouting prospects search and filter functionality
+
+-- Full-text search index on full_name for faster name searches
+CREATE INDEX IF NOT EXISTS idx_scouting_prospects_full_name_trgm 
+  ON public.scouting_prospects USING gin (full_name gin_trgm_ops);
+
+-- Index on email for faster email searches
+CREATE INDEX IF NOT EXISTS idx_scouting_prospects_email 
+  ON public.scouting_prospects (email);
+
+-- Index on instagram_handle for faster Instagram handle searches
+CREATE INDEX IF NOT EXISTS idx_scouting_prospects_instagram 
+  ON public.scouting_prospects (instagram_handle);
+
+-- Composite index on (agency_id, status) for filtered queries
+CREATE INDEX IF NOT EXISTS idx_scouting_prospects_agency_status 
+  ON public.scouting_prospects (agency_id, status);
+
+-- Composite index on (agency_id, source) for source filtering
+CREATE INDEX IF NOT EXISTS idx_scouting_prospects_agency_source 
+  ON public.scouting_prospects (agency_id, source);
+
+-- GIN index on categories array for category filtering
+CREATE INDEX IF NOT EXISTS idx_scouting_prospects_categories 
+  ON public.scouting_prospects USING gin (categories);
+
+-- Index on rating for rating-based filtering
+CREATE INDEX IF NOT EXISTS idx_scouting_prospects_rating 
+  ON public.scouting_prospects (rating);
+
+-- Index on discovery_date for sorting
+CREATE INDEX IF NOT EXISTS idx_scouting_prospects_discovery_date 
+  ON public.scouting_prospects (discovery_date DESC);
 
 COMMIT;
