@@ -1,5 +1,6 @@
 {
   "greeting": "Hello, Welcome!",
+  "getStarted": "Get Started",
   "brands": "Brands",
   "agencies": "Agencies",
   "marketingAgency": "Marketing Agency",
@@ -178,14 +179,14 @@
   "readyToUse": "Ready to Use",
   "verifiedProtection": "Verified Protection",
   "licensedFaces": "Licensed Faces",
-  "heroTitle": "Build Real Athlete Partnerships That Pay Year-Round",
-  "heroSubtitle": "One retainer, consistent presence. Athletes earn, you win.",
+  "heroTitle": "Transform How You Work with Talent",
+  "heroSubtitle": "From months of vetting to minutes of browsing.",
   "forBrands": "For Brands",
   "forAgencies": "For Agencies",
-  "transformTalentTitle": "Transform How You Work with Talent",
-  "transformTalentSubtitle": "From months of vetting to minutes of browsing.",
-  "userTrustTitle": "Don't Lose User Trust using Fake Avatars",
-  "userTrustSubtitle": "Real creators bring genuine belief, and your audiences feel it instantly.",
+  "transformTalentTitle": "Don't Lose User Trust using Fake Avatars",
+  "transformTalentSubtitle": "Real creators bring genuine belief, and your audiences feel it instantly.",
+  "userTrustTitle": "Build Real Athlete Partnerships That Pay Year-Round",
+  "userTrustSubtitle": "One retainer, consistent presence. Athletes earn, you win.",
   "scaleCatalogTitle": "Scale Your Catalog Without Scaling Costs",
   "scaleCatalogSubtitle": "Same influencer. Infinite product variations. Launch in hours.",
   "premiumTalentTitle": "Premium Talent with Zero Production Headaches",
@@ -602,6 +603,7 @@
     "assistance": "Need immediate assistance? Email us at"
   },
   "organizationSignup": {
+    "selectAndContinue": "Select and Continue",
     "selectAll": "Select All",
     "missingFieldsTitle": "Missing Fields",
     "missingFieldsDescription": "Please fill in all required fields to proceed.",
@@ -629,6 +631,7 @@
     "step": "Step",
     "of": "of",
     "companyInfo": "Company Info",
+    "agencyInfo": "Agency Info",
     "startWithBasics": "Let's start with the basics.",
     "emailPlaceholder": "company@example.com",
     "passwordPlaceholder": "••••••••",
@@ -644,11 +647,15 @@
       "networkError": "Connection lost. Please check your internet connection."
     },
     "companyEmail": "Company Email",
+    "agencyEmail": "Agency Email",
     "confirmPassword": "Confirm Password",
     "organizationName": "Organization Name",
+    "agencyName": "Agency Name",
     "contactName": "Contact Name",
     "contactTitle": "Contact Title",
     "contactTitlePlaceholder": "e.g. Marketing Manager",
+    "agentName": "Primary Agent Name",
+    "agentTitle": "Agent Title",
     "website": "Website",
     "phoneNumber": "Phone Number",
     "saving": "Saving...",
@@ -656,6 +663,7 @@
     "back": "Back",
     "submitting": "Submitting...",
     "completeSignUp": "Complete Sign Up",
+    "selectAndContinue": "Select and Continue",
     "industries": {
       "fashion": "Fashion",
       "beauty": "Beauty",
@@ -729,6 +737,15 @@
       "licenseLikenessQuestion": "Do you currently license your models' likeness?",
       "openToAiQuestion": "Are your talents open to AI recreation or only likeness protection?",
       "campaignsPursuedLabel": "What types of campaigns or collaborations do you pursue most?",
+      "bulkOnboardQuestion": "Do you want to bulk-onboard your roster to Likelee?"
+    },
+    "sportsAgency": {
+      "title": "Sports Agency Details",
+      "subtitle": "Tell us about your athlete roster",
+      "athleteCount": "Number of Athletes Represented",
+      "licenseAthletesQuestion": "Do you currently license your athletes' likeness?",
+      "openToAiQuestion": "Are your athletes open to AI recreation or only likeness protection?",
+      "campaignTypesQuestion": "What types of campaigns or collaborations do you pursue most?",
       "bulkOnboardQuestion": "Do you want to bulk-onboard your roster to Likelee?"
     },
     "options": {
@@ -2103,36 +2120,28 @@
     },
     "earnings": {
       "title": "Earnings Dashboard",
-      "byIndustry": "Earnings by Industry",
-      "byCampaign": "Earnings by Campaign",
-      "bankConnection": {
-        "title": "Connect Your Bank Account",
-        "subtitle": "Link your bank account to receive your earnings directly.",
-        "securityTitle": "Bank-level Security",
-        "securityMessage": "Your information is encrypted and protected",
-        "privateTitle": "Private & Secure",
-        "privateMessage": "We never store your banking credentials",
-        "button": "Connect Bank Account",
-        "comingSoon": "Bank connection coming soon. We're integrating secure payment processing.",
-        "back": "Back"
-      },
       "subtitle": "Track your revenue and payments",
-      "readyTitle": "Your earnings dashboard is ready",
-      "readyMessage": "Once your licenses activate, you'll see real-time earnings here. Currently, you have no active contracts.",
-      "actions": {
-        "cashOut": "Cash Out",
-        "downloadTax": "Download Tax Summary (1099)"
+      "readyTitle": "Ready to Cash Out?",
+      "readyMessage": "Connect your payout method to withdraw your earnings. It only takes a few minutes to get set up.",
+      "announcement": {
+        "title": "New: Flexible Cash Out!",
+        "message": "You can now withdraw your earnings via Stripe Connect. PayPal and Wise coming soon!"
       },
       "metrics": {
-        "totalEarnedYTD": "Total Earned YTD",
-        "willUpdate": "Will update once your first license activates",
-        "thisMonthRecurring": "This Month's Recurring",
+        "totalEarnedYTD": "Total Earned (YTD)",
+        "willUpdate": "Updates after each payout",
+        "thisMonthRecurring": "This Month (Recurring)",
         "waitingForCampaigns": "Waiting for active campaigns",
         "projectedNextMonth": "Projected Next Month",
         "willCalculate": "Will calculate based on active licenses",
         "nextPayment": "Next Payment",
-        "toBeDetermined": "To be determined",
+        "toBeDetermined": "TBD",
         "noActiveContracts": "No active contracts yet"
+      },
+      "actions": {
+        "cashOut": "Cash Out",
+        "loading": "Processing...",
+        "downloadTax": "Download Tax Documents (PDF)"
       },
       "charts": {
         "revenueTrend": "Revenue Trend (Last 6 Months)",

@@ -5,6 +5,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 
@@ -24,7 +25,10 @@ interface AuthContextValue {
     displayName?: string,
   ) => Promise<{ user: User | null; session: any | null }>;
   refreshToken: () => Promise<void>;
-  resendEmailConfirmation?: (email: string) => Promise<void>;
+  resendEmailConfirmation?: (
+    email: string,
+    redirectTo?: string,
+  ) => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
 
@@ -34,12 +38,14 @@ export interface Profile {
   full_name?: string;
   profile_photo_url?: string;
   kyc_status?: string;
+  onboarding_step?: string;
   [key: string]: any;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const queryClient = useQueryClient();
   const [initialized, setInitialized] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -48,34 +54,75 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     userId: string,
     userEmail?: string,
     userFullName?: string,
+    role?: string,
   ) => {
     try {
+      let table = "creators";
+      const effectiveRole = role || "creator";
+
+      if (effectiveRole === "brand") {
+        table = "brands";
+      } else if (effectiveRole === "agency") {
+        table = "agencies";
+      }
+
       const { data, error } = await supabase
-        .from("profiles")
+        .from(table)
         .select("*")
         .eq("id", userId)
         .maybeSingle();
 
       if (error) {
-        console.error("Error fetching profile:", error);
+        // Ignore AbortError which happens on rapid re-renders/navigation
+        if (error.message && error.message.includes("AbortError")) {
+          return;
+        }
+        console.error(
+          `Error fetching profile from ${table}:`,
+          JSON.stringify(error, null, 2),
+        );
         return;
       }
 
       if (data) {
-        setProfile(data);
-      } else if (userEmail) {
-        // Profile missing, create it
+        // Add role to profile object for convenience
+        setProfile({ ...data, role: role || data.role });
+      } else if (userEmail && table === "creators") {
+        // Profile missing in profiles table, create it (only for creators)
         console.log("Profile missing, creating new profile for:", userId);
         const { data: newProfile, error: insertError } = await supabase
-          .from("profiles")
-          .insert([{ id: userId, email: userEmail, full_name: userFullName }])
+          .from("creators")
+          .insert([
+            {
+              id: userId,
+              email: userEmail,
+              full_name: userFullName,
+              role: role || "creator",
+            },
+          ])
           .select()
           .single();
 
         if (insertError) {
-          console.error("Error creating profile:", insertError);
+          if (
+            insertError.code === "23505" ||
+            insertError.message.includes("duplicate key")
+          ) {
+            const { data: existingProfile } = await supabase
+              .from("creators")
+              .select("*")
+              .eq("id", userId)
+              .maybeSingle();
+            if (existingProfile)
+              setProfile({
+                ...existingProfile,
+                role: role || existingProfile.role,
+              });
+          } else {
+            console.error("Error creating profile:", insertError);
+          }
         } else if (newProfile) {
-          setProfile(newProfile);
+          setProfile({ ...newProfile, role: role || newProfile.role });
         }
       }
     } catch (err) {
@@ -89,15 +136,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         const currentUser = session?.user ?? null;
         setUser(currentUser);
-        if (currentUser && currentUser.email_confirmed_at) {
-          fetchProfile(
-            currentUser.id,
-            currentUser.email,
-            currentUser.user_metadata?.full_name,
-          );
+
+        if (currentUser && (currentUser.email_confirmed_at || session)) {
+          // Prevent infinite loop: only fetch if profile is not already loaded or if user changed
+          if (!profile || profile.id !== currentUser.id) {
+            fetchProfile(
+              currentUser.id,
+              currentUser.email,
+              currentUser.user_metadata?.full_name,
+              currentUser.user_metadata?.role,
+            );
+          }
         } else {
           setProfile(null);
         }
@@ -108,13 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data }) => {
       const currentUser = data.session?.user ?? null;
       setUser(currentUser);
-      if (currentUser && currentUser.email_confirmed_at) {
-        fetchProfile(
-          currentUser.id,
-          currentUser.email,
-          currentUser.user_metadata?.full_name,
-        );
-      }
+      // Avoid double-fetching profile; rely on onAuthStateChange handler above
       setInitialized(true);
     });
     return () => {
@@ -152,6 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout: async () => {
         if (!supabase) return;
         await supabase.auth.signOut();
+        queryClient.clear();
       },
       register: async (email, password, displayName) => {
         if (!supabase) throw new Error("Supabase not configured");
@@ -160,27 +207,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: emailNormalized,
           password,
           options: {
-            data: { full_name: displayName || null },
-            emailRedirectTo: `${window.location.origin}/ReserveProfile?step=2`,
+            data: {
+              full_name: displayName || null,
+              role: "creator",
+            },
+            emailRedirectTo:
+              (displayName as any)?.redirectTo ||
+              `${window.location.origin}/ReserveProfile?step=2`,
           },
         });
         if (error) throw error;
 
-        // Profile creation deferred until email verification and subsequent login/session refresh
-        // if (data.user) {
-        //   await fetchProfile(data.user.id, data.user.email, displayName);
-        // }
+        // Profile creation is now handled immediately after signup to capture full_name.
+        if (data.user) {
+          await fetchProfile(data.user.id, data.user.email, displayName);
+        }
 
         return { user: data.user, session: data.session };
       },
-      resendEmailConfirmation: async (email: string) => {
+      resendEmailConfirmation: async (email: string, redirectTo?: string) => {
         if (!supabase) throw new Error("Supabase not configured");
         const emailNormalized = (email || "").trim().toLowerCase();
         const { error } = await supabase.auth.resend({
           type: "signup",
           email: emailNormalized,
           options: {
-            emailRedirectTo: `${window.location.origin}/ReserveProfile?step=1`,
+            emailRedirectTo:
+              redirectTo || `${window.location.origin}/ReserveProfile?step=1`,
           },
         });
         if (error) throw error;
@@ -195,6 +248,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             user.id,
             user.email,
             user.user_metadata?.full_name,
+            user.user_metadata?.role,
           );
         }
       },

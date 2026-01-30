@@ -288,7 +288,7 @@ function ReferencePhotosStep(props: any) {
       if (!userId || !supabase) return;
       try {
         const { data, error } = await supabase
-          .from("profiles")
+          .from("creators")
           .select("cameo_front_url, cameo_left_url, cameo_right_url")
           .eq("id", userId)
           .maybeSingle();
@@ -845,7 +845,7 @@ export default function ReserveProfile() {
                 ? "cameo_left_url"
                 : "cameo_right_url";
           await supabase
-            .from("profiles")
+            .from("creators")
             .update({ [column]: url })
             .eq("id", user.id);
         }
@@ -879,9 +879,13 @@ export default function ReserveProfile() {
       u.searchParams.set("step", "4");
       u.searchParams.set("verified", "1");
       const returnUrl = u.toString();
+      const session = (await supabase.auth.getSession())?.data?.session;
       const res = await fetch(api(`/api/kyc/session`), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token}`,
+        },
         body: JSON.stringify({ user_id: targetId, return_url: returnUrl }),
       });
       if (!res.ok) throw new Error(await res.text());
@@ -906,8 +910,14 @@ export default function ReserveProfile() {
     if (!targetId) return;
     try {
       setKycLoading(true);
+      const session = (await supabase.auth.getSession())?.data?.session;
       const res = await fetch(
         api(`/api/kyc/status?user_id=${encodeURIComponent(targetId)}`),
+        {
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+        },
       );
       if (!res.ok) throw new Error(await res.text());
       const rows = await res.json();
@@ -1069,7 +1079,7 @@ export default function ReserveProfile() {
           is_sample: false,
         };
         const { data: upserted, error } = await supabase
-          .from("profiles")
+          .from("creators")
           .upsert(payload, { onConflict: "id" })
           .select();
         if (error) throw error;
@@ -1143,7 +1153,7 @@ export default function ReserveProfile() {
 
         console.log("Upserting profile with data:", updateData);
         const { data: updated, error } = await supabase
-          .from("profiles")
+          .from("creators")
           .upsert(updateData, { onConflict: "id" })
           .select();
         if (error) throw error;
@@ -1494,7 +1504,7 @@ export default function ReserveProfile() {
       if (right) (payload as any).cameo_right_url = right;
 
       const { error } = await supabase
-        .from("profiles")
+        .from("creators")
         .upsert(payload, { onConflict: "id" });
       if (error) throw error;
       setProfileId(user.id);

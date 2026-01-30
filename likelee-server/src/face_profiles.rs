@@ -47,7 +47,7 @@ pub async fn search_faces(
     State(state): State<AppState>,
     Query(q): Query<SearchFacesQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let mut request = state.pg.from("profiles").select("*").eq("role", "creator");
+    let mut request = state.pg.from("creators").select("*").eq("role", "creator");
 
     if let Some(search) = q.query {
         if !search.is_empty() {

@@ -1,5 +1,6 @@
 {
   "greeting": "¡Hola, bienvenido!",
+  "getStarted": "Empezar",
   "brands": "Marcas",
   "agencies": "Agencias",
   "marketingAgency": "Agencia de marketing",
@@ -1876,6 +1877,7 @@
     "assistance": "Para asistencia inmediata, envíenos un correo electrónico a"
   },
   "organizationSignup": {
+    "selectAndContinue": "Seleccionar y continuar",
     "selectAll": "Seleccionar todo",
     "missingFieldsTitle": "Campos faltantes",
     "missingFieldsDescription": "Por favor complete todos los campos requeridos para continuar.",

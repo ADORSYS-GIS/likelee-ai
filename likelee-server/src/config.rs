@@ -23,6 +23,9 @@ pub struct ServerConfig {
     #[envconfig(from = "SUPABASE_SERVICE_KEY")]
     pub supabase_service_key: String,
 
+    #[envconfig(from = "SUPABASE_JWT_SECRET")]
+    pub supabase_jwt_secret: String,
+
     #[envconfig(from = "SUPABASE_BUCKET_PRIVATE", default = "likelee-private")]
     pub supabase_bucket_private: String,
 
@@ -104,6 +107,44 @@ pub struct ServerConfig {
 
     #[envconfig(from = "TAVUS_CALLBACK_URL", default = "")]
     pub tavus_callback_url: String,
+
+    // Stripe
+    #[envconfig(from = "STRIPE_SECRET_KEY", default = "")]
+    pub stripe_secret_key: String,
+
+    #[envconfig(from = "STRIPE_CLIENT_ID", default = "")]
+    pub stripe_client_id: String,
+
+    #[envconfig(from = "STRIPE_RETURN_URL", default = "")]
+    pub stripe_return_url: String,
+
+    #[envconfig(from = "STRIPE_REFRESH_URL", default = "")]
+    pub stripe_refresh_url: String,
+
+    #[envconfig(from = "STRIPE_WEBHOOK_SECRET", default = "")]
+    pub stripe_webhook_secret: String,
+
+    // Payout Logic
+    #[envconfig(from = "PAYOUTS_ENABLED", default = "false")]
+    pub payouts_enabled: bool,
+
+    #[envconfig(from = "PAYOUT_AUTO_APPROVE_THRESHOLD_CENTS", default = "5000")]
+    pub payout_auto_approve_threshold_cents: u32,
+
+    #[envconfig(from = "MIN_PAYOUT_AMOUNT_CENTS", default = "1000")]
+    pub min_payout_amount_cents: u32,
+
+    #[envconfig(from = "INSTANT_PAYOUTS_ENABLED", default = "false")]
+    pub instant_payouts_enabled: bool,
+
+    #[envconfig(from = "PAYOUT_FEE_BPS", default = "100")] // 1%
+    pub payout_fee_bps: u32,
+
+    #[envconfig(from = "PAYOUT_CURRENCY", default = "USD")]
+    pub payout_currency: String,
+
+    #[envconfig(from = "PAYOUT_ALLOWED_CURRENCIES", default = "USD,EUR")]
+    pub payout_allowed_currencies: String,
 }
 
 #[derive(Clone)]
@@ -114,6 +155,7 @@ pub struct AppState {
     pub rekog: Option<RekogClient>,
     pub supabase_url: String,
     pub supabase_service_key: String,
+    pub supabase_jwt_secret: String,
     pub supabase_bucket_public: String,
     pub supabase_bucket_private: String,
     pub elevenlabs_api_key: String,
@@ -125,6 +167,21 @@ pub struct AppState {
     pub tavus_base_url: String,
     pub tavus_webhook_secret: String,
     pub tavus_callback_url: String,
+
+    pub stripe_secret_key: String,
+    pub stripe_client_id: String,
+    pub stripe_return_url: String,
+    pub stripe_refresh_url: String,
+    pub stripe_webhook_secret: String,
+
+    // Payout Logic
+    pub payouts_enabled: bool,
+    pub payout_auto_approve_threshold_cents: u32,
+    pub min_payout_amount_cents: u32,
+    pub instant_payouts_enabled: bool,
+    pub payout_fee_bps: u32,
+    pub payout_currency: String,
+    pub payout_allowed_currencies: Vec<String>,
 
     pub smtp_host: String,
     pub smtp_port: u16,

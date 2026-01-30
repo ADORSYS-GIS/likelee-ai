@@ -12,6 +12,7 @@ pub fn build_router(state: AppState) -> Router {
         .allow_methods(Any)
         .allow_headers(Any);
     Router::new()
+        .route("/api/health", get(crate::health::health))
         .route("/api/kyc/session", post(crate::kyc::create_session))
         .route("/api/kyc/status", get(crate::kyc::get_status))
         .route(
@@ -19,31 +20,34 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::kyc::create_session),
         )
         .route("/api/kyc/organization/status", get(crate::kyc::get_status))
-        // Organization Profiles
+        // Brands
+        .route("/api/brand-register", post(crate::brands::register))
+        .route("/api/brand-profile", post(crate::brands::update))
+        .route("/api/brand-profile/user", get(crate::brands::get_by_user))
+        // Agencies
+        .route("/api/agency-register", post(crate::agencies::register))
+        .route("/api/agency-profile", post(crate::agencies::update))
         .route(
-            "/api/organization-register",
-            post(crate::organization_profiles::register),
+            "/api/agency-profile/user",
+            get(crate::agencies::get_by_user),
+        )
+        .route("/api/agency/talents", get(crate::agencies::list_talents))
+        .route(
+            "/api/agency/clients",
+            get(crate::agencies::list_clients).post(crate::agencies::create_client),
         )
         .route(
-            "/api/organization-profile",
-            post(crate::organization_profiles::create),
-        )
-        .route(
-            "/api/organization-profile/:id",
-            post(crate::organization_profiles::update),
-        )
-        .route(
-            "/api/organization-profile/user/:user_id",
-            get(crate::organization_profiles::get_by_user),
+            "/api/agency/files/upload",
+            post(crate::agencies::upload_agency_file),
         )
         .route("/api/dashboard", get(crate::dashboard::get_dashboard))
         // Removed legacy Tavus routes
         .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))
-        .route("/api/email/available", get(crate::profiles::check_email))
-        .route("/api/profile", post(crate::profiles::upsert_profile))
+        .route("/api/email/available", get(crate::creators::check_email))
+        .route("/api/profile", post(crate::creators::upsert_profile))
         .route(
             "/api/profile/photo-upload",
-            post(crate::profiles::upload_profile_photo),
+            post(crate::creators::upload_profile_photo),
         )
         .route(
             "/api/face-profiles",
@@ -53,7 +57,6 @@ pub fn build_router(state: AppState) -> Router {
             "/api/face-profiles/:id",
             post(crate::face_profiles::update_face_profile),
         )
-        .route("/api/faces/search", get(crate::face_profiles::search_faces))
         .route(
             "/api/moderation/image",
             post(crate::moderation::moderate_image),
@@ -138,6 +141,43 @@ pub fn build_router(state: AppState) -> Router {
             "/webhooks/creatify",
             post(crate::creatify::creatify_webhook),
         )
+        // Bookings (Agency Dashboard)
+        .route(
+            "/api/bookings",
+            get(crate::bookings::list).post(crate::bookings::create),
+        )
+        .route(
+            "/api/bookings/with-files",
+            post(crate::bookings::create_with_files),
+        )
+        .route("/api/bookings/:id", post(crate::bookings::update))
+        .route(
+            "/api/bookings/:id/files/upload",
+            post(crate::bookings::upload_booking_file),
+        )
+        .route("/api/bookings/:id/cancel", post(crate::bookings::cancel))
+        // Book-Outs (Availability)
+        .route(
+            "/api/book-outs",
+            get(crate::book_outs::list).post(crate::book_outs::create),
+        )
+        .route(
+            "/api/book-outs/:id",
+            delete(crate::book_outs::delete_book_out),
+        )
+        // Payouts
+        .route(
+            "/api/payouts/onboarding_link",
+            post(crate::payouts::create_onboarding_link),
+        )
+        .route(
+            "/api/payouts/account_status",
+            get(crate::payouts::get_account_status),
+        )
+        .route("/api/payouts/balance", get(crate::payouts::get_balance))
+        .route("/api/payouts/request", post(crate::payouts::request_payout))
+        .route("/api/payouts/history", get(crate::payouts::get_history))
+        .route("/webhooks/stripe", post(crate::payouts::stripe_webhook))
         // Integrations: Core
         .route(
             "/api/integrations/core/send-email",
@@ -156,6 +196,14 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/performance-tiers/:tier_name/talents",
             get(crate::performance_tiers::get_tier_talents),
+        // Notifications
+        .route(
+            "/api/notifications/booking-created-email",
+            post(crate::notifications::booking_created_email),
+        )
+        .route(
+            "/api/notifications/booking-notifications",
+            get(crate::notifications::list_booking_notifications),
         )
         .with_state(state)
         .layer(DefaultBodyLimit::max(20_000_000)) // 20MB limit

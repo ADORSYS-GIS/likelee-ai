@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -82,6 +83,7 @@ import {
   ArrowLeft,
   Ban,
   BadgeCheck,
+  Sparkles,
 } from "lucide-react";
 import {
   LineChart,
@@ -1154,6 +1156,110 @@ export default function CreatorDashboard() {
   const [savingRates, setSavingRates] = useState(false);
   const [showCardModal, setShowCardModal] = useState(false);
   const [showConnectBankAccount, setShowConnectBankAccount] = useState(false);
+  const [isLoadingPayout, setIsLoadingPayout] = useState(false);
+  const [showPayoutSettings, setShowPayoutSettings] = useState(false);
+  const [payoutMethod, setPayoutMethod] = useState<
+    "stripe" | "paypal" | "wise"
+  >("stripe");
+  const [paypalEmail, setPaypalEmail] = useState("");
+  const [wiseDetails, setWiseDetails] = useState("");
+  const [showShoutOut, setShowShoutOut] = useState(true);
+  const [payoutAccountStatus, setPayoutAccountStatus] = useState<any>(null);
+  const [balances, setBalances] = useState<any[]>([]);
+  const [showRequestPayoutModal, setShowRequestPayoutModal] = useState(false);
+  const [requestPayoutAmount, setRequestPayoutAmount] = useState("");
+
+  const fetchPayoutStatus = async () => {
+    if (!initialized || !authenticated || !user?.id) return;
+    try {
+      const { getPayoutsAccountStatus, getPayoutBalance } =
+        await import("@/api/functions");
+      const [statusRes, balanceRes] = await Promise.all([
+        getPayoutsAccountStatus(user.id),
+        getPayoutBalance(user.id),
+      ]);
+      setPayoutAccountStatus(statusRes.data);
+      setBalances(balanceRes.data.balances || []);
+    } catch (e) {
+      console.error("Failed to fetch payout status", e);
+    }
+  };
+
+  useEffect(() => {
+    const handleOAuthCallback = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get("code");
+      const state = urlParams.get("state"); // Should match user ID ideally, or session state
+
+      if (code && initialized && authenticated && user?.id) {
+        // Should verify state matches user.id
+        if (state && state !== user.id) {
+          console.warn("OAuth state mismatch", state, user.id);
+          // handle error or ignore
+        }
+
+        try {
+          setIsLoadingPayout(true);
+          const { exchangeStripeOAuthCode } = await import("@/api/functions");
+          const res = await exchangeStripeOAuthCode(code, user.id);
+
+          if (res.data.status === "ok") {
+            toast({
+              title: "Success",
+              description: "Stripe account linked successfully via OAuth!",
+            });
+            // Clear query params
+            window.history.replaceState(
+              {},
+              document.title,
+              window.location.pathname,
+            );
+            // Refresh status
+            await fetchPayoutStatus();
+          } else {
+            throw new Error(res.data.error || "OAuth exchange failed");
+          }
+        } catch (e) {
+          console.error("OAuth error", e);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to link Stripe account via OAuth",
+          });
+        } finally {
+          setIsLoadingPayout(false);
+        }
+      }
+    };
+
+    handleOAuthCallback();
+  }, [initialized, authenticated, user?.id]);
+
+  useEffect(() => {
+    if (initialized && authenticated && user?.id) {
+      fetchPayoutStatus();
+    }
+  }, [initialized, authenticated, user?.id]);
+
+  // Shoutout should only disappear once payouts are set up; clear any previous localStorage gating
+  useEffect(() => {
+    localStorage.removeItem("cashout_announcement_dismissed");
+    localStorage.removeItem("cashout_announcement_first_sight");
+  }, []);
+
+  // Auto-hide shoutout once payouts are connected/enabled
+  useEffect(() => {
+    if (
+      payoutAccountStatus?.connected ||
+      payoutAccountStatus?.payouts_enabled ||
+      payoutAccountStatus?.transfers_enabled ||
+      payoutAccountStatus?.details_submitted
+    ) {
+      if (showShoutOut) {
+        setShowShoutOut(false);
+      }
+    }
+  }, [payoutAccountStatus, showShoutOut]);
 
   // Load persisted Reference Image Library on mount/auth ready
   useEffect(() => {
@@ -1161,12 +1267,8 @@ export default function CreatorDashboard() {
     const abort = new AbortController();
     (async () => {
       try {
-        const full = api(
-          `/api/reference-images?user_id=${encodeURIComponent(user.id)}`,
-        );
-        const res = await fetch(full, { signal: abort.signal });
-        if (!res.ok) return; // best-effort
-        const items = await res.json();
+        // Use authenticated client so Authorization header is attached
+        const items = await base44.get<any[]>(`/api/reference-images`);
         if (Array.isArray(items)) {
           // keep latest per section_id
           const bySection = new Map<string, any>();
@@ -1197,26 +1299,20 @@ export default function CreatorDashboard() {
     const abort = new AbortController();
     (async () => {
       try {
-        // 1) List recordings
-        const res = await fetch(
-          api(`/api/voice/recordings?user_id=${encodeURIComponent(user.id)}`),
-          { signal: abort.signal },
-        );
-        if (!res.ok) return; // best-effort
-        const rows = await res.json();
+        // 1) List recordings via authenticated client
+        const rows = await base44.get<any[]>(`/api/voice/recordings`, {
+          params: { user_id: user.id },
+        } as any);
         if (!Array.isArray(rows)) return;
 
         // 2) Fetch signed URLs for playback
         const withUrls = await Promise.all(
           rows.map(async (row: any) => {
             try {
-              const s = await fetch(
-                api(
-                  `/api/voice/recordings/signed-url?recording_id=${encodeURIComponent(row.id)}&expires_sec=600`,
-                ),
-                { signal: abort.signal },
+              const j = await base44.get<any>(
+                `/api/voice/recordings/signed-url`,
+                { params: { recording_id: row.id, expires_sec: 600 } } as any,
               );
-              const j = s.ok ? await s.json() : { url: null };
               return {
                 id: row.id,
                 emotion: row.emotion_tag || null,
@@ -1306,12 +1402,7 @@ export default function CreatorDashboard() {
     const abort = new AbortController();
     (async () => {
       try {
-        const res = await fetch(
-          api(`/api/dashboard?user_id=${encodeURIComponent(user.id)}`),
-          { signal: abort.signal },
-        );
-        if (!res.ok) throw new Error(await res.text());
-        const json = await res.json();
+        const json = await base44.get("/api/dashboard");
         const profile = json.profile || {};
         setCreator((prev: any) => ({
           ...prev,
@@ -1369,21 +1460,16 @@ export default function CreatorDashboard() {
     if (!initialized || !authenticated || !user?.id) return;
     (async () => {
       try {
-        const res = await fetch(
-          api(`/api/creator-rates?user_id=${encodeURIComponent(user.id)}`),
+        const data = await base44.get("/api/creator-rates");
+        setCustomRates(
+          data.filter(
+            (rate: any) =>
+              rate.rate_name !== "Social-media ads" &&
+              rate.rate_name !== "Other" &&
+              (CONTENT_TYPES.includes(rate.rate_name) ||
+                INDUSTRIES.includes(rate.rate_name)),
+          ),
         );
-        if (res.ok) {
-          const data = await res.json();
-          setCustomRates(
-            data.filter(
-              (rate: any) =>
-                rate.rate_name !== "Social-media ads" &&
-                rate.rate_name !== "Other" &&
-                (CONTENT_TYPES.includes(rate.rate_name) ||
-                  INDUSTRIES.includes(rate.rate_name)),
-            ),
-          );
-        }
       } catch (e) {
         console.error("Failed to fetch rates", e);
       }
@@ -1425,11 +1511,7 @@ export default function CreatorDashboard() {
     if (!authenticated || !user?.id) return;
     try {
       setKycLoading(true);
-      const res = await fetch(
-        api(`/api/kyc/status?user_id=${encodeURIComponent(user.id)}`),
-      );
-      if (!res.ok) throw new Error(await res.text());
-      const rows = await res.json();
+      const rows = await base44.get("/api/kyc/status");
       const row = Array.isArray(rows) && rows.length ? rows[0] : null;
       if (row && (row.kyc_status || row.liveness_status)) {
         setCreator((prev: any) => ({
@@ -2280,7 +2362,7 @@ export default function CreatorDashboard() {
         const publicUrl = data.publicUrl;
 
         const { error: dbError } = await supabase
-          .from("profiles")
+          .from("creators")
           .update({ cameo_front_url: publicUrl })
           .eq("id", user.id);
 
@@ -2339,13 +2421,23 @@ export default function CreatorDashboard() {
 
       try {
         const buf = await file.arrayBuffer();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        if (!token) {
+          throw new Error("Missing auth session. Please sign in again.");
+        }
         const res = await fetch(
           api(
             `/api/profile/photo-upload?user_id=${encodeURIComponent(user.id)}`,
           ),
           {
             method: "POST",
-            headers: { "content-type": file.type || "image/jpeg" },
+            headers: {
+              "content-type": file.type || "image/jpeg",
+              Authorization: `Bearer ${token}`,
+            },
             body: new Uint8Array(buf),
             cache: "no-cache",
           },
@@ -2377,9 +2469,16 @@ export default function CreatorDashboard() {
         });
         // Revert optimistic update on error by refreshing dashboard
         try {
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          const token = session?.access_token;
           const profileRes = await fetch(
             api(`/api/dashboard?user_id=${encodeURIComponent(user.id)}`),
-            { cache: "no-cache" },
+            {
+              cache: "no-cache",
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            },
           );
           if (profileRes.ok) {
             const profileJson = await profileRes.json();
@@ -2893,7 +2992,8 @@ export default function CreatorDashboard() {
     // Apply overrides if provided (e.g. for immediate toggle updates)
     const profileData = {
       email: creator.email || user.email,
-      full_name: creator.name,
+      full_name:
+        creator.name || profile?.full_name || user?.user_metadata?.full_name,
       bio: creator.bio,
       city: creator.location?.split(",")[0]?.trim(),
       state: creator.location?.split(",")[1]?.trim(),
@@ -2910,9 +3010,13 @@ export default function CreatorDashboard() {
     };
 
     try {
+      const session = (await supabase.auth.getSession())?.data?.session;
       const res = await fetch(api(`/api/profile?user_id=${user.id}`), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token}`,
+        },
         body: JSON.stringify(profileData),
       });
 
@@ -2929,6 +3033,7 @@ export default function CreatorDashboard() {
         const savedProfile = responseData[0];
         setCreator((prev) => ({
           ...prev,
+          name: savedProfile.full_name || prev.name,
           content_types: savedProfile.content_types ?? prev.content_types,
           industries: savedProfile.industries ?? prev.industries,
           content_restrictions:
@@ -3139,7 +3244,7 @@ export default function CreatorDashboard() {
                 {imagesFilled}/{imagesTotal}
               </div>
               <Progress
-                value={Math.round((imagesFilled / imagesTotal) * 100)}
+                value={Math.round((imagesFilled / IMAGE_SECTIONS.length) * 100)}
                 className="h-2 mt-3 bg-gray-200"
               />
             </div>
@@ -3239,7 +3344,7 @@ export default function CreatorDashboard() {
       // Upload via backend (Option B: server-only writes)
       const buf = await file.arrayBuffer();
       const full = api(
-        `/api/reference-images/upload?user_id=${encodeURIComponent(user.id)}&section_id=${encodeURIComponent(selectedImageSection)}`,
+        `/api/reference-images/upload?section_id=${encodeURIComponent(selectedImageSection)}`,
       );
       const res = await fetch(full, {
         method: "POST",
@@ -5580,11 +5685,29 @@ export default function CreatorDashboard() {
   );
 
   const renderEarnings = () => {
-    if (showConnectBankAccount) {
-      return renderConnectBankAccount();
-    }
     return (
       <div className="space-y-6">
+        {/* New Feature Shout Out */}
+        {showShoutOut && (
+          <Card className="p-3 bg-[#E6FAFB] text-[#0F3D3F] border border-[#BFEFF2] shadow-sm relative animate-pulse">
+            <div className="flex items-start gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold truncate">
+                    {t("creatorDashboard.earnings.announcement.title")}
+                  </h3>
+                  <Badge className="bg-[#32C8D1] text-white border-none px-1.5 py-0 text-[10px]">
+                    New
+                  </Badge>
+                </div>
+                <p className="text-sm text-[#0F3D3F]/80">
+                  {t("creatorDashboard.earnings.announcement.message")}
+                </p>
+              </div>
+            </div>
+          </Card>
+        )}
+
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold text-gray-900">
@@ -5594,13 +5717,41 @@ export default function CreatorDashboard() {
               {t("creatorDashboard.earnings.subtitle")}
             </p>
           </div>
-          <Button
-            onClick={() => setShowConnectBankAccount(true)}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-md px-4 py-2 flex items-center gap-2"
-          >
-            <DollarSign className="w-4 h-4" />
-            {t("creatorDashboard.earnings.actions.cashOut")}
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              onClick={() => {
+                if (
+                  payoutAccountStatus?.payouts_enabled ||
+                  payoutAccountStatus?.details_submitted
+                ) {
+                  setShowRequestPayoutModal(true);
+                } else {
+                  setShowPayoutSettings(true);
+                }
+              }}
+              className={`h-11 px-6 font-bold shadow-md transition-all duration-500 scale-100 transform ${
+                showShoutOut
+                  ? "bg-emerald-600 hover:bg-emerald-700 text-white animate-twinkle animate-shine scale-110"
+                  : "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+              }`}
+              disabled={isLoadingPayout}
+            >
+              {isLoadingPayout ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  {t("creatorDashboard.earnings.actions.loading")}
+                </>
+              ) : (
+                <>
+                  <WalletIcon className="w-5 h-5 mr-2" />
+                  {payoutAccountStatus?.payouts_enabled ||
+                  payoutAccountStatus?.details_submitted
+                    ? t("creatorDashboard.earnings.actions.cashOut")
+                    : "Setup Payouts"}
+                </>
+              )}
+            </Button>
+          </div>
         </div>
 
         {/* Info banner */}
@@ -5616,12 +5767,19 @@ export default function CreatorDashboard() {
 
         {/* Key metrics */}
         <div className="grid md:grid-cols-4 gap-6">
-          <Card className="p-6 bg-white border border-gray-200">
-            <p className="text-sm text-gray-600 mb-2">
-              {t("creatorDashboard.earnings.metrics.totalEarnedYTD")}
+          <Card className="p-6 bg-white border border-gray-200 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full -mr-12 -mt-12 group-hover:scale-110 transition-transform duration-500"></div>
+            <p className="text-sm font-medium text-gray-600 mb-2 relative z-10">
+              Available Balance
             </p>
-            <p className="text-3xl font-bold text-gray-900">$0</p>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-3xl font-bold text-emerald-600 relative z-10">
+              $
+              {(
+                (balances.find((b) => b.currency === "USD")?.available_cents ||
+                  0) / 100
+              ).toFixed(2)}
+            </p>
+            <p className="text-sm text-gray-600 mt-1 relative z-10">
               {t("creatorDashboard.earnings.metrics.willUpdate")}
             </p>
           </Card>
@@ -5862,7 +6020,7 @@ export default function CreatorDashboard() {
 
       // Persist category selections to profiles table as well
       const profileStatus = await supabase
-        .from("profiles")
+        .from("creators")
         .update({
           content_types:
             showRatesModal === "content"
@@ -8212,6 +8370,434 @@ export default function CreatorDashboard() {
               {t("creatorDashboard.modals.contentRestrictions.saveChanges")}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payout Settings Modal */}
+      <Dialog open={showPayoutSettings} onOpenChange={setShowPayoutSettings}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">
+              Payout Settings
+            </DialogTitle>
+            <DialogDescription>
+              Choose how you want to receive your earnings
+            </DialogDescription>
+          </DialogHeader>
+
+          {isLoadingPayout && (
+            <div className="absolute inset-0 z-50 bg-white/70 backdrop-blur-[1px] flex flex-col items-center justify-center gap-3 rounded-lg">
+              <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+              <p className="text-sm text-gray-700">Setting up payouts…</p>
+            </div>
+          )}
+
+          <div className="space-y-6 py-4">
+            <div className="grid gap-4">
+              {/* Stripe Connect */}
+              <div
+                onClick={() => setPayoutMethod("stripe")}
+                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                  payoutMethod === "stripe"
+                    ? "border-emerald-500 bg-emerald-50"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center ${
+                      payoutMethod === "stripe"
+                        ? "border-emerald-500"
+                        : "border-gray-300"
+                    }`}
+                  >
+                    {payoutMethod === "stripe" && (
+                      <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-gray-900">
+                          Stripe Connect
+                        </h3>
+                        <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300">
+                          Recommended
+                        </Badge>
+                      </div>
+                      <img
+                        src="https://www.vectorlogo.zone/logos/stripe/stripe-icon.svg"
+                        className="h-6 w-auto opacity-80"
+                        alt="Stripe"
+                      />
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Connect your existing Stripe account or create a new one.
+                      Fast, secure, and supports multiple currencies.
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        Instant Setup
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        Multiple Currencies
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        Direct Deposit
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* PayPal - Coming Soon */}
+              <div className="p-4 border-2 rounded-lg border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed relative">
+                <div className="absolute top-2 right-2">
+                  <Badge className="bg-amber-100 text-amber-700 border-amber-300">
+                    Coming Soon
+                  </Badge>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center border-gray-300" />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3">
+                      <h3 className="font-semibold text-gray-500">PayPal</h3>
+                      <img
+                        src="https://www.vectorlogo.zone/logos/paypal/paypal-icon.svg"
+                        className="h-6 w-auto opacity-50"
+                        alt="PayPal"
+                      />
+                    </div>
+                    <p className="text-sm text-gray-400 mt-1">
+                      Receive payments directly to your PayPal account.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Wise - Coming Soon */}
+              <div className="p-4 border-2 rounded-lg border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed relative">
+                <div className="absolute top-2 right-2">
+                  <Badge className="bg-amber-100 text-amber-700 border-amber-300">
+                    Coming Soon
+                  </Badge>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center border-gray-300" />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3">
+                      <h3 className="font-semibold text-gray-500">
+                        Wise (TransferWise)
+                      </h3>
+                      <img
+                        src="https://www.vectorlogo.zone/logos/transferwise/transferwise-icon.svg"
+                        className="h-6 w-auto opacity-50"
+                        alt="Wise"
+                      />
+                    </div>
+                    <p className="text-sm text-gray-400 mt-1">
+                      International transfers with low fees. Great for
+                      cross-border payments.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Info Banner */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex gap-3">
+                <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-blue-900">
+                  <p className="font-semibold">Important Information</p>
+                  <ul className="mt-2 space-y-1 list-disc list-inside">
+                    <li>
+                      Stripe Connect is currently our active payout method
+                    </li>
+                    <li>PayPal and Wise integration is coming soon</li>
+                    <li>We provide secure and fast payouts through Stripe</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowPayoutSettings(false)}
+              className="mr-auto"
+            >
+              Cancel
+            </Button>
+
+            {payoutMethod === "stripe" ? (
+              <>
+                <Button
+                  variant="outline"
+                  className="border-primary text-primary hover:bg-primary/5"
+                  disabled={isLoadingPayout}
+                  onClick={async () => {
+                    try {
+                      setIsLoadingPayout(true);
+                      if (!user?.id) throw new Error("Not authenticated");
+                      const { getStripeOAuthUrl } =
+                        await import("@/api/functions");
+                      const res = await getStripeOAuthUrl(user.id);
+                      console.log("OAuth URL response:", res);
+
+                      // Handle both possible response formats
+                      const url = res?.data?.url || res?.url;
+                      const status = res?.data?.status || res?.status;
+
+                      if (status === "ok" && url) {
+                        console.log("Redirecting to OAuth URL:", url);
+                        window.location.href = url;
+                        return; // Don't reset loading state, we're redirecting
+                      } else {
+                        console.error("Invalid response:", res);
+                        throw new Error("Failed to get OAuth URL");
+                      }
+                    } catch (e) {
+                      console.error(e);
+                      toast({
+                        variant: "destructive",
+                        title: "Error",
+                        description: "Failed to initiate Stripe connection",
+                      });
+                      setIsLoadingPayout(false);
+                    }
+                  }}
+                >
+                  Link Existing Account
+                </Button>
+                <Button
+                  disabled={isLoadingPayout}
+                  onClick={async () => {
+                    try {
+                      setIsLoadingPayout(true);
+                      const profileId = user?.id;
+                      if (!profileId) throw new Error("Not authenticated");
+
+                      const { getStripeOAuthUrl } =
+                        await import("@/api/functions");
+                      const res = await getStripeOAuthUrl(profileId);
+                      console.log("Stripe onboarding response:", res);
+
+                      const url = res?.data?.url || res?.url;
+                      if (url) {
+                        console.log("Redirecting to Stripe onboarding:", url);
+                        // Don't reset loading state - we're redirecting away
+                        window.location.href = url;
+                        return; // Exit early to prevent finally block
+                      } else {
+                        console.error("No URL in response:", res);
+                        toast({
+                          variant: "destructive",
+                          title: "Error",
+                          description:
+                            "Failed to create Stripe onboarding link",
+                        });
+                        setIsLoadingPayout(false);
+                      }
+                    } catch (e) {
+                      setIsLoadingPayout(false);
+                      throw e;
+                    }
+                  }}
+                >
+                  Create New Account
+                </Button>
+              </>
+            ) : (
+              <Button
+                onClick={async () => {
+                  try {
+                    setIsLoadingPayout(true);
+                    const profileId = user?.id;
+                    if (!profileId) throw new Error("Not authenticated");
+
+                    const { updatePayoutSettings } =
+                      await import("@/api/functions");
+                    const result = await updatePayoutSettings({
+                      profile_id: profileId,
+                      preference: payoutMethod,
+                      paypal_email:
+                        payoutMethod === "paypal" ? paypalEmail : undefined,
+                      wise_details:
+                        payoutMethod === "wise"
+                          ? { email: wiseDetails }
+                          : undefined,
+                    });
+
+                    if (result.data?.status === "error") {
+                      throw new Error(result.data?.error || "Unknown error");
+                    }
+
+                    toast({
+                      title: "Success",
+                      description: `${payoutMethod === "paypal" ? "PayPal" : "Wise"} payout method configured successfully! You can now withdraw funds.`,
+                    });
+                    setShowPayoutSettings(false);
+                    await fetchPayoutStatus();
+                  } catch (e) {
+                    console.error(e);
+                    toast({
+                      description: "Failed to setup payout method",
+                    });
+                  } finally {
+                    setIsLoadingPayout(false);
+                  }
+                }}
+              >
+                Save Settings
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Request Payout Modal */}
+      <Dialog
+        open={showRequestPayoutModal}
+        onOpenChange={setShowRequestPayoutModal}
+      >
+        <DialogContent className="max-w-md ">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">Cash Out</DialogTitle>
+            <DialogDescription>
+              Withdraw your earnings to your {payoutAccountStatus?.preference}{" "}
+              account
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-100 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <WalletIcon className="h-5 w-5 text-emerald-600" />
+                <span className="text-emerald-900 font-medium">
+                  Available Balance
+                </span>
+              </div>
+              <span className="text-emerald-900 font-bold text-lg">
+                $
+                {(
+                  (balances.find((b) => b.currency === "USD")
+                    ?.available_cents || 0) / 100
+                ).toFixed(2)}
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="payout-amount">Amount to Withdraw</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  $
+                </span>
+                <Input
+                  id="payout-amount"
+                  type="number"
+                  placeholder="0.00"
+                  value={requestPayoutAmount}
+                  onChange={(e) => setRequestPayoutAmount(e.target.value)}
+                  className="pl-7"
+                />
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="text-emerald-600 h-auto p-0"
+                  onClick={() =>
+                    setRequestPayoutAmount(
+                      (
+                        (balances.find((b) => b.currency === "USD")
+                          ?.available_cents || 0) / 100
+                      ).toString(),
+                    )
+                  }
+                >
+                  Withdraw Maximum
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 flex gap-3">
+              <Clock className="h-5 w-5 text-gray-400 mt-0.5" />
+              <div className="text-sm text-gray-600">
+                <p className="font-semibold">Processing Time</p>
+                <p>
+                  {payoutAccountStatus?.preference === "stripe"
+                    ? "1-2 business days"
+                    : "3-5 business days (manual)"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowRequestPayoutModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              disabled={
+                !requestPayoutAmount ||
+                parseFloat(requestPayoutAmount) <= 0 ||
+                parseFloat(requestPayoutAmount) >
+                  (balances.find((b) => b.currency === "USD")
+                    ?.available_cents || 0) /
+                    100 ||
+                isLoadingPayout
+              }
+              onClick={async () => {
+                try {
+                  setIsLoadingPayout(true);
+                  const { requestPayout } = await import("@/api/functions");
+                  const res = await requestPayout({
+                    profile_id: user?.id!,
+                    amount_cents: Math.round(
+                      parseFloat(requestPayoutAmount) * 100,
+                    ),
+                  });
+
+                  if (res.data?.status === "ok") {
+                    toast({
+                      title: "Success",
+                      description: "Payout request submitted successfully!",
+                    });
+                    setShowRequestPayoutModal(false);
+                    setRequestPayoutAmount("");
+                    fetchPayoutStatus();
+                  } else {
+                    throw new Error(
+                      res.data?.error || "Failed to request payout",
+                    );
+                  }
+                } catch (e: any) {
+                  toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: e.message || "Failed to request payout",
+                  });
+                } finally {
+                  setIsLoadingPayout(false);
+                }
+              }}
+            >
+              {isLoadingPayout ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  Requesting...
+                </>
+              ) : (
+                "Confirm Withdrawal"
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
