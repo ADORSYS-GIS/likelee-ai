@@ -22,10 +22,7 @@ import {
   X,
 } from "lucide-react";
 
-import {
-  getTalentCampaigns,
-  updateAgencyTalent,
-} from "@/api/functions";
+import { getTalentCampaigns, updateAgencyTalent } from "@/api/functions";
 
 interface TalentSideModalProps {
   talent: any;

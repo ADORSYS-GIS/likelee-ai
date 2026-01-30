@@ -7480,9 +7480,13 @@ const LicensingRequestsView = () => {
       ? (totalNum * agencyPercentNum) / 100
       : 0;
   const talentTotal =
-    Number.isFinite(totalNum) && Number.isFinite(agencyTotal) ? totalNum - agencyTotal : 0;
+    Number.isFinite(totalNum) && Number.isFinite(agencyTotal)
+      ? totalNum - agencyTotal
+      : 0;
   const perTalentTalent =
-    talentCount > 0 && Number.isFinite(talentTotal) ? talentTotal / talentCount : 0;
+    talentCount > 0 && Number.isFinite(talentTotal)
+      ? talentTotal / talentCount
+      : 0;
   const hasMissingTalentNames = (selectedGroup?.talents || []).some(
     (t: any) => !(t?.talent_name || "").trim(),
   );
@@ -7530,7 +7534,9 @@ const LicensingRequestsView = () => {
       const total = (resp as any)?.total_payment_amount;
       const ap = (resp as any)?.agency_percent;
       setTotalPaymentAmount(
-        typeof total === "number" && Number.isFinite(total) ? String(total) : "",
+        typeof total === "number" && Number.isFinite(total)
+          ? String(total)
+          : "",
       );
       setAgencyPercent(
         typeof ap === "number" && Number.isFinite(ap) ? String(ap) : "",
@@ -7543,14 +7549,19 @@ const LicensingRequestsView = () => {
     }
   };
 
-  const updateGroupStatus = async (group: any, status: "pending" | "approved" | "rejected") => {
+  const updateGroupStatus = async (
+    group: any,
+    status: "pending" | "approved" | "rejected",
+  ) => {
     const ids = (group?.talents || [])
       .map((t: any) => t.licensing_request_id)
       .filter(Boolean);
     if (!ids.length) return;
 
     const notes =
-      status === "pending" ? window.prompt("Counter offer message (optional)") || undefined : undefined;
+      status === "pending"
+        ? window.prompt("Counter offer message (optional)") || undefined
+        : undefined;
 
     try {
       await updateAgencyLicensingRequestsStatus({
@@ -7558,7 +7569,9 @@ const LicensingRequestsView = () => {
         status,
         notes,
       });
-      await queryClient.invalidateQueries({ queryKey: ["agency", "licensing-requests"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["agency", "licensing-requests"],
+      });
     } catch (e: any) {
       toast({
         title: "Update failed",
@@ -7582,7 +7595,10 @@ const LicensingRequestsView = () => {
       return;
     }
     if (!agencyPercent.trim()) {
-      toast({ title: "Agency percent is required", variant: "destructive" as any });
+      toast({
+        title: "Agency percent is required",
+        variant: "destructive" as any,
+      });
       return;
     }
     if (!Number.isFinite(ap) || ap < 0 || ap > 100) {
@@ -7600,7 +7616,9 @@ const LicensingRequestsView = () => {
       toast({ title: "Pay updated" });
       setPayModalOpen(false);
       setSelectedGroup(null);
-      await queryClient.invalidateQueries({ queryKey: ["agency", "licensing-requests"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["agency", "licensing-requests"],
+      });
     } catch (e: any) {
       toast({
         title: "Save failed",
@@ -7641,7 +7659,9 @@ const LicensingRequestsView = () => {
 
         {!isLoading && !error && (data || []).length === 0 && (
           <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
-            <div className="text-gray-500 font-medium">No licensing requests yet</div>
+            <div className="text-gray-500 font-medium">
+              No licensing requests yet
+            </div>
           </Card>
         )}
 
@@ -7691,7 +7711,9 @@ const LicensingRequestsView = () => {
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
                     Regions
                   </p>
-                  <p className="text-sm font-bold text-gray-900">{group.regions || "—"}</p>
+                  <p className="text-sm font-bold text-gray-900">
+                    {group.regions || "—"}
+                  </p>
                 </div>
               </div>
               <div className="space-y-4">
@@ -7773,8 +7795,8 @@ const LicensingRequestsView = () => {
           <DialogHeader>
             <DialogTitle>Pay split</DialogTitle>
             <DialogDescription>
-              Set total campaign pay and agency percent. The system will split total evenly
-              across talents.
+              Set total campaign pay and agency percent. The system will split
+              total evenly across talents.
             </DialogDescription>
           </DialogHeader>
 
@@ -7797,7 +7819,9 @@ const LicensingRequestsView = () => {
             </div>
 
             <div className="p-4 bg-white border border-gray-200 rounded-lg">
-              <div className="text-sm font-bold text-gray-900 mb-2">Preview</div>
+              <div className="text-sm font-bold text-gray-900 mb-2">
+                Preview
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
                   <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
@@ -7819,17 +7843,22 @@ const LicensingRequestsView = () => {
                   <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
                     Agency final amount
                   </div>
-                  <div className="text-sm font-bold text-gray-900">{formatMoney(agencyTotal)}</div>
+                  <div className="text-sm font-bold text-gray-900">
+                    {formatMoney(agencyTotal)}
+                  </div>
                 </div>
               </div>
             </div>
 
             <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-              <div className="text-sm font-bold text-gray-900 mb-2">Talents</div>
+              <div className="text-sm font-bold text-gray-900 mb-2">
+                Talents
+              </div>
               {hasMissingTalentNames && (
                 <div className="mb-3 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-2">
-                  Some talent names could not be resolved. This usually means the licensing requests
-                  were created with talent IDs that do not match existing agency roster members.
+                  Some talent names could not be resolved. This usually means
+                  the licensing requests were created with talent IDs that do
+                  not match existing agency roster members.
                 </div>
               )}
               <div className="flex flex-wrap gap-2">
@@ -14181,7 +14210,9 @@ export default function AgencyDashboard() {
       return;
     }
 
-    setActiveSubTabState((prev) => (prev === defaultSubTab ? prev : defaultSubTab));
+    setActiveSubTabState((prev) =>
+      prev === defaultSubTab ? prev : defaultSubTab,
+    );
 
     setSearchParams((prev) => {
       const prevTab = prev.get("tab") || "";

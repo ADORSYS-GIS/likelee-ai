@@ -63,7 +63,8 @@ fn talent_display_name(row: &serde_json::Value) -> String {
 }
 
 fn value_to_f64(v: &serde_json::Value) -> Option<f64> {
-    v.as_f64().or_else(|| v.as_str().and_then(|s| s.parse::<f64>().ok()))
+    v.as_f64()
+        .or_else(|| v.as_str().and_then(|s| s.parse::<f64>().ok()))
 }
 
 fn value_to_non_empty_string(v: Option<&serde_json::Value>) -> Option<String> {
@@ -81,11 +82,7 @@ fn group_status(statuses: &[String]) -> String {
     if statuses.iter().any(|s| s == "rejected") {
         return "rejected".to_string();
     }
-    if !statuses.is_empty()
-        && statuses
-            .iter()
-            .all(|s| s == "approved" || s == "confirmed")
-    {
+    if !statuses.is_empty() && statuses.iter().all(|s| s == "approved" || s == "confirmed") {
         return "approved".to_string();
     }
     "pending".to_string()
@@ -172,10 +169,7 @@ pub async fn list_for_agency(
                 if let Some(arr) = b_rows.as_array() {
                     for r in arr {
                         let id = r.get("id").and_then(|v| v.as_str()).unwrap_or("");
-                        let name = r
-                            .get("company_name")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("");
+                        let name = r.get("company_name").and_then(|v| v.as_str()).unwrap_or("");
                         if !id.is_empty() {
                             brand_name_by_id.insert(id.to_string(), name.to_string());
                         }
@@ -266,7 +260,11 @@ pub async fn list_for_agency(
             continue;
         }
         let brand_id = r.get("brand_id").and_then(|v| v.as_str()).unwrap_or("");
-        let brand_key = if brand_id.is_empty() { "__none__" } else { brand_id };
+        let brand_key = if brand_id.is_empty() {
+            "__none__"
+        } else {
+            brand_id
+        };
         let talent_id = r.get("talent_id").and_then(|v| v.as_str()).unwrap_or("");
         let status = r
             .get("status")
@@ -288,29 +286,31 @@ pub async fn list_for_agency(
 
         let key = created_at_group_key(brand_key, &created_at);
 
-        let entry = groups.entry(key.clone()).or_insert_with(|| LicensingRequestGroup {
-            group_key: key.clone(),
-            brand_id: if brand_id.is_empty() {
-                None
-            } else {
-                Some(brand_id.to_string())
-            },
-            brand_name: if brand_id.is_empty() {
-                None
-            } else {
-                brand_name_by_id.get(brand_id).cloned()
-            },
-            campaign_title: campaign_title.clone(),
-            budget_min,
-            budget_max,
-            usage_scope: usage_scope.clone(),
-            regions: regions.clone(),
-            deadline: deadline.clone(),
-            created_at: created_at.clone(),
-            status: "pending".to_string(),
-            pay_set: false,
-            talents: vec![],
-        });
+        let entry = groups
+            .entry(key.clone())
+            .or_insert_with(|| LicensingRequestGroup {
+                group_key: key.clone(),
+                brand_id: if brand_id.is_empty() {
+                    None
+                } else {
+                    Some(brand_id.to_string())
+                },
+                brand_name: if brand_id.is_empty() {
+                    None
+                } else {
+                    brand_name_by_id.get(brand_id).cloned()
+                },
+                campaign_title: campaign_title.clone(),
+                budget_min,
+                budget_max,
+                usage_scope: usage_scope.clone(),
+                regions: regions.clone(),
+                deadline: deadline.clone(),
+                created_at: created_at.clone(),
+                status: "pending".to_string(),
+                pay_set: false,
+                talents: vec![],
+            });
 
         if entry
             .campaign_title
@@ -388,7 +388,10 @@ pub async fn update_status_bulk(
     }
 
     if payload.licensing_request_ids.is_empty() {
-        return Err((StatusCode::BAD_REQUEST, "No licensing_request_ids".to_string()));
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "No licensing_request_ids".to_string(),
+        ));
     }
 
     let status = payload.status.trim().to_lowercase();
@@ -418,7 +421,11 @@ pub async fn update_status_bulk(
         }
     }
 
-    let ids: Vec<&str> = payload.licensing_request_ids.iter().map(|s| s.as_str()).collect();
+    let ids: Vec<&str> = payload
+        .licensing_request_ids
+        .iter()
+        .map(|s| s.as_str())
+        .collect();
 
     let resp = state
         .pg
@@ -455,7 +462,10 @@ pub async fn get_pay_split(
         .collect();
 
     if ids.is_empty() {
-        return Err((StatusCode::BAD_REQUEST, "No licensing_request_ids".to_string()));
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "No licensing_request_ids".to_string(),
+        ));
     }
 
     let id_refs: Vec<&str> = ids.iter().map(|s| s.as_str()).collect();
@@ -526,7 +536,10 @@ pub async fn get_pay_split(
 
     if let Some(arr) = c_rows.as_array() {
         for r in arr {
-            let payment_amount = r.get("payment_amount").and_then(|v| v.as_f64()).unwrap_or(0.0);
+            let payment_amount = r
+                .get("payment_amount")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
             total += payment_amount;
             if agency_percent.is_none() {
                 agency_percent = r.get("agency_percent").and_then(|v| v.as_f64());
@@ -535,7 +548,10 @@ pub async fn get_pay_split(
                 talent_percent = r.get("talent_percent").and_then(|v| v.as_f64());
             }
             let talent_id = r.get("talent_id").and_then(|v| v.as_str()).unwrap_or("");
-            let talent_name = talent_name_by_id.get(talent_id).cloned().unwrap_or_default();
+            let talent_name = talent_name_by_id
+                .get(talent_id)
+                .cloned()
+                .unwrap_or_default();
             let mut obj = r.clone();
             if let Some(map) = obj.as_object_mut() {
                 map.insert("talent_name".into(), json!(talent_name));
@@ -562,15 +578,24 @@ pub async fn set_pay_split(
     }
 
     if payload.licensing_request_ids.is_empty() {
-        return Err((StatusCode::BAD_REQUEST, "No licensing_request_ids".to_string()));
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "No licensing_request_ids".to_string(),
+        ));
     }
 
     if payload.total_payment_amount < 0.0 {
-        return Err((StatusCode::BAD_REQUEST, "Invalid total_payment_amount".to_string()));
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "Invalid total_payment_amount".to_string(),
+        ));
     }
 
     if payload.agency_percent < 0.0 || payload.agency_percent > 100.0 {
-        return Err((StatusCode::BAD_REQUEST, "Invalid agency_percent".to_string()));
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "Invalid agency_percent".to_string(),
+        ));
     }
 
     let talent_percent = 100.0 - payload.agency_percent;
@@ -617,7 +642,10 @@ pub async fn set_pay_split(
     }
 
     for r in &reqs {
-        let st = r.get("status").and_then(|v| v.as_str()).unwrap_or("pending");
+        let st = r
+            .get("status")
+            .and_then(|v| v.as_str())
+            .unwrap_or("pending");
         if st != "approved" && st != "confirmed" {
             return Err((
                 StatusCode::BAD_REQUEST,
@@ -662,10 +690,7 @@ pub async fn set_pay_split(
         }
         let talent_id = r.get("talent_id").and_then(|v| v.as_str()).unwrap_or("");
         let brand_id = r.get("brand_id").and_then(|v| v.as_str()).unwrap_or("");
-        let created_at = r
-            .get("created_at")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
+        let created_at = r.get("created_at").and_then(|v| v.as_str()).unwrap_or("");
         let date = created_at.get(0..10).unwrap_or("");
 
         let mut row = json!({
@@ -722,8 +747,12 @@ pub async fn set_pay_split(
 
     // Return the updated pay split details
     let ids_joined = payload.licensing_request_ids.join(",");
-    get_pay_split(State(state), user, Query(PaySplitQuery {
-        licensing_request_ids: ids_joined,
-    }))
+    get_pay_split(
+        State(state),
+        user,
+        Query(PaySplitQuery {
+            licensing_request_ids: ids_joined,
+        }),
+    )
     .await
 }

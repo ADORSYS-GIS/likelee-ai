@@ -179,7 +179,9 @@ export const updateAgencyLicensingRequestsStatus = (data: {
   notes?: string;
 }) => base44Client.post(`/api/agency/licensing-requests/status`, data);
 
-export const getAgencyLicensingRequestsPaySplit = (licensing_request_ids: string) =>
+export const getAgencyLicensingRequestsPaySplit = (
+  licensing_request_ids: string,
+) =>
   base44Client.get(`/api/agency/licensing-requests/pay-split`, {
     params: { licensing_request_ids },
   });
