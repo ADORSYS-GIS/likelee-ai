@@ -271,16 +271,75 @@ pub async fn get_account_status(
         }
     };
     let text = agency_resp.text().await.unwrap_or("[]".into());
-    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let mut rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
     if rows.is_empty() {
-        return (
-            StatusCode::NOT_FOUND,
-            Json(json!({
-                "status":"error",
-                "error":"agency_not_found",
-                "message":"No agency profile row found for this user. Complete agency registration (or create your agency profile) before connecting a bank account."
-            })),
-        );
+        // Self-heal: if the authenticated user has no agencies row, create a minimal profile row.
+        // This keeps Stripe Connect state anchored to a stable agency record.
+        let email = match user.email.as_deref() {
+            Some(e) if !e.trim().is_empty() => e,
+            _ => {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "status":"error",
+                        "error":"agency_profile_missing_email",
+                        "message":"Authenticated user has no email in token claims; cannot auto-create agency profile row. Please complete agency registration first."
+                    })),
+                )
+            }
+        };
+
+        let minimal_agency = json!({
+            "id": user.id,
+            "agency_name": "Agency",
+            "email": email,
+            "status": "active",
+            "onboarding_step": "complete"
+        });
+        let insert_resp = state
+            .pg
+            .from("agencies")
+            .auth(state.supabase_service_key.clone())
+            .insert(minimal_agency.to_string())
+            .execute()
+            .await;
+        if let Err(e) = insert_resp {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status":"error","error":e.to_string()})),
+            );
+        }
+
+        // Re-fetch after insertion
+        let agency_resp = match state
+            .pg
+            .from("agencies")
+            .select("id,stripe_connect_account_id")
+            .eq("id", &user.id)
+            .limit(1)
+            .execute()
+            .await
+        {
+            Ok(r) => r,
+            Err(e) => {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({"status":"error","error":e.to_string()})),
+                )
+            }
+        };
+        let text = agency_resp.text().await.unwrap_or("[]".into());
+        rows = serde_json::from_str(&text).unwrap_or_default();
+        if rows.is_empty() {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "status":"error",
+                    "error":"agency_profile_create_failed",
+                    "message":"Failed to auto-create agency profile row."
+                })),
+            );
+        }
     }
 
     let mut account_id = rows[0]
@@ -369,7 +428,47 @@ pub async fn get_agency_account_status(
             )
         }
     };
-    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let mut rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    if rows.is_empty() {
+        // Mirror onboarding behavior: try to self-heal by creating a minimal agencies row.
+        // This avoids "agency_not_found" when the user is authenticated but profile creation was skipped.
+        let email = match user.email.as_deref() {
+            Some(e) if !e.trim().is_empty() => e,
+            _ => "",
+        };
+
+        if !email.is_empty() {
+            let minimal_agency = json!({
+                "id": user.id,
+                "agency_name": "Agency",
+                "email": email,
+                "status": "active",
+                "onboarding_step": "complete"
+            });
+            let _ = state
+                .pg
+                .from("agencies")
+                .auth(state.supabase_service_key.clone())
+                .insert(minimal_agency.to_string())
+                .execute()
+                .await;
+
+            // Re-fetch
+            if let Ok(r) = state
+                .pg
+                .from("agencies")
+                .select("id,stripe_connect_account_id,payouts_enabled,last_payout_error")
+                .eq("id", &user.id)
+                .limit(1)
+                .execute()
+                .await
+            {
+                if let Ok(t) = r.text().await {
+                    rows = serde_json::from_str(&t).unwrap_or_default();
+                }
+            }
+        }
+    }
     let row = rows.first().cloned().unwrap_or(json!({}));
     let connected = row
         .get("stripe_connect_account_id")
