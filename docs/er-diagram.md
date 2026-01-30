@@ -341,7 +341,6 @@ erDiagram
   - Bookings/payments produce `ROYALTY_LEDGER` entries tied to a Face (in `PROFILES`).
   - `V_FACE_PAYOUTS` aggregates for dashboards.
 
-
 I’ll append the new tables and relationships directly to docs/er-diagram.md. My previous automated patch failed due to anchoring issues, so I’ll add the section at the end of the file text you have open. Here is the exact block to paste at the end of docs/er-diagram.md.
 
 ## Bookings and Agency Clients Addendum (2026-01)
@@ -398,6 +397,7 @@ erDiagram
 ```
 
 Notes
+
 - Enums
   - booking_type: casting | option | confirmed | test-shoot | fitting | rehearsal
   - booking_status: pending | confirmed | completed | cancelled

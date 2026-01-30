@@ -123,7 +123,6 @@ const ClientCRMView = () => {
 
   return (
     <div className="space-y-8">
-
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
@@ -166,7 +165,11 @@ const ClientCRMView = () => {
             <span className="text-base font-bold text-blue-800">Prospects</span>
           </div>
           <span className="text-3xl font-bold text-blue-900">
-            {clients.filter((c) => c.status === "Prospect" || c.status === "Lead").length}
+            {
+              clients.filter(
+                (c) => c.status === "Prospect" || c.status === "Lead",
+              ).length
+            }
           </span>
         </Card>
         <Card className="p-6 bg-purple-50/50 border-purple-100 rounded-2xl">
@@ -180,7 +183,10 @@ const ClientCRMView = () => {
           </div>
           <span className="text-3xl font-bold text-purple-900">
             {(() => {
-              const totalCents = clients.reduce((sum, c) => sum + (c.metrics?.revenue_cents || 0), 0);
+              const totalCents = clients.reduce(
+                (sum, c) => sum + (c.metrics?.revenue_cents || 0),
+                0,
+              );
               const totalDollars = totalCents / 100;
               if (totalDollars >= 1000) {
                 return `$${(totalDollars / 1000).toLocaleString(undefined, { maximumFractionDigits: 1 })}K`;
@@ -199,11 +205,13 @@ const ClientCRMView = () => {
             </span>
           </div>
           <span className="text-3xl font-bold text-orange-900">
-            {clients.filter(c => {
-              if (!c.next_follow_up_date) return false;
-              const d = new Date(c.next_follow_up_date);
-              return d <= new Date();
-            }).length}
+            {
+              clients.filter((c) => {
+                if (!c.next_follow_up_date) return false;
+                const d = new Date(c.next_follow_up_date);
+                return d <= new Date();
+              }).length
+            }
           </span>
         </Card>
       </div>
@@ -296,7 +304,8 @@ const ClientCRMView = () => {
               <span className="font-bold text-gray-900">
                 {clientToDelete?.company}
               </span>
-              ? This action cannot be undone and will remove all associated data.
+              ? This action cannot be undone and will remove all associated
+              data.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">

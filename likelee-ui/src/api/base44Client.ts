@@ -59,8 +59,8 @@ export const base44 = {
     const {
       data: { session },
     } = supabase
-        ? await supabase.auth.getSession()
-        : { data: { session: null } };
+      ? await supabase.auth.getSession()
+      : { data: { session: null } };
     const token = session?.access_token;
 
     const headers = {
@@ -86,8 +86,8 @@ export const base44 = {
     const {
       data: { session },
     } = supabase
-        ? await supabase.auth.getSession()
-        : { data: { session: null } };
+      ? await supabase.auth.getSession()
+      : { data: { session: null } };
     const token = session?.access_token;
 
     const isForm = typeof FormData !== "undefined" && data instanceof FormData;
@@ -109,18 +109,15 @@ export const base44 = {
     }
     return (await res.json()) as T;
   },
-  async delete<T = any>(
-    url: string,
-    config?: RequestConfig,
-  ): Promise<T> {
+  async delete<T = any>(url: string, config?: RequestConfig): Promise<T> {
     const full = buildUrl(API_BASE, url, config?.params);
 
     // Get token from Supabase
     const {
       data: { session },
     } = supabase
-        ? await supabase.auth.getSession()
-        : { data: { session: null } };
+      ? await supabase.auth.getSession()
+      : { data: { session: null } };
     const token = session?.access_token;
 
     const headers = {
