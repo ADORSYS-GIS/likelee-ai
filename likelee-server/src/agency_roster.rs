@@ -8,6 +8,7 @@ use chrono::{Datelike, NaiveDate};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::collections::HashSet;
+use tracing::warn;
 
 #[derive(Clone, Deserialize)]
 #[serde(untagged)]
@@ -820,6 +821,90 @@ pub async fn get_roster(
                     *entry += cents;
                     earnings_prev_30d_total_cents += cents;
                 }
+            }
+        }
+
+        let bookings_resp = state
+            .pg
+            .from("bookings")
+            .select("talent_id,rate_cents,currency,date,status")
+            .eq("agency_user_id", &user.id)
+            .eq("status", "completed")
+            .in_("talent_id", ids.clone())
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let bookings_text = bookings_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let bookings_rows: serde_json::Value =
+            serde_json::from_str(&bookings_text).unwrap_or(serde_json::json!([]));
+
+        if let Some(arr) = bookings_rows.as_array() {
+            for r in arr {
+                let t_id = r.get("talent_id").and_then(|v| v.as_str()).unwrap_or("");
+                if t_id.is_empty() {
+                    continue;
+                }
+
+                let date = r
+                    .get("date")
+                    .and_then(|v| v.as_str())
+                    .and_then(|s| chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d").ok());
+                let Some(d) = date else {
+                    continue;
+                };
+                if d < start_60d_date {
+                    continue;
+                }
+
+                let currency = r
+                    .get("currency")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("USD")
+                    .to_uppercase();
+                if currency != "USD" {
+                    continue;
+                }
+
+                let cents: i64 = r
+                    .get("rate_cents")
+                    .and_then(|v| v.as_i64().or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok())))
+                    .unwrap_or(0);
+
+                if d >= start_30d_date {
+                    let entry = earnings_30d_by_talent.entry(t_id.to_string()).or_insert(0);
+                    *entry += cents;
+                    earnings_30d_total_cents += cents;
+                } else {
+                    let entry = earnings_prev_30d_by_talent
+                        .entry(t_id.to_string())
+                        .or_insert(0);
+                    *entry += cents;
+                    earnings_prev_30d_total_cents += cents;
+                }
+            }
+        }
+
+        for t_id in talent_ids.iter() {
+            let cents = earnings_30d_by_talent.get(t_id).cloned().unwrap_or(0);
+            let body = serde_json::json!({ "earnings_30d": cents });
+            let upd = state
+                .pg
+                .from("agency_users")
+                .eq("agency_id", &user.id)
+                .eq("id", t_id)
+                .update(body.to_string())
+                .execute()
+                .await;
+            if let Ok(resp) = upd {
+                if !resp.status().is_success() {
+                    let txt = resp.text().await.unwrap_or_default();
+                    warn!(talent_id = %t_id, body = %txt, "failed to persist earnings_30d");
+                }
+            } else if let Err(e) = upd {
+                warn!(talent_id = %t_id, error = %e, "failed to persist earnings_30d");
             }
         }
 
