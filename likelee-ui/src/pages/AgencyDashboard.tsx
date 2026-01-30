@@ -632,10 +632,6 @@ import {
 import { useAuth } from "../auth/AuthProvider";
 
 // --- Mock Data (Based on Reference) ---
-const mockAgency = {
-  name: "CM Models",
-  email: "admin@cmmodels.com",
-};
 
 interface Client {
   id: string;
@@ -6845,6 +6841,7 @@ const RosterView = ({
   setConsentFilter,
   sortConfig,
   setSortConfig,
+  profile,
 }: {
   searchTerm: string;
   setSearchTerm: (s: string) => void;
@@ -6854,6 +6851,7 @@ const RosterView = ({
   setConsentFilter: (s: string) => void;
   sortConfig: { key: string; direction: "asc" | "desc" } | null;
   setSortConfig: (c: { key: string; direction: "asc" | "desc" } | null) => void;
+  profile: any;
 }) => {
   const navigate = useNavigate();
   const [rosterTab, setRosterTab] = useState("roster");
@@ -6924,14 +6922,24 @@ const RosterView = ({
       <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex items-start gap-4">
-            <div className="w-16 h-16 bg-white border border-gray-200 rounded-lg flex items-center justify-center p-2 shadow-sm">
-              <span className="font-serif text-2xl font-bold text-gray-900">
-                CM
-              </span>
+            <div className="w-16 h-16 bg-white border border-gray-200 rounded-lg flex items-center justify-center p-2 shadow-sm overflow-hidden">
+              {profile?.logo_url ? (
+                <img
+                  src={profile.logo_url}
+                  alt={profile.agency_name || "Agency"}
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <span className="font-serif text-2xl font-bold text-gray-900">
+                  {profile?.agency_name?.substring(0, 2)?.toUpperCase() || "AG"}
+                </span>
+              )}
             </div>
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-gray-900">CM Models</h1>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {profile?.agency_name || "Agency Name"}
+                </h1>
                 {/* Verified Badge */}
                 <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">
                   <svg
@@ -6988,7 +6996,7 @@ const RosterView = ({
                       d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
                     />
                   </svg>
-                  https://cmmodels.com/
+                  {profile?.website || "https://agency.com/"}
                 </span>
               </div>
             </div>
@@ -13726,7 +13734,7 @@ const PlaceholderView = ({ title }: { title: string }) => (
 );
 
 export default function AgencyDashboard() {
-  const { logout, user, authenticated } = useAuth();
+  const { logout, user, profile, authenticated } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -14103,23 +14111,36 @@ export default function AgencyDashboard() {
       <aside
         className={`w-64 bg-white border-r border-gray-200 flex flex-col fixed top-16 left-0 h-[calc(100vh-4rem)] z-40 transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
       >
-        <div className="p-6 flex items-center gap-3">
+        <div
+          className="p-6 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-colors"
+          onClick={() => {
+            setActiveTab("settings");
+            setActiveSubTab("General Settings");
+            setSidebarOpen(false);
+          }}
+        >
           <div className="relative">
             <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center border-2 border-gray-200 p-1 shadow-sm overflow-hidden">
-              <img
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/a37a561a8_Screenshot2025-10-29at70538PM.png"
-                alt="Agency"
-                className="w-full h-full object-contain"
-              />
+              {profile?.logo_url ? (
+                <img
+                  src={profile.logo_url}
+                  alt={profile.agency_name || "Agency"}
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <div className="w-full h-full bg-indigo-50 flex items-center justify-center">
+                  <Building2 className="w-8 h-8 text-indigo-600" />
+                </div>
+              )}
             </div>
             <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
           </div>
           <div className="flex flex-col min-w-0">
-            <h2 className="font-bold text-gray-900 text-base leading-tight">
-              CM Models
+            <h2 className="font-bold text-gray-900 text-base leading-tight truncate">
+              {profile?.agency_name || "Agency Name"}
             </h2>
-            <p className="text-sm text-gray-500 font-medium">
-              admin@cmmodels.com
+            <p className="text-sm text-gray-500 font-medium truncate">
+              {profile?.email || user?.email}
             </p>
           </div>
         </div>
@@ -14307,16 +14328,26 @@ export default function AgencyDashboard() {
                 <div className="absolute right-0 top-full mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                   <div className="p-5 border-b border-gray-100">
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center p-1">
-                        <img
-                          src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/a37a561a8_Screenshot2025-10-29at70538PM.png"
-                          alt="Agency"
-                          className="w-full h-full object-contain"
-                        />
+                      <div className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center p-1 overflow-hidden">
+                        {profile?.logo_url ? (
+                          <img
+                            src={profile.logo_url}
+                            alt={profile.agency_name || "Agency"}
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-indigo-50 flex items-center justify-center">
+                            <Building2 className="w-5 h-5 text-indigo-600" />
+                          </div>
+                        )}
                       </div>
-                      <div>
-                        <h3 className="font-bold text-gray-900">CM Models</h3>
-                        <p className="text-xs text-gray-500">Agency Account</p>
+                      <div className="min-w-0">
+                        <h3 className="font-bold text-gray-900 truncate">
+                          {profile?.agency_name || "Agency Name"}
+                        </h3>
+                        <p className="text-xs text-gray-500 truncate">
+                          Agency Account
+                        </p>
                       </div>
                     </div>
                     <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0.5 text-xs font-bold gap-1">
@@ -14406,6 +14437,7 @@ export default function AgencyDashboard() {
               setConsentFilter={setConsentFilter}
               sortConfig={sortConfig}
               setSortConfig={setSortConfig}
+              profile={profile}
             />
           )}
           {activeTab === "roster" && activeSubTab === "Performance Tiers" && (
