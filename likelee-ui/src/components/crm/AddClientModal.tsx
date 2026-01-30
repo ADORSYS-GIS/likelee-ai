@@ -134,7 +134,7 @@ const AddClientModal = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden rounded-2xl border-none">
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto p-0 rounded-2xl border-none">
                 <div className="p-8 space-y-6">
                     <div className="flex justify-between items-center">
                         <DialogTitle className="text-2xl font-bold text-gray-900">

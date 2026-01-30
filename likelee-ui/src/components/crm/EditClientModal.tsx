@@ -20,6 +20,33 @@ import { useToast } from "@/components/ui/use-toast";
 import * as crmApi from "@/api/crm";
 import { Client } from "@/types/crm";
 
+const INDUSTRY_OPTIONS = [
+    "Fashion",
+    "Technology",
+    "Media",
+    "Retail",
+    "Healthcare",
+    "Finance",
+    "Entertainment",
+    "Automotive",
+    "Real Estate",
+    "Education",
+];
+
+const TAG_OPTIONS = [
+    "High Budget",
+    "VIP",
+    "Long-term",
+    "New",
+    "Referral",
+    "Urgent",
+    "Local",
+    "International",
+    "Corporate",
+    "Start-up",
+];
+
+
 const EditClientModal = ({
     client,
     isOpen,
@@ -74,6 +101,23 @@ const EditClientModal = ({
         },
     });
 
+    const toggleTag = (tag: string) => {
+        const currentTags = formData.tags
+            ? formData.tags.split(",").map((t) => t.trim()).filter(Boolean)
+            : [];
+        if (currentTags.includes(tag)) {
+            setFormData({
+                ...formData,
+                tags: currentTags.filter((t) => t !== tag).join(", "),
+            });
+        } else {
+            setFormData({
+                ...formData,
+                tags: [...currentTags, tag].join(", "),
+            });
+        }
+    };
+
     const handleSubmit = () => {
         if (!formData.company) {
             toast({
@@ -98,7 +142,7 @@ const EditClientModal = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden rounded-2xl border-none">
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto p-0 rounded-2xl border-none">
                 <div className="p-8 space-y-6">
                     <div className="flex justify-between items-center">
                         <DialogTitle className="text-2xl font-bold text-gray-900">
@@ -124,14 +168,21 @@ const EditClientModal = ({
                             <Label className="text-sm font-bold text-gray-700">
                                 Industry
                             </Label>
-                            <Input
-                                placeholder="Fashion, Tech, etc."
-                                className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+                            <Select
                                 value={formData.industry}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, industry: e.target.value })
-                                }
-                            />
+                                onValueChange={(val) => setFormData({ ...formData, industry: val })}
+                            >
+                                <SelectTrigger className="h-11 bg-gray-50 border-gray-200 rounded-xl">
+                                    <SelectValue placeholder="Select Industry" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {INDUSTRY_OPTIONS.map((ind) => (
+                                        <SelectItem key={ind} value={ind}>
+                                            {ind}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
 
@@ -166,16 +217,30 @@ const EditClientModal = ({
                         </Select>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                         <Label className="text-sm font-bold text-gray-700">
-                            Tags (comma-separated)
+                            Tags
                         </Label>
-                        <Input
-                            placeholder="Fashion, Commercial, High-Budget"
-                            className="h-11 bg-gray-50 border-gray-200 rounded-xl"
-                            value={formData.tags}
-                            onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                        />
+                        <div className="flex flex-wrap gap-2">
+                            {TAG_OPTIONS.map((tag) => {
+                                const isSelected = formData.tags
+                                    .split(",")
+                                    .map((t) => t.trim())
+                                    .includes(tag);
+                                return (
+                                    <button
+                                        key={tag}
+                                        onClick={() => toggleTag(tag)}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${isSelected
+                                            ? "bg-indigo-100 text-indigo-700 border-indigo-200 shadow-sm"
+                                            : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
+                                            }`}
+                                    >
+                                        {tag}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
 
                     <div className="space-y-2">
