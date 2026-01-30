@@ -88,22 +88,22 @@ const ClientCard = ({
                                 {client.contacts} contacts
                             </div>
                         </div>
-                        <div className="flex items-center gap-6 text-[13px] mt-3">
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-gray-500 font-medium">Total Revenue:</span>
-                                <span className="text-gray-900 font-extrabold">{client.metrics?.revenue || client.totalRevenue}</span>
+                        <div className="flex items-center gap-8 text-sm mt-4">
+                            <div className="flex items-center gap-2">
+                                <span className="text-gray-500 font-bold">Total Revenue:</span>
+                                <span className="text-gray-900 font-extrabold text-lg">{client.metrics?.revenue || client.totalRevenue}</span>
                             </div>
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-gray-500 font-medium">Bookings:</span>
-                                <span className="text-gray-900 font-extrabold">{client.metrics?.bookings || client.bookings}</span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-gray-500 font-bold">Bookings:</span>
+                                <span className="text-gray-900 font-extrabold text-lg">{client.metrics?.bookings || client.bookings}</span>
                             </div>
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-gray-500 font-medium">Last Booking:</span>
-                                <span className="text-gray-900 font-bold">{client.metrics?.lastBookingDate || client.lastBooking}</span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-gray-500 font-bold">Last Booking:</span>
+                                <span className="text-gray-900 font-bold text-base">{client.metrics?.lastBookingDate || client.lastBooking}</span>
                             </div>
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-gray-500 font-medium">Next Follow-up:</span>
-                                <span className={getFollowUpColor(client.next_follow_up_date)}>
+                            <div className="flex items-center gap-2">
+                                <span className="text-gray-500 font-bold">Next Follow-up:</span>
+                                <span className={`${getFollowUpColor(client.next_follow_up_date)} text-base`}>
                                     {client.nextFollowUp}
                                 </span>
                             </div>
