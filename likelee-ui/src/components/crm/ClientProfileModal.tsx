@@ -109,11 +109,19 @@ const ClientProfileModal = ({
         (sum: number, b: any) => sum + (b.rate_cents || 0),
         0,
     );
-    const totalRevenue = (totalRevenueCents / 100).toLocaleString(undefined, {
-        style: "currency",
-        currency: "USD",
-        maximumFractionDigits: 0,
-    });
+    const totalRevenue = (() => {
+        const dollars = totalRevenueCents / 100;
+        if (dollars >= 1000) {
+            return `$${(dollars / 1000).toLocaleString(undefined, {
+                maximumFractionDigits: 1,
+            })}K`;
+        }
+        return dollars.toLocaleString(undefined, {
+            style: "currency",
+            currency: "USD",
+            maximumFractionDigits: 0,
+        });
+    })();
     const totalBookingsCount = bookings.length;
     const lastBooking =
         bookings.length > 0

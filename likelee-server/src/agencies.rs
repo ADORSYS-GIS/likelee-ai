@@ -532,9 +532,13 @@ pub async fn list_clients(
             let c_count = contacts_count_map.get(id).copied().unwrap_or(0);
             
             if let Some((count, revenue, last_date)) = metrics_map.get(id) {
-                let revenue_str = format!("${}K", revenue / 100000); // Simple $K formatting
                 let formatted_revenue = if *revenue >= 100000 {
-                    revenue_str
+                    let k_value = (*revenue as f64) / 100000.0;
+                    if k_value.fract() == 0.0 {
+                        format!("${:.0}K", k_value)
+                    } else {
+                        format!("${:.1}K", k_value)
+                    }
                 } else {
                     format!("${}", revenue / 100)
                 };
