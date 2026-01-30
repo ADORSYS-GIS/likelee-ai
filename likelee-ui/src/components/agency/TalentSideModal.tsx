@@ -25,7 +25,6 @@ import {
 import {
   getTalentCampaigns,
   updateAgencyTalent,
-  updateCampaignSplit,
 } from "@/api/functions";
 
 interface TalentSideModalProps {
@@ -61,19 +60,6 @@ const TalentSideModal = ({
   const [isSaving, setIsSaving] = useState(false);
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [campaignsLoading, setCampaignsLoading] = useState(false);
-  const [editingCampaignId, setEditingCampaignId] = useState<string | null>(
-    null,
-  );
-  const [campaignForm, setCampaignForm] = useState<{
-    payment_amount: string;
-    agency_percent: string;
-    talent_percent: string;
-  }>({
-    payment_amount: "",
-    agency_percent: "0",
-    talent_percent: "100",
-  });
-  const [campaignSaving, setCampaignSaving] = useState(false);
   const roleCategories = ["Model", "Actor", "Creator", "Voice", "Athlete"];
   const skillsText = safeTextFromMaybeJsonArray(
     (talent as any)?.special_skills,
@@ -158,100 +144,6 @@ const TalentSideModal = ({
       mounted = false;
     };
   }, [open, talent?.id]);
-
-  const startEditCampaign = (c: any) => {
-    setEditingCampaignId(String(c?.id || ""));
-    setCampaignForm({
-      payment_amount:
-        c?.payment_amount === null || c?.payment_amount === undefined
-          ? ""
-          : String(c.payment_amount),
-      agency_percent:
-        c?.agency_percent === null || c?.agency_percent === undefined
-          ? "0"
-          : String(c.agency_percent),
-      talent_percent:
-        c?.talent_percent === null || c?.talent_percent === undefined
-          ? "100"
-          : String(c.talent_percent),
-    });
-  };
-
-  const cancelEditCampaign = () => {
-    setEditingCampaignId(null);
-    setCampaignForm({
-      payment_amount: "",
-      agency_percent: "0",
-      talent_percent: "100",
-    });
-  };
-
-  const setCampaignPercent = (
-    field: "agency_percent" | "talent_percent",
-    raw: string,
-  ) => {
-    const n = Number(raw);
-    if (!Number.isFinite(n)) {
-      setCampaignForm((p) => ({ ...p, [field]: raw }) as any);
-      return;
-    }
-    const clamped = Math.max(0, Math.min(100, n));
-    const other = 100 - clamped;
-    if (field === "agency_percent") {
-      setCampaignForm((p) => ({
-        ...p,
-        agency_percent: String(clamped),
-        talent_percent: String(other),
-      }));
-    } else {
-      setCampaignForm((p) => ({
-        ...p,
-        talent_percent: String(clamped),
-        agency_percent: String(other),
-      }));
-    }
-  };
-
-  const computeTalentEarningsPreview = () => {
-    const amt = Number(campaignForm.payment_amount);
-    const talentPct = Number(campaignForm.talent_percent);
-    if (!Number.isFinite(amt) || !Number.isFinite(talentPct)) return null;
-    const cents = Math.round(
-      Math.max(0, amt) * 100 * (Math.max(0, Math.min(100, talentPct)) / 100),
-    );
-    return cents;
-  };
-
-  const saveCampaignSplit = async () => {
-    if (!editingCampaignId) return;
-    const payment_amount =
-      campaignForm.payment_amount === ""
-        ? undefined
-        : Number(campaignForm.payment_amount);
-    const agency_percent =
-      campaignForm.agency_percent === ""
-        ? undefined
-        : Number(campaignForm.agency_percent);
-    const talent_percent =
-      campaignForm.talent_percent === ""
-        ? undefined
-        : Number(campaignForm.talent_percent);
-
-    setCampaignSaving(true);
-    try {
-      await updateCampaignSplit(editingCampaignId, {
-        payment_amount,
-        agency_percent,
-        talent_percent,
-      });
-      // refresh campaigns
-      const resp = (await getTalentCampaigns(talent.id)) as any;
-      setCampaigns(Array.isArray(resp) ? resp : []);
-      cancelEditCampaign();
-    } finally {
-      setCampaignSaving(false);
-    }
-  };
 
   const formatCampaignAmount = (v: any) => {
     if (v === null || v === undefined || v === "") return "—";
@@ -694,102 +586,18 @@ const TalentSideModal = ({
                         {c.date || "—"}
                       </p>
 
-                      {editingCampaignId === String(c.id) ? (
-                        <div className="mt-3 space-y-2">
-                          <div className="grid grid-cols-3 gap-2">
-                            <div>
-                              <div className="text-[10px] uppercase font-bold text-gray-400 mb-1">
-                                Amount ($)
-                              </div>
-                              <Input
-                                type="number"
-                                value={campaignForm.payment_amount}
-                                onChange={(e) =>
-                                  setCampaignForm((p) => ({
-                                    ...p,
-                                    payment_amount: e.target.value,
-                                  }))
-                                }
-                              />
-                            </div>
-                            <div>
-                              <div className="text-[10px] uppercase font-bold text-gray-400 mb-1">
-                                Agency %
-                              </div>
-                              <Input
-                                type="number"
-                                value={campaignForm.agency_percent}
-                                onChange={(e) =>
-                                  setCampaignPercent(
-                                    "agency_percent",
-                                    e.target.value,
-                                  )
-                                }
-                              />
-                            </div>
-                            <div>
-                              <div className="text-[10px] uppercase font-bold text-gray-400 mb-1">
-                                Talent %
-                              </div>
-                              <Input
-                                type="number"
-                                value={campaignForm.talent_percent}
-                                onChange={(e) =>
-                                  setCampaignPercent(
-                                    "talent_percent",
-                                    e.target.value,
-                                  )
-                                }
-                              />
-                            </div>
-                          </div>
-
-                          <div className="flex items-center justify-between">
-                            <div className="text-xs text-gray-500 font-bold">
-                              Talent earns (preview)
-                            </div>
-                            <div className="text-xs font-bold text-gray-900">
-                              {(() => {
-                                const cents = computeTalentEarningsPreview();
-                                if (cents === null) return "—";
-                                const dollars = (cents / 100).toFixed(2);
-                                return `$${dollars}`;
-                              })()}
-                            </div>
-                          </div>
-
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="outline"
-                              className="border-gray-200 text-gray-700 font-bold h-9"
-                              onClick={cancelEditCampaign}
-                              disabled={campaignSaving}
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-9"
-                              onClick={saveCampaignSplit}
-                              disabled={campaignSaving}
-                            >
-                              {campaignSaving ? "Saving..." : "Save"}
-                            </Button>
-                          </div>
+                      <div className="mt-3 flex items-center justify-between">
+                        <div className="text-xs text-gray-500 font-bold">
+                          Talent earns
                         </div>
-                      ) : (
-                        <div className="mt-3 flex items-center justify-between">
-                          <div className="text-xs text-gray-500 font-bold">
-                            Talent earns
-                          </div>
-                          <div className="text-xs font-bold text-gray-900">
-                            {(() => {
-                              const cents = Number(c?.talent_earnings_cents);
-                              if (!Number.isFinite(cents)) return "—";
-                              return `$${(cents / 100).toFixed(2)}`;
-                            })()}
-                          </div>
+                        <div className="text-xs font-bold text-gray-900">
+                          {(() => {
+                            const cents = Number(c?.talent_earnings_cents);
+                            if (!Number.isFinite(cents)) return "—";
+                            return `$${(cents / 100).toFixed(2)}`;
+                          })()}
                         </div>
-                      )}
+                      </div>
                     </div>
 
                     <div className="text-right shrink-0 pl-3">
@@ -799,15 +607,6 @@ const TalentSideModal = ({
                       <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">
                         {c.status || "—"}
                       </p>
-                      {editingCampaignId !== String(c.id) && (
-                        <Button
-                          variant="outline"
-                          className="mt-2 border-gray-200 text-gray-700 font-bold h-8 px-3"
-                          onClick={() => startEditCampaign(c)}
-                        >
-                          Edit split
-                        </Button>
-                      )}
                     </div>
                   </div>
                 ))}

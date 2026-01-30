@@ -49,6 +49,19 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::campaigns::update_campaign_split),
         )
         .route(
+            "/api/agency/licensing-requests",
+            get(crate::licensing_requests::list_for_agency),
+        )
+        .route(
+            "/api/agency/licensing-requests/status",
+            post(crate::licensing_requests::update_status_bulk),
+        )
+        .route(
+            "/api/agency/licensing-requests/pay-split",
+            get(crate::licensing_requests::get_pay_split)
+                .post(crate::licensing_requests::set_pay_split),
+        )
+        .route(
             "/api/agency/digitals",
             get(crate::digitals::list_agency_digitals),
         )

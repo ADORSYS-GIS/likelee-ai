@@ -20,6 +20,7 @@ pub mod face_profiles;
 pub mod health;
 pub mod kyc;
 pub mod licenses;
+pub mod licensing_requests;
 pub mod moderation;
 pub mod notifications;
 pub mod payouts;

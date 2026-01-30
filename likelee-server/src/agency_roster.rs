@@ -604,6 +604,39 @@ pub async fn get_roster(
             }
         }
 
+        let lr_resp = state
+            .pg
+            .from("licensing_requests")
+            .select("talent_id,status")
+            .eq("agency_id", &user.id)
+            .in_("talent_id", ids.clone())
+            .eq("status", "pending")
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let lr_text = lr_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let lr_rows: serde_json::Value =
+            serde_json::from_str(&lr_text).unwrap_or(serde_json::json!([]));
+        if let Some(arr) = lr_rows.as_array() {
+            for r in arr {
+                let t_id = r.get("talent_id").and_then(|v| v.as_str()).unwrap_or("");
+                if t_id.is_empty() {
+                    continue;
+                }
+
+                let current = status_by_talent
+                    .get(t_id)
+                    .cloned()
+                    .unwrap_or_else(|| "Inactive".to_string());
+                if current != "Active" {
+                    status_by_talent.insert(t_id.to_string(), "Pending".to_string());
+                }
+            }
+        }
+
         // Top brand based on last-30d earnings.
         // 30D window is based on booking date: end_at (preferred), else date.
         // Earnings are taken from computed campaigns.talent_earnings_cents (split-based).

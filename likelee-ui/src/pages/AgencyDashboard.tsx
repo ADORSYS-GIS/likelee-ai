@@ -123,6 +123,10 @@ import {
   listBookOuts,
   createBookOut,
   notifyBookingCreatedEmail,
+  getAgencyLicensingRequests,
+  updateAgencyLicensingRequestsStatus,
+  getAgencyLicensingRequestsPaySplit,
+  setAgencyLicensingRequestsPaySplit,
 } from "@/api/functions";
 
 const STATUS_MAP = {
@@ -7451,44 +7455,162 @@ const InlineRosterView = ({
 };
 
 const LicensingRequestsView = () => {
-  const requests = [
-    {
-      id: 1,
-      brand: "Aime Leon Dore",
-      campaign: "Holiday Gift Guide 2025",
-      talents: ["Emma", "Milan"],
-      budget: "$8,000 - $12,000",
-      scope: "Social Media + E-commerce",
-      regions: "North America",
-      deadline: "11/28/2025",
-      status: "reviewing",
-      statusColor: "bg-blue-100 text-blue-700",
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["agency", "licensing-requests"],
+    queryFn: async () => {
+      const resp = await getAgencyLicensingRequests();
+      return resp as any[];
     },
-    {
-      id: 2,
-      brand: "Byredo",
-      campaign: "Winter Fragrance Campaign",
-      talents: ["Julia"],
-      budget: "$15,000 - $20,000",
-      scope: "Digital Campaign + Print",
-      regions: "North America, Europe",
-      deadline: "12/10/2025",
-      status: "negotiating",
-      statusColor: "bg-yellow-100 text-yellow-700",
-    },
-    {
-      id: 3,
-      brand: "Outdoor Voices",
-      campaign: "Holiday Activewear Collection",
-      talents: ["Carla", "Luisa"],
-      budget: "$10,000 - $15,000",
-      scope: "Social Media + Website",
-      regions: "North America",
-      deadline: "12/5/2025",
-      status: "pending",
-      statusColor: "bg-gray-100 text-gray-700",
-    },
-  ];
+  });
+
+  const [payModalOpen, setPayModalOpen] = useState(false);
+  const [payModalLoading, setPayModalLoading] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<any | null>(null);
+  const [totalPaymentAmount, setTotalPaymentAmount] = useState<string>("");
+  const [agencyPercent, setAgencyPercent] = useState<string>("");
+
+  const talentCount = (selectedGroup?.talents || []).length || 0;
+  const totalNum = Number(totalPaymentAmount);
+  const agencyPercentNum = Number(agencyPercent);
+  const agencyTotal =
+    Number.isFinite(totalNum) && Number.isFinite(agencyPercentNum)
+      ? (totalNum * agencyPercentNum) / 100
+      : 0;
+  const talentTotal =
+    Number.isFinite(totalNum) && Number.isFinite(agencyTotal) ? totalNum - agencyTotal : 0;
+  const perTalentTalent =
+    talentCount > 0 && Number.isFinite(talentTotal) ? talentTotal / talentCount : 0;
+  const hasMissingTalentNames = (selectedGroup?.talents || []).some(
+    (t: any) => !(t?.talent_name || "").trim(),
+  );
+  const formatMoney = (n: number) =>
+    Number.isFinite(n)
+      ? n.toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
+      : "--";
+
+  const statusStyle = (status: string) => {
+    if (status === "approved") return "bg-green-100 text-green-700";
+    if (status === "rejected") return "bg-red-100 text-red-700";
+    return "bg-gray-100 text-gray-700";
+  };
+
+  const formatBudget = (min?: number | null, max?: number | null) => {
+    const minOk = typeof min === "number" && Number.isFinite(min);
+    const maxOk = typeof max === "number" && Number.isFinite(max);
+    const fmt = (n: number) =>
+      n.toLocaleString(undefined, {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      });
+
+    if (minOk && maxOk) return `${fmt(min!)} - ${fmt(max!)}`;
+    if (minOk) return fmt(min!);
+    if (maxOk) return fmt(max!);
+    return "—";
+  };
+
+  const openPayModal = async (group: any) => {
+    setSelectedGroup(group);
+    setPayModalOpen(true);
+    setPayModalLoading(true);
+    try {
+      const ids = (group?.talents || [])
+        .map((t: any) => t.licensing_request_id)
+        .filter(Boolean)
+        .join(",");
+      const resp = await getAgencyLicensingRequestsPaySplit(ids);
+      const total = (resp as any)?.total_payment_amount;
+      const ap = (resp as any)?.agency_percent;
+      setTotalPaymentAmount(
+        typeof total === "number" && Number.isFinite(total) ? String(total) : "",
+      );
+      setAgencyPercent(
+        typeof ap === "number" && Number.isFinite(ap) ? String(ap) : "",
+      );
+    } catch {
+      setTotalPaymentAmount("");
+      setAgencyPercent("");
+    } finally {
+      setPayModalLoading(false);
+    }
+  };
+
+  const updateGroupStatus = async (group: any, status: "pending" | "approved" | "rejected") => {
+    const ids = (group?.talents || [])
+      .map((t: any) => t.licensing_request_id)
+      .filter(Boolean);
+    if (!ids.length) return;
+
+    const notes =
+      status === "pending" ? window.prompt("Counter offer message (optional)") || undefined : undefined;
+
+    try {
+      await updateAgencyLicensingRequestsStatus({
+        licensing_request_ids: ids,
+        status,
+        notes,
+      });
+      await queryClient.invalidateQueries({ queryKey: ["agency", "licensing-requests"] });
+    } catch (e: any) {
+      toast({
+        title: "Update failed",
+        description: e?.message || "Could not update licensing request",
+        variant: "destructive" as any,
+      });
+    }
+  };
+
+  const savePaySplit = async () => {
+    if (!selectedGroup) return;
+    const ids = (selectedGroup?.talents || [])
+      .map((t: any) => t.licensing_request_id)
+      .filter(Boolean);
+    if (!ids.length) return;
+
+    const total = Number(totalPaymentAmount);
+    const ap = Number(agencyPercent);
+    if (!Number.isFinite(total) || total < 0) {
+      toast({ title: "Invalid total amount", variant: "destructive" as any });
+      return;
+    }
+    if (!agencyPercent.trim()) {
+      toast({ title: "Agency percent is required", variant: "destructive" as any });
+      return;
+    }
+    if (!Number.isFinite(ap) || ap < 0 || ap > 100) {
+      toast({ title: "Invalid agency percent", variant: "destructive" as any });
+      return;
+    }
+
+    setPayModalLoading(true);
+    try {
+      await setAgencyLicensingRequestsPaySplit({
+        licensing_request_ids: ids,
+        total_payment_amount: total,
+        agency_percent: ap,
+      });
+      toast({ title: "Pay updated" });
+      setPayModalOpen(false);
+      setSelectedGroup(null);
+      await queryClient.invalidateQueries({ queryKey: ["agency", "licensing-requests"] });
+    } catch (e: any) {
+      toast({
+        title: "Save failed",
+        description: e?.message || "Could not save pay split",
+        variant: "destructive" as any,
+      });
+    } finally {
+      setPayModalLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -7503,32 +7625,54 @@ const LicensingRequestsView = () => {
       </div>
 
       <div className="space-y-6">
-        {requests.map((req) => (
+        {isLoading && (
+          <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
+            <div className="text-gray-500 font-medium">Loading...</div>
+          </Card>
+        )}
+
+        {!isLoading && error && (
+          <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
+            <div className="text-red-600 font-medium">
+              Failed to load licensing requests
+            </div>
+          </Card>
+        )}
+
+        {!isLoading && !error && (data || []).length === 0 && (
+          <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
+            <div className="text-gray-500 font-medium">No licensing requests yet</div>
+          </Card>
+        )}
+
+        {(data || []).map((group: any) => (
           <Card
-            key={req.id}
+            key={group.group_key}
             className="p-8 bg-white border-2 border-gray-900 rounded-none overflow-hidden relative"
           >
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h3 className="text-xl font-bold text-gray-900 mb-1">
-                  {req.brand}
+                  {group.brand_name || "Unknown brand"}
                 </h3>
-                <p className="text-gray-500 font-medium">{req.campaign}</p>
+                <p className="text-gray-500 font-medium">
+                  {(group.campaign_title || "").trim() || "—"}
+                </p>
               </div>
               <span
-                className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${req.statusColor}`}
+                className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyle(group.status)}`}
               >
-                {req.status}
+                {group.status}
               </span>
             </div>
 
             <div className="flex flex-wrap gap-2 mb-8">
-              {req.talents.map((t) => (
+              {(group.talents || []).map((t: any) => (
                 <span
-                  key={t}
+                  key={t.licensing_request_id}
                   className="px-3 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded uppercase"
                 >
-                  {t}
+                  {(t.talent_name || "").trim() || "Talent"}
                 </span>
               ))}
             </div>
@@ -7540,16 +7684,14 @@ const LicensingRequestsView = () => {
                     Budget Range
                   </p>
                   <p className="text-sm font-bold text-gray-900">
-                    {req.budget}
+                    {formatBudget(group.budget_min, group.budget_max)}
                   </p>
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
                     Regions
                   </p>
-                  <p className="text-sm font-bold text-gray-900">
-                    {req.regions}
-                  </p>
+                  <p className="text-sm font-bold text-gray-900">{group.regions || "—"}</p>
                 </div>
               </div>
               <div className="space-y-4">
@@ -7557,7 +7699,9 @@ const LicensingRequestsView = () => {
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
                     Usage Scope
                   </p>
-                  <p className="text-sm font-bold text-gray-900">{req.scope}</p>
+                  <p className="text-sm font-bold text-gray-900">
+                    {(group.usage_scope || "").trim() || "—"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
@@ -7565,38 +7709,152 @@ const LicensingRequestsView = () => {
                   </p>
                   <div className="flex items-center gap-1.5 font-bold text-gray-900 text-sm">
                     <Calendar className="w-4 h-4 text-gray-400" />
-                    {req.deadline}
+                    {group.deadline
+                      ? new Date(group.deadline).toLocaleDateString()
+                      : "—"}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Button className="bg-green-600 hover:bg-green-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2">
-                <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
-                  <span className="text-[10px]">✓</span>
-                </div>
-                Approve
-              </Button>
-              <Button
-                variant="outline"
-                className="border-gray-300 text-gray-700 font-bold h-11 rounded-md"
-              >
-                Counter Offer
-              </Button>
-              <Button
-                variant="outline"
-                className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
-              >
-                <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
-                  <span className="text-[10px]">✕</span>
-                </div>
-                Decline
-              </Button>
-            </div>
+            {group.status === "approved" ? (
+              <div>
+                <Button
+                  onClick={() => openPayModal(group)}
+                  className={`w-full font-bold h-11 rounded-md flex items-center justify-center gap-2 ${group.pay_set ? "bg-white text-gray-900 border border-gray-300 hover:bg-gray-50" : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 animate-pulse"}`}
+                >
+                  {group.pay_set ? (
+                    <>
+                      <Eye className="w-4 h-4" /> View Pay
+                    </>
+                  ) : (
+                    <>
+                      <DollarSign className="w-4 h-4" /> Set Pay
+                    </>
+                  )}
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Button
+                  onClick={() => updateGroupStatus(group, "approved")}
+                  className="bg-green-600 hover:bg-green-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                >
+                  <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
+                    <span className="text-[10px]">✓</span>
+                  </div>
+                  Approve
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => updateGroupStatus(group, "pending")}
+                  className="border-gray-300 text-gray-700 font-bold h-11 rounded-md"
+                >
+                  Counter Offer
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => updateGroupStatus(group, "rejected")}
+                  className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                >
+                  <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
+                    <span className="text-[10px]">✕</span>
+                  </div>
+                  Decline
+                </Button>
+              </div>
+            )}
           </Card>
         ))}
       </div>
+
+      <Dialog open={payModalOpen} onOpenChange={setPayModalOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Pay split</DialogTitle>
+            <DialogDescription>
+              Set total campaign pay and agency percent. The system will split total evenly
+              across talents.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Total payment amount</Label>
+              <Input
+                value={totalPaymentAmount}
+                onChange={(e) => setTotalPaymentAmount(e.target.value)}
+                placeholder="e.g. 12000"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Agency percent</Label>
+              <Input
+                value={agencyPercent}
+                onChange={(e) => setAgencyPercent(e.target.value)}
+                placeholder="e.g. 20"
+              />
+            </div>
+
+            <div className="p-4 bg-white border border-gray-200 rounded-lg">
+              <div className="text-sm font-bold text-gray-900 mb-2">Preview</div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                    Amount left for talents
+                  </div>
+                  <div className="text-sm font-bold text-gray-900">
+                    {formatMoney(talentTotal)}
+                  </div>
+                </div>
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                    Per-talent payout
+                  </div>
+                  <div className="text-sm font-bold text-gray-900">
+                    {formatMoney(perTalentTalent)}
+                  </div>
+                </div>
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                    Agency final amount
+                  </div>
+                  <div className="text-sm font-bold text-gray-900">{formatMoney(agencyTotal)}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <div className="text-sm font-bold text-gray-900 mb-2">Talents</div>
+              {hasMissingTalentNames && (
+                <div className="mb-3 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-2">
+                  Some talent names could not be resolved. This usually means the licensing requests
+                  were created with talent IDs that do not match existing agency roster members.
+                </div>
+              )}
+              <div className="flex flex-wrap gap-2">
+                {(selectedGroup?.talents || []).map((t: any) => (
+                  <span
+                    key={t.licensing_request_id}
+                    className="px-3 py-1 bg-white border border-gray-200 text-gray-800 text-[10px] font-bold rounded uppercase"
+                  >
+                    {(t.talent_name || "").trim() || "Unknown talent"}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="mt-6">
+            <Button variant="outline" onClick={() => setPayModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={savePaySplit} disabled={payModalLoading}>
+              {payModalLoading ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -13625,7 +13883,20 @@ export default function AgencyDashboard() {
   const [activeTab, setActiveTabState] = useState(
     searchParams.get("tab") || "dashboard",
   );
-  const [activeSubTab, setActiveSubTab] = useState("All Talent");
+  const [activeSubTab, setActiveSubTabState] = useState(
+    searchParams.get("subTab") ||
+      (searchParams.get("tab") === "licensing"
+        ? "Licensing Requests"
+        : searchParams.get("tab") === "roster"
+          ? "All Talent"
+          : searchParams.get("tab") === "protection"
+            ? "Protect & Usage"
+            : searchParams.get("tab") === "analytics"
+              ? "Analytics Dashboard"
+              : searchParams.get("tab") === "settings"
+                ? "General Settings"
+                : "All Talent"),
+  );
   const [activeScoutingTab, setActiveScoutingTabState] = useState(
     searchParams.get("scoutingTab") || "Prospect Pipeline",
   );
@@ -13816,6 +14087,34 @@ export default function AgencyDashboard() {
   };
 
   // Wrapper functions to update both state and URL params
+  const setTabAndSubTab = (tab: string, subTab?: string | null) => {
+    setActiveTabState(tab);
+    if (subTab !== undefined) {
+      setActiveSubTabState(subTab || "");
+    }
+
+    setSearchParams((prev) => {
+      const prevTab = prev.get("tab") || "";
+      const prevSubTab = prev.get("subTab");
+      const nextSubTab = subTab && subTab.length > 0 ? subTab : null;
+
+      const tabChanged = prevTab !== tab;
+      const subChanged = (prevSubTab || null) !== nextSubTab;
+      if (!tabChanged && !subChanged) {
+        return prev;
+      }
+
+      const newParams = new URLSearchParams(prev);
+      newParams.set("tab", tab);
+      if (nextSubTab) {
+        newParams.set("subTab", nextSubTab);
+      } else {
+        newParams.delete("subTab");
+      }
+      return newParams;
+    });
+  };
+
   const setAgencyMode = (mode: "AI" | "IRL") => {
     setAgencyModeState(mode);
     setSearchParams((prev) => {
@@ -13825,13 +14124,24 @@ export default function AgencyDashboard() {
     });
   };
 
+  const setActiveSubTab = (subTab: string) => {
+    setTabAndSubTab(activeTab, subTab);
+  };
+
   const setActiveTab = (tab: string) => {
-    setActiveTabState(tab);
-    setSearchParams((prev) => {
-      const newParams = new URLSearchParams(prev);
-      newParams.set("tab", tab);
-      return newParams;
-    });
+    const defaultSubTab =
+      tab === "licensing"
+        ? "Licensing Requests"
+        : tab === "roster"
+          ? "All Talent"
+          : tab === "protection"
+            ? "Protect & Usage"
+            : tab === "analytics"
+              ? "Analytics Dashboard"
+              : tab === "settings"
+                ? "General Settings"
+                : null;
+    setTabAndSubTab(tab, defaultSubTab);
   };
 
   const setActiveScoutingTab = (tab: string) => {
@@ -13842,6 +14152,50 @@ export default function AgencyDashboard() {
       return newParams;
     });
   };
+
+  useEffect(() => {
+    const tabParam = searchParams.get("tab") || "dashboard";
+    const subParam = searchParams.get("subTab");
+
+    setActiveTabState((prev) => (prev === tabParam ? prev : tabParam));
+
+    if (subParam) {
+      setActiveSubTabState((prev) => (prev === subParam ? prev : subParam));
+      return;
+    }
+
+    const defaultSubTab =
+      tabParam === "licensing"
+        ? "Licensing Requests"
+        : tabParam === "roster"
+          ? "All Talent"
+          : tabParam === "protection"
+            ? "Protect & Usage"
+            : tabParam === "analytics"
+              ? "Analytics Dashboard"
+              : tabParam === "settings"
+                ? "General Settings"
+                : null;
+
+    if (!defaultSubTab) {
+      return;
+    }
+
+    setActiveSubTabState((prev) => (prev === defaultSubTab ? prev : defaultSubTab));
+
+    setSearchParams((prev) => {
+      const prevTab = prev.get("tab") || "";
+      const prevSubTab = prev.get("subTab") || "";
+      if (prevTab === tabParam && prevSubTab === defaultSubTab) {
+        return prev;
+      }
+
+      const newParams = new URLSearchParams(prev);
+      newParams.set("tab", tabParam);
+      newParams.set("subTab", defaultSubTab);
+      return newParams;
+    });
+  }, [searchParams, setSearchParams]);
 
   // Helper for API URLs
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
@@ -14056,10 +14410,7 @@ export default function AgencyDashboard() {
                 onClick={() => {
                   if (item.subItems) {
                     toggleExpanded(item.id);
-                    if (item.id === "settings") {
-                      setActiveTab("settings");
-                      setActiveSubTab("General Settings");
-                    }
+                    setActiveTab(item.id);
                   } else {
                     setActiveTab(item.id);
                     setSidebarOpen(false);
@@ -14091,8 +14442,7 @@ export default function AgencyDashboard() {
                     <button
                       key={subItem}
                       onClick={() => {
-                        setActiveTab(item.id);
-                        setActiveSubTab(subItem);
+                        setTabAndSubTab(item.id, subItem);
                         setSidebarOpen(false);
                       }}
                       className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${

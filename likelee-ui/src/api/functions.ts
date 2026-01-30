@@ -169,6 +169,27 @@ export const updateCampaignSplit = (
   },
 ) => base44Client.post(`/api/agency/campaigns/${campaignId}`, data);
 
+// Licensing Requests (Agency Dashboard)
+export const getAgencyLicensingRequests = () =>
+  base44Client.get(`/api/agency/licensing-requests`);
+
+export const updateAgencyLicensingRequestsStatus = (data: {
+  licensing_request_ids: string[];
+  status: "pending" | "approved" | "rejected";
+  notes?: string;
+}) => base44Client.post(`/api/agency/licensing-requests/status`, data);
+
+export const getAgencyLicensingRequestsPaySplit = (licensing_request_ids: string) =>
+  base44Client.get(`/api/agency/licensing-requests/pay-split`, {
+    params: { licensing_request_ids },
+  });
+
+export const setAgencyLicensingRequestsPaySplit = (data: {
+  licensing_request_ids: string[];
+  total_payment_amount: number;
+  agency_percent: number;
+}) => base44Client.post(`/api/agency/licensing-requests/pay-split`, data);
+
 export const createTalentDigitals = (talentId: string, data: any) =>
   base44Client.post(`/api/agency/talent/${talentId}/digitals`, data);
 
