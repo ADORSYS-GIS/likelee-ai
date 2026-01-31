@@ -15088,7 +15088,10 @@ export default function AgencyDashboard() {
             <h2 className="font-bold text-gray-900 text-base leading-tight truncate">
               {agencyName || profile?.agency_name || "Agency Name"}
             </h2>
-            <p className="text-sm text-gray-500 font-medium truncate" title={user?.email}>
+            <p
+              className="text-sm text-gray-500 font-medium truncate"
+              title={user?.email}
+            >
               {profile?.email || user?.email}
             </p>
           </div>
@@ -15290,7 +15293,10 @@ export default function AgencyDashboard() {
                         <h3 className="font-bold text-gray-900 truncate">
                           {agencyName || profile?.agency_name || "Agency Name"}
                         </h3>
-                        <p className="text-xs text-gray-500 truncate" title={user?.email || ""}>
+                        <p
+                          className="text-xs text-gray-500 truncate"
+                          title={user?.email || ""}
+                        >
                           {profile?.email || user?.email || "Agency Account"}
                         </p>
                       </div>

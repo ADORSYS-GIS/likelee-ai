@@ -11,100 +11,100 @@ use tracing::warn;
 
 use crate::email;
 
- fn try_parse_json_string_array(s: &str) -> Option<Vec<String>> {
-     let t = s.trim();
-     if !t.starts_with('[') {
-         return None;
-     }
-     serde_json::from_str::<Vec<String>>(t).ok()
- }
+fn try_parse_json_string_array(s: &str) -> Option<Vec<String>> {
+    let t = s.trim();
+    if !t.starts_with('[') {
+        return None;
+    }
+    serde_json::from_str::<Vec<String>>(t).ok()
+}
 
- fn try_parse_postgres_array_literal(s: &str) -> Option<Vec<String>> {
-     let t = s.trim();
-     if !(t.starts_with('{') && t.ends_with('}')) {
-         return None;
-     }
-     let inner = &t[1..t.len().saturating_sub(1)];
-     if inner.trim().is_empty() {
-         return Some(vec![]);
-     }
+fn try_parse_postgres_array_literal(s: &str) -> Option<Vec<String>> {
+    let t = s.trim();
+    if !(t.starts_with('{') && t.ends_with('}')) {
+        return None;
+    }
+    let inner = &t[1..t.len().saturating_sub(1)];
+    if inner.trim().is_empty() {
+        return Some(vec![]);
+    }
 
-     let mut out: Vec<String> = Vec::new();
-     let mut cur = String::new();
-     let mut in_quotes = false;
-     let mut escape = false;
+    let mut out: Vec<String> = Vec::new();
+    let mut cur = String::new();
+    let mut in_quotes = false;
+    let mut escape = false;
 
-     for ch in inner.chars() {
-         if escape {
-             cur.push(ch);
-             escape = false;
-             continue;
-         }
-         if ch == '\\' {
-             escape = true;
-             continue;
-         }
-         if ch == '"' {
-             in_quotes = !in_quotes;
-             continue;
-         }
-         if ch == ',' && !in_quotes {
-             let v = cur.trim();
-             if !v.is_empty() {
-                 out.push(v.to_string());
-             }
-             cur.clear();
-             continue;
-         }
-         cur.push(ch);
-     }
-     let v = cur.trim();
-     if !v.is_empty() {
-         out.push(v.to_string());
-     }
+    for ch in inner.chars() {
+        if escape {
+            cur.push(ch);
+            escape = false;
+            continue;
+        }
+        if ch == '\\' {
+            escape = true;
+            continue;
+        }
+        if ch == '"' {
+            in_quotes = !in_quotes;
+            continue;
+        }
+        if ch == ',' && !in_quotes {
+            let v = cur.trim();
+            if !v.is_empty() {
+                out.push(v.to_string());
+            }
+            cur.clear();
+            continue;
+        }
+        cur.push(ch);
+    }
+    let v = cur.trim();
+    if !v.is_empty() {
+        out.push(v.to_string());
+    }
 
-     Some(out)
- }
+    Some(out)
+}
 
- fn parse_string_array_value(v: &serde_json::Value) -> Vec<String> {
-     if let Some(arr) = v.as_array() {
-         return arr
-             .iter()
-             .filter_map(|x| x.as_str())
-             .map(|s| s.to_string())
-             .collect();
-     }
-     if let Some(s) = v.as_str() {
-         if let Some(arr) = try_parse_json_string_array(s) {
-             return arr;
-         }
-         if let Some(arr) = try_parse_postgres_array_literal(s) {
-             return arr;
-         }
-         if s.trim().is_empty() {
-             return vec![];
-         }
-         return vec![s.to_string()];
-     }
-     vec![]
- }
+fn parse_string_array_value(v: &serde_json::Value) -> Vec<String> {
+    if let Some(arr) = v.as_array() {
+        return arr
+            .iter()
+            .filter_map(|x| x.as_str())
+            .map(|s| s.to_string())
+            .collect();
+    }
+    if let Some(s) = v.as_str() {
+        if let Some(arr) = try_parse_json_string_array(s) {
+            return arr;
+        }
+        if let Some(arr) = try_parse_postgres_array_literal(s) {
+            return arr;
+        }
+        if s.trim().is_empty() {
+            return vec![];
+        }
+        return vec![s.to_string()];
+    }
+    vec![]
+}
 
- fn normalize_asset_url(s: &str) -> String {
-     let t = s.trim();
-     if let Some(i) = t.find("://") {
-         let (scheme, rest) = t.split_at(i + 3);
-         let mut r = rest.to_string();
-         while r.contains("//") {
-             r = r.replace("//", "/");
-         }
-         return format!("{}{}", scheme, r);
-     }
-     let mut r = t.to_string();
-     while r.contains("//") {
-         r = r.replace("//", "/");
-     }
-     r
- }
+fn normalize_asset_url(s: &str) -> String {
+    let t = s.trim();
+    if let Some(i) = t.find("://") {
+        let (scheme, rest) = t.split_at(i + 3);
+        let mut r = rest.to_string();
+        while r.contains("//") {
+            r = r.replace("//", "/");
+        }
+        return format!("{}{}", scheme, r);
+    }
+    let mut r = t.to_string();
+    while r.contains("//") {
+        r = r.replace("//", "/");
+    }
+    r
+}
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct DigitalRow {
