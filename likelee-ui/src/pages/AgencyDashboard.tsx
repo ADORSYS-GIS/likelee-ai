@@ -1873,7 +1873,7 @@ const ClientCard = ({
   );
 };
 
-const ClientCRMView = () => {
+const ClientCRMViewDemo = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [stageFilter, setStageFilter] = useState("all");
   const [sortBy, setSortBy] = useState("last-booking");

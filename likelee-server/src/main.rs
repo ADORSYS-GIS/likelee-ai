@@ -77,12 +77,6 @@ async fn main() {
 
     let state = likelee_server::config::AppState {
         pg,
-        pg: Postgrest::new(format!("{}/rest/v1", cfg.supabase_url))
-            .insert_header("apikey", cfg.supabase_service_key.clone())
-            .insert_header(
-                "Authorization",
-                format!("Bearer {}", cfg.supabase_service_key),
-            ),
         veriff: likelee_server::config::VeriffConfig {
             base_url: cfg.veriff_base_url,
             api_key: cfg.veriff_api_key,
