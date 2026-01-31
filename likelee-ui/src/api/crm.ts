@@ -34,3 +34,6 @@ export const uploadFile = (clientId: string, file: File) => {
   formData.append("file", file);
   return base44Client.post(`/api/agency/clients/${clientId}/files`, formData);
 };
+
+export const getSignedUrl = (clientId: string, fileId: string) =>
+  base44Client.get(`/api/agency/clients/${clientId}/files/${fileId}/signed-url`);

@@ -54,6 +54,7 @@ const ClientProfileModal = ({
   const [isLogCommOpen, setIsLogCommOpen] = useState(false);
   const [notes, setNotes] = useState(client.notes || "");
   const [isUploading, setIsUploading] = useState(false);
+  const [fetchingUrlId, setFetchingUrlId] = useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -162,6 +163,29 @@ const ClientProfileModal = ({
     const file = e.target.files?.[0];
     if (file) {
       uploadFileMutation.mutate(file);
+    }
+  };
+
+  const handleViewFile = async (file: any) => {
+    if (file.public_url) {
+      window.open(file.public_url, "_blank");
+      return;
+    }
+
+    try {
+      setFetchingUrlId(file.id);
+      const resp = await crmApi.getSignedUrl(client.id, file.id);
+      if (resp && (resp as any).url) {
+        window.open((resp as any).url, "_blank");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: `Failed to get access to file: ${error.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setFetchingUrlId(null);
     }
   };
 
@@ -579,10 +603,10 @@ const ClientProfileModal = ({
                                 <div className="flex items-center gap-2 mt-1">
                                   <Badge
                                     className={`${booking.status === "confirmed"
-                                        ? "bg-green-100 text-green-700"
-                                        : booking.status === "pending"
-                                          ? "bg-yellow-100 text-yellow-700"
-                                          : "bg-gray-100 text-gray-700"
+                                      ? "bg-green-100 text-green-700"
+                                      : booking.status === "pending"
+                                        ? "bg-yellow-100 text-yellow-700"
+                                        : "bg-gray-100 text-gray-700"
                                       } border-none text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter`}
                                   >
                                     {booking.status}
@@ -697,20 +721,14 @@ const ClientProfileModal = ({
                               variant="ghost"
                               size="sm"
                               className="text-gray-400 hover:text-indigo-600 font-bold flex items-center gap-2"
-                              onClick={() => {
-                                if (file.public_url) {
-                                  window.open(file.public_url, "_blank");
-                                } else {
-                                  // For private files, we might need a signed URL
-                                  // For now, alerting or providing feedback
-                                  toast({
-                                    title: "Access Restricted",
-                                    description: "Signed URLs for private files coming soon.",
-                                  });
-                                }
-                              }}
+                              disabled={fetchingUrlId === file.id}
+                              onClick={() => handleViewFile(file)}
                             >
-                              <Download className="w-4 h-4" />
+                              {fetchingUrlId === file.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Download className="w-4 h-4" />
+                              )}
                               View
                             </Button>
                           </Card>
