@@ -210,12 +210,12 @@ const ClientProfileModal = ({
   const lastBooking =
     bookings.length > 0
       ? new Date(
-        Math.max(...bookings.map((b: any) => new Date(b.date).getTime())),
-      ).toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
+          Math.max(...bookings.map((b: any) => new Date(b.date).getTime())),
+        ).toLocaleDateString(undefined, {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })
       : "Never";
 
   return (
@@ -602,12 +602,13 @@ const ClientProfileModal = ({
                                 </h5>
                                 <div className="flex items-center gap-2 mt-1">
                                   <Badge
-                                    className={`${booking.status === "confirmed"
-                                      ? "bg-green-100 text-green-700"
-                                      : booking.status === "pending"
-                                        ? "bg-yellow-100 text-yellow-700"
-                                        : "bg-gray-100 text-gray-700"
-                                      } border-none text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter`}
+                                    className={`${
+                                      booking.status === "confirmed"
+                                        ? "bg-green-100 text-green-700"
+                                        : booking.status === "pending"
+                                          ? "bg-yellow-100 text-yellow-700"
+                                          : "bg-gray-100 text-gray-700"
+                                    } border-none text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter`}
                                   >
                                     {booking.status}
                                   </Badge>
