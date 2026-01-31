@@ -20,7 +20,7 @@ async fn main() {
     tracing_subscriber::fmt().with_env_filter(filter).init();
     info!(port, endpoint_base = %cfg.veriff_base_url, "Starting likelee-server");
 
-    let pg = Postgrest::new(format!("{}/rest/v1", cfg.supabase_url))
+    let _pg = Postgrest::new(format!("{}/rest/v1", cfg.supabase_url))
         .insert_header("apikey", cfg.supabase_service_key.clone())
         .insert_header(
             "Authorization",
@@ -69,7 +69,7 @@ async fn main() {
     };
 
     let state = likelee_server::config::AppState {
-        pg,
+        pg: Postgrest::new(cfg.supabase_url.clone()),
         veriff: likelee_server::config::VeriffConfig {
             base_url: cfg.veriff_base_url,
             api_key: cfg.veriff_api_key,
@@ -118,6 +118,12 @@ async fn main() {
         smtp_password: cfg.smtp_password.clone(),
         email_from: cfg.email_from.clone(),
         email_contact_to: cfg.email_contact_to.clone(),
+
+        docuseal_api_key: cfg.docuseal_api_key.clone(),
+        docuseal_api_url: cfg.docuseal_api_url.clone(),
+        docuseal_app_url: cfg.docuseal_app_url.clone(),
+        docuseal_webhook_url: cfg.docuseal_webhook_url.clone(),
+        docuseal_user_email: cfg.docuseal_user_email.clone(),
     };
 
     let app = likelee_server::router::build_router(state);
