@@ -743,6 +743,84 @@ pub async fn list_talent_assets(
     Ok(Json(json!(assets)))
 }
 
+pub async fn delete_talent_asset(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path((talent_id, asset_id)): Path<(String, String)>,
+) -> Result<StatusCode, (StatusCode, String)> {
+    // 1. Verify agency management of this talent to ensure authorization.
+    let agency_user_resp = state
+        .pg
+        .from("agency_users")
+        .select("id")
+        .eq("agency_id", &user.id)
+        .eq("id", &talent_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !agency_user_resp.status().is_success() {
+        return Err((StatusCode::FORBIDDEN, "Access denied to this talent".to_string()));
+    }
+
+    // 2. Find the file record in `agency_files` to get its storage path.
+    // We check against both the asset_id and the talent_id for security.
+    let file_resp = state
+        .pg
+        .from("agency_files")
+        .select("storage_path")
+        .eq("id", &asset_id)
+        .eq("talent_id", &talent_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !file_resp.status().is_success() {
+        // If not found in agency_files, it might be a reference_image. For now, we only handle deletable agency_files.
+        // A 404 is appropriate if the asset doesn't exist or doesn't belong to the talent.
+        return Err((StatusCode::NOT_FOUND, "Asset not found".to_string()));
+    }
+
+    let file_text = file_resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let file_json: serde_json::Value = serde_json::from_str(&file_text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let storage_path = file_json["storage_path"].as_str().ok_or_else(|| (StatusCode::INTERNAL_SERVER_ERROR, "Storage path not found for asset".to_string()))?;
+
+    // 3. Delete the file from Supabase Storage.
+    let storage_url = format!(
+        "{}/storage/v1/object/{}",
+        state.supabase_url, storage_path
+    );
+    let http = reqwest::Client::new();
+    let delete_resp = http
+        .delete(&storage_url)
+        .header("Authorization", format!("Bearer {}", state.supabase_service_key))
+        .header("apikey", state.supabase_service_key.clone())
+        .send()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    if !delete_resp.status().is_success() {
+        // Log the error but proceed to delete the DB record anyway.
+        // It's better to have a dangling DB record than an orphaned file.
+        let error_body = delete_resp.text().await.unwrap_or_default();
+        tracing::error!("Failed to delete file from storage: {}. Path: {}", error_body, storage_path);
+    }
+
+    // 4. Delete the record from the `agency_files` table.
+    state
+        .pg
+        .from("agency_files")
+        .delete()
+        .eq("id", &asset_id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
 pub async fn upload_talent_asset(
     State(state): State<AppState>,
     user: AuthUser,

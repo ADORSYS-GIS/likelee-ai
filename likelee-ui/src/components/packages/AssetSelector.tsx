@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle2, Image as ImageIcon, Video, X, Upload, Loader2 } from "lucide-react";
+import { CheckCircle2, Image as ImageIcon, Video, X, Upload, Loader2, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Asset {
@@ -64,6 +64,14 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
         },
     });
 
+    const deleteMutation = useMutation({
+        mutationFn: ({ talentId, assetId }: { talentId: string; assetId: string }) =>
+            packageApi.deleteTalentAsset(talentId, assetId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["talent-assets", talentId] });
+        },
+    });
+
     const handleUploadClick = () => {
         fileInputRef.current?.click();
     };
@@ -81,6 +89,11 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
         setTempSelection(prev =>
             prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]
         );
+    };
+
+    const handleDeleteAsset = (e: React.MouseEvent, assetId: string) => {
+        e.stopPropagation();
+        deleteMutation.mutate({ talentId, assetId });
     };
 
     const [isApplying, setIsApplying] = React.useState(false);
@@ -175,6 +188,23 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
                                                     <div className="px-2 py-1 rounded-lg bg-black/40 backdrop-blur-md text-[10px] font-bold text-white uppercase tracking-wider">
                                                         {asset.type}
                                                     </div>
+                                                </div>
+
+                                                {/* Delete Button */}
+                                                <div className="absolute top-3 right-12 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Button
+                                                        variant="destructive"
+                                                        size="icon"
+                                                        className="w-8 h-8 rounded-full bg-black/30 hover:bg-red-500/80 text-white border-none"
+                                                        onClick={(e) => handleDeleteAsset(e, asset.id)}
+                                                        disabled={deleteMutation.isPending && deleteMutation.variables?.assetId === asset.id}
+                                                    >
+                                                        {deleteMutation.isPending && deleteMutation.variables?.assetId === asset.id ? (
+                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                        ) : (
+                                                            <Trash2 className="w-4 h-4" />
+                                                        )}
+                                                    </Button>
                                                 </div>
 
                                                 {/* Status Icon */}

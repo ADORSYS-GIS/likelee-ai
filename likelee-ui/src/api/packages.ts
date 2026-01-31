@@ -15,6 +15,9 @@ export const packageApi = {
     uploadTalentAsset: (id: string, formData: FormData) =>
         base44Client.post(`/api/agency/talents/${id}/assets/upload`, formData),
 
+    deleteTalentAsset: (talentId: string, assetId: string) =>
+        base44Client.delete(`/api/agency/talents/${talentId}/assets/${assetId}`),
+
     getPublicPackage: (token: string) => base44Client.get(`/api/public/packages/${token}`),
 
     createInteraction: (token: string, data: any) =>

@@ -41,6 +41,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::agencies::upload_talent_asset),
         )
         .route(
+            "/api/agency/talents/:talent_id/assets/:asset_id",
+            delete(crate::agencies::delete_talent_asset),
+        )
+        .route(
             "/api/agency/clients",
             get(crate::agencies::list_clients).post(crate::agencies::create_client),
         )
