@@ -83,8 +83,13 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
         );
     };
 
-    const handleConfirm = () => {
+    const [isApplying, setIsApplying] = React.useState(false);
+
+    const handleConfirm = async () => {
+        setIsApplying(true);
+        await new Promise(r => setTimeout(r, 400));
         onSelect(tempSelection);
+        setIsApplying(false);
         onOpenChange(false);
     };
 
@@ -228,8 +233,10 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
                             </Button>
                             <Button
                                 onClick={handleConfirm}
-                                className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black px-8 shadow-lg shadow-indigo-100 border-none"
+                                disabled={isApplying}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-black px-8 shadow-lg shadow-indigo-100 border-none gap-2"
                             >
+                                {isApplying ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                                 Apply Selection
                             </Button>
                         </div>

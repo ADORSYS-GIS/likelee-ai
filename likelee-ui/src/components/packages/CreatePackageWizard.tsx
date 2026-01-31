@@ -41,6 +41,7 @@ const STEPS = [
 export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardProps) {
     const [step, setStep] = useState(0);
     const [showTalentSelector, setShowTalentSelector] = useState(false);
+    const [isNavigating, setIsNavigating] = useState(false);
     const [activeTalentForAssets, setActiveTalentForAssets] = useState<{ id: string, name: string } | null>(null);
     const { toast } = useToast();
     const queryClient = useQueryClient();
@@ -103,10 +104,15 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
         });
     };
 
-    const nextStep = () => {
+    const nextStep = async () => {
         if (step === 0 && !formData.title) return toast({ title: "Required", description: "Title is required", variant: "destructive" });
         if (step === 1 && formData.items.length === 0) return toast({ title: "Empty", description: "Please select at least one talent", variant: "destructive" });
+
+        setIsNavigating(true);
+        // Artificial delay to prevent double-click and show feedback
+        await new Promise(r => setTimeout(r, 400));
         setStep((s) => Math.min(s + 1, STEPS.length - 1));
+        setIsNavigating(false);
     };
 
     const prevStep = () => setStep((s) => Math.max(s - 1, 0));
@@ -479,10 +485,17 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                             {step < STEPS.length - 1 ? (
                                 <Button
                                     onClick={nextStep}
+                                    disabled={isNavigating}
                                     className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl px-12 h-14 font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-indigo-200/50 group"
                                 >
-                                    Continue
-                                    <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                                    {isNavigating ? (
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    ) : (
+                                        <>
+                                            Continue
+                                            <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                                        </>
+                                    )}
                                 </Button>
                             ) : (
                                 <Button
@@ -544,9 +557,18 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                     </ScrollArea>
 
                     <Button
-                        onClick={() => setShowTalentSelector(false)}
+                        onClick={async () => {
+                            setIsNavigating(true);
+                            await new Promise(r => setTimeout(r, 400));
+                            setShowTalentSelector(false);
+                            setIsNavigating(false);
+                        }}
+                        disabled={isNavigating}
                         className="w-full mt-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[1.5rem] h-16 font-black uppercase tracking-[0.2em] text-[11px] shadow-2xl shadow-indigo-200/50"
                     >
+                        {isNavigating ? (
+                            <Loader2 className="w-5 h-5 animate-spin mr-3" />
+                        ) : null}
                         Confirm Selection ({formData.items.length})
                     </Button>
                 </DialogContent>
