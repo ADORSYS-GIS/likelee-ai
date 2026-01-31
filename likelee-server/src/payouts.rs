@@ -12,6 +12,19 @@ use crate::config::AppState;
 use std::str::FromStr;
 // use stripe_sdk; // Implicitly available
 
+fn extract_bank_last4(acct: &stripe_sdk::Account) -> Option<String> {
+    for ea in acct.external_accounts.data.iter() {
+        if let stripe_sdk::ExternalAccount::BankAccount(ba) = ea {
+            if let Some(last4) = ba.last4.as_ref() {
+                if !last4.trim().is_empty() {
+                    return Some(last4.clone());
+                }
+            }
+        }
+    }
+    None
+}
+
 pub async fn create_onboarding_link(
     State(state): State<AppState>,
     Query(q): Query<ProfileQuery>,
@@ -200,6 +213,7 @@ pub async fn get_account_status(
 
     // If connected, fetch live status from Stripe
     let mut transfers_enabled = false;
+    let mut bank_last4: Option<String> = None;
     if connected {
         if let Some(acct_id) = row
             .get("stripe_connect_account_id")
@@ -208,14 +222,16 @@ pub async fn get_account_status(
         {
             let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
             if let Ok(parsed) = acct_id.parse::<stripe_sdk::AccountId>() {
-                match stripe_sdk::Account::retrieve(&client, &parsed, &[]).await {
+                match stripe_sdk::Account::retrieve(&client, &parsed, &["external_accounts"]).await
+                {
                     Ok(acct) => {
                         payouts_enabled = payouts_enabled || acct.payouts_enabled.unwrap_or(false);
-                        if let Some(caps) = acct.capabilities {
+                        if let Some(ref caps) = acct.capabilities {
                             if let Some(tr) = caps.transfers {
                                 transfers_enabled = tr == stripe_sdk::CapabilityStatus::Active;
                             }
                         }
+                        bank_last4 = extract_bank_last4(&acct);
                     }
                     Err(e) => warn!(error=%e, "stripe retrieve account failed"),
                 }
@@ -230,28 +246,29 @@ pub async fn get_account_status(
             "connected": connected,
             "payouts_enabled": payouts_enabled,
             "transfers_enabled": transfers_enabled,
-            "last_error": last_error
+            "last_error": last_error,
+            "bank_last4": bank_last4
         })),
     )
 }
 
-    pub async fn create_agency_onboarding_link(
-        State(state): State<AppState>,
-        user: AuthUser,
-    ) -> (StatusCode, Json<serde_json::Value>) {
-        info!("Creating agency onboarding link for user: {}", user.id);
-        if !state.payouts_enabled {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(json!({"status":"error","error":"payouts_disabled"})),
-            );
-        }
-        if state.stripe_secret_key.trim().is_empty() {
-            return (
-                StatusCode::PRECONDITION_FAILED,
-                Json(json!({"status":"error","error":"stripe_not_configured"})),
-            );
-        }
+pub async fn create_agency_onboarding_link(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> (StatusCode, Json<serde_json::Value>) {
+    info!("Creating agency onboarding link for user: {}", user.id);
+    if !state.payouts_enabled {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"status":"error","error":"payouts_disabled"})),
+        );
+    }
+    if state.stripe_secret_key.trim().is_empty() {
+        return (
+            StatusCode::PRECONDITION_FAILED,
+            Json(json!({"status":"error","error":"stripe_not_configured"})),
+        );
+    }
 
     let agency_resp = match state
         .pg
@@ -270,7 +287,29 @@ pub async fn get_account_status(
             )
         }
     };
-    let text = agency_resp.text().await.unwrap_or("[]".into());
+    let status = agency_resp.status();
+    let text = agency_resp.text().await.unwrap_or_default();
+    if !status.is_success() {
+        // Most likely the agencies table is missing the Stripe columns (migration not applied)
+        if text.contains("does not exist")
+            && (text.contains("stripe_connect_account_id")
+                || text.contains("payouts_enabled")
+                || text.contains("last_payout_error"))
+        {
+            return (
+                StatusCode::PRECONDITION_FAILED,
+                Json(json!({
+                    "status":"error",
+                    "error":"agency_schema_outdated",
+                    "message":"Database schema is missing Stripe Connect columns on public.agencies. Please apply migration supabase/migrations/0013_agency_stripe_connect.sql and restart the server."
+                })),
+            );
+        }
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"status":"error","error":text})),
+        );
+    }
     let mut rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
     if rows.is_empty() {
         // Self-heal: if the authenticated user has no agencies row, create a minimal profile row.
@@ -328,7 +367,28 @@ pub async fn get_account_status(
                 )
             }
         };
-        let text = agency_resp.text().await.unwrap_or("[]".into());
+        let status = agency_resp.status();
+        let text = agency_resp.text().await.unwrap_or_default();
+        if !status.is_success() {
+            if text.contains("does not exist")
+                && (text.contains("stripe_connect_account_id")
+                    || text.contains("payouts_enabled")
+                    || text.contains("last_payout_error"))
+            {
+                return (
+                    StatusCode::PRECONDITION_FAILED,
+                    Json(json!({
+                        "status":"error",
+                        "error":"agency_schema_outdated",
+                        "message":"Database schema is missing Stripe Connect columns on public.agencies. Please apply migration supabase/migrations/0013_agency_stripe_connect.sql and restart the server."
+                    })),
+                );
+            }
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status":"error","error":text})),
+            );
+        }
         rows = serde_json::from_str(&text).unwrap_or_default();
         if rows.is_empty() {
             return (
@@ -419,6 +479,7 @@ pub async fn get_agency_account_status(
             )
         }
     };
+    let status = resp.status();
     let text = match resp.text().await {
         Ok(t) => t,
         Err(e) => {
@@ -428,6 +489,26 @@ pub async fn get_agency_account_status(
             )
         }
     };
+    if !status.is_success() {
+        if text.contains("does not exist")
+            && (text.contains("stripe_connect_account_id")
+                || text.contains("payouts_enabled")
+                || text.contains("last_payout_error"))
+        {
+            return (
+                StatusCode::PRECONDITION_FAILED,
+                Json(json!({
+                    "status":"error",
+                    "error":"agency_schema_outdated",
+                    "message":"Database schema is missing Stripe Connect columns on public.agencies. Please apply migration supabase/migrations/0013_agency_stripe_connect.sql and restart the server."
+                })),
+            );
+        }
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"status":"error","error":text})),
+        );
+    }
     let mut rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
     if rows.is_empty() {
         // Mirror onboarding behavior: try to self-heal by creating a minimal agencies row.
@@ -486,6 +567,7 @@ pub async fn get_agency_account_status(
         .to_string();
 
     let mut transfers_enabled = false;
+    let mut bank_last4: Option<String> = None;
     if connected {
         if let Some(acct_id) = row
             .get("stripe_connect_account_id")
@@ -494,14 +576,16 @@ pub async fn get_agency_account_status(
         {
             let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
             if let Ok(parsed) = acct_id.parse::<stripe_sdk::AccountId>() {
-                match stripe_sdk::Account::retrieve(&client, &parsed, &[]).await {
+                match stripe_sdk::Account::retrieve(&client, &parsed, &["external_accounts"]).await
+                {
                     Ok(acct) => {
                         payouts_enabled = payouts_enabled || acct.payouts_enabled.unwrap_or(false);
-                        if let Some(caps) = acct.capabilities {
+                        if let Some(ref caps) = acct.capabilities {
                             if let Some(tr) = caps.transfers {
                                 transfers_enabled = tr == stripe_sdk::CapabilityStatus::Active;
                             }
                         }
+                        bank_last4 = extract_bank_last4(&acct);
                     }
                     Err(e) => warn!(error=%e, "stripe retrieve account failed"),
                 }
@@ -517,7 +601,8 @@ pub async fn get_agency_account_status(
             "connected": connected,
             "payouts_enabled": payouts_enabled,
             "transfers_enabled": transfers_enabled,
-            "last_error": last_error
+            "last_error": last_error,
+            "bank_last4": bank_last4
         })),
     )
 }

@@ -92,7 +92,8 @@ pub async fn send_email(
                     )
                 }
             };
-            multipart = multipart.singlepart(LettreAttachment::new(att.filename.clone()).body(bytes, ct));
+            multipart =
+                multipart.singlepart(LettreAttachment::new(att.filename.clone()).body(bytes, ct));
         }
     }
 
