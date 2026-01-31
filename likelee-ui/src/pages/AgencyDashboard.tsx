@@ -117,6 +117,7 @@ import { Switch } from "@/components/ui/switch";
 import { BookingsView } from "@/components/Bookings/BookingsView";
 import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
 import FileStorageView from "@/components/dashboard/settings/FileStorageView";
+import PerformanceTiers from "@/components/dashboard/PerformanceTiers";
 import { useAuth } from "../auth/AuthProvider";
 import {
   listBookings,
@@ -467,11 +468,10 @@ const ProspectModal = ({
                     selectedCategories.includes(cat) ? "default" : "secondary"
                   }
                   onClick={() => toggleCategory(cat)}
-                  className={`${
-                    selectedCategories.includes(cat)
-                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
-                  } font-medium`}
+                  className={`${selectedCategories.includes(cat)
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                    } font-medium`}
                 >
                   {cat}
                 </Button>
@@ -2466,11 +2466,10 @@ const FinancialReportsView = () => {
             <button
               key={tab.id}
               onClick={() => setActiveReportTab(tab.id)}
-              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${
-                activeReportTab === tab.id
-                  ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-              }`}
+              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${activeReportTab === tab.id
+                ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                }`}
             >
               {tab.label}
             </button>
@@ -2944,11 +2943,10 @@ const GenerateInvoiceView = () => {
             <div className="flex gap-3">
               <Button
                 variant={createFrom === "booking" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
-                  createFrom === "booking"
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "border-gray-200 text-gray-700"
-                }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "booking"
+                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                  : "border-gray-200 text-gray-700"
+                  }`}
                 onClick={() => setCreateFrom("booking")}
               >
                 <Calendar className="w-5 h-5" />
@@ -2956,11 +2954,10 @@ const GenerateInvoiceView = () => {
               </Button>
               <Button
                 variant={createFrom === "manual" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
-                  createFrom === "manual"
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "border-gray-200 text-gray-700"
-                }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "manual"
+                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                  : "border-gray-200 text-gray-700"
+                  }`}
                 onClick={() => setCreateFrom("manual")}
               >
                 <FileText className="w-5 h-5" />
@@ -3514,11 +3511,10 @@ const InvoiceManagementView = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveSubTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                  isActive
-                    ? "bg-indigo-600 text-white shadow-sm"
-                    : "text-gray-700 hover:bg-gray-50"
-                }`}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${isActive
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-gray-700 hover:bg-gray-50"
+                  }`}
               >
                 <Icon className="w-4 h-4" />
                 {tab.label}
@@ -4255,325 +4251,18 @@ const CLIENTS_PERFORMANCE_DATA = [
 // --- View Components ---
 
 const PerformanceTiersView = ({ onBack }: { onBack: () => void }) => {
-  const tiers = [
-    {
-      id: "Premium",
-      label: "Tier 1 - Premium",
-      icon: Trophy,
-      color: "border-yellow-400",
-      textColor: "text-yellow-500",
-      bg: "bg-[#FFFEF0]",
-      iconBg: "bg-[#FEFCE8]",
-      desc: "Top 10% earners with high activity",
-      avgEarnings: "$6,800",
-      freq: "13.0",
-      capacity: "10%",
-    },
-    {
-      id: "Core",
-      label: "Tier 2 - Core",
-      icon: TrendingUp,
-      color: "border-blue-400",
-      textColor: "text-blue-500",
-      bg: "bg-[#F5F9FF]",
-      iconBg: "bg-[#EFF6FF]",
-      desc: "Mid-tier earners with consistent bookings",
-      avgEarnings: "$3,200",
-      freq: "6.0",
-      capacity: "30%",
-    },
-    {
-      id: "Growth",
-      label: "Tier 3 - Growth",
-      icon: Target,
-      color: "border-green-400",
-      textColor: "text-green-500",
-      bg: "bg-[#F5FFF8]",
-      iconBg: "bg-[#F0FDF4]",
-      desc: "Newer or emerging talent",
-      avgEarnings: "$2,400",
-      freq: "4.0",
-      capacity: "10%",
-    },
-    {
-      id: "Inactive",
-      label: "Tier 4 - Inactive",
-      icon: AlertCircle,
-      color: "border-gray-300",
-      textColor: "text-gray-500",
-      bg: "bg-gray-50",
-      iconBg: "bg-gray-100",
-      desc: "No activity in 60+ days",
-      avgEarnings: "$0",
-      freq: "0.0",
-      capacity: "0%",
-    },
-  ];
-
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-            Performance Tiers
-          </h1>
-          <p className="text-gray-500 font-medium text-sm mt-1">
-            Talent segmented by earnings and activity levels
-          </p>
-        </div>
+    <div className="space-y-6 animate-in fade-in duration-500 max-w-7xl mx-auto">
+      <div className="flex justify-between items-center">
         <Button
           variant="outline"
           onClick={onBack}
           className="flex items-center gap-2 border-gray-300 font-bold text-gray-700 bg-white shadow-sm"
         >
-          <TrendingUp className="w-4 h-4 text-gray-400" /> View All Roster
+          <ArrowLeft className="w-4 h-4" /> Back to Roster
         </Button>
       </div>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {tiers.map((tier) => {
-          const count = TALENT_DATA.filter(
-            (t: any) => t.tier === tier.id,
-          ).length;
-          return (
-            <Card
-              key={tier.id}
-              className={`p-6 bg-white border-2 ${tier.color} shadow-sm rounded-xl hover:shadow-md transition-shadow`}
-            >
-              <div className="flex flex-col h-full">
-                <div className="mb-4">
-                  <tier.icon className={`w-10 h-10 ${tier.textColor}`} />
-                </div>
-                <h3 className="text-sm font-bold text-gray-900 mb-1">
-                  {tier.label}
-                </h3>
-                <div className="flex items-baseline gap-1.5 mt-auto">
-                  <span className="text-3xl font-bold text-gray-900">
-                    {count}
-                  </span>
-                  <span className="text-xs text-gray-500 font-medium pb-1">
-                    talent
-                  </span>
-                </div>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Detail Sections */}
-      <div className="space-y-12">
-        {tiers.map((tier) => {
-          const talentInTier = TALENT_DATA.filter(
-            (t: any) => t.tier === tier.id,
-          );
-          return (
-            <div
-              key={tier.id}
-              className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden p-8"
-            >
-              {/* Tier Info Header */}
-              <div className="flex items-center gap-4 mb-8">
-                <div
-                  className={`p-4 rounded-xl ${tier.id === "Premium" ? "bg-[#FAFAF5]" : tier.id === "Core" ? "bg-[#FAFCFF]" : tier.id === "Growth" ? "bg-[#FAFFFC]" : "bg-gray-50"}`}
-                >
-                  <tier.icon className={`w-6 h-6 ${tier.textColor}`} />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 leading-tight">
-                    {tier.label}
-                  </h2>
-                  <p className="text-sm text-gray-500 font-medium">
-                    {tier.desc}
-                  </p>
-                </div>
-              </div>
-
-              {/* Tier Stats Row */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div
-                  className={`p-6 rounded-2xl border ${tier.id === "Premium" ? "bg-[#FFFEF0] border-yellow-50" : tier.id === "Core" ? "bg-[#F5F9FF] border-blue-50" : tier.id === "Growth" ? "bg-[#F5FFF8] border-green-50" : "bg-gray-50 border-gray-100"}`}
-                >
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="p-2 bg-white rounded-lg shadow-sm">
-                      <DollarSign className={`w-4 h-4 ${tier.textColor}`} />
-                    </div>
-                    <span className="text-xs font-bold text-gray-500">
-                      Avg Monthly Earnings
-                    </span>
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900">
-                    {tier.avgEarnings}
-                  </div>
-                </div>
-
-                <div
-                  className={`p-6 rounded-2xl border ${tier.id === "Premium" ? "bg-[#FFFEF0] border-yellow-50" : tier.id === "Core" ? "bg-[#F5F9FF] border-blue-50" : tier.id === "Growth" ? "bg-[#F5FFF8] border-green-50" : "bg-gray-50 border-gray-100"}`}
-                >
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="p-2 bg-white rounded-lg shadow-sm">
-                      <FileText className={`w-4 h-4 ${tier.textColor}`} />
-                    </div>
-                    <span className="text-xs font-bold text-gray-500">
-                      Avg Booking Frequency
-                    </span>
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900">
-                    {tier.freq}
-                  </div>
-                </div>
-
-                <div
-                  className={`p-6 rounded-2xl border ${tier.id === "Premium" ? "bg-[#FFFEF0] border-yellow-50" : tier.id === "Core" ? "bg-[#F5F9FF] border-blue-50" : tier.id === "Growth" ? "bg-[#F5FFF8] border-green-50" : "bg-gray-50 border-gray-100"}`}
-                >
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="p-2 bg-white rounded-lg shadow-sm">
-                      <Users className={`w-4 h-4 ${tier.textColor}`} />
-                    </div>
-                    <span className="text-xs font-bold text-gray-500">
-                      Total Talent
-                    </span>
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900">
-                    {talentInTier.length}
-                  </div>
-                </div>
-              </div>
-
-              {/* Recommendation Box */}
-              <div className="bg-[#F5F8FF] border border-[#E0E7FF] p-5 rounded-2xl flex items-start gap-4 mb-8">
-                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border-[3px] border-[#C7D2FE] flex-shrink-0 mt-0.5 shadow-sm">
-                  <svg
-                    className="w-4 h-4 text-indigo-600"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={3}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-gray-900 mb-1">
-                    Agency Recommendation
-                  </h4>
-                  <p className="text-[13px] text-[#4F46E5] font-semibold leading-snug">
-                    {tier.id === "Premium" &&
-                      "Prioritize for high-value campaigns. Consider exclusive partnerships."}
-                    {tier.id === "Core" &&
-                      "Stable performers. Focus on increasing campaign frequency and average deal value."}
-                    {tier.id === "Growth" &&
-                      "Invest in portfolio development. Increase brand exposure and campaign opportunities."}
-                    {tier.id === "Inactive" &&
-                      "Requires immediate action. Consider portfolio refresh, marketing push, or roster review."}
-                  </p>
-                </div>
-              </div>
-
-              {/* Talent List in Tier */}
-              <div>
-                <h4 className="text-sm font-bold text-gray-900 mb-6">
-                  Talent in This Tier
-                </h4>
-                <div className="space-y-3">
-                  {talentInTier.length > 0 ? (
-                    [...talentInTier]
-                      .sort(
-                        (a: any, b: any) =>
-                          (a.sortOrder || 99) - (b.sortOrder || 99),
-                      )
-                      .map((t) => (
-                        <div
-                          key={t.id}
-                          className="flex items-center gap-4 p-5 border border-gray-100 rounded-2xl bg-white shadow-sm hover:shadow-md hover:border-indigo-100 transition-all group"
-                        >
-                          <img
-                            src={t.img}
-                            alt={t.name}
-                            className="w-14 h-14 rounded-2xl object-cover bg-gray-50 shadow-sm border border-gray-50"
-                          />
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-bold text-gray-900 text-[15px]">
-                                {t.name}
-                              </span>
-                              <div className="bg-green-100 p-0.5 rounded-full">
-                                <svg
-                                  className="w-2.5 h-2.5 text-green-600"
-                                  fill="currentColor"
-                                  viewBox="0 0 20 20"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400">
-                              <span className="text-gray-900 font-bold">
-                                {t.earnings}/mo
-                              </span>
-                              <span className="text-gray-300">•</span>
-                              <span className="flex items-center gap-1 group-hover:text-indigo-500 transition-colors">
-                                <TrendingUp className="w-3.5 h-3.5" />{" "}
-                                {t.campaigns} campaigns
-                              </span>
-                              <span className="text-gray-300">•</span>
-                              <span>{t.engagement} engagement</span>
-                            </div>
-                          </div>
-                          <div className="hidden md:flex flex-col items-center gap-2 w-48 mr-6">
-                            <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden border border-gray-50">
-                              <div
-                                className="h-full bg-gray-900 rounded-full"
-                                style={{
-                                  width:
-                                    (t as any).id === "carla"
-                                      ? "85%"
-                                      : (t as any).tier === "Core"
-                                        ? "65%"
-                                        : (t as any).tier === "Growth"
-                                          ? "45%"
-                                          : "10%",
-                                }}
-                              ></div>
-                            </div>
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-10 font-bold text-gray-700 bg-white border-gray-200 px-6 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
-                          >
-                            View
-                          </Button>
-                        </div>
-                      ))
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-16 text-center bg-gray-50/30 rounded-2xl border border-dashed border-gray-200">
-                      <div className="p-6 bg-white rounded-full mb-4 shadow-sm">
-                        <Users className="w-12 h-12 text-gray-100" />
-                      </div>
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest leading-relaxed">
-                        No talent assigned to
-                        <br />
-                        this performance tier yet
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      <PerformanceTiers />
     </div>
   );
 };
@@ -4651,11 +4340,10 @@ const ScoutingHubView = ({
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
-              activeTab === tab
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
-                : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
-            }`}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab
+              ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+              : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
+              }`}
           >
             {tab}
           </button>
@@ -4896,8 +4584,8 @@ const ProspectDetailsSheet = ({
                       Send Offer
                     </Button>
                   ) : ["offer_sent", "opened", "signed", "declined"].includes(
-                      prospect.status,
-                    ) ? (
+                    prospect.status,
+                  ) ? (
                     <div className="flex items-center gap-3">
                       <Button
                         onClick={() =>
@@ -5842,19 +5530,18 @@ const OpenCallsTab = ({
               <div className="p-4">
                 <div className="flex justify-between items-start mb-3">
                   <Badge
-                    className={`rounded-md font-bold px-2 py-0.5 text-[10px] border shadow-sm ${
-                      event.status === "published"
-                        ? "bg-green-50 text-green-700 border-green-100"
-                        : event.status === "draft"
-                          ? "bg-gray-50 text-gray-600 border-gray-100"
-                          : event.status === "scheduled"
-                            ? "bg-blue-50 text-blue-700 border-blue-100"
-                            : event.status === "completed"
-                              ? "bg-indigo-50 text-indigo-700 border-indigo-100"
-                              : event.status === "cancelled"
-                                ? "bg-red-50 text-red-700 border-red-100"
-                                : "bg-gray-50 text-gray-600 border-gray-100"
-                    }`}
+                    className={`rounded-md font-bold px-2 py-0.5 text-[10px] border shadow-sm ${event.status === "published"
+                      ? "bg-green-50 text-green-700 border-green-100"
+                      : event.status === "draft"
+                        ? "bg-gray-50 text-gray-600 border-gray-100"
+                        : event.status === "scheduled"
+                          ? "bg-blue-50 text-blue-700 border-blue-100"
+                          : event.status === "completed"
+                            ? "bg-indigo-50 text-indigo-700 border-indigo-100"
+                            : event.status === "cancelled"
+                              ? "bg-red-50 text-red-700 border-red-100"
+                              : "bg-gray-50 text-gray-600 border-gray-100"
+                      }`}
                   >
                     {event.status.toUpperCase()}
                   </Badge>
@@ -6884,13 +6571,13 @@ const RosterView = ({
                   statusFilter !== "All Status" ||
                   consentFilter !== "All Consent" ||
                   sortConfig) && (
-                  <button
-                    onClick={clearFilters}
-                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
-                  >
-                    <X className="w-4 h-4" /> Clear Filters
-                  </button>
-                )}
+                    <button
+                      onClick={clearFilters}
+                      className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" /> Clear Filters
+                    </button>
+                  )}
               </div>
             </div>
 
@@ -7009,16 +6696,15 @@ const RosterView = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${
-                            talent.consent === "complete"
-                              ? "bg-green-50 text-green-600"
-                              : talent.consent === "missing"
-                                ? "bg-red-50 text-red-600"
-                                : "bg-orange-50 text-orange-600"
-                          }`}
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${talent.consent === "complete"
+                            ? "bg-green-50 text-green-600"
+                            : talent.consent === "missing"
+                              ? "bg-red-50 text-red-600"
+                              : "bg-orange-50 text-orange-600"
+                            }`}
                         >
                           {talent.consent === "complete" ||
-                          talent.consent === "active" ? (
+                            talent.consent === "active" ? (
                             <svg
                               className="w-3 h-3"
                               fill="none"
@@ -7859,9 +7545,9 @@ const LicenseTemplatesView = () => {
     const updatedTemplates = templates.map((t) =>
       t.id === editingTemplate.id
         ? {
-            ...editingTemplate,
-            pricing: editingTemplate.pricingRange,
-          }
+          ...editingTemplate,
+          pricing: editingTemplate.pricingRange,
+        }
         : t,
     );
     setTemplates(updatedTemplates);
@@ -8673,11 +8359,10 @@ const ProtectionUsageView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${
-                activeTab === tab
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:text-gray-900"
-              }`}
+              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === tab
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-gray-500 hover:text-gray-900"
+                }`}
             >
               {tab}
             </button>
@@ -10848,7 +10533,7 @@ const ComplianceHubView = () => {
       title: "Action Required",
       description: message,
       action: (
-        <ToastAction altText="Try again" onClick={() => {}}>
+        <ToastAction altText="Try again" onClick={() => { }}>
           OK
         </ToastAction>
       ),
@@ -11011,11 +10696,10 @@ const ComplianceHubView = () => {
             <Button
               disabled={selectedTalentIds.length === 0}
               variant="outline"
-              className={`text-xs font-bold h-8 gap-2 ${
-                selectedTalentIds.length === 0
-                  ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
-                  : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
-              }`}
+              className={`text-xs font-bold h-8 gap-2 ${selectedTalentIds.length === 0
+                ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
+                : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
+                }`}
               onClick={handleSendRenewalRequests}
             >
               <RefreshCw
@@ -11508,11 +11192,10 @@ const RoyaltiesPayoutsView = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-              activeTab === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-            }`}
+            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+              }`}
           >
             {tab}
           </button>
@@ -12394,11 +12077,10 @@ const AnalyticsDashboardView = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-                  activeTab === tab
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                }`}
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+                  }`}
               >
                 {tab}
               </button>
@@ -13644,92 +13326,92 @@ export default function AgencyDashboard() {
   const sidebarItems: SidebarItem[] =
     agencyMode === "AI"
       ? [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
-          },
-          {
-            id: "licensing",
-            label: "Licensing",
-            icon: FileText,
-            subItems: [
-              "Licensing Requests",
-              "Active Licenses",
-              "License Templates",
-            ],
-          },
-          {
-            id: "protection",
-            label: "Protection & Usage",
-            icon: Shield,
-            subItems: ["Protect & Usage", "Compliance Hub"],
-            badges: { "Compliance Hub": "NEW" },
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-          },
-          {
-            id: "settings",
-            label: "Settings",
-            icon: Settings,
-            subItems: ["General Settings", "File Storage"],
-          },
-        ]
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        {
+          id: "licensing",
+          label: "Licensing",
+          icon: FileText,
+          subItems: [
+            "Licensing Requests",
+            "Active Licenses",
+            "License Templates",
+          ],
+        },
+        {
+          id: "protection",
+          label: "Protection & Usage",
+          icon: Shield,
+          subItems: ["Protect & Usage", "Compliance Hub"],
+          badges: { "Compliance Hub": "NEW" },
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+        },
+        {
+          id: "settings",
+          label: "Settings",
+          icon: Settings,
+          subItems: ["General Settings", "File Storage"],
+        },
+      ]
       : [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
-          },
-          { id: "scouting", label: "Scouting", icon: Target },
-          { id: "client-crm", label: "Client CRM", icon: Building2 },
-          {
-            id: "bookings",
-            label: "Bookings",
-            icon: Calendar,
-            subItems: [
-              "Calendar & Schedule",
-              "Booking Requests",
-              "Client Database",
-              "Talent Availability",
-              "Notifications",
-              "Management & Analytics",
-            ],
-          },
-          {
-            id: "accounting",
-            label: "Accounting & Invoicing",
-            icon: CreditCard,
-            subItems: [
-              "Invoice Generation",
-              "Invoice Management",
-              "Payment Tracking",
-              "Talent Statements",
-              "Financial Reports",
-              "Expense Tracking",
-            ],
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-          },
-          {
-            id: "settings",
-            label: "Settings",
-            icon: Settings,
-            subItems: ["General Settings", "File Storage"],
-          },
-        ];
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        { id: "scouting", label: "Scouting", icon: Target },
+        { id: "client-crm", label: "Client CRM", icon: Building2 },
+        {
+          id: "bookings",
+          label: "Bookings",
+          icon: Calendar,
+          subItems: [
+            "Calendar & Schedule",
+            "Booking Requests",
+            "Client Database",
+            "Talent Availability",
+            "Notifications",
+            "Management & Analytics",
+          ],
+        },
+        {
+          id: "accounting",
+          label: "Accounting & Invoicing",
+          icon: CreditCard,
+          subItems: [
+            "Invoice Generation",
+            "Invoice Management",
+            "Payment Tracking",
+            "Talent Statements",
+            "Financial Reports",
+            "Expense Tracking",
+          ],
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+        },
+        {
+          id: "settings",
+          label: "Settings",
+          icon: Settings,
+          subItems: ["General Settings", "File Storage"],
+        },
+      ];
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
@@ -13795,16 +13477,14 @@ export default function AgencyDashboard() {
                     setSidebarOpen(false);
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === item.id && !item.subItems
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
+                  ? "bg-indigo-50 text-indigo-700"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${
-                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                  }`}
+                  className={`w-5 h-5 ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"
+                    }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.subItems && (
@@ -13825,11 +13505,10 @@ export default function AgencyDashboard() {
                         setActiveSubTab(subItem);
                         setSidebarOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                        activeTab === item.id && activeSubTab === subItem
-                          ? "text-indigo-700 bg-indigo-50 font-bold"
-                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                      }`}
+                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
+                        ? "text-indigo-700 bg-indigo-50 font-bold"
+                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                        }`}
                     >
                       <span className="truncate">{subItem}</span>
                       {item.badges && item.badges[subItem] && (

@@ -9,6 +9,7 @@ mod creatify;
 pub mod creator_rates;
 pub mod creators;
 pub mod dashboard;
+pub mod performance_tiers;
 pub mod email;
 pub mod face_profiles;
 pub mod health;
