@@ -1,4 +1,8 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { useAuth } from "@/auth/AuthProvider";
+import { supabase } from "@/lib/supabase";
+import { useToast } from "@/components/ui/use-toast";
+import { RefreshCw } from "lucide-react";
 import {
   Building2,
   Upload,
@@ -199,7 +203,7 @@ const EditPermissionsModal = ({
                     <span className="text-sm font-medium text-gray-700">
                       {perm.label}
                     </span>
-                    <Switch defaultChecked={perm.default} />
+                    <Switch checked={perm.default} />
                   </div>
                 ))}
               </div>
@@ -323,19 +327,146 @@ const ActivityLogModal = ({
 };
 
 const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
+  const { profile, refreshProfile } = useAuth();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("Profile");
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
   const [showActivityModal, setShowActivityModal] = useState(false);
   const [selectedMember, setSelectedMember] = useState<any>(null);
-  const [primaryColor, setPrimaryColor] = useState("#4F46E5");
-  const [secondaryColor, setSecondaryColor] = useState("#10B981");
+  const [primaryColor, setPrimaryColor] = useState(
+    profile?.primary_color || "#4F46E5",
+  );
+  const [secondaryColor, setSecondaryColor] = useState(
+    profile?.secondary_color || "#10B981",
+  );
   const primaryColorInputRef = useRef<HTMLInputElement>(null);
   const secondaryColorInputRef = useRef<HTMLInputElement>(null);
   const [prodKey, setProdKey] = useState("pk_live_51P2x8S2e3f4g5h6i7j8k9l0m");
   const [testKey, setTestKey] = useState("pk_test_51P2x8S2e3f4g5h6i7j8k9l0m");
   const [showProdKey, setShowProdKey] = useState(false);
   const [showTestKey, setShowTestKey] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [formData, setFormData] = useState({
+    agency_name: "",
+    legal_entity_name: "",
+    address: "",
+    city: "",
+    state: "",
+    zip_postal_code: "",
+    country: "us",
+    time_zone: "est",
+    phone_number: "",
+    email: "",
+    website: "",
+    tax_id_ein: "",
+    email_signature: "",
+  });
+
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        agency_name: profile.agency_name || "",
+        legal_entity_name: profile.legal_entity_name || "",
+        address: profile.address || "",
+        city: profile.city || "",
+        state: profile.state || "",
+        zip_postal_code: profile.zip_postal_code || "",
+        country: profile.country || "us",
+        time_zone: profile.time_zone || "est",
+        phone_number: profile.phone_number || "",
+        email: profile.email || "",
+        website: profile.website || "",
+        tax_id_ein: profile.tax_id_ein || "",
+        email_signature: profile.email_signature || "",
+      });
+      setPrimaryColor(profile.primary_color || "#4F46E5");
+      setSecondaryColor(profile.secondary_color || "#10B981");
+    }
+  }, [profile]);
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      setIsSaving(true);
+      const { error } = await supabase
+        .from("agencies")
+        .update({
+          ...formData,
+          primary_color: primaryColor,
+          secondary_color: secondaryColor,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", profile?.id);
+
+      if (error) throw error;
+
+      await refreshProfile();
+      toast({
+        title: "Settings Saved",
+        description: "Your agency profile has been updated successfully.",
+      });
+    } catch (error: any) {
+      console.error("Error saving profile:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save settings.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !profile) return;
+
+    try {
+      setIsUploading(true);
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${profile.id}-${Math.random()}.${fileExt}`;
+      const filePath = `agency-logos/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("likelee-public")
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("likelee-public").getPublicUrl(filePath);
+
+      const { error: updateError } = await supabase
+        .from("agencies")
+        .update({ logo_url: publicUrl })
+        .eq("id", profile.id);
+
+      if (updateError) throw updateError;
+
+      await refreshProfile();
+      toast({
+        title: "Logo Updated",
+        description: "Your agency logo has been updated successfully.",
+      });
+    } catch (error: any) {
+      console.error("Error uploading logo:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload logo.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   return (
     <div className="max-w-full mx-auto">
@@ -364,11 +495,10 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-lg transition-all whitespace-nowrap ${
-                activeTab === tab
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-lg transition-all whitespace-nowrap ${activeTab === tab
                   ? "bg-white text-gray-900 shadow-sm"
                   : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
-              }`}
+                }`}
             >
               {tab}
             </button>
@@ -391,13 +521,13 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                   {(kycStatus === "approved" ||
                     kycStatus === "verified" ||
                     kycStatus === "active") && (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 rounded-full border border-green-100 shadow-sm animate-in fade-in zoom-in-95 duration-500">
-                      <BadgeCheck className="w-3.5 h-3.5 text-green-600" />
-                      <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider">
-                        Verified
-                      </span>
-                    </div>
-                  )}
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 rounded-full border border-green-100 shadow-sm animate-in fade-in zoom-in-95 duration-500">
+                        <BadgeCheck className="w-3.5 h-3.5 text-green-600" />
+                        <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider">
+                          Verified
+                        </span>
+                      </div>
+                    )}
                 </div>
               </div>
 
@@ -407,8 +537,11 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                     Agency Name *
                   </Label>
                   <Input
-                    defaultValue="CM Models"
-                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
+                    value={formData.agency_name}
+                    onChange={(e) =>
+                      handleInputChange("agency_name", e.target.value)
+                    }
+                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-900 font-medium rounded-xl text-sm"
                   />
                 </div>
                 <div className="space-y-2">
@@ -416,8 +549,11 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                     Legal Entity Name
                   </Label>
                   <Input
-                    defaultValue="CM Models LLC"
-                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
+                    value={formData.legal_entity_name}
+                    onChange={(e) =>
+                      handleInputChange("legal_entity_name", e.target.value)
+                    }
+                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-900 font-medium rounded-xl text-sm"
                   />
                 </div>
                 <div className="md:col-span-2 space-y-2">
@@ -425,8 +561,11 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                     Address
                   </Label>
                   <Input
-                    defaultValue="123 Fashion Ave"
-                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
+                    value={formData.address}
+                    onChange={(e) =>
+                      handleInputChange("address", e.target.value)
+                    }
+                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-900 font-medium rounded-xl text-sm"
                   />
                 </div>
                 <div className="space-y-2">
@@ -434,8 +573,9 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                     City
                   </Label>
                   <Input
-                    defaultValue="New York"
-                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
+                    value={formData.city}
+                    onChange={(e) => handleInputChange("city", e.target.value)}
+                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-900 font-medium rounded-xl text-sm"
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -444,8 +584,11 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                       State/Province
                     </Label>
                     <Input
-                      defaultValue="NY"
-                      className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
+                      value={formData.state}
+                      onChange={(e) =>
+                        handleInputChange("state", e.target.value)
+                      }
+                      className="bg-white border-gray-200 h-9 sm:h-11 text-gray-900 font-medium rounded-xl text-sm"
                     />
                   </div>
                   <div className="space-y-2">
@@ -453,8 +596,11 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                       ZIP/Postal Code
                     </Label>
                     <Input
-                      defaultValue="10001"
-                      className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
+                      value={formData.zip_postal_code}
+                      onChange={(e) =>
+                        handleInputChange("zip_postal_code", e.target.value)
+                      }
+                      className="bg-white border-gray-200 h-9 sm:h-11 text-gray-900 font-medium rounded-xl text-sm"
                     />
                   </div>
                 </div>
@@ -462,8 +608,11 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                   <Label className="text-sm font-bold text-gray-900">
                     Country
                   </Label>
-                  <Select defaultValue="us">
-                    <SelectTrigger className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm">
+                  <Select
+                    value={formData.country}
+                    onValueChange={(val) => handleInputChange("country", val)}
+                  >
+                    <SelectTrigger className="bg-white border-gray-200 h-9 sm:h-11 text-gray-900 font-medium rounded-xl text-sm">
                       <SelectValue placeholder="Select country" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
@@ -478,8 +627,11 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                   <Label className="text-sm font-bold text-gray-900">
                     Time Zone
                   </Label>
-                  <Select defaultValue="est">
-                    <SelectTrigger className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm">
+                  <Select
+                    value={formData.time_zone}
+                    onValueChange={(val) => handleInputChange("time_zone", val)}
+                  >
+                    <SelectTrigger className="bg-white border-gray-200 h-9 sm:h-11 text-gray-900 font-medium rounded-xl text-sm">
                       <SelectValue placeholder="Select timezone" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
@@ -494,8 +646,11 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                     Phone
                   </Label>
                   <Input
-                    defaultValue="+1 (212) 555-0123"
-                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
+                    value={formData.phone_number}
+                    onChange={(e) =>
+                      handleInputChange("phone_number", e.target.value)
+                    }
+                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-900 font-medium rounded-xl text-sm"
                   />
                 </div>
                 <div className="space-y-2">
@@ -503,8 +658,9 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                     Email
                   </Label>
                   <Input
-                    defaultValue="info@cmmodels.com"
-                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange("email", e.target.value)}
+                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-900 font-medium rounded-xl text-sm"
                   />
                 </div>
                 <div className="md:col-span-2 space-y-2">
@@ -512,8 +668,11 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                     Website
                   </Label>
                   <Input
-                    defaultValue="https://cmmodels.com/"
-                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
+                    value={formData.website}
+                    onChange={(e) =>
+                      handleInputChange("website", e.target.value)
+                    }
+                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-900 font-medium rounded-xl text-sm"
                   />
                 </div>
                 <div className="md:col-span-2 space-y-2">
@@ -521,8 +680,11 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                     Tax ID / EIN
                   </Label>
                   <Input
-                    defaultValue="12-3456789"
-                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-500 font-medium rounded-xl text-sm"
+                    value={formData.tax_id_ein}
+                    onChange={(e) =>
+                      handleInputChange("tax_id_ein", e.target.value)
+                    }
+                    className="bg-white border-gray-200 h-9 sm:h-11 text-gray-900 font-medium rounded-xl text-sm"
                   />
                 </div>
               </div>
@@ -541,18 +703,37 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                   </Label>
                   <div className="flex items-center gap-6">
                     <div className="w-20 h-20 rounded-xl bg-white border border-gray-200 flex items-center justify-center shadow-sm overflow-hidden p-2">
-                      <img
-                        src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/a37a561a8_Screenshot2025-10-29at70538PM.png"
-                        alt="Logo"
-                        className="w-full h-full object-contain"
-                      />
+                      {profile?.logo_url ? (
+                        <img
+                          src={profile.logo_url}
+                          alt="Logo"
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-indigo-50 flex items-center justify-center">
+                          <Building2 className="w-8 h-8 text-indigo-600" />
+                        </div>
+                      )}
                     </div>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleLogoUpload}
+                      className="hidden"
+                      accept="image/*"
+                    />
                     <Button
                       variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
                       className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2"
                     >
-                      <Upload className="w-4 h-4" />
-                      Upload New Logo
+                      {isUploading ? (
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Upload className="w-4 h-4" />
+                      )}
+                      {isUploading ? "Uploading..." : "Upload New Logo"}
                     </Button>
                   </div>
                 </div>
@@ -629,17 +810,29 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                     Email Signature
                   </Label>
                   <Textarea
-                    defaultValue={`Best regards,\nCM Models\nhttps://cmmodels.com/\n+1 (212) 555-0123`}
-                    className="bg-white border-gray-200 min-h-[120px] text-xs sm:text-sm text-gray-500 font-medium rounded-xl resize-none"
+                    value={formData.email_signature}
+                    onChange={(e) =>
+                      handleInputChange("email_signature", e.target.value)
+                    }
+                    placeholder={`Best regards,\nAgency Name\nhttps://agency.com/\n+1 (212) 555-0123`}
+                    className="bg-white border-gray-200 min-h-[120px] text-xs sm:text-sm text-gray-900 font-medium rounded-xl resize-none"
                   />
                 </div>
               </div>
             </Card>
 
             <div className="flex justify-end">
-              <Button className="w-full sm:w-auto h-10 px-6 sm:h-12 sm:px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
-                <Save className="w-5 h-5" />
-                Save Profile Settings
+              <Button
+                onClick={handleSaveProfile}
+                disabled={isSaving}
+                className="w-full sm:w-auto h-10 px-6 sm:h-12 sm:px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center justify-center gap-2"
+              >
+                {isSaving ? (
+                  <RefreshCw className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Save className="w-5 h-5" />
+                )}
+                {isSaving ? "Saving..." : "Save Profile Settings"}
               </Button>
             </div>
           </div>
@@ -965,19 +1158,19 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                     </div>
                     <div className="flex items-center gap-6">
                       <div className="flex items-center gap-2">
-                        <Switch defaultChecked={pref.email} />
+                        <Switch checked={pref.email} />
                         <span className="text-xs font-bold text-gray-900">
                           Email
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Switch defaultChecked={pref.sms} />
+                        <Switch checked={pref.sms} />
                         <span className="text-xs font-bold text-gray-900">
                           SMS
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Switch defaultChecked={pref.push} />
+                        <Switch checked={pref.push} />
                         <span className="text-xs font-bold text-gray-900">
                           Push
                         </span>
@@ -1105,7 +1298,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                 </div>
                 <div className="flex items-center justify-between p-4 bg-gray-50/50 border border-gray-100 rounded-xl">
                   <div className="flex items-center gap-2">
-                    <Switch defaultChecked />
+                    <Switch checked={true} />
                     <span className="text-sm font-bold text-gray-900">
                       Include tax in displayed prices
                     </span>
@@ -1463,11 +1656,10 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                         </Badge>
                         <div className="flex items-center gap-1 shrink-0">
                           <div
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              user.status === "Active"
+                            className={`w-1.5 h-1.5 rounded-full ${user.status === "Active"
                                 ? "bg-green-500"
                                 : "bg-yellow-500"
-                            }`}
+                              }`}
                           />
                           <span className="text-[10px] sm:text-xs text-green-600 font-bold uppercase tracking-wider hidden xs:inline">
                             {user.status}
@@ -1632,11 +1824,10 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                   </div>
                   <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
                     <Badge
-                      className={`${
-                        integration.status === "Connected"
+                      className={`${integration.status === "Connected"
                           ? "bg-green-100 text-green-700 border-green-200"
                           : "bg-gray-100 text-gray-600 border-gray-200"
-                      } font-bold`}
+                        } font-bold`}
                     >
                       {integration.status}
                     </Badge>

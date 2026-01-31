@@ -33,7 +33,6 @@ pub struct MonthlyRevenue {
 pub struct PendingActions {
     pub licensing_requests: i64,
     pub expiring_licenses: i64,
-    pub compliance_issues: i64,
 }
 
 #[derive(Debug, Serialize)]
@@ -230,7 +229,7 @@ pub async fn get_licensing_pipeline(
 
     // 2. Counts from brand_licenses
     let now = chrono::Utc::now();
-    let month_start = format!("{}-{:02}-01", now.year(), now.month());
+    // month_start removed as it was unused
     let thirty_days_hence = (now + chrono::Duration::days(30)).to_rfc3339();
 
     // Expiring Soon
@@ -274,50 +273,8 @@ pub async fn get_licensing_pipeline(
     let active_data: serde_json::Value = serde_json::from_str(&active_text).unwrap_or(json!([]));
     let active = active_data.as_array().map(|a| a.len() as i64).unwrap_or(0);
 
-    // Total This Month (New requests + licenses created this month)
-    let total_req_month_resp = state
-        .pg
-        .from("licensing_requests")
-        .select("id")
-        .eq("agency_id", agency_id)
-        .gte("created_at", &month_start)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let total_req_month_data: serde_json::Value = serde_json::from_str(
-        &total_req_month_resp
-            .text()
-            .await
-            .unwrap_or_else(|_| "[]".to_string()),
-    )
-    .unwrap_or(json!([]));
-    let total_requests_this_month = total_req_month_data
-        .as_array()
-        .map(|a| a.len() as i64)
-        .unwrap_or(0);
-
-    let total_lic_month_resp = state
-        .pg
-        .from("brand_licenses")
-        .select("id")
-        .eq("agency_id", agency_id)
-        .gte("created_at", &month_start)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let total_lic_month_data: serde_json::Value = serde_json::from_str(
-        &total_lic_month_resp
-            .text()
-            .await
-            .unwrap_or_else(|_| "[]".to_string()),
-    )
-    .unwrap_or(json!([]));
-    let total_licenses_this_month = total_lic_month_data
-        .as_array()
-        .map(|a| a.len() as i64)
-        .unwrap_or(0);
-
-    let total_this_month = total_requests_this_month + total_licenses_this_month;
+    // Total This Month (Sum of Pending and Active, per requirement)
+    let total_this_month = pending_approval + active;
 
     Ok(Json(LicensingPipeline {
         pending_approval,
@@ -333,44 +290,128 @@ pub async fn get_recent_activity(
     auth_user: AuthUser,
 ) -> Result<Json<ActivityFeed>, (StatusCode, String)> {
     let agency_id = &auth_user.id;
+    let mut all_activities = Vec::new();
 
-    let resp = state
-        .pg
-        .from("activity_events")
-        .select("id,type,title,subtitle,created_at")
+    // 1. Campaigns
+    let resp_camp = state.pg.from("campaigns")
+        .select("id, name, created_at")
         .eq("agency_id", agency_id)
         .order("created_at.desc")
-        .limit(10)
-        .execute()
-        .await
+        .limit(5)
+        .execute().await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text_camp = resp_camp.text().await.unwrap_or_else(|_| "[]".to_string());
+    if let Ok(json) = serde_json::from_str::<serde_json::Value>(&text_camp) {
+        if let Some(arr) = json.as_array() {
+            for item in arr {
+                let name = item.get("name").and_then(|v| v.as_str()).unwrap_or("Campaign");
+                let time = item.get("created_at").and_then(|v| v.as_str()).unwrap_or("");
+                if let Some(id) = item.get("id").and_then(|v| v.as_str()) {
+                    all_activities.push(ActivityItem {
+                        id: id.to_string(),
+                        type_name: "campaign".to_string(),
+                        title: format!("New Campaign: {}", name),
+                        subtitle: "Campaign Created".to_string(),
+                        timestamp: time.to_string(),
+                        relative_time: "Recently".to_string(),
+                    });
+                }
+            }
+        }
+    }
 
-    let text = resp
-        .text()
-        .await
+    // 2. Payments
+    let resp_pay = state.pg.from("payments")
+        .select("id, gross_cents, created_at")
+        .eq("agency_id", agency_id)
+        .eq("status", "succeeded")
+        .order("created_at.desc")
+        .limit(5)
+        .execute().await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text_pay = resp_pay.text().await.unwrap_or_else(|_| "[]".to_string());
+    if let Ok(json) = serde_json::from_str::<serde_json::Value>(&text_pay) {
+        if let Some(arr) = json.as_array() {
+            for item in arr {
+                let cents = item.get("gross_cents").and_then(|v| v.as_i64()).unwrap_or(0);
+                let time = item.get("created_at").and_then(|v| v.as_str()).unwrap_or("");
+                if let Some(id) = item.get("id").and_then(|v| v.as_str()) {
+                    all_activities.push(ActivityItem {
+                        id: id.to_string(),
+                        type_name: "payment".to_string(),
+                        title: "Payment Received".to_string(),
+                        subtitle: format!("+${:.2}", cents as f64 / 100.0),
+                        timestamp: time.to_string(),
+                        relative_time: "Recently".to_string(),
+                    });
+                }
+            }
+        }
+    }
 
-    let data: serde_json::Value = serde_json::from_str(&text)
+    // 3. New Talents
+    let resp_tal = state.pg.from("agency_users")
+        .select("id, stage_name, full_legal_name, created_at")
+        .eq("agency_id", agency_id)
+        .eq("role", "talent")
+        .order("created_at.desc")
+        .limit(5)
+        .execute().await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text_tal = resp_tal.text().await.unwrap_or_else(|_| "[]".to_string());
+    if let Ok(json) = serde_json::from_str::<serde_json::Value>(&text_tal) {
+        if let Some(arr) = json.as_array() {
+            for item in arr {
+                let s_name = item.get("stage_name").and_then(|v| v.as_str()).unwrap_or("");
+                let l_name = item.get("full_legal_name").and_then(|v| v.as_str()).unwrap_or("Unknown");
+                let name = if !s_name.is_empty() { s_name } else { l_name };
+                let time = item.get("created_at").and_then(|v| v.as_str()).unwrap_or("");
+                if let Some(id) = item.get("id").and_then(|v| v.as_str()) {
+                    all_activities.push(ActivityItem {
+                        id: id.to_string(),
+                        type_name: "talent".to_string(),
+                        title: format!("New Talent: {}", name),
+                        subtitle: "Roster Addition".to_string(),
+                        timestamp: time.to_string(),
+                        relative_time: "Recently".to_string(),
+                    });
+                }
+            }
+        }
+    }
 
-    let empty_vec = vec![];
-    let activities: Vec<ActivityItem> = data
-        .as_array()
-        .unwrap_or(&empty_vec)
-        .iter()
-        .filter_map(|item| {
-            Some(ActivityItem {
-                id: item.get("id")?.as_str()?.to_string(),
-                type_name: item.get("type")?.as_str()?.to_string(),
-                title: item.get("title")?.as_str()?.to_string(),
-                subtitle: item.get("subtitle")?.as_str()?.to_string(),
-                timestamp: item.get("created_at")?.as_str()?.to_string(),
-                relative_time: "Recently".to_string(), // Simplified for now
-            })
-        })
-        .collect();
+    // 4. Licensing Requests
+    let resp_req = state.pg.from("licensing_requests")
+        .select("id, created_at")
+        .eq("agency_id", agency_id)
+        .order("created_at.desc")
+        .limit(5)
+        .execute().await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text_req = resp_req.text().await.unwrap_or_else(|_| "[]".to_string());
+    if let Ok(json) = serde_json::from_str::<serde_json::Value>(&text_req) {
+         if let Some(arr) = json.as_array() {
+            for item in arr {
+                let time = item.get("created_at").and_then(|v| v.as_str()).unwrap_or("");
+                if let Some(id) = item.get("id").and_then(|v| v.as_str()) {
+                    all_activities.push(ActivityItem {
+                        id: id.to_string(),
+                        type_name: "licensing".to_string(),
+                        title: "New Licensing Request".to_string(),
+                        subtitle: "Pending Approval".to_string(),
+                        timestamp: time.to_string(),
+                        relative_time: "Recently".to_string(),
+                    });
+                }
+            }
+        }
+    }
 
-    Ok(Json(ActivityFeed { activities }))
+    // Sort and Limit
+    all_activities.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
+    all_activities.truncate(5);
+
+    Ok(Json(ActivityFeed { activities: all_activities }))
 }
 
 async fn get_roster_health(
@@ -428,7 +469,7 @@ async fn get_monthly_revenue(
     let resp = state
         .pg
         .from("payments")
-        .select("talent_earnings_cents")
+        .select("gross_cents")
         .eq("agency_id", agency_id)
         .eq("status", "succeeded")
         .gte("paid_at", &month_start)
@@ -447,7 +488,7 @@ async fn get_monthly_revenue(
     let payments = data.as_array().unwrap_or(&empty_vec);
     let amount_cents: i64 = payments
         .iter()
-        .filter_map(|p| p.get("talent_earnings_cents")?.as_i64())
+        .filter_map(|p| p.get("gross_cents")?.as_i64())
         .sum();
 
     // Get last month revenue for growth calculation
@@ -462,7 +503,7 @@ async fn get_monthly_revenue(
     let last_resp = state
         .pg
         .from("payments")
-        .select("talent_earnings_cents")
+        .select("gross_cents")
         .eq("agency_id", agency_id)
         .eq("status", "succeeded")
         .gte("paid_at", &last_month_start)
@@ -477,7 +518,7 @@ async fn get_monthly_revenue(
     let last_payments = last_data.as_array().unwrap_or(&empty_vec);
     let last_amount_cents: i64 = last_payments
         .iter()
-        .filter_map(|p| p.get("talent_earnings_cents")?.as_i64())
+        .filter_map(|p| p.get("gross_cents")?.as_i64())
         .sum();
 
     let growth_percentage = if last_amount_cents > 0 {
@@ -547,76 +588,83 @@ async fn get_pending_actions(
         .map(|a| a.len() as i64)
         .unwrap_or(0);
 
-    // 3. Mock compliance issues
-    let compliance_issues = 0i64;
+    // 3. Mock compliance issues - REMOVED
 
     Ok(PendingActions {
         licensing_requests,
         expiring_licenses,
-        compliance_issues,
     })
 }
+
+
 
 async fn get_top_revenue_generators(
     state: &AppState,
     agency_id: &str,
 ) -> Result<Vec<TopTalent>, (StatusCode, String)> {
     let now = chrono::Utc::now();
-    let month_start = format!("{}-{:02}-01", now.year(), now.month());
+    let thirty_days_ago = (now - chrono::Duration::days(30)).to_rfc3339();
 
-    // Fetch payments for the month with talent info
+    // Query payments joined with agency_users to get real gross revenue
     let resp = state
         .pg
         .from("payments")
-        .select("talent_id, talent_earnings_cents, agency_users(stage_name, profile_photo_url)")
+        .select("talent_id, gross_cents, agency_users(stage_name, full_legal_name, profile_photo_url)")
         .eq("agency_id", agency_id)
         .eq("status", "succeeded")
-        .gte("paid_at", &month_start)
+        .gte("paid_at", &thirty_days_ago)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let text = resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let data: serde_json::Value = serde_json::from_str(&text)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let payments = data.as_array().ok_or((
-        StatusCode::INTERNAL_SERVER_ERROR,
-        "Invalid payments data".to_string(),
-    ))?;
+    let text = resp.text().await.unwrap_or_else(|_| "[]".to_string());
+    let data: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
+    let empty_vec = vec![];
+    let items = data.as_array().unwrap_or(&empty_vec);
 
-    let mut talent_map: HashMap<String, (i64, String, Option<String>)> = HashMap::new();
+    let mut talent_map: HashMap<String, (String, Option<String>, i64)> = HashMap::new();
 
-    for p in payments {
-        let talent_id = p
+    for item in items {
+        let talent_id = item
             .get("talent_id")
             .and_then(|v| v.as_str())
             .unwrap_or("unknown")
             .to_string();
-        let cents = p
-            .get("talent_earnings_cents")
+        
+        let cents = item
+            .get("gross_cents")
             .and_then(|v| v.as_i64())
             .unwrap_or(0);
-        let talent = p.get("agency_users");
-        let name = talent
-            .and_then(|v| v.get("stage_name"))
+            
+        let user = item.get("agency_users");
+        let stage_name = user
+            .and_then(|u| u.get("stage_name"))
             .and_then(|v| v.as_str())
-            .unwrap_or("Unknown")
+            .unwrap_or("")
             .to_string();
-        let photo = talent
-            .and_then(|v| v.get("profile_photo_url"))
+        let legal_name = user
+            .and_then(|u| u.get("full_legal_name"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("Unknown User")
+            .to_string();
+
+        let name = if !stage_name.trim().is_empty() {
+            stage_name
+        } else {
+            legal_name
+        };
+        let photo = user
+            .and_then(|u| u.get("profile_photo_url"))
             .and_then(|v| v.as_str())
             .map(|s| s.to_string());
 
-        let entry = talent_map.entry(talent_id).or_insert((0, name, photo));
-        entry.0 += cents;
+        let entry = talent_map.entry(talent_id).or_insert((name, photo, 0));
+        entry.2 += cents;
     }
 
-    let mut top_talents: Vec<TopTalent> = talent_map
+    let mut sorted_talents: Vec<TopTalent> = talent_map
         .into_iter()
-        .map(|(id, (cents, name, photo))| TopTalent {
+        .map(|(id, (name, photo, cents))| TopTalent {
             id,
             name,
             photo_url: photo,
@@ -625,8 +673,11 @@ async fn get_top_revenue_generators(
         })
         .collect();
 
-    top_talents.truncate(3);
-    Ok(top_talents)
+    // Sort descending by earnings
+    sorted_talents.sort_by(|a, b| b.earnings_cents.cmp(&a.earnings_cents));
+    
+    // Take top 3
+    Ok(sorted_talents.into_iter().take(3).collect())
 }
 
 async fn get_actively_earning(
@@ -634,15 +685,16 @@ async fn get_actively_earning(
     agency_id: &str,
 ) -> Result<Vec<ActiveTalent>, (StatusCode, String)> {
     let now = chrono::Utc::now();
-    let thirty_days_ago = (now - chrono::Duration::days(30)).to_rfc3339();
+    let month_start = format!("{}-{:02}-01", now.year(), now.month());
 
     let resp = state
         .pg
         .from("payments")
-        .select("talent_id, talent_earnings_cents, paid_at, agency_users(stage_name, profile_photo_url)")
+        .select("talent_id, talent_earnings_cents, paid_at, agency_users(stage_name, full_legal_name, profile_photo_url)")
         .eq("agency_id", agency_id)
         .eq("status", "succeeded")
-        .gte("paid_at", &thirty_days_ago)
+        .gte("paid_at", &month_start)
+
         .order("paid_at.desc")
         .execute()
         .await
@@ -676,11 +728,23 @@ async fn get_actively_earning(
             .unwrap_or("")
             .to_string();
         let talent = p.get("agency_users");
-        let name = talent
+        
+        let stage_name = talent
             .and_then(|v| v.get("stage_name"))
             .and_then(|v| v.as_str())
-            .unwrap_or("Unknown")
+            .unwrap_or("")
             .to_string();
+        let legal_name = talent
+            .and_then(|v| v.get("full_legal_name"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("Unknown User")
+            .to_string();
+
+        let name = if !stage_name.trim().is_empty() {
+            stage_name
+        } else {
+            legal_name
+        };
         let photo = talent
             .and_then(|v| v.get("profile_photo_url"))
             .and_then(|v| v.as_str())
@@ -713,7 +777,7 @@ async fn get_new_talent_performance(
     let resp = state
         .pg
         .from("agency_users")
-        .select("id, created_at, stage_name, profile_photo_url, status")
+        .select("id, created_at, stage_name, full_legal_name, profile_photo_url, status")
         .eq("agency_id", agency_id)
         .eq("role", "talent")
         .gte("created_at", &date_filter)
@@ -748,11 +812,19 @@ async fn get_new_talent_performance(
                 .unwrap_or(chrono::Utc::now());
             let days_since_added = (chrono::Utc::now() - created_date).num_days();
 
-            let name = item
+            let stage = item
                 .get("stage_name")
                 .and_then(|v| v.as_str())
-                .unwrap_or("Unknown")
-                .to_string();
+                .unwrap_or("");
+            let legal = item
+                .get("full_legal_name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("Unknown");
+            let name = if !stage.trim().is_empty() {
+                stage.to_string()
+            } else {
+                legal.to_string()
+            };
             let photo = item
                 .get("profile_photo_url")
                 .and_then(|v| v.as_str())
@@ -764,32 +836,48 @@ async fn get_new_talent_performance(
                 .to_uppercase();
 
             // Calculate REAL avg time to first booking for this specific talent
-            // We find their earliest succeeded payment
-            let pay_resp = state
+            // We find their earliest booking from the bookings table
+            let booking_resp = state
                 .pg
-                .from("payments")
-                .select("paid_at")
+                .from("bookings")
+                .select("date")
                 .eq("talent_id", &id)
-                .eq("status", "succeeded")
-                .order("paid_at.asc")
+                .order("date.asc")
                 .limit(1)
                 .execute()
                 .await;
 
-            let avg_days = if let Ok(pr) = pay_resp {
-                let p_text = pr.text().await.unwrap_or_else(|_| "[]".to_string());
-                let p_data: serde_json::Value = serde_json::from_str(&p_text).unwrap_or(json!([]));
-                if let Some(first_pay) = p_data.as_array().and_then(|a| a.first()) {
-                    let paid_at_str = first_pay
-                        .get("paid_at")
+            let avg_days = if let Ok(br) = booking_resp {
+                let b_text = br.text().await.unwrap_or_else(|_| "[]".to_string());
+                let b_data: serde_json::Value =
+                    serde_json::from_str(&b_text).unwrap_or(json!([]));
+                if let Some(first_booking) = b_data.as_array().and_then(|a| a.first()) {
+                    let booking_date_str = first_booking
+                        .get("date")
                         .and_then(|v| v.as_str())
                         .unwrap_or("");
-                    let paid_date = chrono::DateTime::parse_from_rfc3339(paid_at_str)
-                        .ok()
-                        .map(|dt| dt.with_timezone(&chrono::Utc));
-                    paid_date
-                        .map(|pd| {
-                            let diff = (pd - created_date).num_days();
+                    // Parse date (YYYY-MM-DD or RFC3339)
+                    let booking_date =
+                        chrono::NaiveDate::parse_from_str(booking_date_str, "%Y-%m-%d")
+                            .ok()
+                            .map(|d| {
+                                chrono::DateTime::from_naive_utc_and_offset(
+                                    chrono::NaiveDateTime::new(
+                                        d,
+                                        chrono::NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
+                                    ),
+                                    chrono::Utc,
+                                )
+                            })
+                            .or_else(|| {
+                                chrono::DateTime::parse_from_rfc3339(booking_date_str)
+                                    .ok()
+                                    .map(|dt| dt.with_timezone(&chrono::Utc))
+                            });
+
+                    booking_date
+                        .map(|bd| {
+                            let diff = (bd - created_date).num_days();
                             if diff < 0 {
                                 0.0
                             } else {
@@ -828,7 +916,7 @@ async fn get_breakdown_by_campaign_type(
     let resp = state
         .pg
         .from("payments")
-        .select("talent_earnings_cents, campaigns!inner(campaign_type)")
+        .select("gross_cents, campaigns(campaign_type)")
         .eq("agency_id", agency_id)
         .eq("status", "succeeded")
         .gte("paid_at", &month_start)
@@ -839,20 +927,20 @@ async fn get_breakdown_by_campaign_type(
     let text = resp.text().await.unwrap_or_else(|_| "[]".to_string());
     let data: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
     let empty_vec = vec![];
-    let payments = data.as_array().unwrap_or(&empty_vec);
+    let items = data.as_array().unwrap_or(&empty_vec);
 
     let mut map: HashMap<String, (i64, i64)> = HashMap::new();
     let mut total_cents = 0i64;
 
-    for p in payments {
-        let campaign_type = p
+    for item in items {
+        let campaign_type = item
             .get("campaigns")
-            .and_then(|v| v.get("campaign_type"))
+            .and_then(|c| c.get("campaign_type"))
             .and_then(|v| v.as_str())
             .unwrap_or("Other")
             .to_string();
-        let cents = p
-            .get("talent_earnings_cents")
+        let cents = item
+            .get("gross_cents")
             .and_then(|v| v.as_i64())
             .unwrap_or(0);
         let entry = map.entry(campaign_type).or_insert((0, 0));
@@ -888,7 +976,7 @@ async fn get_breakdown_by_brand_vertical(
     let resp = state
         .pg
         .from("payments")
-        .select("talent_earnings_cents, campaigns!inner(brand_vertical)")
+        .select("gross_cents, campaigns(brand_vertical)")
         .eq("agency_id", agency_id)
         .eq("status", "succeeded")
         .gte("paid_at", &month_start)
@@ -899,20 +987,20 @@ async fn get_breakdown_by_brand_vertical(
     let text = resp.text().await.unwrap_or_else(|_| "[]".to_string());
     let data: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
     let empty_vec = vec![];
-    let payments = data.as_array().unwrap_or(&empty_vec);
+    let items = data.as_array().unwrap_or(&empty_vec);
 
     let mut map: HashMap<String, (i64, i64)> = HashMap::new();
     let mut total_cents = 0i64;
 
-    for p in payments {
-        let vertical = p
+    for item in items {
+        let vertical = item
             .get("campaigns")
-            .and_then(|v| v.get("brand_vertical"))
+            .and_then(|c| c.get("brand_vertical"))
             .and_then(|v| v.as_str())
             .unwrap_or("Other")
             .to_string();
-        let cents = p
-            .get("talent_earnings_cents")
+        let cents = item
+            .get("gross_cents")
             .and_then(|v| v.as_i64())
             .unwrap_or(0);
         let entry = map.entry(vertical).or_insert((0, 0));
@@ -948,7 +1036,7 @@ async fn get_breakdown_by_region(
     let resp = state
         .pg
         .from("payments")
-        .select("talent_earnings_cents, campaigns!inner(region)")
+        .select("gross_cents, campaigns(region)")
         .eq("agency_id", agency_id)
         .eq("status", "succeeded")
         .gte("paid_at", &month_start)
@@ -959,20 +1047,20 @@ async fn get_breakdown_by_region(
     let text = resp.text().await.unwrap_or_else(|_| "[]".to_string());
     let data: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
     let empty_vec = vec![];
-    let payments = data.as_array().unwrap_or(&empty_vec);
+    let items = data.as_array().unwrap_or(&empty_vec);
 
     let mut map: HashMap<String, (i64, i64)> = HashMap::new();
     let mut total_cents = 0i64;
 
-    for p in payments {
-        let region = p
+    for item in items {
+        let region = item
             .get("campaigns")
-            .and_then(|v| v.get("region"))
+            .and_then(|c| c.get("region"))
             .and_then(|v| v.as_str())
             .unwrap_or("Other")
             .to_string();
-        let cents = p
-            .get("talent_earnings_cents")
+        let cents = item
+            .get("gross_cents")
             .and_then(|v| v.as_i64())
             .unwrap_or(0);
         let entry = map.entry(region).or_insert((0, 0));

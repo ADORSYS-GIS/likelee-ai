@@ -5,7 +5,6 @@ BEGIN;
 CREATE TABLE IF NOT EXISTS public.agency_users (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
-    creator_id uuid REFERENCES public.creators(id) ON DELETE SET NULL, 
     
     role text NOT NULL DEFAULT 'talent',
     status text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'pending')),
@@ -51,7 +50,6 @@ CREATE TABLE IF NOT EXISTS public.agency_users (
 
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_agency_users_agency ON public.agency_users(agency_id);
-CREATE INDEX IF NOT EXISTS idx_agency_users_creator ON public.agency_users(creator_id);
 CREATE INDEX IF NOT EXISTS idx_agency_users_email ON public.agency_users(email);
 
 -- RLS Enablement
@@ -63,3 +61,49 @@ CREATE POLICY "Agency users can view their agency's roster"
     ON public.agency_users FOR SELECT USING (auth.uid() = agency_id);
 
 COMMIT;
+
+
+-- 1. Verify Payments Data (Source of Revenue)
+-- Should show 'gross_cents' (Agency Revenue) and 'talent_earnings_cents' (Talent Cut)
+SELECT 
+    'PAYMENTS' as check_type,
+    id, 
+    gross_cents as agency_revenue, 
+    talent_earnings_cents, 
+    status, 
+    paid_at 
+FROM payments 
+WHERE status = 'succeeded' 
+ORDER BY paid_at DESC 
+LIMIT 5;
+
+-- 2. Verify Campaign Metadata (Source of Breakdowns)
+-- When joined with payments, we get revenue by Type/Vertical/Region
+SELECT 
+    'CAMPAIGN_META' as check_type,
+    id, 
+    name, 
+    campaign_type, 
+    brand_vertical, 
+    region 
+FROM campaigns 
+ORDER BY created_at DESC 
+LIMIT 5;
+
+-- 3. Verify Agency User Earnings (Source of Top Talent)
+-- 'earnings_30d' should reflect recent payouts
+SELECT 
+    'AGENCY_USER' as check_type,
+    total_earnings_cents,
+    stage_name, 
+    full_legal_name, 
+    earnings_30d 
+FROM agency_users 
+WHERE role = 'talent' 
+ORDER BY earnings_30d DESC 
+LIMIT 5;
+
+-- 4. Verify Licensing Pipeline
+-- Check pending requests and active licenses
+SELECT 'PENDING_REQUESTS' as metric, count(*) FROM licensing_requests WHERE status = 'pending';
+SELECT 'ACTIVE_LICENSES' as metric, count(*) FROM brand_licenses WHERE status = 'active';

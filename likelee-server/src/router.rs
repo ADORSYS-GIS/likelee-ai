@@ -58,8 +58,32 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::agencies::list_clients).post(crate::agencies::create_client),
         )
         .route(
+            "/api/agency/clients/:id",
+            post(crate::agencies::update_client).delete(crate::agencies::delete_client),
+        )
+        .route(
+            "/api/agency/clients/:id/contacts",
+            get(crate::agencies::list_contacts).post(crate::agencies::create_contact),
+        )
+        .route(
+            "/api/agency/clients/:client_id/contacts/:contact_id",
+            delete(crate::agencies::delete_contact),
+        )
+        .route(
+            "/api/agency/clients/:id/communications",
+            get(crate::agencies::list_communications).post(crate::agencies::create_communication),
+        )
+        .route(
             "/api/agency/files/upload",
             post(crate::agencies::upload_agency_file),
+        )
+        .route(
+            "/api/agency/clients/:id/files",
+            get(crate::agencies::list_client_files).post(crate::agencies::upload_client_file),
+        )
+        .route(
+            "/api/agency/clients/:id/files/:file_id/signed-url",
+            get(crate::agencies::get_client_file_signed_url),
         )
         .route("/api/dashboard", get(crate::dashboard::get_dashboard))
         // Removed legacy Tavus routes
@@ -209,6 +233,40 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::creator_rates::get_creator_rates)
                 .post(crate::creator_rates::upsert_creator_rates),
         )
+        // Scouting (DocuSeal)
+        .route(
+            "/api/scouting/templates",
+            get(crate::scouting::list_templates).post(crate::scouting::create_template),
+        )
+        .route(
+            "/api/scouting/templates/sync",
+            post(crate::scouting::sync_templates),
+        )
+        .route(
+            "/api/scouting/templates/upload",
+            post(crate::scouting::create_template_from_pdf),
+        )
+        .route(
+            "/api/scouting/templates/:id",
+            delete(crate::scouting::delete_template).put(crate::scouting::update_template_from_pdf),
+        )
+        .route(
+            "/api/scouting/offers",
+            get(crate::scouting::list_offers).post(crate::scouting::create_offer),
+        )
+        .route(
+            "/api/scouting/offers/:offer_id",
+            get(crate::scouting::get_offer_details).delete(crate::scouting::delete_offer),
+        )
+        .route(
+            "/api/scouting/offers/refresh-status",
+            post(crate::scouting::refresh_offer_status),
+        )
+        .route(
+            "/api/scouting/builder-token",
+            post(crate::scouting::create_builder_token),
+        )
+        .route("/webhooks/docuseal", post(crate::scouting::handle_webhook))
         // Notifications
         .route(
             "/api/notifications/booking-created-email",
