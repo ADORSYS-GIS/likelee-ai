@@ -33,6 +33,14 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route("/api/agency/talents", get(crate::agencies::list_talents))
         .route(
+            "/api/agency/talents/:id/assets",
+            get(crate::agencies::list_talent_assets),
+        )
+        .route(
+            "/api/agency/talents/:id/assets/upload",
+            post(crate::agencies::upload_talent_asset),
+        )
+        .route(
             "/api/agency/clients",
             get(crate::agencies::list_clients).post(crate::agencies::create_client),
         )

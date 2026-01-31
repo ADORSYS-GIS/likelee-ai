@@ -4,7 +4,7 @@ import {
     Loader2, Plus, X, Check, ArrowRight, ArrowLeft,
     Image as ImageIcon, User, Settings, Send, Search,
     Eye, Calendar, Palette, Type, Building2, Mail,
-    GripVertical, Trash2, Globe, SwitchCamera
+    GripVertical, Trash2, Globe, SwitchCamera, Layers
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -24,6 +24,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
+import { AssetSelector } from "./AssetSelector";
 
 interface CreatePackageWizardProps {
     open: boolean;
@@ -40,6 +41,7 @@ const STEPS = [
 export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardProps) {
     const [step, setStep] = useState(0);
     const [showTalentSelector, setShowTalentSelector] = useState(false);
+    const [activeTalentForAssets, setActiveTalentForAssets] = useState<{ id: string, name: string } | null>(null);
     const { toast } = useToast();
     const queryClient = useQueryClient();
 
@@ -124,40 +126,49 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
         }
     };
 
+    const updateTalentAssets = (talentId: string, assetIds: string[]) => {
+        setFormData({
+            ...formData,
+            items: formData.items.map(item =>
+                item.talent_id === talentId ? { ...item, asset_ids: assetIds } : item
+            )
+        });
+    };
+
     return (
         <>
             <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0 overflow-hidden bg-white rounded-3xl border-none shadow-[0_32px_128px_-12px_rgba(0,0,0,0.1)]">
+                <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0 overflow-hidden bg-white/95 backdrop-blur-xl rounded-[2.5rem] border-none shadow-[0_32px_128px_-12px_rgba(0,0,0,0.1)]">
                     {/* Header */}
-                    <div className="p-8 pb-0">
-                        <div className="flex justify-between items-start mb-6">
+                    <div className="p-10 pb-0">
+                        <div className="flex justify-between items-start mb-8">
                             <div>
-                                <DialogTitle className="text-3xl font-black text-gray-900 tracking-tighter">
+                                <DialogTitle className="text-4xl font-black text-gray-900 tracking-tighter">
                                     Create New Package
                                 </DialogTitle>
                                 <p className="text-sm text-gray-400 font-medium mt-1">
                                     Build a beautiful portfolio package to showcase your talent to clients
                                 </p>
                             </div>
-                            <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-50" onClick={() => onOpenChange(false)}>
-                                <X className="w-5 h-5" />
+                            <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100/50" onClick={() => onOpenChange(false)}>
+                                <X className="w-5 h-5 text-gray-400" />
                             </Button>
                         </div>
 
                         {/* Step Bar */}
-                        <div className="flex items-center gap-0 mb-8 max-w-2xl">
+                        <div className="flex items-center gap-0 mb-10 max-w-2xl">
                             {STEPS.map((s, i) => (
                                 <React.Fragment key={s.id}>
                                     <div className="flex items-center gap-3">
-                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black transition-all duration-500 ${step >= i ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200" : "bg-gray-100 text-gray-400"}`}>
-                                            {step > i ? <Check className="w-4 h-4" /> : i + 1}
+                                        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-black transition-all duration-500 ${step >= i ? "bg-indigo-600 text-white shadow-xl shadow-indigo-100" : "bg-gray-100 text-gray-400"}`}>
+                                            {step > i ? <Check className="w-5 h-5" /> : i + 1}
                                         </div>
-                                        <span className={`text-xs font-black tracking-tight ${step >= i ? "text-gray-900" : "text-gray-400"}`}>
+                                        <span className={`text-[10px] uppercase font-black tracking-widest ${step >= i ? "text-gray-900" : "text-gray-400"}`}>
                                             {s.title}
                                         </span>
                                     </div>
                                     {i < STEPS.length - 1 && (
-                                        <div className="flex-1 mx-4 h-[2px] bg-gray-100" />
+                                        <div className="flex-1 mx-6 h-[2px] bg-gray-50" />
                                     )}
                                 </React.Fragment>
                             ))}
@@ -165,78 +176,82 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                     </div>
 
                     {/* Body */}
-                    <div className="flex-1 overflow-y-auto px-8 pb-8">
+                    <div className="flex-1 overflow-y-auto px-10 pb-10">
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={step}
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
-                                className="space-y-6"
+                                transition={{ duration: 0.3 }}
+                                className="space-y-8"
                             >
                                 {step === 0 && (
-                                    <div className="space-y-6 max-w-2xl">
-                                        <div className="space-y-2">
-                                            <Label className="text-xs font-black uppercase tracking-widest text-gray-900">Package Title *</Label>
+                                    <div className="space-y-8 max-w-2xl">
+                                        <div className="space-y-3">
+                                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Package Title *</Label>
                                             <Input
-                                                placeholder="Enter title..."
+                                                placeholder="e.g. Summer Campaign 2026"
                                                 value={formData.title}
                                                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                                className="h-12 bg-white border-gray-100 focus:border-indigo-600 rounded-xl"
+                                                className="h-14 bg-white border-2 border-gray-50 focus:border-indigo-600 focus:bg-white rounded-2xl px-6 transition-all duration-300 font-bold placeholder:text-gray-300"
                                             />
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-xs font-black uppercase tracking-widest text-gray-900">Description</Label>
+                                        <div className="space-y-3">
+                                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Introduction Note</Label>
                                             <Textarea
-                                                placeholder="Add a brief description..."
+                                                placeholder="Share the vision for this selection..."
                                                 value={formData.description}
                                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                                className="min-h-[100px] border-gray-100 rounded-xl"
+                                                className="min-h-[120px] bg-white border-2 border-gray-50 focus:border-indigo-600 rounded-2xl px-6 py-4 transition-all duration-300 font-medium placeholder:text-gray-300"
                                             />
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-xs font-black uppercase tracking-widest text-gray-900">Cover Image URL</Label>
+                                        <div className="space-y-3">
+                                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Cover Image URL</Label>
                                             <Input
-                                                placeholder="https://..."
+                                                placeholder="https://images.unsplash.com/..."
                                                 value={formData.cover_image_url}
                                                 onChange={(e) => setFormData({ ...formData, cover_image_url: e.target.value })}
-                                                className="h-12 border-gray-100 rounded-xl"
+                                                className="h-14 bg-white border-2 border-gray-50 focus:border-indigo-600 rounded-2xl px-6 transition-all duration-300 font-bold placeholder:text-gray-300"
                                             />
                                         </div>
 
-                                        <div className="p-6 bg-gray-50/50 rounded-2xl border border-gray-100 space-y-6">
-                                            <h4 className="text-sm font-black text-gray-900 tracking-tight">Agency Branding</h4>
+                                        <div className="p-8 bg-gray-50/50 backdrop-blur-sm rounded-[2rem] border border-gray-100 space-y-8">
+                                            <div className="flex items-center gap-3">
+                                                <Palette className="w-5 h-5 text-indigo-600" />
+                                                <h4 className="text-sm font-black text-gray-900 tracking-tight">Agency Branding</h4>
+                                            </div>
                                             <div className="grid grid-cols-2 gap-8">
-                                                <div className="space-y-3">
-                                                    <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Primary Color</Label>
-                                                    <div className="flex items-center gap-3 bg-white p-2 rounded-xl border border-gray-100">
+                                                <div className="space-y-4">
+                                                    <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Primary Accent</Label>
+                                                    <div className="flex items-center gap-3 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm shadow-gray-100">
                                                         <input
                                                             type="color"
                                                             value={formData.primary_color}
                                                             onChange={(e) => setFormData({ ...formData, primary_color: e.target.value })}
-                                                            className="w-full h-8 cursor-pointer rounded-lg overflow-hidden border-none"
+                                                            className="w-full h-10 cursor-pointer rounded-xl overflow-hidden border-none p-0"
                                                         />
                                                     </div>
                                                 </div>
-                                                <div className="space-y-3">
-                                                    <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Secondary Color</Label>
-                                                    <div className="flex items-center gap-3 bg-white p-2 rounded-xl border border-gray-100">
+                                                <div className="space-y-4">
+                                                    <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Secondary Accent</Label>
+                                                    <div className="flex items-center gap-3 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm shadow-gray-100">
                                                         <input
                                                             type="color"
                                                             value={formData.secondary_color}
                                                             onChange={(e) => setFormData({ ...formData, secondary_color: e.target.value })}
-                                                            className="w-full h-8 cursor-pointer rounded-lg overflow-hidden border-none"
+                                                            className="w-full h-10 cursor-pointer rounded-xl overflow-hidden border-none p-0"
                                                         />
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="space-y-2 pt-2">
-                                                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Custom Message</Label>
+                                            <div className="space-y-3">
+                                                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Custom Footer Message</Label>
                                                 <Textarea
                                                     placeholder="A personal note for the client..."
                                                     value={formData.custom_message}
                                                     onChange={(e) => setFormData({ ...formData, custom_message: e.target.value })}
-                                                    className="bg-white border-gray-100 rounded-xl"
+                                                    className="bg-white border-2 border-gray-50 focus:border-indigo-600 rounded-2xl px-6 transition-all duration-300 min-h-[80px]"
                                                 />
                                             </div>
                                         </div>
@@ -244,59 +259,75 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                 )}
 
                                 {step === 1 && (
-                                    <div className="space-y-6">
+                                    <div className="space-y-8">
                                         <div className="flex justify-between items-center">
-                                            <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">Selected Talents ({formData.items.length})</h3>
+                                            <div className="space-y-1">
+                                                <h3 className="text-sm font-black text-gray-900 uppercase tracking-[0.2em]">Selected Talents</h3>
+                                                <p className="text-[11px] font-medium text-gray-400">Select talents and pick their best assets for this package</p>
+                                            </div>
                                             <Button
                                                 onClick={() => setShowTalentSelector(true)}
-                                                className="bg-gray-900 hover:bg-black text-white rounded-xl h-10 px-4 font-black text-[10px] uppercase tracking-widest gap-2"
+                                                className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl h-12 px-6 font-black text-[11px] uppercase tracking-widest gap-2 shadow-lg shadow-indigo-100"
                                             >
-                                                <Plus className="w-4 h-4" /> Add Talent
+                                                <Plus className="w-5 h-5" /> Add Talent
                                             </Button>
                                         </div>
 
-                                        <div className="space-y-3">
-                                            <AnimatePresence>
+                                        <div className="space-y-4">
+                                            <AnimatePresence mode="popLayout">
                                                 {formData.items.map((item, idx) => (
                                                     <motion.div
                                                         key={item.talent_id}
-                                                        initial={{ opacity: 0, x: -10 }}
-                                                        animate={{ opacity: 1, x: 0 }}
+                                                        layout
+                                                        initial={{ opacity: 0, scale: 0.95 }}
+                                                        animate={{ opacity: 1, scale: 1 }}
                                                         exit={{ opacity: 0, scale: 0.95 }}
-                                                        className="group flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl hover:shadow-lg hover:shadow-gray-100 transition-all duration-300"
+                                                        className="group flex items-center justify-between p-6 bg-white border-2 border-gray-50 rounded-[2rem] hover:border-indigo-100/50 hover:shadow-xl hover:shadow-indigo-50/20 transition-all duration-500"
                                                     >
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="p-2 border border-gray-50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity cursor-grab">
-                                                                <GripVertical className="w-4 h-4 text-gray-300" />
+                                                        <div className="flex items-center gap-6">
+                                                            <div className="hidden sm:block p-2 text-gray-200 group-hover:text-indigo-200 transition-colors cursor-grab active:cursor-grabbing">
+                                                                <GripVertical className="w-5 h-5" />
                                                             </div>
-                                                            <div className="w-12 h-12 rounded-xl bg-gray-50 overflow-hidden">
-                                                                <img src={item.talent.profile_photo_url} className="w-full h-full object-cover" />
+                                                            <div className="w-16 h-16 rounded-[1.25rem] bg-gray-100 overflow-hidden shadow-inner flex-shrink-0">
+                                                                <img src={item.talent.profile_photo_url} className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-500" />
                                                             </div>
                                                             <div>
-                                                                <h5 className="font-black text-gray-900 tracking-tight">{item.talent.full_name}</h5>
-                                                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">0 photos, 0 videos</p>
+                                                                <h5 className="font-black text-gray-900 tracking-tight text-lg">{item.talent.full_name}</h5>
+                                                                <div className="flex items-center gap-2 mt-1">
+                                                                    <Badge variant="secondary" className="bg-gray-100/50 text-gray-400 text-[9px] font-black uppercase tracking-widest border-none px-2 rounded-lg">
+                                                                        {item.asset_ids.length} Assets
+                                                                    </Badge>
+                                                                    <p className="text-[10px] text-gray-300 font-bold uppercase tracking-widest">Selected</p>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <div className="flex items-center gap-3">
-                                                            <Button variant="outline" className="h-9 px-4 rounded-xl border-gray-100 text-[10px] font-black uppercase tracking-widest gap-2">
-                                                                <ImageIcon className="w-3.5 h-3.5" /> Select Assets
+                                                        <div className="flex items-center gap-4">
+                                                            <Button
+                                                                onClick={() => setActiveTalentForAssets({ id: item.talent_id, name: item.talent.full_name })}
+                                                                className={`h-10 px-6 rounded-xl border-none text-[10px] font-black uppercase tracking-widest gap-2 transition-all duration-300 ${item.asset_ids.length > 0 ? "bg-green-50 text-green-600 hover:bg-green-100" : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100"}`}
+                                                            >
+                                                                <Layers className="w-4 h-4" />
+                                                                {item.asset_ids.length > 0 ? "Update Selection" : "Select Assets"}
                                                             </Button>
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
                                                                 onClick={() => toggleTalentSelection(item.talent)}
-                                                                className="h-9 w-9 text-gray-300 hover:text-red-500 rounded-xl"
+                                                                className="h-10 w-10 text-gray-200 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-300"
                                                             >
-                                                                <X className="w-4 h-4" />
+                                                                <Trash2 className="w-4 h-4" />
                                                             </Button>
                                                         </div>
                                                     </motion.div>
                                                 ))}
                                             </AnimatePresence>
                                             {formData.items.length === 0 && (
-                                                <div className="p-12 text-center border-2 border-dashed border-gray-100 rounded-3xl">
-                                                    <User className="w-10 h-10 text-gray-200 mx-auto mb-4" />
-                                                    <p className="text-gray-400 font-bold text-sm uppercase tracking-widest">No talents selected</p>
+                                                <div className="p-20 text-center border-4 border-dashed border-gray-50 rounded-[3rem] bg-gray-50/30">
+                                                    <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm shadow-gray-100">
+                                                        <User className="w-8 h-8 text-gray-200" />
+                                                    </div>
+                                                    <p className="text-gray-400 font-black text-sm uppercase tracking-widest">No talents added yet</p>
+                                                    <p className="text-gray-300 text-xs mt-2 font-medium">Add talent from your roster to start building the package</p>
                                                 </div>
                                             )}
                                         </div>
@@ -304,25 +335,28 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                 )}
 
                                 {step === 2 && (
-                                    <div className="max-w-2xl space-y-10 py-4">
-                                        <div className="space-y-6">
-                                            <h3 className="text-xl font-black text-gray-900 tracking-tighter">Package Settings</h3>
+                                    <div className="max-w-2xl space-y-12 py-4">
+                                        <div className="space-y-8">
+                                            <div className="space-y-1">
+                                                <h3 className="text-2xl font-black text-gray-900 tracking-tighter">Package Controls</h3>
+                                                <p className="text-sm text-gray-400 font-medium">Fine-tune the client experience and permissions</p>
+                                            </div>
                                             <div className="space-y-4">
                                                 {[
-                                                    { id: 'allow_comments', label: 'Allow Client Comments', desc: 'Clients can leave comments on each talent' },
-                                                    { id: 'allow_favorites', label: 'Allow Favorites', desc: 'Clients can favorite talents they\'re interested in' },
-                                                    { id: 'allow_callbacks', label: 'Allow Callback Requests', desc: 'Clients can request a callback from your agency' },
-                                                    { id: 'password_protected', label: 'Password Protection', desc: 'Require password to view package' },
+                                                    { id: 'allow_comments', label: 'Client Feedback', desc: 'Allow clients to leave notes on specific talents' },
+                                                    { id: 'allow_favorites', label: 'Interest Tracking', desc: 'Let clients favorite talents to shortlist them' },
+                                                    { id: 'allow_callbacks', label: 'Callback Requests', desc: 'Clients can directly request inquiries or callbacks' },
+                                                    { id: 'password_protected', label: 'Access Control', desc: 'Secure this package with a private password' },
                                                 ].map((s) => (
-                                                    <div key={s.id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-2xl transition-colors">
-                                                        <div>
-                                                            <Label className="text-sm font-black text-gray-900 tracking-tight block mb-1">{s.label}</Label>
-                                                            <p className="text-xs text-gray-400 font-medium">{s.desc}</p>
+                                                    <div key={s.id} className="flex items-center justify-between p-6 bg-white border-2 border-gray-50 rounded-3xl hover:border-indigo-50/50 transition-all duration-300">
+                                                        <div className="space-y-1">
+                                                            <Label className="text-base font-black text-gray-900 tracking-tight block">{s.label}</Label>
+                                                            <p className="text-xs text-gray-400 font-medium leading-relaxed max-w-[280px]">{s.desc}</p>
                                                         </div>
                                                         <Switch
                                                             checked={(formData as any)[s.id]}
                                                             onCheckedChange={(val) => setFormData({ ...formData, [s.id]: val })}
-                                                            className="data-[state=checked]:bg-indigo-600"
+                                                            className="data-[state=checked]:bg-indigo-600 scale-110"
                                                         />
                                                     </div>
                                                 ))}
@@ -332,75 +366,94 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                         <AnimatePresence>
                                             {formData.password_protected && (
                                                 <motion.div
-                                                    initial={{ opacity: 0, height: 0 }}
-                                                    animate={{ opacity: 1, height: 'auto' }}
-                                                    exit={{ opacity: 0, height: 0 }}
-                                                    className="space-y-2"
+                                                    initial={{ opacity: 0, height: 0, y: -20 }}
+                                                    animate={{ opacity: 1, height: 'auto', y: 0 }}
+                                                    exit={{ opacity: 0, height: 0, y: -20 }}
+                                                    className="space-y-3"
                                                 >
-                                                    <Label className="text-xs font-black uppercase tracking-widest text-gray-900">Access Password</Label>
+                                                    <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Gateway Password</Label>
                                                     <Input
                                                         type="password"
-                                                        placeholder="Enter password..."
+                                                        placeholder="Create a secure password..."
                                                         value={formData.password}
                                                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                                        className="h-12 border-gray-100 rounded-xl"
+                                                        className="h-14 border-2 border-indigo-50 bg-indigo-50/5 focus:bg-white focus:border-indigo-600 rounded-2xl px-6 transition-all duration-300"
                                                     />
                                                 </motion.div>
                                             )}
                                         </AnimatePresence>
 
-                                        <div className="space-y-2">
-                                            <Label className="text-xs font-black uppercase tracking-widest text-gray-900">Expiration Date (Optional)</Label>
+                                        <div className="space-y-4 pt-4">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <Calendar className="w-5 h-5 text-indigo-600" />
+                                                <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Privacy Expiration</Label>
+                                            </div>
                                             <Input
                                                 type="date"
                                                 value={formData.expires_at}
                                                 onChange={(e) => setFormData({ ...formData, expires_at: e.target.value })}
-                                                className="h-12 border-gray-100 rounded-xl font-bold"
+                                                className="h-14 bg-white border-2 border-gray-50 focus:border-indigo-600 focus:bg-white rounded-2xl px-6 transition-all duration-300 font-bold"
                                             />
+                                            <p className="text-[10px] text-gray-300 font-medium">Leave empty for an evergreen package link</p>
                                         </div>
                                     </div>
                                 )}
 
                                 {step === 3 && (
-                                    <div className="max-w-2xl space-y-8 py-4">
-                                        <div className="space-y-6">
-                                            <h3 className="text-xl font-black text-gray-900 tracking-tighter">Final Details</h3>
-                                            <div className="space-y-4">
-                                                <div className="space-y-2">
-                                                    <Label className="text-xs font-black uppercase tracking-widest text-gray-900">Client Name *</Label>
+                                    <div className="max-w-2xl space-y-12 py-4">
+                                        <div className="space-y-8">
+                                            <div className="space-y-1">
+                                                <h3 className="text-2xl font-black text-gray-900 tracking-tighter">Ready to send?</h3>
+                                                <p className="text-sm text-gray-400 font-medium">Complete the recipient details to publish the package</p>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-8">
+                                                <div className="space-y-3">
+                                                    <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Client Contact *</Label>
                                                     <Input
                                                         placeholder="e.g. John Doe"
                                                         value={formData.client_name}
                                                         onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
-                                                        className="h-12 border-gray-100 rounded-xl font-bold"
+                                                        className="h-14 bg-white border-2 border-gray-50 focus:border-indigo-600 rounded-2xl px-6 transition-all duration-300 font-bold"
                                                     />
                                                 </div>
-                                                <div className="space-y-2">
-                                                    <Label className="text-xs font-black uppercase tracking-widest text-gray-900">Client Email *</Label>
+                                                <div className="space-y-3">
+                                                    <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Delivery Email *</Label>
                                                     <Input
                                                         type="email"
                                                         placeholder="client@company.com"
                                                         value={formData.client_email}
                                                         onChange={(e) => setFormData({ ...formData, client_email: e.target.value })}
-                                                        className="h-12 border-gray-100 rounded-xl font-bold"
+                                                        className="h-14 bg-white border-2 border-gray-50 focus:border-indigo-600 rounded-2xl px-6 transition-all duration-300 font-bold"
                                                     />
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="p-8 bg-indigo-50/50 rounded-3xl border border-indigo-100 space-y-4">
-                                            <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Package Preview</h4>
-                                            <div className="space-y-1">
-                                                <h5 className="text-lg font-black text-indigo-900 uppercase tracking-tight">Title: <span className="font-bold lowercase opacity-70">"{formData.title || 'Untitled'}"</span></h5>
-                                                <p className="text-sm font-bold text-indigo-900/60 uppercase tracking-widest">Talents: <span className="text-indigo-900">{formData.items.length} selected</span></p>
-                                                <p className="text-sm font-bold text-indigo-900/60 uppercase tracking-widest">Settings: <span className="text-indigo-900">
-                                                    {[
-                                                        formData.allow_comments && "Comments",
-                                                        formData.allow_favorites && "Favorites",
-                                                        formData.allow_callbacks && "Callbacks",
-                                                        formData.password_protected && "Password Protected"
-                                                    ].filter(Boolean).join(", ")}
-                                                </span></p>
+                                        <div className="p-10 bg-indigo-50/30 backdrop-blur-sm rounded-[3rem] border border-indigo-100/50 relative overflow-hidden group">
+                                            <div className="absolute top-0 right-0 p-8 opacity-10 scale-150 rotate-12 group-hover:scale-175 transition-transform duration-700">
+                                                <Send className="w-24 h-24 text-indigo-600" />
+                                            </div>
+                                            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-6 flex items-center gap-2">
+                                                <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+                                                Package Summary
+                                            </h4>
+                                            <div className="space-y-4 relative z-10">
+                                                <div className="flex items-baseline gap-3">
+                                                    <h5 className="text-2xl font-black text-indigo-900 tracking-tighter leading-none">{formData.title || 'Untitled Selection'}</h5>
+                                                </div>
+                                                <div className="flex flex-wrap gap-3 mt-4">
+                                                    <Badge className="bg-white/80 backdrop-blur-md text-indigo-600 border-none px-4 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm">
+                                                        {formData.items.length} Talents
+                                                    </Badge>
+                                                    <Badge className="bg-white/80 backdrop-blur-md text-indigo-600 border-none px-4 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm">
+                                                        {formData.items.reduce((acc, it) => acc + it.asset_ids.length, 0)} Assets
+                                                    </Badge>
+                                                    {formData.password_protected && (
+                                                        <Badge className="bg-indigo-600 text-white border-none px-4 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm">
+                                                            Password Protected
+                                                        </Badge>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -410,62 +463,59 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                     </div>
 
                     {/* Footer */}
-                    <DialogFooter className="p-8 pt-0 flex flex-row items-center justify-between sm:justify-between w-full">
+                    <div className="p-10 bg-gray-50/50 backdrop-blur-md border-t border-gray-100 flex items-center justify-between">
                         <Button
                             variant="ghost"
-                            onClick={prevStep}
-                            disabled={step === 0}
-                            className="bg-gray-50 hover:bg-gray-100 rounded-xl px-6 h-12 font-black uppercase tracking-widest text-[10px] gap-2 border border-gray-100"
+                            onClick={() => {
+                                if (step === 0) onOpenChange(false);
+                                else prevStep();
+                            }}
+                            className="text-gray-400 hover:text-gray-900 font-black uppercase tracking-widest text-[10px] gap-2 transition-all p-0 h-auto hover:bg-transparent"
                         >
-                            Cancel
+                            <X className="w-4 h-4" /> {step === 0 ? "Cancel" : "Back Step"}
                         </Button>
 
                         <div className="flex gap-4">
-                            {step > 0 && step < STEPS.length - 1 && (
-                                <Button
-                                    variant="outline"
-                                    onClick={prevStep}
-                                    className="rounded-xl px-8 h-12 font-black uppercase tracking-widest text-[10px] border-gray-200"
-                                >
-                                    Previous
-                                </Button>
-                            )}
-
                             {step < STEPS.length - 1 ? (
                                 <Button
                                     onClick={nextStep}
-                                    className="bg-black hover:bg-gray-900 text-white rounded-xl px-12 h-12 font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-gray-200"
+                                    className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl px-12 h-14 font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-indigo-200/50 group"
                                 >
-                                    Next
+                                    Continue
+                                    <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                                 </Button>
                             ) : (
                                 <Button
                                     onClick={() => createMutation.mutate(formData)}
                                     disabled={createMutation.isPending}
-                                    className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-12 h-12 font-black uppercase tracking-widest text-[10px] shadow-2xl shadow-indigo-200 gap-2"
+                                    className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl px-14 h-14 font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-indigo-200/50 gap-3"
                                 >
-                                    {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                                    Create & Send Package
+                                    {createMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                                    Publish & Send
                                 </Button>
                             )}
                         </div>
-                    </DialogFooter>
+                    </div>
                 </DialogContent>
             </Dialog>
 
             {/* Talent Selector Overlay Modal */}
             <Dialog open={showTalentSelector} onOpenChange={setShowTalentSelector}>
-                <DialogContent className="max-w-2xl rounded-3xl p-8 border-none scrollbar-hide">
-                    <DialogHeader className="mb-6">
-                        <DialogTitle className="text-2xl font-black text-gray-900 tracking-tighter">Select Talent</DialogTitle>
+                <DialogContent className="max-w-2xl rounded-[3rem] p-10 border-none bg-white/95 backdrop-blur-xl shadow-2xl">
+                    <DialogHeader className="mb-8">
+                        <DialogTitle className="text-3xl font-black text-gray-900 tracking-tighter">Select Roster</DialogTitle>
+                        <p className="text-sm text-gray-400 font-medium">Choose talents to include in this collection</p>
                     </DialogHeader>
 
-                    <div className="relative mb-6">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <Input placeholder="Search roster..." className="pl-11 h-12 rounded-xl bg-gray-50 border-transparent focus:bg-white" />
+                    <div className="relative mb-8">
+                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
+                        <Input
+                            placeholder="Filter by name or category..."
+                            className="pl-14 h-14 rounded-2xl bg-gray-50 border-transparent focus:bg-white focus:border-indigo-600 transition-all duration-300 font-bold"
+                        />
                     </div>
 
-                    <ScrollArea className="h-[400px]">
+                    <ScrollArea className="h-[450px] pr-4">
                         <div className="grid grid-cols-2 gap-4">
                             {Array.isArray(talentsData) && talentsData.map((talent: any) => {
                                 const isSelected = formData.items.some(i => i.talent_id === talent.id);
@@ -473,16 +523,20 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                     <Card
                                         key={talent.id}
                                         onClick={() => toggleTalentSelection(talent)}
-                                        className={`p-4 cursor-pointer rounded-2xl border-2 transition-all duration-300 flex items-center gap-4 ${isSelected ? "border-indigo-600 bg-indigo-50/30" : "border-gray-50 hover:border-gray-200"}`}
+                                        className={`p-5 cursor-pointer rounded-[2rem] border-2 transition-all duration-500 flex items-center gap-5 ${isSelected ? "border-indigo-600 bg-indigo-50/30 shadow-lg shadow-indigo-100/20" : "border-gray-50 hover:border-gray-100 bg-white"}`}
                                     >
-                                        <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
-                                            <img src={talent.profile_photo_url} className="w-full h-full object-cover" />
+                                        <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0 shadow-inner">
+                                            <img src={talent.profile_photo_url} className="w-full h-full object-cover grayscale-[0.5] group-hover:grayscale-0 transition-all duration-500" />
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                            <h6 className="font-black text-gray-900 truncate tracking-tight">{talent.full_name}</h6>
-                                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{talent.categories?.[0] || 'Model'}</p>
+                                            <h6 className="font-black text-gray-900 truncate tracking-tight text-base">{talent.full_name}</h6>
+                                            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5">{talent.categories?.[0] || 'Member'}</p>
                                         </div>
-                                        {isSelected && <Check className="w-5 h-5 text-indigo-600" />}
+                                        {isSelected && (
+                                            <div className="bg-indigo-600 rounded-full p-1 shadow-md shadow-indigo-200">
+                                                <Check className="w-4 h-4 text-white" />
+                                            </div>
+                                        )}
                                     </Card>
                                 );
                             })}
@@ -491,12 +545,22 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
 
                     <Button
                         onClick={() => setShowTalentSelector(false)}
-                        className="w-full mt-8 bg-gray-900 hover:bg-black text-white rounded-2xl h-14 font-black uppercase tracking-widest text-[11px]"
+                        className="w-full mt-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[1.5rem] h-16 font-black uppercase tracking-[0.2em] text-[11px] shadow-2xl shadow-indigo-200/50"
                     >
-                        Save Selection ({formData.items.length})
+                        Confirm Selection ({formData.items.length})
                     </Button>
                 </DialogContent>
             </Dialog>
+
+            {/* Asset Selector Modal */}
+            <AssetSelector
+                open={!!activeTalentForAssets}
+                onOpenChange={(open) => !open && setActiveTalentForAssets(null)}
+                talentId={activeTalentForAssets?.id || ""}
+                talentName={activeTalentForAssets?.name || ""}
+                selectedAssets={formData.items.find(i => i.talent_id === activeTalentForAssets?.id)?.asset_ids || []}
+                onSelect={(assetIds) => activeTalentForAssets && updateTalentAssets(activeTalentForAssets.id, assetIds)}
+            />
         </>
     );
 }

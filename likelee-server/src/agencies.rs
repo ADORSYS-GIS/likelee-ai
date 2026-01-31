@@ -221,6 +221,7 @@ pub struct AgencyFileUploadResponse {
     pub storage_bucket: String,
     pub storage_path: String,
     pub client_id: Option<String>,
+    pub talent_id: Option<String>,
 }
 
 // Upload an agency file (contracts, call sheets, references) to Supabase Storage and record it.
@@ -337,6 +338,7 @@ pub async fn upload_agency_file(
         storage_bucket: bucket,
         storage_path: path,
         client_id: None,
+        talent_id: None,
     }))
 }
 
@@ -564,6 +566,7 @@ pub async fn upload_client_file(
         storage_bucket: bucket,
         storage_path: path,
         client_id: Some(client_id),
+        talent_id: None,
     }))
 }
 
@@ -649,6 +652,234 @@ pub async fn list_talents(
         .collect();
 
     Ok(Json(json!(talents)))
+}
+
+pub async fn list_talent_assets(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(talent_id): Path<String>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    // 1. Verify agency management of this talent
+    let resp = state
+        .pg
+        .from("agency_users")
+        .select("id")
+        .eq("agency_id", &user.id)
+        .eq("creator_id", &talent_id)
+        .eq("status", "active")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if rows.is_empty() {
+        return Err((StatusCode::FORBIDDEN, "Access denied to this talent".to_string()));
+    }
+
+    // 2. Fetch images from reference_images
+    let images_resp = state
+        .pg
+        .from("reference_images")
+        .select("id,public_url,section_id,created_at")
+        .eq("user_id", &talent_id)
+        .eq("moderation_status", "approved")
+        .order("created_at.desc")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let images_text = images_resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let images: Vec<serde_json::Value> = serde_json::from_str(&images_text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    // 3. Fetch files from agency_files
+    let files_resp = state
+        .pg
+        .from("agency_files")
+        .select("id,file_name,public_url,created_at,storage_path")
+        .eq("talent_id", &talent_id)
+        .order("created_at.desc")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let files_text = files_resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let files: Vec<serde_json::Value> = serde_json::from_str(&files_text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let mut assets = vec![];
+    
+    // Add reference images
+    for img in images {
+        assets.push(json!({
+            "id": img["id"],
+            "url": img["public_url"],
+            "type": "image",
+            "metadata": {
+                "section": img["section_id"],
+                "created_at": img["created_at"]
+            }
+        }));
+    }
+
+    // Add agency files (could be videos or high-res photos)
+    for file in files {
+        let fname = file["file_name"].as_str().unwrap_or("");
+        let is_video = fname.to_lowercase().ends_with(".mp4") || fname.to_lowercase().ends_with(".mov") || fname.to_lowercase().ends_with(".webm");
+        
+        assets.push(json!({
+            "id": file["id"],
+            "url": file["public_url"],
+            "type": if is_video { "video" } else { "image" },
+            "metadata": {
+                "section": "agency_upload",
+                "created_at": file["created_at"]
+            }
+        }));
+    }
+
+    Ok(Json(json!(assets)))
+}
+
+pub async fn upload_talent_asset(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(talent_id): Path<String>,
+    mut multipart: Multipart,
+) -> Result<Json<AgencyFileUploadResponse>, (StatusCode, String)> {
+    // 1. Verify agency management of this talent
+    let resp = state
+        .pg
+        .from("agency_users")
+        .select("id")
+        .eq("agency_id", &user.id)
+        .eq("creator_id", &talent_id)
+        .eq("status", "active")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if rows.is_empty() {
+        return Err((StatusCode::FORBIDDEN, "Access denied to this talent".to_string()));
+    }
+
+    // 2. Extract file
+    let mut file_name = None;
+    let mut bytes: Vec<u8> = vec![];
+    let mut content_type = None;
+
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?
+    {
+        let name = field.name().map(|s| s.to_string());
+        if name.as_deref() == Some("file") {
+            file_name = field.file_name().map(|s| s.to_string());
+            content_type = field.content_type().map(|s| s.to_string());
+            let data = field
+                .bytes()
+                .await
+                .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+            bytes = data.to_vec();
+            break;
+        }
+    }
+
+    if bytes.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "missing file".into()));
+    }
+
+    let fname = file_name.unwrap_or_else(|| "upload.bin".to_string());
+    let sanitized = fname
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect::<String>();
+
+    // 3. Storage target (PUBLIC bucket for packages)
+    let bucket = state.supabase_bucket_public.clone();
+    let path = format!(
+        "agencies/{}/talents/{}/assets/{}_{}",
+        user.id,
+        talent_id,
+        chrono::Utc::now().timestamp_millis(),
+        sanitized
+    );
+
+    // 4. Upload to Supabase Storage
+    let storage_url = format!(
+        "{}/storage/v1/object/{}/{}",
+        state.supabase_url, bucket, path
+    );
+    let http = reqwest::Client::new();
+    let up = http
+        .post(&storage_url)
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
+        .header("apikey", state.supabase_service_key.clone())
+        .header("content-type", content_type.unwrap_or_else(|| "application/octet-stream".to_string()))
+        .body(bytes)
+        .send()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    if !up.status().is_success() {
+        let msg = up.text().await.unwrap_or_default();
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            format!("storage upload failed: {msg}"),
+        ));
+    }
+
+    let public_url = format!(
+        "{}/storage/v1/object/public/{}/{}",
+        state.supabase_url, bucket, path
+    );
+
+    // 5. Insert row into agency_files
+    let insert = serde_json::json!({
+        "agency_id": user.id,
+        "talent_id": talent_id,
+        "file_name": fname,
+        "storage_bucket": bucket,
+        "storage_path": path,
+        "public_url": public_url,
+    });
+
+    let resp = state
+        .pg
+        .from("agency_files")
+        .insert(insert.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let txt = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let arr: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+    let rec = arr.first().cloned().unwrap_or(serde_json::json!({"id": ""}));
+    let id = rec.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+
+    Ok(Json(AgencyFileUploadResponse {
+        id,
+        file_name: fname,
+        public_url: Some(public_url),
+        storage_bucket: bucket,
+        storage_path: path,
+        client_id: None,
+        talent_id: Some(talent_id),
+    }))
 }
 
 #[derive(Deserialize, Serialize, Debug)]
