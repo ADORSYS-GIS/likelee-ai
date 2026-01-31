@@ -1,5 +1,5 @@
--- 0013_talent_packages.sql
--- Subschema for Talent Packages (Portfolios)
+-- 0013_talent_packages_core.sql
+-- Subschema for Talent Packages (Portfolios) including client info and agency file links
 
 BEGIN;
 
@@ -17,6 +17,10 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_packages (
     primary_color text,
     secondary_color text,
     custom_message text,
+    
+    -- Client Contact Information (Consolidated from 0016)
+    client_name text,
+    client_email text,
     
     -- Settings
     allow_comments boolean DEFAULT true,
@@ -36,6 +40,7 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_packages (
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_agency_talent_packages_agency_id ON public.agency_talent_packages(agency_id);
 CREATE INDEX IF NOT EXISTS idx_agency_talent_packages_access_token ON public.agency_talent_packages(access_token);
+CREATE INDEX IF NOT EXISTS idx_atp_client_email ON public.agency_talent_packages(client_email);
 
 -- 2. Talent Selections in Package
 CREATE TABLE IF NOT EXISTS public.agency_talent_package_items (
@@ -83,6 +88,13 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_package_stats (
     unique_visitors integer DEFAULT 0
 );
 
+-- 6. Agency Files Extension (Consolidated from 0014)
+-- Add talent_id to agency_files to link files to specific talents
+ALTER TABLE public.agency_files
+  ADD COLUMN IF NOT EXISTS talent_id uuid REFERENCES public.creators(id) ON DELETE CASCADE;
+
+CREATE INDEX IF NOT EXISTS idx_agency_files_talent_id ON public.agency_files(talent_id);
+
 -- RLS POLICIES
 
 ALTER TABLE public.agency_talent_packages ENABLE ROW LEVEL SECURITY;
@@ -91,18 +103,17 @@ ALTER TABLE public.agency_talent_package_item_assets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.agency_talent_package_interactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.agency_talent_package_stats ENABLE ROW LEVEL SECURITY;
 
--- 1. Agencies can manage their own packages
+-- Agencies manage own packages
 DROP POLICY IF EXISTS "Agency members manage own packages" ON public.agency_talent_packages;
 CREATE POLICY "Agency members manage own packages" ON public.agency_talent_packages
     FOR ALL USING (auth.uid() = agency_id);
 
--- 2. Public can view package details ONLY if access_token is provided (via API/Handlers)
--- In RLS, we can allow lookup by access_token for select
+-- Public access via token
 DROP POLICY IF EXISTS "Public access via token" ON public.agency_talent_packages;
 CREATE POLICY "Public access via token" ON public.agency_talent_packages
-    FOR SELECT USING (true); -- We will enforce access_token check in the API layer or specific where clauses
+    FOR SELECT USING (true);
 
--- 3. Items and Assets follow the package visibility
+-- Items and Assets visibility
 DROP POLICY IF EXISTS "Package items visibility" ON public.agency_talent_package_items;
 CREATE POLICY "Package items visibility" ON public.agency_talent_package_items
     FOR SELECT USING (
@@ -122,7 +133,7 @@ CREATE POLICY "Package assets visibility" ON public.agency_talent_package_item_a
         )
     );
 
--- 4. Interactions: Agencies can view all, Public can insert
+-- Interactions: Agencies view all, Public insert
 DROP POLICY IF EXISTS "Interactions agency select" ON public.agency_talent_package_interactions;
 CREATE POLICY "Interactions agency select" ON public.agency_talent_package_interactions
     FOR SELECT USING (
@@ -136,7 +147,7 @@ DROP POLICY IF EXISTS "Interactions public insert" ON public.agency_talent_packa
 CREATE POLICY "Interactions public insert" ON public.agency_talent_package_interactions
     FOR INSERT WITH CHECK (true);
 
--- 5. Stats
+-- Stats agency select
 DROP POLICY IF EXISTS "Stats agency select" ON public.agency_talent_package_stats;
 CREATE POLICY "Stats agency select" ON public.agency_talent_package_stats
     FOR SELECT USING (
@@ -145,5 +156,20 @@ CREATE POLICY "Stats agency select" ON public.agency_talent_package_stats
             WHERE id = package_id AND agency_id = auth.uid()
         )
     );
+
+-- Agency Files RLS (Consolidated from 0014)
+DROP POLICY IF EXISTS "agency_files select own" ON public.agency_files;
+CREATE POLICY "agency_files select own" ON public.agency_files
+  FOR SELECT USING (
+    auth.uid() = agency_id OR 
+    EXISTS (
+      SELECT 1 FROM public.agency_clients
+      WHERE id = client_id AND agency_id = auth.uid()
+    ) OR
+    EXISTS (
+      SELECT 1 FROM public.agency_users
+      WHERE creator_id = talent_id AND agency_id = auth.uid()
+    )
+  );
 
 COMMIT;

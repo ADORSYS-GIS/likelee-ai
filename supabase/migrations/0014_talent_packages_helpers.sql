@@ -1,7 +1,9 @@
--- 0015_talent_package_stats_helpers.sql
+-- 0014_talent_packages_helpers.sql
+-- Consolidates stats and aggregate helper functions for Talent Packages
+
 BEGIN;
 
--- 1. Function to increment package views
+-- 1. Function to increment package views (from 0015)
 CREATE OR REPLACE FUNCTION public.increment_package_view(p_package_id uuid)
 RETURNS void
 LANGUAGE plpgsql
@@ -17,7 +19,7 @@ BEGIN
 END;
 $$;
 
--- 2. Function to get aggregate stats for an agency
+-- 2. Function to get aggregate stats for an agency (from 0015)
 CREATE OR REPLACE FUNCTION public.get_agency_package_stats(p_agency_id uuid)
 RETURNS TABLE (
     total_views bigint,
