@@ -271,7 +271,7 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                             </div>
                                             <Button
                                                 onClick={() => setShowTalentSelector(true)}
-                                                className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-full flex items-center gap-2"
+                                                className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg flex items-center gap-2"
                                             >
                                                 <Plus className="w-5 h-5" /> Add Talent
                                             </Button>
@@ -317,7 +317,7 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                                                 variant="ghost"
                                                                 size="icon"
                                                                 onClick={() => toggleTalentSelection(item.talent)}
-                                                                className="h-10 w-10 text-gray-200 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all duration-300"
+                                                                className="h-10 w-10 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-300"
                                                             >
                                                                 <Trash2 className="w-4 h-4" />
                                                             </Button>
