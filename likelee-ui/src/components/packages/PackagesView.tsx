@@ -64,10 +64,10 @@ export function PackagesView() {
     };
 
     const stats = [
-        { label: "Total Packages", value: realStats.total_packages, icon: Package, color: "text-blue-600" },
-        { label: "Active Shares", value: realStats.active_shares, icon: CheckCircle2, color: "text-green-600" },
-        { label: "Total Views", value: realStats.total_views.toLocaleString(), icon: Eye, color: "text-purple-600" },
-        { label: "Conversion", value: realStats.conversion_rate, icon: TrendingUp, color: "text-orange-600" },
+        { label: "Total Packages", value: realStats.total_packages, icon: Package, color: "text-blue-600", bgColor: "bg-blue-100" },
+        { label: "Active Shares", value: realStats.active_shares, icon: CheckCircle2, color: "text-green-600", bgColor: "bg-green-100" },
+        { label: "Total Views", value: realStats.total_views.toLocaleString(), icon: Eye, color: "text-purple-600", bgColor: "bg-purple-100" },
+        { label: "Conversion", value: realStats.conversion_rate, icon: TrendingUp, color: "text-orange-600", bgColor: "bg-orange-100" },
     ];
 
     return (
@@ -77,12 +77,12 @@ export function PackagesView() {
                 {stats.map((s, i) => (
                     <Card key={i} className="p-6 bg-white border border-gray-200 shadow-sm relative overflow-hidden group">
                         <div className="flex justify-between items-start mb-4">
-                            <div className={`p-2 rounded-lg bg-gray-50 group-hover:bg-white transition-colors border border-transparent group-hover:border-gray-100`}>
+                            <div className={`p-2 rounded-lg ${s.bgColor} transition-colors border border-transparent`}>
                                 <s.icon className={`w-5 h-5 ${s.color}`} />
                             </div>
-                            <Badge variant="secondary" className="bg-gray-50 text-[10px] font-black uppercase tracking-widest">+4%</Badge>
+                            <Badge variant="secondary" className="bg-gray-100 text-[10px] font-black uppercase tracking-widest">+4%</Badge>
                         </div>
-                        <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">{s.label}</p>
+                        <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest">{s.label}</p>
                         <h3 className="text-3xl font-black text-gray-900 tracking-tighter mt-1">{s.value}</h3>
                     </Card>
                 ))}
