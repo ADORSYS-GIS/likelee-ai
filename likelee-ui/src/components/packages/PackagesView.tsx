@@ -82,7 +82,7 @@ export function PackagesView() {
                             </div>
                             <Badge variant="secondary" className="bg-gray-100 text-[10px] font-black uppercase tracking-widest">+4%</Badge>
                         </div>
-                        <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest">{s.label}</p>
+                        <p className="text-[11px] font-black text-gray-700 uppercase tracking-widest">{s.label}</p>
                         <h3 className="text-3xl font-black text-gray-900 tracking-tighter mt-1">{s.value}</h3>
                     </Card>
                 ))}
