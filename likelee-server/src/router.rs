@@ -37,6 +37,22 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::agencies::list_clients).post(crate::agencies::create_client),
         )
         .route(
+            "/api/agency/clients/:id",
+            post(crate::agencies::update_client).delete(crate::agencies::delete_client),
+        )
+        .route(
+            "/api/agency/clients/:id/contacts",
+            get(crate::agencies::list_contacts).post(crate::agencies::create_contact),
+        )
+        .route(
+            "/api/agency/clients/:client_id/contacts/:contact_id",
+            delete(crate::agencies::delete_contact),
+        )
+        .route(
+            "/api/agency/clients/:id/communications",
+            get(crate::agencies::list_communications).post(crate::agencies::create_communication),
+        )
+        .route(
             "/api/agency/files/upload",
             post(crate::agencies::upload_agency_file),
         )
