@@ -96,18 +96,18 @@ export function PackagesView() {
                         placeholder="Search packages..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 h-12 bg-white border-gray-200 font-medium"
+                        className="pl-10 h-12 bg-white border-gray-200 font-medium rounded-lg"
                     />
                 </div>
                 <div className="flex gap-3">
-                    <Button variant="outline" className="h-12 px-6 font-black uppercase tracking-widest text-[11px] border-2">
+                    <Button variant="outline" className="h-10 px-6 font-bold text-sm rounded-lg border-2">
                         <Filter className="w-4 h-4 mr-2" /> Filter
                     </Button>
                     <Button
                         onClick={() => setShowWizard(true)}
-                        className="h-12 px-8 bg-gray-900 hover:bg-gray-800 text-white font-black uppercase tracking-widest text-[11px] shadow-lg shadow-gray-200"
+                        className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg"
                     >
-                        <Plus className="w-4 h-4 mr-2" /> Create New Package
+                        <Plus className="w-4 h-4 mr-2" /> Package
                     </Button>
                 </div>
             </div>
@@ -126,9 +126,9 @@ export function PackagesView() {
                     <p className="text-gray-500 font-medium mt-2 mb-8">Start by creating your first talent portfolio for a client.</p>
                     <Button
                         onClick={() => setShowWizard(true)}
-                        className="bg-gray-900 hover:bg-gray-800 text-white font-black uppercase tracking-widest text-[11px] px-8 h-12"
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg px-6 h-10 rounded-lg shadow-md shadow-indigo-300"
                     >
-                        Create Your First Package
+                        +
                     </Button>
                 </Card>
             ) : (

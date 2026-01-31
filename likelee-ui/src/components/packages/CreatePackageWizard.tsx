@@ -150,7 +150,7 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                         <div className="flex justify-between items-start mb-8">
                             <div>
                                 <DialogTitle className="text-4xl font-black text-gray-900 tracking-tighter">
-                                    Create New Package
+
                                 </DialogTitle>
                                 <p className="text-sm text-gray-400 font-medium mt-1">
                                     Build a beautiful portfolio package to showcase your talent to clients
