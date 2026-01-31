@@ -64,6 +64,23 @@ pub fn build_router(state: AppState) -> Router {
             "/api/agency/clients/:id/files/:file_id/signed-url",
             get(crate::agencies::get_client_file_signed_url),
         )
+        // Talent Packages
+        .route(
+            "/api/agency/packages",
+            get(crate::packages::list_packages).post(crate::packages::create_package),
+        )
+        .route(
+            "/api/agency/packages/:id",
+            get(crate::packages::get_package).delete(crate::packages::delete_package),
+        )
+        .route(
+            "/api/public/packages/:token",
+            get(crate::packages::get_public_package),
+        )
+        .route(
+            "/api/public/packages/:token/interactions",
+            post(crate::packages::create_interaction),
+        )
         .route("/api/dashboard", get(crate::dashboard::get_dashboard))
         // Removed legacy Tavus routes
         .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))

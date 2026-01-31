@@ -103,6 +103,7 @@ import CameoUpload from "./CameoUpload";
 import RoyaltyWallet from "./RoyaltyWallet";
 import PublicProfile from "./PublicProfile";
 import BrandDiscoverFaces from "./BrandDiscoverFaces";
+import { PublicPackageView } from "./PublicPackageView";
 
 import {
   BrowserRouter as Router,
@@ -230,6 +231,7 @@ const PAGES = {
   PublicProfile: PublicProfile,
   BrandDiscoverFaces: BrandDiscoverFaces,
   Unauthorized: Unauthorized,
+  PublicPackageView: PublicPackageView,
 };
 
 function _getCurrentPage(url) {
@@ -500,6 +502,7 @@ function PagesContent() {
           }
         />
         <Route path="/Unauthorized" element={<Unauthorized />} />
+        <Route path="/share/package/:token" element={<PublicPackageView />} />
       </Routes>
     </Layout>
   );

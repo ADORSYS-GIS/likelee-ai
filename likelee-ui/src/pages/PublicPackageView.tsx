@@ -1,0 +1,322 @@
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import {
+    Heart, MessageSquare, Send, Calendar,
+    MapPin, User, ChevronRight, Eye,
+    CheckCircle2, Download, ExternalLink,
+    Loader2, AlertCircle, Play, X
+} from "lucide-react";
+import { packageApi } from "@/api/packages";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { motion, AnimatePresence } from "framer-motion";
+import { format } from "date-fns";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+
+export function PublicPackageView() {
+    const { token } = useParams<{ token: string }>();
+    const [selectedTalent, setSelectedTalent] = useState<any>(null);
+    const [commentOpen, setCommentOpen] = useState(false);
+    const [comment, setComment] = useState("");
+    const [clientName, setClientName] = useState("");
+
+    const { data: packageData, isLoading, error } = useQuery({
+        queryKey: ["public-package", token],
+        queryFn: () => packageApi.getPublicPackage(token!),
+        enabled: !!token,
+    });
+
+    const interactionMutation = useMutation({
+        mutationFn: (data: any) => packageApi.createInteraction(token!, data),
+        onSuccess: () => {
+            setCommentOpen(false);
+            setComment("");
+            // Logic for success message
+        }
+    });
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-white">
+                <Loader2 className="w-12 h-12 animate-spin text-gray-900 mb-4" />
+                <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Loading Portfolio...</p>
+            </div>
+        );
+    }
+
+    if (error || !packageData?.data) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-white p-6 text-center">
+                <AlertCircle className="w-16 h-16 text-red-500 mb-6" />
+                <h1 className="text-2xl font-black text-gray-900 uppercase tracking-tight">Access Denied</h1>
+                <p className="text-gray-500 max-w-md mt-2">This package may have expired or the link is invalid. Please contact the agency for a new link.</p>
+                <Button variant="outline" className="mt-8 border-2" onClick={() => window.location.href = '/'}>
+                    Return Home
+                </Button>
+            </div>
+        );
+    }
+
+    const pkg = packageData.data;
+    const primaryColor = pkg.primary_color || "#0F172A";
+
+    const handleFavorite = (talentId: string) => {
+        interactionMutation.mutate({
+            talent_id: talentId,
+            type: 'favorite'
+        });
+    };
+
+    const submitComment = () => {
+        if (!comment || !selectedTalent) return;
+        interactionMutation.mutate({
+            talent_id: selectedTalent.id,
+            type: 'comment',
+            content: comment,
+            client_name: clientName
+        });
+    };
+
+    return (
+        <div className="min-h-screen bg-white selection:bg-gray-900 selection:text-white pb-20 overflow-x-hidden">
+            {/* Branding Bar */}
+            <div className="h-1 bg-gray-100 w-full" style={{ backgroundColor: pkg.secondary_color + '22' }}>
+                <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: "100%" }}
+                    transition={{ duration: 1.5 }}
+                    className="h-full"
+                    style={{ backgroundColor: primaryColor }}
+                />
+            </div>
+
+            <header className="max-w-7xl mx-auto px-6 pt-16 pb-20">
+                <div className="flex flex-col md:flex-row justify-between items-end gap-10">
+                    <div className="space-y-4">
+                        <Badge variant="outline" className="border-2 border-gray-900 text-gray-900 font-black uppercase tracking-widest px-4 py-1">
+                            Portfolio Package
+                        </Badge>
+                        <h1 className="text-6xl md:text-8xl font-black text-gray-900 tracking-tighter leading-[0.9]">
+                            {pkg.title}
+                        </h1>
+                        <p className="text-xl text-gray-500 font-medium max-w-2xl">
+                            {pkg.custom_message || "Explore our latest talent selections curated specifically for your upcoming project."}
+                        </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Curated by</span>
+                        <h2 className="text-lg font-black text-gray-900 uppercase tracking-tight">{pkg.agency_name || "Premier Talent Agency"}</h2>
+                    </div>
+                </div>
+            </header>
+
+            {/* Talent Grid */}
+            <main className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+                {pkg.items?.map((item: any, idx: number) => {
+                    const talent = item.talent;
+                    return (
+                        <motion.div
+                            key={item.id}
+                            initial={{ opacity: 0, y: 30 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.1 }}
+                            className="group cursor-pointer"
+                        >
+                            <div
+                                className="aspect-[3/4] rounded-3xl overflow-hidden relative mb-6 shadow-2xl transition-transform duration-500 group-hover:scale-[1.02]"
+                                onClick={() => setSelectedTalent(talent)}
+                            >
+                                {talent.profile_photo_url ? (
+                                    <img
+                                        src={talent.profile_photo_url}
+                                        className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
+                                        alt={talent.full_name}
+                                    />
+                                ) : (
+                                    <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-300">
+                                        <User className="w-20 h-20" />
+                                    </div>
+                                )}
+
+                                {/* Overlay Tags */}
+                                <div className="absolute top-6 left-6 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                    <Badge className="bg-white/90 backdrop-blur text-gray-900 hover:bg-white p-2">
+                                        <CheckCircle2 className="w-4 h-4" />
+                                    </Badge>
+                                </div>
+
+                                <div className="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex justify-between items-end translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                                    <div className="text-white">
+                                        <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">{talent.categories?.[0] || 'Talent'}</p>
+                                        <h3 className="text-3xl font-black uppercase tracking-tighter">{talent.full_name}</h3>
+                                    </div>
+                                    <ChevronRight className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </div>
+                            </div>
+
+                            <div className="flex justify-between items-center bg-gray-50 rounded-2xl p-4 border border-transparent hover:border-gray-200 transition-all">
+                                <div className="flex gap-4">
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleFavorite(talent.id); }}
+                                        className="flex flex-col items-center gap-1 group/btn"
+                                    >
+                                        <Heart className="w-5 h-5 text-gray-400 group-hover/btn:text-red-500 transition-colors" />
+                                        <span className="text-[8px] font-black uppercase tracking-widest text-gray-400">Save</span>
+                                    </button>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setSelectedTalent(talent); setCommentOpen(true); }}
+                                        className="flex flex-col items-center gap-1 group/btn"
+                                    >
+                                        <MessageSquare className="w-5 h-5 text-gray-400 group-hover/btn:text-gray-900 transition-colors" />
+                                        <span className="text-[8px] font-black uppercase tracking-widest text-gray-400">Notes</span>
+                                    </button>
+                                </div>
+                                <Button
+                                    variant="link"
+                                    className="text-[10px] font-black uppercase tracking-widest text-gray-900 p-0 h-auto"
+                                    onClick={() => setSelectedTalent(talent)}
+                                >
+                                    View Card
+                                </Button>
+                            </div>
+                        </motion.div>
+                    );
+                })}
+            </main>
+
+            {/* Footer Branding */}
+            <footer className="max-w-7xl mx-auto px-6 mt-40 border-t border-gray-100 pt-16 text-center">
+                <p className="text-[11px] font-black uppercase tracking-[0.4em] text-gray-300 mb-6">Powered by LikeLee.ai</p>
+                <div className="flex justify-center gap-8 mb-20 grayscale opacity-40">
+                    {/* Logos for credibility */}
+                    <div className="w-8 h-8 rounded bg-gray-200" />
+                    <div className="w-8 h-8 rounded bg-gray-200" />
+                    <div className="w-8 h-8 rounded bg-gray-200" />
+                </div>
+            </footer>
+
+            {/* Talent Detail Modal */}
+            <AnimatePresence>
+                {selectedTalent && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-black/90 backdrop-blur-xl"
+                            onClick={() => setSelectedTalent(null)}
+                        />
+
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white w-full max-w-6xl rounded-3xl overflow-hidden shadow-2xl relative z-10 flex flex-col md:flex-row h-[90vh]"
+                        >
+                            <div className="w-full md:w-[60%] h-1/2 md:h-full relative overflow-hidden bg-gray-100">
+                                <img
+                                    src={selectedTalent.profile_photo_url}
+                                    className="w-full h-full object-cover"
+                                    alt={selectedTalent.full_name}
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute top-6 left-6 text-white hover:bg-white/20 rounded-full"
+                                    onClick={() => setSelectedTalent(null)}
+                                >
+                                    <X className="w-6 h-6" />
+                                </Button>
+                            </div>
+
+                            <div className="flex-1 p-12 overflow-y-auto flex flex-col">
+                                <div className="flex justify-between items-start mb-10">
+                                    <div className="space-y-2">
+                                        <Badge variant="secondary" className="bg-gray-100 font-black uppercase text-[10px]">{selectedTalent.categories?.[0]}</Badge>
+                                        <h2 className="text-4xl font-black text-gray-900 uppercase tracking-tighter">{selectedTalent.full_name}</h2>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button variant="outline" size="icon" className="rounded-full border-2" onClick={() => handleFavorite(selectedTalent.id)}>
+                                            <Heart className="w-5 h-5" />
+                                        </Button>
+                                        <Button className="rounded-full bg-gray-900 h-10 px-6 font-black uppercase text-[10px] tracking-widest gap-2">
+                                            Request Callback <ChevronRight className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-8 mb-12">
+                                    {[
+                                        { label: 'Location', value: selectedTalent.city || 'NY / Global', icon: MapPin },
+                                        { label: 'Ethnicity', value: selectedTalent.race || 'Global', icon: Globe },
+                                        { label: 'Availability', value: 'Immediate', icon: Calendar },
+                                    ].map((stat, i) => (
+                                        <div key={i} className="space-y-1">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-1.5"><stat.icon className="w-3 h-3" /> {stat.label}</p>
+                                            <p className="font-bold text-gray-900">{stat.value}</p>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="space-y-4 mb-12">
+                                    <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">Internal Bio</h3>
+                                    <p className="text-gray-500 font-medium leading-relaxed">
+                                        {selectedTalent.bio || "This premium talent selection represents our highest tier of visual creators. Suitable for broad campaign reaches and international branding."}
+                                    </p>
+                                </div>
+
+                                <div className="mt-auto space-y-6 pt-10 border-t border-gray-100">
+                                    <div className="flex justify-between items-center">
+                                        <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest">Feedback & Notes</h4>
+                                        <Badge variant="outline" className="text-[9px] uppercase tracking-tighter opacity-50">Private Selection</Badge>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <Input
+                                            placeholder="Your Name"
+                                            value={clientName}
+                                            onChange={(e) => setClientName(e.target.value)}
+                                            className="bg-gray-50 border-transparent focus:bg-white h-12 font-bold"
+                                        />
+                                        <div className="relative">
+                                            <Textarea
+                                                placeholder="Add a comment or share your thoughts on this talent..."
+                                                className="bg-gray-50 border-transparent focus:bg-white min-h-[100px] font-medium"
+                                                value={comment}
+                                                onChange={(e) => setComment(e.target.value)}
+                                            />
+                                            <Button
+                                                size="icon"
+                                                className="absolute bottom-4 right-4 bg-gray-900 rounded-xl"
+                                                onClick={submitComment}
+                                                disabled={interactionMutation.isPending || !comment}
+                                            >
+                                                <Send className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            <style dangerouslySetInnerHTML={{
+                __html: `
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+      `}} />
+        </div>
+    );
+}
+
+const Globe = ({ className }: { className?: string }) => (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+    </svg>
+);

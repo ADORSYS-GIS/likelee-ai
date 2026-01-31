@@ -16,6 +16,7 @@ pub mod kyc;
 pub mod licenses;
 pub mod moderation;
 pub mod notifications;
+pub mod packages;
 pub mod payouts;
 pub mod reference_images;
 pub mod router;
