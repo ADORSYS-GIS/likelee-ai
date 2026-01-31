@@ -414,15 +414,15 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                 )}
 
                                 {step === 3 && (
-                                    <div className="max-w-2xl space-y-12 py-4 mx-auto w-full">
-                                        <div className="space-y-8">
+                                    <div className="max-w-2xl space-y-10 py-4 mx-auto w-full">
+                                        <div className="space-y-6">
                                             <div className="space-y-1">
-                                                <h3 className="text-2xl font-black text-gray-900 tracking-tighter">Ready to send?</h3>
-                                                <p className="text-sm text-gray-400 font-medium">Complete the recipient details to publish the package</p>
+                                                <h3 className="text-2xl font-black text-gray-900 tracking-tight">Ready to send?</h3>
+                                                <p className="text-sm text-gray-500 font-medium">Complete the recipient details to publish the package</p>
                                             </div>
-                                            <div className="grid grid-cols-2 gap-8">
+                                            <div className="grid grid-cols-2 gap-6">
                                                 <div className="space-y-3">
-                                                    <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Client Contact *</Label>
+                                                    <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Client Contact *</Label>
                                                     <Input
                                                         placeholder="e.g. John Doe"
                                                         value={formData.client_name}
@@ -431,7 +431,7 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                                     />
                                                 </div>
                                                 <div className="space-y-3">
-                                                    <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Delivery Email *</Label>
+                                                    <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Delivery Email *</Label>
                                                     <Input
                                                         type="email"
                                                         placeholder="client@company.com"
@@ -443,27 +443,27 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                             </div>
                                         </div>
 
-                                        <div className="p-10 bg-indigo-50/30 backdrop-blur-sm rounded-[3rem] border border-indigo-100/50 relative overflow-hidden group">
-                                            <div className="absolute top-0 right-0 p-8 opacity-10 scale-150 rotate-12 group-hover:scale-175 transition-transform duration-700">
-                                                <Send className="w-24 h-24 text-indigo-600" />
+                                        <div className="p-10 bg-white rounded-[1.75rem] border border-gray-200 shadow-sm relative overflow-hidden min-h-[190px]">
+                                            <div className="absolute top-4 right-4 opacity-10">
+                                                <Send className="w-28 h-28 text-indigo-600" />
                                             </div>
-                                            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-6 flex items-center gap-2">
-                                                <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+                                            <h4 className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-500 mb-4 flex items-center gap-2">
+                                                <span className="w-2 h-2 rounded-full bg-indigo-500" />
                                                 Package Summary
                                             </h4>
-                                            <div className="space-y-4 relative z-10">
+                                            <div className="space-y-3 relative z-10">
                                                 <div className="flex items-baseline gap-3">
-                                                    <h5 className="text-2xl font-black text-indigo-900 tracking-tighter leading-none">{formData.title || 'Untitled Selection'}</h5>
+                                                    <h5 className="text-xl font-black text-gray-900 tracking-tight leading-none">{formData.title || 'Untitled Selection'}</h5>
                                                 </div>
-                                                <div className="flex flex-wrap gap-3 mt-4">
-                                                    <Badge className="bg-white/80 backdrop-blur-md text-indigo-600 border-none px-4 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm">
+                                                <div className="flex flex-wrap gap-3 mt-3">
+                                                    <Badge className="bg-gray-100 text-gray-700 border-none px-3 py-1 rounded-lg font-bold text-[10px] uppercase tracking-widest">
                                                         {formData.items.length} Talents
                                                     </Badge>
-                                                    <Badge className="bg-white/80 backdrop-blur-md text-indigo-600 border-none px-4 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm">
+                                                    <Badge className="bg-gray-100 text-gray-700 border-none px-3 py-1 rounded-lg font-bold text-[10px] uppercase tracking-widest">
                                                         {formData.items.reduce((acc, it) => acc + it.asset_ids.length, 0)} Assets
                                                     </Badge>
                                                     {formData.password_protected && (
-                                                        <Badge className="bg-indigo-600 text-white border-none px-4 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-sm">
+                                                        <Badge className="bg-indigo-600 text-white border-none px-3 py-1 rounded-lg font-bold text-[10px] uppercase tracking-widest">
                                                             Password Protected
                                                         </Badge>
                                                     )}
