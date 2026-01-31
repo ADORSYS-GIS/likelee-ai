@@ -599,7 +599,7 @@ pub async fn list_talents(
         .select("id,agency_id,creator_id,full_legal_name,stage_name,profile_photo_url,status,role")
         .eq("agency_id", &org_id)
         .eq("role", "talent")
-        .eq("status", "active");
+        .in_("status", vec!["active", "inactive"]);
     if let Some(q) = params.q.as_ref().filter(|s| !s.is_empty()) {
         let enc = format!("%25{}%25", q);
         // Filter by stage_name OR full_legal_name
@@ -665,8 +665,8 @@ pub async fn list_talent_assets(
         .from("agency_users")
         .select("id")
         .eq("agency_id", &user.id)
-        .eq("creator_id", &talent_id)
         .eq("status", "active")
+        .eq("id", &talent_id)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -752,7 +752,7 @@ pub async fn upload_talent_asset(
         .from("agency_users")
         .select("id")
         .eq("agency_id", &user.id)
-        .eq("creator_id", &talent_id)
+        .eq("id", &talent_id)
         .eq("status", "active")
         .execute()
         .await

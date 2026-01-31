@@ -13,9 +13,7 @@ export const packageApi = {
     listTalents: () => base44Client.get("/api/agency/talents"),
     listTalentAssets: (id: string) => base44Client.get(`/api/agency/talents/${id}/assets`),
     uploadTalentAsset: (id: string, formData: FormData) =>
-        base44Client.post(`/api/agency/talents/${id}/assets/upload`, formData, {
-            headers: { "Content-Type": "multipart/form-data" },
-        }),
+        base44Client.post(`/api/agency/talents/${id}/assets/upload`, formData),
 
     getPublicPackage: (token: string) => base44Client.get(`/api/public/packages/${token}`),
 
