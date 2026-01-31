@@ -61,7 +61,8 @@ export function PublicPackageView() {
     }
 
     const pkg = packageData.data;
-    const primaryColor = pkg.primary_color || "#0F172A";
+    const primaryColor = pkg.primary_color || "#6366F1";
+    const secondaryColor = pkg.secondary_color || "#06B6D4";
 
     const handleFavorite = (talentId: string) => {
         interactionMutation.mutate({
@@ -81,9 +82,10 @@ export function PublicPackageView() {
     };
 
     return (
-        <div className="min-h-screen bg-white selection:bg-gray-900 selection:text-white pb-20 overflow-x-hidden">
+        <div className="min-h-screen bg-white pb-20 overflow-x-hidden" style={{ "--selection-bg": primaryColor } as any}>
+            <style>{`::selection { background-color: var(--selection-bg); color: white; }`}</style>
             {/* Branding Bar */}
-            <div className="h-1 bg-gray-100 w-full" style={{ backgroundColor: pkg.secondary_color + '22' }}>
+            <div className="h-1 bg-gray-100 w-full" style={{ backgroundColor: secondaryColor + '22' }}>
                 <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: "100%" }}
@@ -96,19 +98,19 @@ export function PublicPackageView() {
             <header className="max-w-7xl mx-auto px-6 pt-16 pb-20">
                 <div className="flex flex-col md:flex-row justify-between items-end gap-10">
                     <div className="space-y-4">
-                        <Badge variant="outline" className="border-2 border-gray-900 text-gray-900 font-black uppercase tracking-widest px-4 py-1">
+                        <Badge variant="outline" className="border-2 font-black uppercase tracking-widest px-4 py-1" style={{ borderColor: primaryColor, color: primaryColor }}>
                             Portfolio Package
                         </Badge>
                         <h1 className="text-6xl md:text-8xl font-black text-gray-900 tracking-tighter leading-[0.9]">
                             {pkg.title}
                         </h1>
                         <p className="text-xl text-gray-500 font-medium max-w-2xl">
-                            {pkg.custom_message || "Explore our latest talent selections curated specifically for your upcoming project."}
+                            {pkg.description || "Explore our latest talent selections curated specifically for your upcoming project."}
                         </p>
                     </div>
                     <div className="flex flex-col items-end gap-2">
                         <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Curated by</span>
-                        <h2 className="text-lg font-black text-gray-900 uppercase tracking-tight">{pkg.agency_name || "Premier Talent Agency"}</h2>
+                        <h2 className="text-lg font-black uppercase tracking-tight" style={{ color: primaryColor }}>{pkg.agency_name || "Premier Talent Agency"}</h2>
                     </div>
                 </div>
             </header>
@@ -176,7 +178,8 @@ export function PublicPackageView() {
                                 </div>
                                 <Button
                                     variant="link"
-                                    className="text-[10px] font-black uppercase tracking-widest text-gray-900 p-0 h-auto"
+                                    className="text-[10px] font-black uppercase tracking-widest p-0 h-auto"
+                                    style={{ color: primaryColor }}
                                     onClick={() => setSelectedTalent(talent)}
                                 >
                                     View Card
@@ -240,10 +243,13 @@ export function PublicPackageView() {
                                         <h2 className="text-4xl font-black text-gray-900 uppercase tracking-tighter">{selectedTalent.full_name}</h2>
                                     </div>
                                     <div className="flex gap-2">
-                                        <Button variant="outline" size="icon" className="rounded-full border-2" onClick={() => handleFavorite(selectedTalent.id)}>
+                                        <Button variant="outline" size="icon" className="rounded-full border-2" style={{ borderColor: primaryColor, color: primaryColor }} onClick={() => handleFavorite(selectedTalent.id)}>
                                             <Heart className="w-5 h-5" />
                                         </Button>
-                                        <Button className="rounded-full bg-gray-900 h-10 px-6 font-black uppercase text-[10px] tracking-widest gap-2">
+                                        <Button
+                                            className="rounded-full h-10 px-6 font-black uppercase text-[10px] tracking-widest gap-2"
+                                            style={{ backgroundColor: primaryColor }}
+                                        >
                                             Request Callback <ChevronRight className="w-4 h-4" />
                                         </Button>
                                     </div>
@@ -291,7 +297,8 @@ export function PublicPackageView() {
                                             />
                                             <Button
                                                 size="icon"
-                                                className="absolute bottom-4 right-4 bg-gray-900 rounded-xl"
+                                                className="absolute bottom-4 right-4 rounded-xl"
+                                                style={{ backgroundColor: primaryColor }}
                                                 onClick={submitComment}
                                                 disabled={interactionMutation.isPending || !comment}
                                             >

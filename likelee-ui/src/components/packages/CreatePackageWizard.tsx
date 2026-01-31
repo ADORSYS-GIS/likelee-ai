@@ -4,7 +4,8 @@ import {
     Loader2, Plus, X, Check, ArrowRight, ArrowLeft,
     Image as ImageIcon, User, Settings, Send, Search,
     Eye, EyeOff, Calendar, Palette, Type, Building2, Mail,
-    GripVertical, Trash2, Globe, SwitchCamera, Layers
+    GripVertical, Trash2, Globe, SwitchCamera, Layers,
+    Heart, MessageSquare, CheckCircle2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -444,29 +445,63 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                         </div>
 
                                         <div className="p-10 bg-white rounded-[1.75rem] border border-gray-200 shadow-sm relative overflow-hidden min-h-[190px]">
-                                            <div className="absolute top-4 right-4 opacity-10">
+                                            <div className="absolute top-4 right-4 opacity-5">
                                                 <Send className="w-28 h-28 text-indigo-600" />
                                             </div>
-                                            <h4 className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-500 mb-4 flex items-center gap-2">
+                                            <h4 className="text-[11px] font-black uppercase tracking-[0.25em] text-gray-500 mb-6 flex items-center gap-2">
                                                 <span className="w-2 h-2 rounded-full bg-indigo-500" />
-                                                Package Summary
+                                                Live Preview Summary
                                             </h4>
-                                            <div className="space-y-3 relative z-10">
-                                                <div className="flex items-baseline gap-3">
-                                                    <h5 className="text-xl font-black text-gray-900 tracking-tight leading-none">{formData.title || 'Untitled Selection'}</h5>
-                                                </div>
-                                                <div className="flex flex-wrap gap-3 mt-3">
-                                                    <Badge className="bg-gray-100 text-gray-700 border-none px-3 py-1 rounded-lg font-bold text-[10px] uppercase tracking-widest">
-                                                        {formData.items.length} Talents
-                                                    </Badge>
-                                                    <Badge className="bg-gray-100 text-gray-700 border-none px-3 py-1 rounded-lg font-bold text-[10px] uppercase tracking-widest">
-                                                        {formData.items.reduce((acc, it) => acc + it.asset_ids.length, 0)} Assets
-                                                    </Badge>
-                                                    {formData.password_protected && (
-                                                        <Badge className="bg-indigo-600 text-white border-none px-3 py-1 rounded-lg font-bold text-[10px] uppercase tracking-widest">
-                                                            Password Protected
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 relative z-10">
+                                                <div className="space-y-6">
+                                                    <div>
+                                                        <h5 className="text-2xl font-black text-gray-900 tracking-tight leading-tight">{formData.title || 'Untitled Selection'}</h5>
+                                                        <p className="text-sm text-gray-500 font-medium mt-1 line-clamp-2">{formData.description || 'No introduction note provided.'}</p>
+                                                    </div>
+
+                                                    <div className="flex flex-wrap gap-2">
+                                                        <Badge className="bg-gray-100 text-gray-700 border-none px-3 py-1 rounded-lg font-bold text-[10px] uppercase tracking-widest whitespace-nowrap">
+                                                            {formData.items.length} Talents
                                                         </Badge>
+                                                        <Badge className="bg-gray-100 text-gray-700 border-none px-3 py-1 rounded-lg font-bold text-[10px] uppercase tracking-widest whitespace-nowrap">
+                                                            {formData.items.reduce((acc, it) => acc + it.asset_ids.length, 0)} Assets
+                                                        </Badge>
+                                                    </div>
+
+                                                    {formData.expires_at && (
+                                                        <div className="flex items-center gap-2 text-[10px] font-bold text-orange-600 uppercase tracking-widest bg-orange-50 px-3 py-2 rounded-lg w-fit">
+                                                            <Calendar className="w-3 h-3" />
+                                                            Expires: {new Date(formData.expires_at).toLocaleDateString()}
+                                                        </div>
                                                     )}
+                                                </div>
+
+                                                <div className="space-y-6">
+                                                    <div className="p-5 bg-gray-50/50 rounded-2xl border border-gray-100">
+                                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-4">Active Experience</p>
+                                                        <div className="grid grid-cols-2 gap-3">
+                                                            {[
+                                                                { enabled: formData.allow_favorites, label: 'Favorites', icon: Heart },
+                                                                { enabled: formData.allow_comments, label: 'Notes', icon: MessageSquare },
+                                                                { enabled: formData.allow_callbacks, label: 'Callbacks', icon: CheckCircle2 },
+                                                                { enabled: formData.password_protected, label: 'Locked', icon: Globe },
+                                                            ].map((opt, i) => (
+                                                                <div key={i} className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all ${opt.enabled ? 'bg-white border-2 border-indigo-100/50 text-indigo-600 shadow-sm' : 'opacity-20 grayscale'}`}>
+                                                                    <opt.icon className="w-3 h-3" />
+                                                                    <span className="text-[10px] font-black uppercase tracking-tight">{opt.label}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="flex -space-x-3">
+                                                            <div className="w-8 h-8 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: formData.primary_color }} title="Primary Color" />
+                                                            <div className="w-8 h-8 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: formData.secondary_color }} title="Secondary Color" />
+                                                        </div>
+                                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Branding applied</p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
