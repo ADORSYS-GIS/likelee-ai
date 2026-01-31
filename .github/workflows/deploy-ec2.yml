@@ -61,7 +61,7 @@ jobs:
             VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}
             VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}
             VITE_API_BASE_URL=/api
-
+        
   deploy:
     name: Deploy on EC2 via SSH
     runs-on: ubuntu-latest
