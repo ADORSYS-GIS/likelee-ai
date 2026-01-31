@@ -21,6 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { packageApi } from "@/api/packages";
 import { useToast } from "@/components/ui/use-toast";
+import { useDebounce } from "@/hooks/useDebounce";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -68,9 +69,12 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
         items: [] as any[],
     });
 
+    const [searchTerm, setSearchTerm] = useState("");
+    const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
     const { data: talentsData, isLoading: loadingTalents } = useQuery({
-        queryKey: ["agency-talents"],
-        queryFn: () => packageApi.listTalents(),
+        queryKey: ["agency-talents", debouncedSearchTerm],
+        queryFn: () => packageApi.listTalents(debouncedSearchTerm),
         enabled: open && showTalentSelector,
     });
 
@@ -615,7 +619,9 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <Input
                             placeholder="Filter by name or category..."
-                            className="pl-11 h-12 rounded-lg bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-600 transition-all duration-300 font-medium"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="h-12 pl-10 bg-gray-100 border-none rounded-xl"
                         />
                     </div>
 

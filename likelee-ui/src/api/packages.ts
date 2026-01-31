@@ -10,7 +10,10 @@ export const packageApi = {
 
     deletePackage: (id: string) => base44Client.delete(`/api/agency/packages/${id}`),
 
-    listTalents: () => base44Client.get("/api/agency/talents"),
+    listTalents: (q?: string) => {
+        const params = q ? `?q=${encodeURIComponent(q)}` : "";
+        return base44Client.get(`/api/agency/talents${params}`);
+    },
     listTalentAssets: (id: string) => base44Client.get(`/api/agency/talents/${id}/assets`),
     uploadTalentAsset: (id: string, formData: FormData) =>
         base44Client.post(`/api/agency/talents/${id}/assets/upload`, formData),

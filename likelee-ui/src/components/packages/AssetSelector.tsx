@@ -89,12 +89,15 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
     };
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+        const files = e.target.files;
+        if (!files) return;
 
-        const formData = new FormData();
-        formData.append("file", file);
-        uploadMutation.mutate(formData);
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const formData = new FormData();
+            formData.append("file", file);
+            uploadMutation.mutate(formData);
+        }
     };
 
     const toggleAsset = (id: string) => {
@@ -138,6 +141,7 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
                                 onChange={handleFileChange}
                                 className="hidden"
                                 accept="image/*,video/*"
+                                multiple
                             />
                             <Button
                                 variant="outline"
