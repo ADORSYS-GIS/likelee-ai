@@ -220,6 +220,7 @@ pub struct AgencyFileUploadResponse {
     pub public_url: Option<String>,
     pub storage_bucket: String,
     pub storage_path: String,
+    pub client_id: Option<String>,
 }
 
 // Upload an agency file (contracts, call sheets, references) to Supabase Storage and record it.
@@ -335,6 +336,234 @@ pub async fn upload_agency_file(
         public_url,
         storage_bucket: bucket,
         storage_path: path,
+        client_id: None,
+    }))
+}
+
+pub async fn list_client_files(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(client_id): Path<String>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("agency_files")
+        .select("id,file_name,storage_bucket,storage_path,public_url,created_at")
+        .eq("agency_id", &user.id)
+        .eq("client_id", &client_id)
+        .order("created_at.desc")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let files: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(Json(files))
+}
+
+pub async fn get_client_file_signed_url(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path((_client_id, file_id)): Path<(String, String)>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    // 1. Fetch file and verify ownership
+    let resp = state
+        .pg
+        .from("agency_files")
+        .select("storage_bucket,storage_path,agency_id,client_id")
+        .eq("id", &file_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let arr: serde_json::Value = serde_json::from_str(&text).unwrap_or(serde_json::json!([]));
+    let row = arr
+        .as_array()
+        .and_then(|a| a.first())
+        .ok_or((StatusCode::NOT_FOUND, "file not found".to_string()))?;
+
+    let agency_id = row
+        .get("agency_id")
+        .and_then(|v| v.as_str())
+        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "missing agency_id".into()))?;
+
+    if agency_id != user.id {
+        return Err((StatusCode::FORBIDDEN, "Access denied".into()));
+    }
+
+    let bucket = row
+        .get("storage_bucket")
+        .and_then(|v| v.as_str())
+        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "missing storage_bucket".into()))?;
+    let path = row
+        .get("storage_path")
+        .and_then(|v| v.as_str())
+        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "missing storage_path".into()))?;
+
+    // 2. Request signed URL from Supabase Storage
+    let url = format!(
+        "{}/storage/v1/object/sign/{}/{}",
+        state.supabase_url, bucket, path
+    );
+    let body = serde_json::json!({ "expiresIn": 3600 }); // 1 hour
+    let http = reqwest::Client::new();
+    let sign_resp = http
+        .post(&url)
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
+        .header("apikey", state.supabase_service_key.clone())
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    if !sign_resp.status().is_success() {
+        let msg = sign_resp.text().await.unwrap_or_default();
+        return Err((StatusCode::BAD_GATEWAY, format!("sign url failed: {msg}")));
+    }
+
+    let signed_json: serde_json::Value = sign_resp
+        .json()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    let signed_path = signed_json
+        .get("signedURL")
+        .and_then(|v| v.as_str())
+        .ok_or((StatusCode::BAD_GATEWAY, "invalid sign response".into()))?;
+
+    let full_url = format!("{}/storage/v1{}", state.supabase_url, signed_path);
+
+    Ok(Json(serde_json::json!({ "url": full_url })))
+}
+
+pub async fn upload_client_file(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(client_id): Path<String>,
+    mut multipart: Multipart,
+) -> Result<Json<AgencyFileUploadResponse>, (StatusCode, String)> {
+    // Expect a single part named "file"
+    let mut file_name = None;
+    let mut bytes: Vec<u8> = vec![];
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?
+    {
+        let name = field.name().map(|s| s.to_string());
+        if name.as_deref() == Some("file") {
+            file_name = field.file_name().map(|s| s.to_string());
+            let data = field
+                .bytes()
+                .await
+                .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+            bytes = data.to_vec();
+            break;
+        }
+    }
+    if bytes.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "missing file".into()));
+    }
+    let fname = file_name.unwrap_or_else(|| "upload.bin".to_string());
+    let sanitized = fname
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect::<String>();
+
+    // Storage target
+    let bucket = state.supabase_bucket_private.clone();
+    let path = format!(
+        "agencies/{}/clients/{}/files/{}_{}",
+        user.id,
+        client_id,
+        chrono::Utc::now().timestamp_millis(),
+        sanitized
+    );
+
+    // Upload to Supabase Storage using service key
+    let storage_url = format!(
+        "{}/storage/v1/object/{}/{}",
+        state.supabase_url, bucket, path
+    );
+    let http = reqwest::Client::new();
+    let up = http
+        .post(&storage_url)
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
+        .header("apikey", state.supabase_service_key.clone())
+        .body(bytes)
+        .send()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    if !up.status().is_success() {
+        let msg = up.text().await.unwrap_or_default();
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            format!("storage upload failed: {msg}"),
+        ));
+    }
+
+    let public_url = None;
+
+    // Insert row into agency_files
+    let insert = serde_json::json!({
+        "agency_id": user.id,
+        "client_id": client_id,
+        "file_name": fname,
+        "storage_bucket": bucket,
+        "storage_path": path,
+        "public_url": public_url,
+    });
+    let resp = state
+        .pg
+        .from("agency_files")
+        .insert(insert.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let txt = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let arr: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+    let rec = arr
+        .first()
+        .cloned()
+        .unwrap_or(serde_json::json!({"id": ""}));
+    let id = rec
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    Ok(Json(AgencyFileUploadResponse {
+        id,
+        file_name: fname,
+        public_url,
+        storage_bucket: bucket,
+        storage_path: path,
+        client_id: Some(client_id),
     }))
 }
 

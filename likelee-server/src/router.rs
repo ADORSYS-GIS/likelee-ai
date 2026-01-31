@@ -56,6 +56,14 @@ pub fn build_router(state: AppState) -> Router {
             "/api/agency/files/upload",
             post(crate::agencies::upload_agency_file),
         )
+        .route(
+            "/api/agency/clients/:id/files",
+            get(crate::agencies::list_client_files).post(crate::agencies::upload_client_file),
+        )
+        .route(
+            "/api/agency/clients/:id/files/:file_id/signed-url",
+            get(crate::agencies::get_client_file_signed_url),
+        )
         .route("/api/dashboard", get(crate::dashboard::get_dashboard))
         // Removed legacy Tavus routes
         .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))

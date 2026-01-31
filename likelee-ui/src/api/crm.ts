@@ -25,3 +25,12 @@ export const listCommunications = (clientId: string) =>
 
 export const createCommunication = (clientId: string, data: any) =>
   base44Client.post(`/api/agency/clients/${clientId}/communications`, data);
+
+export const listFiles = (clientId: string) =>
+  base44Client.get(`/api/agency/clients/${clientId}/files`);
+
+export const uploadFile = (clientId: string, file: File) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  return base44Client.post(`/api/agency/clients/${clientId}/files`, formData);
+};

@@ -14,7 +14,11 @@ import {
   Trash2,
   TrendingUp,
   File,
+  Loader2,
+  Download,
 } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +52,11 @@ const ClientProfileModal = ({
 }) => {
   const [isAddContactOpen, setIsAddContactOpen] = useState(false);
   const [isLogCommOpen, setIsLogCommOpen] = useState(false);
+  const [notes, setNotes] = useState(client.notes || "");
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: contacts = [], isLoading: isLoadingContacts } = useQuery({
     queryKey: ["client-contacts", client.id],
@@ -101,6 +110,61 @@ const ClientProfileModal = ({
     enabled: !!client.id && isOpen,
   });
 
+  const { data: files = [], isLoading: isLoadingFiles } = useQuery({
+    queryKey: ["client-files", client.id],
+    queryFn: async () => {
+      const resp = await crmApi.listFiles(client.id);
+      return resp as any[];
+    },
+    enabled: !!client.id && isOpen,
+  });
+
+  const updateNotesMutation = useMutation({
+    mutationFn: (newNotes: string) =>
+      crmApi.updateClient(client.id, { notes: newNotes }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["agency-clients"] });
+      toast({
+        title: "Notes Saved",
+        description: "The client notes have been updated successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: `Failed to save notes: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const uploadFileMutation = useMutation({
+    mutationFn: (file: File) => crmApi.uploadFile(client.id, file),
+    onMutate: () => setIsUploading(true),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["client-files", client.id] });
+      toast({
+        title: "File Uploaded",
+        description: "The document has been uploaded successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Upload Failed",
+        description: `Failed to upload document: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+    onSettled: () => setIsUploading(false),
+  });
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      uploadFileMutation.mutate(file);
+    }
+  };
+
   const totalRevenueCents = bookings.reduce(
     (sum: number, b: any) => sum + (b.rate_cents || 0),
     0,
@@ -122,12 +186,12 @@ const ClientProfileModal = ({
   const lastBooking =
     bookings.length > 0
       ? new Date(
-          Math.max(...bookings.map((b: any) => new Date(b.date).getTime())),
-        ).toLocaleDateString(undefined, {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })
+        Math.max(...bookings.map((b: any) => new Date(b.date).getTime())),
+      ).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
       : "Never";
 
   return (
@@ -514,13 +578,12 @@ const ClientProfileModal = ({
                                 </h5>
                                 <div className="flex items-center gap-2 mt-1">
                                   <Badge
-                                    className={`${
-                                      booking.status === "confirmed"
+                                    className={`${booking.status === "confirmed"
                                         ? "bg-green-100 text-green-700"
                                         : booking.status === "pending"
                                           ? "bg-yellow-100 text-yellow-700"
                                           : "bg-gray-100 text-gray-700"
-                                    } border-none text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter`}
+                                      } border-none text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter`}
                                   >
                                     {booking.status}
                                   </Badge>
@@ -556,10 +619,19 @@ const ClientProfileModal = ({
                   <Card className="p-6 border-gray-100 rounded-2xl shadow-sm space-y-4">
                     <h4 className="font-bold text-gray-900">Notes</h4>
                     <Textarea
-                      defaultValue={client.notes || ""}
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="Enter client notes, preferences, or internal details..."
                       className="min-h-[120px] bg-white border-gray-200 rounded-xl resize-none font-medium"
                     />
-                    <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 rounded-xl">
+                    <Button
+                      onClick={() => updateNotesMutation.mutate(notes)}
+                      disabled={updateNotesMutation.isPending}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 rounded-xl"
+                    >
+                      {updateNotesMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : null}
                       Save Notes
                     </Button>
                   </Card>
@@ -569,16 +641,81 @@ const ClientProfileModal = ({
                       <h4 className="font-bold text-gray-900">
                         Files & Documents
                       </h4>
-                      <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
-                        <Plus className="w-4 h-4" />
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileUpload}
+                        className="hidden"
+                      />
+                      <Button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm"
+                      >
+                        {isUploading ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <Plus className="w-4 h-4" />
+                        )}
                         Upload File
                       </Button>
                     </div>
-                    <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
-                      <File className="w-12 h-12 text-gray-300 mb-3" />
-                      <p className="text-gray-500 font-bold">
-                        No files uploaded yet
-                      </p>
+
+                    <div className="space-y-3">
+                      {isLoadingFiles ? (
+                        <div className="text-center py-12 text-gray-400 font-bold">
+                          <RefreshCw className="w-8 h-8 mx-auto mb-3 animate-spin" />
+                          Loading documents...
+                        </div>
+                      ) : files.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
+                          <File className="w-12 h-12 text-gray-300 mb-3" />
+                          <p className="text-gray-500 font-bold">
+                            No files uploaded yet
+                          </p>
+                        </div>
+                      ) : (
+                        files.map((file: any) => (
+                          <Card
+                            key={file.id}
+                            className="p-4 border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow flex justify-between items-center bg-white group"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
+                                <FileText className="w-5 h-5" />
+                              </div>
+                              <div>
+                                <h5 className="font-bold text-gray-900 text-sm">
+                                  {file.file_name}
+                                </h5>
+                                <p className="text-[10px] text-gray-400 font-black uppercase tracking-wider">
+                                  Added {new Date(file.created_at).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-gray-400 hover:text-indigo-600 font-bold flex items-center gap-2"
+                              onClick={() => {
+                                if (file.public_url) {
+                                  window.open(file.public_url, "_blank");
+                                } else {
+                                  // For private files, we might need a signed URL
+                                  // For now, alerting or providing feedback
+                                  toast({
+                                    title: "Access Restricted",
+                                    description: "Signed URLs for private files coming soon.",
+                                  });
+                                }
+                              }}
+                            >
+                              <Download className="w-4 h-4" />
+                              View
+                            </Button>
+                          </Card>
+                        ))
+                      )}
                     </div>
                   </Card>
                 </TabsContent>
