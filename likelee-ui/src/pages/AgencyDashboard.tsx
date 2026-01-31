@@ -147,6 +147,7 @@ const ConnectBankView = () => {
     payouts_enabled: boolean;
     transfers_enabled: boolean;
     last_error: string;
+    bank_last4?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -162,6 +163,7 @@ const ConnectBankView = () => {
           payouts_enabled: Boolean((data as any)?.payouts_enabled),
           transfers_enabled: Boolean((data as any)?.transfers_enabled),
           last_error: String((data as any)?.last_error || ""),
+          bank_last4: String((data as any)?.bank_last4 || "") || undefined,
         });
       } catch (e: any) {
         toast({
@@ -217,7 +219,7 @@ const ConnectBankView = () => {
           disabled={loading}
         >
           <CreditCard className="w-4 h-4" />
-          Connect Bank Account
+          {connected ? "Change account" : "Connect Bank Account"}
         </Button>
       </div>
 
@@ -241,6 +243,9 @@ const ConnectBankView = () => {
                 <p className="text-xs text-gray-600 font-medium">
                   {ready ? "Payouts enabled" : "Connection created — complete onboarding in Stripe to enable payouts"}
                 </p>
+                {!!status?.bank_last4 && (
+                  <p className="text-xs text-gray-600 font-medium mt-1">Account ending in ••••{status.bank_last4}</p>
+                )}
               </div>
             </div>
           )}
@@ -281,7 +286,7 @@ const ConnectBankView = () => {
             disabled={loading}
           >
             <Link className="w-4 h-4" />
-            Connect with Stripe
+            {connected ? "Change account" : "Connect with Stripe"}
           </Button>
 
           <div className="text-center mt-4">

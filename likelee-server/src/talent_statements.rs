@@ -65,12 +65,13 @@ pub async fn list(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !status.is_success() {
-        let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        let code =
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
         return Err((code, text));
     }
 
-    let rows: serde_json::Value =
-        serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let rows: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let arr = rows.as_array().cloned().unwrap_or_default();
 
     let now = Utc::now();
@@ -165,7 +166,7 @@ pub async fn list(
             let paid_date = paid_at_str
                 .split('T')
                 .next()
-                .and_then(|d| parse_date(d));
+                .and_then(parse_date);
             paid && paid_date.map(|d| d.year() == ytd_year).unwrap_or(false)
         } else {
             false
@@ -216,7 +217,13 @@ pub async fn list(
             gross_cents,
             agency_fee_cents,
             net_cents,
-            status: if owed { "sent".to_string() } else if paid { "paid".to_string() } else { status_str },
+            status: if owed {
+                "sent".to_string()
+            } else if paid {
+                "paid".to_string()
+            } else {
+                status_str
+            },
             paid_at,
         });
     }
