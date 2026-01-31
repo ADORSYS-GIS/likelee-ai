@@ -293,19 +293,28 @@ pub async fn get_recent_activity(
     let mut all_activities = Vec::new();
 
     // 1. Campaigns
-    let resp_camp = state.pg.from("campaigns")
+    let resp_camp = state
+        .pg
+        .from("campaigns")
         .select("id, name, created_at")
         .eq("agency_id", agency_id)
         .order("created_at.desc")
         .limit(5)
-        .execute().await
+        .execute()
+        .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let text_camp = resp_camp.text().await.unwrap_or_else(|_| "[]".to_string());
     if let Ok(json) = serde_json::from_str::<serde_json::Value>(&text_camp) {
         if let Some(arr) = json.as_array() {
             for item in arr {
-                let name = item.get("name").and_then(|v| v.as_str()).unwrap_or("Campaign");
-                let time = item.get("created_at").and_then(|v| v.as_str()).unwrap_or("");
+                let name = item
+                    .get("name")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("Campaign");
+                let time = item
+                    .get("created_at")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
                 if let Some(id) = item.get("id").and_then(|v| v.as_str()) {
                     all_activities.push(ActivityItem {
                         id: id.to_string(),
@@ -321,20 +330,29 @@ pub async fn get_recent_activity(
     }
 
     // 2. Payments
-    let resp_pay = state.pg.from("payments")
+    let resp_pay = state
+        .pg
+        .from("payments")
         .select("id, gross_cents, created_at")
         .eq("agency_id", agency_id)
         .eq("status", "succeeded")
         .order("created_at.desc")
         .limit(5)
-        .execute().await
+        .execute()
+        .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let text_pay = resp_pay.text().await.unwrap_or_else(|_| "[]".to_string());
     if let Ok(json) = serde_json::from_str::<serde_json::Value>(&text_pay) {
         if let Some(arr) = json.as_array() {
             for item in arr {
-                let cents = item.get("gross_cents").and_then(|v| v.as_i64()).unwrap_or(0);
-                let time = item.get("created_at").and_then(|v| v.as_str()).unwrap_or("");
+                let cents = item
+                    .get("gross_cents")
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0);
+                let time = item
+                    .get("created_at")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
                 if let Some(id) = item.get("id").and_then(|v| v.as_str()) {
                     all_activities.push(ActivityItem {
                         id: id.to_string(),
@@ -350,22 +368,34 @@ pub async fn get_recent_activity(
     }
 
     // 3. New Talents
-    let resp_tal = state.pg.from("agency_users")
+    let resp_tal = state
+        .pg
+        .from("agency_users")
         .select("id, stage_name, full_legal_name, created_at")
         .eq("agency_id", agency_id)
         .eq("role", "talent")
         .order("created_at.desc")
         .limit(5)
-        .execute().await
+        .execute()
+        .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let text_tal = resp_tal.text().await.unwrap_or_else(|_| "[]".to_string());
     if let Ok(json) = serde_json::from_str::<serde_json::Value>(&text_tal) {
         if let Some(arr) = json.as_array() {
             for item in arr {
-                let s_name = item.get("stage_name").and_then(|v| v.as_str()).unwrap_or("");
-                let l_name = item.get("full_legal_name").and_then(|v| v.as_str()).unwrap_or("Unknown");
+                let s_name = item
+                    .get("stage_name")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let l_name = item
+                    .get("full_legal_name")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("Unknown");
                 let name = if !s_name.is_empty() { s_name } else { l_name };
-                let time = item.get("created_at").and_then(|v| v.as_str()).unwrap_or("");
+                let time = item
+                    .get("created_at")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
                 if let Some(id) = item.get("id").and_then(|v| v.as_str()) {
                     all_activities.push(ActivityItem {
                         id: id.to_string(),
@@ -381,18 +411,24 @@ pub async fn get_recent_activity(
     }
 
     // 4. Licensing Requests
-    let resp_req = state.pg.from("licensing_requests")
+    let resp_req = state
+        .pg
+        .from("licensing_requests")
         .select("id, created_at")
         .eq("agency_id", agency_id)
         .order("created_at.desc")
         .limit(5)
-        .execute().await
+        .execute()
+        .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let text_req = resp_req.text().await.unwrap_or_else(|_| "[]".to_string());
     if let Ok(json) = serde_json::from_str::<serde_json::Value>(&text_req) {
-         if let Some(arr) = json.as_array() {
+        if let Some(arr) = json.as_array() {
             for item in arr {
-                let time = item.get("created_at").and_then(|v| v.as_str()).unwrap_or("");
+                let time = item
+                    .get("created_at")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
                 if let Some(id) = item.get("id").and_then(|v| v.as_str()) {
                     all_activities.push(ActivityItem {
                         id: id.to_string(),
@@ -411,7 +447,9 @@ pub async fn get_recent_activity(
     all_activities.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
     all_activities.truncate(5);
 
-    Ok(Json(ActivityFeed { activities: all_activities }))
+    Ok(Json(ActivityFeed {
+        activities: all_activities,
+    }))
 }
 
 async fn get_roster_health(
@@ -596,8 +634,6 @@ async fn get_pending_actions(
     })
 }
 
-
-
 async fn get_top_revenue_generators(
     state: &AppState,
     agency_id: &str,
@@ -609,7 +645,9 @@ async fn get_top_revenue_generators(
     let resp = state
         .pg
         .from("payments")
-        .select("talent_id, gross_cents, agency_users(stage_name, full_legal_name, profile_photo_url)")
+        .select(
+            "talent_id, gross_cents, agency_users(stage_name, full_legal_name, profile_photo_url)",
+        )
         .eq("agency_id", agency_id)
         .eq("status", "succeeded")
         .gte("paid_at", &thirty_days_ago)
@@ -630,12 +668,12 @@ async fn get_top_revenue_generators(
             .and_then(|v| v.as_str())
             .unwrap_or("unknown")
             .to_string();
-        
+
         let cents = item
             .get("gross_cents")
             .and_then(|v| v.as_i64())
             .unwrap_or(0);
-            
+
         let user = item.get("agency_users");
         let stage_name = user
             .and_then(|u| u.get("stage_name"))
@@ -675,7 +713,7 @@ async fn get_top_revenue_generators(
 
     // Sort descending by earnings
     sorted_talents.sort_by(|a, b| b.earnings_cents.cmp(&a.earnings_cents));
-    
+
     // Take top 3
     Ok(sorted_talents.into_iter().take(3).collect())
 }
@@ -728,7 +766,7 @@ async fn get_actively_earning(
             .unwrap_or("")
             .to_string();
         let talent = p.get("agency_users");
-        
+
         let stage_name = talent
             .and_then(|v| v.get("stage_name"))
             .and_then(|v| v.as_str())
@@ -849,8 +887,7 @@ async fn get_new_talent_performance(
 
             let avg_days = if let Ok(br) = booking_resp {
                 let b_text = br.text().await.unwrap_or_else(|_| "[]".to_string());
-                let b_data: serde_json::Value =
-                    serde_json::from_str(&b_text).unwrap_or(json!([]));
+                let b_data: serde_json::Value = serde_json::from_str(&b_text).unwrap_or(json!([]));
                 if let Some(first_booking) = b_data.as_array().and_then(|a| a.first()) {
                     let booking_date_str = first_booking
                         .get("date")
