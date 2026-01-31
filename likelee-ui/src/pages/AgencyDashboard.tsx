@@ -137,6 +137,8 @@ import {
   getAgencyLicensingRequestsPaySplit,
   setAgencyLicensingRequestsPaySplit,
 } from "@/api/functions";
+import ClientCRMView from "@/components/crm/ClientCRMView";
+import * as crmApi from "@/api/crm";
 
 const STATUS_MAP: { [key: string]: string } = {
   new_lead: "New Lead",

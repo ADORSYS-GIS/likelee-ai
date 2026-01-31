@@ -89,7 +89,15 @@
     "@tensorflow/tfjs-converter": "4.11.0",
     "@tensorflow/tfjs-backend-cpu": "4.11.0",
     "@tensorflow/tfjs-backend-webgl": "4.11.0",
-    "@tensorflow/tfjs-backend-wasm": "4.11.0"
+    "@tensorflow/tfjs-backend-wasm": "4.11.0",
+    "fast-xml-parser": "^5.3.4",
+    "nanoid": "^3.3.8",
+    "@aws-sdk/core": "^3.973.5",
+    "@aws-sdk/middleware-user-agent": "^3.972.5",
+    "@aws-sdk/util-user-agent-node": "^3.972.3",
+    "@aws-sdk/token-providers": "^3.980.0",
+    "@aws-sdk/nested-clients": "^3.980.0",
+    "cross-spawn": "^7.0.6"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
