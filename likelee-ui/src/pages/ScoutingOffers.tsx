@@ -96,7 +96,9 @@ export default function ScoutingOffers() {
   );
 
   // Loading states for actions
-  const [viewingOfferId, setViewingOfferId] = useState<number | string | null>(null);
+  const [viewingOfferId, setViewingOfferId] = useState<number | string | null>(
+    null,
+  );
   const [isArchiving, setIsArchiving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -167,25 +169,25 @@ export default function ScoutingOffers() {
     return offers.filter((offer) => {
       const searchMatch = searchQuery
         ? offer.template?.name
-          ?.toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        offer.prospect?.full_name
-          ?.toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        offer.prospect?.email
-          ?.toLowerCase()
-          .includes(searchQuery.toLowerCase())
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          offer.prospect?.full_name
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          offer.prospect?.email
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase())
         : true;
 
       const statusMatch =
         statusFilters.length > 0
           ? statusFilters.some((filter) => {
-            if (filter === "completed")
-              return ["completed", "signed"].includes(offer.status);
-            if (filter === "declined")
-              return ["declined", "voided"].includes(offer.status);
-            return offer.status === filter;
-          })
+              if (filter === "completed")
+                return ["completed", "signed"].includes(offer.status);
+              if (filter === "declined")
+                return ["declined", "voided"].includes(offer.status);
+              return offer.status === filter;
+            })
           : true;
 
       return searchMatch && statusMatch;
@@ -422,19 +424,21 @@ export default function ScoutingOffers() {
           <nav className="-mb-px flex space-x-8" aria-label="Tabs">
             <button
               onClick={() => setActiveTab("templates")}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === "templates"
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === "templates"
                   ? "border-indigo-500 text-indigo-600"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
+              }`}
             >
               Templates
             </button>
             <button
               onClick={() => setActiveTab("submissions")}
-              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${activeTab === "submissions"
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === "submissions"
                   ? "border-indigo-500 text-indigo-600"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
+              }`}
             >
               Submissions
             </button>
@@ -490,99 +494,99 @@ export default function ScoutingOffers() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {templatesLoading
                 ? [1, 2].map((i) => (
-                  <div
-                    key={i}
-                    className="h-48 bg-gray-100 rounded-xl animate-pulse"
-                  />
-                ))
+                    <div
+                      key={i}
+                      className="h-48 bg-gray-100 rounded-xl animate-pulse"
+                    />
+                  ))
                 : templates?.map((template) => (
-                  <button
-                    key={template.id}
-                    className="group bg-indigo-50 rounded-xl border border-indigo-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col text-left"
-                    onClick={async () => {
-                      try {
-                        const agencyId =
-                          await scoutingService.getUserAgencyId();
-                        if (!agencyId) return;
-                        const token = await scoutingService.getBuilderToken(
-                          agencyId,
-                          template.docuseal_template_id,
-                        );
-                        setBuilderToken(token);
-                        setBuilderTemplateId(template.docuseal_template_id);
-                        setShowTemplateBuilder(true);
-                      } catch (e) {
-                        console.error(e);
-                      }
-                    }}
-                  >
-                    <div className="h-32 bg-indigo-100 border-b border-indigo-200 flex items-center justify-center relative">
-                      <FilePenLine className="w-12 h-12 text-indigo-300" />
-                      <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 bg-white/80 backdrop-blur-sm"
-                            >
-                              <MoreHorizontal className="w-4 h-4 text-gray-600" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setTemplateToDelete(template);
-                                const count =
-                                  offers?.filter(
-                                    (o) => o.template_id === template.id,
-                                  ).length || 0;
-                                setOffersToDeleteCount(count);
-                                setShowDeleteTemplateDialog(true);
-                              }}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                    <button
+                      key={template.id}
+                      className="group bg-indigo-50 rounded-xl border border-indigo-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col text-left"
+                      onClick={async () => {
+                        try {
+                          const agencyId =
+                            await scoutingService.getUserAgencyId();
+                          if (!agencyId) return;
+                          const token = await scoutingService.getBuilderToken(
+                            agencyId,
+                            template.docuseal_template_id,
+                          );
+                          setBuilderToken(token);
+                          setBuilderTemplateId(template.docuseal_template_id);
+                          setShowTemplateBuilder(true);
+                        } catch (e) {
+                          console.error(e);
+                        }
+                      }}
+                    >
+                      <div className="h-32 bg-indigo-100 border-b border-indigo-200 flex items-center justify-center relative">
+                        <FilePenLine className="w-12 h-12 text-indigo-300" />
+                        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 bg-white/80 backdrop-blur-sm"
+                              >
+                                <MoreHorizontal className="w-4 h-4 text-gray-600" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setTemplateToDelete(template);
+                                  const count =
+                                    offers?.filter(
+                                      (o) => o.template_id === template.id,
+                                    ).length || 0;
+                                  setOffersToDeleteCount(count);
+                                  setShowDeleteTemplateDialog(true);
+                                }}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
-                    </div>
-                    <div className="p-4 flex-1 flex flex-col">
-                      <h3 className="font-semibold text-gray-900 truncate">
-                        {template.name}
-                      </h3>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Created{" "}
-                        {new Date(template.created_at).toLocaleDateString()}
-                      </p>
-                      <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 text-xs h-8"
-                          onClick={() => {
-                            setSelectedTemplate(template);
-                            setShowSendOfferDialog(true);
-                          }}
-                          disabled={!prospectId}
-                        >
-                          <Send className="w-3 h-3 mr-1.5" />
-                          Use Template
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-xs h-8 px-2"
-                          onClick={(e) => e.stopPropagation()} // Let the parent button handle the click
-                        >
-                          <Eye className="w-3 h-3" />
-                        </Button>
+                      <div className="p-4 flex-1 flex flex-col">
+                        <h3 className="font-semibold text-gray-900 truncate">
+                          {template.name}
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Created{" "}
+                          {new Date(template.created_at).toLocaleDateString()}
+                        </p>
+                        <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 text-xs h-8"
+                            onClick={() => {
+                              setSelectedTemplate(template);
+                              setShowSendOfferDialog(true);
+                            }}
+                            disabled={!prospectId}
+                          >
+                            <Send className="w-3 h-3 mr-1.5" />
+                            Use Template
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs h-8 px-2"
+                            onClick={(e) => e.stopPropagation()} // Let the parent button handle the click
+                          >
+                            <Eye className="w-3 h-3" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  ))}
 
               {/* Empty State Placeholder */}
               {(!templates || templates.length === 0) && !templatesLoading && (
@@ -828,71 +832,71 @@ export default function ScoutingOffers() {
                           <div className="flex items-center justify-end gap-2 transition-opacity">
                             {(offer.status === "completed" ||
                               offer.status === "signed") && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-8 text-xs bg-indigo-50 text-indigo-700 border-indigo-100 hover:bg-indigo-100"
-                                  onClick={() =>
-                                    window.open(
-                                      offer.signed_document_url,
-                                      "_blank",
-                                    )
-                                  }
-                                >
-                                  <Download className="w-3 h-3 mr-1.5" />
-                                  Download
-                                </Button>
-                              )}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 text-xs bg-indigo-50 text-indigo-700 border-indigo-100 hover:bg-indigo-100"
+                                onClick={() =>
+                                  window.open(
+                                    offer.signed_document_url,
+                                    "_blank",
+                                  )
+                                }
+                              >
+                                <Download className="w-3 h-3 mr-1.5" />
+                                Download
+                              </Button>
+                            )}
                             {(["sent", "opened", "pending"] as const).includes(
                               offer.status,
                             ) && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-8 text-xs"
-                                  disabled={!!viewingOfferId}
-                                  onClick={async () => {
-                                    try {
-                                      setViewingOfferId(offer.id);
-                                      await scoutingService.refreshOfferStatus(
-                                        offer.id,
-                                      );
-                                      const updated =
-                                        await scoutingService.getOffer(offer.id);
-                                      const link =
-                                        (updated.signing_url &&
-                                          updated.signing_url.trim() !== ""
-                                          ? updated.signing_url
-                                          : undefined) ||
-                                        (updated as any)?.docuseal_details
-                                          ?.submitters?.[0]?.url;
-                                      if (link) {
-                                        window.location.href = link;
-                                      } else {
-                                        toast({
-                                          title: "No signing link",
-                                          description:
-                                            "No signing URL available. Try Sync Status and retry.",
-                                        });
-                                      }
-                                    } catch (e: any) {
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 text-xs"
+                                disabled={!!viewingOfferId}
+                                onClick={async () => {
+                                  try {
+                                    setViewingOfferId(offer.id);
+                                    await scoutingService.refreshOfferStatus(
+                                      offer.id,
+                                    );
+                                    const updated =
+                                      await scoutingService.getOffer(offer.id);
+                                    const link =
+                                      (updated.signing_url &&
+                                      updated.signing_url.trim() !== ""
+                                        ? updated.signing_url
+                                        : undefined) ||
+                                      (updated as any)?.docuseal_details
+                                        ?.submitters?.[0]?.url;
+                                    if (link) {
+                                      window.location.href = link;
+                                    } else {
                                       toast({
-                                        title: "Failed to fetch offer",
-                                        description: e?.message || String(e),
+                                        title: "No signing link",
+                                        description:
+                                          "No signing URL available. Try Sync Status and retry.",
                                       });
-                                    } finally {
-                                      setViewingOfferId(null);
                                     }
-                                  }}
-                                >
-                                  {viewingOfferId === offer.id ? (
-                                    <RefreshCw className="w-3 h-3 mr-1.5 animate-spin" />
-                                  ) : (
-                                    <Eye className="w-3 h-3 mr-1.5" />
-                                  )}
-                                  View
-                                </Button>
-                              )}
+                                  } catch (e: any) {
+                                    toast({
+                                      title: "Failed to fetch offer",
+                                      description: e?.message || String(e),
+                                    });
+                                  } finally {
+                                    setViewingOfferId(null);
+                                  }
+                                }}
+                              >
+                                {viewingOfferId === offer.id ? (
+                                  <RefreshCw className="w-3 h-3 mr-1.5 animate-spin" />
+                                ) : (
+                                  <Eye className="w-3 h-3 mr-1.5" />
+                                )}
+                                View
+                              </Button>
+                            )}
                             {offer.status === "archived" ? (
                               <Button
                                 variant="ghost"
