@@ -474,10 +474,11 @@ const ProspectModal = ({
                     selectedCategories.includes(cat) ? "default" : "secondary"
                   }
                   onClick={() => toggleCategory(cat)}
-                  className={`${selectedCategories.includes(cat)
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "bg-gray-100 hover:bg-gray-200 text-gray-900"
-                    } font-medium`}
+                  className={`${
+                    selectedCategories.includes(cat)
+                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                  } font-medium`}
                 >
                   {cat}
                 </Button>
@@ -2472,10 +2473,11 @@ const FinancialReportsView = () => {
             <button
               key={tab.id}
               onClick={() => setActiveReportTab(tab.id)}
-              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${activeReportTab === tab.id
-                ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
-                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                }`}
+              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${
+                activeReportTab === tab.id
+                  ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              }`}
             >
               {tab.label}
             </button>
@@ -2949,10 +2951,11 @@ const GenerateInvoiceView = () => {
             <div className="flex gap-3">
               <Button
                 variant={createFrom === "booking" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "booking"
-                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                  : "border-gray-200 text-gray-700"
-                  }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
+                  createFrom === "booking"
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "border-gray-200 text-gray-700"
+                }`}
                 onClick={() => setCreateFrom("booking")}
               >
                 <Calendar className="w-5 h-5" />
@@ -2960,10 +2963,11 @@ const GenerateInvoiceView = () => {
               </Button>
               <Button
                 variant={createFrom === "manual" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "manual"
-                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                  : "border-gray-200 text-gray-700"
-                  }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
+                  createFrom === "manual"
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "border-gray-200 text-gray-700"
+                }`}
                 onClick={() => setCreateFrom("manual")}
               >
                 <FileText className="w-5 h-5" />
@@ -3517,10 +3521,11 @@ const InvoiceManagementView = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveSubTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${isActive
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "text-gray-700 hover:bg-gray-50"
-                  }`}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                  isActive
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
               >
                 <Icon className="w-4 h-4" />
                 {tab.label}
@@ -4653,10 +4658,11 @@ const ScoutingHubView = ({
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab
-              ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
-              : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
-              }`}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+              activeTab === tab
+                ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+                : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
+            }`}
           >
             {tab}
           </button>
@@ -4897,8 +4903,8 @@ const ProspectDetailsSheet = ({
                       Send Offer
                     </Button>
                   ) : ["offer_sent", "opened", "signed", "declined"].includes(
-                    prospect.status,
-                  ) ? (
+                      prospect.status,
+                    ) ? (
                     <div className="flex items-center gap-3">
                       <Button
                         onClick={() =>
@@ -5843,18 +5849,19 @@ const OpenCallsTab = ({
               <div className="p-4">
                 <div className="flex justify-between items-start mb-3">
                   <Badge
-                    className={`rounded-md font-bold px-2 py-0.5 text-[10px] border shadow-sm ${event.status === "published"
-                      ? "bg-green-50 text-green-700 border-green-100"
-                      : event.status === "draft"
-                        ? "bg-gray-50 text-gray-600 border-gray-100"
-                        : event.status === "scheduled"
-                          ? "bg-blue-50 text-blue-700 border-blue-100"
-                          : event.status === "completed"
-                            ? "bg-indigo-50 text-indigo-700 border-indigo-100"
-                            : event.status === "cancelled"
-                              ? "bg-red-50 text-red-700 border-red-100"
-                              : "bg-gray-50 text-gray-600 border-gray-100"
-                      }`}
+                    className={`rounded-md font-bold px-2 py-0.5 text-[10px] border shadow-sm ${
+                      event.status === "published"
+                        ? "bg-green-50 text-green-700 border-green-100"
+                        : event.status === "draft"
+                          ? "bg-gray-50 text-gray-600 border-gray-100"
+                          : event.status === "scheduled"
+                            ? "bg-blue-50 text-blue-700 border-blue-100"
+                            : event.status === "completed"
+                              ? "bg-indigo-50 text-indigo-700 border-indigo-100"
+                              : event.status === "cancelled"
+                                ? "bg-red-50 text-red-700 border-red-100"
+                                : "bg-gray-50 text-gray-600 border-gray-100"
+                    }`}
                   >
                     {event.status.toUpperCase()}
                   </Badge>
@@ -6149,14 +6156,14 @@ const DashboardView = ({ onKYC, data }: { onKYC: () => void; data: any }) => {
             {overview?.pending_actions.licensing_requests +
               overview?.pending_actions.expiring_licenses >
               0 && (
-                <Badge
-                  variant="default"
-                  className="bg-red-600 hover:bg-red-700 text-white border-0 h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]"
-                >
-                  {overview?.pending_actions.licensing_requests +
-                    overview?.pending_actions.expiring_licenses}
-                </Badge>
-              )}
+              <Badge
+                variant="default"
+                className="bg-red-600 hover:bg-red-700 text-white border-0 h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]"
+              >
+                {overview?.pending_actions.licensing_requests +
+                  overview?.pending_actions.expiring_licenses}
+              </Badge>
+            )}
           </div>
           <h3 className="text-sm font-medium text-gray-500 mb-1">
             Pending Actions
@@ -6673,11 +6680,11 @@ const RosterView = ({
                 {(kycStatus === "approved" ||
                   kycStatus === "verified" ||
                   kycStatus === "active") && (
-                    <div className="flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1 rounded-full border border-green-100 text-[10px] font-bold uppercase tracking-wider shadow-sm">
-                      <BadgeCheck className="w-3.5 h-3.5" />
-                      Verified Agency
-                    </div>
-                  )}
+                  <div className="flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1 rounded-full border border-green-100 text-[10px] font-bold uppercase tracking-wider shadow-sm">
+                    <BadgeCheck className="w-3.5 h-3.5" />
+                    Verified Agency
+                  </div>
+                )}
                 <div className="bg-blue-600 text-white px-2 py-0.5 rounded text-xs font-bold">
                   Marketplace: Public
                 </div>
@@ -6746,8 +6753,8 @@ const RosterView = ({
               {(kycStatus === "approved" ||
                 kycStatus === "verified" ||
                 kycStatus === "active") && (
-                  <BadgeCheck className="w-3.5 h-3.5 text-[#32C8D1] ml-1" />
-                )}
+                <BadgeCheck className="w-3.5 h-3.5 text-[#32C8D1] ml-1" />
+              )}
             </Button>
             <Button
               variant="outline"
@@ -6978,13 +6985,13 @@ const RosterView = ({
                   statusFilter !== "All Status" ||
                   consentFilter !== "All Consent" ||
                   sortConfig) && (
-                    <button
-                      onClick={clearFilters}
-                      className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
-                    >
-                      <X className="w-4 h-4" /> Clear Filters
-                    </button>
-                  )}
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
+                  >
+                    <X className="w-4 h-4" /> Clear Filters
+                  </button>
+                )}
               </div>
             </div>
 
@@ -7103,15 +7110,16 @@ const RosterView = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${talent.consent === "complete"
-                            ? "bg-green-50 text-green-600"
-                            : talent.consent === "missing"
-                              ? "bg-red-50 text-red-600"
-                              : "bg-orange-50 text-orange-600"
-                            }`}
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${
+                            talent.consent === "complete"
+                              ? "bg-green-50 text-green-600"
+                              : talent.consent === "missing"
+                                ? "bg-red-50 text-red-600"
+                                : "bg-orange-50 text-orange-600"
+                          }`}
                         >
                           {talent.consent === "complete" ||
-                            talent.consent === "active" ? (
+                          talent.consent === "active" ? (
                             <svg
                               className="w-3 h-3"
                               fill="none"
@@ -7952,9 +7960,9 @@ const LicenseTemplatesView = () => {
     const updatedTemplates = templates.map((t) =>
       t.id === editingTemplate.id
         ? {
-          ...editingTemplate,
-          pricing: editingTemplate.pricingRange,
-        }
+            ...editingTemplate,
+            pricing: editingTemplate.pricingRange,
+          }
         : t,
     );
     setTemplates(updatedTemplates);
@@ -8766,10 +8774,11 @@ const ProtectionUsageView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === tab
-                ? "border-indigo-600 text-indigo-600"
-                : "border-transparent text-gray-500 hover:text-gray-900"
-                }`}
+              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${
+                activeTab === tab
+                  ? "border-indigo-600 text-indigo-600"
+                  : "border-transparent text-gray-500 hover:text-gray-900"
+              }`}
             >
               {tab}
             </button>
@@ -10940,7 +10949,7 @@ const ComplianceHubView = () => {
       title: "Action Required",
       description: message,
       action: (
-        <ToastAction altText="Try again" onClick={() => { }}>
+        <ToastAction altText="Try again" onClick={() => {}}>
           OK
         </ToastAction>
       ),
@@ -11103,10 +11112,11 @@ const ComplianceHubView = () => {
             <Button
               disabled={selectedTalentIds.length === 0}
               variant="outline"
-              className={`text-xs font-bold h-8 gap-2 ${selectedTalentIds.length === 0
-                ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
-                : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
-                }`}
+              className={`text-xs font-bold h-8 gap-2 ${
+                selectedTalentIds.length === 0
+                  ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
+                  : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
+              }`}
               onClick={handleSendRenewalRequests}
             >
               <RefreshCw
@@ -11599,10 +11609,11 @@ const RoyaltiesPayoutsView = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-              }`}
+            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
+              activeTab === tab
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+            }`}
           >
             {tab}
           </button>
@@ -12484,10 +12495,11 @@ const AnalyticsDashboardView = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                  }`}
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
+                  activeTab === tab
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+                }`}
               >
                 {tab}
               </button>
@@ -13924,92 +13936,92 @@ export default function AgencyDashboard() {
   const sidebarItems: SidebarItem[] =
     agencyMode === "AI"
       ? [
-        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-        {
-          id: "roster",
-          label: "Roster",
-          icon: Users,
-          subItems: ["All Talent", "Performance Tiers"],
-        },
-        {
-          id: "licensing",
-          label: "Licensing",
-          icon: FileText,
-          subItems: [
-            "Licensing Requests",
-            "Active Licenses",
-            "License Templates",
-          ],
-        },
-        {
-          id: "protection",
-          label: "Protection & Usage",
-          icon: Shield,
-          subItems: ["Protect & Usage", "Compliance Hub"],
-          badges: { "Compliance Hub": "NEW" },
-        },
-        {
-          id: "analytics",
-          label: "Analytics",
-          icon: BarChart2,
-          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-        },
-        {
-          id: "settings",
-          label: "Settings",
-          icon: Settings,
-          subItems: ["General Settings", "File Storage"],
-        },
-      ]
+          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          {
+            id: "roster",
+            label: "Roster",
+            icon: Users,
+            subItems: ["All Talent", "Performance Tiers"],
+          },
+          {
+            id: "licensing",
+            label: "Licensing",
+            icon: FileText,
+            subItems: [
+              "Licensing Requests",
+              "Active Licenses",
+              "License Templates",
+            ],
+          },
+          {
+            id: "protection",
+            label: "Protection & Usage",
+            icon: Shield,
+            subItems: ["Protect & Usage", "Compliance Hub"],
+            badges: { "Compliance Hub": "NEW" },
+          },
+          {
+            id: "analytics",
+            label: "Analytics",
+            icon: BarChart2,
+            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+          },
+          {
+            id: "settings",
+            label: "Settings",
+            icon: Settings,
+            subItems: ["General Settings", "File Storage"],
+          },
+        ]
       : [
-        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-        {
-          id: "roster",
-          label: "Roster",
-          icon: Users,
-          subItems: ["All Talent", "Performance Tiers"],
-        },
-        { id: "scouting", label: "Scouting", icon: Target },
-        { id: "client-crm", label: "Client CRM", icon: Building2 },
-        {
-          id: "bookings",
-          label: "Bookings",
-          icon: Calendar,
-          subItems: [
-            "Calendar & Schedule",
-            "Booking Requests",
-            "Client Database",
-            "Talent Availability",
-            "Notifications",
-            "Management & Analytics",
-          ],
-        },
-        {
-          id: "accounting",
-          label: "Accounting & Invoicing",
-          icon: CreditCard,
-          subItems: [
-            "Invoice Generation",
-            "Invoice Management",
-            "Payment Tracking",
-            "Talent Statements",
-            "Financial Reports",
-            "Expense Tracking",
-          ],
-        },
-        {
-          id: "analytics",
-          label: "Analytics",
-          icon: BarChart2,
-          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-        },
-        {
-          id: "settings",
-          label: "Settings",
-          icon: Settings,
-          subItems: ["General Settings", "File Storage"],
-        },
-      ];
+          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          {
+            id: "roster",
+            label: "Roster",
+            icon: Users,
+            subItems: ["All Talent", "Performance Tiers"],
+          },
+          { id: "scouting", label: "Scouting", icon: Target },
+          { id: "client-crm", label: "Client CRM", icon: Building2 },
+          {
+            id: "bookings",
+            label: "Bookings",
+            icon: Calendar,
+            subItems: [
+              "Calendar & Schedule",
+              "Booking Requests",
+              "Client Database",
+              "Talent Availability",
+              "Notifications",
+              "Management & Analytics",
+            ],
+          },
+          {
+            id: "accounting",
+            label: "Accounting & Invoicing",
+            icon: CreditCard,
+            subItems: [
+              "Invoice Generation",
+              "Invoice Management",
+              "Payment Tracking",
+              "Talent Statements",
+              "Financial Reports",
+              "Expense Tracking",
+            ],
+          },
+          {
+            id: "analytics",
+            label: "Analytics",
+            icon: BarChart2,
+            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+          },
+          {
+            id: "settings",
+            label: "Settings",
+            icon: Settings,
+            subItems: ["General Settings", "File Storage"],
+          },
+        ];
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
@@ -14057,13 +14069,13 @@ export default function AgencyDashboard() {
               {(dashboardData?.overview?.kyc_status === "approved" ||
                 dashboardData?.overview?.kyc_status === "verified" ||
                 dashboardData?.overview?.kyc_status === "active") && (
-                  <span
-                    className="inline-flex items-center justify-center shrink-0"
-                    title="Verified"
-                  >
-                    <BadgeCheck className="w-4 h-4 text-[#32C8D1]" />
-                  </span>
-                )}
+                <span
+                  className="inline-flex items-center justify-center shrink-0"
+                  title="Verified"
+                >
+                  <BadgeCheck className="w-4 h-4 text-[#32C8D1]" />
+                </span>
+              )}
             </div>
             <p className="text-sm text-gray-500 font-medium truncate">
               {profile?.email || user?.email}
@@ -14087,14 +14099,16 @@ export default function AgencyDashboard() {
                     setSidebarOpen(false);
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
-                  ? "bg-indigo-50 text-indigo-700"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === item.id && !item.subItems
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                    }`}
+                  className={`w-5 h-5 ${
+                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
+                  }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.subItems && (
@@ -14115,10 +14129,11 @@ export default function AgencyDashboard() {
                         setActiveSubTab(subItem);
                         setSidebarOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
-                        ? "text-indigo-700 bg-indigo-50 font-bold"
-                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                        }`}
+                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                        activeTab === item.id && activeSubTab === subItem
+                          ? "text-indigo-700 bg-indigo-50 font-bold"
+                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                      }`}
                     >
                       <span className="truncate">{subItem}</span>
                       {item.badges && item.badges[subItem] && (
@@ -14272,16 +14287,16 @@ export default function AgencyDashboard() {
                           {(dashboardData?.overview?.kyc_status ===
                             "approved" ||
                             dashboardData?.overview?.kyc_status ===
-                            "verified" ||
+                              "verified" ||
                             dashboardData?.overview?.kyc_status ===
-                            "active") && (
-                              <span
-                                className="inline-flex items-center justify-center shrink-0"
-                                title="Verified"
-                              >
-                                <BadgeCheck className="w-4 h-4 text-[#32C8D1]" />
-                              </span>
-                            )}
+                              "active") && (
+                            <span
+                              className="inline-flex items-center justify-center shrink-0"
+                              title="Verified"
+                            >
+                              <BadgeCheck className="w-4 h-4 text-[#32C8D1]" />
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs text-gray-500 truncate">
                           Agency Account
@@ -14291,10 +14306,10 @@ export default function AgencyDashboard() {
                     {(dashboardData?.overview?.kyc_status === "approved" ||
                       dashboardData?.overview?.kyc_status === "verified" ||
                       dashboardData?.overview?.kyc_status === "active") && (
-                        <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0.5 text-xs font-bold gap-1 mt-2">
-                          <ShieldCheck className="w-3 h-3" /> Verified
-                        </Badge>
-                      )}
+                      <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0.5 text-xs font-bold gap-1 mt-2">
+                        <ShieldCheck className="w-3 h-3" /> Verified
+                      </Badge>
+                    )}
                   </div>
 
                   <div className="p-2">
