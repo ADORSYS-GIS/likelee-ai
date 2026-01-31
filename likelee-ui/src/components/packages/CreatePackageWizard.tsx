@@ -134,18 +134,34 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
         } else {
             setFormData({
                 ...formData,
-                items: [...formData.items, { talent_id: talent.id, asset_ids: [], talent }],
+                items: [...formData.items, { talent_id: talent.id, assets: [], talent }],
             });
         }
     };
 
-    const updateTalentAssets = (talentId: string, assetIds: string[]) => {
-        setFormData({
+    const updateTalentAssets = (talentId: string, newAssets: any[]) => {
+        setFormData(currentData => ({
+            ...currentData,
+            items: currentData.items.map(item =>
+                item.talent_id === talentId ? { ...item, assets: newAssets } : item
+            ),
+        }));
+    };
+
+    const handleSubmit = () => {
+        if (formData.client_name === "" || formData.client_email === "") return toast({ title: "Required", description: "Client details are required to send the package", variant: "destructive" });
+
+        const finalData = {
             ...formData,
-            items: formData.items.map(item =>
-                item.talent_id === talentId ? { ...item, asset_ids: assetIds } : item
-            )
-        });
+            items: formData.items.map(({ talent, assets, ...item }) => ({
+                ...item,
+                asset_ids: assets.map((asset: any) => ({
+                    asset_id: asset.id,
+                    asset_type: asset.type,
+                }))
+            })),
+        };
+        createMutation.mutate(finalData);
     };
 
     return (
@@ -305,7 +321,7 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                                                 <h5 className="font-black text-gray-900 tracking-tight text-lg">{item.talent.full_name}</h5>
                                                                 <div className="flex items-center gap-2 mt-1">
                                                                     <Badge variant="secondary" className="bg-gray-100 text-gray-700 text-[9px] font-bold uppercase tracking-wider border-none px-2 rounded-md">
-                                                                        {item.asset_ids.length} Assets
+                                                                        {item.assets.length} Assets
                                                                     </Badge>
                                                                     <p className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">Selected</p>
                                                                 </div>
@@ -314,10 +330,10 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                                         <div className="flex items-center gap-4">
                                                             <Button
                                                                 onClick={() => setActiveTalentForAssets({ id: item.talent_id, name: item.talent.full_name })}
-                                                                className={`h-10 px-6 rounded-full border-none text-xs font-bold uppercase tracking-wider gap-2 transition-all duration-300 ${item.asset_ids.length > 0 ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-indigo-100 text-indigo-700 hover:bg-indigo-200"}`}
+                                                                className={`h-10 px-6 rounded-full border-none text-xs font-bold uppercase tracking-wider gap-2 transition-all duration-300 ${item.assets.length > 0 ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-indigo-100 text-indigo-700 hover:bg-indigo-200"}`}
                                                             >
                                                                 <Layers className="w-4 h-4" />
-                                                                {item.asset_ids.length > 0 ? "Update Selection" : "Select Assets"}
+                                                                {item.assets.length > 0 ? "Update Selection" : "Select Assets"}
                                                             </Button>
                                                             <Button
                                                                 variant="ghost"
@@ -470,7 +486,7 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                                             {formData.items.length} Talents
                                                         </Badge>
                                                         <Badge className="bg-gray-100 text-gray-700 border-none px-3 py-1 rounded-lg font-bold text-[10px] uppercase tracking-widest whitespace-nowrap">
-                                                            {formData.items.reduce((acc, it) => acc + it.asset_ids.length, 0)} Assets
+                                                            {formData.items.reduce((acc, it) => acc + it.assets.length, 0)} Assets
                                                         </Badge>
                                                     </div>
 
@@ -589,7 +605,7 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                     </Button>
                                 ) : (
                                     <Button
-                                        onClick={() => createMutation.mutate(formData)}
+                                        onClick={handleSubmit}
                                         disabled={createMutation.isPending}
                                         className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg group flex items-center gap-2"
                                     >
@@ -674,11 +690,11 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
             {/* Asset Selector Modal */}
             <AssetSelector
                 open={!!activeTalentForAssets}
-                onOpenChange={(open) => !open && setActiveTalentForAssets(null)}
-                talentId={activeTalentForAssets?.id || ""}
-                talentName={activeTalentForAssets?.name || ""}
-                selectedAssets={formData.items.find(i => i.talent_id === activeTalentForAssets?.id)?.asset_ids || []}
-                onSelect={(assetIds) => activeTalentForAssets && updateTalentAssets(activeTalentForAssets.id, assetIds)}
+                onOpenChange={() => setActiveTalentForAssets(null)}
+                talentId={activeTalentForAssets?.id!}
+                talentName={activeTalentForAssets?.name!}
+                selectedAssets={formData.items.find(i => i.talent_id === activeTalentForAssets?.id)?.assets || []}
+                onSelect={(assets) => updateTalentAssets(activeTalentForAssets?.id!, assets)}
             />
         </>
     );

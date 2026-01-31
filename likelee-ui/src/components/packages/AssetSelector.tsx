@@ -29,8 +29,8 @@ interface AssetSelectorProps {
     onOpenChange: (open: boolean) => void;
     talentId: string;
     talentName: string;
-    selectedAssets: string[];
-    onSelect: (assetIds: string[]) => void;
+    selectedAssets: any[];
+    onSelect: (assets: any[]) => void;
 }
 
 export const AssetSelector: React.FC<AssetSelectorProps> = ({
@@ -41,13 +41,13 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
     selectedAssets,
     onSelect,
 }) => {
-    const [tempSelection, setTempSelection] = React.useState<string[]>(selectedAssets);
+    const [tempSelection, setTempSelection] = React.useState<string[]>(selectedAssets.map(a => a.id));
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const queryClient = useQueryClient();
 
     React.useEffect(() => {
         if (open) {
-            setTempSelection(selectedAssets);
+            setTempSelection(selectedAssets.map(a => a.id));
         }
     }, [open, selectedAssets]);
 
@@ -116,7 +116,8 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
     const handleConfirm = async () => {
         setIsApplying(true);
         await new Promise(r => setTimeout(r, 400));
-        onSelect(tempSelection);
+        const selectedAssetObjects = assets.filter((asset: Asset) => tempSelection.includes(asset.id));
+        onSelect(selectedAssetObjects);
         setIsApplying(false);
         onOpenChange(false);
     };
