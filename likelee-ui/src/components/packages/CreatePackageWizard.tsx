@@ -397,7 +397,7 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                                 onChange={(e) => setFormData({ ...formData, expires_at: e.target.value })}
                                                 className="h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
                                             />
-                                            <p className="text-[10px] text-gray-500 font-medium">Leave empty for an evergreen package link</p>
+                                            <p className="text-xs text-gray-500 font-medium">Leave empty for an evergreen package link</p>
                                         </div>
                                     </div>
                                 )}
