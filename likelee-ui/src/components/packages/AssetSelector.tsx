@@ -191,11 +191,11 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
                                                 </div>
 
                                                 {/* Delete Button */}
-                                                <div className="absolute top-3 right-12 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div className="absolute bottom-3 right-3 z-10 transition-opacity">
                                                     <Button
                                                         variant="destructive"
                                                         size="icon"
-                                                        className="w-8 h-8 rounded-full bg-black/30 hover:bg-red-500/80 text-white border-none"
+                                                        className="w-8 h-8 rounded-full bg-red-500/90 hover:bg-red-600/90 text-white border-none shadow-lg"
                                                         onClick={(e) => handleDeleteAsset(e, asset.id)}
                                                         disabled={deleteMutation.isPending && deleteMutation.variables?.assetId === asset.id}
                                                     >
