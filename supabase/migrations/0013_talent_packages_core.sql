@@ -90,8 +90,30 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_package_stats (
 
 -- 6. Agency Files Extension (Consolidated from 0014)
 -- Add talent_id to agency_files to link files to specific talents
+-- First, drop the old constraint if it exists from a previous version of this script
+DO $$
+DECLARE
+    fkey_name text;
+BEGIN
+    SELECT conname INTO fkey_name
+    FROM pg_constraint
+    WHERE conrelid = 'public.agency_files'::regclass
+      AND conkey = ARRAY(SELECT a.attnum FROM pg_attribute a WHERE a.attrelid = 'public.agency_files'::regclass AND a.attname = 'talent_id')
+      AND confrelid = 'public.creators'::regclass;
+
+    IF fkey_name IS NOT NULL THEN
+        EXECUTE 'ALTER TABLE public.agency_files DROP CONSTRAINT ' || quote_ident(fkey_name);
+    END IF;
+END$$;
+
+-- Add or update the column and set the correct foreign key reference
 ALTER TABLE public.agency_files
-  ADD COLUMN IF NOT EXISTS talent_id uuid REFERENCES public.creators(id) ON DELETE CASCADE;
+  ADD COLUMN IF NOT EXISTS talent_id uuid;
+
+-- Add the correct foreign key constraint to reference agency_users(id)
+ALTER TABLE public.agency_files
+ADD CONSTRAINT agency_files_talent_id_fkey
+FOREIGN KEY (talent_id) REFERENCES public.agency_users(id) ON DELETE CASCADE;
 
 CREATE INDEX IF NOT EXISTS idx_agency_files_talent_id ON public.agency_files(talent_id);
 

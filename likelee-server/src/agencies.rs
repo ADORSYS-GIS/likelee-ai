@@ -625,11 +625,7 @@ pub async fn list_talents(
         .unwrap_or(&vec![])
         .iter()
         .map(|r| {
-            let id = r
-                .get("creator_id")
-                .and_then(|v| v.as_str())
-                .unwrap_or_else(|| r.get("id").and_then(|v| v.as_str()).unwrap_or(""))
-                .to_string();
+            let id = r.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
             let full_name = r
                 .get("stage_name")
                 .and_then(|v| v.as_str())
@@ -682,7 +678,7 @@ pub async fn list_talent_assets(
         .pg
         .from("reference_images")
         .select("id,public_url,section_id,created_at")
-        .eq("user_id", &talent_id)
+        .eq("user_id", &talent_id) // Assuming user_id can be agency_users.id
         .eq("moderation_status", "approved")
         .order("created_at.desc")
         .execute()
@@ -697,7 +693,7 @@ pub async fn list_talent_assets(
         .pg
         .from("agency_files")
         .select("id,file_name,public_url,created_at,storage_path")
-        .eq("talent_id", &talent_id)
+        .eq("talent_id", &talent_id) // Now uses the agency_users.id
         .order("created_at.desc")
         .execute()
         .await
@@ -736,6 +732,13 @@ pub async fn list_talent_assets(
             }
         }));
     }
+
+    // Sort all assets by creation date, descending
+    assets.sort_by(|a, b| {
+        let a_date = a["metadata"]["created_at"].as_str().unwrap_or_default();
+        let b_date = b["metadata"]["created_at"].as_str().unwrap_or_default();
+        b_date.cmp(a_date)
+    });
 
     Ok(Json(json!(assets)))
 }
