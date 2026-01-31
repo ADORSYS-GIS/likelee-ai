@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     Loader2, Plus, X, Check, ArrowRight, ArrowLeft,
     Image as ImageIcon, User, Settings, Send, Search,
-    Eye, Calendar, Palette, Type, Building2, Mail,
+    Eye, EyeOff, Calendar, Palette, Type, Building2, Mail,
     GripVertical, Trash2, Globe, SwitchCamera, Layers
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -43,6 +43,7 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
     const [showTalentSelector, setShowTalentSelector] = useState(false);
     const [isNavigating, setIsNavigating] = useState(false);
     const [activeTalentForAssets, setActiveTalentForAssets] = useState<{ id: string, name: string } | null>(null);
+    const [showPassword, setShowPassword] = useState(false);
     const { toast } = useToast();
     const queryClient = useQueryClient();
 
@@ -375,13 +376,23 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                                     className="space-y-3"
                                                 >
                                                     <Label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Gateway Password</Label>
-                                                    <Input
-                                                        type="password"
-                                                        placeholder="Create a secure password..."
-                                                        value={formData.password}
-                                                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                                        className="h-12 border border-gray-200 bg-gray-50 focus:bg-white focus:border-indigo-600 rounded-lg px-4 transition-all duration-300"
-                                                    />
+                                                    <div className="relative">
+                                                        <Input
+                                                            type={showPassword ? "text" : "password"}
+                                                            placeholder="Create a secure password..."
+                                                            value={formData.password}
+                                                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                                            className="h-12 border border-gray-200 bg-gray-50 focus:bg-white focus:border-indigo-600 rounded-lg px-4 pr-10 transition-all duration-300"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowPassword((prev) => !prev)}
+                                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                                            aria-label={showPassword ? "Hide password" : "Show password"}
+                                                        >
+                                                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                                        </button>
+                                                    </div>
                                                 </motion.div>
                                             )}
                                         </AnimatePresence>
@@ -519,10 +530,10 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                     </DialogHeader>
 
                     <div className="relative mb-8">
-                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <Input
                             placeholder="Filter by name or category..."
-                            className="pl-14 h-14 rounded-2xl bg-gray-50 border-transparent focus:bg-white focus:border-indigo-600 transition-all duration-300 font-bold"
+                            className="pl-11 h-12 rounded-lg bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-600 transition-all duration-300 font-medium"
                         />
                     </div>
 
@@ -562,7 +573,7 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                             setIsNavigating(false);
                         }}
                         disabled={isNavigating}
-                        className="w-full mt-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[1.5rem] h-16 font-black uppercase tracking-[0.2em] text-[11px] shadow-2xl shadow-indigo-200/50"
+                        className="w-full mt-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg h-12 font-bold tracking-wider text-sm shadow-md shadow-indigo-200"
                     >
                         {isNavigating ? (
                             <Loader2 className="w-5 h-5 animate-spin mr-3" />
