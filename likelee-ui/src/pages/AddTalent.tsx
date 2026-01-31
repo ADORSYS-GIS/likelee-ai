@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -63,6 +63,7 @@ const skinTones = [
 
 export default function AddTalent() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
   const [step, setStep] = useState(1);
@@ -116,6 +117,19 @@ export default function AddTalent() {
     bio: "",
     special_skills: "",
   });
+
+  useEffect(() => {
+    const prospect = (location as any)?.state?.prospect;
+    if (prospect) {
+      setFormData((prev) => ({
+        ...prev,
+        full_name: prospect.full_name || "",
+        email: prospect.email || "",
+        phone: prospect.phone || "",
+        instagram_handle: prospect.instagram_handle || "",
+      }));
+    }
+  }, [location]);
 
   useEffect(() => {
     setProfilePhotoIndex((prev) => {

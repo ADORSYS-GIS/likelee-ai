@@ -42,6 +42,93 @@ fn try_parse_json_string_array(s: &str) -> Option<Vec<String>> {
     serde_json::from_str::<Vec<String>>(t).ok()
 }
 
+ fn try_parse_postgres_array_literal(s: &str) -> Option<Vec<String>> {
+     let t = s.trim();
+     if !(t.starts_with('{') && t.ends_with('}')) {
+         return None;
+     }
+     let inner = &t[1..t.len().saturating_sub(1)];
+     if inner.trim().is_empty() {
+         return Some(vec![]);
+     }
+
+     let mut out: Vec<String> = Vec::new();
+     let mut cur = String::new();
+     let mut in_quotes = false;
+     let mut escape = false;
+
+     for ch in inner.chars() {
+         if escape {
+             cur.push(ch);
+             escape = false;
+             continue;
+         }
+         if ch == '\\' {
+             escape = true;
+             continue;
+         }
+         if ch == '"' {
+             in_quotes = !in_quotes;
+             continue;
+         }
+         if ch == ',' && !in_quotes {
+             let v = cur.trim();
+             if !v.is_empty() {
+                 out.push(v.to_string());
+             }
+             cur.clear();
+             continue;
+         }
+         cur.push(ch);
+     }
+     let v = cur.trim();
+     if !v.is_empty() {
+         out.push(v.to_string());
+     }
+
+     Some(out)
+ }
+
+ fn parse_string_array_value(v: &serde_json::Value) -> Vec<String> {
+     if let Some(arr) = v.as_array() {
+         return arr
+             .iter()
+             .filter_map(|x| x.as_str())
+             .map(|s| s.to_string())
+             .collect();
+     }
+     if let Some(s) = v.as_str() {
+         if let Some(arr) = try_parse_json_string_array(s) {
+             return arr;
+         }
+         if let Some(arr) = try_parse_postgres_array_literal(s) {
+             return arr;
+         }
+         if s.trim().is_empty() {
+             return vec![];
+         }
+         return vec![s.to_string()];
+     }
+    vec![]
+}
+
+ fn normalize_asset_url(s: &str) -> String {
+     let t = s.trim();
+     if let Some(i) = t.find("://") {
+         let (scheme, rest) = t.split_at(i + 3);
+         let mut r = rest.to_string();
+         while r.contains("//") {
+             r = r.replace("//", "/");
+         }
+         return format!("{}{}", scheme, r);
+     }
+     let mut r = t.to_string();
+     while r.contains("//") {
+         r = r.replace("//", "/");
+     }
+     r
+ }
+
 #[derive(Serialize, Deserialize)]
 pub struct TalentRow {
     pub id: String,
@@ -266,23 +353,18 @@ pub async fn get_roster(
                 .to_string();
             let photo_urls: Vec<String> = item
                 .get("photo_urls")
-                .and_then(|v| v.as_array())
-                .map(|arr| {
-                    arr.iter()
-                        .filter_map(|x| x.as_str().map(|s| s.to_string()))
-                        .collect::<Vec<_>>()
-                })
+                .map(parse_string_array_value)
                 .unwrap_or_default();
 
             if !id.is_empty() {
                 let entry = asset_urls_by_talent.entry(id.clone()).or_default();
                 if !img.trim().is_empty() {
-                    entry.insert(img.clone());
+                    entry.insert(normalize_asset_url(&img));
                 }
                 for u in photo_urls.iter() {
                     let t = u.trim();
                     if !t.is_empty() {
-                        entry.insert(t.to_string());
+                        entry.insert(normalize_asset_url(t));
                     }
                 }
             }
@@ -449,16 +531,24 @@ pub async fn get_roster(
         let digitals_resp = state
             .pg
             .from("digitals")
-            .select("talent_id,photo_urls,comp_card_url,bust_inches,waist_inches,hips_inches,measurements,uploaded_at,created_at")
+            .select("talent_id,photo_urls,comp_card_url,bust_inches,waist_inches,hips_inches,uploaded_at,created_at")
             .in_("talent_id", ids.clone())
             .order("uploaded_at.desc")
             .execute()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        let digitals_status = digitals_resp.status();
         let digitals_text = digitals_resp
             .text()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        if !digitals_status.is_success() {
+            warn!(agency_id = %user.id, status = %digitals_status, body = %digitals_text, "digitals lookup failed");
+            return Err((StatusCode::INTERNAL_SERVER_ERROR, digitals_text));
+        }
+
         let digitals_rows: serde_json::Value =
             serde_json::from_str(&digitals_text).unwrap_or(serde_json::json!([]));
         if let Some(arr) = digitals_rows.as_array() {
@@ -469,18 +559,18 @@ pub async fn get_roster(
                 }
 
                 let entry = asset_urls_by_talent.entry(t_id.to_string()).or_default();
-                if let Some(urls) = r.get("photo_urls").and_then(|v| v.as_array()) {
-                    for u in urls.iter().filter_map(|x| x.as_str()) {
+                if let Some(v) = r.get("photo_urls") {
+                    for u in parse_string_array_value(v).iter() {
                         let t = u.trim();
                         if !t.is_empty() {
-                            entry.insert(t.to_string());
+                            entry.insert(normalize_asset_url(t));
                         }
                     }
                 }
                 if let Some(cc) = r.get("comp_card_url").and_then(|v| v.as_str()) {
                     let t = cc.trim();
                     if !t.is_empty() {
-                        entry.insert(t.to_string());
+                        entry.insert(normalize_asset_url(t));
                     }
                 }
 
@@ -499,15 +589,11 @@ pub async fn get_roster(
                     .get("hips_inches")
                     .and_then(|v| v.as_i64())
                     .map(|v| v as i32);
-                let mut measurements = r
-                    .get("measurements")
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.to_string());
-                if measurements.is_none() {
-                    if let (Some(b), Some(w), Some(h)) = (bust, waist, hips) {
-                        measurements = Some(format!("{b}-{w}-{h}"));
-                    }
-                }
+                let measurements = if let (Some(b), Some(w), Some(h)) = (bust, waist, hips) {
+                    Some(format!("{b}-{w}-{h}"))
+                } else {
+                    None
+                };
                 digitals_by_talent.insert(t_id.to_string(), (bust, waist, hips, measurements));
             }
         }
@@ -916,11 +1002,18 @@ pub async fn get_roster(
         // If anything is missing (tables/columns), we fall back to the existing agency_users.license_expiry field.
     }
 
+    let mut assets_updates: Vec<(String, i32)> = Vec::new();
+
     for t in roster.iter_mut() {
-        t.assets = asset_urls_by_talent
+        let computed_assets = asset_urls_by_talent
             .get(&t.id)
             .map(|s| s.len() as i32)
             .unwrap_or(0);
+
+        if computed_assets != t.assets {
+            t.assets = computed_assets;
+            assets_updates.push((t.id.clone(), computed_assets));
+        }
 
         if let Some(tb) = top_brand_by_talent.get(&t.id) {
             t.top_brand = tb.clone();
@@ -949,6 +1042,26 @@ pub async fn get_roster(
         }
         if let Some(exp) = license_expiry_by_talent.get(&t.id) {
             t.expiry = exp.clone();
+        }
+    }
+
+    for (t_id, assets) in assets_updates {
+        let body = serde_json::json!({ "total_assets": assets });
+        let upd = state
+            .pg
+            .from("agency_users")
+            .eq("agency_id", &user.id)
+            .eq("id", &t_id)
+            .update(body.to_string())
+            .execute()
+            .await;
+        if let Ok(resp) = upd {
+            if !resp.status().is_success() {
+                let txt = resp.text().await.unwrap_or_default();
+                warn!(talent_id = %t_id, body = %txt, "failed to persist total_assets");
+            }
+        } else if let Err(e) = upd {
+            warn!(talent_id = %t_id, error = %e, "failed to persist total_assets");
         }
     }
 

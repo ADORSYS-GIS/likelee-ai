@@ -145,6 +145,22 @@ pub struct ServerConfig {
 
     #[envconfig(from = "PAYOUT_ALLOWED_CURRENCIES", default = "USD,EUR")]
     pub payout_allowed_currencies: String,
+
+    // DocuSeal API configuration
+    #[envconfig(from = "DOCUSEAL_API_KEY", default = "")]
+    pub docuseal_api_key: String,
+
+    #[envconfig(from = "DOCUSEAL_API_URL", default = "https://docuseal.co")]
+    pub docuseal_api_url: String,
+
+    #[envconfig(from = "DOCUSEAL_APP_URL", default = "https://docuseal.co")]
+    pub docuseal_app_url: String,
+
+    #[envconfig(from = "DOCUSEAL_WEBHOOK_URL", default = "")]
+    pub docuseal_webhook_url: String,
+
+    #[envconfig(from = "DOCUSEAL_USER_EMAIL", default = "")]
+    pub docuseal_user_email: String,
 }
 
 #[derive(Clone)]
@@ -189,4 +205,11 @@ pub struct AppState {
     pub smtp_password: String,
     pub email_from: String,
     pub email_contact_to: String,
+
+    // DocuSeal
+    pub docuseal_api_key: String,
+    pub docuseal_api_url: String,
+    pub docuseal_app_url: String,
+    pub docuseal_webhook_url: String,
+    pub docuseal_user_email: String,
 }

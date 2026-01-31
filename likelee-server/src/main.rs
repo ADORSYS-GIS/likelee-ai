@@ -20,7 +20,14 @@ async fn main() {
     tracing_subscriber::fmt().with_env_filter(filter).init();
     info!(port, endpoint_base = %cfg.veriff_base_url, "Starting likelee-server");
 
-    let pg = Postgrest::new(format!("{}/rest/v1", cfg.supabase_url))
+    let supabase_base = cfg.supabase_url.trim_end_matches('/');
+    let postgrest_base = if supabase_base.ends_with("/rest/v1") {
+        supabase_base.to_string()
+    } else {
+        format!("{}/rest/v1", supabase_base)
+    };
+
+    let pg = Postgrest::new(postgrest_base.clone())
         .insert_header("apikey", cfg.supabase_service_key.clone())
         .insert_header(
             "Authorization",
@@ -29,7 +36,7 @@ async fn main() {
 
     // Ensure Storage buckets and policies exist (Option B: server-only writes)
     {
-        let rpc = Postgrest::new(format!("{}/rest/v1", cfg.supabase_url))
+        let rpc = Postgrest::new(postgrest_base.clone())
             .insert_header("apikey", cfg.supabase_service_key.clone())
             .insert_header(
                 "Authorization",
@@ -118,6 +125,12 @@ async fn main() {
         smtp_password: cfg.smtp_password.clone(),
         email_from: cfg.email_from.clone(),
         email_contact_to: cfg.email_contact_to.clone(),
+
+        docuseal_api_key: cfg.docuseal_api_key.clone(),
+        docuseal_api_url: cfg.docuseal_api_url.clone(),
+        docuseal_app_url: cfg.docuseal_app_url.clone(),
+        docuseal_webhook_url: cfg.docuseal_webhook_url.clone(),
+        docuseal_user_email: cfg.docuseal_user_email.clone(),
     };
 
     let app = likelee_server::router::build_router(state);

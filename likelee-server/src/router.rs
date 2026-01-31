@@ -238,6 +238,40 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::creator_rates::get_creator_rates)
                 .post(crate::creator_rates::upsert_creator_rates),
         )
+        // Scouting (DocuSeal)
+        .route(
+            "/api/scouting/templates",
+            get(crate::scouting::list_templates).post(crate::scouting::create_template),
+        )
+        .route(
+            "/api/scouting/templates/sync",
+            post(crate::scouting::sync_templates),
+        )
+        .route(
+            "/api/scouting/templates/upload",
+            post(crate::scouting::create_template_from_pdf),
+        )
+        .route(
+            "/api/scouting/templates/:id",
+            delete(crate::scouting::delete_template).put(crate::scouting::update_template_from_pdf),
+        )
+        .route(
+            "/api/scouting/offers",
+            get(crate::scouting::list_offers).post(crate::scouting::create_offer),
+        )
+        .route(
+            "/api/scouting/offers/:offer_id",
+            get(crate::scouting::get_offer_details).delete(crate::scouting::delete_offer),
+        )
+        .route(
+            "/api/scouting/offers/refresh-status",
+            post(crate::scouting::refresh_offer_status),
+        )
+        .route(
+            "/api/scouting/builder-token",
+            post(crate::scouting::create_builder_token),
+        )
+        .route("/webhooks/docuseal", post(crate::scouting::handle_webhook))
         // Notifications
         .route(
             "/api/notifications/booking-created-email",

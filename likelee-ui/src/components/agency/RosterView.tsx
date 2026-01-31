@@ -69,6 +69,7 @@ interface RosterViewProps {
   earningsPrev30dTotalCents?: number;
   agencyName: string;
   seatsLimit: number;
+  isLoading?: boolean;
   onRosterChanged?: () => void;
 }
 
@@ -88,6 +89,7 @@ const RosterView = ({
   earningsPrev30dTotalCents = 0,
   agencyName,
   seatsLimit,
+  isLoading = false,
   onRosterChanged,
 }: RosterViewProps) => {
   const navigate = useNavigate();
@@ -455,6 +457,7 @@ const RosterView = ({
       setUploadFiles([]);
       setUploadDateTaken(new Date().toISOString().slice(0, 10));
       await refreshAgencyDigitals();
+      onRosterChanged?.();
 
       toast({
         title: "Digital uploaded successfully!",
@@ -1099,6 +1102,30 @@ const RosterView = ({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50 bg-white">
+                      {isLoading && filteredTalent.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={agencyMode === "AI" ? 8 : 6}
+                            className="px-6 py-10"
+                          >
+                            <div className="flex items-center justify-center gap-2 text-sm text-gray-500 font-medium">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Loading talents…
+                            </div>
+                          </td>
+                        </tr>
+                      ) : filteredTalent.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={agencyMode === "AI" ? 8 : 6}
+                            className="px-6 py-10"
+                          >
+                            <div className="text-center text-sm text-gray-500 font-medium">
+                              No talents to display.
+                            </div>
+                          </td>
+                        </tr>
+                      ) : null}
                       {filteredTalent.map((talent) => (
                         <tr
                           key={talent.id}

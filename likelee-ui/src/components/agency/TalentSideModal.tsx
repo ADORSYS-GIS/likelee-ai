@@ -4,6 +4,7 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
+  SheetDescription,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,8 +38,6 @@ const TalentSideModal = ({
   onOpenChange,
   onSaved,
 }: TalentSideModalProps) => {
-  if (!talent) return null;
-
   const safeTextFromMaybeJsonArray = (v: any): string => {
     if (v === null || v === undefined) return "";
     if (Array.isArray(v)) return v.filter(Boolean).join(", ");
@@ -91,26 +90,27 @@ const TalentSideModal = ({
         .map((s) => s.trim())
         .filter(Boolean)
     : [];
+  const safeTalent = talent || ({} as any);
   const buildEditForm = () => ({
-    full_name: talent.name || "",
-    stage_name: talent.stage_name || "",
-    email: talent.email || "",
-    phone: talent.phone || "",
-    bio: talent.bio || "",
-    instagram_handle: talent.instagram_handle || "",
+    full_name: safeTalent.name || "",
+    stage_name: safeTalent.stage_name || "",
+    email: safeTalent.email || "",
+    phone: safeTalent.phone || "",
+    bio: safeTalent.bio || "",
+    instagram_handle: safeTalent.instagram_handle || "",
     role_types: roleTypes,
-    gender_identity: talent.gender_identity || "",
-    hair_color: talent.hair_color || "",
-    eye_color: talent.eye_color || "",
-    height_feet: talent.height_feet ?? "",
-    height_inches: talent.height_inches ?? "",
-    race_ethnicity: Array.isArray(talent.race_ethnicity)
-      ? talent.race_ethnicity
+    gender_identity: safeTalent.gender_identity || "",
+    hair_color: safeTalent.hair_color || "",
+    eye_color: safeTalent.eye_color || "",
+    height_feet: safeTalent.height_feet ?? "",
+    height_inches: safeTalent.height_inches ?? "",
+    race_ethnicity: Array.isArray(safeTalent.race_ethnicity)
+      ? safeTalent.race_ethnicity
       : [],
     special_skills: skillsText || "",
-    city: talent.city || "",
-    state_province: talent.state_province || "",
-    country: talent.country || "",
+    city: safeTalent.city || "",
+    state_province: safeTalent.state_province || "",
+    country: safeTalent.country || "",
   });
   const [editForm, setEditForm] = useState(buildEditForm());
 
@@ -211,50 +211,56 @@ const TalentSideModal = ({
           <SheetTitle className="text-xl font-bold text-gray-900">
             Talent Details
           </SheetTitle>
+          <SheetDescription className="sr-only">Talent details</SheetDescription>
           {/* Close button is handled by Sheet primitive usually, but we can have custom if needed */}
         </SheetHeader>
 
-        <div className="space-y-6">
-          {/* Profile Header */}
-          <div className="flex gap-5 items-start">
-            <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden shrink-0">
-              <img
-                src={talent.img || "https://via.placeholder.com/150"}
-                className="w-full h-full object-cover"
-                alt={talent.name}
-              />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  {talent.name}
-                </h2>
+        {!talent ? (
+          <div className="py-10 text-center text-sm text-gray-500 font-medium">
+            No talent selected.
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Profile Header */}
+            <div className="flex gap-5 items-start">
+              <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden shrink-0">
+                <img
+                  src={talent.img || "https://via.placeholder.com/150"}
+                  className="w-full h-full object-cover"
+                  alt={talent.name}
+                />
               </div>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {roleTypes.length > 0 ? (
-                  roleTypes.slice(0, 3).map((r) => (
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    {talent.name}
+                  </h2>
+                </div>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {roleTypes.length > 0 ? (
+                    roleTypes.slice(0, 3).map((r) => (
+                      <Badge
+                        key={r}
+                        variant="secondary"
+                        className="bg-gray-100 text-gray-600 border-none font-bold text-[10px]"
+                      >
+                        {r}
+                      </Badge>
+                    ))
+                  ) : (
                     <Badge
-                      key={r}
                       variant="secondary"
                       className="bg-gray-100 text-gray-600 border-none font-bold text-[10px]"
                     >
-                      {r}
+                      {safeTextFromMaybeJsonArray(talent.role) || "Model"}
                     </Badge>
-                  ))
-                ) : (
-                  <Badge
-                    variant="secondary"
-                    className="bg-gray-100 text-gray-600 border-none font-bold text-[10px]"
-                  >
-                    {safeTextFromMaybeJsonArray(talent.role) || "Model"}
-                  </Badge>
-                )}
+                  )}
+                </div>
+                <p className="text-sm text-gray-500 leading-tight">
+                  {talent.bio || ""}
+                </p>
               </div>
-              <p className="text-sm text-gray-500 leading-tight">
-                {talent.bio || ""}
-              </p>
             </div>
-          </div>
 
           {skillsText && (
             <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
@@ -635,28 +641,18 @@ const TalentSideModal = ({
                 </Button>
               </>
             ) : (
-              <>
-                <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 shadow-lg shadow-indigo-100 gap-2">
-                  <Mail className="w-4 h-4" /> Send Message
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full border-gray-200 text-gray-700 font-bold h-10 gap-2"
-                >
-                  <RefreshCw className="w-4 h-4" /> Renew License
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full border-gray-200 text-gray-700 font-bold h-10 gap-2"
-                  onClick={() => setIsEditing(true)}
-                  disabled={isSaving}
-                >
-                  <Pencil className="w-4 h-4" /> Edit Profile
-                </Button>
-              </>
+              <Button
+                variant="outline"
+                className="w-full border-gray-200 text-gray-700 font-bold h-10 gap-2"
+                onClick={() => setIsEditing(true)}
+                disabled={isSaving}
+              >
+                <Pencil className="w-4 h-4" /> Edit Profile
+              </Button>
             )}
           </div>
         </div>
+        )}
       </SheetContent>
     </Sheet>
   );

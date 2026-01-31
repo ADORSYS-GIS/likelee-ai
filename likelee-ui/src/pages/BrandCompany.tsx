@@ -33,7 +33,7 @@ export default function BrandCompany() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Add JSON-LD structured data
+    // Add JSON-LD structured data.
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "Service",
