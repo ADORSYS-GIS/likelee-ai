@@ -36,4 +36,6 @@ export const uploadFile = (clientId: string, file: File) => {
 };
 
 export const getSignedUrl = (clientId: string, fileId: string) =>
-  base44Client.get(`/api/agency/clients/${clientId}/files/${fileId}/signed-url`);
+  base44Client.get(
+    `/api/agency/clients/${clientId}/files/${fileId}/signed-url`,
+  );
