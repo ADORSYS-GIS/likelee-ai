@@ -2,6 +2,7 @@ use axum::{
     extract::{Path, State},
     http::StatusCode,
     Json,
+    extract::Multipart,
 };
 use serde::{Deserialize, Serialize};
 use crate::auth::AuthUser;
@@ -60,7 +61,7 @@ pub async fn list_packages(
     let resp = state
         .pg
         .from("agency_talent_packages")
-        .select("*")
+        .select("*, stats:agency_talent_package_stats(*)")
         .eq("agency_id", &user.id)
         .order("created_at.desc")
         .execute()
@@ -189,6 +190,72 @@ pub async fn delete_package(
     Ok(StatusCode::NO_CONTENT)
 }
 
+pub async fn get_dashboard_stats(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    // 1. Get total packages and active shares
+    let packages_resp = state
+        .pg
+        .from("agency_talent_packages")
+        .select("id,expires_at")
+        .eq("agency_id", &user.id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let packages_text = packages_resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let packages: Vec<serde_json::Value> = serde_json::from_str(&packages_text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let total_packages = packages.len();
+    let now = chrono::Utc::now();
+    let active_shares = packages.iter().filter(|p| {
+        match p["expires_at"].as_str() {
+            Some(exp) => {
+                match chrono::DateTime::parse_from_rfc3339(exp) {
+                    Ok(exp_dt) => exp_dt > now,
+                    Err(_) => true,
+                }
+            },
+            None => true,
+        }
+    }).count();
+
+    // 2. Get total views and interactions via RPC
+    let stats_resp = state
+        .pg
+        .rpc("get_agency_package_stats", serde_json::json!({ "p_agency_id": user.id }).to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let stats_text = stats_resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let stats_arr: Vec<serde_json::Value> = serde_json::from_str(&stats_text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    
+    let stats = stats_arr.first().cloned().unwrap_or(serde_json::json!({
+        "total_views": 0,
+        "total_favorites": 0,
+        "total_callbacks": 0
+    }));
+
+    let views = stats["total_views"].as_i64().unwrap_or(0);
+    let favorites = stats["total_favorites"].as_i64().unwrap_or(0);
+    let callbacks = stats["total_callbacks"].as_i64().unwrap_or(0);
+
+    let conversion = if views > 0 {
+        ((favorites + callbacks) as f64 / views as f64) * 100.0
+    } else {
+        0.0
+    };
+
+    Ok(Json(serde_json::json!({
+        "total_packages": total_packages,
+        "active_shares": active_shares,
+        "total_views": views,
+        "conversion_rate": format!("{:.1}%", conversion),
+    })))
+}
+
 // Public Handlers
 pub async fn get_public_package(
     State(state): State<AppState>,
@@ -214,6 +281,14 @@ pub async fn get_public_package(
                 return Err((StatusCode::GONE, "Package expired".to_string()));
             }
         }
+    }
+
+    // Increment view count
+    if let Some(id) = package["id"].as_str() {
+        let _ = state.pg
+            .rpc("increment_package_view", serde_json::json!({ "p_package_id": id }).to_string())
+            .execute()
+            .await;
     }
 
     Ok(Json(package))

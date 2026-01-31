@@ -78,6 +78,10 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::packages::list_packages).post(crate::packages::create_package),
         )
         .route(
+            "/api/agency/packages/stats",
+            get(crate::packages::get_dashboard_stats),
+        )
+        .route(
             "/api/agency/packages/:id",
             get(crate::packages::get_package).delete(crate::packages::delete_package),
         )

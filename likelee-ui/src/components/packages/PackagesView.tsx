@@ -32,11 +32,17 @@ export function PackagesView() {
         queryFn: () => packageApi.listPackages(),
     });
 
+    const { data: statsData, isLoading: isStatsLoading } = useQuery({
+        queryKey: ["agency-package-stats"],
+        queryFn: () => packageApi.getPackageStats(),
+    });
+
     const deleteMutation = useMutation({
         mutationFn: (id: string) => packageApi.deletePackage(id),
         onSuccess: () => {
             toast({ title: "Package deleted" });
             queryClient.invalidateQueries({ queryKey: ["agency-packages"] });
+            queryClient.invalidateQueries({ queryKey: ["agency-package-stats"] });
         },
     });
 
@@ -50,11 +56,18 @@ export function PackagesView() {
         p.title.toLowerCase().includes(searchTerm.toLowerCase())
     ) || [];
 
+    const realStats = statsData?.data || {
+        total_packages: 0,
+        active_shares: 0,
+        total_views: 0,
+        conversion_rate: "0%"
+    };
+
     const stats = [
-        { label: "Total Packages", value: filteredPackages.length, icon: Package, color: "text-blue-600" },
-        { label: "Active Shares", value: filteredPackages.filter((p: any) => !p.expires_at || new Date(p.expires_at) > new Date()).length, icon: CheckCircle2, color: "text-green-600" },
-        { label: "Total Views", value: "1,204", icon: Eye, color: "text-purple-600" }, // Mocked for now
-        { label: "Conversion", value: "12%", icon: TrendingUp, color: "text-orange-600" }, // Mocked for now
+        { label: "Total Packages", value: realStats.total_packages, icon: Package, color: "text-blue-600" },
+        { label: "Active Shares", value: realStats.active_shares, icon: CheckCircle2, color: "text-green-600" },
+        { label: "Total Views", value: realStats.total_views.toLocaleString(), icon: Eye, color: "text-purple-600" },
+        { label: "Conversion", value: realStats.conversion_rate, icon: TrendingUp, color: "text-orange-600" },
     ];
 
     return (
