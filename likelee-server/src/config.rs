@@ -161,6 +161,9 @@ pub struct ServerConfig {
 
     #[envconfig(from = "DOCUSEAL_USER_EMAIL", default = "")]
     pub docuseal_user_email: String,
+
+    #[envconfig(from = "FRONTEND_URL", default = "http://localhost:5173")]
+    pub frontend_url: String,
 }
 
 #[derive(Clone)]
@@ -212,4 +215,5 @@ pub struct AppState {
     pub docuseal_app_url: String,
     pub docuseal_webhook_url: String,
     pub docuseal_user_email: String,
+    pub frontend_url: String,
 }

@@ -39,6 +39,8 @@ pub struct CreatePackageRequest {
     pub allow_favorites: Option<bool>,
     pub allow_callbacks: Option<bool>,
     pub expires_at: Option<String>,
+    pub client_name: Option<String>,
+    pub client_email: Option<String>,
     pub items: Vec<PackageItemRequest>,
 }
 
@@ -92,6 +94,8 @@ pub async fn create_package(
         "allow_favorites": payload.allow_favorites.unwrap_or(true),
         "allow_callbacks": payload.allow_callbacks.unwrap_or(true),
         "expires_at": payload.expires_at,
+        "client_name": payload.client_name,
+        "client_email": payload.client_email,
     });
 
     let resp = state
@@ -147,7 +151,58 @@ pub async fn create_package(
         }
     }
 
+    // 3. Trigger Email Notification if client email is provided
+    if let Some(client_email) = &payload.client_email {
+        if !client_email.trim().is_empty() {
+            let agency_name = fetch_agency_name(&state, &user.id).await.unwrap_or_else(|_| "Premier Talent Agency".to_string());
+            let client_name = payload.client_name.as_deref().unwrap_or("Client");
+            let package_url = format!("{}/packages/{}", state.frontend_url, package["access_token"].as_str().unwrap_or(""));
+            
+            let subject = format!("New Talent Selection from {}", agency_name);
+            let body = format!(
+                r#"
+                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; border: 1px solid #eee; border-radius: 10px;">
+                    <h2 style="color: #333; margin-bottom: 24px;">Hello {},</h2>
+                    <p style="color: #555; line-height: 1.6; font-size: 16px;">
+                        <strong>{}</strong> has curated a new talent selection specifically for your project.
+                    </p>
+                    <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin: 30px 0;">
+                        <h3 style="margin-top: 0; color: #111;">{}</h3>
+                        <p style="color: #666; font-size: 14px;">{}</p>
+                        <a href="{}" style="display: inline-block; background-color: #6366f1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 10px;">View Portfolio</a>
+                    </div>
+                    <p style="color: #888; font-size: 12px; margin-top: 40px; border-top: 1px solid #eee; pt: 20px;">
+                        Powered by LikeLee.ai - Professional Talent Management
+                    </p>
+                </div>
+                "#,
+                client_name, agency_name, payload.title, payload.description.as_deref().unwrap_or(""), package_url
+            );
+
+            let _ = crate::email::send_email_core(&state, client_email, &subject, &body, true).await;
+        }
+    }
+
     Ok(Json(package.clone()))
+}
+
+async fn fetch_agency_name(state: &AppState, agency_id: &str) -> Result<String, String> {
+    let resp = state
+        .pg
+        .from("agencies")
+        .select("agency_name")
+        .eq("id", agency_id)
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let text = resp.text().await.map_err(|e| e.to_string())?;
+    let agencies: Vec<serde_json::Value> = serde_json::from_str(&text).map_err(|e| e.to_string())?;
+    
+    agencies.first()
+        .and_then(|a| a["agency_name"].as_str())
+        .map(|s| s.to_string())
+        .ok_or_else(|| "Agency not found".to_string())
 }
 
 pub async fn get_package(

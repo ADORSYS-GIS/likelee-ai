@@ -12,66 +12,58 @@ pub struct SendEmailRequest {
     pub to: String,
     pub subject: String,
     pub body: String,
+    pub is_html: Option<bool>,
 }
 
 pub async fn send_email(
     State(state): State<AppState>,
     Json(payload): Json<SendEmailRequest>,
 ) -> (StatusCode, Json<serde_json::Value>) {
-    // Determine destination: prefer configured EMAIL_CONTACT_TO when set
-    let dest = if !state.email_contact_to.trim().is_empty() {
+    let to = if !state.email_contact_to.trim().is_empty() {
         state.email_contact_to.trim().to_string()
     } else {
-        payload.to.trim().to_string()
+        payload.to.clone()
     };
-    if dest.is_empty() {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(json!({"status":"error","error":"missing_destination"})),
-        );
+
+    match send_email_core(&state, &to, &payload.subject, &payload.body, payload.is_html.unwrap_or(false)).await {
+        Ok(_) => (StatusCode::OK, Json(json!({"status":"ok"}))),
+        Err((code, msg)) => (code, Json(json!({"status":"error", "error": msg}))),
+    }
+}
+
+pub async fn send_email_core(
+    state: &AppState,
+    to: &str,
+    subject: &str,
+    body: &str,
+    is_html: bool,
+) -> Result<(), (StatusCode, String)> {
+    if to.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "missing_destination".to_string()));
     }
 
-    // SMTP is required (lettre-only). If not configured, return 500.
     if state.smtp_host.is_empty() || state.smtp_user.is_empty() {
-        return (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"status":"error","error":"smtp_not_configured"})),
-        );
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, "smtp_not_configured".to_string()));
     }
 
-    let from_addr = match state.email_from.parse() {
-        Ok(a) => a,
-        Err(_) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"status":"error","error":"invalid_from_address"})),
-            )
-        }
-    };
-    let to_addr = match dest.parse() {
-        Ok(a) => a,
-        Err(_) => {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(json!({"status":"error","error":"invalid_to_address"})),
-            )
-        }
+    let from_addr = state.email_from.parse()
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "invalid_from_address".to_string()))?;
+    
+    let to_addr = to.parse()
+        .map_err(|_| (StatusCode::BAD_REQUEST, "invalid_to_address".to_string()))?;
+
+    let part = if is_html {
+        SinglePart::html(body.to_string())
+    } else {
+        SinglePart::plain(body.to_string())
     };
 
-    let email = match Message::builder()
+    let email = Message::builder()
         .from(from_addr)
         .to(to_addr)
-        .subject(payload.subject.clone())
-        .singlepart(SinglePart::plain(payload.body.clone()))
-    {
-        Ok(m) => m,
-        Err(_) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"status":"error","error":"build_message_failed"})),
-            )
-        }
-    };
+        .subject(subject.to_string())
+        .singlepart(part)
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "build_message_failed".to_string()))?;
 
     let creds = lettre::transport::smtp::authentication::Credentials::new(
         state.smtp_user.clone(),
@@ -79,50 +71,25 @@ pub async fn send_email(
     );
 
     let mailer = if state.smtp_port == 465 {
-        let tls = match TlsParameters::new(state.smtp_host.clone()) {
-            Ok(p) => p,
-            Err(_) => {
-                return (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(json!({"status":"error","error":"tls_parameters_init_failed"})),
-                )
-            }
-        };
-        let builder = match SmtpTransport::relay(&state.smtp_host) {
-            Ok(b) => b,
-            Err(_) => {
-                return (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(json!({"status":"error","error":"smtp_relay_init_failed"})),
-                )
-            }
-        };
-        builder
+        let tls = TlsParameters::new(state.smtp_host.clone())
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "tls_parameters_init_failed".to_string()))?;
+        
+        SmtpTransport::relay(&state.smtp_host)
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "smtp_relay_init_failed".to_string()))?
             .port(465)
             .tls(Tls::Wrapper(tls))
             .credentials(creds)
             .build()
     } else {
-        let relay = match SmtpTransport::starttls_relay(&state.smtp_host) {
-            Ok(r) => r,
-            Err(_) => match SmtpTransport::relay(&state.smtp_host) {
-                Ok(r2) => r2,
-                Err(_) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(json!({"status":"error","error":"smtp_relay_init_failed"})),
-                    )
-                }
-            },
-        };
+        let relay = SmtpTransport::starttls_relay(&state.smtp_host)
+            .or_else(|_| SmtpTransport::relay(&state.smtp_host))
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "smtp_relay_init_failed".to_string()))?;
+        
         relay.port(state.smtp_port).credentials(creds).build()
     };
 
-    match mailer.send(&email) {
-        Ok(_) => (StatusCode::OK, Json(json!({"status":"ok"}))),
-        Err(e) => (
-            StatusCode::BAD_GATEWAY,
-            Json(json!({"status":"error","error":"smtp_send_failed","detail": e.to_string()})),
-        ),
-    }
+    mailer.send(&email)
+        .map_err(|e| (StatusCode::BAD_GATEWAY, format!("smtp_send_failed: {}", e)))?;
+
+    Ok(())
 }

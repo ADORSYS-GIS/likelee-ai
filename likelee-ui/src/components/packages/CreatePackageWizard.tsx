@@ -45,6 +45,8 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
     const [isNavigating, setIsNavigating] = useState(false);
     const [activeTalentForAssets, setActiveTalentForAssets] = useState<{ id: string, name: string } | null>(null);
     const [showPassword, setShowPassword] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [createdPackage, setCreatedPackage] = useState<any>(null);
     const { toast } = useToast();
     const queryClient = useQueryClient();
 
@@ -74,19 +76,18 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
 
     const createMutation = useMutation({
         mutationFn: (data: any) => packageApi.createPackage(data),
-        onSuccess: () => {
-            toast({
-                title: "Package Created",
-                description: "Your talent portal has been published successfully!",
-            });
+        onSuccess: (data: any) => {
+            setCreatedPackage(data.data);
+            setShowSuccess(true);
             queryClient.invalidateQueries({ queryKey: ["agency-packages"] });
-            onOpenChange(false);
-            resetForm();
+            queryClient.invalidateQueries({ queryKey: ["agency-package-stats"] });
         },
     });
 
     const resetForm = () => {
         setStep(0);
+        setShowSuccess(false);
+        setCreatedPackage(null);
         setFormData({
             title: "",
             description: "",
@@ -507,48 +508,94 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                         </div>
                                     </div>
                                 )}
+
+                                {showSuccess && createdPackage && (
+                                    <div className="flex flex-col items-center justify-center p-10 py-20 text-center space-y-8 h-full">
+                                        <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center">
+                                            <CheckCircle2 className="w-12 h-12 text-green-600" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-4xl font-black text-gray-900 tracking-tight">Package Published!</h2>
+                                            <p className="text-gray-500 font-medium mt-2 max-w-sm mx-auto">
+                                                Your curated selection is now live and {formData.client_email ? `an invitation has been sent to ${formData.client_email}.` : "is ready to be shared."}
+                                            </p>
+                                        </div>
+
+                                        <div className="w-full max-w-md p-6 bg-gray-50 rounded-2xl border border-gray-100 space-y-4">
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Shareable Link</p>
+                                            <div className="flex gap-2">
+                                                <Input
+                                                    readOnly
+                                                    value={`${window.location.origin}/packages/${createdPackage.access_token}`}
+                                                    className="bg-white border-gray-200 font-bold text-indigo-600 h-12"
+                                                />
+                                                <Button
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(`${window.location.origin}/packages/${createdPackage.access_token}`);
+                                                        toast({ title: "Link Copied", description: "The portal address is now in your clipboard." });
+                                                    }}
+                                                    className="bg-white border-2 border-indigo-100 text-indigo-600 hover:bg-white h-12 w-12 p-0"
+                                                >
+                                                    <Badge className="bg-indigo-50 text-indigo-600 border-none">Copy</Badge>
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                        <Button
+                                            onClick={() => {
+                                                onOpenChange(false);
+                                                resetForm();
+                                            }}
+                                            className="bg-gray-900 text-white rounded-xl h-12 px-10 font-black uppercase text-xs tracking-widest"
+                                        >
+                                            Done
+                                        </Button>
+                                    </div>
+                                )}
                             </motion.div>
                         </AnimatePresence>
                     </div>
 
                     {/* Footer */}
-                    <div className="p-10 bg-gray-50/50 backdrop-blur-md border-t border-gray-100 flex items-center justify-between">
-                        <Button
-                            variant="ghost"
-                            onClick={() => {
-                                if (step === 0) onOpenChange(false);
-                                else prevStep();
-                            }}
-                            className="h-10 px-6 font-bold text-sm rounded-lg border-2 border-gray-200 text-gray-700 hover:bg-gray-50"
-                        >
-                            {step === 0 ? 'Cancel' : <><ArrowLeft className="w-4 h-4 mr-2" /> Back</>}
-                        </Button>
+                    {!showSuccess && (
+                        <div className="p-10 bg-gray-50/50 backdrop-blur-md border-t border-gray-100 flex items-center justify-between">
+                            <Button
+                                variant="ghost"
+                                onClick={() => {
+                                    if (step === 0) onOpenChange(false);
+                                    else prevStep();
+                                }}
+                                className="h-10 px-6 font-bold text-sm rounded-lg border-2 border-gray-200 text-gray-700 hover:bg-gray-50"
+                            >
+                                {step === 0 ? 'Cancel' : <><ArrowLeft className="w-4 h-4 mr-2" /> Back</>}
+                            </Button>
 
-                        <div className="flex gap-4">
-                            {step < STEPS.length - 1 ? (
-                                <Button
-                                    onClick={nextStep}
-                                    disabled={isNavigating}
-                                    className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg group"
-                                >
-                                    {isNavigating ? (
-                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    ) : (
-                                        <span className="flex items-center gap-2">Continue <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" /></span>
-                                    )}
-                                </Button>
-                            ) : (
-                                <Button
-                                    onClick={() => createMutation.mutate(formData)}
-                                    disabled={createMutation.isPending}
-                                    className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg group flex items-center gap-2"
-                                >
-                                    {createMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                                    Publish & Send
-                                </Button>
-                            )}
+                            <div className="flex gap-4">
+                                {step < STEPS.length - 1 ? (
+                                    <Button
+                                        onClick={nextStep}
+                                        disabled={isNavigating}
+                                        className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg group"
+                                    >
+                                        {isNavigating ? (
+                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        ) : (
+                                            <span className="flex items-center gap-2">Continue <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" /></span>
+                                        )}
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        onClick={() => createMutation.mutate(formData)}
+                                        disabled={createMutation.isPending}
+                                        className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg group flex items-center gap-2"
+                                    >
+                                        {createMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                                        Publish & Send
+                                    </Button>
+                                )}
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </DialogContent>
             </Dialog>
 
