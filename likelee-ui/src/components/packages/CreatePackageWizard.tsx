@@ -144,37 +144,34 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
     return (
         <>
             <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0 overflow-hidden bg-white/95 backdrop-blur-xl rounded-[2.5rem] border-none shadow-[0_32px_128px_-12px_rgba(0,0,0,0.1)]">
+                <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0 overflow-hidden bg-white/95 backdrop-blur-xl rounded-2xl border-none shadow-[0_32px_128px_-12px_rgba(0,0,0,0.1)]">
                     {/* Header */}
                     <div className="p-10 pb-0">
                         <div className="flex justify-between items-start mb-8">
                             <div>
-                                <DialogTitle className="text-4xl font-black text-gray-900 tracking-tighter">
-
+                                <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight">
+                                    Create a New Talent Package
                                 </DialogTitle>
-                                <p className="text-sm text-gray-400 font-medium mt-1">
+                                <p className="text-sm text-gray-500 font-medium mt-1">
                                     Build a beautiful portfolio package to showcase your talent to clients
                                 </p>
                             </div>
-                            <Button variant="ghost" size="icon" className="rounded-full hover:bg-gray-100/50" onClick={() => onOpenChange(false)}>
-                                <X className="w-5 h-5 text-gray-400" />
-                            </Button>
                         </div>
 
                         {/* Step Bar */}
-                        <div className="flex items-center gap-0 mb-10 max-w-2xl">
+                        <div className="flex items-center gap-0 mb-10 max-w-2xl mx-auto">
                             {STEPS.map((s, i) => (
                                 <React.Fragment key={s.id}>
                                     <div className="flex items-center gap-3">
                                         <div className={`w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-black transition-all duration-500 ${step >= i ? "bg-indigo-600 text-white shadow-xl shadow-indigo-100" : "bg-gray-100 text-gray-400"}`}>
                                             {step > i ? <Check className="w-5 h-5" /> : i + 1}
                                         </div>
-                                        <span className={`text-[10px] uppercase font-black tracking-widest ${step >= i ? "text-gray-900" : "text-gray-400"}`}>
+                                        <span className={`text-[10px] uppercase font-black tracking-widest ${step >= i ? "text-gray-900" : "text-gray-500"}`}>
                                             {s.title}
                                         </span>
                                     </div>
                                     {i < STEPS.length - 1 && (
-                                        <div className="flex-1 mx-6 h-[2px] bg-gray-50" />
+                                        <div className="flex-1 mx-6 h-[3px] bg-gray-300" />
                                     )}
                                 </React.Fragment>
                             ))}
@@ -193,32 +190,32 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                 className="space-y-8"
                             >
                                 {step === 0 && (
-                                    <div className="space-y-8 max-w-2xl">
+                                    <div className="space-y-8 max-w-2xl mx-auto w-full">
                                         <div className="space-y-3">
-                                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Package Title *</Label>
+                                            <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-600">Package Title *</Label>
                                             <Input
                                                 placeholder="e.g. Summer Campaign 2026"
                                                 value={formData.title}
                                                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                                className="h-14 bg-white border-2 border-gray-50 focus:border-indigo-600 focus:bg-white rounded-2xl px-6 transition-all duration-300 font-bold placeholder:text-gray-300"
+                                                className="h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium placeholder:text-gray-400"
                                             />
                                         </div>
                                         <div className="space-y-3">
-                                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Introduction Note</Label>
+                                            <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-600">Introduction Note</Label>
                                             <Textarea
                                                 placeholder="Share the vision for this selection..."
                                                 value={formData.description}
                                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                                className="min-h-[120px] bg-white border-2 border-gray-50 focus:border-indigo-600 rounded-2xl px-6 py-4 transition-all duration-300 font-medium placeholder:text-gray-300"
+                                                className="min-h-[120px] bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 py-3 transition-all duration-300 font-medium placeholder:text-gray-400"
                                             />
                                         </div>
                                         <div className="space-y-3">
-                                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Cover Image URL</Label>
+                                            <Label className="text-[11px] font-bold uppercase tracking-wider text-gray-600">Cover Image URL</Label>
                                             <Input
                                                 placeholder="https://images.unsplash.com/..."
                                                 value={formData.cover_image_url}
                                                 onChange={(e) => setFormData({ ...formData, cover_image_url: e.target.value })}
-                                                className="h-14 bg-white border-2 border-gray-50 focus:border-indigo-600 rounded-2xl px-6 transition-all duration-300 font-bold placeholder:text-gray-300"
+                                                className="h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium placeholder:text-gray-400"
                                             />
                                         </div>
 
@@ -257,7 +254,7 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                                     placeholder="A personal note for the client..."
                                                     value={formData.custom_message}
                                                     onChange={(e) => setFormData({ ...formData, custom_message: e.target.value })}
-                                                    className="bg-white border-2 border-gray-50 focus:border-indigo-600 rounded-2xl px-6 transition-all duration-300 min-h-[80px]"
+                                                    className="bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-2xl px-6 transition-all duration-300 min-h-[80px]"
                                                 />
                                             </div>
                                         </div>
@@ -265,9 +262,9 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                 )}
 
                                 {step === 1 && (
-                                    <div className="space-y-8">
+                                    <div className="space-y-8 max-w-3xl mx-auto w-full">
                                         <div className="flex justify-between items-center">
-                                            <div className="space-y-1">
+                                            <div>
                                                 <h3 className="text-sm font-black text-gray-900 uppercase tracking-[0.2em]">Selected Talents</h3>
                                                 <p className="text-[11px] font-medium text-gray-400">Select talents and pick their best assets for this package</p>
                                             </div>
@@ -328,12 +325,12 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                                 ))}
                                             </AnimatePresence>
                                             {formData.items.length === 0 && (
-                                                <div className="p-20 text-center border-4 border-dashed border-gray-50 rounded-[3rem] bg-gray-50/30">
-                                                    <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm shadow-gray-100">
-                                                        <User className="w-8 h-8 text-gray-200" />
+                                                <div className="p-20 text-center border-2 border-dashed border-gray-200 rounded-[2rem] bg-white">
+                                                    <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm shadow-gray-100">
+                                                        <User className="w-8 h-8 text-gray-300" />
                                                     </div>
-                                                    <p className="text-gray-400 font-black text-sm uppercase tracking-widest">No talents added yet</p>
-                                                    <p className="text-gray-300 text-xs mt-2 font-medium">Add talent from your roster to start building the package</p>
+                                                    <p className="text-gray-600 font-black text-sm uppercase tracking-widest">No talents added yet</p>
+                                                    <p className="text-gray-400 text-xs mt-2 font-medium">Add talent from your roster to start building the package</p>
                                                 </div>
                                             )}
                                         </div>
@@ -341,7 +338,7 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                 )}
 
                                 {step === 2 && (
-                                    <div className="max-w-2xl space-y-12 py-4">
+                                    <div className="max-w-2xl space-y-12 py-4 mx-auto w-full">
                                         <div className="space-y-8">
                                             <div className="space-y-1">
                                                 <h3 className="text-2xl font-black text-gray-900 tracking-tighter">Package Controls</h3>
@@ -383,7 +380,7 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                                         placeholder="Create a secure password..."
                                                         value={formData.password}
                                                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                                        className="h-14 border-2 border-indigo-50 bg-indigo-50/5 focus:bg-white focus:border-indigo-600 rounded-2xl px-6 transition-all duration-300"
+                                                        className="h-12 border border-gray-200 bg-gray-50 focus:bg-white focus:border-indigo-600 rounded-lg px-4 transition-all duration-300"
                                                     />
                                                 </motion.div>
                                             )}
@@ -398,7 +395,7 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                                 type="date"
                                                 value={formData.expires_at}
                                                 onChange={(e) => setFormData({ ...formData, expires_at: e.target.value })}
-                                                className="h-14 bg-white border-2 border-gray-50 focus:border-indigo-600 focus:bg-white rounded-2xl px-6 transition-all duration-300 font-bold"
+                                                className="h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
                                             />
                                             <p className="text-[10px] text-gray-300 font-medium">Leave empty for an evergreen package link</p>
                                         </div>
@@ -406,7 +403,7 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                 )}
 
                                 {step === 3 && (
-                                    <div className="max-w-2xl space-y-12 py-4">
+                                    <div className="max-w-2xl space-y-12 py-4 mx-auto w-full">
                                         <div className="space-y-8">
                                             <div className="space-y-1">
                                                 <h3 className="text-2xl font-black text-gray-900 tracking-tighter">Ready to send?</h3>
@@ -419,7 +416,7 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                                         placeholder="e.g. John Doe"
                                                         value={formData.client_name}
                                                         onChange={(e) => setFormData({ ...formData, client_name: e.target.value })}
-                                                        className="h-14 bg-white border-2 border-gray-50 focus:border-indigo-600 rounded-2xl px-6 transition-all duration-300 font-bold"
+                                                        className="h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
                                                     />
                                                 </div>
                                                 <div className="space-y-3">
@@ -429,7 +426,7 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                                         placeholder="client@company.com"
                                                         value={formData.client_email}
                                                         onChange={(e) => setFormData({ ...formData, client_email: e.target.value })}
-                                                        className="h-14 bg-white border-2 border-gray-50 focus:border-indigo-600 rounded-2xl px-6 transition-all duration-300 font-bold"
+                                                        className="h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
                                                     />
                                                 </div>
                                             </div>
@@ -476,9 +473,9 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                 if (step === 0) onOpenChange(false);
                                 else prevStep();
                             }}
-                            className="text-gray-400 hover:text-gray-900 font-black uppercase tracking-widest text-[10px] gap-2 transition-all p-0 h-auto hover:bg-transparent"
+                            className="h-10 px-6 font-bold text-sm rounded-lg border-2 border-gray-200 text-gray-700 hover:bg-gray-50"
                         >
-                            <X className="w-4 h-4" /> {step === 0 ? "Cancel" : "Back Step"}
+                            {step === 0 ? 'Cancel' : <><ArrowLeft className="w-4 h-4 mr-2" /> Back</>}
                         </Button>
 
                         <div className="flex gap-4">
@@ -486,22 +483,19 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                 <Button
                                     onClick={nextStep}
                                     disabled={isNavigating}
-                                    className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl px-12 h-14 font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-indigo-200/50 group"
+                                    className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg group"
                                 >
                                     {isNavigating ? (
                                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                                     ) : (
-                                        <>
-                                            Continue
-                                            <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                                        </>
+                                        <span className="flex items-center gap-2">Continue <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" /></span>
                                     )}
                                 </Button>
                             ) : (
                                 <Button
                                     onClick={() => createMutation.mutate(formData)}
                                     disabled={createMutation.isPending}
-                                    className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl px-14 h-14 font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-indigo-200/50 gap-3"
+                                    className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg group flex items-center gap-2"
                                 >
                                     {createMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                                     Publish & Send
@@ -516,8 +510,12 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
             <Dialog open={showTalentSelector} onOpenChange={setShowTalentSelector}>
                 <DialogContent className="max-w-2xl rounded-[3rem] p-10 border-none bg-white/95 backdrop-blur-xl shadow-2xl">
                     <DialogHeader className="mb-8">
-                        <DialogTitle className="text-3xl font-black text-gray-900 tracking-tighter">Select Roster</DialogTitle>
-                        <p className="text-sm text-gray-400 font-medium">Choose talents to include in this collection</p>
+                        <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight">
+                            Create a New Talent Package
+                        </DialogTitle>
+                        <p className="text-sm text-gray-500 font-medium mt-1">
+                            Build a beautiful portfolio package to showcase your talent to clients
+                        </p>
                     </DialogHeader>
 
                     <div className="relative mb-8">
