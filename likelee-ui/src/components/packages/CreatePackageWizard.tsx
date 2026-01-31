@@ -171,7 +171,7 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                         </span>
                                     </div>
                                     {i < STEPS.length - 1 && (
-                                        <div className="flex-1 mx-6 h-[3px] bg-gray-300" />
+                                        <div className="flex-1 mx-6 h-1 bg-gray-300" />
                                     )}
                                 </React.Fragment>
                             ))}
@@ -265,12 +265,12 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                     <div className="space-y-8 max-w-3xl mx-auto w-full">
                                         <div className="flex justify-between items-center">
                                             <div>
-                                                <h3 className="text-sm font-black text-gray-900 uppercase tracking-[0.2em]">Selected Talents</h3>
-                                                <p className="text-[11px] font-medium text-gray-400">Select talents and pick their best assets for this package</p>
+                                                <h3 className="text-xl font-black text-gray-900 tracking-tight">Selected Talents</h3>
+                                                <p className="text-sm font-medium text-gray-700">Select talents and pick their best assets for this package</p>
                                             </div>
                                             <Button
                                                 onClick={() => setShowTalentSelector(true)}
-                                                className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl h-12 px-6 font-black text-[11px] uppercase tracking-widest gap-2 shadow-lg shadow-indigo-100"
+                                                className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-full flex items-center gap-2"
                                             >
                                                 <Plus className="w-5 h-5" /> Add Talent
                                             </Button>
@@ -285,7 +285,7 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                                         initial={{ opacity: 0, scale: 0.95 }}
                                                         animate={{ opacity: 1, scale: 1 }}
                                                         exit={{ opacity: 0, scale: 0.95 }}
-                                                        className="group flex items-center justify-between p-6 bg-white border-2 border-gray-50 rounded-[2rem] hover:border-indigo-100/50 hover:shadow-xl hover:shadow-indigo-50/20 transition-all duration-500"
+                                                        className="group flex items-center justify-between p-4 bg-white border border-gray-200 rounded-2xl hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-50 transition-all duration-300"
                                                     >
                                                         <div className="flex items-center gap-6">
                                                             <div className="hidden sm:block p-2 text-gray-200 group-hover:text-indigo-200 transition-colors cursor-grab active:cursor-grabbing">
@@ -297,17 +297,17 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                                             <div>
                                                                 <h5 className="font-black text-gray-900 tracking-tight text-lg">{item.talent.full_name}</h5>
                                                                 <div className="flex items-center gap-2 mt-1">
-                                                                    <Badge variant="secondary" className="bg-gray-100/50 text-gray-400 text-[9px] font-black uppercase tracking-widest border-none px-2 rounded-lg">
+                                                                    <Badge variant="secondary" className="bg-gray-100 text-gray-700 text-[9px] font-bold uppercase tracking-wider border-none px-2 rounded-md">
                                                                         {item.asset_ids.length} Assets
                                                                     </Badge>
-                                                                    <p className="text-[10px] text-gray-300 font-bold uppercase tracking-widest">Selected</p>
+                                                                    <p className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">Selected</p>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                         <div className="flex items-center gap-4">
                                                             <Button
                                                                 onClick={() => setActiveTalentForAssets({ id: item.talent_id, name: item.talent.full_name })}
-                                                                className={`h-10 px-6 rounded-xl border-none text-[10px] font-black uppercase tracking-widest gap-2 transition-all duration-300 ${item.asset_ids.length > 0 ? "bg-green-50 text-green-600 hover:bg-green-100" : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100"}`}
+                                                                className={`h-10 px-6 rounded-full border-none text-xs font-bold uppercase tracking-wider gap-2 transition-all duration-300 ${item.asset_ids.length > 0 ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-indigo-100 text-indigo-700 hover:bg-indigo-200"}`}
                                                             >
                                                                 <Layers className="w-4 h-4" />
                                                                 {item.asset_ids.length > 0 ? "Update Selection" : "Select Assets"}
@@ -354,7 +354,7 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                                     <div key={s.id} className="flex items-center justify-between p-6 bg-white border-2 border-gray-50 rounded-3xl hover:border-indigo-50/50 transition-all duration-300">
                                                         <div className="space-y-1">
                                                             <Label className="text-base font-black text-gray-900 tracking-tight block">{s.label}</Label>
-                                                            <p className="text-xs text-gray-400 font-medium leading-relaxed max-w-[280px]">{s.desc}</p>
+                                                            <p className="text-xs text-gray-600 font-medium leading-relaxed max-w-[280px]">{s.desc}</p>
                                                         </div>
                                                         <Switch
                                                             checked={(formData as any)[s.id]}
@@ -397,7 +397,7 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                                 onChange={(e) => setFormData({ ...formData, expires_at: e.target.value })}
                                                 className="h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
                                             />
-                                            <p className="text-[10px] text-gray-300 font-medium">Leave empty for an evergreen package link</p>
+                                            <p className="text-[10px] text-gray-500 font-medium">Leave empty for an evergreen package link</p>
                                         </div>
                                     </div>
                                 )}
