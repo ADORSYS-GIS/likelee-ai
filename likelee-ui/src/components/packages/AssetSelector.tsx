@@ -67,7 +67,19 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
     const deleteMutation = useMutation({
         mutationFn: ({ talentId, assetId }: { talentId: string; assetId: string }) =>
             packageApi.deleteTalentAsset(talentId, assetId),
-        onSuccess: () => {
+        onMutate: async ({ assetId }) => {
+            await queryClient.cancelQueries({ queryKey: ["talent-assets", talentId] });
+            const previousAssets = queryClient.getQueryData<Asset[]>(["talent-assets", talentId]);
+            const newAssets = previousAssets?.filter(asset => asset.id !== assetId) ?? [];
+            queryClient.setQueryData(["talent-assets", talentId], newAssets);
+            return { previousAssets };
+        },
+        onError: (err, variables, context) => {
+            if (context?.previousAssets) {
+                queryClient.setQueryData(["talent-assets", talentId], context.previousAssets);
+            }
+        },
+        onSettled: () => {
             queryClient.invalidateQueries({ queryKey: ["talent-assets", talentId] });
         },
     });
