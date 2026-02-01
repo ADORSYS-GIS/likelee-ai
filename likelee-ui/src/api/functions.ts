@@ -158,6 +158,7 @@ export const exchangeStripeOAuthCode = async (
 export const listBookings = (params?: {
   date_start?: string;
   date_end?: string;
+  client_id?: string;
 }) => base44Client.get(`/api/bookings`, { params: params || {} });
 
 export const createBooking = (data: any) =>

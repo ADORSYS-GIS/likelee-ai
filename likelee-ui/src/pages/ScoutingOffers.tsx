@@ -95,6 +95,13 @@ export default function ScoutingOffers() {
     "templates",
   );
 
+  // Loading states for actions
+  const [viewingOfferId, setViewingOfferId] = useState<number | string | null>(
+    null,
+  );
+  const [isArchiving, setIsArchiving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const ALL_STATUSES = ["completed", "declined", "opened", "sent"];
@@ -336,6 +343,7 @@ export default function ScoutingOffers() {
 
       queryClient.invalidateQueries({ queryKey: ["offers"] });
       setShowSendOfferDialog(false);
+      setActiveTab("submissions");
     } catch (error: any) {
       console.error("Error sending offer:", error);
       const msg = error?.message || "";
@@ -846,8 +854,10 @@ export default function ScoutingOffers() {
                                 variant="outline"
                                 size="sm"
                                 className="h-8 text-xs"
+                                disabled={!!viewingOfferId}
                                 onClick={async () => {
                                   try {
+                                    setViewingOfferId(offer.id);
                                     await scoutingService.refreshOfferStatus(
                                       offer.id,
                                     );
@@ -874,10 +884,16 @@ export default function ScoutingOffers() {
                                       title: "Failed to fetch offer",
                                       description: e?.message || String(e),
                                     });
+                                  } finally {
+                                    setViewingOfferId(null);
                                   }
                                 }}
                               >
-                                <Eye className="w-3 h-3 mr-1.5" />
+                                {viewingOfferId === offer.id ? (
+                                  <RefreshCw className="w-3 h-3 mr-1.5 animate-spin" />
+                                ) : (
+                                  <Eye className="w-3 h-3 mr-1.5" />
+                                )}
                                 View
                               </Button>
                             )}
@@ -994,8 +1010,10 @@ export default function ScoutingOffers() {
             </Button>
             <Button
               variant="destructive"
+              disabled={isArchiving}
               onClick={async () => {
                 if (!offerToArchive) return;
+                setIsArchiving(true);
                 try {
                   await scoutingService.deleteOffer(offerToArchive.id);
                   toast({
@@ -1011,10 +1029,19 @@ export default function ScoutingOffers() {
                     description: "Failed to archive submission.",
                     variant: "destructive",
                   });
+                } finally {
+                  setIsArchiving(false);
                 }
               }}
             >
-              Archive
+              {isArchiving ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Archiving...
+                </>
+              ) : (
+                "Archive"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1107,8 +1134,10 @@ export default function ScoutingOffers() {
             </Button>
             <Button
               variant="destructive"
+              disabled={isDeleting}
               onClick={async () => {
                 if (!offerToDelete) return;
+                setIsDeleting(true);
                 try {
                   await scoutingService.permanentlyDeleteOffer(
                     offerToDelete.id,
@@ -1126,10 +1155,19 @@ export default function ScoutingOffers() {
                     description: "Failed to delete submission.",
                     variant: "destructive",
                   });
+                } finally {
+                  setIsDeleting(false);
                 }
               }}
             >
-              Permanently Delete
+              {isDeleting ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Permanently Delete"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

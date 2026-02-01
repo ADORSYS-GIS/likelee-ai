@@ -1,4 +1,3 @@
-
 # EC2 Deployment (AWS Load Balancer + ACM + Nginx Gateway)
 
 This stack runs three containers:

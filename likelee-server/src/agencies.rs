@@ -1,7 +1,7 @@
 use crate::{auth::AuthUser, config::AppState};
 use axum::extract::Multipart;
 use axum::extract::Query;
-use axum::{extract::State, http::StatusCode, Json};
+use axum::{extract::Path, extract::State, http::StatusCode, Json};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -249,6 +249,7 @@ pub struct AgencyFileUploadResponse {
     pub public_url: Option<String>,
     pub storage_bucket: String,
     pub storage_path: String,
+    pub client_id: Option<String>,
 }
 
 // Upload an agency file (contracts, call sheets, references) to Supabase Storage and record it.
@@ -364,6 +365,234 @@ pub async fn upload_agency_file(
         public_url,
         storage_bucket: bucket,
         storage_path: path,
+        client_id: None,
+    }))
+}
+
+pub async fn list_client_files(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(client_id): Path<String>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("agency_files")
+        .select("id,file_name,storage_bucket,storage_path,public_url,created_at")
+        .eq("agency_id", &user.id)
+        .eq("client_id", &client_id)
+        .order("created_at.desc")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let files: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(Json(files))
+}
+
+pub async fn get_client_file_signed_url(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path((_client_id, file_id)): Path<(String, String)>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    // 1. Fetch file and verify ownership
+    let resp = state
+        .pg
+        .from("agency_files")
+        .select("storage_bucket,storage_path,agency_id,client_id")
+        .eq("id", &file_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let arr: serde_json::Value = serde_json::from_str(&text).unwrap_or(serde_json::json!([]));
+    let row = arr
+        .as_array()
+        .and_then(|a| a.first())
+        .ok_or((StatusCode::NOT_FOUND, "file not found".to_string()))?;
+
+    let agency_id = row.get("agency_id").and_then(|v| v.as_str()).ok_or((
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "missing agency_id".into(),
+    ))?;
+
+    if agency_id != user.id {
+        return Err((StatusCode::FORBIDDEN, "Access denied".into()));
+    }
+
+    let bucket = row.get("storage_bucket").and_then(|v| v.as_str()).ok_or((
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "missing storage_bucket".into(),
+    ))?;
+    let path = row.get("storage_path").and_then(|v| v.as_str()).ok_or((
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "missing storage_path".into(),
+    ))?;
+
+    // 2. Request signed URL from Supabase Storage
+    let url = format!(
+        "{}/storage/v1/object/sign/{}/{}",
+        state.supabase_url, bucket, path
+    );
+    let body = serde_json::json!({ "expiresIn": 3600 }); // 1 hour
+    let http = reqwest::Client::new();
+    let sign_resp = http
+        .post(&url)
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
+        .header("apikey", state.supabase_service_key.clone())
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    if !sign_resp.status().is_success() {
+        let msg = sign_resp.text().await.unwrap_or_default();
+        return Err((StatusCode::BAD_GATEWAY, format!("sign url failed: {msg}")));
+    }
+
+    let signed_json: serde_json::Value = sign_resp
+        .json()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    let signed_path = signed_json
+        .get("signedURL")
+        .and_then(|v| v.as_str())
+        .ok_or((StatusCode::BAD_GATEWAY, "invalid sign response".into()))?;
+
+    let full_url = format!("{}/storage/v1{}", state.supabase_url, signed_path);
+
+    Ok(Json(serde_json::json!({ "url": full_url })))
+}
+
+pub async fn upload_client_file(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(client_id): Path<String>,
+    mut multipart: Multipart,
+) -> Result<Json<AgencyFileUploadResponse>, (StatusCode, String)> {
+    // Expect a single part named "file"
+    let mut file_name = None;
+    let mut bytes: Vec<u8> = vec![];
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?
+    {
+        let name = field.name().map(|s| s.to_string());
+        if name.as_deref() == Some("file") {
+            file_name = field.file_name().map(|s| s.to_string());
+            let data = field
+                .bytes()
+                .await
+                .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+            bytes = data.to_vec();
+            break;
+        }
+    }
+    if bytes.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "missing file".into()));
+    }
+    let fname = file_name.unwrap_or_else(|| "upload.bin".to_string());
+    let sanitized = fname
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect::<String>();
+
+    // Storage target
+    let bucket = state.supabase_bucket_private.clone();
+    let path = format!(
+        "agencies/{}/clients/{}/files/{}_{}",
+        user.id,
+        client_id,
+        chrono::Utc::now().timestamp_millis(),
+        sanitized
+    );
+
+    // Upload to Supabase Storage using service key
+    let storage_url = format!(
+        "{}/storage/v1/object/{}/{}",
+        state.supabase_url, bucket, path
+    );
+    let http = reqwest::Client::new();
+    let up = http
+        .post(&storage_url)
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
+        .header("apikey", state.supabase_service_key.clone())
+        .body(bytes)
+        .send()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    if !up.status().is_success() {
+        let msg = up.text().await.unwrap_or_default();
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            format!("storage upload failed: {msg}"),
+        ));
+    }
+
+    let public_url = None;
+
+    // Insert row into agency_files
+    let insert = serde_json::json!({
+        "agency_id": user.id,
+        "client_id": client_id,
+        "file_name": fname,
+        "storage_bucket": bucket,
+        "storage_path": path,
+        "public_url": public_url,
+    });
+    let resp = state
+        .pg
+        .from("agency_files")
+        .insert(insert.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let txt = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let arr: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+    let rec = arr
+        .first()
+        .cloned()
+        .unwrap_or(serde_json::json!({"id": ""}));
+    let id = rec
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    Ok(Json(AgencyFileUploadResponse {
+        id,
+        file_name: fname,
+        public_url,
+        storage_bucket: bucket,
+        storage_path: path,
+        client_id: Some(client_id),
     }))
 }
 
@@ -459,17 +688,42 @@ pub struct AgencyClientPayload {
     pub phone: Option<String>,
     pub terms: Option<String>,
     pub industry: Option<String>,
+    pub status: Option<String>,
+    pub website: Option<String>,
+    pub tags: Option<Vec<String>>,
+    pub notes: Option<String>,
+    pub next_follow_up_date: Option<String>,
+    pub preferences: Option<serde_json::Value>,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct AgencyClientContactPayload {
+    pub name: String,
+    pub role: Option<String>,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub is_primary: Option<bool>,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct AgencyClientCommunicationPayload {
+    pub contact_id: Option<String>,
+    pub communication_type: String, // 'type' is a reserved keyword in Rust
+    pub subject: String,
+    pub content: Option<String>,
+    pub occurred_at: Option<String>,
 }
 
 pub async fn list_clients(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    // 1. Fetch clients
     let resp = state
         .pg
         .from("agency_clients")
         .select(
-            "id,agency_id,company,contact_name,email,phone,terms,industry,created_at,updated_at",
+            "id,agency_id,company,contact_name,email,phone,terms,industry,status,website,tags,notes,next_follow_up_date,preferences,created_at,updated_at",
         )
         .eq("agency_id", &user.id)
         .order("created_at.desc")
@@ -480,9 +734,114 @@ pub async fn list_clients(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let v: serde_json::Value = serde_json::from_str(&text)
+    let mut clients: Vec<serde_json::Value> = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    Ok(Json(v))
+
+    // 2. Fetch all bookings for this agency to aggregate metrics
+    let bookings_resp = state
+        .pg
+        .from("bookings")
+        .select("client_id,rate_cents,date")
+        .eq("agency_user_id", &user.id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let bookings_text = bookings_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let bookings: Vec<serde_json::Value> = serde_json::from_str(&bookings_text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    // 2.1 Fetch contacts to count them
+    let contacts_resp = state
+        .pg
+        .from("client_contacts")
+        .select("client_id")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let contacts_text = contacts_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let contacts: Vec<serde_json::Value> = serde_json::from_str(&contacts_text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    // 3. Aggregate metrics by client_id
+    use std::collections::HashMap;
+    let mut metrics_map: HashMap<String, (i32, i32, Option<String>)> = HashMap::new();
+    let mut contacts_count_map: HashMap<String, i32> = HashMap::new();
+
+    for b in bookings {
+        if let Some(cid) = b.get("client_id").and_then(|v| v.as_str()) {
+            let rate = b.get("rate_cents").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
+            let date = b
+                .get("date")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+
+            let entry = metrics_map.entry(cid.to_string()).or_insert((0, 0, None));
+            entry.0 += 1; // count
+            entry.1 += rate; // revenue
+            if let Some(d) = date {
+                if entry.2.is_none() || d > *entry.2.as_ref().unwrap() {
+                    entry.2 = Some(d);
+                }
+            }
+        }
+    }
+
+    for c in contacts {
+        if let Some(cid) = c.get("client_id").and_then(|v| v.as_str()) {
+            let count = contacts_count_map.entry(cid.to_string()).or_insert(0);
+            *count += 1;
+        }
+    }
+
+    // 4. Attach metrics to clients
+    for client in &mut clients {
+        if let Some(id) = client.get("id").and_then(|v| v.as_str()) {
+            let c_count = contacts_count_map.get(id).copied().unwrap_or(0);
+
+            if let Some((count, revenue, last_date)) = metrics_map.get(id) {
+                let formatted_revenue = if *revenue >= 100000 {
+                    let k_value = (*revenue as f64) / 100000.0;
+                    if k_value.fract() == 0.0 {
+                        format!("${:.0}K", k_value)
+                    } else {
+                        format!("${:.1}K", k_value)
+                    }
+                } else {
+                    format!("${}", revenue / 100)
+                };
+
+                client.as_object_mut().unwrap().insert(
+                    "metrics".to_string(),
+                    json!({
+                        "bookings": count,
+                        "revenue": formatted_revenue,
+                        "revenue_cents": revenue,
+                        "lastBookingDate": last_date.clone().unwrap_or_else(|| "Never".to_string()),
+                        "contacts": c_count,
+                    }),
+                );
+            } else {
+                client.as_object_mut().unwrap().insert(
+                    "metrics".to_string(),
+                    json!({
+                        "bookings": 0,
+                        "revenue": "$0",
+                        "revenue_cents": 0,
+                        "lastBookingDate": "Never",
+                        "contacts": c_count,
+                    }),
+                );
+            }
+        }
+    }
+
+    Ok(Json(serde_json::Value::Array(clients)))
 }
 
 pub async fn create_client(
@@ -498,6 +857,12 @@ pub async fn create_client(
         "phone": payload.phone,
         "terms": payload.terms,
         "industry": payload.industry,
+        "status": payload.status.unwrap_or_else(|| "Lead".to_string()),
+        "website": payload.website,
+        "tags": payload.tags.unwrap_or_default(),
+        "notes": payload.notes,
+        "next_follow_up_date": payload.next_follow_up_date,
+        "preferences": payload.preferences.unwrap_or_else(|| json!({})),
     });
     let resp = state
         .pg
@@ -516,6 +881,88 @@ pub async fn create_client(
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
         return Err((code, text));
     }
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(v))
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct UpdateAgencyClientPayload {
+    pub company: Option<String>,
+    pub contact_name: Option<String>,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub terms: Option<String>,
+    pub industry: Option<String>,
+    pub status: Option<String>,
+    pub website: Option<String>,
+    pub tags: Option<Vec<String>>,
+    pub notes: Option<String>,
+    pub next_follow_up_date: Option<String>,
+    pub preferences: Option<serde_json::Value>,
+}
+
+pub async fn update_client(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(id): Path<String>,
+    Json(payload): Json<UpdateAgencyClientPayload>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let mut v =
+        serde_json::to_value(&payload).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+
+    // Remove nulls to allow partial updates
+    if let serde_json::Value::Object(ref mut map) = v {
+        let null_keys: Vec<String> = map
+            .iter()
+            .filter_map(|(k, v)| if v.is_null() { Some(k.clone()) } else { None })
+            .collect();
+        for k in null_keys {
+            map.remove(&k);
+        }
+        // Always update updated_at
+        map.insert("updated_at".to_string(), json!(chrono::Utc::now()));
+    }
+
+    let resp = state
+        .pg
+        .from("agency_clients")
+        .eq("id", &id)
+        .eq("agency_id", &user.id)
+        .update(v.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(v))
+}
+
+pub async fn delete_client(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(id): Path<String>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("agency_clients")
+        .eq("id", &id)
+        .eq("agency_id", &user.id)
+        .delete()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    // Supabase delete returns the deleted row(s)
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(v))
@@ -542,5 +989,127 @@ pub async fn get_by_user(
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    Ok(Json(v))
+}
+
+pub async fn list_contacts(
+    State(state): State<AppState>,
+    Path(client_id): Path<String>,
+    _user: AuthUser,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("client_contacts")
+        .select("*")
+        .eq("client_id", &client_id)
+        .order("created_at.desc")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(v))
+}
+
+pub async fn create_contact(
+    State(state): State<AppState>,
+    Path(client_id): Path<String>,
+    _user: AuthUser,
+    Json(payload): Json<AgencyClientContactPayload>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let body = json!({
+        "client_id": client_id,
+        "name": payload.name,
+        "role": payload.role,
+        "email": payload.email,
+        "phone": payload.phone,
+        "is_primary": payload.is_primary.unwrap_or(false),
+    });
+    let resp = state
+        .pg
+        .from("client_contacts")
+        .insert(body.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(v))
+}
+
+pub async fn delete_contact(
+    State(state): State<AppState>,
+    Path((_client_id, contact_id)): Path<(String, String)>,
+    _user: AuthUser,
+) -> Result<StatusCode, (StatusCode, String)> {
+    state
+        .pg
+        .from("client_contacts")
+        .delete()
+        .eq("id", &contact_id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+pub async fn list_communications(
+    State(state): State<AppState>,
+    Path(client_id): Path<String>,
+    _user: AuthUser,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("client_communications")
+        .select("*")
+        .eq("client_id", &client_id)
+        .order("occurred_at.desc")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(v))
+}
+
+pub async fn create_communication(
+    State(state): State<AppState>,
+    Path(client_id): Path<String>,
+    _user: AuthUser,
+    Json(payload): Json<AgencyClientCommunicationPayload>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let body = json!({
+        "client_id": client_id,
+        "contact_id": payload.contact_id,
+        "type": payload.communication_type,
+        "subject": payload.subject,
+        "content": payload.content,
+        "occurred_at": payload.occurred_at.unwrap_or_else(|| chrono::Utc::now().to_rfc3339()),
+    });
+    let resp = state
+        .pg
+        .from("client_communications")
+        .insert(body.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(v))
 }

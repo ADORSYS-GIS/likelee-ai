@@ -66,10 +66,33 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/agency-profile/user",
             get(crate::agencies::get_profile),
+
+            "/api/agency/clients/:id",
+            post(crate::agencies::update_client).delete(crate::agencies::delete_client),
+        )
+        .route(
+            "/api/agency/clients/:id/contacts",
+            get(crate::agencies::list_contacts).post(crate::agencies::create_contact),
+        )
+        .route(
+            "/api/agency/clients/:client_id/contacts/:contact_id",
+            delete(crate::agencies::delete_contact),
+        )
+        .route(
+            "/api/agency/clients/:id/communications",
+            get(crate::agencies::list_communications).post(crate::agencies::create_communication),
         )
         .route(
             "/api/agency/files/upload",
             post(crate::agencies::upload_agency_file),
+        )
+        .route(
+            "/api/agency/clients/:id/files",
+            get(crate::agencies::list_client_files).post(crate::agencies::upload_client_file),
+        )
+        .route(
+            "/api/agency/clients/:id/files/:file_id/signed-url",
+            get(crate::agencies::get_client_file_signed_url),
         )
         .route("/api/dashboard", get(crate::dashboard::get_dashboard))
         // Removed legacy Tavus routes
