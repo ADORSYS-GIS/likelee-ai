@@ -66,7 +66,8 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/agency-profile/user",
             get(crate::agencies::get_profile),
-
+        )
+        .route(
             "/api/agency/clients/:id",
             post(crate::agencies::update_client).delete(crate::agencies::delete_client),
         )
