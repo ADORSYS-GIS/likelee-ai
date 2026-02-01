@@ -224,9 +224,12 @@ const ConnectBankView = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Connect Your Bank Account</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Connect Your Bank Account
+          </h2>
           <p className="text-gray-600 font-medium">
-            Link your bank account to receive direct payments from clients and manage payouts to talent
+            Link your bank account to receive direct payments from clients and
+            manage payouts to talent
           </p>
         </div>
         <Button
@@ -246,9 +249,12 @@ const ConnectBankView = () => {
             <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
               <CreditCard className="w-8 h-8 text-green-600" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900">Connect Your Bank Account</h3>
+            <h3 className="text-xl font-bold text-gray-900">
+              Connect Your Bank Account
+            </h3>
             <p className="text-sm text-gray-600 font-medium mt-1">
-              Link your bank account to receive direct payments from clients and manage payouts to talent
+              Link your bank account to receive direct payments from clients and
+              manage payouts to talent
             </p>
           </div>
 
@@ -256,7 +262,9 @@ const ConnectBankView = () => {
             <div className="mb-6 p-4 bg-green-50 border border-green-100 rounded-xl flex items-start gap-3">
               <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm font-bold text-gray-900">Bank account connected</p>
+                <p className="text-sm font-bold text-gray-900">
+                  Bank account connected
+                </p>
                 {!!accountLast4 && (
                   <p className="text-xs text-gray-600 font-medium mt-1">
                     Account ending in ••••{accountLast4}
@@ -270,8 +278,12 @@ const ConnectBankView = () => {
             <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm font-bold text-gray-900">Last payout error</p>
-                <p className="text-xs text-gray-600 font-medium">{status.last_error}</p>
+                <p className="text-sm font-bold text-gray-900">
+                  Last payout error
+                </p>
+                <p className="text-xs text-gray-600 font-medium">
+                  {status.last_error}
+                </p>
               </div>
             </div>
           )}
@@ -279,7 +291,9 @@ const ConnectBankView = () => {
           <div className="p-5 bg-blue-50 border border-blue-100 rounded-xl mb-6">
             <div className="flex items-center gap-2 mb-3">
               <CheckCircle2 className="w-4 h-4 text-blue-600" />
-              <p className="text-sm font-bold text-gray-900">Why Connect Your Bank?</p>
+              <p className="text-sm font-bold text-gray-900">
+                Why Connect Your Bank?
+              </p>
             </div>
             <div className="space-y-2">
               {[
@@ -306,16 +320,22 @@ const ConnectBankView = () => {
           </Button>
 
           <div className="text-center mt-4">
-            <p className="text-xs text-gray-500 font-medium">Powered by Stripe Connect</p>
+            <p className="text-xs text-gray-500 font-medium">
+              Powered by Stripe Connect
+            </p>
             <p className="text-[10px] text-gray-400 font-medium">
               Bank-level security • SOC 2 certified • PCI DSS compliant
             </p>
           </div>
 
           <Card className="p-4 bg-gray-50 border border-gray-100 rounded-xl mt-6">
-            <p className="text-xs font-bold text-gray-700 mb-2">What you'll need:</p>
+            <p className="text-xs font-bold text-gray-700 mb-2">
+              What you'll need:
+            </p>
             <div className="text-xs text-gray-600 font-medium space-y-1">
-              <div>Business bank account details (routing & account number)</div>
+              <div>
+                Business bank account details (routing & account number)
+              </div>
               <div>Business tax ID (EIN or SSN)</div>
               <div>Business address and contact information</div>
               <div>Government-issued ID for verification</div>
@@ -910,9 +930,12 @@ const ConnectBankViewAlt = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Connect Your Bank Account</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Connect Your Bank Account
+          </h2>
           <p className="text-gray-600 font-medium">
-            Link your bank account to receive direct payments from clients and manage payouts to talent
+            Link your bank account to receive direct payments from clients and
+            manage payouts to talent
           </p>
         </div>
         <Button
@@ -932,9 +955,12 @@ const ConnectBankViewAlt = () => {
             <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
               <CreditCard className="w-8 h-8 text-green-600" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900">Connect Your Bank Account</h3>
+            <h3 className="text-xl font-bold text-gray-900">
+              Connect Your Bank Account
+            </h3>
             <p className="text-sm text-gray-600 font-medium mt-1">
-              Link your bank account to receive direct payments from clients and manage payouts to talent
+              Link your bank account to receive direct payments from clients and
+              manage payouts to talent
             </p>
           </div>
 
@@ -942,12 +968,18 @@ const ConnectBankViewAlt = () => {
             <div className="mb-6 p-4 bg-green-50 border border-green-100 rounded-xl flex items-start gap-3">
               <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm font-bold text-gray-900">Bank account connected</p>
+                <p className="text-sm font-bold text-gray-900">
+                  Bank account connected
+                </p>
                 <p className="text-xs text-gray-600 font-medium">
-                  {ready ? "Payouts enabled" : "Connection created — complete onboarding in Stripe to enable payouts"}
+                  {ready
+                    ? "Payouts enabled"
+                    : "Connection created — complete onboarding in Stripe to enable payouts"}
                 </p>
                 {!!status?.bank_last4 && (
-                  <p className="text-xs text-gray-600 font-medium mt-1">Account ending in ••••{status.bank_last4}</p>
+                  <p className="text-xs text-gray-600 font-medium mt-1">
+                    Account ending in ••••{status.bank_last4}
+                  </p>
                 )}
               </div>
             </div>
@@ -957,8 +989,12 @@ const ConnectBankViewAlt = () => {
             <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm font-bold text-gray-900">Last payout error</p>
-                <p className="text-xs text-gray-600 font-medium">{status.last_error}</p>
+                <p className="text-sm font-bold text-gray-900">
+                  Last payout error
+                </p>
+                <p className="text-xs text-gray-600 font-medium">
+                  {status.last_error}
+                </p>
               </div>
             </div>
           )}
@@ -966,7 +1002,9 @@ const ConnectBankViewAlt = () => {
           <div className="p-5 bg-blue-50 border border-blue-100 rounded-xl mb-6">
             <div className="flex items-center gap-2 mb-3">
               <CheckCircle2 className="w-4 h-4 text-blue-600" />
-              <p className="text-sm font-bold text-gray-900">Why Connect Your Bank?</p>
+              <p className="text-sm font-bold text-gray-900">
+                Why Connect Your Bank?
+              </p>
             </div>
             <div className="space-y-2">
               {[
@@ -993,16 +1031,22 @@ const ConnectBankViewAlt = () => {
           </Button>
 
           <div className="text-center mt-4">
-            <p className="text-xs text-gray-500 font-medium">Powered by Stripe Connect</p>
+            <p className="text-xs text-gray-500 font-medium">
+              Powered by Stripe Connect
+            </p>
             <p className="text-[10px] text-gray-400 font-medium">
               Bank-level security • SOC 2 certified • PCI DSS compliant
             </p>
           </div>
 
           <Card className="p-4 bg-gray-50 border border-gray-100 rounded-xl mt-6">
-            <p className="text-xs font-bold text-gray-700 mb-2">What you'll need:</p>
+            <p className="text-xs font-bold text-gray-700 mb-2">
+              What you'll need:
+            </p>
             <div className="text-xs text-gray-600 font-medium space-y-1">
-              <div>Business bank account details (routing & account number)</div>
+              <div>
+                Business bank account details (routing & account number)
+              </div>
               <div>Business tax ID (EIN or SSN)</div>
               <div>Business address and contact information</div>
               <div>Government-issued ID for verification</div>
@@ -2501,7 +2545,9 @@ const ExpenseTrackingView = () => {
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [newExpenseName, setNewExpenseName] = useState("");
   const [newExpenseCategory, setNewExpenseCategory] = useState("Travel");
-  const [newExpenseDate, setNewExpenseDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [newExpenseDate, setNewExpenseDate] = useState(() =>
+    new Date().toISOString().slice(0, 10),
+  );
   const [newExpenseAmount, setNewExpenseAmount] = useState("0");
   const [newExpenseStatus, setNewExpenseStatus] = useState("approved");
   const [newExpenseSubmitter, setNewExpenseSubmitter] = useState("");
@@ -2531,7 +2577,11 @@ const ExpenseTrackingView = () => {
     if (!v) return "";
     const d = new Date(v);
     if (Number.isNaN(d.getTime())) return v;
-    return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    return d.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   };
 
   const loadExpenses = async () => {
@@ -2619,7 +2669,9 @@ const ExpenseTrackingView = () => {
   }, [filteredExpenses]);
 
   const totalExpensesText = useMemo(() => {
-    const entries = Array.from(totalExpensesByCurrency.entries()).filter(([, v]) => (v || 0) !== 0);
+    const entries = Array.from(totalExpensesByCurrency.entries()).filter(
+      ([, v]) => (v || 0) !== 0,
+    );
     if (!entries.length) return money(0, "USD");
     if (entries.length === 1) {
       const [cur, cents] = entries[0];
@@ -2632,7 +2684,8 @@ const ExpenseTrackingView = () => {
   }, [money, totalExpensesByCurrency]);
 
   const submitNewExpense = async () => {
-    const dollars = Number(String(newExpenseAmount || "0").replace(/[^0-9.\-]/g, "")) || 0;
+    const dollars =
+      Number(String(newExpenseAmount || "0").replace(/[^0-9.\-]/g, "")) || 0;
     const cents = Math.round(dollars * 100);
     try {
       await createExpense({
@@ -2705,38 +2758,38 @@ const ExpenseTrackingView = () => {
           <div className="text-sm text-gray-600 font-medium">Loading…</div>
         ) : (
           filteredExpenses.map((expense) => (
-          <Card
-            key={expense.id}
-            className="p-5 bg-white border border-gray-100 rounded-2xl hover:shadow-sm transition-shadow"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4 flex-1">
-                <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center border border-orange-100">
-                  {getCategoryIcon(expense.category)}
+            <Card
+              key={expense.id}
+              className="p-5 bg-white border border-gray-100 rounded-2xl hover:shadow-sm transition-shadow"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4 flex-1">
+                  <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center border border-orange-100">
+                    {getCategoryIcon(expense.category)}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-base font-bold text-gray-900">
+                      {expense.name}
+                    </h4>
+                    <p className="text-sm text-gray-600 font-bold">
+                      {expense.category} • {expense.date}
+                      {expense.submitter && ` • ${expense.submitter}`}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <h4 className="text-base font-bold text-gray-900">
-                    {expense.name}
-                  </h4>
-                  <p className="text-sm text-gray-600 font-bold">
-                    {expense.category} • {expense.date}
-                    {expense.submitter && ` • ${expense.submitter}`}
-                  </p>
+                <div className="flex items-center gap-4">
+                  <Badge
+                    variant="outline"
+                    className={`text-xs font-bold px-3 py-1 rounded-lg capitalize ${getStatusColor(expense.status)}`}
+                  >
+                    {expense.status}
+                  </Badge>
+                  <span className="text-lg font-bold text-gray-900">
+                    {money(expense.amountCents, expense.currency)}
+                  </span>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <Badge
-                  variant="outline"
-                  className={`text-xs font-bold px-3 py-1 rounded-lg capitalize ${getStatusColor(expense.status)}`}
-                >
-                  {expense.status}
-                </Badge>
-                <span className="text-lg font-bold text-gray-900">
-                  {money(expense.amountCents, expense.currency)}
-                </span>
-              </div>
-            </div>
-          </Card>
+            </Card>
           ))
         )}
       </div>
@@ -2760,7 +2813,9 @@ const ExpenseTrackingView = () => {
       <Dialog open={showAddExpense} onOpenChange={setShowAddExpense}>
         <DialogContent className="sm:max-w-[520px] rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-gray-900">Add Expense</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-gray-900">
+              Add Expense
+            </DialogTitle>
             <DialogDescription className="text-gray-500 font-medium">
               Create a new operating expense for your agency.
             </DialogDescription>
@@ -2777,8 +2832,13 @@ const ExpenseTrackingView = () => {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">Category</Label>
-                <Select value={newExpenseCategory} onValueChange={setNewExpenseCategory}>
+                <Label className="text-sm font-bold text-gray-700">
+                  Category
+                </Label>
+                <Select
+                  value={newExpenseCategory}
+                  onValueChange={setNewExpenseCategory}
+                >
                   <SelectTrigger className="h-11 rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
@@ -2802,7 +2862,9 @@ const ExpenseTrackingView = () => {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">Amount (USD)</Label>
+                <Label className="text-sm font-bold text-gray-700">
+                  Amount (USD)
+                </Label>
                 <Input
                   value={newExpenseAmount}
                   onChange={(e) => setNewExpenseAmount(e.target.value)}
@@ -2811,8 +2873,13 @@ const ExpenseTrackingView = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">Status</Label>
-                <Select value={newExpenseStatus} onValueChange={setNewExpenseStatus}>
+                <Label className="text-sm font-bold text-gray-700">
+                  Status
+                </Label>
+                <Select
+                  value={newExpenseStatus}
+                  onValueChange={setNewExpenseStatus}
+                >
                   <SelectTrigger className="h-11 rounded-xl">
                     <SelectValue />
                   </SelectTrigger>
@@ -2825,7 +2892,9 @@ const ExpenseTrackingView = () => {
               </div>
             </div>
             <div className="space-y-2">
-              <Label className="text-sm font-bold text-gray-700">Submitter (optional)</Label>
+              <Label className="text-sm font-bold text-gray-700">
+                Submitter (optional)
+              </Label>
               <Input
                 value={newExpenseSubmitter}
                 onChange={(e) => setNewExpenseSubmitter(e.target.value)}
@@ -2893,7 +2962,11 @@ const TalentStatementsView = () => {
     if (!v) return "";
     const d = new Date(v);
     if (Number.isNaN(d.getTime())) return v;
-    return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    return d.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   };
 
   useEffect(() => {
@@ -2963,7 +3036,8 @@ const TalentStatementsView = () => {
     out = out.sort((a, b) => {
       if (sortBy === "amount-high") return b.totalOwedCents - a.totalOwedCents;
       if (sortBy === "amount-low") return a.totalOwedCents - b.totalOwedCents;
-      if (sortBy === "total-paid") return b.totalPaidYTDCents - a.totalPaidYTDCents;
+      if (sortBy === "total-paid")
+        return b.totalPaidYTDCents - a.totalPaidYTDCents;
       if (sortBy === "name-az") return a.name.localeCompare(b.name);
       if (sortBy === "name-za") return b.name.localeCompare(a.name);
       return 0;
@@ -3035,7 +3109,9 @@ const TalentStatementsView = () => {
       esc(l?.paid_at),
     ]);
 
-    const csv = [header.join(","), ...rows.map((r: any[]) => r.join(","))].join("\n");
+    const csv = [header.join(","), ...rows.map((r: any[]) => r.join(","))].join(
+      "\n",
+    );
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -3049,11 +3125,24 @@ const TalentStatementsView = () => {
   };
 
   if (selectedTalent) {
-    const totalGrossCents = selectedLines.reduce((sum, l) => sum + (l.grossCents || 0), 0);
-    const totalAgencyFeeCents = selectedLines.reduce((sum, l) => sum + (l.agencyFeeCents || 0), 0);
-    const totalNetCents = selectedLines.reduce((sum, l) => sum + (l.netCents || 0), 0);
-    const unpaidCount = selectedLines.filter((l) => String(l.status) === "sent").length;
-    const paidCount = selectedLines.filter((l) => String(l.status) === "paid").length;
+    const totalGrossCents = selectedLines.reduce(
+      (sum, l) => sum + (l.grossCents || 0),
+      0,
+    );
+    const totalAgencyFeeCents = selectedLines.reduce(
+      (sum, l) => sum + (l.agencyFeeCents || 0),
+      0,
+    );
+    const totalNetCents = selectedLines.reduce(
+      (sum, l) => sum + (l.netCents || 0),
+      0,
+    );
+    const unpaidCount = selectedLines.filter(
+      (l) => String(l.status) === "sent",
+    ).length;
+    const paidCount = selectedLines.filter(
+      (l) => String(l.status) === "paid",
+    ).length;
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
@@ -3132,7 +3221,9 @@ const TalentStatementsView = () => {
             <p className="text-3xl font-bold text-orange-600 mb-1">
               {money(Number(selectedTalent.totalOwedCents || 0) || 0, "USD")}
             </p>
-            <p className="text-xs text-gray-600 font-medium">{unpaidCount} unpaid jobs</p>
+            <p className="text-xs text-gray-600 font-medium">
+              {unpaidCount} unpaid jobs
+            </p>
           </Card>
           <Card className="p-6 bg-green-50 border border-green-100 rounded-2xl">
             <div className="flex items-center gap-2 mb-2">
@@ -3144,7 +3235,9 @@ const TalentStatementsView = () => {
             <p className="text-3xl font-bold text-green-600 mb-1">
               {money(Number(selectedTalent.totalPaidYTDCents || 0) || 0, "USD")}
             </p>
-            <p className="text-xs text-gray-600 font-medium">{paidCount} paid jobs</p>
+            <p className="text-xs text-gray-600 font-medium">
+              {paidCount} paid jobs
+            </p>
           </Card>
           <Card className="p-6 bg-purple-50 border border-purple-100 rounded-2xl">
             <div className="flex items-center gap-2 mb-2">
@@ -3162,7 +3255,9 @@ const TalentStatementsView = () => {
               <p className="text-sm font-bold text-gray-700">Last Payment</p>
             </div>
             <p className="text-lg font-bold text-blue-600 mb-1">
-              {selectedTalent.lastPaymentAt ? formatDate(selectedTalent.lastPaymentAt) : "No payments"}
+              {selectedTalent.lastPaymentAt
+                ? formatDate(selectedTalent.lastPaymentAt)
+                : "No payments"}
             </p>
           </Card>
         </div>
@@ -3206,7 +3301,10 @@ const TalentStatementsView = () => {
                 {selectedLines.map((l) => {
                   const isPaid = String(l.status) === "paid";
                   return (
-                    <tr key={`${l.invoiceNumber}-${l.description}`} className={isPaid ? "bg-green-50/30" : ""}>
+                    <tr
+                      key={`${l.invoiceNumber}-${l.description}`}
+                      className={isPaid ? "bg-green-50/30" : ""}
+                    >
                       <td className="px-6 py-4">
                         {isPaid ? (
                           <CheckCircle2 className="w-5 h-5 text-green-600" />
@@ -3217,8 +3315,12 @@ const TalentStatementsView = () => {
                       <td className="px-6 py-4 text-sm font-bold text-gray-900">
                         {l.jobDate ? formatDate(l.jobDate) : ""}
                       </td>
-                      <td className="px-6 py-4 text-sm font-bold text-gray-700">{l.client}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600 font-medium">{l.description}</td>
+                      <td className="px-6 py-4 text-sm font-bold text-gray-700">
+                        {l.client}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600 font-medium">
+                        {l.description}
+                      </td>
                       <td className="px-6 py-4 text-sm font-bold text-gray-900">
                         {money(l.grossCents, "USD")}
                       </td>
@@ -3239,7 +3341,9 @@ const TalentStatementsView = () => {
                           {isPaid ? "Paid" : "Unpaid"}
                         </Badge>
                       </td>
-                      <td className="px-6 py-4 text-sm font-bold text-indigo-600">{l.invoiceNumber}</td>
+                      <td className="px-6 py-4 text-sm font-bold text-indigo-600">
+                        {l.invoiceNumber}
+                      </td>
                     </tr>
                   );
                 })}
@@ -3348,71 +3452,78 @@ const TalentStatementsView = () => {
           <div className="text-sm text-gray-600 font-medium">Loading…</div>
         ) : summaries.length ? (
           summaries.map((talent) => (
-          <Card
-            key={talent.talentId}
-            className="p-4 bg-white border border-gray-100 rounded-2xl hover:shadow-sm transition-shadow"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 flex-1">
-                <Checkbox className="rounded-md w-4 h-4 border-gray-300" />
-                <img
-                  src={talent.photo || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop"}
-                  alt={talent.name}
-                  className="w-12 h-12 rounded-xl object-cover border-2 border-white shadow-sm"
-                />
-                <div className="flex-1">
-                  <h4 className="text-sm font-bold text-gray-900">
-                    {talent.name}
-                  </h4>
-                  <p className="text-xs text-gray-600 font-bold">
-                    {talent.totalJobs} total jobs
-                  </p>
+            <Card
+              key={talent.talentId}
+              className="p-4 bg-white border border-gray-100 rounded-2xl hover:shadow-sm transition-shadow"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 flex-1">
+                  <Checkbox className="rounded-md w-4 h-4 border-gray-300" />
+                  <img
+                    src={
+                      talent.photo ||
+                      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop"
+                    }
+                    alt={talent.name}
+                    className="w-12 h-12 rounded-xl object-cover border-2 border-white shadow-sm"
+                  />
+                  <div className="flex-1">
+                    <h4 className="text-sm font-bold text-gray-900">
+                      {talent.name}
+                    </h4>
+                    <p className="text-xs text-gray-600 font-bold">
+                      {talent.totalJobs} total jobs
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-6">
+                  <div className="text-right">
+                    <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
+                      Total Owed
+                    </p>
+                    <p className="text-base font-bold text-orange-600">
+                      {money(talent.totalOwedCents, "USD")}
+                    </p>
+                    <p className="text-[10px] text-gray-400 font-medium">
+                      {talent.totalOwedCents > 0 ? "Has unpaid" : "No unpaid"}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
+                      Total Paid (YTD)
+                    </p>
+                    <p className="text-base font-bold text-green-600">
+                      {money(talent.totalPaidYTDCents, "USD")}
+                    </p>
+                    <p className="text-[10px] text-gray-400 font-medium">
+                      {talent.totalPaidYTDCents > 0 ? "Has paid" : "No paid"}
+                    </p>
+                  </div>
+                  <div className="text-right min-w-[100px]">
+                    <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
+                      Last Payment
+                    </p>
+                    <p className="text-xs text-gray-600 font-medium">
+                      {talent.lastPaymentAt
+                        ? formatDate(talent.lastPaymentAt)
+                        : "No payments"}
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => setSelectedTalent(talent)}
+                    className="h-10 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
+                  >
+                    <FileText className="w-4 h-4" />
+                    View Statement
+                  </Button>
                 </div>
               </div>
-              <div className="flex items-center gap-6">
-                <div className="text-right">
-                  <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
-                    Total Owed
-                  </p>
-                  <p className="text-base font-bold text-orange-600">
-                    {money(talent.totalOwedCents, "USD")}
-                  </p>
-                  <p className="text-[10px] text-gray-400 font-medium">
-                    {talent.totalOwedCents > 0 ? "Has unpaid" : "No unpaid"}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
-                    Total Paid (YTD)
-                  </p>
-                  <p className="text-base font-bold text-green-600">
-                    {money(talent.totalPaidYTDCents, "USD")}
-                  </p>
-                  <p className="text-[10px] text-gray-400 font-medium">
-                    {talent.totalPaidYTDCents > 0 ? "Has paid" : "No paid"}
-                  </p>
-                </div>
-                <div className="text-right min-w-[100px]">
-                  <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
-                    Last Payment
-                  </p>
-                  <p className="text-xs text-gray-600 font-medium">
-                    {talent.lastPaymentAt ? formatDate(talent.lastPaymentAt) : "No payments"}
-                  </p>
-                </div>
-                <Button
-                  onClick={() => setSelectedTalent(talent)}
-                  className="h-10 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
-                >
-                  <FileText className="w-4 h-4" />
-                  View Statement
-                </Button>
-              </div>
-            </div>
-          </Card>
+            </Card>
           ))
         ) : (
-          <div className="text-sm text-gray-600 font-medium">No talent statements yet.</div>
+          <div className="text-sm text-gray-600 font-medium">
+            No talent statements yet.
+          </div>
         )}
       </div>
     </div>
@@ -3451,7 +3562,9 @@ const PaymentTrackingView = () => {
   };
 
   const moneyTotals = (totalsByCurrency: Map<string, number>) => {
-    const entries = Array.from(totalsByCurrency.entries()).filter(([, v]) => (v || 0) !== 0);
+    const entries = Array.from(totalsByCurrency.entries()).filter(
+      ([, v]) => (v || 0) !== 0,
+    );
     if (!entries.length) return money(0, "USD");
     if (entries.length === 1) {
       const [cur, cents] = entries[0];
@@ -3469,7 +3582,11 @@ const PaymentTrackingView = () => {
     if (!v) return "";
     const d = new Date(v);
     if (Number.isNaN(d.getTime())) return v;
-    return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    return d.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   };
 
   useEffect(() => {
@@ -3477,9 +3594,12 @@ const PaymentTrackingView = () => {
       const raw = localStorage.getItem(reminderKey);
       if (raw) {
         const v = JSON.parse(raw);
-        if (typeof v?.reminder3Days === "boolean") setReminder3Days(v.reminder3Days);
-        if (typeof v?.reminderDueDate === "boolean") setReminderDueDate(v.reminderDueDate);
-        if (typeof v?.reminder7Days === "boolean") setReminder7Days(v.reminder7Days);
+        if (typeof v?.reminder3Days === "boolean")
+          setReminder3Days(v.reminder3Days);
+        if (typeof v?.reminderDueDate === "boolean")
+          setReminderDueDate(v.reminderDueDate);
+        if (typeof v?.reminder7Days === "boolean")
+          setReminder7Days(v.reminder7Days);
       }
     } catch {
       // ignore
@@ -3541,7 +3661,10 @@ const PaymentTrackingView = () => {
         return statusRaw;
       })();
       const isOverdue =
-        inferredStatus !== "paid" && inferredStatus !== "void" && due && due < today;
+        inferredStatus !== "paid" &&
+        inferredStatus !== "void" &&
+        due &&
+        due < today;
       return {
         id: String((inv as any)?.id || ""),
         invoiceNumber: String((inv as any)?.invoice_number || ""),
@@ -3568,21 +3691,30 @@ const PaymentTrackingView = () => {
     const paidThisMonthTotals = new Map<string, number>();
     for (const i of paidThisMonth) {
       const cur = String(i.currency || "USD");
-      paidThisMonthTotals.set(cur, (paidThisMonthTotals.get(cur) || 0) + (i.totalCents || 0));
+      paidThisMonthTotals.set(
+        cur,
+        (paidThisMonthTotals.get(cur) || 0) + (i.totalCents || 0),
+      );
     }
 
     const pending = normalized.filter((i) => i.status === "sent");
     const pendingTotals = new Map<string, number>();
     for (const i of pending) {
       const cur = String(i.currency || "USD");
-      pendingTotals.set(cur, (pendingTotals.get(cur) || 0) + (i.totalCents || 0));
+      pendingTotals.set(
+        cur,
+        (pendingTotals.get(cur) || 0) + (i.totalCents || 0),
+      );
     }
 
     const overdue = normalized.filter((i) => i.status === "overdue");
     const overdueTotals = new Map<string, number>();
     for (const i of overdue) {
       const cur = String(i.currency || "USD");
-      overdueTotals.set(cur, (overdueTotals.get(cur) || 0) + (i.totalCents || 0));
+      overdueTotals.set(
+        cur,
+        (overdueTotals.get(cur) || 0) + (i.totalCents || 0),
+      );
     }
 
     // Non-goal for MVP per design.md
@@ -3591,7 +3723,9 @@ const PaymentTrackingView = () => {
 
     const recentPayments = normalized
       .filter((i) => i.status === "paid" && i.paidAt)
-      .sort((a, b) => new Date(b.paidAt).getTime() - new Date(a.paidAt).getTime())
+      .sort(
+        (a, b) => new Date(b.paidAt).getTime() - new Date(a.paidAt).getTime(),
+      )
       .slice(0, 10);
 
     return {
@@ -3677,9 +3811,7 @@ const PaymentTrackingView = () => {
         <Card className="p-6 bg-red-50 border border-red-100 rounded-2xl">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-bold text-gray-700 mb-2">
-                Overdue
-              </p>
+              <p className="text-sm font-bold text-gray-700 mb-2">Overdue</p>
               <p className="text-3xl font-bold text-red-600">
                 {moneyTotals(summary.overdueTotals)}
               </p>
@@ -3727,7 +3859,9 @@ const PaymentTrackingView = () => {
             ))}
           </div>
         ) : (
-          <div className="text-sm text-gray-600 font-medium">No payments yet.</div>
+          <div className="text-sm text-gray-600 font-medium">
+            No payments yet.
+          </div>
         )}
       </Card>
 
@@ -3736,7 +3870,8 @@ const PaymentTrackingView = () => {
           Payment Reminder Settings
         </h3>
         <p className="text-xs text-gray-500 font-medium mb-4">
-          Reminders are not sent automatically in the current MVP. These toggles only save your preferences.
+          Reminders are not sent automatically in the current MVP. These toggles
+          only save your preferences.
         </p>
         <div className="space-y-3">
           <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-100 rounded-xl">
@@ -3831,7 +3966,9 @@ const FinancialReportsView = () => {
   };
 
   const moneyTotals = (totalsByCurrency: Map<string, number>) => {
-    const entries = Array.from(totalsByCurrency.entries()).filter(([, v]) => (v || 0) !== 0);
+    const entries = Array.from(totalsByCurrency.entries()).filter(
+      ([, v]) => (v || 0) !== 0,
+    );
     if (!entries.length) return money(0, "USD");
     if (entries.length === 1) {
       const [cur, cents] = entries[0];
@@ -3900,13 +4037,15 @@ const FinancialReportsView = () => {
     (async () => {
       setLoading(true);
       try {
-        const [inv, clients, talents, statements, expenses] = await Promise.all([
-          listInvoices({}),
-          getAgencyClients(),
-          getAgencyTalents({}),
-          listTalentStatements({}),
-          listExpenses({}),
-        ]);
+        const [inv, clients, talents, statements, expenses] = await Promise.all(
+          [
+            listInvoices({}),
+            getAgencyClients(),
+            getAgencyTalents({}),
+            listTalentStatements({}),
+            listExpenses({}),
+          ],
+        );
         if (!mounted) return;
         setInvoiceRows(asArray(inv));
         setClientRows(asArray(clients));
@@ -3969,7 +4108,10 @@ const FinancialReportsView = () => {
         return statusRaw;
       })();
       const isOverdue =
-        inferredStatus !== "paid" && inferredStatus !== "void" && due && due < today;
+        inferredStatus !== "paid" &&
+        inferredStatus !== "void" &&
+        due &&
+        due < today;
       return {
         id: String((inv as any)?.id || ""),
         invoiceNumber: String((inv as any)?.invoice_number || ""),
@@ -4007,7 +4149,8 @@ const FinancialReportsView = () => {
       const d = parseDate(l?.invoice_date);
       if (!d) return false;
       if (d < start || d > end) return false;
-      if (talentFilter !== "all" && String(l?.talent_id || "") !== talentFilter) return false;
+      if (talentFilter !== "all" && String(l?.talent_id || "") !== talentFilter)
+        return false;
       return true;
     });
   }, [statementLineRows, reportPeriod, talentFilter]);
@@ -4021,21 +4164,37 @@ const FinancialReportsView = () => {
     const pendingTotals = new Map<string, number>();
     const receivablesTotals = new Map<string, number>();
     for (const i of paid) {
-      revenueTotals.set(i.currency, (revenueTotals.get(i.currency) || 0) + i.totalCents);
+      revenueTotals.set(
+        i.currency,
+        (revenueTotals.get(i.currency) || 0) + i.totalCents,
+      );
     }
     for (const i of pending) {
-      pendingTotals.set(i.currency, (pendingTotals.get(i.currency) || 0) + i.totalCents);
-      receivablesTotals.set(i.currency, (receivablesTotals.get(i.currency) || 0) + i.totalCents);
+      pendingTotals.set(
+        i.currency,
+        (pendingTotals.get(i.currency) || 0) + i.totalCents,
+      );
+      receivablesTotals.set(
+        i.currency,
+        (receivablesTotals.get(i.currency) || 0) + i.totalCents,
+      );
     }
     for (const i of overdue) {
-      receivablesTotals.set(i.currency, (receivablesTotals.get(i.currency) || 0) + i.totalCents);
+      receivablesTotals.set(
+        i.currency,
+        (receivablesTotals.get(i.currency) || 0) + i.totalCents,
+      );
     }
 
     const payablesTotals = new Map<string, number>();
     for (const l of filteredStatementLines) {
       if (String((l as any)?.status || "") === "sent") {
         // line currency not available; assume USD
-        payablesTotals.set("USD", (payablesTotals.get("USD") || 0) + (Number((l as any)?.net_cents || 0) || 0));
+        payablesTotals.set(
+          "USD",
+          (payablesTotals.get("USD") || 0) +
+            (Number((l as any)?.net_cents || 0) || 0),
+        );
       }
     }
 
@@ -4044,11 +4203,23 @@ const FinancialReportsView = () => {
     const taxTotals = new Map<string, number>();
     const grossServiceTotals = new Map<string, number>();
     for (const i of paid) {
-      commissionTotals.set(i.currency, (commissionTotals.get(i.currency) || 0) + (i.agencyFeeCents || 0));
-      talentPaymentsTotals.set(i.currency, (talentPaymentsTotals.get(i.currency) || 0) + (i.talentNetCents || 0));
-      taxTotals.set(i.currency, (taxTotals.get(i.currency) || 0) + (i.taxCents || 0));
+      commissionTotals.set(
+        i.currency,
+        (commissionTotals.get(i.currency) || 0) + (i.agencyFeeCents || 0),
+      );
+      talentPaymentsTotals.set(
+        i.currency,
+        (talentPaymentsTotals.get(i.currency) || 0) + (i.talentNetCents || 0),
+      );
+      taxTotals.set(
+        i.currency,
+        (taxTotals.get(i.currency) || 0) + (i.taxCents || 0),
+      );
       // Service gross (excluding tax/expenses/discount) approximated as stored subtotal
-      grossServiceTotals.set(i.currency, (grossServiceTotals.get(i.currency) || 0) + (i.subtotalCents || 0));
+      grossServiceTotals.set(
+        i.currency,
+        (grossServiceTotals.get(i.currency) || 0) + (i.subtotalCents || 0),
+      );
     }
 
     return {
@@ -4106,8 +4277,14 @@ const FinancialReportsView = () => {
   }, [clientFilter, normalizedInvoices, parseDate, reportPeriod]);
 
   const growthRatePct = useMemo(() => {
-    const cur = Array.from(summary.revenueTotals.values()).reduce((a, b) => a + b, 0);
-    const prev = Array.from(prevPeriodRevenueTotals.values()).reduce((a, b) => a + b, 0);
+    const cur = Array.from(summary.revenueTotals.values()).reduce(
+      (a, b) => a + b,
+      0,
+    );
+    const prev = Array.from(prevPeriodRevenueTotals.values()).reduce(
+      (a, b) => a + b,
+      0,
+    );
     if (!prev) return 0;
     return ((cur - prev) / prev) * 100;
   }, [prevPeriodRevenueTotals, summary.revenueTotals]);
@@ -4121,7 +4298,10 @@ const FinancialReportsView = () => {
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       if (!m.has(key)) m.set(key, new Map());
       const byCur = m.get(key)!;
-      byCur.set(inv.currency, (byCur.get(inv.currency) || 0) + (inv.totalCents || 0));
+      byCur.set(
+        inv.currency,
+        (byCur.get(inv.currency) || 0) + (inv.totalCents || 0),
+      );
     }
     return Array.from(m.entries())
       .map(([key, totals]) => ({ key, totals }))
@@ -4136,7 +4316,10 @@ const FinancialReportsView = () => {
       if (!cid) continue;
       if (!totals.has(cid)) totals.set(cid, new Map());
       const byCur = totals.get(cid)!;
-      byCur.set(inv.currency, (byCur.get(inv.currency) || 0) + (inv.totalCents || 0));
+      byCur.set(
+        inv.currency,
+        (byCur.get(inv.currency) || 0) + (inv.totalCents || 0),
+      );
     }
     return Array.from(totals.entries())
       .map(([clientId, byCur]) => ({
@@ -4156,7 +4339,10 @@ const FinancialReportsView = () => {
       if (String((l as any)?.status || "") !== "paid") continue;
       const tid = String((l as any)?.talent_id || "");
       if (!tid) continue;
-      totals.set(tid, (totals.get(tid) || 0) + (Number((l as any)?.gross_cents || 0) || 0));
+      totals.set(
+        tid,
+        (totals.get(tid) || 0) + (Number((l as any)?.gross_cents || 0) || 0),
+      );
       const nm = String((l as any)?.talent_name || "");
       if (nm) names.set(tid, nm);
     }
@@ -4213,7 +4399,10 @@ const FinancialReportsView = () => {
     const count = Math.max(1, filteredInvoices.length);
     const totals = new Map<string, number>();
     for (const inv of filteredInvoices) {
-      totals.set(inv.currency, (totals.get(inv.currency) || 0) + (inv.totalCents || 0));
+      totals.set(
+        inv.currency,
+        (totals.get(inv.currency) || 0) + (inv.totalCents || 0),
+      );
     }
     const avg = new Map<string, number>();
     for (const [cur, cents] of totals.entries()) {
@@ -4226,7 +4415,9 @@ const FinancialReportsView = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const open = filteredInvoices.filter((i) => i.status === "sent" || i.status === "overdue");
+    const open = filteredInvoices.filter(
+      (i) => i.status === "sent" || i.status === "overdue",
+    );
     const bucketDefs = [
       { key: "current", label: "Current (Not Due)", color: "green" },
       { key: "1_30", label: "1-30 Days Overdue", color: "yellow" },
@@ -4257,7 +4448,10 @@ const FinancialReportsView = () => {
         return "90_plus";
       })();
       const totals = bucketTotals.get(key)!;
-      totals.set(inv.currency, (totals.get(inv.currency) || 0) + (inv.totalCents || 0));
+      totals.set(
+        inv.currency,
+        (totals.get(inv.currency) || 0) + (inv.totalCents || 0),
+      );
       bucketCounts.set(key, (bucketCounts.get(key) || 0) + 1);
     }
 
@@ -4275,7 +4469,10 @@ const FinancialReportsView = () => {
       if (!cid) continue;
       if (!largestByClient.has(cid)) largestByClient.set(cid, new Map());
       const byCur = largestByClient.get(cid)!;
-      byCur.set(inv.currency, (byCur.get(inv.currency) || 0) + (inv.totalCents || 0));
+      byCur.set(
+        inv.currency,
+        (byCur.get(inv.currency) || 0) + (inv.totalCents || 0),
+      );
     }
     const largestClients = Array.from(largestByClient.entries())
       .map(([clientId, totals]) => ({
@@ -4329,7 +4526,10 @@ const FinancialReportsView = () => {
       if (!cid) continue;
       if (!m.has(cid)) m.set(cid, new Map());
       const byCur = m.get(cid)!;
-      byCur.set(inv.currency, (byCur.get(inv.currency) || 0) + (inv.agencyFeeCents || 0));
+      byCur.set(
+        inv.currency,
+        (byCur.get(inv.currency) || 0) + (inv.agencyFeeCents || 0),
+      );
     }
     return Array.from(m.entries())
       .map(([clientId, totals]) => ({
@@ -4349,7 +4549,10 @@ const FinancialReportsView = () => {
       if (String((l as any)?.status || "") !== "paid") continue;
       const tid = String((l as any)?.talent_id || "");
       if (!tid) continue;
-      m.set(tid, (m.get(tid) || 0) + (Number((l as any)?.agency_fee_cents || 0) || 0));
+      m.set(
+        tid,
+        (m.get(tid) || 0) + (Number((l as any)?.agency_fee_cents || 0) || 0),
+      );
       const nm = String((l as any)?.talent_name || "");
       if (nm) names.set(tid, nm);
     }
@@ -4376,8 +4579,21 @@ const FinancialReportsView = () => {
     const netProfit = commission - expenses;
     const profitMargin = revenue ? (netProfit / revenue) * 100 : 0;
     const expenseRatio = revenue ? (expenses / revenue) * 100 : 0;
-    return { revenue, cogs, commission, expenses, netProfit, profitMargin, expenseRatio };
-  }, [expensesTotals, summary.commissionTotals, summary.grossServiceTotals, summary.talentPaymentsTotals]);
+    return {
+      revenue,
+      cogs,
+      commission,
+      expenses,
+      netProfit,
+      profitMargin,
+      expenseRatio,
+    };
+  }, [
+    expensesTotals,
+    summary.commissionTotals,
+    summary.grossServiceTotals,
+    summary.talentPaymentsTotals,
+  ]);
 
   const taxTotals = useMemo(() => {
     return summary.taxTotals;
@@ -4434,7 +4650,9 @@ const FinancialReportsView = () => {
         agingBuckets: receivables.bucketDefs.map((b) => ({
           key: b.key,
           label: b.label,
-          totals: Array.from((receivables.bucketTotals.get(b.key) || new Map()).entries()),
+          totals: Array.from(
+            (receivables.bucketTotals.get(b.key) || new Map()).entries(),
+          ),
           count: receivables.bucketCounts.get(b.key) || 0,
         })),
         largestClients: receivables.largestClients.map((c) => ({
@@ -4454,7 +4672,8 @@ const FinancialReportsView = () => {
     const payload = buildExportPayload();
 
     const lines: string[] = [];
-    const addRow = (...cols: any[]) => lines.push(cols.map(escapeCsv).join(","));
+    const addRow = (...cols: any[]) =>
+      lines.push(cols.map(escapeCsv).join(","));
 
     addRow("Financial Report");
     addRow("Report Period", payload.meta.reportPeriod);
@@ -4466,7 +4685,11 @@ const FinancialReportsView = () => {
     addRow("Section", "Metric", "Value");
     addRow("Overview", "Total Revenue", moneyTotals(summary.revenueTotals));
     addRow("Overview", "Pending", moneyTotals(summary.pendingTotals));
-    addRow("Overview", "Outstanding Receivables", moneyTotals(summary.receivablesTotals));
+    addRow(
+      "Overview",
+      "Outstanding Receivables",
+      moneyTotals(summary.receivablesTotals),
+    );
     addRow("Overview", "Expenses", moneyTotals(expensesTotals));
     addRow("Overview", "Net Income", moneyTotals(netIncomeTotals));
     addRow("Overview", "Commission", moneyTotals(summary.commissionTotals));
@@ -4475,12 +4698,14 @@ const FinancialReportsView = () => {
 
     addRow("Top Clients by Revenue");
     addRow("Client", "Revenue");
-    for (const c of topClientsByRevenue) addRow(c.clientName, moneyTotals(c.totals));
+    for (const c of topClientsByRevenue)
+      addRow(c.clientName, moneyTotals(c.totals));
     lines.push("");
 
     addRow("Top Talent by Revenue");
     addRow("Talent", "Gross Revenue");
-    for (const t of topTalentByRevenue) addRow(t.talentName, money(t.grossCents, "USD"));
+    for (const t of topTalentByRevenue)
+      addRow(t.talentName, money(t.grossCents, "USD"));
     lines.push("");
 
     addRow("Outstanding Receivables Aging");
@@ -4496,17 +4721,20 @@ const FinancialReportsView = () => {
 
     addRow("Talent Payables");
     addRow("Talent", "Amount");
-    for (const r of payablesByTalent.rows) addRow(r.talentName, money(r.netCents, "USD"));
+    for (const r of payablesByTalent.rows)
+      addRow(r.talentName, money(r.netCents, "USD"));
     lines.push("");
 
     addRow("Commission by Client");
     addRow("Client", "Commission");
-    for (const c of commissionByClient) addRow(c.clientName, moneyTotals(c.totals));
+    for (const c of commissionByClient)
+      addRow(c.clientName, moneyTotals(c.totals));
     lines.push("");
 
     addRow("Commission by Talent");
     addRow("Talent", "Commission");
-    for (const t of commissionByTalent) addRow(t.talentName, money(t.feeCents, "USD"));
+    for (const t of commissionByTalent)
+      addRow(t.talentName, money(t.feeCents, "USD"));
     lines.push("");
 
     addRow("Profit & Loss");
@@ -4518,7 +4746,9 @@ const FinancialReportsView = () => {
     addRow("Profit Margin %", pl.profitMargin.toFixed(2));
     addRow("Expense Ratio %", pl.expenseRatio.toFixed(2));
 
-    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const blob = new Blob([lines.join("\n")], {
+      type: "text/csv;charset=utf-8",
+    });
     downloadBlob(blob, `${exportBaseName}.csv`);
   };
 
@@ -4653,7 +4883,9 @@ const FinancialReportsView = () => {
           <p className="text-3xl font-bold text-green-600 mb-1">
             {moneyTotals(summary.revenueTotals)}
           </p>
-          <p className="text-xs text-gray-600 font-medium">{summary.paidCount} paid invoices</p>
+          <p className="text-xs text-gray-600 font-medium">
+            {summary.paidCount} paid invoices
+          </p>
         </Card>
         <Card className="p-6 bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-2">
@@ -4663,22 +4895,30 @@ const FinancialReportsView = () => {
           <p className="text-3xl font-bold text-yellow-600 mb-1">
             {moneyTotals(summary.pendingTotals)}
           </p>
-          <p className="text-xs text-gray-600 font-medium">{summary.pendingCount} invoices</p>
+          <p className="text-xs text-gray-600 font-medium">
+            {summary.pendingCount} invoices
+          </p>
         </Card>
         <Card className="p-6 bg-gradient-to-br from-red-50 to-pink-50 border border-red-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-2">
             <TrendingDown className="w-5 h-5 text-red-600" />
             <p className="text-sm font-bold text-gray-700">Expenses</p>
           </div>
-          <p className="text-3xl font-bold text-red-600 mb-1">{moneyTotals(expensesTotals)}</p>
-          <p className="text-xs text-gray-600 font-medium">{filteredExpenses.length} expenses</p>
+          <p className="text-3xl font-bold text-red-600 mb-1">
+            {moneyTotals(expensesTotals)}
+          </p>
+          <p className="text-xs text-gray-600 font-medium">
+            {filteredExpenses.length} expenses
+          </p>
         </Card>
         <Card className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-2">
             <TrendingUp className="w-5 h-5 text-indigo-600" />
             <p className="text-sm font-bold text-gray-700">Net Income</p>
           </div>
-          <p className="text-3xl font-bold text-indigo-600 mb-1">{moneyTotals(netIncomeTotals)}</p>
+          <p className="text-3xl font-bold text-indigo-600 mb-1">
+            {moneyTotals(netIncomeTotals)}
+          </p>
           <p className="text-xs text-gray-600 font-medium">selected period</p>
         </Card>
       </div>
@@ -4814,7 +5054,8 @@ const FinancialReportsView = () => {
                   {moneyTotals(summary.receivablesTotals)}
                 </p>
                 <p className="text-[10px] text-gray-600 font-medium">
-                  {summary.pendingCount + summary.overdueCount} outstanding invoices
+                  {summary.pendingCount + summary.overdueCount} outstanding
+                  invoices
                 </p>
               </Card>
               <Card className="p-5 bg-purple-50 border border-purple-100 rounded-xl">
@@ -4858,10 +5099,16 @@ const FinancialReportsView = () => {
                       const max = Math.max(
                         1,
                         ...revenueByMonth.map((x) =>
-                          Array.from(x.totals.values()).reduce((a, b) => a + b, 0),
+                          Array.from(x.totals.values()).reduce(
+                            (a, b) => a + b,
+                            0,
+                          ),
                         ),
                       );
-                      const v = Array.from(last.totals.values()).reduce((a, b) => a + b, 0);
+                      const v = Array.from(last.totals.values()).reduce(
+                        (a, b) => a + b,
+                        0,
+                      );
                       return `${Math.round((v / max) * 100)}%`;
                     })(),
                   }}
@@ -4884,19 +5131,28 @@ const FinancialReportsView = () => {
                 {topClientsByRevenue.length ? (
                   <div className="space-y-2">
                     {topClientsByRevenue.map((c) => (
-                      <div key={c.clientId} className="flex items-center gap-3 p-3 bg-white rounded-lg">
+                      <div
+                        key={c.clientId}
+                        className="flex items-center gap-3 p-3 bg-white rounded-lg"
+                      >
                         <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
                           <Building2 className="w-4 h-4 text-indigo-600" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-bold text-gray-900">{c.clientName}</p>
+                          <p className="text-sm font-bold text-gray-900">
+                            {c.clientName}
+                          </p>
                         </div>
-                        <span className="text-sm font-bold text-green-600">{moneyTotals(c.totals)}</span>
+                        <span className="text-sm font-bold text-green-600">
+                          {moneyTotals(c.totals)}
+                        </span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-gray-400 font-medium">No revenue yet</div>
+                  <div className="text-center py-8 text-gray-400 font-medium">
+                    No revenue yet
+                  </div>
                 )}
               </Card>
               <Card className="p-5 bg-gray-50 border border-gray-100 rounded-xl">
@@ -4906,19 +5162,28 @@ const FinancialReportsView = () => {
                 {topTalentByRevenue.length ? (
                   <div className="space-y-2">
                     {topTalentByRevenue.map((t) => (
-                      <div key={t.talentId} className="flex items-center gap-3 p-3 bg-white rounded-lg">
+                      <div
+                        key={t.talentId}
+                        className="flex items-center gap-3 p-3 bg-white rounded-lg"
+                      >
                         <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
                           <User className="w-4 h-4 text-purple-600" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-bold text-gray-900">{t.talentName}</p>
+                          <p className="text-sm font-bold text-gray-900">
+                            {t.talentName}
+                          </p>
                         </div>
-                        <span className="text-sm font-bold text-green-600">{money(t.grossCents, "USD")}</span>
+                        <span className="text-sm font-bold text-green-600">
+                          {money(t.grossCents, "USD")}
+                        </span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-gray-400 font-medium">No revenue yet</div>
+                  <div className="text-center py-8 text-gray-400 font-medium">
+                    No revenue yet
+                  </div>
                 )}
               </Card>
             </div>
@@ -4949,7 +5214,9 @@ const FinancialReportsView = () => {
                     {aging.label}
                   </p>
                   <p className={`text-xl font-bold text-${aging.color}-600`}>
-                    {moneyTotals(receivables.bucketTotals.get(aging.key) || new Map())}
+                    {moneyTotals(
+                      receivables.bucketTotals.get(aging.key) || new Map(),
+                    )}
                   </p>
                   <p className="text-[10px] text-gray-500 font-medium">
                     {receivables.bucketCounts.get(aging.key) || 0} invoices
@@ -4965,19 +5232,28 @@ const FinancialReportsView = () => {
               {receivables.largestClients.length ? (
                 <div className="space-y-2">
                   {receivables.largestClients.map((c) => (
-                    <div key={c.clientId} className="flex items-center justify-between p-3 bg-white rounded-lg">
+                    <div
+                      key={c.clientId}
+                      className="flex items-center justify-between p-3 bg-white rounded-lg"
+                    >
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
                           <Building2 className="w-4 h-4 text-indigo-600" />
                         </div>
-                        <p className="text-sm font-bold text-gray-900">{c.clientName}</p>
+                        <p className="text-sm font-bold text-gray-900">
+                          {c.clientName}
+                        </p>
                       </div>
-                      <span className="text-sm font-bold text-red-600">{moneyTotals(c.totals)}</span>
+                      <span className="text-sm font-bold text-red-600">
+                        {moneyTotals(c.totals)}
+                      </span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-gray-400 font-medium">No outstanding receivables</div>
+                <div className="text-center py-8 text-gray-400 font-medium">
+                  No outstanding receivables
+                </div>
               )}
             </Card>
           </div>
@@ -5004,19 +5280,28 @@ const FinancialReportsView = () => {
               {payablesByTalent.rows.length ? (
                 <div className="space-y-2">
                   {payablesByTalent.rows.slice(0, 10).map((r) => (
-                    <div key={r.talentId} className="flex items-center justify-between p-3 bg-white rounded-lg">
+                    <div
+                      key={r.talentId}
+                      className="flex items-center justify-between p-3 bg-white rounded-lg"
+                    >
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
                           <User className="w-4 h-4 text-purple-600" />
                         </div>
-                        <p className="text-sm font-bold text-gray-900">{r.talentName}</p>
+                        <p className="text-sm font-bold text-gray-900">
+                          {r.talentName}
+                        </p>
                       </div>
-                      <span className="text-sm font-bold text-orange-600">{money(r.netCents, "USD")}</span>
+                      <span className="text-sm font-bold text-orange-600">
+                        {money(r.netCents, "USD")}
+                      </span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-gray-400 font-medium">No pending talent payables</div>
+                <div className="text-center py-8 text-gray-400 font-medium">
+                  No pending talent payables
+                </div>
               )}
             </Card>
           </div>
@@ -5050,7 +5335,10 @@ const FinancialReportsView = () => {
                   {(() => {
                     const deals = Math.max(1, summary.paidCount);
                     const totals = new Map<string, number>();
-                    for (const [cur, cents] of summary.commissionTotals.entries()) {
+                    for (const [
+                      cur,
+                      cents,
+                    ] of summary.commissionTotals.entries()) {
                       totals.set(cur, Math.round((cents || 0) / deals));
                     }
                     return moneyTotals(totals);
@@ -5082,14 +5370,23 @@ const FinancialReportsView = () => {
                 {commissionByClient.length ? (
                   <div className="space-y-2">
                     {commissionByClient.map((c) => (
-                      <div key={c.clientId} className="flex items-center justify-between p-3 bg-white rounded-lg">
-                        <p className="text-sm font-bold text-gray-900">{c.clientName}</p>
-                        <span className="text-sm font-bold text-indigo-600">{moneyTotals(c.totals)}</span>
+                      <div
+                        key={c.clientId}
+                        className="flex items-center justify-between p-3 bg-white rounded-lg"
+                      >
+                        <p className="text-sm font-bold text-gray-900">
+                          {c.clientName}
+                        </p>
+                        <span className="text-sm font-bold text-indigo-600">
+                          {moneyTotals(c.totals)}
+                        </span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-gray-400 font-medium">No commission data available</div>
+                  <div className="text-center py-8 text-gray-400 font-medium">
+                    No commission data available
+                  </div>
                 )}
               </Card>
               <Card className="p-6 bg-gray-50 border border-gray-100 rounded-xl">
@@ -5099,14 +5396,23 @@ const FinancialReportsView = () => {
                 {commissionByTalent.length ? (
                   <div className="space-y-2">
                     {commissionByTalent.map((t) => (
-                      <div key={t.talentId} className="flex items-center justify-between p-3 bg-white rounded-lg">
-                        <p className="text-sm font-bold text-gray-900">{t.talentName}</p>
-                        <span className="text-sm font-bold text-indigo-600">{money(t.feeCents, "USD")}</span>
+                      <div
+                        key={t.talentId}
+                        className="flex items-center justify-between p-3 bg-white rounded-lg"
+                      >
+                        <p className="text-sm font-bold text-gray-900">
+                          {t.talentName}
+                        </p>
+                        <span className="text-sm font-bold text-indigo-600">
+                          {money(t.feeCents, "USD")}
+                        </span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-gray-400 font-medium">No commission data available</div>
+                  <div className="text-center py-8 text-gray-400 font-medium">
+                    No commission data available
+                  </div>
                 )}
               </Card>
             </div>
@@ -5124,25 +5430,33 @@ const FinancialReportsView = () => {
                   <span className="text-base font-bold text-gray-900">
                     Revenue (Gross from Invoices)
                   </span>
-                  <span className="text-xl font-bold text-green-600">{money(pl.revenue, "USD")}</span>
+                  <span className="text-xl font-bold text-green-600">
+                    {money(pl.revenue, "USD")}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center p-4 bg-red-50 rounded-xl border border-red-100">
                   <span className="text-base font-bold text-gray-900">
                     Less: Talent Payments (COGS)
                   </span>
-                  <span className="text-xl font-bold text-red-600">-{money(pl.cogs, "USD")}</span>
+                  <span className="text-xl font-bold text-red-600">
+                    -{money(pl.cogs, "USD")}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center p-4 bg-blue-50 rounded-xl border border-blue-100">
                   <span className="text-base font-bold text-gray-900">
                     Gross Profit (Agency Commission)
                   </span>
-                  <span className="text-xl font-bold text-blue-600">{money(pl.commission, "USD")}</span>
+                  <span className="text-xl font-bold text-blue-600">
+                    {money(pl.commission, "USD")}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center p-4 bg-orange-50 rounded-xl border border-orange-100">
                   <span className="text-base font-bold text-gray-900">
                     Less: Operating Expenses
                   </span>
-                  <span className="text-xl font-bold text-orange-600">-{money(pl.expenses, "USD")}</span>
+                  <span className="text-xl font-bold text-orange-600">
+                    -{money(pl.expenses, "USD")}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center p-6 bg-green-50 rounded-2xl border-4 border-green-400 mt-6">
                   <span className="text-2xl font-bold text-gray-900">
@@ -5159,13 +5473,17 @@ const FinancialReportsView = () => {
                   <p className="text-xs font-bold text-gray-500 mb-1">
                     Profit Margin
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">{pl.profitMargin.toFixed(1)}%</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {pl.profitMargin.toFixed(1)}%
+                  </p>
                 </Card>
                 <Card className="p-4 bg-gray-50 border border-gray-100 rounded-xl text-center">
                   <p className="text-xs font-bold text-gray-500 mb-1">
                     Expense Ratio
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">{pl.expenseRatio.toFixed(1)}%</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {pl.expenseRatio.toFixed(1)}%
+                  </p>
                 </Card>
               </div>
             </Card>
@@ -5183,8 +5501,12 @@ const FinancialReportsView = () => {
                   <p className="text-sm font-bold text-gray-700 mb-2">
                     Sales Tax Collected
                   </p>
-                  <p className="text-3xl font-bold text-blue-600 mb-1">{moneyTotals(taxTotals)}</p>
-                  <p className="text-xs text-gray-500 font-medium">Sales tax only</p>
+                  <p className="text-3xl font-bold text-blue-600 mb-1">
+                    {moneyTotals(taxTotals)}
+                  </p>
+                  <p className="text-xs text-gray-500 font-medium">
+                    Sales tax only
+                  </p>
                 </Card>
                 <Card className="p-6 bg-orange-50 border border-orange-100 rounded-xl">
                   <p className="text-sm font-bold text-gray-700 mb-2">
@@ -5350,7 +5672,10 @@ const GenerateInvoiceView = () => {
   }, [toast]);
 
   const selectedClient = useMemo(() => {
-    return clients.find((c) => String((c as any)?.id || "") === selectedClientId) || null;
+    return (
+      clients.find((c) => String((c as any)?.id || "") === selectedClientId) ||
+      null
+    );
   }, [clients, selectedClientId]);
 
   const formatMoney = useMemo(() => {
@@ -5446,7 +5771,10 @@ const GenerateInvoiceView = () => {
       };
     }
     if (validItems.some((it) => it.qty <= 0)) {
-      return { ok: false, message: "Line item quantity must be greater than 0." };
+      return {
+        ok: false,
+        message: "Line item quantity must be greater than 0.",
+      };
     }
     if (validItems.some((it) => !it.unitOk)) {
       return {
@@ -5459,14 +5787,7 @@ const GenerateInvoiceView = () => {
 
   const invoiceFormOk = useMemo(() => {
     return validateInvoice().ok;
-  }, [
-    selectedClientId,
-    invoiceDate,
-    dueDate,
-    currency,
-    paymentTerms,
-    items,
-  ]);
+  }, [selectedClientId, invoiceDate, dueDate, currency, paymentTerms, items]);
 
   const downloadPdf = async () => {
     const validation = validateInvoice();
@@ -5485,7 +5806,9 @@ const GenerateInvoiceView = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = invoiceNumber ? `invoice-${invoiceNumber}.pdf` : "invoice.pdf";
+      a.download = invoiceNumber
+        ? `invoice-${invoiceNumber}.pdf`
+        : "invoice.pdf";
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -5503,7 +5826,8 @@ const GenerateInvoiceView = () => {
     if (!invoiceId) {
       toast({
         title: "Save invoice first",
-        description: "Please save as draft to generate an invoice number before marking as sent.",
+        description:
+          "Please save as draft to generate an invoice number before marking as sent.",
         variant: "destructive" as any,
       });
       return;
@@ -5512,7 +5836,9 @@ const GenerateInvoiceView = () => {
       await markInvoiceSent(invoiceId);
       toast({
         title: "Marked as sent",
-        description: invoiceNumber ? `Invoice ${invoiceNumber} marked as sent.` : "Invoice marked as sent.",
+        description: invoiceNumber
+          ? `Invoice ${invoiceNumber} marked as sent.`
+          : "Invoice marked as sent.",
       });
     } catch (e: any) {
       toast({
@@ -5527,7 +5853,8 @@ const GenerateInvoiceView = () => {
     if (!invoiceId) {
       toast({
         title: "Save invoice first",
-        description: "Please save as draft to generate an invoice number before marking as paid.",
+        description:
+          "Please save as draft to generate an invoice number before marking as paid.",
         variant: "destructive" as any,
       });
       return;
@@ -5536,7 +5863,9 @@ const GenerateInvoiceView = () => {
       await markInvoicePaid(invoiceId);
       toast({
         title: "Marked as paid",
-        description: invoiceNumber ? `Invoice ${invoiceNumber} marked as paid.` : "Invoice marked as paid.",
+        description: invoiceNumber
+          ? `Invoice ${invoiceNumber} marked as paid.`
+          : "Invoice marked as paid.",
       });
     } catch (e: any) {
       toast({
@@ -5631,15 +5960,35 @@ const GenerateInvoiceView = () => {
     const money = (n: number) => formatMoney.format(n);
 
     const drawCard = (x: number, y: number, w: number, h: number) => {
-      page.drawRectangle({ x, y, width: w, height: h, color: cBg, borderColor: cBorder, borderWidth: 1 });
+      page.drawRectangle({
+        x,
+        y,
+        width: w,
+        height: h,
+        color: cBg,
+        borderColor: cBorder,
+        borderWidth: 1,
+      });
     };
 
     const drawLabel = (text: string, x: number, y: number) => {
-      page.drawText(text.toUpperCase(), { x, y, size: 8, font: fontBold, color: cMuted });
+      page.drawText(text.toUpperCase(), {
+        x,
+        y,
+        size: 8,
+        font: fontBold,
+        color: cMuted,
+      });
     };
 
     const drawValue = (text: string, x: number, y: number, bold = false) => {
-      page.drawText(text, { x, y, size: 11, font: bold ? fontBold : font, color: cText });
+      page.drawText(text, {
+        x,
+        y,
+        size: 11,
+        font: bold ? fontBold : font,
+        color: cText,
+      });
     };
 
     const agencyName =
@@ -5662,15 +6011,38 @@ const GenerateInvoiceView = () => {
         const img = await doc.embedPng(logoBytes);
         const imgW = 34;
         const imgH = (img.height / img.width) * imgW;
-        page.drawImage(img, { x: margin, y: height - margin - imgH + 2, width: imgW, height: imgH });
+        page.drawImage(img, {
+          x: margin,
+          y: height - margin - imgH + 2,
+          width: imgW,
+          height: imgH,
+        });
       } catch {
         // ignore
       }
     }
 
-    page.drawText("Likelee", { x: margin + (logoBytes ? 42 : 0), y: height - margin - 16, size: 16, font: fontBold, color: cText });
-    page.drawText("Invoice", { x: margin, y: height - margin - 44, size: 28, font: fontBold, color: cText });
-    page.drawText(invoiceNo, { x: margin, y: height - margin - 66, size: 11, font, color: cMuted });
+    page.drawText("Likelee", {
+      x: margin + (logoBytes ? 42 : 0),
+      y: height - margin - 16,
+      size: 16,
+      font: fontBold,
+      color: cText,
+    });
+    page.drawText("Invoice", {
+      x: margin,
+      y: height - margin - 44,
+      size: 28,
+      font: fontBold,
+      color: cText,
+    });
+    page.drawText(invoiceNo, {
+      x: margin,
+      y: height - margin - 66,
+      size: 11,
+      font,
+      color: cMuted,
+    });
     page.drawText(`From: ${agencyName} (sent via Likelee)`, {
       x: margin,
       y: height - margin - 86,
@@ -5685,11 +6057,23 @@ const GenerateInvoiceView = () => {
     const metaY = height - margin - metaH;
     drawCard(metaX, metaY, metaW, metaH);
     drawLabel("Invoice date", metaX + 14, metaY + metaH - 22);
-    drawValue(invoiceDate, metaX + metaW - 14 - font.widthOfTextAtSize(invoiceDate, 11), metaY + metaH - 24);
+    drawValue(
+      invoiceDate,
+      metaX + metaW - 14 - font.widthOfTextAtSize(invoiceDate, 11),
+      metaY + metaH - 24,
+    );
     drawLabel("Due date", metaX + 14, metaY + metaH - 46);
-    drawValue(dueDate, metaX + metaW - 14 - font.widthOfTextAtSize(dueDate, 11), metaY + metaH - 48);
+    drawValue(
+      dueDate,
+      metaX + metaW - 14 - font.widthOfTextAtSize(dueDate, 11),
+      metaY + metaH - 48,
+    );
     drawLabel("Status", metaX + 14, metaY + metaH - 70);
-    drawValue(statusText, metaX + metaW - 14 - font.widthOfTextAtSize(statusText, 11), metaY + metaH - 72);
+    drawValue(
+      statusText,
+      metaX + metaW - 14 - font.widthOfTextAtSize(statusText, 11),
+      metaY + metaH - 72,
+    );
 
     const cardW = (width - margin * 2 - gap) / 2;
     const cardH = 92;
@@ -5718,20 +6102,60 @@ const GenerateInvoiceView = () => {
     }
 
     let y = billY - 24;
-    page.drawText("LINE ITEMS", { x: margin, y, size: 10, font: fontBold, color: cMuted });
+    page.drawText("LINE ITEMS", {
+      x: margin,
+      y,
+      size: 10,
+      font: fontBold,
+      color: cMuted,
+    });
     y -= 10;
 
     const tableX = margin;
     const tableW = width - margin * 2;
     const rowH = 28;
-    page.drawLine({ start: { x: tableX, y }, end: { x: tableX + tableW, y }, thickness: 1, color: cBorder });
+    page.drawLine({
+      start: { x: tableX, y },
+      end: { x: tableX + tableW, y },
+      thickness: 1,
+      color: cBorder,
+    });
     y -= 18;
-    page.drawText("DESCRIPTION", { x: tableX, y, size: 9, font: fontBold, color: cMuted });
-    page.drawText("QTY", { x: tableX + tableW - 170, y, size: 9, font: fontBold, color: cMuted });
-    page.drawText("UNIT", { x: tableX + tableW - 120, y, size: 9, font: fontBold, color: cMuted });
-    page.drawText("TOTAL", { x: tableX + tableW - 56, y, size: 9, font: fontBold, color: cMuted });
+    page.drawText("DESCRIPTION", {
+      x: tableX,
+      y,
+      size: 9,
+      font: fontBold,
+      color: cMuted,
+    });
+    page.drawText("QTY", {
+      x: tableX + tableW - 170,
+      y,
+      size: 9,
+      font: fontBold,
+      color: cMuted,
+    });
+    page.drawText("UNIT", {
+      x: tableX + tableW - 120,
+      y,
+      size: 9,
+      font: fontBold,
+      color: cMuted,
+    });
+    page.drawText("TOTAL", {
+      x: tableX + tableW - 56,
+      y,
+      size: 9,
+      font: fontBold,
+      color: cMuted,
+    });
     y -= 10;
-    page.drawLine({ start: { x: tableX, y }, end: { x: tableX + tableW, y }, thickness: 1, color: cBorder });
+    page.drawLine({
+      start: { x: tableX, y },
+      end: { x: tableX + tableW, y },
+      thickness: 1,
+      color: cBorder,
+    });
     y -= 18;
 
     const itemRows = items
@@ -5744,18 +6168,36 @@ const GenerateInvoiceView = () => {
       .filter((it) => it.desc.length > 0);
 
     if (!itemRows.length) {
-      page.drawText("No line items", { x: tableX, y, size: 10, font, color: cMuted });
+      page.drawText("No line items", {
+        x: tableX,
+        y,
+        size: 10,
+        font,
+        color: cMuted,
+      });
       y -= rowH;
     } else {
       for (const it of itemRows.slice(0, 6)) {
         const total = it.qty * it.unit;
-        page.drawText(it.desc.slice(0, 44), { x: tableX, y, size: 10, font: fontBold, color: cText });
+        page.drawText(it.desc.slice(0, 44), {
+          x: tableX,
+          y,
+          size: 10,
+          font: fontBold,
+          color: cText,
+        });
 
         const sub = [
           (() => {
             const talentName = String(
-              talents.find((t) => String((t as any)?.id || "") === String(it.talent_id || ""))?.name ||
-                talents.find((t) => String((t as any)?.id || "") === String(it.talent_id || ""))?.full_name ||
+              talents.find(
+                (t) =>
+                  String((t as any)?.id || "") === String(it.talent_id || ""),
+              )?.name ||
+                talents.find(
+                  (t) =>
+                    String((t as any)?.id || "") === String(it.talent_id || ""),
+                )?.full_name ||
                 "",
             ).trim();
             const date = String(it.date_of_service || "").trim();
@@ -5767,42 +6209,134 @@ const GenerateInvoiceView = () => {
           .join(" ");
 
         if (sub) {
-          page.drawText(sub.slice(0, 60), { x: tableX, y: y - 12, size: 9, font, color: cMuted });
+          page.drawText(sub.slice(0, 60), {
+            x: tableX,
+            y: y - 12,
+            size: 9,
+            font,
+            color: cMuted,
+          });
         }
 
-        page.drawText(String(it.qty), { x: tableX + tableW - 170, y, size: 10, font, color: cText });
-        page.drawText(money(it.unit), { x: tableX + tableW - 120, y, size: 10, font, color: cText });
-        page.drawText(money(total), { x: tableX + tableW - 56, y, size: 10, font: fontBold, color: cText });
+        page.drawText(String(it.qty), {
+          x: tableX + tableW - 170,
+          y,
+          size: 10,
+          font,
+          color: cText,
+        });
+        page.drawText(money(it.unit), {
+          x: tableX + tableW - 120,
+          y,
+          size: 10,
+          font,
+          color: cText,
+        });
+        page.drawText(money(total), {
+          x: tableX + tableW - 56,
+          y,
+          size: 10,
+          font: fontBold,
+          color: cText,
+        });
 
         y -= rowH;
-        page.drawLine({ start: { x: tableX, y }, end: { x: tableX + tableW, y }, thickness: 1, color: cBorder });
+        page.drawLine({
+          start: { x: tableX, y },
+          end: { x: tableX + tableW, y },
+          thickness: 1,
+          color: cBorder,
+        });
         y -= 14;
       }
     }
 
-    page.drawText("EXPENSES", { x: margin, y, size: 10, font: fontBold, color: cMuted });
+    page.drawText("EXPENSES", {
+      x: margin,
+      y,
+      size: 10,
+      font: fontBold,
+      color: cMuted,
+    });
     y -= 10;
-    page.drawLine({ start: { x: tableX, y }, end: { x: tableX + tableW, y }, thickness: 1, color: cBorder });
+    page.drawLine({
+      start: { x: tableX, y },
+      end: { x: tableX + tableW, y },
+      thickness: 1,
+      color: cBorder,
+    });
     y -= 18;
-    page.drawText("DESCRIPTION", { x: tableX, y, size: 9, font: fontBold, color: cMuted });
-    page.drawText("TAXABLE", { x: tableX + tableW - 160, y, size: 9, font: fontBold, color: cMuted });
-    page.drawText("AMOUNT", { x: tableX + tableW - 70, y, size: 9, font: fontBold, color: cMuted });
+    page.drawText("DESCRIPTION", {
+      x: tableX,
+      y,
+      size: 9,
+      font: fontBold,
+      color: cMuted,
+    });
+    page.drawText("TAXABLE", {
+      x: tableX + tableW - 160,
+      y,
+      size: 9,
+      font: fontBold,
+      color: cMuted,
+    });
+    page.drawText("AMOUNT", {
+      x: tableX + tableW - 70,
+      y,
+      size: 9,
+      font: fontBold,
+      color: cMuted,
+    });
     y -= 10;
-    page.drawLine({ start: { x: tableX, y }, end: { x: tableX + tableW, y }, thickness: 1, color: cBorder });
+    page.drawLine({
+      start: { x: tableX, y },
+      end: { x: tableX + tableW, y },
+      thickness: 1,
+      color: cBorder,
+    });
     y -= 18;
 
     if (!expenses.length) {
-      page.drawText("No expenses", { x: tableX, y, size: 10, font, color: cMuted });
+      page.drawText("No expenses", {
+        x: tableX,
+        y,
+        size: 10,
+        font,
+        color: cMuted,
+      });
       y -= 28;
     } else {
       for (const e of expenses.slice(0, 4)) {
         const desc = String(e.description || "").trim() || "Expense";
         const amount = Number(e.amount || "0") || 0;
-        page.drawText(desc.slice(0, 44), { x: tableX, y, size: 10, font, color: cText });
-        page.drawText("No", { x: tableX + tableW - 160, y, size: 10, font, color: cText });
-        page.drawText(money(amount), { x: tableX + tableW - 70, y, size: 10, font: fontBold, color: cText });
+        page.drawText(desc.slice(0, 44), {
+          x: tableX,
+          y,
+          size: 10,
+          font,
+          color: cText,
+        });
+        page.drawText("No", {
+          x: tableX + tableW - 160,
+          y,
+          size: 10,
+          font,
+          color: cText,
+        });
+        page.drawText(money(amount), {
+          x: tableX + tableW - 70,
+          y,
+          size: 10,
+          font: fontBold,
+          color: cText,
+        });
         y -= 28;
-        page.drawLine({ start: { x: tableX, y }, end: { x: tableX + tableW, y }, thickness: 1, color: cBorder });
+        page.drawLine({
+          start: { x: tableX, y },
+          end: { x: tableX + tableW, y },
+          thickness: 1,
+          color: cBorder,
+        });
         y -= 14;
       }
     }
@@ -5818,18 +6352,50 @@ const GenerateInvoiceView = () => {
     const rightLowerY = leftLowerY;
 
     drawCard(leftLowerX, leftLowerY, lowerCardW, lowerCardH);
-    drawLabel("Payment instructions", leftLowerX + 14, leftLowerY + lowerCardH - 22);
-    page.drawText(String(paymentInstructions || "").slice(0, 140), { x: leftLowerX + 14, y: leftLowerY + lowerCardH - 46, size: 10, font, color: cText, lineHeight: 12 });
-    page.drawLine({ start: { x: leftLowerX + 14, y: leftLowerY + 54 }, end: { x: leftLowerX + lowerCardW - 14, y: leftLowerY + 54 }, thickness: 1, color: cBorder });
+    drawLabel(
+      "Payment instructions",
+      leftLowerX + 14,
+      leftLowerY + lowerCardH - 22,
+    );
+    page.drawText(String(paymentInstructions || "").slice(0, 140), {
+      x: leftLowerX + 14,
+      y: leftLowerY + lowerCardH - 46,
+      size: 10,
+      font,
+      color: cText,
+      lineHeight: 12,
+    });
+    page.drawLine({
+      start: { x: leftLowerX + 14, y: leftLowerY + 54 },
+      end: { x: leftLowerX + lowerCardW - 14, y: leftLowerY + 54 },
+      thickness: 1,
+      color: cBorder,
+    });
     drawLabel("Footer", leftLowerX + 14, leftLowerY + 44);
-    page.drawText(String(footerText || "").slice(0, 90), { x: leftLowerX + 14, y: leftLowerY + 26, size: 10, font, color: cText });
+    page.drawText(String(footerText || "").slice(0, 90), {
+      x: leftLowerX + 14,
+      y: leftLowerY + 26,
+      size: 10,
+      font,
+      color: cText,
+    });
 
     drawCard(rightLowerX, rightLowerY, lowerCardW, lowerCardH);
     const tx = rightLowerX + 14;
     let ty = rightLowerY + lowerCardH - 34;
     const drawTotalRow = (label: string, value: string, bold = false) => {
       page.drawText(label, { x: tx, y: ty, size: 10, font, color: cText });
-      page.drawText(value, { x: rightLowerX + lowerCardW - 14 - font.widthOfTextAtSize(value, bold ? 11 : 10), y: ty, size: bold ? 11 : 10, font: bold ? fontBold : font, color: cText });
+      page.drawText(value, {
+        x:
+          rightLowerX +
+          lowerCardW -
+          14 -
+          font.widthOfTextAtSize(value, bold ? 11 : 10),
+        y: ty,
+        size: bold ? 11 : 10,
+        font: bold ? fontBold : font,
+        color: cText,
+      });
       ty -= 18;
     };
 
@@ -5837,10 +6403,18 @@ const GenerateInvoiceView = () => {
     drawTotalRow("Expenses", money(expensesTotal));
     drawTotalRow("Discount", "-$0.00");
     drawTotalRow("Tax (0%)", "$0.00");
-    page.drawLine({ start: { x: tx, y: ty + 6 }, end: { x: rightLowerX + lowerCardW - 14, y: ty + 6 }, thickness: 1, color: cBorder });
+    page.drawLine({
+      start: { x: tx, y: ty + 6 },
+      end: { x: rightLowerX + lowerCardW - 14, y: ty + 6 },
+      thickness: 1,
+      color: cBorder,
+    });
     ty -= 14;
     drawTotalRow("Total", money(grandTotal), true);
-    drawTotalRow(`Agency fee (${commissionPct}%)`, money(agencyCommissionAmount));
+    drawTotalRow(
+      `Agency fee (${commissionPct}%)`,
+      money(agencyCommissionAmount),
+    );
     drawTotalRow("Talent net", money(talentNetAmount));
 
     const bytes = await doc.save();
@@ -5923,7 +6497,8 @@ const GenerateInvoiceView = () => {
       setEmailSending(true);
       toast({
         title: "Sending invoice…",
-        description: "Generating PDF and sending email in the background. Please keep this tab open.",
+        description:
+          "Generating PDF and sending email in the background. Please keep this tab open.",
       });
 
       await ensureInvoiceSaved();
@@ -5955,7 +6530,9 @@ const GenerateInvoiceView = () => {
 
       const attachments = [
         {
-          filename: invoiceNumber ? `invoice-${invoiceNumber}.pdf` : "invoice.pdf",
+          filename: invoiceNumber
+            ? `invoice-${invoiceNumber}.pdf`
+            : "invoice.pdf",
           content_type: "application/pdf",
           content_base64: invoicePdfBase64,
         },
@@ -6081,7 +6658,9 @@ const GenerateInvoiceView = () => {
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-w-3xl rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-gray-900">Invoice Preview</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-gray-900">
+              Invoice Preview
+            </DialogTitle>
             <DialogDescription className="text-gray-500 font-medium">
               Preview is generated from the current form values.
             </DialogDescription>
@@ -6091,18 +6670,24 @@ const GenerateInvoiceView = () => {
               <div>
                 <p className="text-sm font-bold text-gray-900">Invoice</p>
                 <p className="text-xs text-gray-600 font-medium">
-                  {invoiceNumber || "(invoice number will be generated when saved)"}
+                  {invoiceNumber ||
+                    "(invoice number will be generated when saved)"}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-gray-600 font-medium">Invoice date: {invoiceDate}</p>
-                <p className="text-xs text-gray-600 font-medium">Due date: {dueDate}</p>
+                <p className="text-xs text-gray-600 font-medium">
+                  Invoice date: {invoiceDate}
+                </p>
+                <p className="text-xs text-gray-600 font-medium">
+                  Due date: {dueDate}
+                </p>
               </div>
             </div>
             <Card className="p-4 bg-white border border-gray-100 rounded-xl">
               <p className="text-xs font-bold text-gray-700 mb-2">Bill To</p>
               <p className="text-sm font-bold text-gray-900">
-                {String((selectedClient as any)?.company || "") || "(select a client)"}
+                {String((selectedClient as any)?.company || "") ||
+                  "(select a client)"}
               </p>
               <p className="text-xs text-gray-600 font-medium">
                 {String((selectedClient as any)?.email || "")}
@@ -6244,7 +6829,10 @@ const GenerateInvoiceView = () => {
               Bill To (Client Information){" "}
               <span className="text-red-500">*</span>
             </Label>
-            <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+            <Select
+              value={selectedClientId}
+              onValueChange={setSelectedClientId}
+            >
               <SelectTrigger className="h-12 rounded-xl border-gray-200">
                 <SelectValue placeholder="Select client" />
               </SelectTrigger>
@@ -6335,7 +6923,9 @@ const GenerateInvoiceView = () => {
                         </Label>
                         <Select
                           value={it.talent_id}
-                          onValueChange={(v) => updateLineItem(it.id, "talent_id", v)}
+                          onValueChange={(v) =>
+                            updateLineItem(it.id, "talent_id", v)
+                          }
                         >
                           <SelectTrigger className="h-11 rounded-xl border-gray-200">
                             <SelectValue placeholder="Select talent" />
@@ -6365,7 +6955,11 @@ const GenerateInvoiceView = () => {
                           type="date"
                           value={it.date_of_service}
                           onChange={(e) =>
-                            updateLineItem(it.id, "date_of_service", e.target.value)
+                            updateLineItem(
+                              it.id,
+                              "date_of_service",
+                              e.target.value,
+                            )
                           }
                           className="h-11 rounded-xl border-gray-200"
                         />
@@ -6388,7 +6982,9 @@ const GenerateInvoiceView = () => {
                           <SelectContent className="rounded-xl">
                             <SelectItem value="day">Day Rate</SelectItem>
                             <SelectItem value="hourly">Hourly Rate</SelectItem>
-                            <SelectItem value="project">Project Rate</SelectItem>
+                            <SelectItem value="project">
+                              Project Rate
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -6420,7 +7016,9 @@ const GenerateInvoiceView = () => {
                       </div>
                     </div>
                     <div className="flex justify-between items-center pt-3 border-t border-gray-200">
-                      <span className="text-sm font-bold text-gray-700">Line Total:</span>
+                      <span className="text-sm font-bold text-gray-700">
+                        Line Total:
+                      </span>
                       <span className="text-lg font-bold text-gray-900">
                         {formatMoney.format(calcLineTotal(it))}
                       </span>
@@ -6507,7 +7105,10 @@ const GenerateInvoiceView = () => {
                 <Label className="text-xs font-bold text-gray-700 mb-2 block">
                   Currency
                 </Label>
-                <Select value={currency.toLowerCase()} onValueChange={(v) => setCurrency(v.toUpperCase())}>
+                <Select
+                  value={currency.toLowerCase()}
+                  onValueChange={(v) => setCurrency(v.toUpperCase())}
+                >
                   <SelectTrigger className="h-11 rounded-xl border-gray-200">
                     <SelectValue />
                   </SelectTrigger>
@@ -6664,7 +7265,9 @@ const GenerateInvoiceView = () => {
               variant="outline"
               className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
               onClick={() => {
-                const el = document.getElementById(fileInputId) as HTMLInputElement | null;
+                const el = document.getElementById(
+                  fileInputId,
+                ) as HTMLInputElement | null;
                 el?.click();
               }}
               disabled={uploadingFile}
@@ -6711,7 +7314,8 @@ const GenerateInvoiceView = () => {
               <DollarSign className="w-4 h-4" />
               Mark as Paid
             </Button>
-            <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
+            <Button
+              className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
               onClick={emailToClient}
               disabled={emailSending || !invoiceFormOk}
             >
@@ -6803,7 +7407,10 @@ const InvoiceManagementView = ({
     (async () => {
       setLoadingInvoices(true);
       try {
-        const [inv, clients] = await Promise.all([listInvoices({}), getAgencyClients()]);
+        const [inv, clients] = await Promise.all([
+          listInvoices({}),
+          getAgencyClients(),
+        ]);
         if (!mounted) return;
         setInvoiceRows(asArray(inv));
         setClientRows(asArray(clients));
@@ -6853,7 +7460,11 @@ const InvoiceManagementView = ({
     if (!v) return "";
     const d = new Date(v);
     if (Number.isNaN(d.getTime())) return v;
-    return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    return d.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   };
 
   const formatDateTime = (s: any) => {
@@ -6894,7 +7505,10 @@ const InvoiceManagementView = ({
       })();
 
       const isOverdue =
-        inferredStatus !== "paid" && inferredStatus !== "void" && due && due < today;
+        inferredStatus !== "paid" &&
+        inferredStatus !== "void" &&
+        due &&
+        due < today;
 
       return {
         id: invoiceId,
@@ -6956,11 +7570,16 @@ const InvoiceManagementView = ({
       return true;
     });
 
-    const byInvoice = (a: any, b: any) => a.invoiceNumber.localeCompare(b.invoiceNumber);
-    const byClient = (a: any, b: any) => a.clientName.localeCompare(b.clientName);
-    const byIssue = (a: any, b: any) => new Date(a.issueDate).getTime() - new Date(b.issueDate).getTime();
-    const byDue = (a: any, b: any) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-    const byAmount = (a: any, b: any) => (a.amountCents || 0) - (b.amountCents || 0);
+    const byInvoice = (a: any, b: any) =>
+      a.invoiceNumber.localeCompare(b.invoiceNumber);
+    const byClient = (a: any, b: any) =>
+      a.clientName.localeCompare(b.clientName);
+    const byIssue = (a: any, b: any) =>
+      new Date(a.issueDate).getTime() - new Date(b.issueDate).getTime();
+    const byDue = (a: any, b: any) =>
+      new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+    const byAmount = (a: any, b: any) =>
+      (a.amountCents || 0) - (b.amountCents || 0);
 
     switch (sortBy) {
       case "oldest":
@@ -7360,7 +7979,9 @@ const InvoiceManagementView = ({
                         onClick={() => {
                           if (!invoice.id) return;
                           setActiveSubTab("Invoice Generation");
-                          navigate({ search: `?invoiceId=${encodeURIComponent(invoice.id)}` });
+                          navigate({
+                            search: `?invoiceId=${encodeURIComponent(invoice.id)}`,
+                          });
                         }}
                       >
                         <Eye className="w-4 h-4" />
@@ -7373,7 +7994,9 @@ const InvoiceManagementView = ({
                         onClick={() => {
                           if (!invoice.id) return;
                           setActiveSubTab("Invoice Generation");
-                          navigate({ search: `?invoiceId=${encodeURIComponent(invoice.id)}` });
+                          navigate({
+                            search: `?invoiceId=${encodeURIComponent(invoice.id)}`,
+                          });
                         }}
                       >
                         <Edit className="w-4 h-4" />
@@ -7386,7 +8009,9 @@ const InvoiceManagementView = ({
                         onClick={() => {
                           if (!invoice.id) return;
                           setActiveSubTab("Invoice Generation");
-                          navigate({ search: `?invoiceId=${encodeURIComponent(invoice.id)}` });
+                          navigate({
+                            search: `?invoiceId=${encodeURIComponent(invoice.id)}`,
+                          });
                         }}
                       >
                         <Download className="w-4 h-4" />
@@ -7474,9 +8099,12 @@ const InvoiceManagementView = ({
                   {money(
                     Math.max(
                       0,
-                      (Number((selectedInvoice as any)?.amountCents || 0) || 0) -
+                      (Number((selectedInvoice as any)?.amountCents || 0) ||
+                        0) -
                         ((selectedInvoice as any)?.paidAt
-                          ? Number((selectedInvoice as any)?.amountCents || 0) || 0
+                          ? Number(
+                              (selectedInvoice as any)?.amountCents || 0,
+                            ) || 0
                           : 0),
                     ),
                     String((selectedInvoice as any)?.currency || "USD"),
@@ -7501,11 +8129,23 @@ const InvoiceManagementView = ({
 
                 const status = String(inv.status || "").toLowerCase();
                 if (String(inv.createdAt || ""))
-                  events.push({ key: "created", kind: "created", at: String(inv.createdAt) });
+                  events.push({
+                    key: "created",
+                    kind: "created",
+                    at: String(inv.createdAt),
+                  });
                 if (String(inv.sentAt || ""))
-                  events.push({ key: "sent", kind: "sent", at: String(inv.sentAt) });
+                  events.push({
+                    key: "sent",
+                    kind: "sent",
+                    at: String(inv.sentAt),
+                  });
                 if (String(inv.paidAt || ""))
-                  events.push({ key: "paid", kind: "paid", at: String(inv.paidAt) });
+                  events.push({
+                    key: "paid",
+                    kind: "paid",
+                    at: String(inv.paidAt),
+                  });
                 if (status === "void")
                   events.push({
                     key: "void",
@@ -7517,7 +8157,9 @@ const InvoiceManagementView = ({
                 if (!payments.length) {
                   return (
                     <Card className="p-4 bg-gray-50 border border-gray-200 rounded-xl">
-                      <p className="text-sm font-bold text-gray-900">No payments recorded</p>
+                      <p className="text-sm font-bold text-gray-900">
+                        No payments recorded
+                      </p>
                       <p className="text-xs text-gray-600 font-medium">
                         This invoice has not been marked as paid.
                       </p>

@@ -31,7 +31,8 @@ if (!RAW_BASE) {
   // Prefer a direct localhost backend in dev to avoid relying on dev-proxy behavior.
   // In production behind a reverse proxy, '/api' works out of the box.
   RAW_BASE =
-    stored || ((import.meta as any)?.env?.DEV ? "http://localhost:8787" : "/api");
+    stored ||
+    ((import.meta as any)?.env?.DEV ? "http://localhost:8787" : "/api");
   // eslint-disable-next-line no-console
   console.warn(
     `[api] VITE_API_BASE_URL not set; using ${RAW_BASE}. Set VITE_API_BASE_URL at build-time for explicit control.`,

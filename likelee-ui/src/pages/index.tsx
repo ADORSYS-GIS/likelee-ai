@@ -374,8 +374,14 @@ function PagesContent() {
           }
         />
 
-        <Route path="/stripe/connect/return" element={<StripeConnectReturn />} />
-        <Route path="/stripe/connect/refresh" element={<StripeConnectRefresh />} />
+        <Route
+          path="/stripe/connect/return"
+          element={<StripeConnectReturn />}
+        />
+        <Route
+          path="/stripe/connect/refresh"
+          element={<StripeConnectRefresh />}
+        />
 
         <Route
           path="/AddTalent"
