@@ -163,10 +163,7 @@ pub async fn list(
         let paid = status_str == "paid" || paid_at.is_some();
 
         let ytd_paid = if let Some(paid_at_str) = paid_at.as_ref() {
-            let paid_date = paid_at_str
-                .split('T')
-                .next()
-                .and_then(parse_date);
+            let paid_date = paid_at_str.split('T').next().and_then(parse_date);
             paid && paid_date.map(|d| d.year() == ytd_year).unwrap_or(false)
         } else {
             false

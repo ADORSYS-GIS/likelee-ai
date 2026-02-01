@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { scoutingService } from "@/services/scoutingService";
 import { ScoutingProspect } from "@/types/scouting";
+import { ScoutingMap } from "@/components/scouting/map/ScoutingMap";
+import { ScoutingTrips } from "@/components/scouting/ScoutingTrips";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -81,8 +83,8 @@ import {
   Image as ImageIcon,
   Mic,
   Link as LinkIcon,
-  Pencil,
 } from "lucide-react";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -127,9 +129,15 @@ import {
   getAgencyPayoutsAccountStatus,
   getAgencyStripeOnboardingLink,
   notifyBookingCreatedEmail,
+  createInvoice,
+  markInvoiceSent,
+  markInvoicePaid,
+  uploadAgencyFile,
+  sendEmail,
 } from "@/api/functions";
 
 const STATUS_MAP = {
+  // legacy/basic statuses
   new: "New Lead",
   contacted: "In Contact",
   meeting: "Meeting Scheduled",
@@ -137,6 +145,13 @@ const STATUS_MAP = {
   offer_sent: "Offer Sent",
   signed: "Signed",
   declined: "Declined",
+  // extended statuses
+  new_lead: "New Lead",
+  in_contact: "In Contact",
+  test_shoot_pending: "Test Shoot (Pending)",
+  test_shoot_success: "Test Shoot (Success)",
+  test_shoot_failed: "Test Shoot (Failed)",
+  opened: "Offer Opened",
 };
 
 const ConnectBankView = () => {
@@ -201,7 +216,7 @@ const ConnectBankView = () => {
   };
 
   const connected = Boolean(status?.connected);
-  const ready = Boolean(status?.payouts_enabled || status?.transfers_enabled);
+  const accountLast4 = String(status?.bank_last4 || "").trim();
 
   return (
     <div className="space-y-6">
@@ -240,11 +255,10 @@ const ConnectBankView = () => {
               <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
               <div className="flex-1">
                 <p className="text-sm font-bold text-gray-900">Bank account connected</p>
-                <p className="text-xs text-gray-600 font-medium">
-                  {ready ? "Payouts enabled" : "Connection created — complete onboarding in Stripe to enable payouts"}
-                </p>
-                {!!status?.bank_last4 && (
-                  <p className="text-xs text-gray-600 font-medium mt-1">Account ending in ••••{status.bank_last4}</p>
+                {!!accountLast4 && (
+                  <p className="text-xs text-gray-600 font-medium mt-1">
+                    Account ending in ••••{accountLast4}
+                  </p>
                 )}
               </div>
             </div>
@@ -311,7 +325,8 @@ const ConnectBankView = () => {
   );
 };
 
-const STATUS_COLORS = {
+const STATUS_COLORS: { [key: string]: string } = {
+  // basic statuses
   new: "bg-blue-50 text-blue-700 border-blue-200",
   contacted: "bg-yellow-50 text-yellow-700 border-yellow-200",
   meeting: "bg-purple-50 text-purple-700 border-purple-200",
@@ -319,6 +334,13 @@ const STATUS_COLORS = {
   offer_sent: "bg-green-50 text-green-700 border-green-200",
   signed: "bg-green-50 text-green-700 border-green-200",
   declined: "bg-red-50 text-red-700 border-red-200",
+  // extended statuses
+  new_lead: "bg-blue-50 text-blue-700 border-blue-200",
+  in_contact: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  test_shoot_pending: "bg-orange-50 text-orange-700 border-orange-200",
+  test_shoot_success: "bg-teal-50 text-teal-700 border-teal-200",
+  test_shoot_failed: "bg-rose-50 text-rose-700 border-rose-200",
+  opened: "bg-yellow-50 text-yellow-700 border-yellow-200",
 };
 
 const ProspectModal = ({
@@ -813,45 +835,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { BookingsView } from "@/components/Bookings/BookingsView";
-import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
-import FileStorageView from "@/components/dashboard/settings/FileStorageView";
+// duplicate imports removed below (already imported earlier in file)
 import { useAuth } from "../auth/AuthProvider";
-import {
-  listBookings,
-  createBooking as apiCreateBooking,
-  updateBooking as apiUpdateBooking,
-  cancelBooking as apiCancelBooking,
-  listBookOuts,
-  createBookOut,
-  getAgencyClients,
-  getAgencyTalents,
-  listInvoices,
-  listTalentStatements,
-  listExpenses,
-  createExpense,
-  getAgencyPayoutsAccountStatus,
-  getAgencyStripeOnboardingLink,
-  notifyBookingCreatedEmail,
-} from "@/api/functions";
 
-const STATUS_MAP: { [key: string]: string } = {
-  new_lead: "New Lead",
-  in_contact: "In Contact",
-  test_shoot_pending: "Test Shoot (Pending)",
-  test_shoot_success: "Test Shoot (Success)",
-  test_shoot_failed: "Test Shoot (Failed)",
-  opened: "Offer Opened",
-  offer_sent: "Offer Sent",
-  new: "New Lead",
-  contacted: "In Contact",
-  meeting: "Meeting Scheduled",
-  test_shoot: "Test Shoots",
-  signed: "Signed",
-  declined: "Declined",
-};
+// STATUS_MAP is defined earlier in this file; removing duplicate declaration here.
 
-const ConnectBankView = () => {
+const ConnectBankViewAlt = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{
@@ -1032,22 +1021,6 @@ const MANUAL_STATUSES = [
   "offer_sent",
 ];
 
-const STATUS_COLORS: { [key: string]: string } = {
-  new_lead: "bg-blue-50 text-blue-700 border-blue-200",
-  in_contact: "bg-yellow-50 text-yellow-700 border-yellow-200",
-  test_shoot_pending: "bg-orange-50 text-orange-700 border-orange-200",
-  test_shoot_success: "bg-teal-50 text-teal-700 border-teal-200",
-  test_shoot_failed: "bg-rose-50 text-rose-700 border-rose-200",
-  offer_sent: "bg-purple-50 text-purple-700 border-purple-200",
-  opened: "bg-yellow-50 text-yellow-700 border-yellow-200",
-  signed: "bg-green-50 text-green-700 border-green-200",
-  declined: "bg-red-50 text-red-700 border-red-200",
-  new: "bg-blue-50 text-blue-700 border-blue-200",
-  contacted: "bg-yellow-50 text-yellow-700 border-yellow-200",
-  meeting: "bg-purple-50 text-purple-700 border-purple-200",
-  test_shoot: "bg-orange-50 text-orange-700 border-orange-200",
-};
-
 const STATUS_DOT_COLORS: { [key: string]: string } = {
   new_lead: "bg-blue-500",
   in_contact: "bg-yellow-500",
@@ -1063,7 +1036,7 @@ const STATUS_DOT_COLORS: { [key: string]: string } = {
   test_shoot: "bg-orange-500",
 };
 
-const ProspectModal = ({
+const ProspectModalAlt = ({
   open,
   onOpenChange,
   prospect = null,
@@ -6274,13 +6247,761 @@ const FinancialReportsView = () => {
 };
 
 const GenerateInvoiceView = () => {
+  const { toast } = useToast();
+  const { profile } = useAuth();
   const [createFrom, setCreateFrom] = useState("booking");
-  const [invoiceNumber, setInvoiceNumber] = useState("INV-2026-6174");
+  const [invoiceId, setInvoiceId] = useState<string>("");
+  const [invoiceNumber, setInvoiceNumber] = useState("");
+  const [selectedClientId, setSelectedClientId] = useState<string>("");
+  const [clients, setClients] = useState<any[]>([]);
+  const [talents, setTalents] = useState<any[]>([]);
+  const [invoiceDate, setInvoiceDate] = useState("2026-01-13");
+  const [dueDate, setDueDate] = useState("2026-02-13");
+  const [paymentTerms, setPaymentTerms] = useState("net_30");
+  const [poNumber, setPoNumber] = useState("");
+  const [projectReference, setProjectReference] = useState("");
+  const [currency, setCurrency] = useState("USD");
+  const [notesInternal, setNotesInternal] = useState("");
+  const [paymentInstructions, setPaymentInstructions] = useState(
+    "Payment due within 30 days. Please reference invoice number on payment.",
+  );
+  const [footerText, setFooterText] = useState("Thank you for your business!");
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailSentOnce, setEmailSentOnce] = useState(false);
+  const fileInputId = useMemo(
+    () => `invoice-attach-${Math.random().toString(36).slice(2)}`,
+    [],
+  );
   const [commission, setCommission] = useState("20");
   const [taxExempt, setTaxExempt] = useState(false);
+  const [items, setItems] = useState<
+    {
+      id: string;
+      description: string;
+      talent_id: string;
+      date_of_service: string;
+      rate_type: "day" | "hourly" | "project";
+      quantity: string;
+      unit_price: string;
+    }[]
+  >([
+    {
+      id: Math.random().toString(36).slice(2),
+      description: "",
+      talent_id: "",
+      date_of_service: "",
+      rate_type: "day",
+      quantity: "1",
+      unit_price: "0",
+    },
+  ]);
   const [expenses, setExpenses] = useState<
     { id: string; description: string; amount: string }[]
   >([]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const resp = await getAgencyClients();
+        const rows = Array.isArray((resp as any)?.data)
+          ? (resp as any).data
+          : Array.isArray(resp)
+            ? resp
+            : Array.isArray((resp as any)?.data?.data)
+              ? (resp as any).data.data
+              : [];
+        if (!mounted) return;
+        setClients(rows);
+      } catch (e: any) {
+        toast({
+          title: "Failed to load clients",
+          description: String(e?.message || e),
+          variant: "destructive" as any,
+        });
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [toast]);
+
+  const selectedClient = useMemo(() => {
+    return clients.find((c) => String((c as any)?.id || "") === selectedClientId) || null;
+  }, [clients, selectedClientId]);
+
+  const formatMoney = useMemo(() => {
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: currency || "USD",
+        minimumFractionDigits: 2,
+      });
+    } catch {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 2,
+      });
+    }
+  }, [currency]);
+
+  const calcLineTotal = (it: { quantity: string; unit_price: string }) => {
+    const qty = Number(it.quantity || "0") || 0;
+    const unit = Number(it.unit_price || "0") || 0;
+    return qty * unit;
+  };
+
+  const subtotal = useMemo(() => {
+    return items.reduce((sum, it) => sum + calcLineTotal(it), 0);
+  }, [items]);
+
+  const expensesTotal = useMemo(() => {
+    return expenses.reduce((sum, e) => sum + (Number(e.amount || "0") || 0), 0);
+  }, [expenses]);
+
+  const commissionPct = useMemo(() => {
+    const v = Number(commission || "0") || 0;
+    return Math.max(0, v);
+  }, [commission]);
+
+  const agencyCommissionAmount = useMemo(() => {
+    return (subtotal * commissionPct) / 100;
+  }, [subtotal, commissionPct]);
+
+  const talentNetAmount = useMemo(() => {
+    return subtotal - agencyCommissionAmount;
+  }, [subtotal, agencyCommissionAmount]);
+
+  const grandTotal = useMemo(() => {
+    return subtotal + expensesTotal;
+  }, [subtotal, expensesTotal]);
+
+  const toBase64 = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onerror = () => reject(new Error("file_read_failed"));
+      r.onload = () => {
+        const res = String(r.result || "");
+        const idx = res.indexOf(",");
+        resolve(idx >= 0 ? res.slice(idx + 1) : res);
+      };
+      r.readAsDataURL(file);
+    });
+
+  const validateInvoice = () => {
+    if (!selectedClientId) {
+      return { ok: false, message: "Please select a client." };
+    }
+    if (!String(invoiceDate || "").trim()) {
+      return { ok: false, message: "Please select an invoice date." };
+    }
+    if (!String(dueDate || "").trim()) {
+      return { ok: false, message: "Please select a due date." };
+    }
+    if (!String(currency || "").trim()) {
+      return { ok: false, message: "Please select a currency." };
+    }
+    if (!String(paymentTerms || "").trim()) {
+      return { ok: false, message: "Please select payment terms." };
+    }
+
+    const validItems = items
+      .map((it) => {
+        const desc = String(it.description || "").trim();
+        const qty = Number(it.quantity || "0") || 0;
+        const unit = Number(it.unit_price || "0");
+        const unitOk = Number.isFinite(unit) && unit >= 0;
+        return { desc, qty, unitOk };
+      })
+      .filter((it) => it.desc.length > 0);
+
+    if (!validItems.length) {
+      return {
+        ok: false,
+        message: "Please add at least one line item with a description.",
+      };
+    }
+    if (validItems.some((it) => it.qty <= 0)) {
+      return { ok: false, message: "Line item quantity must be greater than 0." };
+    }
+    if (validItems.some((it) => !it.unitOk)) {
+      return {
+        ok: false,
+        message: "Line item unit price must be a number (0 or more).",
+      };
+    }
+    return { ok: true, message: "" };
+  };
+
+  const invoiceFormOk = useMemo(() => {
+    return validateInvoice().ok;
+  }, [
+    selectedClientId,
+    invoiceDate,
+    dueDate,
+    currency,
+    paymentTerms,
+    items,
+  ]);
+
+  const downloadPdf = async () => {
+    const validation = validateInvoice();
+    if (!validation.ok) {
+      toast({
+        title: "Missing required fields",
+        description: validation.message,
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    try {
+      const base64 = await generateInvoicePdfBase64();
+      const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+      const blob = new Blob([bytes], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = invoiceNumber ? `invoice-${invoiceNumber}.pdf` : "invoice.pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      toast({
+        title: "Failed to generate PDF",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+    }
+  };
+
+  const markAsSent = async () => {
+    if (!invoiceId) {
+      toast({
+        title: "Save invoice first",
+        description: "Please save as draft to generate an invoice number before marking as sent.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    try {
+      await markInvoiceSent(invoiceId);
+      toast({
+        title: "Marked as sent",
+        description: invoiceNumber ? `Invoice ${invoiceNumber} marked as sent.` : "Invoice marked as sent.",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Failed to mark as sent",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+    }
+  };
+
+  const markAsPaid = async () => {
+    if (!invoiceId) {
+      toast({
+        title: "Save invoice first",
+        description: "Please save as draft to generate an invoice number before marking as paid.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    try {
+      await markInvoicePaid(invoiceId);
+      toast({
+        title: "Marked as paid",
+        description: invoiceNumber ? `Invoice ${invoiceNumber} marked as paid.` : "Invoice marked as paid.",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Failed to mark as paid",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+    }
+  };
+
+  const bytesToBase64 = (bytes: Uint8Array) => {
+    let binary = "";
+    bytes.forEach((b) => (binary += String.fromCharCode(b)));
+    return btoa(binary);
+  };
+
+  const buildCreateInvoicePayload = () => {
+    const commissionPct = Number(commission || "0") || 0;
+    const agency_commission_bps = Math.round(commissionPct * 100);
+    const itemPayload = items
+      .map((it, idx) => ({
+        description: it.description,
+        talent_id: it.talent_id || undefined,
+        date_of_service: it.date_of_service || undefined,
+        rate_type: it.rate_type,
+        quantity: Number(it.quantity || "0") || 0,
+        unit_price_cents: Math.round((Number(it.unit_price || "0") || 0) * 100),
+        sort_order: idx,
+      }))
+      .filter((it) => (it.description || "").trim().length > 0);
+
+    return {
+      client_id: selectedClientId,
+      invoice_date: invoiceDate,
+      due_date: dueDate,
+      payment_terms: paymentTerms,
+      po_number: poNumber || undefined,
+      project_reference: projectReference || undefined,
+      currency,
+      agency_commission_bps,
+      tax_exempt: taxExempt,
+      tax_rate_bps: 0,
+      discount_cents: 0,
+      notes_internal: notesInternal || undefined,
+      payment_instructions: paymentInstructions || undefined,
+      footer_text: footerText || undefined,
+      items: itemPayload,
+      expenses: expenses.map((e) => ({
+        description: e.description,
+        amount_cents: Math.round((Number(e.amount || "0") || 0) * 100),
+        taxable: false,
+      })),
+    };
+  };
+
+  const ensureInvoiceSaved = async () => {
+    if (invoiceId) return { id: invoiceId, invoice_number: invoiceNumber };
+    const resp = await createInvoice(buildCreateInvoicePayload());
+    const data = (resp as any)?.data ?? resp;
+    const newId = String((data as any)?.id || "");
+    const newNumber = String((data as any)?.invoice_number || "");
+    if (newId) setInvoiceId(newId);
+    if (newNumber) setInvoiceNumber(newNumber);
+    return { id: newId, invoice_number: newNumber };
+  };
+
+  const tryFetchLogoPng = async (): Promise<Uint8Array | null> => {
+    try {
+      const resp = await fetch("/likelee-logo.png");
+      if (!resp.ok) return null;
+      const buf = await resp.arrayBuffer();
+      return new Uint8Array(buf);
+    } catch {
+      return null;
+    }
+  };
+
+  const generateInvoicePdfBase64 = async () => {
+    const doc = await PDFDocument.create();
+    const page = doc.addPage([595.28, 841.89]);
+    const { width, height } = page.getSize();
+    const font = await doc.embedFont(StandardFonts.Helvetica);
+    const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
+
+    const cText = rgb(0.12, 0.12, 0.12);
+    const cMuted = rgb(0.45, 0.45, 0.45);
+    const cBorder = rgb(0.9, 0.92, 0.95);
+    const cBg = rgb(0.98, 0.98, 0.99);
+
+    const margin = 36;
+    const gap = 14;
+    const money = (n: number) => formatMoney.format(n);
+
+    const drawCard = (x: number, y: number, w: number, h: number) => {
+      page.drawRectangle({ x, y, width: w, height: h, color: cBg, borderColor: cBorder, borderWidth: 1 });
+    };
+
+    const drawLabel = (text: string, x: number, y: number) => {
+      page.drawText(text.toUpperCase(), { x, y, size: 8, font: fontBold, color: cMuted });
+    };
+
+    const drawValue = (text: string, x: number, y: number, bold = false) => {
+      page.drawText(text, { x, y, size: 11, font: bold ? fontBold : font, color: cText });
+    };
+
+    const agencyName =
+      String((profile as any)?.company_name || "").trim() ||
+      String((profile as any)?.company || "").trim() ||
+      String((profile as any)?.name || "").trim() ||
+      String((profile as any)?.full_name || "").trim() ||
+      "Agency";
+
+    const clientCompany = String((selectedClient as any)?.company || "").trim();
+    const clientName = String((selectedClient as any)?.name || "").trim();
+    const clientEmail = String((selectedClient as any)?.email || "").trim();
+
+    const invoiceNo = invoiceNumber ? invoiceNumber : "(not assigned yet)";
+    const statusText = invoiceId ? "issued" : "draft";
+
+    const logoBytes = await tryFetchLogoPng();
+    if (logoBytes) {
+      try {
+        const img = await doc.embedPng(logoBytes);
+        const imgW = 34;
+        const imgH = (img.height / img.width) * imgW;
+        page.drawImage(img, { x: margin, y: height - margin - imgH + 2, width: imgW, height: imgH });
+      } catch {
+        // ignore
+      }
+    }
+
+    page.drawText("Likelee", { x: margin + (logoBytes ? 42 : 0), y: height - margin - 16, size: 16, font: fontBold, color: cText });
+    page.drawText("Invoice", { x: margin, y: height - margin - 44, size: 28, font: fontBold, color: cText });
+    page.drawText(invoiceNo, { x: margin, y: height - margin - 66, size: 11, font, color: cMuted });
+    page.drawText(`From: ${agencyName} (sent via Likelee)`, {
+      x: margin,
+      y: height - margin - 86,
+      size: 10,
+      font,
+      color: cMuted,
+    });
+
+    const metaW = 230;
+    const metaH = 92;
+    const metaX = width - margin - metaW;
+    const metaY = height - margin - metaH;
+    drawCard(metaX, metaY, metaW, metaH);
+    drawLabel("Invoice date", metaX + 14, metaY + metaH - 22);
+    drawValue(invoiceDate, metaX + metaW - 14 - font.widthOfTextAtSize(invoiceDate, 11), metaY + metaH - 24);
+    drawLabel("Due date", metaX + 14, metaY + metaH - 46);
+    drawValue(dueDate, metaX + metaW - 14 - font.widthOfTextAtSize(dueDate, 11), metaY + metaH - 48);
+    drawLabel("Status", metaX + 14, metaY + metaH - 70);
+    drawValue(statusText, metaX + metaW - 14 - font.widthOfTextAtSize(statusText, 11), metaY + metaH - 72);
+
+    const cardW = (width - margin * 2 - gap) / 2;
+    const cardH = 92;
+    const cardsTopY = height - margin - 130;
+
+    const billX = margin;
+    const billY = cardsTopY - cardH;
+    drawCard(billX, billY, cardW, cardH);
+    drawLabel("Bill to", billX + 14, billY + cardH - 22);
+    const billLineY = billY + cardH - 44;
+    if (clientCompany) {
+      drawValue(clientCompany, billX + 14, billLineY, true);
+      if (clientName) drawValue(clientName, billX + 14, billLineY - 16);
+      if (clientEmail) drawValue(clientEmail, billX + 14, billLineY - 32);
+    } else {
+      drawValue(clientName || "Client", billX + 14, billLineY, true);
+      if (clientEmail) drawValue(clientEmail, billX + 14, billLineY - 16);
+    }
+
+    const refX = margin + cardW + gap;
+    const refY = billY;
+    drawCard(refX, refY, cardW, cardH);
+    drawLabel("Reference", refX + 14, refY + cardH - 22);
+    if (projectReference) {
+      drawValue(projectReference, refX + 14, refY + cardH - 44, true);
+    }
+
+    let y = billY - 24;
+    page.drawText("LINE ITEMS", { x: margin, y, size: 10, font: fontBold, color: cMuted });
+    y -= 10;
+
+    const tableX = margin;
+    const tableW = width - margin * 2;
+    const rowH = 28;
+    page.drawLine({ start: { x: tableX, y }, end: { x: tableX + tableW, y }, thickness: 1, color: cBorder });
+    y -= 18;
+    page.drawText("DESCRIPTION", { x: tableX, y, size: 9, font: fontBold, color: cMuted });
+    page.drawText("QTY", { x: tableX + tableW - 170, y, size: 9, font: fontBold, color: cMuted });
+    page.drawText("UNIT", { x: tableX + tableW - 120, y, size: 9, font: fontBold, color: cMuted });
+    page.drawText("TOTAL", { x: tableX + tableW - 56, y, size: 9, font: fontBold, color: cMuted });
+    y -= 10;
+    page.drawLine({ start: { x: tableX, y }, end: { x: tableX + tableW, y }, thickness: 1, color: cBorder });
+    y -= 18;
+
+    const itemRows = items
+      .map((it) => ({
+        ...it,
+        desc: (it.description || "").replace(/\s+/g, " ").trim(),
+        qty: Number(it.quantity || "0") || 0,
+        unit: Number(it.unit_price || "0") || 0,
+      }))
+      .filter((it) => it.desc.length > 0);
+
+    if (!itemRows.length) {
+      page.drawText("No line items", { x: tableX, y, size: 10, font, color: cMuted });
+      y -= rowH;
+    } else {
+      for (const it of itemRows.slice(0, 6)) {
+        const total = it.qty * it.unit;
+        page.drawText(it.desc.slice(0, 44), { x: tableX, y, size: 10, font: fontBold, color: cText });
+
+        const sub = [
+          (() => {
+            const talentName = String(
+              talents.find((t) => String((t as any)?.id || "") === String(it.talent_id || ""))?.name ||
+                talents.find((t) => String((t as any)?.id || "") === String(it.talent_id || ""))?.full_name ||
+                "",
+            ).trim();
+            const date = String(it.date_of_service || "").trim();
+            const rate = String(it.rate_type || "").trim();
+            return [talentName, date, rate].filter(Boolean).join(" • ");
+          })(),
+        ]
+          .filter(Boolean)
+          .join(" ");
+
+        if (sub) {
+          page.drawText(sub.slice(0, 60), { x: tableX, y: y - 12, size: 9, font, color: cMuted });
+        }
+
+        page.drawText(String(it.qty), { x: tableX + tableW - 170, y, size: 10, font, color: cText });
+        page.drawText(money(it.unit), { x: tableX + tableW - 120, y, size: 10, font, color: cText });
+        page.drawText(money(total), { x: tableX + tableW - 56, y, size: 10, font: fontBold, color: cText });
+
+        y -= rowH;
+        page.drawLine({ start: { x: tableX, y }, end: { x: tableX + tableW, y }, thickness: 1, color: cBorder });
+        y -= 14;
+      }
+    }
+
+    page.drawText("EXPENSES", { x: margin, y, size: 10, font: fontBold, color: cMuted });
+    y -= 10;
+    page.drawLine({ start: { x: tableX, y }, end: { x: tableX + tableW, y }, thickness: 1, color: cBorder });
+    y -= 18;
+    page.drawText("DESCRIPTION", { x: tableX, y, size: 9, font: fontBold, color: cMuted });
+    page.drawText("TAXABLE", { x: tableX + tableW - 160, y, size: 9, font: fontBold, color: cMuted });
+    page.drawText("AMOUNT", { x: tableX + tableW - 70, y, size: 9, font: fontBold, color: cMuted });
+    y -= 10;
+    page.drawLine({ start: { x: tableX, y }, end: { x: tableX + tableW, y }, thickness: 1, color: cBorder });
+    y -= 18;
+
+    if (!expenses.length) {
+      page.drawText("No expenses", { x: tableX, y, size: 10, font, color: cMuted });
+      y -= 28;
+    } else {
+      for (const e of expenses.slice(0, 4)) {
+        const desc = String(e.description || "").trim() || "Expense";
+        const amount = Number(e.amount || "0") || 0;
+        page.drawText(desc.slice(0, 44), { x: tableX, y, size: 10, font, color: cText });
+        page.drawText("No", { x: tableX + tableW - 160, y, size: 10, font, color: cText });
+        page.drawText(money(amount), { x: tableX + tableW - 70, y, size: 10, font: fontBold, color: cText });
+        y -= 28;
+        page.drawLine({ start: { x: tableX, y }, end: { x: tableX + tableW, y }, thickness: 1, color: cBorder });
+        y -= 14;
+      }
+    }
+
+    const bottomY = margin + 170;
+    if (y < bottomY) y = bottomY;
+
+    const lowerCardW = cardW;
+    const lowerCardH = 140;
+    const leftLowerX = margin;
+    const leftLowerY = margin + 20;
+    const rightLowerX = margin + lowerCardW + gap;
+    const rightLowerY = leftLowerY;
+
+    drawCard(leftLowerX, leftLowerY, lowerCardW, lowerCardH);
+    drawLabel("Payment instructions", leftLowerX + 14, leftLowerY + lowerCardH - 22);
+    page.drawText(String(paymentInstructions || "").slice(0, 140), { x: leftLowerX + 14, y: leftLowerY + lowerCardH - 46, size: 10, font, color: cText, lineHeight: 12 });
+    page.drawLine({ start: { x: leftLowerX + 14, y: leftLowerY + 54 }, end: { x: leftLowerX + lowerCardW - 14, y: leftLowerY + 54 }, thickness: 1, color: cBorder });
+    drawLabel("Footer", leftLowerX + 14, leftLowerY + 44);
+    page.drawText(String(footerText || "").slice(0, 90), { x: leftLowerX + 14, y: leftLowerY + 26, size: 10, font, color: cText });
+
+    drawCard(rightLowerX, rightLowerY, lowerCardW, lowerCardH);
+    const tx = rightLowerX + 14;
+    let ty = rightLowerY + lowerCardH - 34;
+    const drawTotalRow = (label: string, value: string, bold = false) => {
+      page.drawText(label, { x: tx, y: ty, size: 10, font, color: cText });
+      page.drawText(value, { x: rightLowerX + lowerCardW - 14 - font.widthOfTextAtSize(value, bold ? 11 : 10), y: ty, size: bold ? 11 : 10, font: bold ? fontBold : font, color: cText });
+      ty -= 18;
+    };
+
+    drawTotalRow("Subtotal", money(subtotal), true);
+    drawTotalRow("Expenses", money(expensesTotal));
+    drawTotalRow("Discount", "-$0.00");
+    drawTotalRow("Tax (0%)", "$0.00");
+    page.drawLine({ start: { x: tx, y: ty + 6 }, end: { x: rightLowerX + lowerCardW - 14, y: ty + 6 }, thickness: 1, color: cBorder });
+    ty -= 14;
+    drawTotalRow("Total", money(grandTotal), true);
+    drawTotalRow(`Agency fee (${commissionPct}%)`, money(agencyCommissionAmount));
+    drawTotalRow("Talent net", money(talentNetAmount));
+
+    const bytes = await doc.save();
+    return bytesToBase64(bytes);
+  };
+
+  const saveDraft = async () => {
+    const validation = validateInvoice();
+    if (!validation.ok) {
+      toast({
+        title: "Missing required fields",
+        description: validation.message,
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    try {
+      const resp = await createInvoice(buildCreateInvoicePayload());
+
+      const data = (resp as any)?.data ?? resp;
+      setInvoiceId(String((data as any)?.id || ""));
+      setInvoiceNumber(String((data as any)?.invoice_number || ""));
+
+      toast({
+        title: "Draft saved",
+        description: "Invoice draft created successfully.",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Failed to save draft",
+        description: String((e as any)?.message || e),
+        variant: "destructive" as any,
+      });
+    }
+  };
+
+  const onPickFile = async (file: File | null) => {
+    if (!file) return;
+    setUploadingFile(true);
+    try {
+      setAttachedFiles((prev) => [...prev, file]);
+      await uploadAgencyFile(file);
+      toast({
+        title: "File uploaded",
+        description: file.name,
+      });
+    } catch (e: any) {
+      toast({
+        title: "File upload failed",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+    } finally {
+      setUploadingFile(false);
+    }
+  };
+
+  const emailToClient = async () => {
+    if (emailSending) return;
+    const validation = validateInvoice();
+    if (!validation.ok) {
+      toast({
+        title: "Missing required fields",
+        description: validation.message,
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    const to = String((selectedClient as any)?.email || "").trim();
+    if (!to) {
+      toast({
+        title: "Missing client email",
+        description: "Selected client does not have an email address.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+
+    try {
+      setEmailSending(true);
+      toast({
+        title: "Sending invoice…",
+        description: "Generating PDF and sending email in the background. Please keep this tab open.",
+      });
+
+      await ensureInvoiceSaved();
+
+      const agencyName =
+        String((profile as any)?.agency_name || "").trim() ||
+        String((profile as any)?.display_name || "").trim() ||
+        String((profile as any)?.company_name || "").trim() ||
+        String((profile as any)?.company || "").trim() ||
+        String((profile as any)?.name || "").trim() ||
+        String((profile as any)?.full_name || "").trim() ||
+        "Agency";
+      const subject = `Invoice from ${agencyName} (sent via Likelee)`;
+      const body = [
+        `Hello,`,
+        ``,
+        `Please find attached your invoice from ${agencyName}.`,
+        ``,
+        `This invoice is being delivered by Likelee on behalf of ${agencyName}.`,
+        `This is an automated message - do not reply.`,
+        ``,
+        `Invoice date: ${invoiceDate}`,
+        `Due date: ${dueDate}`,
+        ``,
+        `For any questions regarding this invoice, please contact ${agencyName} directly.`,
+      ].join("\n");
+
+      const invoicePdfBase64 = await generateInvoicePdfBase64();
+
+      const attachments = [
+        {
+          filename: invoiceNumber ? `invoice-${invoiceNumber}.pdf` : "invoice.pdf",
+          content_type: "application/pdf",
+          content_base64: invoicePdfBase64,
+        },
+        ...(await Promise.all(
+          attachedFiles.map(async (f) => ({
+            filename: f.name,
+            content_type: f.type || "application/octet-stream",
+            content_base64: await toBase64(f),
+          })),
+        )),
+      ];
+
+      await sendEmail({
+        to,
+        subject,
+        body,
+        attachments: attachments.length ? attachments : undefined,
+      });
+
+      setEmailSentOnce(true);
+
+      toast({
+        title: "Email sent",
+        description: `Sent to ${to}`,
+      });
+    } catch (e: any) {
+      toast({
+        title: "Failed to send email",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+    } finally {
+      setEmailSending(false);
+    }
+  };
+
+  const addLineItem = () => {
+    setItems((prev) => [
+      ...prev,
+      {
+        id: Math.random().toString(36).slice(2),
+        description: "",
+        talent_id: "",
+        date_of_service: "",
+        rate_type: "day",
+        quantity: "1",
+        unit_price: "0",
+      },
+    ]);
+  };
+
+  const updateLineItem = (
+    id: string,
+    field:
+      | "description"
+      | "talent_id"
+      | "date_of_service"
+      | "rate_type"
+      | "quantity"
+      | "unit_price",
+    value: string,
+  ) => {
+    setItems((prev) =>
+      prev.map((it) => (it.id === id ? { ...it, [field]: value } : it)),
+    );
+  };
 
   const addExpense = () => {
     setExpenses([
@@ -6329,12 +7050,68 @@ const GenerateInvoiceView = () => {
           <Button
             variant="outline"
             className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            onClick={() => setPreviewOpen(true)}
           >
             <Eye className="w-5 h-5" />
             Preview
           </Button>
         </div>
       </div>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-3xl rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900">Invoice Preview</DialogTitle>
+            <DialogDescription className="text-gray-500 font-medium">
+              Preview is generated from the current form values.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-gray-900">Invoice</p>
+                <p className="text-xs text-gray-600 font-medium">
+                  {invoiceNumber || "(invoice number will be generated when saved)"}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-gray-600 font-medium">Invoice date: {invoiceDate}</p>
+                <p className="text-xs text-gray-600 font-medium">Due date: {dueDate}</p>
+              </div>
+            </div>
+            <Card className="p-4 bg-white border border-gray-100 rounded-xl">
+              <p className="text-xs font-bold text-gray-700 mb-2">Bill To</p>
+              <p className="text-sm font-bold text-gray-900">
+                {String((selectedClient as any)?.company || "") || "(select a client)"}
+              </p>
+              <p className="text-xs text-gray-600 font-medium">
+                {String((selectedClient as any)?.email || "")}
+              </p>
+            </Card>
+            <Card className="p-4 bg-white border border-gray-100 rounded-xl">
+              <p className="text-xs font-bold text-gray-700 mb-2">Notes</p>
+              <p className="text-xs text-gray-700 font-medium whitespace-pre-wrap">
+                {notesInternal || "-"}
+              </p>
+            </Card>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              className="h-11 px-6 rounded-xl border-gray-200 font-bold"
+              onClick={() => setPreviewOpen(false)}
+            >
+              Close
+            </Button>
+            <Button
+              className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl"
+              onClick={() => window.print()}
+            >
+              Print
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
         <div className="space-y-6">
@@ -6397,8 +7174,9 @@ const GenerateInvoiceView = () => {
                 Invoice Number <span className="text-red-500">*</span>
               </Label>
               <Input
-                value={invoiceNumber}
-                onChange={(e) => setInvoiceNumber(e.target.value)}
+                value={invoiceNumber || ""}
+                placeholder="Generated when you save"
+                readOnly
                 className="h-12 rounded-xl border-gray-200"
               />
             </div>
@@ -6408,7 +7186,8 @@ const GenerateInvoiceView = () => {
               </Label>
               <Input
                 type="date"
-                defaultValue="2026-01-13"
+                value={invoiceDate}
+                onChange={(e) => setInvoiceDate(e.target.value)}
                 className="h-12 rounded-xl border-gray-200"
               />
             </div>
@@ -6419,17 +7198,18 @@ const GenerateInvoiceView = () => {
               <div className="flex gap-2">
                 <Input
                   type="date"
-                  defaultValue="2026-02-13"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
                   className="h-12 rounded-xl border-gray-200 flex-1"
                 />
-                <Select defaultValue="net30">
+                <Select value={paymentTerms} onValueChange={setPaymentTerms}>
                   <SelectTrigger className="h-12 rounded-xl border-gray-200 w-32">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    <SelectItem value="net15">Net 15</SelectItem>
-                    <SelectItem value="net30">Net 30</SelectItem>
-                    <SelectItem value="net60">Net 60</SelectItem>
+                    <SelectItem value="net_15">Net 15</SelectItem>
+                    <SelectItem value="net_30">Net 30</SelectItem>
+                    <SelectItem value="net_60">Net 60</SelectItem>
                     <SelectItem value="due-on-receipt">
                       Due on Receipt
                     </SelectItem>
@@ -6444,14 +7224,24 @@ const GenerateInvoiceView = () => {
               Bill To (Client Information){" "}
               <span className="text-red-500">*</span>
             </Label>
-            <Select>
+            <Select value={selectedClientId} onValueChange={setSelectedClientId}>
               <SelectTrigger className="h-12 rounded-xl border-gray-200">
                 <SelectValue placeholder="Select client" />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
-                <SelectItem value="nike">Nike Global</SelectItem>
-                <SelectItem value="adidas">Adidas</SelectItem>
-                <SelectItem value="apple">Apple Inc.</SelectItem>
+                {clients.map((c) => {
+                  const id = String((c as any)?.id || "");
+                  const label =
+                    String((c as any)?.company || "").trim() ||
+                    String((c as any)?.contact_name || "").trim() ||
+                    String((c as any)?.email || "").trim() ||
+                    id;
+                  return (
+                    <SelectItem key={id} value={id}>
+                      {label}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
@@ -6463,6 +7253,8 @@ const GenerateInvoiceView = () => {
               </Label>
               <Input
                 placeholder="Client purchase order number"
+                value={poNumber}
+                onChange={(e) => setPoNumber(e.target.value)}
                 className="h-12 rounded-xl border-gray-200"
               />
             </div>
@@ -6472,6 +7264,8 @@ const GenerateInvoiceView = () => {
               </Label>
               <Input
                 placeholder="Project name or reference"
+                value={projectReference}
+                onChange={(e) => setProjectReference(e.target.value)}
                 className="h-12 rounded-xl border-gray-200"
               />
             </div>
@@ -6485,94 +7279,136 @@ const GenerateInvoiceView = () => {
               <Button
                 variant="outline"
                 className="h-9 px-4 rounded-lg border-gray-200 font-bold flex items-center gap-2 text-sm"
+                onClick={addLineItem}
               >
                 <Plus className="w-4 h-4" />
                 Add Line Item
               </Button>
             </div>
-            <Card className="p-5 bg-gray-50 border border-gray-200 rounded-xl">
-              <p className="text-sm font-bold text-gray-900 mb-4">Item #1</p>
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                    Description
-                  </Label>
-                  <Textarea
-                    placeholder="e.g., Model services for brand photoshoot"
-                    className="min-h-[80px] rounded-xl border-gray-200 resize-none"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                      Talent
-                    </Label>
-                    <Select>
-                      <SelectTrigger className="h-11 rounded-xl border-gray-200">
-                        <SelectValue placeholder="Select talent" />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl">
-                        <SelectItem value="emma">Emma</SelectItem>
-                        <SelectItem value="milan">Milan</SelectItem>
-                        <SelectItem value="julia">Julia</SelectItem>
-                      </SelectContent>
-                    </Select>
+            <div className="space-y-4">
+              {items.map((it, idx) => (
+                <Card
+                  key={it.id}
+                  className="p-5 bg-gray-50 border border-gray-200 rounded-xl"
+                >
+                  <p className="text-sm font-bold text-gray-900 mb-4">
+                    Item #{idx + 1}
+                  </p>
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                        Description
+                      </Label>
+                      <Textarea
+                        value={it.description}
+                        onChange={(e) =>
+                          updateLineItem(it.id, "description", e.target.value)
+                        }
+                        placeholder="e.g., Model services for brand photoshoot"
+                        className="min-h-[80px] rounded-xl border-gray-200 resize-none"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                          Talent
+                        </Label>
+                        <Select
+                          value={it.talent_id}
+                          onValueChange={(v) => updateLineItem(it.id, "talent_id", v)}
+                        >
+                          <SelectTrigger className="h-11 rounded-xl border-gray-200">
+                            <SelectValue placeholder="Select talent" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl">
+                            {talents.map((t) => {
+                              const id = String((t as any)?.id || "");
+                              const label =
+                                String((t as any)?.stage_name || "").trim() ||
+                                String((t as any)?.full_name || "").trim() ||
+                                String((t as any)?.name || "").trim() ||
+                                id;
+                              return (
+                                <SelectItem key={id} value={id}>
+                                  {label}
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                          Date of Service
+                        </Label>
+                        <Input
+                          type="date"
+                          value={it.date_of_service}
+                          onChange={(e) =>
+                            updateLineItem(it.id, "date_of_service", e.target.value)
+                          }
+                          className="h-11 rounded-xl border-gray-200"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                          Rate Type
+                        </Label>
+                        <Select
+                          value={it.rate_type}
+                          onValueChange={(v) =>
+                            updateLineItem(it.id, "rate_type", v as any)
+                          }
+                        >
+                          <SelectTrigger className="h-11 rounded-xl border-gray-200">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl">
+                            <SelectItem value="day">Day Rate</SelectItem>
+                            <SelectItem value="hourly">Hourly Rate</SelectItem>
+                            <SelectItem value="project">Project Rate</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                          Quantity/Hours
+                        </Label>
+                        <Input
+                          type="number"
+                          value={it.quantity}
+                          onChange={(e) =>
+                            updateLineItem(it.id, "quantity", e.target.value)
+                          }
+                          className="h-11 rounded-xl border-gray-200"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                          Unit Price ({currency})
+                        </Label>
+                        <Input
+                          type="number"
+                          value={it.unit_price}
+                          onChange={(e) =>
+                            updateLineItem(it.id, "unit_price", e.target.value)
+                          }
+                          className="h-11 rounded-xl border-gray-200"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center pt-3 border-t border-gray-200">
+                      <span className="text-sm font-bold text-gray-700">Line Total:</span>
+                      <span className="text-lg font-bold text-gray-900">
+                        {formatMoney.format(calcLineTotal(it))}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                      Date of Service
-                    </Label>
-                    <Input
-                      type="date"
-                      className="h-11 rounded-xl border-gray-200"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                      Rate Type
-                    </Label>
-                    <Select defaultValue="day">
-                      <SelectTrigger className="h-11 rounded-xl border-gray-200">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl">
-                        <SelectItem value="day">Day Rate</SelectItem>
-                        <SelectItem value="hourly">Hourly Rate</SelectItem>
-                        <SelectItem value="project">Project Rate</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                      Quantity/Hours
-                    </Label>
-                    <Input
-                      type="number"
-                      defaultValue="1"
-                      className="h-11 rounded-xl border-gray-200"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                      Unit Price ($)
-                    </Label>
-                    <Input
-                      type="number"
-                      defaultValue="0"
-                      className="h-11 rounded-xl border-gray-200"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-between items-center pt-3 border-t border-gray-200">
-                  <span className="text-sm font-bold text-gray-700">
-                    Line Total:
-                  </span>
-                  <span className="text-lg font-bold text-gray-900">$0.00</span>
-                </div>
-              </div>
-            </Card>
+                </Card>
+              ))}
+            </div>
           </div>
 
           <Card className="p-5 bg-white border border-gray-100 rounded-2xl">
@@ -6651,7 +7487,7 @@ const GenerateInvoiceView = () => {
                 <Label className="text-xs font-bold text-gray-700 mb-2 block">
                   Currency
                 </Label>
-                <Select defaultValue="usd">
+                <Select value={currency.toLowerCase()} onValueChange={(v) => setCurrency(v.toUpperCase())}>
                   <SelectTrigger className="h-11 rounded-xl border-gray-200">
                     <SelectValue />
                   </SelectTrigger>
@@ -6722,22 +7558,26 @@ const GenerateInvoiceView = () => {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-700 font-medium">
-                    Subtotal (1 items)
+                    Subtotal ({items.length} items)
                   </span>
-                  <span className="text-sm font-bold text-gray-900">$0.00</span>
+                  <span className="text-sm font-bold text-gray-900">
+                    {formatMoney.format(subtotal)}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-700 font-medium">
-                    Agency Commission (20%)
+                    Agency Commission ({commissionPct}%)
                   </span>
-                  <span className="text-sm font-bold text-red-600">-$0.00</span>
+                  <span className="text-sm font-bold text-red-600">
+                    -{formatMoney.format(agencyCommissionAmount)}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center pb-3 border-b border-indigo-200">
                   <span className="text-sm text-gray-700 font-medium">
                     Talent Net Amount
                   </span>
                   <span className="text-sm font-bold text-green-600">
-                    $0.00
+                    {formatMoney.format(talentNetAmount)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center pt-2">
@@ -6745,7 +7585,7 @@ const GenerateInvoiceView = () => {
                     Grand Total
                   </span>
                   <span className="text-2xl font-bold text-indigo-600">
-                    $0.00
+                    {formatMoney.format(grandTotal)}
                   </span>
                 </div>
               </div>
@@ -6759,6 +7599,8 @@ const GenerateInvoiceView = () => {
               </Label>
               <Textarea
                 placeholder="Internal notes, special terms, or additional details..."
+                value={notesInternal}
+                onChange={(e) => setNotesInternal(e.target.value)}
                 className="min-h-[100px] rounded-xl border-gray-200 resize-none"
               />
             </div>
@@ -6767,7 +7609,8 @@ const GenerateInvoiceView = () => {
                 Payment Instructions
               </Label>
               <Textarea
-                defaultValue="Payment due within 30 days. Please reference invoice number on payment."
+                value={paymentInstructions}
+                onChange={(e) => setPaymentInstructions(e.target.value)}
                 className="min-h-[100px] rounded-xl border-gray-200 resize-none"
               />
             </div>
@@ -6778,7 +7621,8 @@ const GenerateInvoiceView = () => {
               Invoice Footer Text
             </Label>
             <Input
-              defaultValue="Thank you for your business!"
+              value={footerText}
+              onChange={(e) => setFooterText(e.target.value)}
               className="h-11 rounded-xl border-gray-200"
             />
           </div>
@@ -6790,19 +7634,41 @@ const GenerateInvoiceView = () => {
             <p className="text-xs text-gray-500 font-medium mb-3">
               Attach contracts, usage agreements, or supporting documents
             </p>
+            <input
+              id={fileInputId}
+              type="file"
+              className="hidden"
+              onChange={(e) => onPickFile(e.target.files?.[0] || null)}
+            />
             <Button
               variant="outline"
               className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+              onClick={() => {
+                const el = document.getElementById(fileInputId) as HTMLInputElement | null;
+                el?.click();
+              }}
+              disabled={uploadingFile}
             >
               <Upload className="w-4 h-4" />
-              Upload File
+              {uploadingFile ? "Uploading..." : "Upload File"}
             </Button>
+            {attachedFiles.length > 0 && (
+              <div className="mt-3 space-y-1">
+                {attachedFiles.map((f) => (
+                  <p key={f.name} className="text-xs text-gray-700 font-medium">
+                    {f.name}
+                  </p>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex gap-3 pt-6 border-t border-gray-200">
             <Button
               variant="outline"
               className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+              onClick={saveDraft}
+              disabled={!invoiceFormOk}
             >
               <Save className="w-4 h-4" />
               Save as Draft
@@ -6810,17 +7676,37 @@ const GenerateInvoiceView = () => {
             <Button
               variant="outline"
               className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+              onClick={markAsSent}
+              disabled={!invoiceId}
             >
               <CheckCircle2 className="w-4 h-4" />
               Mark as Sent
             </Button>
-            <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2">
+            <Button
+              variant="outline"
+              className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+              onClick={markAsPaid}
+              disabled={!invoiceId}
+            >
+              <DollarSign className="w-4 h-4" />
+              Mark as Paid
+            </Button>
+            <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
+              onClick={emailToClient}
+              disabled={emailSending || !invoiceFormOk}
+            >
               <Send className="w-4 h-4" />
-              Email to Client
+              {emailSending
+                ? "Generating PDF & sending…"
+                : emailSentOnce
+                  ? "Send again"
+                  : "Email to Client"}
             </Button>
             <Button
               variant="outline"
               className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+              onClick={downloadPdf}
+              disabled={!invoiceFormOk}
             >
               <Download className="w-4 h-4" />
               Download PDF
@@ -8408,7 +9294,7 @@ const ScoutingHubView = ({
         )}
         {activeTab === "Analytics" && <ScoutingAnalyticsTab />}
       </div>
-      <ProspectModal
+      <ProspectModalAlt
         open={isProspectModalOpen}
         onOpenChange={setIsProspectModalOpen}
         prospect={prospectToEdit}
@@ -8699,6 +9585,10 @@ const ProspectPipelineTab = ({
   onEditProspect: (prospect: ScoutingProspect) => void;
 }) => {
   const { user } = useAuth();
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState("all");
   const [selectedProspect, setSelectedProspect] =
     useState<ScoutingProspect | null>(null);
   const { data: prospects, isLoading } = useQuery({
@@ -8718,6 +9608,13 @@ const ProspectPipelineTab = ({
       if (updated) setSelectedProspect(updated);
     }
   }, [prospects]);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(searchInput.trim());
+    }, 250);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
   const stats = [
     {
@@ -9334,20 +10231,20 @@ const OpenCallsTab = ({
                 <div className="flex justify-between items-start mb-3">
                   <Badge
                     className={`rounded-md font-bold px-2 py-0.5 text-[10px] border shadow-sm ${
-                      event.status === "published"
+                      String((event as any).status) === "published"
                         ? "bg-green-50 text-green-700 border-green-100"
-                        : event.status === "draft"
+                        : String((event as any).status) === "draft"
                           ? "bg-gray-50 text-gray-600 border-gray-100"
-                          : event.status === "scheduled"
+                          : String((event as any).status) === "scheduled"
                             ? "bg-blue-50 text-blue-700 border-blue-100"
-                            : event.status === "completed"
+                            : String((event as any).status) === "completed"
                               ? "bg-indigo-50 text-indigo-700 border-indigo-100"
-                              : event.status === "cancelled"
+                              : String((event as any).status) === "cancelled"
                                 ? "bg-red-50 text-red-700 border-red-100"
                                 : "bg-gray-50 text-gray-600 border-gray-100"
                     }`}
                   >
-                    {event.status.toUpperCase()}
+                    {String((event as any).status || "").toUpperCase()}
                   </Badge>
                   <div className="flex items-center gap-1 text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">
                     <Clock className="w-3 h-3" />
@@ -16870,7 +17767,9 @@ export default function AgencyDashboard() {
   const [activeTab, setActiveTabState] = useState(
     searchParams.get("tab") || "dashboard",
   );
-  const [activeSubTab, setActiveSubTab] = useState("All Talent");
+  const [activeSubTab, setActiveSubTab] = useState(
+    searchParams.get("subTab") || "All Talent",
+  );
   const [activeScoutingTab, setActiveScoutingTabState] = useState(
     searchParams.get("scoutingTab") || "Prospect Pipeline",
   );

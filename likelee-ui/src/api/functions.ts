@@ -250,3 +250,19 @@ export const listBookingNotifications = (params?: { limit?: number }) =>
   base44Client.get(`/api/notifications/booking-notifications`, {
     params: params || {},
   });
+
+// Agency files (multipart)
+export const uploadAgencyFile = async (file: File) => {
+  const fd = new FormData();
+  fd.append("file", file);
+  // Do NOT set Content-Type manually; let the browser add the multipart boundary
+  return base44Client.post(`/api/agency/files/upload`, fd);
+};
+
+// Email
+export const sendEmail = (data: {
+  to: string;
+  subject: string;
+  body: string;
+  attachments?: Array<{ filename: string; content_type: string; content_base64: string }>;
+}) => base44Client.post(`/api/integrations/core/send-email`, data);
