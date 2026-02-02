@@ -501,16 +501,17 @@ async fn get_monthly_revenue(
     agency_id: &str,
 ) -> Result<MonthlyRevenue, (StatusCode, String)> {
     let now = chrono::Utc::now();
-    let month_start = format!("{}-{:02}-01", now.year(), now.month());
+    let thirty_days_ago = (now - chrono::Duration::days(30)).to_rfc3339();
+    let sixty_days_ago = (now - chrono::Duration::days(60)).to_rfc3339();
 
-    // Get current month revenue
+    // Get last 30 days revenue
     let resp = state
         .pg
         .from("payments")
         .select("gross_cents")
         .eq("agency_id", agency_id)
         .eq("status", "succeeded")
-        .gte("paid_at", &month_start)
+        .gte("paid_at", &thirty_days_ago)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -529,23 +530,15 @@ async fn get_monthly_revenue(
         .filter_map(|p| p.get("gross_cents")?.as_i64())
         .sum();
 
-    // Get last month revenue for growth calculation
-    let last_month_date = if now.month() == 1 {
-        chrono::NaiveDate::from_ymd_opt(now.year() - 1, 12, 1).unwrap()
-    } else {
-        chrono::NaiveDate::from_ymd_opt(now.year(), now.month() - 1, 1).unwrap()
-    };
-    let last_month_start = last_month_date.format("%Y-%m-01").to_string();
-    let last_month_end = month_start.clone();
-
+    // Get previous 30 days revenue (days 31-60) for growth calculation
     let last_resp = state
         .pg
         .from("payments")
         .select("gross_cents")
         .eq("agency_id", agency_id)
         .eq("status", "succeeded")
-        .gte("paid_at", &last_month_start)
-        .lt("paid_at", &last_month_end)
+        .gte("paid_at", &sixty_days_ago)
+        .lt("paid_at", &thirty_days_ago)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -567,7 +560,13 @@ async fn get_monthly_revenue(
         0.0
     };
 
-    let amount_formatted = format!("${:.1}K", amount_cents as f64 / 100_000.0);
+    let amount_formatted = if amount_cents >= 100_000_000 {
+        format!("${:.1}M", amount_cents as f64 / 100_000_000.0)
+    } else if amount_cents >= 100_000 {
+        format!("${:.1}K", amount_cents as f64 / 100_000.0)
+    } else {
+        format!("${:.0}", amount_cents as f64 / 100.0)
+    };
 
     Ok(MonthlyRevenue {
         amount_cents,
@@ -948,7 +947,7 @@ async fn get_breakdown_by_campaign_type(
     agency_id: &str,
 ) -> Result<Vec<BreakdownItem>, (StatusCode, String)> {
     let now = chrono::Utc::now();
-    let month_start = format!("{}-{:02}-01", now.year(), now.month());
+    let thirty_days_ago = (now - chrono::Duration::days(30)).to_rfc3339();
 
     let resp = state
         .pg
@@ -956,7 +955,7 @@ async fn get_breakdown_by_campaign_type(
         .select("gross_cents, campaigns(campaign_type)")
         .eq("agency_id", agency_id)
         .eq("status", "succeeded")
-        .gte("paid_at", &month_start)
+        .gte("paid_at", &thirty_days_ago)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -1008,7 +1007,7 @@ async fn get_breakdown_by_brand_vertical(
     agency_id: &str,
 ) -> Result<Vec<BreakdownItem>, (StatusCode, String)> {
     let now = chrono::Utc::now();
-    let month_start = format!("{}-{:02}-01", now.year(), now.month());
+    let thirty_days_ago = (now - chrono::Duration::days(30)).to_rfc3339();
 
     let resp = state
         .pg
@@ -1016,7 +1015,7 @@ async fn get_breakdown_by_brand_vertical(
         .select("gross_cents, campaigns(brand_vertical)")
         .eq("agency_id", agency_id)
         .eq("status", "succeeded")
-        .gte("paid_at", &month_start)
+        .gte("paid_at", &thirty_days_ago)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -1068,7 +1067,7 @@ async fn get_breakdown_by_region(
     agency_id: &str,
 ) -> Result<Vec<BreakdownItem>, (StatusCode, String)> {
     let now = chrono::Utc::now();
-    let month_start = format!("{}-{:02}-01", now.year(), now.month());
+    let thirty_days_ago = (now - chrono::Duration::days(30)).to_rfc3339();
 
     let resp = state
         .pg
@@ -1076,7 +1075,7 @@ async fn get_breakdown_by_region(
         .select("gross_cents, campaigns(region)")
         .eq("agency_id", agency_id)
         .eq("status", "succeeded")
-        .gte("paid_at", &month_start)
+        .gte("paid_at", &thirty_days_ago)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;

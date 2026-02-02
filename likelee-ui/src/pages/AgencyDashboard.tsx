@@ -654,11 +654,10 @@ const ProspectModal = ({
                     selectedCategories.includes(cat) ? "default" : "secondary"
                   }
                   onClick={() => toggleCategory(cat)}
-                  className={`${
-                    selectedCategories.includes(cat)
-                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
-                  } font-medium`}
+                  className={`${selectedCategories.includes(cat)
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                    } font-medium`}
                 >
                   {cat}
                 </Button>
@@ -1573,8 +1572,8 @@ const ClientProfileModal = ({
                               >
                                 {talent.license_expiry !== "—"
                                   ? new Date(
-                                      talent.license_expiry,
-                                    ).toLocaleDateString()
+                                    talent.license_expiry,
+                                  ).toLocaleDateString()
                                   : "—"}
                               </span>
                               {isLicenseExpiring(talent.license_expiry) && (
@@ -2359,11 +2358,10 @@ const ProspectModalAlt = ({
                     selectedCategories.includes(cat) ? "default" : "secondary"
                   }
                   onClick={() => toggleCategory(cat)}
-                  className={`${
-                    selectedCategories.includes(cat)
-                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
-                  } font-medium`}
+                  className={`${selectedCategories.includes(cat)
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                    } font-medium`}
                 >
                   {cat}
                 </Button>
@@ -4602,9 +4600,9 @@ const PaymentTrackingView = () => {
     return invoiceRows.map((inv) => {
       const statusRaw = String(
         (inv as any)?.status ??
-          (inv as any)?.invoice_status ??
-          (inv as any)?.invoice?.status ??
-          "draft",
+        (inv as any)?.invoice_status ??
+        (inv as any)?.invoice?.status ??
+        "draft",
       );
       const dueDateStr = String((inv as any)?.due_date || "");
       const due = dueDateStr ? new Date(dueDateStr) : null;
@@ -5049,9 +5047,9 @@ const FinancialReportsView = () => {
     return invoiceRows.map((inv) => {
       const statusRaw = String(
         (inv as any)?.status ??
-          (inv as any)?.invoice_status ??
-          (inv as any)?.invoice?.status ??
-          "draft",
+        (inv as any)?.invoice_status ??
+        (inv as any)?.invoice?.status ??
+        "draft",
       );
       const dueDateStr = String((inv as any)?.due_date || "");
       const due = dueDateStr ? new Date(dueDateStr) : null;
@@ -5149,7 +5147,7 @@ const FinancialReportsView = () => {
         payablesTotals.set(
           "USD",
           (payablesTotals.get("USD") || 0) +
-            (Number((l as any)?.net_cents || 0) || 0),
+          (Number((l as any)?.net_cents || 0) || 0),
         );
       }
     }
@@ -5744,14 +5742,14 @@ const FinancialReportsView = () => {
       <thead><tr><th>Metric</th><th style="text-align:right;">Value</th></tr></thead>
       <tbody>
         ${tableRows([
-          ["Total Revenue", moneyTotals(summary.revenueTotals)],
-          ["Pending", moneyTotals(summary.pendingTotals)],
-          ["Outstanding Receivables", moneyTotals(summary.receivablesTotals)],
-          ["Expenses", moneyTotals(expensesTotals)],
-          ["Net Income", moneyTotals(netIncomeTotals)],
-          ["Commission", moneyTotals(summary.commissionTotals)],
-          ["Sales Tax", moneyTotals(taxTotals)],
-        ])}
+      ["Total Revenue", moneyTotals(summary.revenueTotals)],
+      ["Pending", moneyTotals(summary.pendingTotals)],
+      ["Outstanding Receivables", moneyTotals(summary.receivablesTotals)],
+      ["Expenses", moneyTotals(expensesTotals)],
+      ["Net Income", moneyTotals(netIncomeTotals)],
+      ["Commission", moneyTotals(summary.commissionTotals)],
+      ["Sales Tax", moneyTotals(taxTotals)],
+    ])}
       </tbody>
     </table>
 
@@ -5760,11 +5758,11 @@ const FinancialReportsView = () => {
       <thead><tr><th>Client</th><th style="text-align:right;">Revenue</th></tr></thead>
       <tbody>
         ${topClientsByRevenue
-          .map(
-            (c) =>
-              `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${c.clientName}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${moneyTotals(c.totals)}</td></tr>`,
-          )
-          .join("")}
+        .map(
+          (c) =>
+            `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${c.clientName}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${moneyTotals(c.totals)}</td></tr>`,
+        )
+        .join("")}
       </tbody>
     </table>
 
@@ -5773,11 +5771,11 @@ const FinancialReportsView = () => {
       <thead><tr><th>Talent</th><th style="text-align:right;">Gross</th></tr></thead>
       <tbody>
         ${topTalentByRevenue
-          .map(
-            (t) =>
-              `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${t.talentName}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${money(t.grossCents, "USD")}</td></tr>`,
-          )
-          .join("")}
+        .map(
+          (t) =>
+            `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${t.talentName}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${money(t.grossCents, "USD")}</td></tr>`,
+        )
+        .join("")}
       </tbody>
     </table>
 
@@ -5786,11 +5784,11 @@ const FinancialReportsView = () => {
       <thead><tr><th>Aging Bucket</th><th style="text-align:right;">Amount</th><th style="text-align:right;">Invoices</th></tr></thead>
       <tbody>
         ${receivables.bucketDefs
-          .map(
-            (b) =>
-              `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${b.label}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${moneyTotals(receivables.bucketTotals.get(b.key) || new Map())}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${receivables.bucketCounts.get(b.key) || 0}</td></tr>`,
-          )
-          .join("")}
+        .map(
+          (b) =>
+            `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${b.label}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${moneyTotals(receivables.bucketTotals.get(b.key) || new Map())}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${receivables.bucketCounts.get(b.key) || 0}</td></tr>`,
+        )
+        .join("")}
       </tbody>
     </table>
 
@@ -5971,11 +5969,10 @@ const FinancialReportsView = () => {
             <button
               key={tab.id}
               onClick={() => setActiveReportTab(tab.id)}
-              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${
-                activeReportTab === tab.id
-                  ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-              }`}
+              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${activeReportTab === tab.id
+                ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                }`}
             >
               {tab.label}
             </button>
@@ -7150,11 +7147,11 @@ const GenerateInvoiceView = () => {
                 (t) =>
                   String((t as any)?.id || "") === String(it.talent_id || ""),
               )?.name ||
-                talents.find(
-                  (t) =>
-                    String((t as any)?.id || "") === String(it.talent_id || ""),
-                )?.full_name ||
-                "",
+              talents.find(
+                (t) =>
+                  String((t as any)?.id || "") === String(it.talent_id || ""),
+              )?.full_name ||
+              "",
             ).trim();
             const date = String(it.date_of_service || "").trim();
             const rate = String(it.rate_type || "").trim();
@@ -7683,11 +7680,10 @@ const GenerateInvoiceView = () => {
             <div className="flex gap-3">
               <Button
                 variant={createFrom === "booking" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
-                  createFrom === "booking"
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "border-gray-200 text-gray-700"
-                }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "booking"
+                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                  : "border-gray-200 text-gray-700"
+                  }`}
                 onClick={() => setCreateFrom("booking")}
               >
                 <Calendar className="w-5 h-5" />
@@ -7695,11 +7691,10 @@ const GenerateInvoiceView = () => {
               </Button>
               <Button
                 variant={createFrom === "manual" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
-                  createFrom === "manual"
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "border-gray-200 text-gray-700"
-                }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "manual"
+                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                  : "border-gray-200 text-gray-700"
+                  }`}
                 onClick={() => setCreateFrom("manual")}
               >
                 <FileText className="w-5 h-5" />
@@ -8444,9 +8439,9 @@ const InvoiceManagementView = ({
       const invoiceId = String((inv as any)?.id || "");
       const statusRaw = String(
         (inv as any)?.status ??
-          (inv as any)?.invoice_status ??
-          (inv as any)?.invoice?.status ??
-          "draft",
+        (inv as any)?.invoice_status ??
+        (inv as any)?.invoice?.status ??
+        "draft",
       );
       const sentAt = (inv as any)?.sent_at ?? (inv as any)?.sentAt;
       const paidAt = (inv as any)?.paid_at ?? (inv as any)?.paidAt;
@@ -8625,11 +8620,10 @@ const InvoiceManagementView = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveSubTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                  isActive
-                    ? "bg-indigo-600 text-white shadow-sm"
-                    : "text-gray-700 hover:bg-gray-50"
-                }`}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${isActive
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-gray-700 hover:bg-gray-50"
+                  }`}
               >
                 <Icon className="w-4 h-4" />
                 {tab.label}
@@ -9057,11 +9051,11 @@ const InvoiceManagementView = ({
                       0,
                       (Number((selectedInvoice as any)?.amountCents || 0) ||
                         0) -
-                        ((selectedInvoice as any)?.paidAt
-                          ? Number(
-                              (selectedInvoice as any)?.amountCents || 0,
-                            ) || 0
-                          : 0),
+                      ((selectedInvoice as any)?.paidAt
+                        ? Number(
+                          (selectedInvoice as any)?.amountCents || 0,
+                        ) || 0
+                        : 0),
                     ),
                     String((selectedInvoice as any)?.currency || "USD"),
                   )}
@@ -9544,11 +9538,10 @@ const ScoutingHubView = ({
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
-              activeTab === tab
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
-                : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
-            }`}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab
+              ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+              : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
+              }`}
           >
             {tab}
           </button>
@@ -10541,19 +10534,18 @@ const OpenCallsTab = ({
               <div className="p-4">
                 <div className="flex justify-between items-start mb-3">
                   <Badge
-                    className={`rounded-md font-bold px-2 py-0.5 text-[10px] border shadow-sm ${
-                      String((event as any).status) === "published"
-                        ? "bg-green-50 text-green-700 border-green-100"
-                        : String((event as any).status) === "draft"
-                          ? "bg-gray-50 text-gray-600 border-gray-100"
-                          : String((event as any).status) === "scheduled"
-                            ? "bg-blue-50 text-blue-700 border-blue-100"
-                            : String((event as any).status) === "completed"
-                              ? "bg-indigo-50 text-indigo-700 border-indigo-100"
-                              : String((event as any).status) === "cancelled"
-                                ? "bg-red-50 text-red-700 border-red-100"
-                                : "bg-gray-50 text-gray-600 border-gray-100"
-                    }`}
+                    className={`rounded-md font-bold px-2 py-0.5 text-[10px] border shadow-sm ${String((event as any).status) === "published"
+                      ? "bg-green-50 text-green-700 border-green-100"
+                      : String((event as any).status) === "draft"
+                        ? "bg-gray-50 text-gray-600 border-gray-100"
+                        : String((event as any).status) === "scheduled"
+                          ? "bg-blue-50 text-blue-700 border-blue-100"
+                          : String((event as any).status) === "completed"
+                            ? "bg-indigo-50 text-indigo-700 border-indigo-100"
+                            : String((event as any).status) === "cancelled"
+                              ? "bg-red-50 text-red-700 border-red-100"
+                              : "bg-gray-50 text-gray-600 border-gray-100"
+                      }`}
                   >
                     {String((event as any).status || "").toUpperCase()}
                   </Badge>
@@ -10733,138 +10725,113 @@ const ScoutingAnalyticsTab = () => {
   );
 };
 
-const DashboardView = ({ onKYC, data }: { onKYC: () => void; data: any }) => {
-  if (data.isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <RefreshCw className="w-8 h-8 animate-spin text-indigo-600" />
-const InlineDashboardView = ({ onKYC }: { onKYC: () => void }) => (
+const InlineDashboardView = ({ onKYC, overview, performance, breakdown, pipeline, activity }: {
+  onKYC: () => void;
+  overview: any;
+  performance: any;
+  breakdown: any;
+  pipeline: any;
+  activity: any[];
+}) => (
   <div className="space-y-8">
     {/* KYC Verification Alert */}
-    <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
-      <div className="flex items-center gap-4">
-        <div className="p-3 bg-white rounded-xl shadow-sm">
-          <ShieldAlert className="w-6 h-6 text-indigo-600" />
-        </div>
-        <div>
-          <h3 className="text-lg font-bold text-gray-900">
-            KYC Verification Required
-          </h3>
-          <p className="text-sm text-gray-500">
-            To enable payouts and licensing for your talent, please complete
-            your agency's ID verification.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  const overview = data.overview;
-  const performance = data.performance;
-  const breakdown = data.breakdown;
-  const pipeline = data.pipeline;
-  const activity = data.activity?.activities || [];
-
-  return (
-    <div className="space-y-8">
-      {/* KYC Verification Alert */}
-      {overview?.kyc_status !== "approved" &&
-        overview?.kyc_status !== "verified" &&
-        overview?.kyc_status !== "active" && (
-          <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-white rounded-xl shadow-sm">
-                <ShieldAlert className="w-6 h-6 text-indigo-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">
-                  KYC Verification Required
-                </h3>
-                <p className="text-sm text-gray-500">
-                  To enable payouts and licensing for your talent, please
-                  complete your agency's ID verification.
-                </p>
-              </div>
+    {overview?.kyc_status !== "approved" &&
+      overview?.kyc_status !== "verified" &&
+      overview?.kyc_status !== "active" && (
+        <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-white rounded-xl shadow-sm">
+              <ShieldAlert className="w-6 h-6 text-indigo-600" />
             </div>
-            <Button
-              variant="default"
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 h-12 rounded-xl disabled:opacity-70 disabled:cursor-not-allowed"
-              onClick={onKYC}
-              disabled={overview?.kyc_status === "pending"}
-            >
-              {overview?.kyc_status === "pending"
-                ? "Pending Verification"
-                : "Complete KYC"}
-            </Button>
-          </div>
-        )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Roster Health */}
-        <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl border-l-4 border-l-indigo-500">
-          <div className="flex justify-between items-start mb-2">
-            <div className="p-2 bg-indigo-50 rounded-lg">
-              <Users className="w-5 h-5 text-indigo-600" />
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">
+                KYC Verification Required
+              </h3>
+              <p className="text-sm text-gray-500">
+                To enable payouts and licensing for your talent, please
+                complete your agency's ID verification.
+              </p>
             </div>
-            {overview?.roster_health.percentage >= 90 ? (
-              <TrendingUp className="w-4 h-4 text-green-500" />
-            ) : (
-              <TrendingDown className="w-4 h-4 text-red-500" />
-            )}
           </div>
-          <h3 className="text-sm font-medium text-gray-500 mb-1">
-            Roster Health
-          </h3>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-gray-900">
-              {overview?.roster_health.active_count}/
-              {overview?.roster_health.total_count}
-            </span>
-          </div>
-          <p
-            className={`text-xs ${overview?.roster_health.percentage >= 90 ? "text-green-600" : "text-yellow-600"} font-medium mt-1`}
+          <Button
+            variant="default"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 h-12 rounded-xl disabled:opacity-70 disabled:cursor-not-allowed"
+            onClick={onKYC}
+            disabled={overview?.kyc_status === "pending"}
           >
-            {overview?.roster_health.percentage.toFixed(0)}% active
-          </p>
-        </Card>
+            {overview?.kyc_status === "pending"
+              ? "Pending Verification"
+              : "Complete KYC"}
+          </Button>
+        </div>
+      )}
 
-        {/* Revenue */}
-        <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl border-l-4 border-l-green-500">
-          <div className="flex justify-between items-start mb-2">
-            <div className="p-2 bg-green-50 rounded-lg">
-              <DollarSign className="w-5 h-5 text-green-600" />
-            </div>
-            {overview?.monthly_revenue.growth_percentage >= 0 ? (
-              <TrendingUp className="w-4 h-4 text-green-500" />
-            ) : (
-              <TrendingDown className="w-4 h-4 text-red-500" />
-            )}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Roster Health */}
+      <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl border-l-4 border-l-indigo-500">
+        <div className="flex justify-between items-start mb-2">
+          <div className="p-2 bg-indigo-50 rounded-lg">
+            <Users className="w-5 h-5 text-indigo-600" />
           </div>
-          <h3 className="text-sm font-medium text-gray-500 mb-1">
-            Revenue This Month
-          </h3>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-gray-900">
-              {overview?.monthly_revenue.amount_formatted}
-            </span>
-          </div>
-          <p
-            className={`text-xs ${overview?.monthly_revenue.growth_percentage >= 0 ? "text-green-600" : "text-red-600"} font-medium mt-1`}
-          >
-            {overview?.monthly_revenue.growth_percentage >= 0 ? "+" : ""}
-            {overview?.monthly_revenue.growth_percentage}% vs last month
-          </p>
-        </Card>
+          {overview?.roster_health.percentage >= 90 ? (
+            <TrendingUp className="w-4 h-4 text-green-500" />
+          ) : (
+            <TrendingDown className="w-4 h-4 text-red-500" />
+          )}
+        </div>
+        <h3 className="text-sm font-medium text-gray-500 mb-1">
+          Roster Health
+        </h3>
+        <div className="flex items-baseline gap-2">
+          <span className="text-3xl font-bold text-gray-900">
+            {overview?.roster_health.active_count}/
+            {overview?.roster_health.total_count}
+          </span>
+        </div>
+        <p
+          className={`text-xs ${overview?.roster_health.percentage >= 90 ? "text-green-600" : "text-yellow-600"} font-medium mt-1`}
+        >
+          {overview?.roster_health.percentage.toFixed(0)}% active
+        </p>
+      </Card>
 
-        {/* Pending Actions */}
-        <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl border-l-4 border-l-red-500 relative">
-          <div className="flex justify-between items-start mb-2">
-            <div className="p-2 bg-red-50 rounded-lg">
-              <AlertCircle className="w-5 h-5 text-red-600" />
-            </div>
-            {overview?.pending_actions.licensing_requests +
-              overview?.pending_actions.expiring_licenses >
-              0 && (
+      {/* Revenue */}
+      <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl border-l-4 border-l-green-500">
+        <div className="flex justify-between items-start mb-2">
+          <div className="p-2 bg-green-50 rounded-lg">
+            <DollarSign className="w-5 h-5 text-green-600" />
+          </div>
+          {overview?.monthly_revenue.growth_percentage >= 0 ? (
+            <TrendingUp className="w-4 h-4 text-green-500" />
+          ) : (
+            <TrendingDown className="w-4 h-4 text-red-500" />
+          )}
+        </div>
+        <h3 className="text-sm font-medium text-gray-500 mb-1">
+          Revenue This Month
+        </h3>
+        <div className="flex items-baseline gap-2">
+          <span className="text-3xl font-bold text-gray-900">
+            {overview?.monthly_revenue.amount_formatted}
+          </span>
+        </div>
+        <p
+          className={`text-xs ${overview?.monthly_revenue.growth_percentage >= 0 ? "text-green-600" : "text-red-600"} font-medium mt-1`}
+        >
+          {overview?.monthly_revenue.growth_percentage >= 0 ? "+" : ""}
+          {overview?.monthly_revenue.growth_percentage}% vs last month
+        </p>
+      </Card>
+
+      {/* Pending Actions */}
+      <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl border-l-4 border-l-red-500 relative">
+        <div className="flex justify-between items-start mb-2">
+          <div className="p-2 bg-red-50 rounded-lg">
+            <AlertCircle className="w-5 h-5 text-red-600" />
+          </div>
+          {overview?.pending_actions.licensing_requests +
+            overview?.pending_actions.expiring_licenses >
+            0 && (
               <Badge
                 variant="default"
                 className="bg-red-600 hover:bg-red-700 text-white border-0 h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]"
@@ -10873,407 +10840,406 @@ const InlineDashboardView = ({ onKYC }: { onKYC: () => void }) => (
                   overview?.pending_actions.expiring_licenses}
               </Badge>
             )}
-          </div>
-          <h3 className="text-sm font-medium text-gray-500 mb-1">
-            Pending Actions
-          </h3>
-          <div className="space-y-1">
-            <p className="text-xs text-gray-600">
-              • {overview?.pending_actions.licensing_requests} licensing
-              requests
-            </p>
-            <p className="text-xs text-gray-600">
-              • {overview?.pending_actions.expiring_licenses} expiring license
-            </p>
-          </div>
-        </Card>
-
-        {/* Platform Ranking */}
-        <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl border-l-4 border-l-blue-400">
-          <div className="flex justify-between items-start mb-2">
-            <div className="p-2 bg-blue-50 rounded-lg">
-              <Trophy className="w-5 h-5 text-blue-600" />
-            </div>
-          </div>
-          <h3 className="text-sm font-medium text-gray-500 mb-1">
-            Platform Ranking
-          </h3>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-blue-600">
-              {overview?.platform_ranking.rank_text}
-            </span>
-          </div>
-          <p className="text-xs text-gray-500 font-medium mt-1">
-            {overview?.platform_ranking.rank_description}
+        </div>
+        <h3 className="text-sm font-medium text-gray-500 mb-1">
+          Pending Actions
+        </h3>
+        <div className="space-y-1">
+          <p className="text-xs text-gray-600">
+            • {overview?.pending_actions.licensing_requests} licensing
+            requests
           </p>
-        </Card>
-      </div>
-
-      {/* Section 2: Talent Performance Summary (Screenshot 3 Layout) */}
-      <Card className="p-8 rounded-xl border border-gray-200 shadow-sm bg-white">
-        <h2 className="text-xl font-bold text-gray-900 mb-8">
-          Talent Performance Summary
-        </h2>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          {/* Top 3 Revenue Generators */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Trophy className="w-5 h-5 text-yellow-500" />
-              <h3 className="text-sm font-bold text-gray-900">
-                Top 3 Revenue Generators
-              </h3>
-            </div>
-
-            {performance?.top_revenue_generators.map(
-              (item: any, index: number) => (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-4 p-4 border border-gray-100 rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <span className={`font-bold text-2xl w-10 text-green-600`}>
-                    #{index + 1}
-                  </span>
-                  {item.photo_url ? (
-                    <img
-                      src={item.photo_url}
-                      alt={item.name}
-                      className="w-12 h-12 rounded-lg object-cover"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
-                      <User className="w-6 h-6 text-gray-400" />
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <p className="font-bold text-gray-900 text-sm">
-                      {item.name}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {item.earnings_formatted}
-                    </p>
-                  </div>
-                  <TrendingUp className="w-4 h-4 text-green-500" />
-                </div>
-              ),
-            )}
-            {performance?.top_revenue_generators.length === 0 && (
-              <p className="text-sm text-gray-500 italic">
-                No revenue generators yet this month.
-              </p>
-            )}
-          </div>
-
-          {/* Actively Earning */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-2 mb-4">
-              <AlertCircle className="w-5 h-5 text-orange-500" />
-              <h3 className="text-sm font-bold text-gray-900">
-                Actively Earning ({performance?.actively_earning.length})
-              </h3>
-            </div>
-            {performance?.actively_earning.length > 0 ? (
-              performance.actively_earning.map((item: any) => (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-4 p-4 border border-gray-100 rounded-xl bg-white shadow-sm"
-                >
-                  {item.photo_url ? (
-                    <img
-                      src={item.photo_url}
-                      alt={item.name}
-                      className="w-12 h-12 rounded-lg object-cover"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
-                      <User className="w-6 h-6 text-gray-400" />
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <p className="font-bold text-gray-900 text-sm">
-                      {item.name}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Last: {item.payment_formatted}
-                    </p>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-gray-500 italic">
-                All talent actively earning!
-              </p>
-            )}
-          </div>
-
-          {/* New Talent Performance */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-2 mb-4">
-              <TrendingUp className="w-5 h-5 text-blue-600" />
-              <h3 className="text-sm font-bold text-gray-900">
-                New Talent Performance
-              </h3>
-            </div>
-
-            {performance?.new_talent_performance.map((item: any) => (
-              <div
-                key={item.id}
-                className="p-6 border border-gray-100 rounded-xl bg-white shadow-sm space-y-4"
-              >
-                <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-                  Onboarded {item.days_since_added} days ago
-                </p>
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-gray-900 text-sm">
-                    {item.name}
-                  </span>
-                  <Badge
-                    variant="default"
-                    className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-0 uppercase font-bold text-[10px]"
-                  >
-                    {item.status}
-                  </Badge>
-                </div>
-                {typeof item.avg_days_to_first_booking === "number" && (
-                  <p className="text-xs text-gray-500">
-                    Average time to First booking:{" "}
-                    {item.avg_days_to_first_booking} days
-                  </p>
-                )}
-              </div>
-            ))}
-            {performance?.new_talent_performance.length === 0 && (
-              <p className="text-sm text-gray-500 italic">
-                No new talent in the last 30 days.
-              </p>
-            )}
-          </div>
+          <p className="text-xs text-gray-600">
+            • {overview?.pending_actions.expiring_licenses} expiring license
+          </p>
         </div>
       </Card>
 
-      {/* Section 3: Revenue Breakdown (Detailed) */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900">Revenue Breakdown</h2>
-        </div>
-        <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* By Campaign Type */}
-          <div className="p-6 border border-gray-100 rounded-xl">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">
-              By Campaign Type
-            </h3>
-            <div className="space-y-4">
-              {breakdown?.by_campaign_type.map((item: any) => (
-                <div
-                  key={item.name}
-                  className="flex justify-between items-center"
-                >
-                  <span className="text-sm font-medium text-gray-600">
-                    {item.name}
-                  </span>
-                  <span className="text-sm font-bold text-gray-900">
-                    {item.percentage}%
-                  </span>
-                </div>
-              ))}
-              {breakdown?.by_campaign_type.length === 0 && (
-                <p className="text-sm text-gray-500 italic">No data yet.</p>
-              )}
-            </div>
-          </div>
-          {/* By Brand Vertical */}
-          <div className="p-6 border border-gray-100 rounded-xl">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">
-              By Brand Vertical
-            </h3>
-            <div className="space-y-4">
-              {breakdown?.by_brand_vertical.map((item: any) => (
-                <div
-                  key={item.name}
-                  className="flex justify-between items-center"
-                >
-                  <span className="text-sm font-medium text-gray-600">
-                    {item.name}
-                  </span>
-                  <span className="text-sm font-bold text-gray-900">
-                    {item.percentage}%
-                  </span>
-                </div>
-              ))}
-              {breakdown?.by_brand_vertical.length === 0 && (
-                <p className="text-sm text-gray-500 italic">No data yet.</p>
-              )}
-            </div>
-          </div>
-          {/* By Region */}
-          <div className="p-6 border border-gray-100 rounded-xl">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">
-              By Region
-            </h3>
-            <div className="space-y-4">
-              {breakdown?.by_region.map((item: any) => (
-                <div
-                  key={item.name}
-                  className="flex justify-between items-center"
-                >
-                  <span className="text-sm font-medium text-gray-600">
-                    {item.name}
-                  </span>
-                  <span className="text-sm font-bold text-gray-900">
-                    {item.percentage}%
-                  </span>
-                </div>
-              ))}
-              {breakdown?.by_region.length === 0 && (
-                <p className="text-sm text-gray-500 italic">No data yet.</p>
-              )}
-            </div>
+      {/* Platform Ranking */}
+      <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl border-l-4 border-l-blue-400">
+        <div className="flex justify-between items-start mb-2">
+          <div className="p-2 bg-blue-50 rounded-lg">
+            <Trophy className="w-5 h-5 text-blue-600" />
           </div>
         </div>
-      </div>
+        <h3 className="text-sm font-medium text-gray-500 mb-1">
+          Platform Ranking
+        </h3>
+        <div className="flex items-baseline gap-2">
+          <span className="text-3xl font-bold text-blue-600">
+            {overview?.platform_ranking.rank_text}
+          </span>
+        </div>
+        <p className="text-xs text-gray-500 font-medium mt-1">
+          {overview?.platform_ranking.rank_description}
+        </p>
+      </Card>
+    </div>
 
-      {/* Section 4: Licensing Pipeline (Detailed) */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900">
-            Licensing Pipeline
-          </h2>
-        </div>
-        <div className="p-6 grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card className="p-6 bg-white border border-yellow-200 shadow-sm rounded-xl">
-            <div className="mb-4">
-              <div className="w-8 h-8 rounded-full border border-yellow-400 flex items-center justify-center text-yellow-500 mb-2">
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-              <span className="text-xs font-medium text-gray-500">
-                Pending Approval
-              </span>
-            </div>
-            <div className="text-3xl font-bold text-gray-900 mb-4">
-              {pipeline?.pending_approval || 0}
-            </div>
-            <Button
-              variant="default"
-              className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold h-10"
-            >
-              Review Now
-            </Button>
-          </Card>
-          <Card className="p-6 bg-white border border-green-200 shadow-sm rounded-xl">
-            <div className="mb-4">
-              <div className="w-8 h-8 rounded-full border border-green-400 flex items-center justify-center text-green-500 mb-2">
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              </div>
-              <span className="text-xs font-medium text-gray-500">Active</span>
-            </div>
-            <div className="text-3xl font-bold text-gray-900 mb-4">
-              {pipeline?.active || 0}
-            </div>
-          </Card>
-          <Card className="p-6 bg-white border border-orange-200 shadow-sm rounded-xl">
-            <div className="mb-4">
-              <div className="w-8 h-8 rounded-full border border-orange-400 flex items-center justify-center text-orange-500 mb-2 text-lg">
-                !
-              </div>
-              <span className="text-xs font-medium text-gray-500">
-                Expiring Soon (30d)
-              </span>
-            </div>
-            <div className="text-3xl font-bold text-gray-900 mb-4">
-              {pipeline?.expiring_soon || 0}
-            </div>
-            <Button
-              variant="outline"
-              className="w-full border-orange-200 text-orange-600 hover:bg-orange-50 font-bold h-10"
-            >
-              Review
-            </Button>
-          </Card>
-          <Card className="p-6 bg-white border border-gray-100 shadow-sm rounded-xl">
-            <div className="mb-4">
-              <div className="w-8 h-8 rounded-full border border-gray-400 flex items-center justify-center text-gray-400 mb-2">
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-              </div>
-              <span className="text-xs font-medium text-gray-500">
-                Total This Month
-              </span>
-            </div>
-            <div className="text-3xl font-bold text-gray-900 mb-4">
-              {pipeline?.total_this_month || 0}
-            </div>
-          </Card>
-        </div>
-      </div>
+    {/* Section 2: Talent Performance Summary (Screenshot 3 Layout) */}
+    <Card className="p-8 rounded-xl border border-gray-200 shadow-sm bg-white">
+      <h2 className="text-xl font-bold text-gray-900 mb-8">
+        Talent Performance Summary
+      </h2>
 
-      {/* Section 5: Recent Activity (Detailed) */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900">Recent Activity</h2>
-        </div>
-        <div className="p-8 space-y-10">
-          {activity.map((item: any, i: number) => (
-            <div key={item.id || i} className="flex gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        {/* Top 3 Revenue Generators */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Trophy className="w-5 h-5 text-yellow-500" />
+            <h3 className="text-sm font-bold text-gray-900">
+              Top 3 Revenue Generators
+            </h3>
+          </div>
+
+          {performance?.top_revenue_generators.map(
+            (item: any, index: number) => (
               <div
-                className={`w-3 h-3 rounded-full mt-1.5 flex-shrink-0 bg-indigo-600`}
-              />
-              <div>
-                <p className="text-gray-900 font-bold text-sm">{item.title}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-xs text-gray-400">
-                    {item.relative_time}
-                  </span>
-                  <span className="text-xs text-gray-300">•</span>
-                  <span className="text-xs text-gray-400 font-medium">
-                    {item.subtitle}
-                  </span>
+                key={item.id}
+                className="flex items-center gap-4 p-4 border border-gray-100 rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow"
+              >
+                <span className={`font-bold text-2xl w-10 text-green-600`}>
+                  #{index + 1}
+                </span>
+                {item.photo_url ? (
+                  <img
+                    src={item.photo_url}
+                    alt={item.name}
+                    className="w-12 h-12 rounded-lg object-cover"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
+                    <User className="w-6 h-6 text-gray-400" />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <p className="font-bold text-gray-900 text-sm">
+                    {item.name}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {item.earnings_formatted}
+                  </p>
+                </div>
+                <TrendingUp className="w-4 h-4 text-green-500" />
+              </div>
+            ),
+          )}
+          {performance?.top_revenue_generators.length === 0 && (
+            <p className="text-sm text-gray-500 italic">
+              No revenue generators yet this month.
+            </p>
+          )}
+        </div>
+
+        {/* Actively Earning */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-2 mb-4">
+            <AlertCircle className="w-5 h-5 text-orange-500" />
+            <h3 className="text-sm font-bold text-gray-900">
+              Actively Earning ({performance?.actively_earning.length})
+            </h3>
+          </div>
+          {performance?.actively_earning.length > 0 ? (
+            performance.actively_earning.map((item: any) => (
+              <div
+                key={item.id}
+                className="flex items-center gap-4 p-4 border border-gray-100 rounded-xl bg-white shadow-sm"
+              >
+                {item.photo_url ? (
+                  <img
+                    src={item.photo_url}
+                    alt={item.name}
+                    className="w-12 h-12 rounded-lg object-cover"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
+                    <User className="w-6 h-6 text-gray-400" />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <p className="font-bold text-gray-900 text-sm">
+                    {item.name}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Last: {item.payment_formatted}
+                  </p>
                 </div>
               </div>
+            ))
+          ) : (
+            <p className="text-sm text-gray-500 italic">
+              All talent actively earning!
+            </p>
+          )}
+        </div>
+
+        {/* New Talent Performance */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp className="w-5 h-5 text-blue-600" />
+            <h3 className="text-sm font-bold text-gray-900">
+              New Talent Performance
+            </h3>
+          </div>
+
+          {performance?.new_talent_performance.map((item: any) => (
+            <div
+              key={item.id}
+              className="p-6 border border-gray-100 rounded-xl bg-white shadow-sm space-y-4"
+            >
+              <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Onboarded {item.days_since_added} days ago
+              </p>
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-gray-900 text-sm">
+                  {item.name}
+                </span>
+                <Badge
+                  variant="default"
+                  className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-0 uppercase font-bold text-[10px]"
+                >
+                  {item.status}
+                </Badge>
+              </div>
+              {typeof item.avg_days_to_first_booking === "number" && (
+                <p className="text-xs text-gray-500">
+                  Average time to First booking:{" "}
+                  {item.avg_days_to_first_booking} days
+                </p>
+              )}
             </div>
           ))}
-          {activity.length === 0 && (
-            <p className="text-sm text-gray-500 italic">No recent activity.</p>
+          {performance?.new_talent_performance.length === 0 && (
+            <p className="text-sm text-gray-500 italic">
+              No new talent in the last 30 days.
+            </p>
           )}
         </div>
       </div>
+    </Card>
+
+    {/* Section 3: Revenue Breakdown (Detailed) */}
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="p-6 border-b border-gray-100">
+        <h2 className="text-lg font-bold text-gray-900">Revenue Breakdown</h2>
+      </div>
+      <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* By Campaign Type */}
+        <div className="p-6 border border-gray-100 rounded-xl">
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">
+            By Campaign Type
+          </h3>
+          <div className="space-y-4">
+            {breakdown?.by_campaign_type.map((item: any) => (
+              <div
+                key={item.name}
+                className="flex justify-between items-center"
+              >
+                <span className="text-sm font-medium text-gray-600">
+                  {item.name}
+                </span>
+                <span className="text-sm font-bold text-gray-900">
+                  {item.percentage}%
+                </span>
+              </div>
+            ))}
+            {breakdown?.by_campaign_type.length === 0 && (
+              <p className="text-sm text-gray-500 italic">No data yet.</p>
+            )}
+          </div>
+        </div>
+        {/* By Brand Vertical */}
+        <div className="p-6 border border-gray-100 rounded-xl">
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">
+            By Brand Vertical
+          </h3>
+          <div className="space-y-4">
+            {breakdown?.by_brand_vertical.map((item: any) => (
+              <div
+                key={item.name}
+                className="flex justify-between items-center"
+              >
+                <span className="text-sm font-medium text-gray-600">
+                  {item.name}
+                </span>
+                <span className="text-sm font-bold text-gray-900">
+                  {item.percentage}%
+                </span>
+              </div>
+            ))}
+            {breakdown?.by_brand_vertical.length === 0 && (
+              <p className="text-sm text-gray-500 italic">No data yet.</p>
+            )}
+          </div>
+        </div>
+        {/* By Region */}
+        <div className="p-6 border border-gray-100 rounded-xl">
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-6">
+            By Region
+          </h3>
+          <div className="space-y-4">
+            {breakdown?.by_region.map((item: any) => (
+              <div
+                key={item.name}
+                className="flex justify-between items-center"
+              >
+                <span className="text-sm font-medium text-gray-600">
+                  {item.name}
+                </span>
+                <span className="text-sm font-bold text-gray-900">
+                  {item.percentage}%
+                </span>
+              </div>
+            ))}
+            {breakdown?.by_region.length === 0 && (
+              <p className="text-sm text-gray-500 italic">No data yet.</p>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
-  );
-};
+
+    {/* Section 4: Licensing Pipeline (Detailed) */}
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="p-6 border-b border-gray-100">
+        <h2 className="text-lg font-bold text-gray-900">
+          Licensing Pipeline
+        </h2>
+      </div>
+      <div className="p-6 grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="p-6 bg-white border border-yellow-200 shadow-sm rounded-xl">
+          <div className="mb-4">
+            <div className="w-8 h-8 rounded-full border border-yellow-400 flex items-center justify-center text-yellow-500 mb-2">
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <span className="text-xs font-medium text-gray-500">
+              Pending Approval
+            </span>
+          </div>
+          <div className="text-3xl font-bold text-gray-900 mb-4">
+            {pipeline?.pending_approval || 0}
+          </div>
+          <Button
+            variant="default"
+            className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold h-10"
+          >
+            Review Now
+          </Button>
+        </Card>
+        <Card className="p-6 bg-white border border-green-200 shadow-sm rounded-xl">
+          <div className="mb-4">
+            <div className="w-8 h-8 rounded-full border border-green-400 flex items-center justify-center text-green-500 mb-2">
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+            <span className="text-xs font-medium text-gray-500">Active</span>
+          </div>
+          <div className="text-3xl font-bold text-gray-900 mb-4">
+            {pipeline?.active || 0}
+          </div>
+        </Card>
+        <Card className="p-6 bg-white border border-orange-200 shadow-sm rounded-xl">
+          <div className="mb-4">
+            <div className="w-8 h-8 rounded-full border border-orange-400 flex items-center justify-center text-orange-500 mb-2 text-lg">
+              !
+            </div>
+            <span className="text-xs font-medium text-gray-500">
+              Expiring Soon (30d)
+            </span>
+          </div>
+          <div className="text-3xl font-bold text-gray-900 mb-4">
+            {pipeline?.expiring_soon || 0}
+          </div>
+          <Button
+            variant="outline"
+            className="w-full border-orange-200 text-orange-600 hover:bg-orange-50 font-bold h-10"
+          >
+            Review
+          </Button>
+        </Card>
+        <Card className="p-6 bg-white border border-gray-100 shadow-sm rounded-xl">
+          <div className="mb-4">
+            <div className="w-8 h-8 rounded-full border border-gray-400 flex items-center justify-center text-gray-400 mb-2">
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+            </div>
+            <span className="text-xs font-medium text-gray-500">
+              Total This Month
+            </span>
+          </div>
+          <div className="text-3xl font-bold text-gray-900 mb-4">
+            {pipeline?.total_this_month || 0}
+          </div>
+        </Card>
+      </div>
+    </div>
+
+    {/* Section 5: Recent Activity (Detailed) */}
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="p-6 border-b border-gray-100">
+        <h2 className="text-lg font-bold text-gray-900">Recent Activity</h2>
+      </div>
+      <div className="p-8 space-y-10">
+        {activity.map((item: any, i: number) => (
+          <div key={item.id || i} className="flex gap-4">
+            <div
+              className={`w-3 h-3 rounded-full mt-1.5 flex-shrink-0 bg-indigo-600`}
+            />
+            <div>
+              <p className="text-gray-900 font-bold text-sm">{item.title}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-xs text-gray-400">
+                  {item.relative_time}
+                </span>
+                <span className="text-xs text-gray-300">•</span>
+                <span className="text-xs text-gray-400 font-medium">
+                  {item.subtitle}
+                </span>
+              </div>
+            </div>
+          </div>
+        ))}
+        {activity.length === 0 && (
+          <p className="text-sm text-gray-500 italic">No recent activity.</p>
+        )}
+      </div>
+    </div>
+  </div>
+);
 
 const InlineRosterView = ({
   searchTerm,
@@ -11377,11 +11343,11 @@ const InlineRosterView = ({
                 {(kycStatus === "approved" ||
                   kycStatus === "verified" ||
                   kycStatus === "active") && (
-                  <div className="flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1 rounded-full border border-green-100 text-[10px] font-bold uppercase tracking-wider shadow-sm">
-                    <BadgeCheck className="w-3.5 h-3.5" />
-                    Verified Agency
-                  </div>
-                )}
+                    <div className="flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1 rounded-full border border-green-100 text-[10px] font-bold uppercase tracking-wider shadow-sm">
+                      <BadgeCheck className="w-3.5 h-3.5" />
+                      Verified Agency
+                    </div>
+                  )}
                 <div className="bg-blue-600 text-white px-2 py-0.5 rounded text-xs font-bold">
                   Marketplace: Public
                 </div>
@@ -11450,8 +11416,8 @@ const InlineRosterView = ({
               {(kycStatus === "approved" ||
                 kycStatus === "verified" ||
                 kycStatus === "active") && (
-                <BadgeCheck className="w-3.5 h-3.5 text-[#32C8D1] ml-1" />
-              )}
+                  <BadgeCheck className="w-3.5 h-3.5 text-[#32C8D1] ml-1" />
+                )}
             </Button>
             <Button
               variant="outline"
@@ -11668,14 +11634,14 @@ const InlineRosterView = ({
                 {(searchTerm ||
                   statusFilter !== "All Status" ||
                   sortConfig) && (
-                  <button
-                    onClick={clearFilters}
-                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                    Clear Filters
-                  </button>
-                )}
+                    <button
+                      onClick={clearFilters}
+                      className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                      Clear Filters
+                    </button>
+                  )}
               </div>
             </div>
 
@@ -11977,9 +11943,9 @@ const LicensingRequestsView = () => {
   const formatMoney = (n: number) =>
     Number.isFinite(n)
       ? n.toLocaleString(undefined, {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
       : "--";
 
   const statusStyle = (status: string) => {
@@ -12883,9 +12849,9 @@ const LicenseTemplatesView = () => {
     const updatedTemplates = templates.map((t) =>
       t.id === editingTemplate.id
         ? {
-            ...editingTemplate,
-            pricing: editingTemplate.pricingRange,
-          }
+          ...editingTemplate,
+          pricing: editingTemplate.pricingRange,
+        }
         : t,
     );
     setTemplates(updatedTemplates);
@@ -13697,11 +13663,10 @@ const ProtectionUsageView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${
-                activeTab === tab
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:text-gray-900"
-              }`}
+              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === tab
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-gray-500 hover:text-gray-900"
+                }`}
             >
               {tab}
             </button>
@@ -15872,7 +15837,7 @@ const ComplianceHubView = () => {
       title: "Action Required",
       description: message,
       action: (
-        <ToastAction altText="Try again" onClick={() => {}}>
+        <ToastAction altText="Try again" onClick={() => { }}>
           OK
         </ToastAction>
       ),
@@ -16035,11 +16000,10 @@ const ComplianceHubView = () => {
             <Button
               disabled={selectedTalentIds.length === 0}
               variant="outline"
-              className={`text-xs font-bold h-8 gap-2 ${
-                selectedTalentIds.length === 0
-                  ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
-                  : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
-              }`}
+              className={`text-xs font-bold h-8 gap-2 ${selectedTalentIds.length === 0
+                ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
+                : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
+                }`}
               onClick={handleSendRenewalRequests}
             >
               <RefreshCw
@@ -16532,11 +16496,10 @@ const RoyaltiesPayoutsView = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-              activeTab === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-            }`}
+            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+              }`}
           >
             {tab}
           </button>
@@ -17418,11 +17381,10 @@ const AnalyticsDashboardView = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-                  activeTab === tab
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                }`}
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+                  }`}
               >
                 {tab}
               </button>
@@ -18485,17 +18447,17 @@ export default function AgencyDashboard() {
   );
   const [activeSubTab, setActiveSubTabState] = useState(
     normalizeSubTab(searchParams.get("subTab")) ||
-      (searchParams.get("tab") === "licensing"
-        ? "Licensing Requests"
-        : searchParams.get("tab") === "roster"
-          ? "All Talent"
-          : searchParams.get("tab") === "protection"
-            ? "Protect & Usage"
-            : searchParams.get("tab") === "analytics"
-              ? "Analytics Dashboard"
-              : searchParams.get("tab") === "settings"
-                ? "General Settings"
-                : "All Talent"),
+    (searchParams.get("tab") === "licensing"
+      ? "Licensing Requests"
+      : searchParams.get("tab") === "roster"
+        ? "All Talent"
+        : searchParams.get("tab") === "protection"
+          ? "Protect & Usage"
+          : searchParams.get("tab") === "analytics"
+            ? "Analytics Dashboard"
+            : searchParams.get("tab") === "settings"
+              ? "General Settings"
+              : "All Talent"),
   );
   const [activeScoutingTab, setActiveScoutingTabState] = useState(
     searchParams.get("scoutingTab") || "Prospect Pipeline",
@@ -18570,8 +18532,8 @@ export default function AgencyDashboard() {
     "Agency Name";
   const seatsLimit = Number(
     (agencyProfileQuery.data as any)?.seats_limit ||
-      (profile as any)?.seats_limit ||
-      0,
+    (profile as any)?.seats_limit ||
+    0,
   );
 
   // Load persisted bookings on mount
@@ -19030,107 +18992,107 @@ export default function AgencyDashboard() {
   const sidebarItems: SidebarItem[] =
     agencyMode === "AI"
       ? [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
-          },
-          {
-            id: "licensing",
-            label: "Licensing",
-            icon: FileText,
-            subItems: [
-              "Licensing Requests",
-              "Active Licenses",
-              "License Templates",
-            ],
-          },
-          {
-            id: "protection",
-            label: "Protection & Usage",
-            icon: Shield,
-            subItems: ["Protect & Usage", "Compliance Hub"],
-            badges: { "Compliance Hub": "NEW" },
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-          },
-          {
-            id: "accounting",
-            label: "Accounting & Invoicing",
-            icon: CreditCard,
-            subItems: [
-              "Invoice Generation",
-              "Invoice Management",
-              "Payment Tracking",
-              "Talent Statements",
-              "Financial Reports",
-              "Expense Tracking",
-              "Connect Bank",
-            ],
-          },
-          {
-            id: "settings",
-            label: "Settings",
-            icon: Settings,
-            subItems: ["General Settings", "File Storage"],
-          },
-        ]
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        {
+          id: "licensing",
+          label: "Licensing",
+          icon: FileText,
+          subItems: [
+            "Licensing Requests",
+            "Active Licenses",
+            "License Templates",
+          ],
+        },
+        {
+          id: "protection",
+          label: "Protection & Usage",
+          icon: Shield,
+          subItems: ["Protect & Usage", "Compliance Hub"],
+          badges: { "Compliance Hub": "NEW" },
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+        },
+        {
+          id: "accounting",
+          label: "Accounting & Invoicing",
+          icon: CreditCard,
+          subItems: [
+            "Invoice Generation",
+            "Invoice Management",
+            "Payment Tracking",
+            "Talent Statements",
+            "Financial Reports",
+            "Expense Tracking",
+            "Connect Bank",
+          ],
+        },
+        {
+          id: "settings",
+          label: "Settings",
+          icon: Settings,
+          subItems: ["General Settings", "File Storage"],
+        },
+      ]
       : [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
-          },
-          { id: "scouting", label: "Scouting", icon: Target },
-          { id: "client-crm", label: "Client CRM", icon: Building2 },
-          {
-            id: "bookings",
-            label: "Bookings",
-            icon: Calendar,
-            subItems: [
-              "Calendar & Schedule",
-              "Booking Requests",
-              "Client Database",
-              "Talent Availability",
-              "Notifications",
-              "Management & Analytics",
-            ],
-          },
-          {
-            id: "accounting",
-            label: "Accounting & Invoicing",
-            icon: CreditCard,
-            subItems: [
-              "Invoice Generation",
-              "Invoice Management",
-              "Payment Tracking",
-              "Talent Statements",
-              "Financial Reports",
-              "Expense Tracking",
-              "Connect Bank",
-            ],
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-          },
-          {
-            id: "settings",
-            label: "Settings",
-            icon: Settings,
-            subItems: ["General Settings", "File Storage"],
-          },
-        ];
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        { id: "scouting", label: "Scouting", icon: Target },
+        { id: "client-crm", label: "Client CRM", icon: Building2 },
+        {
+          id: "bookings",
+          label: "Bookings",
+          icon: Calendar,
+          subItems: [
+            "Calendar & Schedule",
+            "Booking Requests",
+            "Client Database",
+            "Talent Availability",
+            "Notifications",
+            "Management & Analytics",
+          ],
+        },
+        {
+          id: "accounting",
+          label: "Accounting & Invoicing",
+          icon: CreditCard,
+          subItems: [
+            "Invoice Generation",
+            "Invoice Management",
+            "Payment Tracking",
+            "Talent Statements",
+            "Financial Reports",
+            "Expense Tracking",
+            "Connect Bank",
+          ],
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+        },
+        {
+          id: "settings",
+          label: "Settings",
+          icon: Settings,
+          subItems: ["General Settings", "File Storage"],
+        },
+      ];
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
@@ -19196,16 +19158,14 @@ export default function AgencyDashboard() {
                     setSidebarOpen(false);
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === item.id && !item.subItems
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
+                  ? "bg-indigo-50 text-indigo-700"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${
-                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                  }`}
+                  className={`w-5 h-5 ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"
+                    }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.subItems && (
@@ -19225,11 +19185,10 @@ export default function AgencyDashboard() {
                         setTabAndSubTab(item.id, subItem);
                         setSidebarOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                        activeTab === item.id && activeSubTab === subItem
-                          ? "text-indigo-700 bg-indigo-50 font-bold"
-                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                      }`}
+                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
+                        ? "text-indigo-700 bg-indigo-50 font-bold"
+                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                        }`}
                     >
                       <span className="truncate">{subItem}</span>
                       {item.badges && item.badges[subItem] && (
@@ -19390,10 +19349,10 @@ export default function AgencyDashboard() {
                     {(dashboardData?.overview?.kyc_status === "approved" ||
                       dashboardData?.overview?.kyc_status === "verified" ||
                       dashboardData?.overview?.kyc_status === "active") && (
-                      <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0.5 text-xs font-bold gap-1 mt-2">
-                        <ShieldCheck className="w-3 h-3" /> Verified
-                      </Badge>
-                    )}
+                        <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0.5 text-xs font-bold gap-1 mt-2">
+                          <ShieldCheck className="w-3 h-3" /> Verified
+                        </Badge>
+                      )}
                   </div>
 
                   <div className="p-2">
@@ -19468,11 +19427,13 @@ export default function AgencyDashboard() {
         {/* Dynamic Dashboard Content */}
         <main className="flex-1 overflow-auto px-12 py-8 bg-gray-50">
           {activeTab === "dashboard" && (
-            <DashboardView onKYC={handleKYC} data={dashboardData} />
-            <DashboardView
+            <InlineDashboardView
               onKYC={handleKYC}
-              agencyName={agencyName}
-              rosterData={rosterTalents}
+              overview={dashboardData.overview}
+              performance={dashboardData.performance}
+              breakdown={dashboardData.breakdown}
+              pipeline={dashboardData.pipeline}
+              activity={dashboardData.activity?.activities || []}
             />
           )}
           {activeTab === "roster" && activeSubTab === "All Talent" && (
