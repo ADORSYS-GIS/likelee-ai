@@ -19,6 +19,7 @@ pub mod licenses;
 pub mod moderation;
 pub mod notifications;
 pub mod payouts;
+pub mod performance_tiers;
 pub mod reference_images;
 pub mod router;
 pub mod scouting;

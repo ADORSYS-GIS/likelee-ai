@@ -96,6 +96,14 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::agencies::get_client_file_signed_url),
         )
         .route("/api/dashboard", get(crate::dashboard::get_dashboard))
+        .route(
+            "/api/agency/dashboard/performance-tiers",
+            get(crate::performance_tiers::get_performance_tiers),
+        )
+        .route(
+            "/api/agency/dashboard/performance-tiers/configure",
+            post(crate::performance_tiers::configure_performance_tiers),
+        )
         // Removed legacy Tavus routes
         .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))
         .route("/api/email/available", get(crate::creators::check_email))
