@@ -8,6 +8,7 @@ import {
     Loader2, AlertCircle, Play, X
 } from "lucide-react";
 import { packageApi } from "@/api/packages";
+import AssetGallery from "@/components/packages/AssetGallery";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -222,16 +223,7 @@ export function PublicPackageView() {
                         >
                             <div className="w-full md:w-[60%] h-1/2 md:h-full relative overflow-hidden bg-gray-100 flex items-center justify-center">
                                 {selectedItem.assets && selectedItem.assets.length > 0 ? (
-                                    <div className="flex gap-4 overflow-x-auto">
-                                        {selectedItem.assets.map((asset: any, idx: number) => (
-                                            <img
-                                                key={idx}
-                                                src={asset.asset_url}
-                                                className="w-1/2 h-full object-cover"
-                                                alt="Talent asset"
-                                            />
-                                        ))}
-                                    </div>
+                                    <AssetGallery assets={selectedItem.assets} />
                                 ) : (
                                     <img
                                         src={selectedTalent.profile_photo_url}
@@ -239,7 +231,6 @@ export function PublicPackageView() {
                                         alt={selectedTalent.full_name}
                                     />
                                 )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                                 <Button
                                     variant="ghost"
                                     size="icon"
