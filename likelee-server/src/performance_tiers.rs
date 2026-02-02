@@ -1,6 +1,5 @@
 use crate::{auth::AuthUser, config::AppState};
 use axum::{extract::State, http::StatusCode, Json};
-use chrono::Datelike;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::HashMap;
@@ -50,12 +49,19 @@ pub struct ConfigurePerformanceRequest {
     pub config: serde_json::Value,
 }
 
+#[derive(Deserialize)]
+pub struct PerformanceStats {
+    pub talent_id: String,
+    pub earnings_cents: i64,
+    pub booking_count: i64,
+}
+
 pub async fn configure_performance_tiers(
     State(state): State<AppState>,
     auth_user: AuthUser,
     Json(payload): Json<ConfigurePerformanceRequest>,
 ) -> Result<StatusCode, (StatusCode, String)> {
-    state
+    let resp = state
         .pg
         .from("agencies")
         .eq("id", &auth_user.id)
@@ -63,6 +69,15 @@ pub async fn configure_performance_tiers(
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let text = resp.text().await.unwrap_or_default();
+        return Err((
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            format!("Database error: {}", text),
+        ));
+    }
 
     Ok(StatusCode::OK)
 }
@@ -81,12 +96,22 @@ pub async fn get_performance_tiers(
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let text = resp.text().await.unwrap_or_default();
+        return Err((
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            format!("Failed to fetch performance tiers: {}", text),
+        ));
+    }
+
     let text = resp
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let tiers_db: Vec<TierRuleDb> = serde_json::from_str(&text)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Parse error (tiers): {}", e)))?;
 
     // Map to TierRule with system defaults
     let mut tiers_json: Vec<TierRule> = tiers_db
@@ -117,12 +142,22 @@ pub async fn get_performance_tiers(
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let text = resp.text().await.unwrap_or_default();
+        return Err((
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            format!("Failed to fetch agency config: {}", text),
+        ));
+    }
+
     let text = resp
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let agency_data: Vec<serde_json::Value> = serde_json::from_str(&text)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Parse error (agency): {}", e)))?;
 
     let performance_config = agency_data
         .first()
@@ -146,84 +181,70 @@ pub async fn get_performance_tiers(
     let resp = state
         .pg
         .from("agency_users")
-        .select("id, full_legal_name, profile_photo_url, earnings_30d")
+        .select("id, full_legal_name, profile_photo_url")
         .eq("agency_id", agency_id)
         .eq("role", "talent")
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let text = resp.text().await.unwrap_or_default();
+        return Err((
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            format!("Failed to fetch talents: {}", text),
+        ));
+    }
+
     let text = resp
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let talents_json: Vec<serde_json::Value> = serde_json::from_str(&text)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Parse error (talents): {}", e)))?;
 
-    // 3. Calculate Real-Time Metrics
+    // 3. Calculate Real-Time Metrics via RPC
     let now = chrono::Utc::now();
-    let month_start = format!("{}-{:02}-01", now.year(), now.month());
-    let thirty_days_ago = (now - chrono::Duration::days(30)).to_rfc3339();
+    let month_start = now.format("%Y-%m-01").to_string();
+    let thirty_days_ago = (now - chrono::Duration::days(30)).format("%Y-%m-%d").to_string();
 
-    // 3a. Earnings
     let resp = state
         .pg
-        .from("payments")
-        .select("talent_id, talent_earnings_cents")
-        .eq("agency_id", agency_id)
-        .eq("status", "succeeded")
-        .gte("paid_at", &thirty_days_ago)
+        .rpc("get_agency_performance_stats", json!({
+            "p_agency_id": agency_id,
+            "p_earnings_start_date": thirty_days_ago,
+            "p_bookings_start_date": month_start,
+        }).to_string())
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let text = resp.text().await.unwrap_or_default();
+        return Err((
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            format!("Failed to fetch performance stats: {}", text),
+        ));
+    }
+
     let text = resp
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let payments: Vec<serde_json::Value> = serde_json::from_str(&text)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let stats: Vec<PerformanceStats> = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Parse error (stats): {}", e)))?;
 
     let mut earnings_map: HashMap<String, f64> = HashMap::new();
-    for p in payments {
-        let tid = p
-            .get("talent_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
-        let cents = p
-            .get("talent_earnings_cents")
-            .and_then(|v| v.as_i64())
-            .unwrap_or(0);
-        *earnings_map.entry(tid).or_insert(0.0) += cents as f64 / 100.0;
-    }
-
-    // 3b. Bookings
-    let resp = state
-        .pg
-        .from("bookings")
-        .select("talent_id")
-        .eq("agency_user_id", agency_id)
-        .gte("created_at", &month_start)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let text = resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let bookings: Vec<serde_json::Value> = serde_json::from_str(&text)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
     let mut bookings_map: HashMap<String, i64> = HashMap::new();
-    for b in bookings {
-        let tid = b
-            .get("talent_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
-        *bookings_map.entry(tid).or_insert(0) += 1;
+    
+    for s in stats {
+        earnings_map.insert(s.talent_id.clone(), s.earnings_cents as f64 / 100.0);
+        bookings_map.insert(s.talent_id, s.booking_count);
     }
 
-    // 4. Assign Tiers
+    // 4. Group Tiers
     let mut groups: HashMap<i32, TierGroup> = HashMap::new();
     for rule in &tiers_json {
         groups.insert(
@@ -237,7 +258,7 @@ pub async fn get_performance_tiers(
         );
     }
 
-    // 5. Update agency_users and Prepare Response
+    // 5. Assign Tiers in-memory (No database updates here for speed)
     for t in talents_json {
         let id = t
             .get("id")
@@ -257,15 +278,6 @@ pub async fn get_performance_tiers(
         let earnings = *earnings_map.get(&id).unwrap_or(&0.0);
         let booking_count = *bookings_map.get(&id).unwrap_or(&0);
 
-        // Update DB
-        let _ = state
-            .pg
-            .from("agency_users")
-            .eq("id", &id)
-            .update(json!({"earnings_30d": (earnings * 100.0).round() as i64}).to_string())
-            .execute()
-            .await;
-
         let mut assigned_tier = &tiers_json[tiers_json.len() - 1]; // Fallback to last (Inactive)
 
         for rule in &tiers_json {
@@ -276,7 +288,6 @@ pub async fn get_performance_tiers(
                 break;
             }
         }
-
         if let Some(group) = groups.get_mut(&assigned_tier.tier_level) {
             group.talents.push(TalentPerformance {
                 id,
