@@ -22,6 +22,7 @@ pub mod health;
 pub mod invoices;
 pub mod kyc;
 pub mod licenses;
+pub mod license_templates;
 pub mod licensing_requests;
 pub mod moderation;
 pub mod notifications;

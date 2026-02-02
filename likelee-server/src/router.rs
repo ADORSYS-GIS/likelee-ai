@@ -79,6 +79,23 @@ pub fn build_router(state: AppState) -> Router {
             "/api/agency/licensing-requests",
             get(crate::licensing_requests::list_for_agency),
         )
+        // License Templates
+        .route(
+            "/api/license-templates",
+            get(crate::license_templates::list).post(crate::license_templates::create),
+        )
+        .route(
+            "/api/license-templates/stats",
+            get(crate::license_templates::stats),
+        )
+        .route(
+            "/api/license-templates/:id",
+            post(crate::license_templates::update).delete(crate::license_templates::delete_template),
+        )
+        .route(
+            "/api/license-templates/:id/copy",
+            post(crate::license_templates::copy),
+        )
         .route(
             "/api/agency/licensing-requests/status",
             post(crate::licensing_requests::update_status_bulk),
