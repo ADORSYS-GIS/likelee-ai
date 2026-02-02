@@ -1,6 +1,6 @@
 use axum::{extract::State, http::StatusCode, Json};
 use base64::{engine::general_purpose, Engine as _};
-use lettre::message::{Attachment as LettreAttachment, MultiPart, SinglePart, Mailbox};
+use lettre::message::{Attachment as LettreAttachment, Mailbox, MultiPart, SinglePart};
 use lettre::transport::smtp::client::{Tls, TlsParameters};
 use lettre::{Message, SmtpTransport, Transport};
 use serde::Deserialize;
