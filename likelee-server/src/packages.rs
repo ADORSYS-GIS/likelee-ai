@@ -224,13 +224,19 @@ pub async fn create_package(
                 "sort_order": asset_idx,
             });
 
-            state
+            let asset_resp = state
                 .pg
                 .from("agency_talent_package_item_assets")
                 .insert(asset_insert.to_string())
                 .execute()
                 .await
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+            if !asset_resp.status().is_success() {
+                let error_text = asset_resp.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+                tracing::error!("Failed to insert package asset: {}", error_text);
+                return Err((StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to insert package asset: {}", error_text)));
+            }
         }
     }
 
@@ -428,9 +434,7 @@ pub async fn get_public_package(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let resp = state
         .pg
-        .from("agency_talent_packages")
-        .select("*, agency:agencies(agency_name), items:agency_talent_package_items(*, talent:agency_users(id, stage_name, full_legal_name, profile_photo_url), assets:agency_talent_package_item_assets(*))")
-        .eq("access_token", &token)
+        .rpc("get_public_package_details", serde_json::json!({ "p_access_token": token }).to_string())
         .single()
         .execute()
         .await
@@ -443,7 +447,12 @@ pub async fn get_public_package(
     }
 
     let text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let package: serde_json::Value = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse public package: {}", e)))?;
+    let package: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse public package: {}", e)))?;
+
+    if package.is_null() {
+        return Err((StatusCode::NOT_FOUND, "Package not found".to_string()));
+    }
 
     // Check if expired
     if let Some(expires_at) = package["expires_at"].as_str() {

@@ -66,6 +66,14 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_package_item_assets (
 
 CREATE INDEX IF NOT EXISTS idx_atpia_item_id ON public.agency_talent_package_item_assets(item_id);
 
+-- Update asset_type check constraint to include 'image' and 'video'
+ALTER TABLE public.agency_talent_package_item_assets
+DROP CONSTRAINT IF EXISTS agency_talent_package_item_assets_asset_type_check;
+
+ALTER TABLE public.agency_talent_package_item_assets
+ADD CONSTRAINT agency_talent_package_item_assets_asset_type_check
+CHECK (asset_type IN ('reference_image', 'agency_file', 'image', 'video'));
+
 -- 4. Package Interactions (Client Side)
 CREATE TABLE IF NOT EXISTS public.agency_talent_package_interactions (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

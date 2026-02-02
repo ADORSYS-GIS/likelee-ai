@@ -18,7 +18,8 @@ import { Textarea } from "@/components/ui/textarea";
 
 export function PublicPackageView() {
     const { token } = useParams<{ token: string }>();
-    const [selectedTalent, setSelectedTalent] = useState<any>(null);
+    const [selectedItem, setSelectedItem] = useState<any>(null);
+    const selectedTalent = selectedItem?.talent;
     const [commentOpen, setCommentOpen] = useState(false);
     const [comment, setComment] = useState("");
     const [clientName, setClientName] = useState("");
@@ -72,9 +73,9 @@ export function PublicPackageView() {
     };
 
     const submitComment = () => {
-        if (!comment || !selectedTalent) return;
+        if (!comment || !selectedItem) return;
         interactionMutation.mutate({
-            talent_id: selectedTalent.id,
+            talent_id: selectedItem.talent.id,
             type: 'comment',
             content: comment,
             client_name: clientName
@@ -129,7 +130,7 @@ export function PublicPackageView() {
                         >
                             <div
                                 className="aspect-[3/4] rounded-3xl overflow-hidden relative mb-6 shadow-2xl transition-transform duration-500 group-hover:scale-[1.02]"
-                                onClick={() => setSelectedTalent(talent)}
+                                onClick={() => setSelectedItem(item)}
                             >
                                 {talent.profile_photo_url ? (
                                     <img
@@ -169,7 +170,7 @@ export function PublicPackageView() {
                                         <span className="text-[8px] font-black uppercase tracking-widest text-gray-400">Save</span>
                                     </button>
                                     <button
-                                        onClick={(e) => { e.stopPropagation(); setSelectedTalent(talent); setCommentOpen(true); }}
+                                        onClick={(e) => { e.stopPropagation(); setSelectedItem(item); setCommentOpen(true); }}
                                         className="flex flex-col items-center gap-1 group/btn"
                                     >
                                         <MessageSquare className="w-5 h-5 text-gray-400 group-hover/btn:text-gray-900 transition-colors" />
@@ -180,7 +181,7 @@ export function PublicPackageView() {
                                     variant="link"
                                     className="text-[10px] font-black uppercase tracking-widest p-0 h-auto"
                                     style={{ color: primaryColor }}
-                                    onClick={() => setSelectedTalent(talent)}
+                                    onClick={() => setSelectedItem(item)}
                                 >
                                     View Card
                                 </Button>
@@ -203,14 +204,14 @@ export function PublicPackageView() {
 
             {/* Talent Detail Modal */}
             <AnimatePresence>
-                {selectedTalent && (
+                {selectedItem && selectedTalent && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             className="absolute inset-0 bg-black/90 backdrop-blur-xl"
-                            onClick={() => setSelectedTalent(null)}
+                            onClick={() => setSelectedItem(null)}
                         />
 
                         <motion.div
@@ -219,18 +220,31 @@ export function PublicPackageView() {
                             exit={{ scale: 0.9, opacity: 0 }}
                             className="bg-white w-full max-w-6xl rounded-3xl overflow-hidden shadow-2xl relative z-10 flex flex-col md:flex-row h-[90vh]"
                         >
-                            <div className="w-full md:w-[60%] h-1/2 md:h-full relative overflow-hidden bg-gray-100">
-                                <img
-                                    src={selectedTalent.profile_photo_url}
-                                    className="w-full h-full object-cover"
-                                    alt={selectedTalent.full_name}
-                                />
+                            <div className="w-full md:w-[60%] h-1/2 md:h-full relative overflow-hidden bg-gray-100 flex items-center justify-center">
+                                {selectedItem.assets && selectedItem.assets.length > 0 ? (
+                                    <div className="flex gap-4 overflow-x-auto">
+                                        {selectedItem.assets.map((asset: any, idx: number) => (
+                                            <img
+                                                key={idx}
+                                                src={asset.asset_url}
+                                                className="w-1/2 h-full object-cover"
+                                                alt="Talent asset"
+                                            />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <img
+                                        src={selectedTalent.profile_photo_url}
+                                        className="w-full h-full object-cover"
+                                        alt={selectedTalent.full_name}
+                                    />
+                                )}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="absolute top-6 left-6 text-white hover:bg-white/20 rounded-full"
-                                    onClick={() => setSelectedTalent(null)}
+                                    className="absolute top-6 left-6 text-white hover:bg-white/20 rounded-full z-10"
+                                    onClick={() => setSelectedItem(null)}
                                 >
                                     <X className="w-6 h-6" />
                                 </Button>
