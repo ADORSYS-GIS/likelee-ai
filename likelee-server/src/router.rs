@@ -58,6 +58,27 @@ pub fn build_router(state: AppState) -> Router {
         // Agencies
         .route("/api/agency-register", post(crate::agencies::register))
         .route("/api/agency-profile", post(crate::agencies::update))
+        // Agency Dashboard
+        .route(
+            "/api/agency/dashboard/overview",
+            get(crate::agency_dashboard::get_dashboard_overview),
+        )
+        .route(
+            "/api/agency/dashboard/talent-performance",
+            get(crate::agency_dashboard::get_talent_performance),
+        )
+        .route(
+            "/api/agency/dashboard/revenue-breakdown",
+            get(crate::agency_dashboard::get_revenue_breakdown),
+        )
+        .route(
+            "/api/agency/dashboard/licensing-pipeline",
+            get(crate::agency_dashboard::get_licensing_pipeline),
+        )
+        .route(
+            "/api/agency/dashboard/recent-activity",
+            get(crate::agency_dashboard::get_recent_activity),
+        )
         .route("/api/agency/roster", get(crate::agency_roster::get_roster))
         .route(
             "/api/agency/talent",

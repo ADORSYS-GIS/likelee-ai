@@ -157,6 +157,21 @@ export const exchangeStripeOAuthCode = async (
   return { data: { status: "error", error: "not_supported" } } as any;
 };
 
+// Agency Dashboard API
+export const getAgencyDashboardOverview = () =>
+  base44Client.get("/api/agency/dashboard/overview");
+
+export const getAgencyTalentPerformance = () =>
+  base44Client.get("/api/agency/dashboard/talent-performance");
+
+export const getAgencyRevenueBreakdown = () =>
+  base44Client.get("/api/agency/dashboard/revenue-breakdown");
+
+export const getAgencyLicensingPipeline = () =>
+  base44Client.get("/api/agency/dashboard/licensing-pipeline");
+
+export const getAgencyRecentActivity = () =>
+  base44Client.get("/api/agency/dashboard/recent-activity");
 // Agency Roster
 export const getAgencyRoster = () => base44Client.get("/api/agency/roster");
 

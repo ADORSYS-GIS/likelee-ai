@@ -181,7 +181,7 @@ pub async fn start_lipsync(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     // Attempt v2 first
-    let url_v2 = format!("{}/api/lipsyncs_v2", base);
+    let url_v2 = format!("{base}/api/lipsyncs_v2");
     let payload_dbg = serde_json::Value::Object(payload.clone());
     let api_id_masked = if state.creatify_api_id.len() > 6 {
         format!(
@@ -215,7 +215,7 @@ pub async fn start_lipsync(
         let body = res.text().await.unwrap_or_default();
         return Err((
             StatusCode::BAD_GATEWAY,
-            format!("Creatify v2 error: {}", body),
+            format!("Creatify v2 error: {body}"),
         ));
     }
     // Clone headers for debug/inspection
@@ -229,7 +229,7 @@ pub async fn start_lipsync(
     let parsed_val: serde_json::Value = serde_json::from_str(&text_body).map_err(|e| {
         (
             StatusCode::BAD_GATEWAY,
-            format!("invalid json from creatify: {}", e),
+            format!("invalid json from creatify: {e}"),
         )
     })?;
     let (root_obj, from_array);
@@ -367,7 +367,7 @@ pub async fn start_lipsync(
                 let val_alt: serde_json::Value = serde_json::from_str(&text_alt).map_err(|e| {
                     (
                         StatusCode::BAD_GATEWAY,
-                        format!("invalid json from creatify v2 alt: {}", e),
+                        format!("invalid json from creatify v2 alt: {e}"),
                     )
                 })?;
                 out_id = if let Some(arr_alt) = val_alt.as_array() {
@@ -384,7 +384,7 @@ pub async fn start_lipsync(
 
             // If still no id, fallback to legacy /api/lipsyncs ensuring character has avatar_id
             if out_id.is_none() {
-                let url_v1 = format!("{}/api/lipsyncs", base);
+                let url_v1 = format!("{base}/api/lipsyncs");
                 let mut payload_v1 = payload.clone();
                 if let Some(inputs) = payload_v1
                     .get_mut("video_inputs")
@@ -446,7 +446,7 @@ pub async fn start_lipsync(
                 let val2: serde_json::Value = serde_json::from_str(&text2).map_err(|e| {
                     (
                         StatusCode::BAD_GATEWAY,
-                        format!("invalid json from creatify v1: {}", e),
+                        format!("invalid json from creatify v1: {e}"),
                     )
                 })?;
                 let try_obj = |obj: &serde_json::Value| {
@@ -945,7 +945,7 @@ pub async fn create_avatar_from_video(
                 // No matching entry in array; wait briefly and fetch the personas list to account for async visibility
                 let base = state.creatify_base_url.trim_end_matches('/').to_string();
                 sleep(Duration::from_secs(3)).await;
-                let list_url = format!("{}/api/personas", base);
+                let list_url = format!("{base}/api/personas");
                 info!(target: "creatify", "Retrying personas lookup via GET {}", list_url);
                 if let Ok(list_res) = client
                     .get(list_url.clone())
@@ -970,8 +970,7 @@ pub async fn create_avatar_from_video(
                                         .map(|s| s.to_string());
                                 } else {
                                     return Err((StatusCode::CONFLICT, format!(
-                                        "Creatify BYOA returned array without match; list also had no match. Expected creator_name='{}' or labels to contain user_id token 'user_id:<uuid>'. post_body={} list_body={}",
-                                        expected_name, val, list_json
+                                        "Creatify BYOA returned array without match; list also had no match. Expected creator_name='{expected_name}' or labels to contain user_id token 'user_id:<uuid>'. post_body={val} list_body={list_json}"
                                     )));
                                 }
                             }
@@ -1010,8 +1009,7 @@ pub async fn create_avatar_from_video(
                 .unwrap_or(false);
             if !(name_ok || labels_ok) {
                 return Err((StatusCode::CONFLICT, format!(
-                    "Creatify BYOA returned a persona that does not match this user. Expected creator_name='{}' or labels to contain user_id token 'user_id:<uuid>'. body={}",
-                    expected_name, val
+                    "Creatify BYOA returned a persona that does not match this user. Expected creator_name='{expected_name}' or labels to contain user_id token 'user_id:<uuid>'. body={val}"
                 )));
             }
             avatar_id_opt = val
@@ -1054,7 +1052,7 @@ pub async fn create_avatar_from_video(
     } else {
         return Err((
             StatusCode::BAD_GATEWAY,
-            format!("Creatify BYOA did not return an id. body={}", body2),
+            format!("Creatify BYOA did not return an id. body={body2}"),
         ));
     };
 
@@ -1088,8 +1086,7 @@ pub async fn create_avatar_from_video(
                 let name_match = api_name == expected_name;
                 if !(labels_match || name_match) {
                     return Err((StatusCode::CONFLICT, format!(
-                        "Creatify returned a persona that does not match this user. Expected name='{}' or labels to contain token 'user_id:<uuid>'. Response: {}",
-                        expected_name, jv
+                        "Creatify returned a persona that does not match this user. Expected name='{expected_name}' or labels to contain token 'user_id:<uuid>'. Response: {jv}"
                     )));
                 }
             }
@@ -1168,7 +1165,7 @@ pub async fn get_avatar_status(
     let base = state.creatify_base_url.trim_end_matches('/');
     let client = reqwest::Client::new();
     // Try v2 (no trailing slash)
-    let url_v2 = format!("{}/api/personas_v2/{}", base, avatar_id);
+    let url_v2 = format!("{base}/api/personas_v2/{avatar_id}");
     let mut final_json: Option<serde_json::Value> = None;
     let mut err_bodies: Vec<String> = vec![];
 
@@ -1192,7 +1189,7 @@ pub async fn get_avatar_status(
 
     // Try v2 with trailing slash if not found yet
     if final_json.is_none() {
-        let url_v2_slash = format!("{}/api/personas_v2/{}/", base, avatar_id);
+        let url_v2_slash = format!("{base}/api/personas_v2/{avatar_id}/");
         if let Ok(res2) = client
             .get(&url_v2_slash)
             .header("X-API-ID", &state.creatify_api_id)
@@ -1214,7 +1211,7 @@ pub async fn get_avatar_status(
 
     // Fallback to legacy personas
     if final_json.is_none() {
-        let url_v1 = format!("{}/api/personas/{}", base, avatar_id);
+        let url_v1 = format!("{base}/api/personas/{avatar_id}");
         if let Ok(res3) = client
             .get(&url_v1)
             .header("X-API-ID", &state.creatify_api_id)
@@ -1280,7 +1277,7 @@ pub async fn get_avatar_status(
     };
     Err((
         StatusCode::BAD_REQUEST,
-        format!("{} details: {}", helpful, combined),
+        format!("{helpful} details: {combined}"),
     ))
 }
 
@@ -1299,7 +1296,7 @@ pub async fn get_avatar_status_by_id(
     }
     let base = state.creatify_base_url.trim_end_matches('/');
     let client = reqwest::Client::new();
-    let url_v2 = format!("{}/api/personas_v2/{}", base, avatar_id);
+    let url_v2 = format!("{base}/api/personas_v2/{avatar_id}");
     let mut final_json: Option<serde_json::Value> = None;
     let mut err_bodies: Vec<String> = vec![];
     if let Ok(res) = client
@@ -1320,7 +1317,7 @@ pub async fn get_avatar_status_by_id(
         }
     }
     if final_json.is_none() {
-        let url_v2_slash = format!("{}/api/personas_v2/{}/", base, avatar_id);
+        let url_v2_slash = format!("{base}/api/personas_v2/{avatar_id}/");
         if let Ok(res2) = client
             .get(&url_v2_slash)
             .header("X-API-ID", &state.creatify_api_id)
@@ -1340,7 +1337,7 @@ pub async fn get_avatar_status_by_id(
         }
     }
     if final_json.is_none() {
-        let url_v1 = format!("{}/api/personas/{}", base, avatar_id);
+        let url_v1 = format!("{base}/api/personas/{avatar_id}");
         if let Ok(res3) = client
             .get(&url_v1)
             .header("X-API-ID", &state.creatify_api_id)
@@ -1365,7 +1362,7 @@ pub async fn get_avatar_status_by_id(
     let combined = err_bodies.join(" | ");
     Err((
         StatusCode::BAD_REQUEST,
-        format!("Failed to fetch avatar by id. details: {}", combined),
+        format!("Failed to fetch avatar by id. details: {combined}"),
     ))
 }
 
@@ -1407,7 +1404,7 @@ async fn synthesize_tts_and_upload(
         .ok_or("missing provider_voice_id")?;
 
     // 2) Call ElevenLabs TTS
-    let tts_url = format!("https://api.elevenlabs.io/v1/text-to-speech/{}", voice_id);
+    let tts_url = format!("https://api.elevenlabs.io/v1/text-to-speech/{voice_id}");
     let client = reqwest::Client::new();
     let tts_res = client
         .post(tts_url)

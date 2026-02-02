@@ -26,6 +26,7 @@ import {
   XCircle,
   Eye,
   EyeOff,
+  BadgeCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -325,7 +326,7 @@ const ActivityLogModal = ({
   );
 };
 
-const GeneralSettingsView = () => {
+const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
   const { profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("Profile");
@@ -514,9 +515,21 @@ const GeneralSettingsView = () => {
                 <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
                   <Building2 className="w-5 h-5 text-indigo-600" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                  Agency Information
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+                    Agency Information
+                  </h3>
+                  {(kycStatus === "approved" ||
+                    kycStatus === "verified" ||
+                    kycStatus === "active") && (
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 rounded-full border border-green-100 shadow-sm animate-in fade-in zoom-in-95 duration-500">
+                      <BadgeCheck className="w-3.5 h-3.5 text-green-600" />
+                      <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider">
+                        Verified
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">

@@ -195,7 +195,7 @@ pub async fn upload_profile_photo(
     };
 
     let file_name = format!("profile_{}_{}.{}", user_id, uuid::Uuid::new_v4(), ext);
-    let path = format!("{}/profile-photos/{}", user_id, file_name);
+    let path = format!("{user_id}/profile-photos/{file_name}");
 
     let bucket = state.supabase_bucket_public.clone();
     let storage_url = format!(
@@ -221,7 +221,7 @@ pub async fn upload_profile_photo(
         let err_body = res.text().await.unwrap_or_default();
         return Err((
             StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Failed to upload to storage: {}", err_body),
+            format!("Failed to upload to storage: {err_body}"),
         ));
     }
 
@@ -332,10 +332,10 @@ pub async fn search_faces(
             } else {
                 let cond_inner = vals
                     .iter()
-                    .map(|s| format!("race.eq.{}", s))
+                    .map(|s| format!("race.eq.{s}"))
                     .collect::<Vec<_>>()
                     .join(",");
-                req = req.or(format!("({})", cond_inner));
+                req = req.or(format!("({cond_inner})"));
             }
         }
     }
@@ -351,10 +351,10 @@ pub async fn search_faces(
             } else {
                 let cond_inner = vals
                     .iter()
-                    .map(|s| format!("hair_color.eq.{}", s))
+                    .map(|s| format!("hair_color.eq.{s}"))
                     .collect::<Vec<_>>()
                     .join(",");
-                req = req.or(format!("({})", cond_inner));
+                req = req.or(format!("({cond_inner})"));
             }
         }
     }
@@ -370,10 +370,10 @@ pub async fn search_faces(
             } else {
                 let cond_inner = vals
                     .iter()
-                    .map(|s| format!("hairstyle.eq.{}", s))
+                    .map(|s| format!("hairstyle.eq.{s}"))
                     .collect::<Vec<_>>()
                     .join(",");
-                req = req.or(format!("({})", cond_inner));
+                req = req.or(format!("({cond_inner})"));
             }
         }
     }
@@ -389,10 +389,10 @@ pub async fn search_faces(
             } else {
                 let cond_inner = vals
                     .iter()
-                    .map(|s| format!("eye_color.eq.{}", s))
+                    .map(|s| format!("eye_color.eq.{s}"))
                     .collect::<Vec<_>>()
                     .join(",");
-                req = req.or(format!("({})", cond_inner));
+                req = req.or(format!("({cond_inner})"));
             }
         }
     }

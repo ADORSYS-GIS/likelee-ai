@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { scoutingService } from "@/services/scoutingService";
 import { ScoutingProspect } from "@/types/scouting";
 import { ScoutingMap } from "@/components/scouting/map/ScoutingMap";
@@ -83,6 +83,9 @@ import {
   Image as ImageIcon,
   Mic,
   Link as LinkIcon,
+  Pencil,
+  BadgeCheck,
+  Loader2,
 } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { Button } from "@/components/ui/button";
@@ -119,6 +122,11 @@ import PerformanceTiers from "@/components/dashboard/PerformanceTiers";
 import { useAuth } from "../auth/AuthProvider";
 
 import {
+  getAgencyDashboardOverview,
+  getAgencyTalentPerformance,
+  getAgencyRevenueBreakdown,
+  getAgencyLicensingPipeline,
+  getAgencyRecentActivity,
   getAgencyRoster,
   getAgencyProfile,
   createOrganizationKycSession,
@@ -10725,32 +10733,53 @@ const ScoutingAnalyticsTab = () => {
   );
 };
 
-const InlineDashboardView = ({ onKYC }: { onKYC: () => void }) => (
+const InlineDashboardView = ({
+  onKYC,
+  overview,
+  performance,
+  breakdown,
+  pipeline,
+  activity,
+}: {
+  onKYC: () => void;
+  overview: any;
+  performance: any;
+  breakdown: any;
+  pipeline: any;
+  activity: any[];
+}) => (
   <div className="space-y-8">
     {/* KYC Verification Alert */}
-    <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
-      <div className="flex items-center gap-4">
-        <div className="p-3 bg-white rounded-xl shadow-sm">
-          <ShieldAlert className="w-6 h-6 text-indigo-600" />
+    {overview?.kyc_status !== "approved" &&
+      overview?.kyc_status !== "verified" &&
+      overview?.kyc_status !== "active" && (
+        <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-white rounded-xl shadow-sm">
+              <ShieldAlert className="w-6 h-6 text-indigo-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">
+                KYC Verification Required
+              </h3>
+              <p className="text-sm text-gray-500">
+                To enable payouts and licensing for your talent, please complete
+                your agency's ID verification.
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="default"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 h-12 rounded-xl disabled:opacity-70 disabled:cursor-not-allowed"
+            onClick={onKYC}
+            disabled={overview?.kyc_status === "pending"}
+          >
+            {overview?.kyc_status === "pending"
+              ? "Pending Verification"
+              : "Complete KYC"}
+          </Button>
         </div>
-        <div>
-          <h3 className="text-lg font-bold text-gray-900">
-            KYC Verification Required
-          </h3>
-          <p className="text-sm text-gray-500">
-            To enable payouts and licensing for your talent, please complete
-            your agency's ID verification.
-          </p>
-        </div>
-      </div>
-      <Button
-        variant="default"
-        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 h-12 rounded-xl"
-        onClick={onKYC}
-      >
-        Complete KYC
-      </Button>
-    </div>
+      )}
 
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {/* Roster Health */}
@@ -10759,15 +10788,26 @@ const InlineDashboardView = ({ onKYC }: { onKYC: () => void }) => (
           <div className="p-2 bg-indigo-50 rounded-lg">
             <Users className="w-5 h-5 text-indigo-600" />
           </div>
-          <TrendingUp className="w-4 h-4 text-green-500" />
+          {overview?.roster_health.percentage >= 90 ? (
+            <TrendingUp className="w-4 h-4 text-green-500" />
+          ) : (
+            <TrendingDown className="w-4 h-4 text-red-500" />
+          )}
         </div>
         <h3 className="text-sm font-medium text-gray-500 mb-1">
           Roster Health
         </h3>
         <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-bold text-gray-900">9/10</span>
+          <span className="text-3xl font-bold text-gray-900">
+            {overview?.roster_health.active_count}/
+            {overview?.roster_health.total_count}
+          </span>
         </div>
-        <p className="text-xs text-green-600 font-medium mt-1">90% active</p>
+        <p
+          className={`text-xs ${overview?.roster_health.percentage >= 90 ? "text-green-600" : "text-yellow-600"} font-medium mt-1`}
+        >
+          {overview?.roster_health.percentage.toFixed(0)}% active
+        </p>
       </Card>
 
       {/* Revenue */}
@@ -10776,16 +10816,25 @@ const InlineDashboardView = ({ onKYC }: { onKYC: () => void }) => (
           <div className="p-2 bg-green-50 rounded-lg">
             <DollarSign className="w-5 h-5 text-green-600" />
           </div>
-          <TrendingUp className="w-4 h-4 text-green-500" />
+          {overview?.monthly_revenue.growth_percentage >= 0 ? (
+            <TrendingUp className="w-4 h-4 text-green-500" />
+          ) : (
+            <TrendingDown className="w-4 h-4 text-red-500" />
+          )}
         </div>
         <h3 className="text-sm font-medium text-gray-500 mb-1">
           Revenue This Month
         </h3>
         <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-bold text-gray-900">$37.7K</span>
+          <span className="text-3xl font-bold text-gray-900">
+            {overview?.monthly_revenue.amount_formatted}
+          </span>
         </div>
-        <p className="text-xs text-green-600 font-medium mt-1">
-          +12% vs last month
+        <p
+          className={`text-xs ${overview?.monthly_revenue.growth_percentage >= 0 ? "text-green-600" : "text-red-600"} font-medium mt-1`}
+        >
+          {overview?.monthly_revenue.growth_percentage >= 0 ? "+" : ""}
+          {overview?.monthly_revenue.growth_percentage}% vs last month
         </p>
       </Card>
 
@@ -10795,20 +10844,28 @@ const InlineDashboardView = ({ onKYC }: { onKYC: () => void }) => (
           <div className="p-2 bg-red-50 rounded-lg">
             <AlertCircle className="w-5 h-5 text-red-600" />
           </div>
-          <Badge
-            variant="default"
-            className="bg-red-600 hover:bg-red-700 text-white border-0 h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]"
-          >
-            3
-          </Badge>
+          {overview?.pending_actions.licensing_requests +
+            overview?.pending_actions.expiring_licenses >
+            0 && (
+            <Badge
+              variant="default"
+              className="bg-red-600 hover:bg-red-700 text-white border-0 h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]"
+            >
+              {overview?.pending_actions.licensing_requests +
+                overview?.pending_actions.expiring_licenses}
+            </Badge>
+          )}
         </div>
         <h3 className="text-sm font-medium text-gray-500 mb-1">
           Pending Actions
         </h3>
         <div className="space-y-1">
-          <p className="text-xs text-gray-600">• 3 licensing requests</p>
-          <p className="text-xs text-gray-600">• 1 expiring license</p>
-          <p className="text-xs text-gray-600">• 1 compliance issue</p>
+          <p className="text-xs text-gray-600">
+            • {overview?.pending_actions.licensing_requests} licensing requests
+          </p>
+          <p className="text-xs text-gray-600">
+            • {overview?.pending_actions.expiring_licenses} expiring license
+          </p>
         </div>
       </Card>
 
@@ -10823,9 +10880,13 @@ const InlineDashboardView = ({ onKYC }: { onKYC: () => void }) => (
           Platform Ranking
         </h3>
         <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-bold text-blue-600">top 15%</span>
+          <span className="text-3xl font-bold text-blue-600">
+            {overview?.platform_ranking.rank_text}
+          </span>
         </div>
-        <p className="text-xs text-gray-500 font-medium mt-1">Top performer</p>
+        <p className="text-xs text-gray-500 font-medium mt-1">
+          {overview?.platform_ranking.rank_description}
+        </p>
       </Card>
     </div>
 
@@ -10845,60 +10906,81 @@ const InlineDashboardView = ({ onKYC }: { onKYC: () => void }) => (
             </h3>
           </div>
 
-          {[
-            {
-              rank: "#1",
-              talent: TALENT_DATA.find((t) => t.id === "carla")!,
-              amount: "$6,800",
-              color: "text-green-600",
-            },
-            {
-              rank: "#2",
-              talent: TALENT_DATA.find((t) => t.id === "clemence")!,
-              amount: "$5,400",
-              color: "text-green-600",
-            },
-            {
-              rank: "#3",
-              talent: TALENT_DATA.find((t) => t.id === "julia")!,
-              amount: "$5,200",
-              color: "text-green-600",
-            },
-          ].map((item) => (
-            <div
-              key={item.rank}
-              className="flex items-center gap-4 p-4 border border-gray-100 rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow"
-            >
-              <span className={`font-bold text-2xl w-10 ${item.color}`}>
-                {item.rank}
-              </span>
-              <img
-                src={item.talent.img}
-                alt={item.talent.name}
-                className="w-12 h-12 rounded-lg object-cover"
-              />
-              <div className="flex-1">
-                <p className="font-bold text-gray-900 text-sm">
-                  {item.talent.name}
-                </p>
-                <p className="text-xs text-gray-500">{item.amount}</p>
+          {performance?.top_revenue_generators.map(
+            (item: any, index: number) => (
+              <div
+                key={item.id}
+                className="flex items-center gap-4 p-4 border border-gray-100 rounded-xl bg-white shadow-sm hover:shadow-md transition-shadow"
+              >
+                <span className={`font-bold text-2xl w-10 text-green-600`}>
+                  #{index + 1}
+                </span>
+                {item.photo_url ? (
+                  <img
+                    src={item.photo_url}
+                    alt={item.name}
+                    className="w-12 h-12 rounded-lg object-cover"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
+                    <User className="w-6 h-6 text-gray-400" />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <p className="font-bold text-gray-900 text-sm">{item.name}</p>
+                  <p className="text-xs text-gray-500">
+                    {item.earnings_formatted}
+                  </p>
+                </div>
+                <TrendingUp className="w-4 h-4 text-green-500" />
               </div>
-              <TrendingUp className="w-4 h-4 text-green-500" />
-            </div>
-          ))}
+            ),
+          )}
+          {performance?.top_revenue_generators.length === 0 && (
+            <p className="text-sm text-gray-500 italic">
+              No revenue generators yet this month.
+            </p>
+          )}
         </div>
 
-        {/* Needs Activation */}
+        {/* Actively Earning */}
         <div className="space-y-6">
           <div className="flex items-center gap-2 mb-4">
             <AlertCircle className="w-5 h-5 text-orange-500" />
             <h3 className="text-sm font-bold text-gray-900">
-              Needs Activation (0)
+              Actively Earning ({performance?.actively_earning.length})
             </h3>
           </div>
-          <p className="text-sm text-gray-500 italic">
-            All talent actively earning!
-          </p>
+          {performance?.actively_earning.length > 0 ? (
+            performance.actively_earning.map((item: any) => (
+              <div
+                key={item.id}
+                className="flex items-center gap-4 p-4 border border-gray-100 rounded-xl bg-white shadow-sm"
+              >
+                {item.photo_url ? (
+                  <img
+                    src={item.photo_url}
+                    alt={item.name}
+                    className="w-12 h-12 rounded-lg object-cover"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
+                    <User className="w-6 h-6 text-gray-400" />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <p className="font-bold text-gray-900 text-sm">{item.name}</p>
+                  <p className="text-xs text-gray-500">
+                    Last: {item.payment_formatted}
+                  </p>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-gray-500 italic">
+              All talent actively earning!
+            </p>
+          )}
         </div>
 
         {/* New Talent Performance */}
@@ -10910,23 +10992,38 @@ const InlineDashboardView = ({ onKYC }: { onKYC: () => void }) => (
             </h3>
           </div>
 
-          <div className="p-6 border border-gray-100 rounded-xl bg-white shadow-sm space-y-4">
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-              Onboarded in last 30 days
-            </p>
-            <div className="flex justify-between items-center">
-              <span className="font-bold text-gray-900 text-sm">Aaron</span>
-              <Badge
-                variant="default"
-                className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-0 uppercase font-bold text-[10px]"
-              >
-                Pending
-              </Badge>
+          {performance?.new_talent_performance.map((item: any) => (
+            <div
+              key={item.id}
+              className="p-6 border border-gray-100 rounded-xl bg-white shadow-sm space-y-4"
+            >
+              <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
+                Onboarded {item.days_since_added} days ago
+              </p>
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-gray-900 text-sm">
+                  {item.name}
+                </span>
+                <Badge
+                  variant="default"
+                  className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-0 uppercase font-bold text-[10px]"
+                >
+                  {item.status}
+                </Badge>
+              </div>
+              {typeof item.avg_days_to_first_booking === "number" && (
+                <p className="text-xs text-gray-500">
+                  Average time to First booking:{" "}
+                  {item.avg_days_to_first_booking} days
+                </p>
+              )}
             </div>
-            <p className="text-xs text-gray-500">
-              Average time to First booking: 12 days
+          ))}
+          {performance?.new_talent_performance.length === 0 && (
+            <p className="text-sm text-gray-500 italic">
+              No new talent in the last 30 days.
             </p>
-          </div>
+          )}
         </div>
       </div>
     </Card>
@@ -10943,23 +11040,22 @@ const InlineDashboardView = ({ onKYC }: { onKYC: () => void }) => (
             By Campaign Type
           </h3>
           <div className="space-y-4">
-            {[
-              { label: "Social Media", value: "45%" },
-              { label: "E-commerce", value: "35%" },
-              { label: "Traditional", value: "20%" },
-            ].map((item) => (
+            {breakdown?.by_campaign_type.map((item: any) => (
               <div
-                key={item.label}
+                key={item.name}
                 className="flex justify-between items-center"
               >
                 <span className="text-sm font-medium text-gray-600">
-                  {item.label}
+                  {item.name}
                 </span>
                 <span className="text-sm font-bold text-gray-900">
-                  {item.value}
+                  {item.percentage}%
                 </span>
               </div>
             ))}
+            {breakdown?.by_campaign_type.length === 0 && (
+              <p className="text-sm text-gray-500 italic">No data yet.</p>
+            )}
           </div>
         </div>
         {/* By Brand Vertical */}
@@ -10968,23 +11064,22 @@ const InlineDashboardView = ({ onKYC }: { onKYC: () => void }) => (
             By Brand Vertical
           </h3>
           <div className="space-y-4">
-            {[
-              { label: "Beauty", value: "40%" },
-              { label: "Fashion", value: "35%" },
-              { label: "Lifestyle", value: "25%" },
-            ].map((item) => (
+            {breakdown?.by_brand_vertical.map((item: any) => (
               <div
-                key={item.label}
+                key={item.name}
                 className="flex justify-between items-center"
               >
                 <span className="text-sm font-medium text-gray-600">
-                  {item.label}
+                  {item.name}
                 </span>
                 <span className="text-sm font-bold text-gray-900">
-                  {item.value}
+                  {item.percentage}%
                 </span>
               </div>
             ))}
+            {breakdown?.by_brand_vertical.length === 0 && (
+              <p className="text-sm text-gray-500 italic">No data yet.</p>
+            )}
           </div>
         </div>
         {/* By Region */}
@@ -10993,23 +11088,22 @@ const InlineDashboardView = ({ onKYC }: { onKYC: () => void }) => (
             By Region
           </h3>
           <div className="space-y-4">
-            {[
-              { label: "North America", value: "60%" },
-              { label: "Europe", value: "30%" },
-              { label: "Other", value: "10%" },
-            ].map((item) => (
+            {breakdown?.by_region.map((item: any) => (
               <div
-                key={item.label}
+                key={item.name}
                 className="flex justify-between items-center"
               >
                 <span className="text-sm font-medium text-gray-600">
-                  {item.label}
+                  {item.name}
                 </span>
                 <span className="text-sm font-bold text-gray-900">
-                  {item.value}
+                  {item.percentage}%
                 </span>
               </div>
             ))}
+            {breakdown?.by_region.length === 0 && (
+              <p className="text-sm text-gray-500 italic">No data yet.</p>
+            )}
           </div>
         </div>
       </div>
@@ -11042,7 +11136,9 @@ const InlineDashboardView = ({ onKYC }: { onKYC: () => void }) => (
               Pending Approval
             </span>
           </div>
-          <div className="text-3xl font-bold text-gray-900 mb-4">3</div>
+          <div className="text-3xl font-bold text-gray-900 mb-4">
+            {pipeline?.pending_approval || 0}
+          </div>
           <Button
             variant="default"
             className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold h-10"
@@ -11069,7 +11165,9 @@ const InlineDashboardView = ({ onKYC }: { onKYC: () => void }) => (
             </div>
             <span className="text-xs font-medium text-gray-500">Active</span>
           </div>
-          <div className="text-3xl font-bold text-gray-900 mb-4">9</div>
+          <div className="text-3xl font-bold text-gray-900 mb-4">
+            {pipeline?.active || 0}
+          </div>
         </Card>
         <Card className="p-6 bg-white border border-orange-200 shadow-sm rounded-xl">
           <div className="mb-4">
@@ -11080,7 +11178,9 @@ const InlineDashboardView = ({ onKYC }: { onKYC: () => void }) => (
               Expiring Soon (30d)
             </span>
           </div>
-          <div className="text-3xl font-bold text-gray-900 mb-4">1</div>
+          <div className="text-3xl font-bold text-gray-900 mb-4">
+            {pipeline?.expiring_soon || 0}
+          </div>
           <Button
             variant="outline"
             className="w-full border-orange-200 text-orange-600 hover:bg-orange-50 font-bold h-10"
@@ -11109,7 +11209,9 @@ const InlineDashboardView = ({ onKYC }: { onKYC: () => void }) => (
               Total This Month
             </span>
           </div>
-          <div className="text-3xl font-bold text-gray-900 mb-4">13</div>
+          <div className="text-3xl font-bold text-gray-900 mb-4">
+            {pipeline?.total_this_month || 0}
+          </div>
         </Card>
       </div>
     </div>
@@ -11120,38 +11222,28 @@ const InlineDashboardView = ({ onKYC }: { onKYC: () => void }) => (
         <h2 className="text-lg font-bold text-gray-900">Recent Activity</h2>
       </div>
       <div className="p-8 space-y-10">
-        {[
-          {
-            text: "License approved for Emma - Glossier Beauty",
-            time: "2 hours ago",
-            color: "bg-blue-600",
-          },
-          {
-            text: "Payment received: $5,200 from & Other Stories",
-            time: "5 hours ago",
-            color: "bg-green-600",
-          },
-          {
-            text: "Aaron added to roster (pending verification)",
-            time: "1 day ago",
-            color: "bg-purple-600",
-          },
-          {
-            text: "License renewed for Milan - Carhartt WIP",
-            time: "2 days ago",
-            color: "bg-blue-600",
-          },
-        ].map((item, i) => (
-          <div key={i} className="flex gap-4">
+        {activity.map((item: any, i: number) => (
+          <div key={item.id || i} className="flex gap-4">
             <div
-              className={`mt-1.5 w-2.5 h-2.5 rounded-full ${item.color} flex-shrink-0`}
+              className={`w-3 h-3 rounded-full mt-1.5 flex-shrink-0 bg-indigo-600`}
             />
             <div>
-              <p className="text-sm font-bold text-gray-900">{item.text}</p>
-              <p className="text-xs text-gray-500 mt-1">{item.time}</p>
+              <p className="text-gray-900 font-bold text-sm">{item.title}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-xs text-gray-400">
+                  {item.relative_time}
+                </span>
+                <span className="text-xs text-gray-300">•</span>
+                <span className="text-xs text-gray-400 font-medium">
+                  {item.subtitle}
+                </span>
+              </div>
             </div>
           </div>
         ))}
+        {activity.length === 0 && (
+          <p className="text-sm text-gray-500 italic">No recent activity.</p>
+        )}
       </div>
     </div>
   </div>
@@ -11164,6 +11256,7 @@ const InlineRosterView = ({
   setStatusFilter,
   sortConfig,
   setSortConfig,
+  kycStatus,
   profile,
 }: {
   searchTerm: string;
@@ -11172,6 +11265,7 @@ const InlineRosterView = ({
   setStatusFilter: (s: string) => void;
   sortConfig: { key: string; direction: "asc" | "desc" } | null;
   setSortConfig: (c: { key: string; direction: "asc" | "desc" } | null) => void;
+  kycStatus?: string;
   profile: any;
 }) => {
   const navigate = useNavigate();
@@ -11254,20 +11348,14 @@ const InlineRosterView = ({
                   {agencyName || profile?.agency_name || "Agency Name"}
                 </h1>
                 {/* Verified Badge */}
-                <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">
-                  <svg
-                    className="w-3 h-3"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Verified Agency
-                </div>
+                {(kycStatus === "approved" ||
+                  kycStatus === "verified" ||
+                  kycStatus === "active") && (
+                  <div className="flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1 rounded-full border border-green-100 text-[10px] font-bold uppercase tracking-wider shadow-sm">
+                    <BadgeCheck className="w-3.5 h-3.5" />
+                    Verified Agency
+                  </div>
+                )}
                 <div className="bg-blue-600 text-white px-2 py-0.5 rounded text-xs font-bold">
                   Marketplace: Public
                 </div>
@@ -11317,7 +11405,7 @@ const InlineRosterView = ({
           <div className="flex gap-3">
             <Button
               variant="outline"
-              className="text-gray-700 border-gray-300 gap-2"
+              className="text-gray-700 border-gray-300 gap-2 font-bold"
             >
               <svg
                 className="w-4 h-4"
@@ -11333,6 +11421,11 @@ const InlineRosterView = ({
                 />
               </svg>
               Edit Profile
+              {(kycStatus === "approved" ||
+                kycStatus === "verified" ||
+                kycStatus === "active") && (
+                <BadgeCheck className="w-3.5 h-3.5 text-[#32C8D1] ml-1" />
+              )}
             </Button>
             <Button
               variant="outline"
@@ -18272,10 +18365,84 @@ const PlaceholderView = ({ title }: { title: string }) => (
   </div>
 );
 
+const useAgencyDashboard = () => {
+  const { user } = useAuth();
+
+  const overviewQuery = useQuery({
+    queryKey: ["agency-dashboard-overview", user?.id],
+    queryFn: async () => {
+      return await getAgencyDashboardOverview();
+    },
+    enabled: !!user?.id,
+    refetchInterval: (query: any) => {
+      const status = query.state.data?.kyc_status;
+      return status === "pending" || status === "waiting" ? 5000 : false;
+    },
+  });
+
+  const performanceQuery = useQuery({
+    queryKey: ["agency-dashboard-performance", user?.id],
+    queryFn: async () => {
+      return await getAgencyTalentPerformance();
+    },
+    enabled: !!user?.id,
+  });
+
+  const breakdownQuery = useQuery({
+    queryKey: ["agency-dashboard-breakdown", user?.id],
+    queryFn: async () => {
+      return await getAgencyRevenueBreakdown();
+    },
+    enabled: !!user?.id,
+  });
+
+  const pipelineQuery = useQuery({
+    queryKey: ["agency-dashboard-pipeline", user?.id],
+    queryFn: async () => {
+      return await getAgencyLicensingPipeline();
+    },
+    enabled: !!user?.id,
+  });
+
+  const activityQuery = useQuery({
+    queryKey: ["agency-dashboard-activity", user?.id],
+    queryFn: async () => {
+      return await getAgencyRecentActivity();
+    },
+    enabled: !!user?.id,
+  });
+
+  const refetch = async () => {
+    await Promise.all([
+      overviewQuery.refetch(),
+      performanceQuery.refetch(),
+      breakdownQuery.refetch(),
+      pipelineQuery.refetch(),
+      activityQuery.refetch(),
+    ]);
+  };
+
+  return {
+    overview: overviewQuery.data,
+    performance: performanceQuery.data,
+    breakdown: breakdownQuery.data,
+    pipeline: pipelineQuery.data,
+    activity: activityQuery.data,
+    isLoading:
+      overviewQuery.isLoading ||
+      performanceQuery.isLoading ||
+      breakdownQuery.isLoading ||
+      pipelineQuery.isLoading ||
+      activityQuery.isLoading,
+    refetch,
+  };
+};
+
 export default function AgencyDashboard() {
-  const { logout, user, profile, authenticated } = useAuth();
+  const { logout, user, profile, authenticated, token } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const dashboardData = useAgencyDashboard();
 
   const normalizeSubTab = (subTab: string | null) => {
     if (!subTab) return subTab;
@@ -18323,6 +18490,10 @@ export default function AgencyDashboard() {
 
   const { toast } = useToast();
   const [kycLoading, setKycLoading] = useState(false);
+  const [isKycModalOpen, setIsKycModalOpen] = useState(false);
+  const [showKycSuccessModal, setShowKycSuccessModal] = useState(false);
+  const prevStatusRef = useRef<string | null>(null);
+
   const [bookings, setBookings] = useState<any[]>([]);
   const [bookOuts, setBookOuts] = useState<any[]>([]);
 
@@ -18657,15 +18828,109 @@ export default function AgencyDashboard() {
 
       const res = await fetch(api(`/api/kyc/session`), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: user.id }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          organization_id: user.organization_id,
+          return_url: window.location.href,
+        }),
       });
 
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
 
       if (data.session_url) {
-        window.open(data.session_url, "_blank");
+        // Open Veriff in a centered popup window
+        const width = 800;
+        const height = 700;
+        const left = window.screen.width / 2 - width / 2;
+        const top = window.screen.height / 2 - height / 2;
+
+        const popup = window.open(
+          data.session_url,
+          "veriff_verification",
+          `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,location=no,status=no`,
+        );
+
+        if (!popup) {
+          throw new Error("Popup blocked. Please allow popups for this site.");
+        }
+
+        setIsKycModalOpen(true);
+
+        // Poll for verification status
+        const pollInterval = setInterval(async () => {
+          try {
+            const statusRes = await fetch(
+              api(
+                `/api/kyc/status?organization_id=${user.organization_id || user.id}`,
+              ),
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              },
+            );
+
+            if (statusRes.ok) {
+              const statusData = await statusRes.json();
+              const status = statusData[0]?.kyc_status;
+
+              if (status === "approved" || status === "verified") {
+                clearInterval(pollInterval);
+                if (popup && !popup.closed) {
+                  popup.close();
+                }
+                setIsKycModalOpen(false);
+                setShowKycSuccessModal(true);
+                toast({
+                  title: "Verification Complete",
+                  description: "Your identity has been verified successfully!",
+                  duration: 5000,
+                });
+                dashboardData.refetch();
+              } else if (status === "rejected" || status === "declined") {
+                clearInterval(pollInterval);
+                if (popup && !popup.closed) {
+                  popup.close();
+                }
+                setIsKycModalOpen(false);
+                toast({
+                  variant: "destructive",
+                  title: "Verification Failed",
+                  description:
+                    "Your verification was not approved. Please try again.",
+                  duration: 5000,
+                });
+              }
+            }
+          } catch (e) {
+            console.error("Status poll error:", e);
+          }
+
+          // Check if popup was closed manually
+          if (popup.closed) {
+            clearInterval(pollInterval);
+            setIsKycModalOpen(false);
+            toast({
+              title: "Verification Canceled",
+              description: "You can restart verification anytime.",
+              duration: 3000,
+            });
+          }
+        }, 3000); // Poll every 3 seconds
+
+        // Cleanup after 10 minutes
+        setTimeout(() => {
+          clearInterval(pollInterval);
+          if (popup && !popup.closed) {
+            popup.close();
+          }
+          setIsKycModalOpen(false);
+        }, 600000);
       } else {
         throw new Error("No session URL returned");
       }
@@ -18684,6 +18949,25 @@ export default function AgencyDashboard() {
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  // Tracking KYC status for success modal
+  useEffect(() => {
+    const currentStatus = dashboardData?.overview?.kyc_status;
+    if (
+      (currentStatus === "approved" ||
+        currentStatus === "verified" ||
+        currentStatus === "active") &&
+      prevStatusRef.current &&
+      prevStatusRef.current !== "approved" &&
+      prevStatusRef.current !== "verified" &&
+      prevStatusRef.current !== "active"
+    ) {
+      setShowKycSuccessModal(true);
+    }
+    if (currentStatus) {
+      prevStatusRef.current = currentStatus;
+    }
+  }, [dashboardData?.overview?.kyc_status]);
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const toggleExpanded = (id: string) => {
@@ -19077,9 +19361,13 @@ export default function AgencyDashboard() {
                         </p>
                       </div>
                     </div>
-                    <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0.5 text-xs font-bold gap-1">
-                      <ShieldCheck className="w-3 h-3" /> Verified
-                    </Badge>
+                    {(dashboardData?.overview?.kyc_status === "approved" ||
+                      dashboardData?.overview?.kyc_status === "verified" ||
+                      dashboardData?.overview?.kyc_status === "active") && (
+                      <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0.5 text-xs font-bold gap-1 mt-2">
+                        <ShieldCheck className="w-3 h-3" /> Verified
+                      </Badge>
+                    )}
                   </div>
 
                   <div className="p-2">
@@ -19154,10 +19442,13 @@ export default function AgencyDashboard() {
         {/* Dynamic Dashboard Content */}
         <main className="flex-1 overflow-auto px-12 py-8 bg-gray-50">
           {activeTab === "dashboard" && (
-            <DashboardView
+            <InlineDashboardView
               onKYC={handleKYC}
-              agencyName={agencyName}
-              rosterData={rosterTalents}
+              overview={dashboardData.overview}
+              performance={dashboardData.performance}
+              breakdown={dashboardData.breakdown}
+              pipeline={dashboardData.pipeline}
+              activity={dashboardData.activity?.activities || []}
             />
           )}
           {activeTab === "roster" && activeSubTab === "All Talent" && (
@@ -19170,6 +19461,8 @@ export default function AgencyDashboard() {
               setCategoryFilter={setCategoryFilter}
               sortConfig={sortConfig}
               setSortConfig={setSortConfig}
+              kycStatus={dashboardData?.overview?.kyc_status}
+              profile={profile}
               agencyMode={agencyMode}
               rosterData={rosterTalents}
               activeCampaigns={activeCampaigns}
@@ -19201,7 +19494,9 @@ export default function AgencyDashboard() {
           )}
           {activeTab === "analytics" && <PlaceholderView title="Analytics" />}
           {activeTab === "settings" && activeSubTab === "General Settings" && (
-            <GeneralSettingsView />
+            <GeneralSettingsView
+              kycStatus={dashboardData?.overview?.kyc_status}
+            />
           )}
           {activeTab === "settings" && activeSubTab === "File Storage" && (
             <FileStorageView />
@@ -19244,6 +19539,60 @@ export default function AgencyDashboard() {
           )}
         </main>
       </div>
+
+      <Dialog open={isKycModalOpen} onOpenChange={setIsKycModalOpen}>
+        <DialogContent className="max-w-[500px] p-8 bg-white border-none shadow-2xl rounded-2xl">
+          <div className="flex flex-col items-center justify-center space-y-6">
+            <div className="relative">
+              <div className="w-20 h-20 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+              <ShieldCheck className="w-10 h-10 text-indigo-600 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+            </div>
+            <div className="text-center space-y-2">
+              <h3 className="text-xl font-bold text-gray-900">
+                Verification in Progress
+              </h3>
+              <p className="text-sm text-gray-600">
+                Complete the verification process in the popup window.
+              </p>
+              <p className="text-xs text-gray-500 mt-4">
+                This window will automatically close when verification is
+                complete.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setIsKycModalOpen(false)}
+              className="mt-4"
+            >
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={showKycSuccessModal} onOpenChange={setShowKycSuccessModal}>
+        <DialogContent className="max-w-[400px] p-8 bg-white border-none shadow-2xl rounded-2xl">
+          <div className="flex flex-col items-center justify-center space-y-6">
+            <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center">
+              <BadgeCheck className="w-12 h-12 text-green-500" />
+            </div>
+            <div className="text-center space-y-2">
+              <h3 className="text-xl font-bold text-gray-900">
+                Verification Successful
+              </h3>
+              <p className="text-sm text-gray-600">
+                Your agency identity has been successfully verified. You now
+                have full access to all features.
+              </p>
+            </div>
+            <Button
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold h-12 rounded-xl"
+              onClick={() => setShowKycSuccessModal(false)}
+            >
+              Continue to Dashboard
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
