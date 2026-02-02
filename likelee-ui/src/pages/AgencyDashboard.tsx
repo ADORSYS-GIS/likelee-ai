@@ -1,15 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { scoutingService } from "@/services/scoutingService";
-import { ScoutingProspect, ScoutingEvent } from "@/types/scouting";
-import { CreateEventModal } from "@/components/scouting/ScoutingComponents";
-import { PlanTripModal } from "@/components/scouting/map/PlanTripModal";
+import { ScoutingProspect } from "@/types/scouting";
 import { ScoutingMap } from "@/components/scouting/map/ScoutingMap";
 import { ScoutingTrips } from "@/components/scouting/ScoutingTrips";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useDebounce } from "@/hooks/useDebounce";
-import { searchLocations } from "@/components/scouting/map/geocoding";
-
 import {
   LayoutDashboard,
   Users,
@@ -81,14 +76,15 @@ import {
   Printer,
   Files,
   TrendingDown,
+  AlertTriangle,
   MapPin,
   Star,
   Menu,
   Image as ImageIcon,
   Mic,
   Link as LinkIcon,
-  Pencil,
 } from "lucide-react";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -126,21 +122,942 @@ import {
   cancelBooking as apiCancelBooking,
   listBookOuts,
   createBookOut,
+  getAgencyClients,
+  getAgencyTalents,
+  listInvoices,
+  listTalentStatements,
+  listExpenses,
+  createExpense,
+  getAgencyPayoutsAccountStatus,
+  getAgencyStripeOnboardingLink,
   notifyBookingCreatedEmail,
+  createInvoice,
+  markInvoiceSent,
+  markInvoicePaid,
+  uploadAgencyFile,
+  sendEmail,
 } from "@/api/functions";
 import ClientCRMView from "@/components/crm/ClientCRMView";
 import * as crmApi from "@/api/crm";
 
-const STATUS_MAP: { [key: string]: string } = {
+const STATUS_MAP = {
+  // legacy/basic statuses
+  new: "New Lead",
+  contacted: "In Contact",
+  meeting: "Meeting Scheduled",
+  test_shoot: "Test Shoots",
+  offer_sent: "Offer Sent",
+  signed: "Signed",
+  declined: "Declined",
+  // extended statuses
   new_lead: "New Lead",
   in_contact: "In Contact",
   test_shoot_pending: "Test Shoot (Pending)",
   test_shoot_success: "Test Shoot (Success)",
   test_shoot_failed: "Test Shoot (Failed)",
-  offer_sent: "Offer Sent",
   opened: "Offer Opened",
-  signed: "Signed",
-  declined: "Declined",
+};
+
+const ConnectBankView = () => {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<{
+    connected: boolean;
+    payouts_enabled: boolean;
+    transfers_enabled: boolean;
+    last_error: string;
+    bank_last4?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const resp = await getAgencyPayoutsAccountStatus();
+        const data = (resp as any)?.data ?? resp;
+        if (!mounted) return;
+        setStatus({
+          connected: Boolean((data as any)?.connected),
+          payouts_enabled: Boolean((data as any)?.payouts_enabled),
+          transfers_enabled: Boolean((data as any)?.transfers_enabled),
+          last_error: String((data as any)?.last_error || ""),
+          bank_last4: String((data as any)?.bank_last4 || "") || undefined,
+        });
+      } catch (e: any) {
+        toast({
+          title: "Failed to load bank connection status",
+          description: String(e?.message || e),
+          variant: "destructive" as any,
+        });
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [toast]);
+
+  const connect = async () => {
+    setLoading(true);
+    try {
+      const resp = await getAgencyStripeOnboardingLink();
+      const url = String((resp as any)?.data?.url || "");
+      if (!url) {
+        throw new Error("Missing Stripe onboarding URL");
+      }
+      window.location.href = url;
+    } catch (e: any) {
+      toast({
+        title: "Failed to start Stripe onboarding",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const connected = Boolean(status?.connected);
+  const accountLast4 = String(status?.bank_last4 || "").trim();
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Connect Your Bank Account
+          </h2>
+          <p className="text-gray-600 font-medium">
+            Link your bank account to receive direct payments from clients and
+            manage payouts to talent
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+          onClick={connect}
+          disabled={loading}
+        >
+          <CreditCard className="w-4 h-4" />
+          {connected ? "Change account" : "Connect Bank Account"}
+        </Button>
+      </div>
+
+      <Card className="p-8 bg-white border border-gray-100 rounded-2xl">
+        <div className="max-w-3xl mx-auto">
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
+              <CreditCard className="w-8 h-8 text-green-600" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900">
+              Connect Your Bank Account
+            </h3>
+            <p className="text-sm text-gray-600 font-medium mt-1">
+              Link your bank account to receive direct payments from clients and
+              manage payouts to talent
+            </p>
+          </div>
+
+          {connected && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-100 rounded-xl flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-bold text-gray-900">
+                  Bank account connected
+                </p>
+                {!!accountLast4 && (
+                  <p className="text-xs text-gray-600 font-medium mt-1">
+                    Account ending in ••••{accountLast4}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {!!status?.last_error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-bold text-gray-900">
+                  Last payout error
+                </p>
+                <p className="text-xs text-gray-600 font-medium">
+                  {status.last_error}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="p-5 bg-blue-50 border border-blue-100 rounded-xl mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <CheckCircle2 className="w-4 h-4 text-blue-600" />
+              <p className="text-sm font-bold text-gray-900">
+                Why Connect Your Bank?
+              </p>
+            </div>
+            <div className="space-y-2">
+              {[
+                "Receive invoice payments directly to your account",
+                "Automate talent commission payouts",
+                "Track cash flow and reconcile payments",
+                "Bank-level security with 256-bit encryption",
+              ].map((t) => (
+                <div key={t} className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5" />
+                  <p className="text-xs text-gray-700 font-medium">{t}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <Button
+            className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 font-bold flex items-center justify-center gap-2"
+            onClick={connect}
+            disabled={loading}
+          >
+            <Link className="w-4 h-4" />
+            {connected ? "Change account" : "Connect with Stripe"}
+          </Button>
+
+          <div className="text-center mt-4">
+            <p className="text-xs text-gray-500 font-medium">
+              Powered by Stripe Connect
+            </p>
+            <p className="text-[10px] text-gray-400 font-medium">
+              Bank-level security • SOC 2 certified • PCI DSS compliant
+            </p>
+          </div>
+
+          <Card className="p-4 bg-gray-50 border border-gray-100 rounded-xl mt-6">
+            <p className="text-xs font-bold text-gray-700 mb-2">
+              What you'll need:
+            </p>
+            <div className="text-xs text-gray-600 font-medium space-y-1">
+              <div>
+                Business bank account details (routing & account number)
+              </div>
+              <div>Business tax ID (EIN or SSN)</div>
+              <div>Business address and contact information</div>
+              <div>Government-issued ID for verification</div>
+            </div>
+          </Card>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+const STATUS_COLORS: { [key: string]: string } = {
+  // basic statuses
+  new: "bg-blue-50 text-blue-700 border-blue-200",
+  contacted: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  meeting: "bg-purple-50 text-purple-700 border-purple-200",
+  test_shoot: "bg-orange-50 text-orange-700 border-orange-200",
+  offer_sent: "bg-green-50 text-green-700 border-green-200",
+  signed: "bg-green-50 text-green-700 border-green-200",
+  declined: "bg-red-50 text-red-700 border-red-200",
+  // extended statuses
+  new_lead: "bg-blue-50 text-blue-700 border-blue-200",
+  in_contact: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  test_shoot_pending: "bg-orange-50 text-orange-700 border-orange-200",
+  test_shoot_success: "bg-teal-50 text-teal-700 border-teal-200",
+  test_shoot_failed: "bg-rose-50 text-rose-700 border-rose-200",
+  opened: "bg-yellow-50 text-yellow-700 border-yellow-200",
+};
+
+const ProspectModal = ({
+  open,
+  onOpenChange,
+  prospect = null,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  prospect?: ScoutingProspect | null;
+}) => {
+  const { user } = useAuth();
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [starRating, setStarRating] = useState(3);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    instagram: "",
+    source: "instagram",
+    discoveryDate: new Date().toISOString().split("T")[0],
+    discoveryLocation: "",
+    referredBy: "",
+    status: "new",
+    assignedAgent: "",
+    notes: "",
+    instagramFollowers: 10000,
+    engagementRate: 4.5,
+  });
+
+  useEffect(() => {
+    if (prospect) {
+      setFormData({
+        name: prospect.full_name,
+        email: prospect.email || "",
+        phone: prospect.phone || "",
+        instagram: prospect.instagram_handle || "",
+        source: prospect.source || "instagram",
+        discoveryDate:
+          prospect.discovery_date || new Date().toISOString().split("T")[0],
+        discoveryLocation: prospect.discovery_location || "",
+        referredBy: prospect.referred_by || "",
+        status: prospect.status,
+        assignedAgent: prospect.assigned_agent_name || "",
+        notes: prospect.notes || "",
+        instagramFollowers: prospect.instagram_followers || 10000,
+        engagementRate: prospect.engagement_rate || 4.5,
+      });
+      setSelectedCategories(prospect.categories || []);
+      setStarRating(prospect.rating || 3);
+    } else {
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        instagram: "",
+        source: "instagram",
+        discoveryDate: new Date().toISOString().split("T")[0],
+        discoveryLocation: "",
+        referredBy: "",
+        status: "new",
+        assignedAgent: "",
+        notes: "",
+        instagramFollowers: 10000,
+        engagementRate: 4.5,
+      });
+      setSelectedCategories([]);
+      setStarRating(3);
+    }
+  }, [prospect, open]);
+
+  const { toast } = useToast();
+
+  const handleInputChange = (field: string, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const toggleCategory = (category: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(category)
+        ? prev.filter((c) => c !== category)
+        : [...prev, category],
+    );
+  };
+
+  const queryClient = useQueryClient();
+
+  const handleSaveProspect = async () => {
+    try {
+      if (!formData.name) {
+        toast({
+          title: "Missing Information",
+          description: "Please enter a name for the prospect.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setIsSaving(true);
+
+      const agencyId = await scoutingService.getUserAgencyId();
+      if (!agencyId) {
+        toast({
+          title: "Error",
+          description:
+            "Could not identify your agency. Please try logging in again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!prospect) {
+        // Check for duplicates only when adding new
+        const existing = await scoutingService.checkDuplicate(
+          agencyId,
+          formData.email || undefined,
+          formData.instagram || undefined,
+        );
+
+        if (existing) {
+          toast({
+            title: "Prospect Already Exists",
+            description: `This prospect (${existing.full_name}) is already in your pipeline.`,
+            variant: "destructive",
+          });
+          setIsSaving(false);
+          return;
+        }
+
+        await scoutingService.createProspect({
+          agency_id: agencyId,
+          full_name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          instagram_handle: formData.instagram,
+          categories: selectedCategories,
+          rating: starRating,
+          source: formData.source as any,
+          discovery_date: formData.discoveryDate,
+          discovery_location: formData.discoveryLocation,
+          referred_by: formData.referredBy,
+          status: formData.status as any,
+          assigned_agent_name: formData.assignedAgent,
+          notes: formData.notes,
+          instagram_followers: formData.instagramFollowers,
+          engagement_rate: formData.engagementRate,
+        });
+
+        toast({
+          title: "Prospect Added",
+          description: `${formData.name} has been added to your pipeline.`,
+        });
+      } else {
+        // Update existing prospect
+        await scoutingService.updateProspect(prospect.id, {
+          full_name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          instagram_handle: formData.instagram,
+          categories: selectedCategories,
+          rating: starRating,
+          source: formData.source as any,
+          discovery_date: formData.discoveryDate,
+          discovery_location: formData.discoveryLocation,
+          referred_by: formData.referredBy,
+          status: formData.status as any,
+          assigned_agent_name: formData.assignedAgent,
+          notes: formData.notes,
+          instagram_followers: formData.instagramFollowers,
+          engagement_rate: formData.engagementRate,
+        });
+
+        toast({
+          title: "Prospect Updated",
+          description: `${formData.name}'s information has been updated.`,
+        });
+      }
+
+      // Invalidate the prospects query to trigger a refetch
+      await queryClient.invalidateQueries({
+        queryKey: ["prospects", user?.id],
+      });
+
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error saving prospect:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save prospect. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold">
+            {prospect ? "Edit Prospect" : "Add New Prospect"}
+          </DialogTitle>
+          <p className="text-sm text-gray-500">
+            Track talent before signing them to your roster
+          </p>
+        </DialogHeader>
+        <div className="space-y-6 py-4">
+          <div>
+            <h3 className="font-bold text-gray-900 mb-4">Basic Information</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name *</Label>
+                <Input
+                  id="name"
+                  placeholder="Full name"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  placeholder="email@example.com"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone</Label>
+                <Input
+                  id="phone"
+                  placeholder="+1 (555) 123-4567"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="instagram">Instagram Handle</Label>
+                <Input
+                  id="instagram"
+                  placeholder="@username"
+                  value={formData.instagram}
+                  onChange={(e) =>
+                    handleInputChange("instagram", e.target.value)
+                  }
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="font-bold text-gray-900 mb-4">Categories</h3>
+            <div className="flex flex-wrap gap-2">
+              {[
+                "Model",
+                "Actor",
+                "Influencer",
+                "Creator",
+                "Voice",
+                "Athlete",
+              ].map((cat) => (
+                <Button
+                  key={cat}
+                  variant={
+                    selectedCategories.includes(cat) ? "default" : "secondary"
+                  }
+                  onClick={() => toggleCategory(cat)}
+                  className={`${
+                    selectedCategories.includes(cat)
+                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                  } font-medium`}
+                >
+                  {cat}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="font-bold text-gray-900 mb-4">Discovery Details</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Discovery Source</Label>
+                <Select
+                  value={formData.source}
+                  onValueChange={(val) => handleInputChange("source", val)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select source" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="instagram">Instagram</SelectItem>
+                    <SelectItem value="tiktok">TikTok</SelectItem>
+                    <SelectItem value="street">Street Scouting</SelectItem>
+                    <SelectItem value="referral">Referral</SelectItem>
+                    <SelectItem value="website">Website</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Discovery Date</Label>
+                <div className="relative">
+                  <Input
+                    type="date"
+                    value={formData.discoveryDate}
+                    onChange={(e) =>
+                      handleInputChange("discoveryDate", e.target.value)
+                    }
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Discovery Location</Label>
+                <Input
+                  placeholder="New York, NY"
+                  value={formData.discoveryLocation}
+                  onChange={(e) =>
+                    handleInputChange("discoveryLocation", e.target.value)
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Referred By</Label>
+                <Input
+                  placeholder="Name of referrer"
+                  value={formData.referredBy}
+                  onChange={(e) =>
+                    handleInputChange("referredBy", e.target.value)
+                  }
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="font-bold text-gray-900 mb-4">
+              Status & Assignment
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(val) => handleInputChange("status", val)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(STATUS_MAP).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Assigned Agent</Label>
+                <Input
+                  placeholder="Agent name"
+                  value={formData.assignedAgent}
+                  onChange={(e) =>
+                    handleInputChange("assignedAgent", e.target.value)
+                  }
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="font-bold text-gray-900 mb-2">Star Rating</h3>
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Star
+                  key={i}
+                  className={`w-8 h-8 cursor-pointer ${i <= starRating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                  onClick={() => setStarRating(i)}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Internal Notes</Label>
+            <Textarea
+              placeholder="Add notes about this prospect..."
+              className="h-32"
+              value={formData.notes}
+              onChange={(e) => handleInputChange("notes", e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-bold text-gray-900 mb-4">
+              Social Media (Optional)
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Instagram Followers</Label>
+                <Input
+                  type="number"
+                  value={formData.instagramFollowers || ""}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "instagramFollowers",
+                      e.target.value === "" ? 0 : parseFloat(e.target.value),
+                    )
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Engagement Rate (%)</Label>
+                <Input
+                  type="number"
+                  value={formData.engagementRate || ""}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "engagementRate",
+                      e.target.value === "" ? 0 : parseFloat(e.target.value),
+                    )
+                  }
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSaving}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="bg-indigo-600 hover:bg-indigo-700 text-white min-w-[120px]"
+              onClick={handleSaveProspect}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Saving...
+                </div>
+              ) : prospect ? (
+                "Update Prospect"
+              ) : (
+                "Add Prospect"
+              )}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from "recharts";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+// duplicate imports removed below (already imported earlier in file)
+import { useAuth } from "../auth/AuthProvider";
+
+// STATUS_MAP is defined earlier in this file; removing duplicate declaration here.
+
+const ConnectBankViewAlt = () => {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<{
+    connected: boolean;
+    payouts_enabled: boolean;
+    transfers_enabled: boolean;
+    last_error: string;
+    bank_last4?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const resp = await getAgencyPayoutsAccountStatus();
+        const data = (resp as any)?.data ?? resp;
+        if (!mounted) return;
+        setStatus({
+          connected: Boolean((data as any)?.connected),
+          payouts_enabled: Boolean((data as any)?.payouts_enabled),
+          transfers_enabled: Boolean((data as any)?.transfers_enabled),
+          last_error: String((data as any)?.last_error || ""),
+          bank_last4: String((data as any)?.bank_last4 || "") || undefined,
+        });
+      } catch (e: any) {
+        toast({
+          title: "Failed to load bank connection status",
+          description: String(e?.message || e),
+          variant: "destructive" as any,
+        });
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [toast]);
+
+  const connect = async () => {
+    setLoading(true);
+    try {
+      const resp = await getAgencyStripeOnboardingLink();
+      const url = String((resp as any)?.data?.url || "");
+      if (!url) {
+        throw new Error("Missing Stripe onboarding URL");
+      }
+      window.location.href = url;
+    } catch (e: any) {
+      toast({
+        title: "Failed to start Stripe onboarding",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const connected = Boolean(status?.connected);
+  const ready = Boolean(status?.payouts_enabled || status?.transfers_enabled);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Connect Your Bank Account
+          </h2>
+          <p className="text-gray-600 font-medium">
+            Link your bank account to receive direct payments from clients and
+            manage payouts to talent
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+          onClick={connect}
+          disabled={loading}
+        >
+          <CreditCard className="w-4 h-4" />
+          {connected ? "Change account" : "Connect Bank Account"}
+        </Button>
+      </div>
+
+      <Card className="p-8 bg-white border border-gray-100 rounded-2xl">
+        <div className="max-w-3xl mx-auto">
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
+              <CreditCard className="w-8 h-8 text-green-600" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900">
+              Connect Your Bank Account
+            </h3>
+            <p className="text-sm text-gray-600 font-medium mt-1">
+              Link your bank account to receive direct payments from clients and
+              manage payouts to talent
+            </p>
+          </div>
+
+          {connected && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-100 rounded-xl flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-bold text-gray-900">
+                  Bank account connected
+                </p>
+                <p className="text-xs text-gray-600 font-medium">
+                  {ready
+                    ? "Payouts enabled"
+                    : "Connection created — complete onboarding in Stripe to enable payouts"}
+                </p>
+                {!!status?.bank_last4 && (
+                  <p className="text-xs text-gray-600 font-medium mt-1">
+                    Account ending in ••••{status.bank_last4}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {!!status?.last_error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-bold text-gray-900">
+                  Last payout error
+                </p>
+                <p className="text-xs text-gray-600 font-medium">
+                  {status.last_error}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="p-5 bg-blue-50 border border-blue-100 rounded-xl mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <CheckCircle2 className="w-4 h-4 text-blue-600" />
+              <p className="text-sm font-bold text-gray-900">
+                Why Connect Your Bank?
+              </p>
+            </div>
+            <div className="space-y-2">
+              {[
+                "Receive invoice payments directly to your account",
+                "Automate talent commission payouts",
+                "Track cash flow and reconcile payments",
+                "Bank-level security with 256-bit encryption",
+              ].map((t) => (
+                <div key={t} className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5" />
+                  <p className="text-xs text-gray-700 font-medium">{t}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <Button
+            className="w-full h-12 rounded-xl bg-indigo-600 hover:bg-indigo-700 font-bold flex items-center justify-center gap-2"
+            onClick={connect}
+            disabled={loading}
+          >
+            <Link className="w-4 h-4" />
+            {connected ? "Change account" : "Connect with Stripe"}
+          </Button>
+
+          <div className="text-center mt-4">
+            <p className="text-xs text-gray-500 font-medium">
+              Powered by Stripe Connect
+            </p>
+            <p className="text-[10px] text-gray-400 font-medium">
+              Bank-level security • SOC 2 certified • PCI DSS compliant
+            </p>
+          </div>
+
+          <Card className="p-4 bg-gray-50 border border-gray-100 rounded-xl mt-6">
+            <p className="text-xs font-bold text-gray-700 mb-2">
+              What you'll need:
+            </p>
+            <div className="text-xs text-gray-600 font-medium space-y-1">
+              <div>
+                Business bank account details (routing & account number)
+              </div>
+              <div>Business tax ID (EIN or SSN)</div>
+              <div>Business address and contact information</div>
+              <div>Government-issued ID for verification</div>
+            </div>
+          </Card>
+        </div>
+      </Card>
+    </div>
+  );
 };
 
 const MANUAL_STATUSES = [
@@ -152,18 +1069,6 @@ const MANUAL_STATUSES = [
   "offer_sent",
 ];
 
-const STATUS_COLORS: { [key: string]: string } = {
-  new_lead: "bg-blue-50 text-blue-700 border-blue-200",
-  in_contact: "bg-yellow-50 text-yellow-700 border-yellow-200",
-  test_shoot_pending: "bg-orange-50 text-orange-700 border-orange-200",
-  test_shoot_success: "bg-teal-50 text-teal-700 border-teal-200",
-  test_shoot_failed: "bg-rose-50 text-rose-700 border-rose-200",
-  offer_sent: "bg-purple-50 text-purple-700 border-purple-200",
-  opened: "bg-yellow-50 text-yellow-700 border-yellow-200",
-  signed: "bg-green-50 text-green-700 border-green-200",
-  declined: "bg-red-50 text-red-700 border-red-200",
-};
-
 const STATUS_DOT_COLORS: { [key: string]: string } = {
   new_lead: "bg-blue-500",
   in_contact: "bg-yellow-500",
@@ -173,9 +1078,13 @@ const STATUS_DOT_COLORS: { [key: string]: string } = {
   offer_sent: "bg-purple-500",
   signed: "bg-green-500",
   declined: "bg-red-500",
+  new: "bg-blue-500",
+  contacted: "bg-yellow-500",
+  meeting: "bg-purple-500",
+  test_shoot: "bg-orange-500",
 };
 
-const ProspectModal = ({
+const ProspectModalAlt = ({
   open,
   onOpenChange,
   prospect = null,
@@ -513,6 +1422,7 @@ const ProspectModal = ({
                   />
                 </div>
               </div>
+
               <div className="space-y-2 relative">
                 <Label>Discovery Location</Label>
                 <div className="relative">
@@ -554,6 +1464,7 @@ const ProspectModal = ({
                   </div>
                 )}
               </div>
+
               <div className="space-y-2">
                 <Label>Referred By</Label>
                 <Input
@@ -561,66 +1472,6 @@ const ProspectModal = ({
                   value={formData.referredBy}
                   onChange={(e) =>
                     handleInputChange("referredBy", e.target.value)
-                  }
-                />
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="font-bold text-gray-900 mb-4">
-              Status & Assignment
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(val) => handleInputChange("status", val)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="new_lead">
-                      {STATUS_MAP.new_lead}
-                    </SelectItem>
-                    <SelectItem value="in_contact">
-                      {STATUS_MAP.in_contact}
-                    </SelectItem>
-                    <SelectGroup>
-                      <SelectLabel className="px-2 py-1.5 text-xs font-semibold text-gray-500">
-                        Test Shoot
-                      </SelectLabel>
-                      <SelectItem
-                        value="test_shoot_pending"
-                        className="bg-gray-50/50 pl-8"
-                      >
-                        Pending
-                      </SelectItem>
-                      <SelectItem
-                        value="test_shoot_success"
-                        className="bg-gray-50/50 pl-8"
-                      >
-                        Success
-                      </SelectItem>
-                      <SelectItem
-                        value="test_shoot_failed"
-                        className="bg-gray-50/50 pl-8"
-                      >
-                        Failed
-                      </SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Assigned Agent</Label>
-                <Input
-                  placeholder="Agent name"
-                  value={formData.assignedAgent}
-                  onChange={(e) =>
-                    handleInputChange("assignedAgent", e.target.value)
                   }
                 />
               </div>
@@ -714,38 +1565,6 @@ const ProspectModal = ({
     </Dialog>
   );
 };
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as RechartsTooltip,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-} from "recharts";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 // --- Mock Data (Based on Reference) ---
 
@@ -1722,6 +2541,72 @@ const ExpenseTrackingView = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [expenseRows, setExpenseRows] = useState<any[]>([]);
+  const [showAddExpense, setShowAddExpense] = useState(false);
+  const [newExpenseName, setNewExpenseName] = useState("");
+  const [newExpenseCategory, setNewExpenseCategory] = useState("Travel");
+  const [newExpenseDate, setNewExpenseDate] = useState(() =>
+    new Date().toISOString().slice(0, 10),
+  );
+  const [newExpenseAmount, setNewExpenseAmount] = useState("0");
+  const [newExpenseStatus, setNewExpenseStatus] = useState("approved");
+  const [newExpenseSubmitter, setNewExpenseSubmitter] = useState("");
+
+  const asArray = (v: any) => {
+    if (Array.isArray(v)) return v;
+    if (Array.isArray(v?.data)) return v.data;
+    if (Array.isArray(v?.items)) return v.items;
+    if (Array.isArray(v?.rows)) return v.rows;
+    return [] as any[];
+  };
+
+  const money = (cents: number, currency: string) => {
+    const n = Math.round(Number(cents || 0)) / 100;
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: String(currency || "USD").toUpperCase(),
+      }).format(n);
+    } catch {
+      return `${String(currency || "USD").toUpperCase()} ${n.toFixed(2)}`;
+    }
+  };
+
+  const formatDate = (s: any) => {
+    const v = String(s || "");
+    if (!v) return "";
+    const d = new Date(v);
+    if (Number.isNaN(d.getTime())) return v;
+    return d.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const loadExpenses = async () => {
+    setLoading(true);
+    try {
+      const resp = await listExpenses({});
+      setExpenseRows(asArray(resp));
+    } catch (e: any) {
+      toast({
+        title: "Failed to load expenses",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadExpenses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "approved":
@@ -1748,10 +2633,86 @@ const ExpenseTrackingView = () => {
     }
   };
 
-  const totalExpenses = MOCK_EXPENSES.reduce((sum, expense) => {
-    const amount = parseFloat(expense.amount.replace("$", ""));
-    return sum + amount;
-  }, 0);
+  const normalizedExpenses = useMemo(() => {
+    return expenseRows.map((ex) => ({
+      id: String((ex as any)?.id || ""),
+      name: String((ex as any)?.name || ""),
+      category: String((ex as any)?.category || "Other"),
+      date: formatDate((ex as any)?.expense_date),
+      status: String((ex as any)?.status || "approved"),
+      submitter: String((ex as any)?.submitter || ""),
+      amountCents: Number((ex as any)?.amount_cents || 0) || 0,
+      currency: String((ex as any)?.currency || "USD"),
+    }));
+  }, [expenseRows]);
+
+  const filteredExpenses = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    const cat = categoryFilter;
+    return normalizedExpenses.filter((ex) => {
+      if (q) {
+        const hay = `${ex.name} ${ex.category} ${ex.submitter}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      if (cat !== "all") {
+        const want = cat.toLowerCase();
+        if (String(ex.category || "").toLowerCase() !== want) return false;
+      }
+      return true;
+    });
+  }, [normalizedExpenses, searchTerm, categoryFilter]);
+
+  const totalExpensesByCurrency = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const ex of filteredExpenses) {
+      m.set(ex.currency, (m.get(ex.currency) || 0) + (ex.amountCents || 0));
+    }
+    return m;
+  }, [filteredExpenses]);
+
+  const totalExpensesText = useMemo(() => {
+    const entries = Array.from(totalExpensesByCurrency.entries()).filter(
+      ([, v]) => (v || 0) !== 0,
+    );
+    if (!entries.length) return money(0, "USD");
+    if (entries.length === 1) {
+      const [cur, cents] = entries[0];
+      return money(cents, cur);
+    }
+    return entries
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([cur, cents]) => money(cents, cur))
+      .join(" + ");
+  }, [money, totalExpensesByCurrency]);
+
+  const submitNewExpense = async () => {
+    const dollars =
+      Number(String(newExpenseAmount || "0").replace(/[^0-9.\-]/g, "")) || 0;
+    const cents = Math.round(dollars * 100);
+    try {
+      await createExpense({
+        name: newExpenseName,
+        category: newExpenseCategory,
+        expense_date: newExpenseDate,
+        amount_cents: cents,
+        currency: "USD",
+        status: newExpenseStatus,
+        submitter: newExpenseSubmitter || undefined,
+      });
+      setShowAddExpense(false);
+      setNewExpenseName("");
+      setNewExpenseAmount("0");
+      setNewExpenseSubmitter("");
+      await loadExpenses();
+      toast({ title: "Expense added" });
+    } catch (e: any) {
+      toast({
+        title: "Failed to add expense",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -1762,7 +2723,10 @@ const ExpenseTrackingView = () => {
             Track and manage agency expenses
           </p>
         </div>
-        <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2">
+        <Button
+          onClick={() => setShowAddExpense(true)}
+          className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
+        >
           <Plus className="w-5 h-5" />
           Add Expense
         </Button>
@@ -1792,40 +2756,44 @@ const ExpenseTrackingView = () => {
       </div>
 
       <div className="space-y-3">
-        {MOCK_EXPENSES.map((expense) => (
-          <Card
-            key={expense.id}
-            className="p-5 bg-white border border-gray-100 rounded-2xl hover:shadow-sm transition-shadow"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4 flex-1">
-                <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center border border-orange-100">
-                  {getCategoryIcon(expense.category)}
+        {loading ? (
+          <div className="text-sm text-gray-600 font-medium">Loading…</div>
+        ) : (
+          filteredExpenses.map((expense) => (
+            <Card
+              key={expense.id}
+              className="p-5 bg-white border border-gray-100 rounded-2xl hover:shadow-sm transition-shadow"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4 flex-1">
+                  <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center border border-orange-100">
+                    {getCategoryIcon(expense.category)}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-base font-bold text-gray-900">
+                      {expense.name}
+                    </h4>
+                    <p className="text-sm text-gray-600 font-bold">
+                      {expense.category} • {expense.date}
+                      {expense.submitter && ` • ${expense.submitter}`}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <h4 className="text-base font-bold text-gray-900">
-                    {expense.name}
-                  </h4>
-                  <p className="text-sm text-gray-600 font-bold">
-                    {expense.category} • {expense.date}
-                    {expense.submitter && ` • ${expense.submitter}`}
-                  </p>
+                <div className="flex items-center gap-4">
+                  <Badge
+                    variant="outline"
+                    className={`text-xs font-bold px-3 py-1 rounded-lg capitalize ${getStatusColor(expense.status)}`}
+                  >
+                    {expense.status}
+                  </Badge>
+                  <span className="text-lg font-bold text-gray-900">
+                    {money(expense.amountCents, expense.currency)}
+                  </span>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <Badge
-                  variant="outline"
-                  className={`text-xs font-bold px-3 py-1 rounded-lg capitalize ${getStatusColor(expense.status)}`}
-                >
-                  {expense.status}
-                </Badge>
-                <span className="text-lg font-bold text-gray-900">
-                  {expense.amount}
-                </span>
-              </div>
-            </div>
-          </Card>
-        ))}
+            </Card>
+          ))
+        )}
       </div>
 
       <Card className="p-6 bg-gradient-to-br from-orange-50 to-red-50 border border-orange-100 rounded-2xl">
@@ -1835,7 +2803,7 @@ const ExpenseTrackingView = () => {
               Total Expenses
             </p>
             <p className="text-3xl font-bold text-orange-600">
-              ${totalExpenses.toFixed(2)}
+              {totalExpensesText}
             </p>
           </div>
           <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center">
@@ -1843,6 +2811,118 @@ const ExpenseTrackingView = () => {
           </div>
         </div>
       </Card>
+
+      <Dialog open={showAddExpense} onOpenChange={setShowAddExpense}>
+        <DialogContent className="sm:max-w-[520px] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900">
+              Add Expense
+            </DialogTitle>
+            <DialogDescription className="text-gray-500 font-medium">
+              Create a new operating expense for your agency.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-gray-700">Name</Label>
+              <Input
+                value={newExpenseName}
+                onChange={(e) => setNewExpenseName(e.target.value)}
+                className="h-11 rounded-xl"
+                placeholder="e.g. Camera rental"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-700">
+                  Category
+                </Label>
+                <Select
+                  value={newExpenseCategory}
+                  onValueChange={setNewExpenseCategory}
+                >
+                  <SelectTrigger className="h-11 rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="Travel">Travel</SelectItem>
+                    <SelectItem value="Equipment">Equipment</SelectItem>
+                    <SelectItem value="Marketing">Marketing</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-700">Date</Label>
+                <Input
+                  type="date"
+                  value={newExpenseDate}
+                  onChange={(e) => setNewExpenseDate(e.target.value)}
+                  className="h-11 rounded-xl"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-700">
+                  Amount (USD)
+                </Label>
+                <Input
+                  value={newExpenseAmount}
+                  onChange={(e) => setNewExpenseAmount(e.target.value)}
+                  className="h-11 rounded-xl"
+                  inputMode="decimal"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-700">
+                  Status
+                </Label>
+                <Select
+                  value={newExpenseStatus}
+                  onValueChange={setNewExpenseStatus}
+                >
+                  <SelectTrigger className="h-11 rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="approved">approved</SelectItem>
+                    <SelectItem value="pending">pending</SelectItem>
+                    <SelectItem value="rejected">rejected</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-gray-700">
+                Submitter (optional)
+              </Label>
+              <Input
+                value={newExpenseSubmitter}
+                onChange={(e) => setNewExpenseSubmitter(e.target.value)}
+                className="h-11 rounded-xl"
+                placeholder="e.g. Emma"
+              />
+            </div>
+          </div>
+          <DialogFooter className="mt-6">
+            <Button
+              variant="outline"
+              onClick={() => setShowAddExpense(false)}
+              className="h-11 rounded-xl font-bold"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={submitNewExpense}
+              disabled={!newExpenseName.trim() || loading}
+              className="h-11 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+            >
+              Add Expense
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -1853,7 +2933,218 @@ const TalentStatementsView = () => {
   const [hasUnpaidEarnings, setHasUnpaidEarnings] = useState(false);
   const [selectedTalent, setSelectedTalent] = useState<any>(null);
 
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [talentRows, setTalentRows] = useState<any[]>([]);
+  const [statementSummaryRows, setStatementSummaryRows] = useState<any[]>([]);
+  const [statementLineRows, setStatementLineRows] = useState<any[]>([]);
+
+  const asArray = (v: any) => {
+    if (Array.isArray(v)) return v;
+    if (Array.isArray(v?.data)) return v.data;
+    if (Array.isArray(v?.items)) return v.items;
+    if (Array.isArray(v?.rows)) return v.rows;
+    return [] as any[];
+  };
+
+  const money = (cents: number, currency: string) => {
+    const n = Math.round(Number(cents || 0)) / 100;
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: String(currency || "USD").toUpperCase(),
+      }).format(n);
+    } catch {
+      return `${String(currency || "USD").toUpperCase()} ${n.toFixed(2)}`;
+    }
+  };
+
+  const formatDate = (s: any) => {
+    const v = String(s || "");
+    if (!v) return "";
+    const d = new Date(v);
+    if (Number.isNaN(d.getTime())) return v;
+    return d.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const [talents, statements] = await Promise.all([
+          getAgencyTalents({}),
+          listTalentStatements({}),
+        ]);
+        if (!mounted) return;
+        setTalentRows(asArray(talents));
+        setStatementSummaryRows(asArray((statements as any)?.summaries));
+        setStatementLineRows(asArray((statements as any)?.lines));
+      } catch (e: any) {
+        toast({
+          title: "Failed to load talent statements",
+          description: String(e?.message || e),
+          variant: "destructive" as any,
+        });
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [toast]);
+
+  const talentById = useMemo(() => {
+    const m = new Map<string, any>();
+    for (const t of talentRows) {
+      const id = String((t as any)?.id || "");
+      if (!id) continue;
+      m.set(id, t);
+    }
+    return m;
+  }, [talentRows]);
+
+  const summaries = useMemo(() => {
+    // Join backend summaries with talent profile info
+    const rows = asArray(statementSummaryRows).map((s: any) => {
+      const tid = String(s?.talent_id || "");
+      const t = talentById.get(tid);
+      const name =
+        String(t?.full_name || "").trim() ||
+        String(s?.talent_name || "").trim() ||
+        "(unknown)";
+      const photo = String(t?.profile_photo_url || "");
+      return {
+        talentId: tid,
+        name,
+        photo,
+        totalJobs: Number(s?.total_jobs || 0) || 0,
+        totalOwedCents: Number(s?.total_owed_cents || 0) || 0,
+        totalPaidYTDCents: Number(s?.total_paid_ytd_cents || 0) || 0,
+        lastPaymentAt: String(s?.last_payment_at || ""),
+      };
+    });
+
+    const q = searchTerm.trim().toLowerCase();
+    let out = rows;
+    if (q) out = out.filter((r) => r.name.toLowerCase().includes(q));
+    if (hasUnpaidEarnings) out = out.filter((r) => r.totalOwedCents > 0);
+
+    out = out.sort((a, b) => {
+      if (sortBy === "amount-high") return b.totalOwedCents - a.totalOwedCents;
+      if (sortBy === "amount-low") return a.totalOwedCents - b.totalOwedCents;
+      if (sortBy === "total-paid")
+        return b.totalPaidYTDCents - a.totalPaidYTDCents;
+      if (sortBy === "name-az") return a.name.localeCompare(b.name);
+      if (sortBy === "name-za") return b.name.localeCompare(a.name);
+      return 0;
+    });
+    return out;
+  }, [statementSummaryRows, talentById, searchTerm, hasUnpaidEarnings, sortBy]);
+
+  const selectedLines = useMemo(() => {
+    if (!selectedTalent) return [] as any[];
+    const tid = String(selectedTalent?.talentId || selectedTalent?.id || "");
+    return asArray(statementLineRows)
+      .filter((l: any) => String(l?.talent_id || "") === tid)
+      .map((l: any) => ({
+        jobDate: String(l?.invoice_date || ""),
+        client: String(l?.client_name || ""),
+        description: String(l?.description || ""),
+        grossCents: Number(l?.gross_cents || 0) || 0,
+        agencyFeeCents: Number(l?.agency_fee_cents || 0) || 0,
+        netCents: Number(l?.net_cents || 0) || 0,
+        status: String(l?.status || ""),
+        invoiceNumber: String(l?.invoice_number || ""),
+        paidAt: String(l?.paid_at || ""),
+      }));
+  }, [selectedTalent, statementLineRows]);
+
+  const exportAll = () => {
+    const esc = (v: any) => {
+      const s = String(v ?? "");
+      const needs = /[",\n\r]/.test(s);
+      const out = s.replace(/"/g, '""');
+      return needs ? `"${out}"` : out;
+    };
+
+    const allLines = asArray(statementLineRows);
+    if (!allLines.length) {
+      toast({
+        title: "Nothing to export",
+        description: "No statement rows are available yet.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+
+    const header = [
+      "talent_id",
+      "talent_name",
+      "invoice_number",
+      "invoice_date",
+      "client_name",
+      "description",
+      "gross_cents",
+      "agency_fee_cents",
+      "net_cents",
+      "status",
+      "paid_at",
+    ];
+
+    const rows = allLines.map((l: any) => [
+      esc(l?.talent_id),
+      esc(l?.talent_name),
+      esc(l?.invoice_number),
+      esc(l?.invoice_date),
+      esc(l?.client_name),
+      esc(l?.description),
+      esc(l?.gross_cents),
+      esc(l?.agency_fee_cents),
+      esc(l?.net_cents),
+      esc(l?.status),
+      esc(l?.paid_at),
+    ]);
+
+    const csv = [header.join(","), ...rows.map((r: any[]) => r.join(","))].join(
+      "\n",
+    );
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `talent-statements-${stamp}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
   if (selectedTalent) {
+    const totalGrossCents = selectedLines.reduce(
+      (sum, l) => sum + (l.grossCents || 0),
+      0,
+    );
+    const totalAgencyFeeCents = selectedLines.reduce(
+      (sum, l) => sum + (l.agencyFeeCents || 0),
+      0,
+    );
+    const totalNetCents = selectedLines.reduce(
+      (sum, l) => sum + (l.netCents || 0),
+      0,
+    );
+    const unpaidCount = selectedLines.filter(
+      (l) => String(l.status) === "sent",
+    ).length;
+    const paidCount = selectedLines.filter(
+      (l) => String(l.status) === "paid",
+    ).length;
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
@@ -1930,9 +3221,11 @@ const TalentStatementsView = () => {
               <p className="text-sm font-bold text-gray-700">Total Owed</p>
             </div>
             <p className="text-3xl font-bold text-orange-600 mb-1">
-              {selectedTalent.totalOwed}
+              {money(Number(selectedTalent.totalOwedCents || 0) || 0, "USD")}
             </p>
-            <p className="text-xs text-gray-600 font-medium">0 unpaid jobs</p>
+            <p className="text-xs text-gray-600 font-medium">
+              {unpaidCount} unpaid jobs
+            </p>
           </Card>
           <Card className="p-6 bg-green-50 border border-green-100 rounded-2xl">
             <div className="flex items-center gap-2 mb-2">
@@ -1942,9 +3235,11 @@ const TalentStatementsView = () => {
               </p>
             </div>
             <p className="text-3xl font-bold text-green-600 mb-1">
-              {selectedTalent.totalPaidYTD}
+              {money(Number(selectedTalent.totalPaidYTDCents || 0) || 0, "USD")}
             </p>
-            <p className="text-xs text-gray-600 font-medium">1 paid jobs</p>
+            <p className="text-xs text-gray-600 font-medium">
+              {paidCount} paid jobs
+            </p>
           </Card>
           <Card className="p-6 bg-purple-50 border border-purple-100 rounded-2xl">
             <div className="flex items-center gap-2 mb-2">
@@ -1962,7 +3257,9 @@ const TalentStatementsView = () => {
               <p className="text-sm font-bold text-gray-700">Last Payment</p>
             </div>
             <p className="text-lg font-bold text-blue-600 mb-1">
-              {selectedTalent.lastPayment}
+              {selectedTalent.lastPaymentAt
+                ? formatDate(selectedTalent.lastPaymentAt)
+                : "No payments"}
             </p>
           </Card>
         </div>
@@ -2003,37 +3300,55 @@ const TalentStatementsView = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                <tr className="bg-green-50/30">
-                  <td className="px-6 py-4">
-                    <CheckCircle2 className="w-5 h-5 text-green-600" />
-                  </td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-900">
-                    Jan 12, 2026
-                  </td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-700">
-                    Emma
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 font-medium">
-                    Booking for
-                  </td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-900">
-                    $3
-                  </td>
-                  <td className="px-6 py-4 text-sm font-bold text-red-600">
-                    -$0.6
-                  </td>
-                  <td className="px-6 py-4 text-sm font-bold text-green-600">
-                    $2.4
-                  </td>
-                  <td className="px-6 py-4">
-                    <Badge className="bg-green-100 text-green-700 border-green-200 font-bold">
-                      Paid
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 text-sm font-bold text-indigo-600">
-                    2026-1000
-                  </td>
-                </tr>
+                {selectedLines.map((l) => {
+                  const isPaid = String(l.status) === "paid";
+                  return (
+                    <tr
+                      key={`${l.invoiceNumber}-${l.description}`}
+                      className={isPaid ? "bg-green-50/30" : ""}
+                    >
+                      <td className="px-6 py-4">
+                        {isPaid ? (
+                          <CheckCircle2 className="w-5 h-5 text-green-600" />
+                        ) : (
+                          <Clock className="w-5 h-5 text-yellow-600" />
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-bold text-gray-900">
+                        {l.jobDate ? formatDate(l.jobDate) : ""}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-bold text-gray-700">
+                        {l.client}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600 font-medium">
+                        {l.description}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-bold text-gray-900">
+                        {money(l.grossCents, "USD")}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-bold text-red-600">
+                        -{money(l.agencyFeeCents, "USD")}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-bold text-green-600">
+                        {money(l.netCents, "USD")}
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge
+                          className={
+                            isPaid
+                              ? "bg-green-100 text-green-700 border-green-200 font-bold"
+                              : "bg-yellow-100 text-yellow-700 border-yellow-200 font-bold"
+                          }
+                        >
+                          {isPaid ? "Paid" : "Unpaid"}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 text-sm font-bold text-indigo-600">
+                        {l.invoiceNumber}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -2042,19 +3357,25 @@ const TalentStatementsView = () => {
               <span className="text-sm text-gray-600 font-bold">
                 Total Gross Amount
               </span>
-              <span className="text-sm font-bold text-gray-900">$3</span>
+              <span className="text-sm font-bold text-gray-900">
+                {money(totalGrossCents, "USD")}
+              </span>
             </div>
             <div className="flex justify-between items-center max-w-md ml-auto">
               <span className="text-sm text-gray-600 font-bold">
                 Total Agency Commission (20%)
               </span>
-              <span className="text-sm font-bold text-red-600">-$0.6</span>
+              <span className="text-sm font-bold text-red-600">
+                -{money(totalAgencyFeeCents, "USD")}
+              </span>
             </div>
             <div className="flex justify-between items-center max-w-md ml-auto pt-3 border-t border-gray-200">
               <span className="text-lg font-bold text-gray-900">
                 Total Talent Net
               </span>
-              <span className="text-lg font-bold text-green-600">$2.4</span>
+              <span className="text-lg font-bold text-green-600">
+                {money(totalNetCents, "USD")}
+              </span>
             </div>
           </div>
         </Card>
@@ -2076,6 +3397,8 @@ const TalentStatementsView = () => {
         <Button
           variant="outline"
           className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+          onClick={exportAll}
+          disabled={loading}
         >
           <Download className="w-5 h-5" />
           Export All
@@ -2127,79 +3450,298 @@ const TalentStatementsView = () => {
       </div>
 
       <div className="space-y-3">
-        {MOCK_TALENT_EARNINGS.map((talent) => (
-          <Card
-            key={talent.id}
-            className="p-4 bg-white border border-gray-100 rounded-2xl hover:shadow-sm transition-shadow"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 flex-1">
-                <Checkbox className="rounded-md w-4 h-4 border-gray-300" />
-                <img
-                  src={talent.photo}
-                  alt={talent.name}
-                  className="w-12 h-12 rounded-xl object-cover border-2 border-white shadow-sm"
-                />
-                <div className="flex-1">
-                  <h4 className="text-sm font-bold text-gray-900">
-                    {talent.name}
-                  </h4>
-                  <p className="text-xs text-gray-600 font-bold">
-                    {talent.totalJobs} total jobs
-                  </p>
+        {loading ? (
+          <div className="text-sm text-gray-600 font-medium">Loading…</div>
+        ) : summaries.length ? (
+          summaries.map((talent) => (
+            <Card
+              key={talent.talentId}
+              className="p-4 bg-white border border-gray-100 rounded-2xl hover:shadow-sm transition-shadow"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 flex-1">
+                  <Checkbox className="rounded-md w-4 h-4 border-gray-300" />
+                  <img
+                    src={
+                      talent.photo ||
+                      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop"
+                    }
+                    alt={talent.name}
+                    className="w-12 h-12 rounded-xl object-cover border-2 border-white shadow-sm"
+                  />
+                  <div className="flex-1">
+                    <h4 className="text-sm font-bold text-gray-900">
+                      {talent.name}
+                    </h4>
+                    <p className="text-xs text-gray-600 font-bold">
+                      {talent.totalJobs} total jobs
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-6">
+                  <div className="text-right">
+                    <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
+                      Total Owed
+                    </p>
+                    <p className="text-base font-bold text-orange-600">
+                      {money(talent.totalOwedCents, "USD")}
+                    </p>
+                    <p className="text-[10px] text-gray-400 font-medium">
+                      {talent.totalOwedCents > 0 ? "Has unpaid" : "No unpaid"}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
+                      Total Paid (YTD)
+                    </p>
+                    <p className="text-base font-bold text-green-600">
+                      {money(talent.totalPaidYTDCents, "USD")}
+                    </p>
+                    <p className="text-[10px] text-gray-400 font-medium">
+                      {talent.totalPaidYTDCents > 0 ? "Has paid" : "No paid"}
+                    </p>
+                  </div>
+                  <div className="text-right min-w-[100px]">
+                    <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
+                      Last Payment
+                    </p>
+                    <p className="text-xs text-gray-600 font-medium">
+                      {talent.lastPaymentAt
+                        ? formatDate(talent.lastPaymentAt)
+                        : "No payments"}
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => setSelectedTalent(talent)}
+                    className="h-10 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
+                  >
+                    <FileText className="w-4 h-4" />
+                    View Statement
+                  </Button>
                 </div>
               </div>
-              <div className="flex items-center gap-6">
-                <div className="text-right">
-                  <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
-                    Total Owed
-                  </p>
-                  <p className="text-base font-bold text-orange-600">
-                    {talent.totalOwed}
-                  </p>
-                  <p className="text-[10px] text-gray-400 font-medium">
-                    0 unpaid jobs
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
-                    Total Paid (YTD)
-                  </p>
-                  <p className="text-base font-bold text-green-600">
-                    {talent.totalPaidYTD}
-                  </p>
-                  <p className="text-[10px] text-gray-400 font-medium">
-                    1 paid jobs
-                  </p>
-                </div>
-                <div className="text-right min-w-[100px]">
-                  <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
-                    Last Payment
-                  </p>
-                  <p className="text-xs text-gray-600 font-medium">
-                    {talent.lastPayment}
-                  </p>
-                </div>
-                <Button
-                  onClick={() => setSelectedTalent(talent)}
-                  className="h-10 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
-                >
-                  <FileText className="w-4 h-4" />
-                  View Statement
-                </Button>
-              </div>
-            </div>
-          </Card>
-        ))}
+            </Card>
+          ))
+        ) : (
+          <div className="text-sm text-gray-600 font-medium">
+            No talent statements yet.
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
 const PaymentTrackingView = () => {
+  const reminderKey = "likelee.payment_reminders.v1";
   const [reminder3Days, setReminder3Days] = useState(true);
   const [reminderDueDate, setReminderDueDate] = useState(true);
   const [reminder7Days, setReminder7Days] = useState(true);
+
+  const { toast } = useToast();
+
+  const [loading, setLoading] = useState(false);
+  const [invoiceRows, setInvoiceRows] = useState<any[]>([]);
+
+  const asArray = (v: any) => {
+    if (Array.isArray(v)) return v;
+    if (Array.isArray(v?.data)) return v.data;
+    if (Array.isArray(v?.items)) return v.items;
+    if (Array.isArray(v?.rows)) return v.rows;
+    return [] as any[];
+  };
+
+  const money = (cents: number, currency: string) => {
+    const n = Math.round(Number(cents || 0)) / 100;
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: String(currency || "USD").toUpperCase(),
+      }).format(n);
+    } catch {
+      return `${String(currency || "USD").toUpperCase()} ${n.toFixed(2)}`;
+    }
+  };
+
+  const moneyTotals = (totalsByCurrency: Map<string, number>) => {
+    const entries = Array.from(totalsByCurrency.entries()).filter(
+      ([, v]) => (v || 0) !== 0,
+    );
+    if (!entries.length) return money(0, "USD");
+    if (entries.length === 1) {
+      const [cur, cents] = entries[0];
+      return money(cents, cur);
+    }
+    // If invoices are in multiple currencies, show a compact breakdown.
+    return entries
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([cur, cents]) => money(cents, cur))
+      .join(" + ");
+  };
+
+  const formatDate = (s: any) => {
+    const v = String(s || "");
+    if (!v) return "";
+    const d = new Date(v);
+    if (Number.isNaN(d.getTime())) return v;
+    return d.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(reminderKey);
+      if (raw) {
+        const v = JSON.parse(raw);
+        if (typeof v?.reminder3Days === "boolean")
+          setReminder3Days(v.reminder3Days);
+        if (typeof v?.reminderDueDate === "boolean")
+          setReminderDueDate(v.reminderDueDate);
+        if (typeof v?.reminder7Days === "boolean")
+          setReminder7Days(v.reminder7Days);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        reminderKey,
+        JSON.stringify({ reminder3Days, reminderDueDate, reminder7Days }),
+      );
+    } catch {
+      // ignore
+    }
+  }, [reminder3Days, reminderDueDate, reminder7Days]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const inv = await listInvoices({});
+        if (!mounted) return;
+        setInvoiceRows(asArray(inv));
+      } catch (e: any) {
+        toast({
+          title: "Failed to load payments",
+          description: String(e?.message || e),
+          variant: "destructive" as any,
+        });
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [toast]);
+
+  const normalized = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return invoiceRows.map((inv) => {
+      const statusRaw = String(
+        (inv as any)?.status ??
+          (inv as any)?.invoice_status ??
+          (inv as any)?.invoice?.status ??
+          "draft",
+      );
+      const dueDateStr = String((inv as any)?.due_date || "");
+      const due = dueDateStr ? new Date(dueDateStr) : null;
+      const paidAt = (inv as any)?.paid_at ?? (inv as any)?.paidAt;
+      const sentAt = (inv as any)?.sent_at ?? (inv as any)?.sentAt;
+      const inferredStatus = (() => {
+        if (statusRaw === "void") return "void";
+        if (paidAt) return "paid";
+        if (sentAt) return "sent";
+        return statusRaw;
+      })();
+      const isOverdue =
+        inferredStatus !== "paid" &&
+        inferredStatus !== "void" &&
+        due &&
+        due < today;
+      return {
+        id: String((inv as any)?.id || ""),
+        invoiceNumber: String((inv as any)?.invoice_number || ""),
+        currency: String((inv as any)?.currency || "USD"),
+        totalCents: Number((inv as any)?.total_cents || 0) || 0,
+        status: isOverdue ? "overdue" : inferredStatus,
+        dueDate: dueDateStr,
+        paidAt: paidAt ? String(paidAt) : "",
+        sentAt: sentAt ? String(sentAt) : "",
+      };
+    });
+  }, [invoiceRows]);
+
+  const summary = useMemo(() => {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    monthStart.setHours(0, 0, 0, 0);
+
+    const paidThisMonth = normalized.filter((i) => {
+      if (!i.paidAt) return false;
+      const d = new Date(i.paidAt);
+      return !Number.isNaN(d.getTime()) && d >= monthStart;
+    });
+    const paidThisMonthTotals = new Map<string, number>();
+    for (const i of paidThisMonth) {
+      const cur = String(i.currency || "USD");
+      paidThisMonthTotals.set(
+        cur,
+        (paidThisMonthTotals.get(cur) || 0) + (i.totalCents || 0),
+      );
+    }
+
+    const pending = normalized.filter((i) => i.status === "sent");
+    const pendingTotals = new Map<string, number>();
+    for (const i of pending) {
+      const cur = String(i.currency || "USD");
+      pendingTotals.set(
+        cur,
+        (pendingTotals.get(cur) || 0) + (i.totalCents || 0),
+      );
+    }
+
+    const overdue = normalized.filter((i) => i.status === "overdue");
+    const overdueTotals = new Map<string, number>();
+    for (const i of overdue) {
+      const cur = String(i.currency || "USD");
+      overdueTotals.set(
+        cur,
+        (overdueTotals.get(cur) || 0) + (i.totalCents || 0),
+      );
+    }
+
+    // Non-goal for MVP per design.md
+    const partialCount = 0;
+    const partialCents = 0;
+
+    const recentPayments = normalized
+      .filter((i) => i.status === "paid" && i.paidAt)
+      .sort(
+        (a, b) => new Date(b.paidAt).getTime() - new Date(a.paidAt).getTime(),
+      )
+      .slice(0, 10);
+
+    return {
+      paidThisMonthTotals,
+      paidThisMonthCount: paidThisMonth.length,
+      pendingTotals,
+      pendingCount: pending.length,
+      partialCents,
+      partialCount,
+      overdueTotals,
+      overdueCount: overdue.length,
+      recentPayments,
+    };
+  }, [normalized]);
 
   return (
     <div className="space-y-6">
@@ -2210,32 +3752,79 @@ const PaymentTrackingView = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="p-6 bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100 rounded-2xl">
-          <p className="text-sm font-bold text-gray-700 mb-2">
-            Paid This Month
-          </p>
-          <p className="text-3xl font-bold text-green-600 mb-1">$3</p>
-          <p className="text-xs text-gray-600 font-medium">1 invoices</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="p-6 bg-green-50 border border-green-100 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-gray-700 mb-2">
+                Paid This Month
+              </p>
+              <p className="text-3xl font-bold text-green-600">
+                {moneyTotals(summary.paidThisMonthTotals)}
+              </p>
+              <p className="text-xs text-gray-600 font-medium mt-1">
+                {summary.paidThisMonthCount} invoices
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+              <DollarSign className="w-6 h-6 text-green-600" />
+            </div>
+          </div>
         </Card>
-        <Card className="p-6 bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-100 rounded-2xl">
-          <p className="text-sm font-bold text-gray-700 mb-2">
-            Pending Payment
-          </p>
-          <p className="text-3xl font-bold text-yellow-600 mb-1">$0</p>
-          <p className="text-xs text-gray-600 font-medium">0 invoices</p>
+
+        <Card className="p-6 bg-yellow-50 border border-yellow-100 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-gray-700 mb-2">
+                Pending Payment
+              </p>
+              <p className="text-3xl font-bold text-yellow-600">
+                {moneyTotals(summary.pendingTotals)}
+              </p>
+              <p className="text-xs text-gray-600 font-medium mt-1">
+                {summary.pendingCount} invoices
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center">
+              <Clock className="w-6 h-6 text-yellow-600" />
+            </div>
+          </div>
         </Card>
-        <Card className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl">
-          <p className="text-sm font-bold text-gray-700 mb-2">
-            Partial Payments
-          </p>
-          <p className="text-3xl font-bold text-blue-600 mb-1">$0</p>
-          <p className="text-xs text-gray-600 font-medium">0 invoices</p>
+
+        <Card className="p-6 bg-blue-50 border border-blue-100 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-gray-700 mb-2">
+                Partial Payments
+              </p>
+              <p className="text-3xl font-bold text-blue-600">
+                {money(summary.partialCents, "USD")}
+              </p>
+              <p className="text-xs text-gray-600 font-medium mt-1">
+                {summary.partialCount} invoices
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+              <PieChart className="w-6 h-6 text-blue-600" />
+            </div>
+          </div>
         </Card>
-        <Card className="p-6 bg-gradient-to-br from-red-50 to-pink-50 border border-red-100 rounded-2xl">
-          <p className="text-sm font-bold text-gray-700 mb-2">Overdue</p>
-          <p className="text-3xl font-bold text-red-600 mb-1">$0</p>
-          <p className="text-xs text-gray-600 font-medium">0 invoices</p>
+
+        <Card className="p-6 bg-red-50 border border-red-100 rounded-2xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-gray-700 mb-2">Overdue</p>
+              <p className="text-3xl font-bold text-red-600">
+                {moneyTotals(summary.overdueTotals)}
+              </p>
+              <p className="text-xs text-gray-600 font-medium mt-1">
+                {summary.overdueCount} invoices
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+              <AlertTriangle className="w-6 h-6 text-red-600" />
+            </div>
+          </div>
         </Card>
       </div>
 
@@ -2243,39 +3832,50 @@ const PaymentTrackingView = () => {
         <h3 className="text-lg font-bold text-gray-900 mb-4">
           Recent Payments
         </h3>
-        <div className="space-y-3">
-          {MOCK_PAYMENTS.map((payment) => (
-            <div
-              key={payment.id}
-              className="flex items-center justify-between p-4 bg-green-50 border border-green-100 rounded-xl"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+        {loading ? (
+          <div className="text-sm text-gray-600 font-medium">Loading…</div>
+        ) : summary.recentPayments.length ? (
+          <div className="space-y-3">
+            {summary.recentPayments.map((p: any) => (
+              <div
+                key={String(p.id || p.invoiceNumber)}
+                className="bg-green-50 border border-green-100 rounded-xl p-4 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-gray-900">
+                      Invoice #{p.invoiceNumber}
+                    </p>
+                    <p className="text-xs text-gray-600 font-medium">
+                      {formatDate(p.paidAt)}
+                    </p>
+                  </div>
                 </div>
-
-                <div>
-                  <p className="text-sm font-bold text-gray-900">
-                    Invoice {payment.invoiceNumber} • {payment.client}
-                  </p>
-                  <p className="text-xs text-gray-600 font-medium">
-                    {payment.date}
-                  </p>
-                </div>
+                <span className="text-lg font-bold text-green-600">
+                  {money(p.totalCents, p.currency)}
+                </span>
               </div>
-              <span className="text-lg font-bold text-green-600">
-                {payment.amount}
-              </span>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-sm text-gray-600 font-medium">
+            No payments yet.
+          </div>
+        )}
       </Card>
 
       <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
         <h3 className="text-lg font-bold text-gray-900 mb-4">
           Payment Reminder Settings
         </h3>
-        <div className="space-y-4">
+        <p className="text-xs text-gray-500 font-medium mb-4">
+          Reminders are not sent automatically in the current MVP. These toggles
+          only save your preferences.
+        </p>
+        <div className="space-y-3">
           <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-100 rounded-xl">
             <div>
               <p className="text-sm font-bold text-gray-900">
@@ -2339,6 +3939,934 @@ const FinancialReportsView = () => {
   const [talentFilter, setTalentFilter] = useState("all");
   const [activeReportTab, setActiveReportTab] = useState("revenue");
 
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [invoiceRows, setInvoiceRows] = useState<any[]>([]);
+  const [clientRows, setClientRows] = useState<any[]>([]);
+  const [talentRows, setTalentRows] = useState<any[]>([]);
+  const [statementLineRows, setStatementLineRows] = useState<any[]>([]);
+  const [expenseRows, setExpenseRows] = useState<any[]>([]);
+
+  const asArray = (v: any) => {
+    if (Array.isArray(v)) return v;
+    if (Array.isArray(v?.data)) return v.data;
+    if (Array.isArray(v?.items)) return v.items;
+    if (Array.isArray(v?.rows)) return v.rows;
+    return [] as any[];
+  };
+
+  const money = (cents: number, currency: string) => {
+    const n = Math.round(Number(cents || 0)) / 100;
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: String(currency || "USD").toUpperCase(),
+      }).format(n);
+    } catch {
+      return `${String(currency || "USD").toUpperCase()} ${n.toFixed(2)}`;
+    }
+  };
+
+  const moneyTotals = (totalsByCurrency: Map<string, number>) => {
+    const entries = Array.from(totalsByCurrency.entries()).filter(
+      ([, v]) => (v || 0) !== 0,
+    );
+    if (!entries.length) return money(0, "USD");
+    if (entries.length === 1) {
+      const [cur, cents] = entries[0];
+      return money(cents, cur);
+    }
+    return entries
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([cur, cents]) => money(cents, cur))
+      .join(" + ");
+  };
+
+  const parseDate = (s: any) => {
+    const v = String(s || "");
+    if (!v) return null;
+    const d = new Date(v);
+    if (Number.isNaN(d.getTime())) return null;
+    return d;
+  };
+
+  const dateBoundsForPeriod = (period: string) => {
+    const now = new Date();
+    const start = new Date(now);
+    const end = new Date(now);
+    end.setHours(23, 59, 59, 999);
+    start.setHours(0, 0, 0, 0);
+
+    const quarterStartMonth = (m: number) => Math.floor(m / 3) * 3;
+    if (period === "this-year") {
+      start.setMonth(0, 1);
+      return { start, end };
+    }
+    if (period === "last-year") {
+      start.setFullYear(now.getFullYear() - 1, 0, 1);
+      end.setFullYear(now.getFullYear() - 1, 11, 31);
+      end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
+    if (period === "this-month") {
+      start.setDate(1);
+      return { start, end };
+    }
+    if (period === "last-month") {
+      start.setMonth(now.getMonth() - 1, 1);
+      end.setFullYear(start.getFullYear(), start.getMonth() + 1, 0);
+      end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
+    if (period === "this-quarter") {
+      const m = quarterStartMonth(now.getMonth());
+      start.setMonth(m, 1);
+      return { start, end };
+    }
+    if (period === "last-quarter") {
+      const m = quarterStartMonth(now.getMonth()) - 3;
+      const base = new Date(now.getFullYear(), m, 1);
+      start.setFullYear(base.getFullYear(), base.getMonth(), 1);
+      end.setFullYear(base.getFullYear(), base.getMonth() + 3, 0);
+      end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
+    return { start, end };
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const [inv, clients, talents, statements, expenses] = await Promise.all(
+          [
+            listInvoices({}),
+            getAgencyClients(),
+            getAgencyTalents({}),
+            listTalentStatements({}),
+            listExpenses({}),
+          ],
+        );
+        if (!mounted) return;
+        setInvoiceRows(asArray(inv));
+        setClientRows(asArray(clients));
+        setTalentRows(asArray(talents));
+        setStatementLineRows(asArray((statements as any)?.lines));
+        setExpenseRows(asArray(expenses));
+      } catch (e: any) {
+        toast({
+          title: "Failed to load financial reports",
+          description: String(e?.message || e),
+          variant: "destructive" as any,
+        });
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [toast]);
+
+  const clientNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const c of clientRows) {
+      const id = String((c as any)?.id || "");
+      const name = String((c as any)?.company || "");
+      if (id) m.set(id, name);
+    }
+    return m;
+  }, [clientRows]);
+
+  const talentNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const t of talentRows) {
+      const id = String((t as any)?.id || "");
+      const name = String((t as any)?.full_name || "");
+      if (id) m.set(id, name);
+    }
+    return m;
+  }, [talentRows]);
+
+  const normalizedInvoices = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return invoiceRows.map((inv) => {
+      const statusRaw = String(
+        (inv as any)?.status ??
+          (inv as any)?.invoice_status ??
+          (inv as any)?.invoice?.status ??
+          "draft",
+      );
+      const dueDateStr = String((inv as any)?.due_date || "");
+      const due = dueDateStr ? new Date(dueDateStr) : null;
+      const paidAt = (inv as any)?.paid_at ?? (inv as any)?.paidAt;
+      const sentAt = (inv as any)?.sent_at ?? (inv as any)?.sentAt;
+      const inferredStatus = (() => {
+        if (statusRaw === "void") return "void";
+        if (paidAt) return "paid";
+        if (sentAt) return "sent";
+        return statusRaw;
+      })();
+      const isOverdue =
+        inferredStatus !== "paid" &&
+        inferredStatus !== "void" &&
+        due &&
+        due < today;
+      return {
+        id: String((inv as any)?.id || ""),
+        invoiceNumber: String((inv as any)?.invoice_number || ""),
+        clientId: String((inv as any)?.client_id || ""),
+        clientName:
+          clientNameById.get(String((inv as any)?.client_id || "")) ||
+          String((inv as any)?.bill_to_company || ""),
+        invoiceDate: String((inv as any)?.invoice_date || ""),
+        dueDate: dueDateStr,
+        currency: String((inv as any)?.currency || "USD"),
+        subtotalCents: Number((inv as any)?.subtotal_cents || 0) || 0,
+        taxCents: Number((inv as any)?.tax_cents || 0) || 0,
+        totalCents: Number((inv as any)?.total_cents || 0) || 0,
+        agencyFeeCents: Number((inv as any)?.agency_fee_cents || 0) || 0,
+        talentNetCents: Number((inv as any)?.talent_net_cents || 0) || 0,
+        status: isOverdue ? "overdue" : inferredStatus,
+      };
+    });
+  }, [clientNameById, invoiceRows]);
+
+  const filteredInvoices = useMemo(() => {
+    const { start, end } = dateBoundsForPeriod(reportPeriod);
+    return normalizedInvoices.filter((inv) => {
+      const d = parseDate(inv.invoiceDate);
+      if (!d) return false;
+      if (d < start || d > end) return false;
+      if (clientFilter !== "all" && inv.clientId !== clientFilter) return false;
+      return true;
+    });
+  }, [normalizedInvoices, reportPeriod, clientFilter]);
+
+  const filteredStatementLines = useMemo(() => {
+    const { start, end } = dateBoundsForPeriod(reportPeriod);
+    return asArray(statementLineRows).filter((l: any) => {
+      const d = parseDate(l?.invoice_date);
+      if (!d) return false;
+      if (d < start || d > end) return false;
+      if (talentFilter !== "all" && String(l?.talent_id || "") !== talentFilter)
+        return false;
+      return true;
+    });
+  }, [statementLineRows, reportPeriod, talentFilter]);
+
+  const summary = useMemo(() => {
+    const paid = filteredInvoices.filter((i) => i.status === "paid");
+    const pending = filteredInvoices.filter((i) => i.status === "sent");
+    const overdue = filteredInvoices.filter((i) => i.status === "overdue");
+
+    const revenueTotals = new Map<string, number>();
+    const pendingTotals = new Map<string, number>();
+    const receivablesTotals = new Map<string, number>();
+    for (const i of paid) {
+      revenueTotals.set(
+        i.currency,
+        (revenueTotals.get(i.currency) || 0) + i.totalCents,
+      );
+    }
+    for (const i of pending) {
+      pendingTotals.set(
+        i.currency,
+        (pendingTotals.get(i.currency) || 0) + i.totalCents,
+      );
+      receivablesTotals.set(
+        i.currency,
+        (receivablesTotals.get(i.currency) || 0) + i.totalCents,
+      );
+    }
+    for (const i of overdue) {
+      receivablesTotals.set(
+        i.currency,
+        (receivablesTotals.get(i.currency) || 0) + i.totalCents,
+      );
+    }
+
+    const payablesTotals = new Map<string, number>();
+    for (const l of filteredStatementLines) {
+      if (String((l as any)?.status || "") === "sent") {
+        // line currency not available; assume USD
+        payablesTotals.set(
+          "USD",
+          (payablesTotals.get("USD") || 0) +
+            (Number((l as any)?.net_cents || 0) || 0),
+        );
+      }
+    }
+
+    const commissionTotals = new Map<string, number>();
+    const talentPaymentsTotals = new Map<string, number>();
+    const taxTotals = new Map<string, number>();
+    const grossServiceTotals = new Map<string, number>();
+    for (const i of paid) {
+      commissionTotals.set(
+        i.currency,
+        (commissionTotals.get(i.currency) || 0) + (i.agencyFeeCents || 0),
+      );
+      talentPaymentsTotals.set(
+        i.currency,
+        (talentPaymentsTotals.get(i.currency) || 0) + (i.talentNetCents || 0),
+      );
+      taxTotals.set(
+        i.currency,
+        (taxTotals.get(i.currency) || 0) + (i.taxCents || 0),
+      );
+      // Service gross (excluding tax/expenses/discount) approximated as stored subtotal
+      grossServiceTotals.set(
+        i.currency,
+        (grossServiceTotals.get(i.currency) || 0) + (i.subtotalCents || 0),
+      );
+    }
+
+    return {
+      revenueTotals,
+      pendingTotals,
+      receivablesTotals,
+      payablesTotals,
+      commissionTotals,
+      talentPaymentsTotals,
+      taxTotals,
+      grossServiceTotals,
+      paidCount: paid.length,
+      pendingCount: pending.length,
+      overdueCount: overdue.length,
+    };
+  }, [filteredInvoices, filteredStatementLines]);
+
+  const prevPeriodRevenueTotals = useMemo(() => {
+    const now = new Date();
+    const prev = (() => {
+      if (reportPeriod === "this-year") return "last-year";
+      if (reportPeriod === "this-quarter") return "last-quarter";
+      if (reportPeriod === "this-month") return "last-month";
+      if (reportPeriod === "last-year") return "last-year";
+      if (reportPeriod === "last-quarter") return "last-quarter";
+      if (reportPeriod === "last-month") return "last-month";
+      return reportPeriod;
+    })();
+
+    const { start, end } = dateBoundsForPeriod(prev);
+    // If the user picked a "last-*" period, shift one more back.
+    if (reportPeriod === "last-year") {
+      start.setFullYear(start.getFullYear() - 1);
+      end.setFullYear(end.getFullYear() - 1);
+    }
+    if (reportPeriod === "last-quarter") {
+      start.setMonth(start.getMonth() - 3);
+      end.setMonth(end.getMonth() - 3);
+    }
+    if (reportPeriod === "last-month") {
+      start.setMonth(start.getMonth() - 1);
+      end.setMonth(end.getMonth() - 1);
+    }
+
+    const m = new Map<string, number>();
+    for (const inv of normalizedInvoices) {
+      const d = parseDate(inv.invoiceDate);
+      if (!d) continue;
+      if (d < start || d > end) continue;
+      if (clientFilter !== "all" && inv.clientId !== clientFilter) continue;
+      if (inv.status !== "paid") continue;
+      m.set(inv.currency, (m.get(inv.currency) || 0) + (inv.totalCents || 0));
+    }
+    return m;
+  }, [clientFilter, normalizedInvoices, parseDate, reportPeriod]);
+
+  const growthRatePct = useMemo(() => {
+    const cur = Array.from(summary.revenueTotals.values()).reduce(
+      (a, b) => a + b,
+      0,
+    );
+    const prev = Array.from(prevPeriodRevenueTotals.values()).reduce(
+      (a, b) => a + b,
+      0,
+    );
+    if (!prev) return 0;
+    return ((cur - prev) / prev) * 100;
+  }, [prevPeriodRevenueTotals, summary.revenueTotals]);
+
+  const revenueByMonth = useMemo(() => {
+    const m = new Map<string, Map<string, number>>();
+    for (const inv of filteredInvoices) {
+      if (inv.status !== "paid") continue;
+      const d = parseDate(inv.invoiceDate);
+      if (!d) continue;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      if (!m.has(key)) m.set(key, new Map());
+      const byCur = m.get(key)!;
+      byCur.set(
+        inv.currency,
+        (byCur.get(inv.currency) || 0) + (inv.totalCents || 0),
+      );
+    }
+    return Array.from(m.entries())
+      .map(([key, totals]) => ({ key, totals }))
+      .sort((a, b) => a.key.localeCompare(b.key));
+  }, [filteredInvoices, parseDate]);
+
+  const topClientsByRevenue = useMemo(() => {
+    const totals = new Map<string, Map<string, number>>();
+    for (const inv of filteredInvoices) {
+      if (inv.status !== "paid") continue;
+      const cid = String(inv.clientId || "");
+      if (!cid) continue;
+      if (!totals.has(cid)) totals.set(cid, new Map());
+      const byCur = totals.get(cid)!;
+      byCur.set(
+        inv.currency,
+        (byCur.get(inv.currency) || 0) + (inv.totalCents || 0),
+      );
+    }
+    return Array.from(totals.entries())
+      .map(([clientId, byCur]) => ({
+        clientId,
+        clientName: clientNameById.get(clientId) || "(unknown)",
+        totals: byCur,
+        sort: Array.from(byCur.values()).reduce((a, b) => a + b, 0),
+      }))
+      .sort((a, b) => b.sort - a.sort)
+      .slice(0, 5);
+  }, [clientNameById, filteredInvoices]);
+
+  const topTalentByRevenue = useMemo(() => {
+    const totals = new Map<string, number>();
+    const names = new Map<string, string>();
+    for (const l of filteredStatementLines) {
+      if (String((l as any)?.status || "") !== "paid") continue;
+      const tid = String((l as any)?.talent_id || "");
+      if (!tid) continue;
+      totals.set(
+        tid,
+        (totals.get(tid) || 0) + (Number((l as any)?.gross_cents || 0) || 0),
+      );
+      const nm = String((l as any)?.talent_name || "");
+      if (nm) names.set(tid, nm);
+    }
+    return Array.from(totals.entries())
+      .map(([talentId, grossCents]) => ({
+        talentId,
+        talentName:
+          String(talentNameById.get(talentId) || "").trim() ||
+          names.get(talentId) ||
+          "(unknown)",
+        grossCents,
+      }))
+      .sort((a, b) => b.grossCents - a.grossCents)
+      .slice(0, 5);
+  }, [filteredStatementLines, talentNameById]);
+
+  const filteredExpenses = useMemo(() => {
+    const { start, end } = dateBoundsForPeriod(reportPeriod);
+    return expenseRows
+      .filter((ex) => {
+        const d = parseDate((ex as any)?.expense_date);
+        if (!d) return false;
+        if (d < start || d > end) return false;
+        const status = String((ex as any)?.status || "approved");
+        if (status !== "approved") return false;
+        return true;
+      })
+      .map((ex) => ({
+        amountCents: Number((ex as any)?.amount_cents || 0) || 0,
+        currency: String((ex as any)?.currency || "USD"),
+      }));
+  }, [expenseRows, reportPeriod]);
+
+  const expensesTotals = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const ex of filteredExpenses) {
+      m.set(ex.currency, (m.get(ex.currency) || 0) + (ex.amountCents || 0));
+    }
+    return m;
+  }, [filteredExpenses]);
+
+  const netIncomeTotals = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const [cur, cents] of summary.revenueTotals.entries()) {
+      m.set(cur, (m.get(cur) || 0) + (cents || 0));
+    }
+    for (const [cur, cents] of expensesTotals.entries()) {
+      m.set(cur, (m.get(cur) || 0) - (cents || 0));
+    }
+    return m;
+  }, [summary.revenueTotals, expensesTotals]);
+
+  const avgInvoiceTotals = useMemo(() => {
+    const count = Math.max(1, filteredInvoices.length);
+    const totals = new Map<string, number>();
+    for (const inv of filteredInvoices) {
+      totals.set(
+        inv.currency,
+        (totals.get(inv.currency) || 0) + (inv.totalCents || 0),
+      );
+    }
+    const avg = new Map<string, number>();
+    for (const [cur, cents] of totals.entries()) {
+      avg.set(cur, Math.round((cents || 0) / count));
+    }
+    return avg;
+  }, [filteredInvoices]);
+
+  const receivables = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const open = filteredInvoices.filter(
+      (i) => i.status === "sent" || i.status === "overdue",
+    );
+    const bucketDefs = [
+      { key: "current", label: "Current (Not Due)", color: "green" },
+      { key: "1_30", label: "1-30 Days Overdue", color: "yellow" },
+      { key: "31_60", label: "31-60 Days Overdue", color: "orange" },
+      { key: "61_90", label: "61-90 Days Overdue", color: "red" },
+      { key: "90_plus", label: "90+ Days Overdue", color: "gray" },
+    ] as const;
+
+    const bucketTotals = new Map<string, Map<string, number>>();
+    const bucketCounts = new Map<string, number>();
+    for (const b of bucketDefs) {
+      bucketTotals.set(b.key, new Map());
+      bucketCounts.set(b.key, 0);
+    }
+
+    const dayDiff = (a: Date, b: Date) =>
+      Math.floor((a.getTime() - b.getTime()) / (24 * 60 * 60 * 1000));
+
+    for (const inv of open) {
+      const due = parseDate(inv.dueDate);
+      const overdueDays = due ? dayDiff(today, due) : 0;
+      const key = (() => {
+        if (!due) return "current";
+        if (overdueDays <= 0) return "current";
+        if (overdueDays <= 30) return "1_30";
+        if (overdueDays <= 60) return "31_60";
+        if (overdueDays <= 90) return "61_90";
+        return "90_plus";
+      })();
+      const totals = bucketTotals.get(key)!;
+      totals.set(
+        inv.currency,
+        (totals.get(inv.currency) || 0) + (inv.totalCents || 0),
+      );
+      bucketCounts.set(key, (bucketCounts.get(key) || 0) + 1);
+    }
+
+    const totalReceivablesTotals = new Map<string, number>();
+    for (const inv of open) {
+      totalReceivablesTotals.set(
+        inv.currency,
+        (totalReceivablesTotals.get(inv.currency) || 0) + (inv.totalCents || 0),
+      );
+    }
+
+    const largestByClient = new Map<string, Map<string, number>>();
+    for (const inv of open) {
+      const cid = String(inv.clientId || "");
+      if (!cid) continue;
+      if (!largestByClient.has(cid)) largestByClient.set(cid, new Map());
+      const byCur = largestByClient.get(cid)!;
+      byCur.set(
+        inv.currency,
+        (byCur.get(inv.currency) || 0) + (inv.totalCents || 0),
+      );
+    }
+    const largestClients = Array.from(largestByClient.entries())
+      .map(([clientId, totals]) => ({
+        clientId,
+        clientName: clientNameById.get(clientId) || "(unknown)",
+        totals,
+        sort: Array.from(totals.values()).reduce((a, b) => a + b, 0),
+      }))
+      .sort((a, b) => b.sort - a.sort)
+      .slice(0, 5);
+
+    return {
+      bucketDefs,
+      bucketTotals,
+      bucketCounts,
+      totalReceivablesTotals,
+      largestClients,
+    };
+  }, [clientNameById, filteredInvoices, parseDate]);
+
+  const payablesByTalent = useMemo(() => {
+    const m = new Map<string, number>();
+    const names = new Map<string, string>();
+    for (const l of filteredStatementLines) {
+      if (String((l as any)?.status || "") !== "sent") continue;
+      const tid = String((l as any)?.talent_id || "");
+      if (!tid) continue;
+      m.set(tid, (m.get(tid) || 0) + (Number((l as any)?.net_cents || 0) || 0));
+      const nm = String((l as any)?.talent_name || "");
+      if (nm) names.set(tid, nm);
+    }
+    const rows = Array.from(m.entries())
+      .map(([talentId, netCents]) => ({
+        talentId,
+        talentName:
+          String(talentNameById.get(talentId) || "").trim() ||
+          names.get(talentId) ||
+          "(unknown)",
+        netCents,
+      }))
+      .sort((a, b) => b.netCents - a.netCents);
+    const totalNetCents = rows.reduce((s, r) => s + (r.netCents || 0), 0);
+    return { rows, totalNetCents };
+  }, [filteredStatementLines, talentNameById]);
+
+  const commissionByClient = useMemo(() => {
+    const m = new Map<string, Map<string, number>>();
+    for (const inv of filteredInvoices) {
+      if (inv.status !== "paid") continue;
+      const cid = String(inv.clientId || "");
+      if (!cid) continue;
+      if (!m.has(cid)) m.set(cid, new Map());
+      const byCur = m.get(cid)!;
+      byCur.set(
+        inv.currency,
+        (byCur.get(inv.currency) || 0) + (inv.agencyFeeCents || 0),
+      );
+    }
+    return Array.from(m.entries())
+      .map(([clientId, totals]) => ({
+        clientId,
+        clientName: clientNameById.get(clientId) || "(unknown)",
+        totals,
+        sort: Array.from(totals.values()).reduce((a, b) => a + b, 0),
+      }))
+      .sort((a, b) => b.sort - a.sort)
+      .slice(0, 5);
+  }, [clientNameById, filteredInvoices]);
+
+  const commissionByTalent = useMemo(() => {
+    const m = new Map<string, number>();
+    const names = new Map<string, string>();
+    for (const l of filteredStatementLines) {
+      if (String((l as any)?.status || "") !== "paid") continue;
+      const tid = String((l as any)?.talent_id || "");
+      if (!tid) continue;
+      m.set(
+        tid,
+        (m.get(tid) || 0) + (Number((l as any)?.agency_fee_cents || 0) || 0),
+      );
+      const nm = String((l as any)?.talent_name || "");
+      if (nm) names.set(tid, nm);
+    }
+    return Array.from(m.entries())
+      .map(([talentId, feeCents]) => ({
+        talentId,
+        talentName:
+          String(talentNameById.get(talentId) || "").trim() ||
+          names.get(talentId) ||
+          "(unknown)",
+        feeCents,
+      }))
+      .sort((a, b) => b.feeCents - a.feeCents)
+      .slice(0, 5);
+  }, [filteredStatementLines, talentNameById]);
+
+  const pl = useMemo(() => {
+    const toNum = (map: Map<string, number>) =>
+      Array.from(map.values()).reduce((a, b) => a + (b || 0), 0);
+    const revenue = toNum(summary.grossServiceTotals);
+    const cogs = toNum(summary.talentPaymentsTotals);
+    const commission = toNum(summary.commissionTotals);
+    const expenses = toNum(expensesTotals);
+    const netProfit = commission - expenses;
+    const profitMargin = revenue ? (netProfit / revenue) * 100 : 0;
+    const expenseRatio = revenue ? (expenses / revenue) * 100 : 0;
+    return {
+      revenue,
+      cogs,
+      commission,
+      expenses,
+      netProfit,
+      profitMargin,
+      expenseRatio,
+    };
+  }, [
+    expensesTotals,
+    summary.commissionTotals,
+    summary.grossServiceTotals,
+    summary.talentPaymentsTotals,
+  ]);
+
+  const taxTotals = useMemo(() => {
+    return summary.taxTotals;
+  }, [summary.taxTotals]);
+
+  const escapeCsv = (v: any) => {
+    const s = String(v ?? "");
+    if (/[\n\r,\"]/g.test(s)) return `"${s.replace(/\"/g, '""')}"`;
+    return s;
+  };
+
+  const downloadBlob = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  };
+
+  const exportBaseName = useMemo(() => {
+    const d = new Date();
+    const ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    return `financial-report-${reportPeriod}-${ymd}`;
+  }, [reportPeriod]);
+
+  const buildExportPayload = () => {
+    return {
+      meta: {
+        reportPeriod,
+        clientFilter,
+        talentFilter,
+        generatedAt: new Date().toISOString(),
+      },
+      totals: {
+        revenue: Array.from(summary.revenueTotals.entries()),
+        pending: Array.from(summary.pendingTotals.entries()),
+        receivables: Array.from(summary.receivablesTotals.entries()),
+        expenses: Array.from(expensesTotals.entries()),
+        netIncome: Array.from(netIncomeTotals.entries()),
+        commission: Array.from(summary.commissionTotals.entries()),
+        tax: Array.from(taxTotals.entries()),
+      },
+      topClientsByRevenue: topClientsByRevenue.map((c) => ({
+        clientId: c.clientId,
+        clientName: c.clientName,
+        totals: Array.from(c.totals.entries()),
+      })),
+      topTalentByRevenue: topTalentByRevenue,
+      receivables: {
+        total: Array.from(receivables.totalReceivablesTotals.entries()),
+        agingBuckets: receivables.bucketDefs.map((b) => ({
+          key: b.key,
+          label: b.label,
+          totals: Array.from(
+            (receivables.bucketTotals.get(b.key) || new Map()).entries(),
+          ),
+          count: receivables.bucketCounts.get(b.key) || 0,
+        })),
+        largestClients: receivables.largestClients.map((c) => ({
+          clientId: c.clientId,
+          clientName: c.clientName,
+          totals: Array.from(c.totals.entries()),
+        })),
+      },
+      payablesByTalent: payablesByTalent.rows,
+      commissionByClient,
+      commissionByTalent,
+      profitAndLoss: pl,
+    };
+  };
+
+  const handleExportExcel = () => {
+    const payload = buildExportPayload();
+
+    const lines: string[] = [];
+    const addRow = (...cols: any[]) =>
+      lines.push(cols.map(escapeCsv).join(","));
+
+    addRow("Financial Report");
+    addRow("Report Period", payload.meta.reportPeriod);
+    addRow("Client Filter", payload.meta.clientFilter);
+    addRow("Talent Filter", payload.meta.talentFilter);
+    addRow("Generated At", payload.meta.generatedAt);
+    lines.push("");
+
+    addRow("Section", "Metric", "Value");
+    addRow("Overview", "Total Revenue", moneyTotals(summary.revenueTotals));
+    addRow("Overview", "Pending", moneyTotals(summary.pendingTotals));
+    addRow(
+      "Overview",
+      "Outstanding Receivables",
+      moneyTotals(summary.receivablesTotals),
+    );
+    addRow("Overview", "Expenses", moneyTotals(expensesTotals));
+    addRow("Overview", "Net Income", moneyTotals(netIncomeTotals));
+    addRow("Overview", "Commission", moneyTotals(summary.commissionTotals));
+    addRow("Overview", "Sales Tax", moneyTotals(taxTotals));
+    lines.push("");
+
+    addRow("Top Clients by Revenue");
+    addRow("Client", "Revenue");
+    for (const c of topClientsByRevenue)
+      addRow(c.clientName, moneyTotals(c.totals));
+    lines.push("");
+
+    addRow("Top Talent by Revenue");
+    addRow("Talent", "Gross Revenue");
+    for (const t of topTalentByRevenue)
+      addRow(t.talentName, money(t.grossCents, "USD"));
+    lines.push("");
+
+    addRow("Outstanding Receivables Aging");
+    addRow("Bucket", "Amount", "Invoices");
+    for (const b of receivables.bucketDefs) {
+      addRow(
+        b.label,
+        moneyTotals(receivables.bucketTotals.get(b.key) || new Map()),
+        receivables.bucketCounts.get(b.key) || 0,
+      );
+    }
+    lines.push("");
+
+    addRow("Talent Payables");
+    addRow("Talent", "Amount");
+    for (const r of payablesByTalent.rows)
+      addRow(r.talentName, money(r.netCents, "USD"));
+    lines.push("");
+
+    addRow("Commission by Client");
+    addRow("Client", "Commission");
+    for (const c of commissionByClient)
+      addRow(c.clientName, moneyTotals(c.totals));
+    lines.push("");
+
+    addRow("Commission by Talent");
+    addRow("Talent", "Commission");
+    for (const t of commissionByTalent)
+      addRow(t.talentName, money(t.feeCents, "USD"));
+    lines.push("");
+
+    addRow("Profit & Loss");
+    addRow("Revenue", money(pl.revenue, "USD"));
+    addRow("COGS (Talent Payments)", money(pl.cogs, "USD"));
+    addRow("Gross Profit (Commission)", money(pl.commission, "USD"));
+    addRow("Operating Expenses", money(pl.expenses, "USD"));
+    addRow("Net Profit", money(pl.netProfit, "USD"));
+    addRow("Profit Margin %", pl.profitMargin.toFixed(2));
+    addRow("Expense Ratio %", pl.expenseRatio.toFixed(2));
+
+    const blob = new Blob([lines.join("\n")], {
+      type: "text/csv;charset=utf-8",
+    });
+    downloadBlob(blob, `${exportBaseName}.csv`);
+  };
+
+  const handleExportPdf = () => {
+    const title = "Financial Report";
+    const meta = `Period: ${reportPeriod} | Client: ${clientFilter} | Talent: ${talentFilter}`;
+
+    const tableRows = (rows: Array<[string, string]>) =>
+      rows
+        .map(
+          ([a, b]) =>
+            `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${a}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${b}</td></tr>`,
+        )
+        .join("");
+
+    const html = `
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>${title}</title>
+    <style>
+      body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; padding: 24px; color:#111827; }
+      h1 { font-size: 18px; margin: 0 0 6px; }
+      .meta { color:#6b7280; font-size: 12px; margin-bottom: 18px; }
+      h2 { font-size: 14px; margin: 18px 0 8px; }
+      table { width: 100%; border-collapse: collapse; font-size: 12px; }
+      th { text-align:left; background:#f9fafb; padding:6px 8px; border:1px solid #e5e7eb; }
+    </style>
+  </head>
+  <body>
+    <h1>${title}</h1>
+    <div class="meta">${meta}</div>
+
+    <h2>Overview</h2>
+    <table>
+      <thead><tr><th>Metric</th><th style="text-align:right;">Value</th></tr></thead>
+      <tbody>
+        ${tableRows([
+          ["Total Revenue", moneyTotals(summary.revenueTotals)],
+          ["Pending", moneyTotals(summary.pendingTotals)],
+          ["Outstanding Receivables", moneyTotals(summary.receivablesTotals)],
+          ["Expenses", moneyTotals(expensesTotals)],
+          ["Net Income", moneyTotals(netIncomeTotals)],
+          ["Commission", moneyTotals(summary.commissionTotals)],
+          ["Sales Tax", moneyTotals(taxTotals)],
+        ])}
+      </tbody>
+    </table>
+
+    <h2>Top Clients by Revenue</h2>
+    <table>
+      <thead><tr><th>Client</th><th style="text-align:right;">Revenue</th></tr></thead>
+      <tbody>
+        ${topClientsByRevenue
+          .map(
+            (c) =>
+              `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${c.clientName}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${moneyTotals(c.totals)}</td></tr>`,
+          )
+          .join("")}
+      </tbody>
+    </table>
+
+    <h2>Top Talent by Revenue</h2>
+    <table>
+      <thead><tr><th>Talent</th><th style="text-align:right;">Gross</th></tr></thead>
+      <tbody>
+        ${topTalentByRevenue
+          .map(
+            (t) =>
+              `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${t.talentName}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${money(t.grossCents, "USD")}</td></tr>`,
+          )
+          .join("")}
+      </tbody>
+    </table>
+
+    <h2>Outstanding Receivables</h2>
+    <table>
+      <thead><tr><th>Aging Bucket</th><th style="text-align:right;">Amount</th><th style="text-align:right;">Invoices</th></tr></thead>
+      <tbody>
+        ${receivables.bucketDefs
+          .map(
+            (b) =>
+              `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${b.label}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${moneyTotals(receivables.bucketTotals.get(b.key) || new Map())}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${receivables.bucketCounts.get(b.key) || 0}</td></tr>`,
+          )
+          .join("")}
+      </tbody>
+    </table>
+
+    <h2>Profit &amp; Loss</h2>
+    <table>
+      <thead><tr><th>Line</th><th style="text-align:right;">Amount</th></tr></thead>
+      <tbody>
+        ${tableRows([
+          ["Revenue", money(pl.revenue, "USD")],
+          ["COGS (Talent Payments)", `-${money(pl.cogs, "USD")}`],
+          ["Gross Profit (Commission)", money(pl.commission, "USD")],
+          ["Operating Expenses", `-${money(pl.expenses, "USD")}`],
+          ["Net Profit", money(pl.netProfit, "USD")],
+        ])}
+      </tbody>
+    </table>
+
+    <script>
+      window.onload = () => { window.focus(); window.print(); };
+    </script>
+  </body>
+</html>`;
+
+    const w = window.open("", "_blank");
+    if (!w) return;
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -2354,32 +4882,46 @@ const FinancialReportsView = () => {
             <DollarSign className="w-5 h-5 text-green-600" />
             <p className="text-sm font-bold text-gray-700">Total Revenue</p>
           </div>
-          <p className="text-3xl font-bold text-green-600 mb-1">$3</p>
-          <p className="text-xs text-gray-600 font-medium">1 paid invoices</p>
+          <p className="text-3xl font-bold text-green-600 mb-1">
+            {moneyTotals(summary.revenueTotals)}
+          </p>
+          <p className="text-xs text-gray-600 font-medium">
+            {summary.paidCount} paid invoices
+          </p>
         </Card>
         <Card className="p-6 bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-2">
             <Clock className="w-5 h-5 text-yellow-600" />
             <p className="text-sm font-bold text-gray-700">Pending</p>
           </div>
-          <p className="text-3xl font-bold text-yellow-600 mb-1">$0</p>
-          <p className="text-xs text-gray-600 font-medium">0 invoices</p>
+          <p className="text-3xl font-bold text-yellow-600 mb-1">
+            {moneyTotals(summary.pendingTotals)}
+          </p>
+          <p className="text-xs text-gray-600 font-medium">
+            {summary.pendingCount} invoices
+          </p>
         </Card>
         <Card className="p-6 bg-gradient-to-br from-red-50 to-pink-50 border border-red-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-2">
             <TrendingDown className="w-5 h-5 text-red-600" />
             <p className="text-sm font-bold text-gray-700">Expenses</p>
           </div>
-          <p className="text-3xl font-bold text-red-600 mb-1">$775</p>
-          <p className="text-xs text-gray-600 font-medium">4 expenses</p>
+          <p className="text-3xl font-bold text-red-600 mb-1">
+            {moneyTotals(expensesTotals)}
+          </p>
+          <p className="text-xs text-gray-600 font-medium">
+            {filteredExpenses.length} expenses
+          </p>
         </Card>
         <Card className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl">
           <div className="flex items-center gap-3 mb-2">
             <TrendingUp className="w-5 h-5 text-indigo-600" />
             <p className="text-sm font-bold text-gray-700">Net Income</p>
           </div>
-          <p className="text-3xl font-bold text-indigo-600 mb-1">-$772</p>
-          <p className="text-xs text-gray-600 font-medium">past month</p>
+          <p className="text-3xl font-bold text-indigo-600 mb-1">
+            {moneyTotals(netIncomeTotals)}
+          </p>
+          <p className="text-xs text-gray-600 font-medium">selected period</p>
         </Card>
       </div>
 
@@ -2390,6 +4932,7 @@ const FinancialReportsView = () => {
             <Button
               variant="outline"
               className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+              onClick={handleExportPdf}
             >
               <FileDown className="w-4 h-4" />
               Export to PDF
@@ -2397,6 +4940,7 @@ const FinancialReportsView = () => {
             <Button
               variant="outline"
               className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+              onClick={handleExportExcel}
             >
               <Download className="w-4 h-4" />
               Export to Excel
@@ -2433,8 +4977,11 @@ const FinancialReportsView = () => {
               </SelectTrigger>
               <SelectContent className="rounded-xl">
                 <SelectItem value="all">All Clients</SelectItem>
-                <SelectItem value="nike">Nike Global</SelectItem>
-                <SelectItem value="adidas">Adidas</SelectItem>
+                {asArray(clientRows).map((c: any) => (
+                  <SelectItem key={String(c?.id)} value={String(c?.id)}>
+                    {String(c?.company || "(unknown)")}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -2448,8 +4995,11 @@ const FinancialReportsView = () => {
               </SelectTrigger>
               <SelectContent className="rounded-xl">
                 <SelectItem value="all">All Talent</SelectItem>
-                <SelectItem value="emma">Emma</SelectItem>
-                <SelectItem value="milan">Milan</SelectItem>
+                {asArray(talentRows).map((t: any) => (
+                  <SelectItem key={String(t?.id)} value={String(t?.id)}>
+                    {String(t?.full_name || "(unknown)")}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -2488,9 +5038,11 @@ const FinancialReportsView = () => {
                     Total Revenue
                   </p>
                 </div>
-                <p className="text-2xl font-bold text-green-600 mb-1">$3</p>
+                <p className="text-2xl font-bold text-green-600 mb-1">
+                  {moneyTotals(summary.revenueTotals)}
+                </p>
                 <p className="text-[10px] text-gray-600 font-medium">
-                  1 paid invoices
+                  {summary.paidCount} paid invoices
                 </p>
               </Card>
               <Card className="p-5 bg-blue-50 border border-blue-100 rounded-xl">
@@ -2500,9 +5052,12 @@ const FinancialReportsView = () => {
                     Pending Revenue
                   </p>
                 </div>
-                <p className="text-2xl font-bold text-blue-600 mb-1">$0</p>
+                <p className="text-2xl font-bold text-blue-600 mb-1">
+                  {moneyTotals(summary.receivablesTotals)}
+                </p>
                 <p className="text-[10px] text-gray-600 font-medium">
-                  0 outstanding invoices
+                  {summary.pendingCount + summary.overdueCount} outstanding
+                  invoices
                 </p>
               </Card>
               <Card className="p-5 bg-purple-50 border border-purple-100 rounded-xl">
@@ -2510,7 +5065,9 @@ const FinancialReportsView = () => {
                   <Receipt className="w-4 h-4 text-purple-600" />
                   <p className="text-xs font-bold text-gray-700">Avg Invoice</p>
                 </div>
-                <p className="text-2xl font-bold text-purple-600 mb-1">$3</p>
+                <p className="text-2xl font-bold text-purple-600 mb-1">
+                  {moneyTotals(avgInvoiceTotals)}
+                </p>
                 <p className="text-[10px] text-gray-600 font-medium">
                   per invoice
                 </p>
@@ -2521,7 +5078,8 @@ const FinancialReportsView = () => {
                   <p className="text-xs font-bold text-gray-700">Growth Rate</p>
                 </div>
                 <p className="text-2xl font-bold text-orange-600 mb-1">
-                  +15.3%
+                  {growthRatePct >= 0 ? "+" : ""}
+                  {growthRatePct.toFixed(1)}%
                 </p>
                 <p className="text-[10px] text-gray-600 font-medium">
                   vs previous period
@@ -2534,10 +5092,36 @@ const FinancialReportsView = () => {
                 Revenue by Month
               </h4>
               <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 w-1/12"></div>
+                <div
+                  className="h-full bg-gradient-to-r from-green-500 to-emerald-500"
+                  style={{
+                    width: (() => {
+                      const last = revenueByMonth[revenueByMonth.length - 1];
+                      if (!last) return "0%";
+                      const max = Math.max(
+                        1,
+                        ...revenueByMonth.map((x) =>
+                          Array.from(x.totals.values()).reduce(
+                            (a, b) => a + b,
+                            0,
+                          ),
+                        ),
+                      );
+                      const v = Array.from(last.totals.values()).reduce(
+                        (a, b) => a + b,
+                        0,
+                      );
+                      return `${Math.round((v / max) * 100)}%`;
+                    })(),
+                  }}
+                ></div>
               </div>
               <p className="text-xs text-gray-600 font-medium mt-2">
-                Jan 2026: $3
+                {(() => {
+                  const last = revenueByMonth[revenueByMonth.length - 1];
+                  if (!last) return "No paid invoices";
+                  return `${last.key}: ${moneyTotals(last.totals)}`;
+                })()}
               </p>
             </div>
 
@@ -2546,31 +5130,63 @@ const FinancialReportsView = () => {
                 <h4 className="text-sm font-bold text-gray-900 mb-4">
                   Top Clients by Revenue
                 </h4>
-                <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
-                  <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-                    <Building2 className="w-4 h-4 text-indigo-600" />
+                {topClientsByRevenue.length ? (
+                  <div className="space-y-2">
+                    {topClientsByRevenue.map((c) => (
+                      <div
+                        key={c.clientId}
+                        className="flex items-center gap-3 p-3 bg-white rounded-lg"
+                      >
+                        <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                          <Building2 className="w-4 h-4 text-indigo-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-bold text-gray-900">
+                            {c.clientName}
+                          </p>
+                        </div>
+                        <span className="text-sm font-bold text-green-600">
+                          {moneyTotals(c.totals)}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-gray-900">
-                      Nike Global
-                    </p>
+                ) : (
+                  <div className="text-center py-8 text-gray-400 font-medium">
+                    No revenue yet
                   </div>
-                  <span className="text-sm font-bold text-green-600">$3</span>
-                </div>
+                )}
               </Card>
               <Card className="p-5 bg-gray-50 border border-gray-100 rounded-xl">
                 <h4 className="text-sm font-bold text-gray-900 mb-4">
                   Top Talent by Revenue
                 </h4>
-                <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
-                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <User className="w-4 h-4 text-purple-600" />
+                {topTalentByRevenue.length ? (
+                  <div className="space-y-2">
+                    {topTalentByRevenue.map((t) => (
+                      <div
+                        key={t.talentId}
+                        className="flex items-center gap-3 p-3 bg-white rounded-lg"
+                      >
+                        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                          <User className="w-4 h-4 text-purple-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-bold text-gray-900">
+                            {t.talentName}
+                          </p>
+                        </div>
+                        <span className="text-sm font-bold text-green-600">
+                          {money(t.grossCents, "USD")}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-gray-900">Emma</p>
+                ) : (
+                  <div className="text-center py-8 text-gray-400 font-medium">
+                    No revenue yet
                   </div>
-                  <span className="text-sm font-bold text-green-600">$3</span>
-                </div>
+                )}
               </Card>
             </div>
           </>
@@ -2583,19 +5199,15 @@ const FinancialReportsView = () => {
                 <p className="text-sm font-bold text-gray-700 mb-2">
                   Total Outstanding Receivables
                 </p>
-                <p className="text-5xl font-bold text-red-600">$0</p>
+                <p className="text-5xl font-bold text-red-600">
+                  {moneyTotals(receivables.totalReceivablesTotals)}
+                </p>
               </div>
               <AlertCircle className="w-12 h-12 text-red-600" />
             </Card>
 
             <div className="grid grid-cols-5 gap-4">
-              {[
-                { label: "Current (Not Due)", color: "green" },
-                { label: "1-30 Days Overdue", color: "yellow" },
-                { label: "31-60 Days Overdue", color: "orange" },
-                { label: "61-90 Days Overdue", color: "red" },
-                { label: "90+ Days Overdue", color: "gray" },
-              ].map((aging) => (
+              {receivables.bucketDefs.map((aging) => (
                 <Card
                   key={aging.label}
                   className={`p-4 bg-${aging.color}-50 border border-${aging.color}-100 rounded-xl`}
@@ -2604,10 +5216,12 @@ const FinancialReportsView = () => {
                     {aging.label}
                   </p>
                   <p className={`text-xl font-bold text-${aging.color}-600`}>
-                    $0
+                    {moneyTotals(
+                      receivables.bucketTotals.get(aging.key) || new Map(),
+                    )}
                   </p>
                   <p className="text-[10px] text-gray-500 font-medium">
-                    0 invoices
+                    {receivables.bucketCounts.get(aging.key) || 0} invoices
                   </p>
                 </Card>
               ))}
@@ -2617,9 +5231,32 @@ const FinancialReportsView = () => {
               <h4 className="text-base font-bold text-gray-900 mb-4">
                 Largest Outstanding Clients
               </h4>
-              <div className="text-center py-8 text-gray-400 font-medium">
-                No outstanding receivables
-              </div>
+              {receivables.largestClients.length ? (
+                <div className="space-y-2">
+                  {receivables.largestClients.map((c) => (
+                    <div
+                      key={c.clientId}
+                      className="flex items-center justify-between p-3 bg-white rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                          <Building2 className="w-4 h-4 text-indigo-600" />
+                        </div>
+                        <p className="text-sm font-bold text-gray-900">
+                          {c.clientName}
+                        </p>
+                      </div>
+                      <span className="text-sm font-bold text-red-600">
+                        {moneyTotals(c.totals)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-400 font-medium">
+                  No outstanding receivables
+                </div>
+              )}
             </Card>
           </div>
         )}
@@ -2631,7 +5268,9 @@ const FinancialReportsView = () => {
                 <p className="text-sm font-bold text-gray-700 mb-2">
                   Total Owed to All Talent
                 </p>
-                <p className="text-5xl font-bold text-orange-600">$0</p>
+                <p className="text-5xl font-bold text-orange-600">
+                  {money(payablesByTalent.totalNetCents, "USD")}
+                </p>
               </div>
               <Users className="w-12 h-12 text-orange-600" />
             </Card>
@@ -2640,9 +5279,32 @@ const FinancialReportsView = () => {
               <h4 className="text-base font-bold text-gray-900 mb-4">
                 Breakdown by Talent
               </h4>
-              <div className="text-center py-8 text-gray-400 font-medium">
-                No pending talent payables
-              </div>
+              {payablesByTalent.rows.length ? (
+                <div className="space-y-2">
+                  {payablesByTalent.rows.slice(0, 10).map((r) => (
+                    <div
+                      key={r.talentId}
+                      className="flex items-center justify-between p-3 bg-white rounded-lg"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                          <User className="w-4 h-4 text-purple-600" />
+                        </div>
+                        <p className="text-sm font-bold text-gray-900">
+                          {r.talentName}
+                        </p>
+                      </div>
+                      <span className="text-sm font-bold text-orange-600">
+                        {money(r.netCents, "USD")}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-400 font-medium">
+                  No pending talent payables
+                </div>
+              )}
             </Card>
           </div>
         )}
@@ -2657,7 +5319,9 @@ const FinancialReportsView = () => {
                     Total Commission Earned
                   </p>
                 </div>
-                <p className="text-3xl font-bold text-indigo-600 mb-1">$0</p>
+                <p className="text-3xl font-bold text-indigo-600 mb-1">
+                  {moneyTotals(summary.commissionTotals)}
+                </p>
                 <p className="text-xs text-gray-600 font-medium">
                   20% of revenue
                 </p>
@@ -2669,7 +5333,19 @@ const FinancialReportsView = () => {
                     Avg Commission per Deal
                   </p>
                 </div>
-                <p className="text-3xl font-bold text-purple-600 mb-1">$0</p>
+                <p className="text-3xl font-bold text-purple-600 mb-1">
+                  {(() => {
+                    const deals = Math.max(1, summary.paidCount);
+                    const totals = new Map<string, number>();
+                    for (const [
+                      cur,
+                      cents,
+                    ] of summary.commissionTotals.entries()) {
+                      totals.set(cur, Math.round((cents || 0) / deals));
+                    }
+                    return moneyTotals(totals);
+                  })()}
+                </p>
                 <p className="text-xs text-gray-600 font-medium">
                   Average earned
                 </p>
@@ -2693,17 +5369,53 @@ const FinancialReportsView = () => {
                 <h4 className="text-base font-bold text-gray-900 mb-4">
                   Commission by Client
                 </h4>
-                <div className="text-center py-8 text-gray-400 font-medium">
-                  No commission data available
-                </div>
+                {commissionByClient.length ? (
+                  <div className="space-y-2">
+                    {commissionByClient.map((c) => (
+                      <div
+                        key={c.clientId}
+                        className="flex items-center justify-between p-3 bg-white rounded-lg"
+                      >
+                        <p className="text-sm font-bold text-gray-900">
+                          {c.clientName}
+                        </p>
+                        <span className="text-sm font-bold text-indigo-600">
+                          {moneyTotals(c.totals)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-400 font-medium">
+                    No commission data available
+                  </div>
+                )}
               </Card>
               <Card className="p-6 bg-gray-50 border border-gray-100 rounded-xl">
                 <h4 className="text-base font-bold text-gray-900 mb-4">
                   Commission by Talent
                 </h4>
-                <div className="text-center py-8 text-gray-400 font-medium">
-                  No commission data available
-                </div>
+                {commissionByTalent.length ? (
+                  <div className="space-y-2">
+                    {commissionByTalent.map((t) => (
+                      <div
+                        key={t.talentId}
+                        className="flex items-center justify-between p-3 bg-white rounded-lg"
+                      >
+                        <p className="text-sm font-bold text-gray-900">
+                          {t.talentName}
+                        </p>
+                        <span className="text-sm font-bold text-indigo-600">
+                          {money(t.feeCents, "USD")}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-400 font-medium">
+                    No commission data available
+                  </div>
+                )}
               </Card>
             </div>
           </div>
@@ -2720,26 +5432,32 @@ const FinancialReportsView = () => {
                   <span className="text-base font-bold text-gray-900">
                     Revenue (Gross from Invoices)
                   </span>
-                  <span className="text-xl font-bold text-green-600">$0</span>
+                  <span className="text-xl font-bold text-green-600">
+                    {money(pl.revenue, "USD")}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center p-4 bg-red-50 rounded-xl border border-red-100">
                   <span className="text-base font-bold text-gray-900">
                     Less: Talent Payments (COGS)
                   </span>
-                  <span className="text-xl font-bold text-red-600">-$0</span>
+                  <span className="text-xl font-bold text-red-600">
+                    -{money(pl.cogs, "USD")}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center p-4 bg-blue-50 rounded-xl border border-blue-100">
                   <span className="text-base font-bold text-gray-900">
                     Gross Profit (Agency Commission)
                   </span>
-                  <span className="text-xl font-bold text-blue-600">$0</span>
+                  <span className="text-xl font-bold text-blue-600">
+                    {money(pl.commission, "USD")}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center p-4 bg-orange-50 rounded-xl border border-orange-100">
                   <span className="text-base font-bold text-gray-900">
                     Less: Operating Expenses
                   </span>
                   <span className="text-xl font-bold text-orange-600">
-                    -$1,095
+                    -{money(pl.expenses, "USD")}
                   </span>
                 </div>
                 <div className="flex justify-between items-center p-6 bg-green-50 rounded-2xl border-4 border-green-400 mt-6">
@@ -2747,7 +5465,7 @@ const FinancialReportsView = () => {
                     Net Profit
                   </span>
                   <span className="text-4xl font-bold text-green-600">
-                    $-1,095
+                    {money(pl.netProfit, "USD")}
                   </span>
                 </div>
               </div>
@@ -2757,13 +5475,17 @@ const FinancialReportsView = () => {
                   <p className="text-xs font-bold text-gray-500 mb-1">
                     Profit Margin
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">0%</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {pl.profitMargin.toFixed(1)}%
+                  </p>
                 </Card>
                 <Card className="p-4 bg-gray-50 border border-gray-100 rounded-xl text-center">
                   <p className="text-xs font-bold text-gray-500 mb-1">
                     Expense Ratio
                   </p>
-                  <p className="text-2xl font-bold text-gray-900">0%</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {pl.expenseRatio.toFixed(1)}%
+                  </p>
                 </Card>
               </div>
             </Card>
@@ -2776,30 +5498,25 @@ const FinancialReportsView = () => {
               <h4 className="text-lg font-bold text-gray-900 mb-6">
                 Tax Summary
               </h4>
-              <div className="grid grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-2 gap-6 mb-8">
                 <Card className="p-6 bg-blue-50 border border-blue-100 rounded-xl">
                   <p className="text-sm font-bold text-gray-700 mb-2">
                     Sales Tax Collected
                   </p>
-                  <p className="text-3xl font-bold text-blue-600 mb-1">$0.00</p>
-                  <p className="text-xs text-gray-500 font-medium">By state</p>
-                </Card>
-                <Card className="p-6 bg-purple-50 border border-purple-100 rounded-xl">
-                  <p className="text-sm font-bold text-gray-700 mb-2">
-                    VAT Collected
-                  </p>
-                  <p className="text-3xl font-bold text-purple-600 mb-1">
-                    $0.00
+                  <p className="text-3xl font-bold text-blue-600 mb-1">
+                    {moneyTotals(taxTotals)}
                   </p>
                   <p className="text-xs text-gray-500 font-medium">
-                    By country
+                    Sales tax only
                   </p>
                 </Card>
                 <Card className="p-6 bg-orange-50 border border-orange-100 rounded-xl">
                   <p className="text-sm font-bold text-gray-700 mb-2">
                     1099 Eligible Payments
                   </p>
-                  <p className="text-3xl font-bold text-orange-600 mb-1">$0</p>
+                  <p className="text-3xl font-bold text-orange-600 mb-1">
+                    {money(payablesByTalent.totalNetCents, "USD")}
+                  </p>
                   <p className="text-xs text-gray-500 font-medium">
                     US talent payments
                   </p>
@@ -2874,13 +5591,1016 @@ const FinancialReportsView = () => {
 };
 
 const GenerateInvoiceView = () => {
+  const { toast } = useToast();
+  const { profile } = useAuth();
   const [createFrom, setCreateFrom] = useState("booking");
-  const [invoiceNumber, setInvoiceNumber] = useState("INV-2026-6174");
+  const [invoiceId, setInvoiceId] = useState<string>("");
+  const [invoiceNumber, setInvoiceNumber] = useState("");
+  const [selectedClientId, setSelectedClientId] = useState<string>("");
+  const [clients, setClients] = useState<any[]>([]);
+  const [talents, setTalents] = useState<any[]>([]);
+  const [invoiceDate, setInvoiceDate] = useState("2026-01-13");
+  const [dueDate, setDueDate] = useState("2026-02-13");
+  const [paymentTerms, setPaymentTerms] = useState("net_30");
+  const [poNumber, setPoNumber] = useState("");
+  const [projectReference, setProjectReference] = useState("");
+  const [currency, setCurrency] = useState("USD");
+  const [notesInternal, setNotesInternal] = useState("");
+  const [paymentInstructions, setPaymentInstructions] = useState(
+    "Payment due within 30 days. Please reference invoice number on payment.",
+  );
+  const [footerText, setFooterText] = useState("Thank you for your business!");
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailSentOnce, setEmailSentOnce] = useState(false);
+  const fileInputId = useMemo(
+    () => `invoice-attach-${Math.random().toString(36).slice(2)}`,
+    [],
+  );
   const [commission, setCommission] = useState("20");
   const [taxExempt, setTaxExempt] = useState(false);
+  const [items, setItems] = useState<
+    {
+      id: string;
+      description: string;
+      talent_id: string;
+      date_of_service: string;
+      rate_type: "day" | "hourly" | "project";
+      quantity: string;
+      unit_price: string;
+    }[]
+  >([
+    {
+      id: Math.random().toString(36).slice(2),
+      description: "",
+      talent_id: "",
+      date_of_service: "",
+      rate_type: "day",
+      quantity: "1",
+      unit_price: "0",
+    },
+  ]);
   const [expenses, setExpenses] = useState<
     { id: string; description: string; amount: string }[]
   >([]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const resp = await getAgencyClients();
+        const rows = Array.isArray((resp as any)?.data)
+          ? (resp as any).data
+          : Array.isArray(resp)
+            ? resp
+            : Array.isArray((resp as any)?.data?.data)
+              ? (resp as any).data.data
+              : [];
+        if (!mounted) return;
+        setClients(rows);
+      } catch (e: any) {
+        toast({
+          title: "Failed to load clients",
+          description: String(e?.message || e),
+          variant: "destructive" as any,
+        });
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [toast]);
+
+  const selectedClient = useMemo(() => {
+    return (
+      clients.find((c) => String((c as any)?.id || "") === selectedClientId) ||
+      null
+    );
+  }, [clients, selectedClientId]);
+
+  const formatMoney = useMemo(() => {
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: currency || "USD",
+        minimumFractionDigits: 2,
+      });
+    } catch {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 2,
+      });
+    }
+  }, [currency]);
+
+  const calcLineTotal = (it: { quantity: string; unit_price: string }) => {
+    const qty = Number(it.quantity || "0") || 0;
+    const unit = Number(it.unit_price || "0") || 0;
+    return qty * unit;
+  };
+
+  const subtotal = useMemo(() => {
+    return items.reduce((sum, it) => sum + calcLineTotal(it), 0);
+  }, [items]);
+
+  const expensesTotal = useMemo(() => {
+    return expenses.reduce((sum, e) => sum + (Number(e.amount || "0") || 0), 0);
+  }, [expenses]);
+
+  const commissionPct = useMemo(() => {
+    const v = Number(commission || "0") || 0;
+    return Math.max(0, v);
+  }, [commission]);
+
+  const agencyCommissionAmount = useMemo(() => {
+    return (subtotal * commissionPct) / 100;
+  }, [subtotal, commissionPct]);
+
+  const talentNetAmount = useMemo(() => {
+    return subtotal - agencyCommissionAmount;
+  }, [subtotal, agencyCommissionAmount]);
+
+  const grandTotal = useMemo(() => {
+    return subtotal + expensesTotal;
+  }, [subtotal, expensesTotal]);
+
+  const toBase64 = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onerror = () => reject(new Error("file_read_failed"));
+      r.onload = () => {
+        const res = String(r.result || "");
+        const idx = res.indexOf(",");
+        resolve(idx >= 0 ? res.slice(idx + 1) : res);
+      };
+      r.readAsDataURL(file);
+    });
+
+  const validateInvoice = () => {
+    if (!selectedClientId) {
+      return { ok: false, message: "Please select a client." };
+    }
+    if (!String(invoiceDate || "").trim()) {
+      return { ok: false, message: "Please select an invoice date." };
+    }
+    if (!String(dueDate || "").trim()) {
+      return { ok: false, message: "Please select a due date." };
+    }
+    if (!String(currency || "").trim()) {
+      return { ok: false, message: "Please select a currency." };
+    }
+    if (!String(paymentTerms || "").trim()) {
+      return { ok: false, message: "Please select payment terms." };
+    }
+
+    const validItems = items
+      .map((it) => {
+        const desc = String(it.description || "").trim();
+        const qty = Number(it.quantity || "0") || 0;
+        const unit = Number(it.unit_price || "0");
+        const unitOk = Number.isFinite(unit) && unit >= 0;
+        return { desc, qty, unitOk };
+      })
+      .filter((it) => it.desc.length > 0);
+
+    if (!validItems.length) {
+      return {
+        ok: false,
+        message: "Please add at least one line item with a description.",
+      };
+    }
+    if (validItems.some((it) => it.qty <= 0)) {
+      return {
+        ok: false,
+        message: "Line item quantity must be greater than 0.",
+      };
+    }
+    if (validItems.some((it) => !it.unitOk)) {
+      return {
+        ok: false,
+        message: "Line item unit price must be a number (0 or more).",
+      };
+    }
+    return { ok: true, message: "" };
+  };
+
+  const invoiceFormOk = useMemo(() => {
+    return validateInvoice().ok;
+  }, [selectedClientId, invoiceDate, dueDate, currency, paymentTerms, items]);
+
+  const downloadPdf = async () => {
+    const validation = validateInvoice();
+    if (!validation.ok) {
+      toast({
+        title: "Missing required fields",
+        description: validation.message,
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    try {
+      const base64 = await generateInvoicePdfBase64();
+      const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+      const blob = new Blob([bytes], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = invoiceNumber
+        ? `invoice-${invoiceNumber}.pdf`
+        : "invoice.pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      toast({
+        title: "Failed to generate PDF",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+    }
+  };
+
+  const markAsSent = async () => {
+    if (!invoiceId) {
+      toast({
+        title: "Save invoice first",
+        description:
+          "Please save as draft to generate an invoice number before marking as sent.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    try {
+      await markInvoiceSent(invoiceId);
+      toast({
+        title: "Marked as sent",
+        description: invoiceNumber
+          ? `Invoice ${invoiceNumber} marked as sent.`
+          : "Invoice marked as sent.",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Failed to mark as sent",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+    }
+  };
+
+  const markAsPaid = async () => {
+    if (!invoiceId) {
+      toast({
+        title: "Save invoice first",
+        description:
+          "Please save as draft to generate an invoice number before marking as paid.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    try {
+      await markInvoicePaid(invoiceId);
+      toast({
+        title: "Marked as paid",
+        description: invoiceNumber
+          ? `Invoice ${invoiceNumber} marked as paid.`
+          : "Invoice marked as paid.",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Failed to mark as paid",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+    }
+  };
+
+  const bytesToBase64 = (bytes: Uint8Array) => {
+    let binary = "";
+    bytes.forEach((b) => (binary += String.fromCharCode(b)));
+    return btoa(binary);
+  };
+
+  const buildCreateInvoicePayload = () => {
+    const commissionPct = Number(commission || "0") || 0;
+    const agency_commission_bps = Math.round(commissionPct * 100);
+    const itemPayload = items
+      .map((it, idx) => ({
+        description: it.description,
+        talent_id: it.talent_id || undefined,
+        date_of_service: it.date_of_service || undefined,
+        rate_type: it.rate_type,
+        quantity: Number(it.quantity || "0") || 0,
+        unit_price_cents: Math.round((Number(it.unit_price || "0") || 0) * 100),
+        sort_order: idx,
+      }))
+      .filter((it) => (it.description || "").trim().length > 0);
+
+    return {
+      client_id: selectedClientId,
+      invoice_date: invoiceDate,
+      due_date: dueDate,
+      payment_terms: paymentTerms,
+      po_number: poNumber || undefined,
+      project_reference: projectReference || undefined,
+      currency,
+      agency_commission_bps,
+      tax_exempt: taxExempt,
+      tax_rate_bps: 0,
+      discount_cents: 0,
+      notes_internal: notesInternal || undefined,
+      payment_instructions: paymentInstructions || undefined,
+      footer_text: footerText || undefined,
+      items: itemPayload,
+      expenses: expenses.map((e) => ({
+        description: e.description,
+        amount_cents: Math.round((Number(e.amount || "0") || 0) * 100),
+        taxable: false,
+      })),
+    };
+  };
+
+  const ensureInvoiceSaved = async () => {
+    if (invoiceId) return { id: invoiceId, invoice_number: invoiceNumber };
+    const resp = await createInvoice(buildCreateInvoicePayload());
+    const data = (resp as any)?.data ?? resp;
+    const newId = String((data as any)?.id || "");
+    const newNumber = String((data as any)?.invoice_number || "");
+    if (newId) setInvoiceId(newId);
+    if (newNumber) setInvoiceNumber(newNumber);
+    return { id: newId, invoice_number: newNumber };
+  };
+
+  const tryFetchLogoPng = async (): Promise<Uint8Array | null> => {
+    try {
+      const resp = await fetch("/likelee-logo.png");
+      if (!resp.ok) return null;
+      const buf = await resp.arrayBuffer();
+      return new Uint8Array(buf);
+    } catch {
+      return null;
+    }
+  };
+
+  const generateInvoicePdfBase64 = async () => {
+    const doc = await PDFDocument.create();
+    const page = doc.addPage([595.28, 841.89]);
+    const { width, height } = page.getSize();
+    const font = await doc.embedFont(StandardFonts.Helvetica);
+    const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
+
+    const cText = rgb(0.12, 0.12, 0.12);
+    const cMuted = rgb(0.45, 0.45, 0.45);
+    const cBorder = rgb(0.9, 0.92, 0.95);
+    const cBg = rgb(0.98, 0.98, 0.99);
+
+    const margin = 36;
+    const gap = 14;
+    const money = (n: number) => formatMoney.format(n);
+
+    const drawCard = (x: number, y: number, w: number, h: number) => {
+      page.drawRectangle({
+        x,
+        y,
+        width: w,
+        height: h,
+        color: cBg,
+        borderColor: cBorder,
+        borderWidth: 1,
+      });
+    };
+
+    const drawLabel = (text: string, x: number, y: number) => {
+      page.drawText(text.toUpperCase(), {
+        x,
+        y,
+        size: 8,
+        font: fontBold,
+        color: cMuted,
+      });
+    };
+
+    const drawValue = (text: string, x: number, y: number, bold = false) => {
+      page.drawText(text, {
+        x,
+        y,
+        size: 11,
+        font: bold ? fontBold : font,
+        color: cText,
+      });
+    };
+
+    const agencyName =
+      String((profile as any)?.company_name || "").trim() ||
+      String((profile as any)?.company || "").trim() ||
+      String((profile as any)?.name || "").trim() ||
+      String((profile as any)?.full_name || "").trim() ||
+      "Agency";
+
+    const clientCompany = String((selectedClient as any)?.company || "").trim();
+    const clientName = String((selectedClient as any)?.name || "").trim();
+    const clientEmail = String((selectedClient as any)?.email || "").trim();
+
+    const invoiceNo = invoiceNumber ? invoiceNumber : "(not assigned yet)";
+    const statusText = invoiceId ? "issued" : "draft";
+
+    const logoBytes = await tryFetchLogoPng();
+    if (logoBytes) {
+      try {
+        const img = await doc.embedPng(logoBytes);
+        const imgW = 34;
+        const imgH = (img.height / img.width) * imgW;
+        page.drawImage(img, {
+          x: margin,
+          y: height - margin - imgH + 2,
+          width: imgW,
+          height: imgH,
+        });
+      } catch {
+        // ignore
+      }
+    }
+
+    page.drawText("Likelee", {
+      x: margin + (logoBytes ? 42 : 0),
+      y: height - margin - 16,
+      size: 16,
+      font: fontBold,
+      color: cText,
+    });
+    page.drawText("Invoice", {
+      x: margin,
+      y: height - margin - 44,
+      size: 28,
+      font: fontBold,
+      color: cText,
+    });
+    page.drawText(invoiceNo, {
+      x: margin,
+      y: height - margin - 66,
+      size: 11,
+      font,
+      color: cMuted,
+    });
+    page.drawText(`From: ${agencyName} (sent via Likelee)`, {
+      x: margin,
+      y: height - margin - 86,
+      size: 10,
+      font,
+      color: cMuted,
+    });
+
+    const metaW = 230;
+    const metaH = 92;
+    const metaX = width - margin - metaW;
+    const metaY = height - margin - metaH;
+    drawCard(metaX, metaY, metaW, metaH);
+    drawLabel("Invoice date", metaX + 14, metaY + metaH - 22);
+    drawValue(
+      invoiceDate,
+      metaX + metaW - 14 - font.widthOfTextAtSize(invoiceDate, 11),
+      metaY + metaH - 24,
+    );
+    drawLabel("Due date", metaX + 14, metaY + metaH - 46);
+    drawValue(
+      dueDate,
+      metaX + metaW - 14 - font.widthOfTextAtSize(dueDate, 11),
+      metaY + metaH - 48,
+    );
+    drawLabel("Status", metaX + 14, metaY + metaH - 70);
+    drawValue(
+      statusText,
+      metaX + metaW - 14 - font.widthOfTextAtSize(statusText, 11),
+      metaY + metaH - 72,
+    );
+
+    const cardW = (width - margin * 2 - gap) / 2;
+    const cardH = 92;
+    const cardsTopY = height - margin - 130;
+
+    const billX = margin;
+    const billY = cardsTopY - cardH;
+    drawCard(billX, billY, cardW, cardH);
+    drawLabel("Bill to", billX + 14, billY + cardH - 22);
+    const billLineY = billY + cardH - 44;
+    if (clientCompany) {
+      drawValue(clientCompany, billX + 14, billLineY, true);
+      if (clientName) drawValue(clientName, billX + 14, billLineY - 16);
+      if (clientEmail) drawValue(clientEmail, billX + 14, billLineY - 32);
+    } else {
+      drawValue(clientName || "Client", billX + 14, billLineY, true);
+      if (clientEmail) drawValue(clientEmail, billX + 14, billLineY - 16);
+    }
+
+    const refX = margin + cardW + gap;
+    const refY = billY;
+    drawCard(refX, refY, cardW, cardH);
+    drawLabel("Reference", refX + 14, refY + cardH - 22);
+    if (projectReference) {
+      drawValue(projectReference, refX + 14, refY + cardH - 44, true);
+    }
+
+    let y = billY - 24;
+    page.drawText("LINE ITEMS", {
+      x: margin,
+      y,
+      size: 10,
+      font: fontBold,
+      color: cMuted,
+    });
+    y -= 10;
+
+    const tableX = margin;
+    const tableW = width - margin * 2;
+    const rowH = 28;
+    page.drawLine({
+      start: { x: tableX, y },
+      end: { x: tableX + tableW, y },
+      thickness: 1,
+      color: cBorder,
+    });
+    y -= 18;
+    page.drawText("DESCRIPTION", {
+      x: tableX,
+      y,
+      size: 9,
+      font: fontBold,
+      color: cMuted,
+    });
+    page.drawText("QTY", {
+      x: tableX + tableW - 170,
+      y,
+      size: 9,
+      font: fontBold,
+      color: cMuted,
+    });
+    page.drawText("UNIT", {
+      x: tableX + tableW - 120,
+      y,
+      size: 9,
+      font: fontBold,
+      color: cMuted,
+    });
+    page.drawText("TOTAL", {
+      x: tableX + tableW - 56,
+      y,
+      size: 9,
+      font: fontBold,
+      color: cMuted,
+    });
+    y -= 10;
+    page.drawLine({
+      start: { x: tableX, y },
+      end: { x: tableX + tableW, y },
+      thickness: 1,
+      color: cBorder,
+    });
+    y -= 18;
+
+    const itemRows = items
+      .map((it) => ({
+        ...it,
+        desc: (it.description || "").replace(/\s+/g, " ").trim(),
+        qty: Number(it.quantity || "0") || 0,
+        unit: Number(it.unit_price || "0") || 0,
+      }))
+      .filter((it) => it.desc.length > 0);
+
+    if (!itemRows.length) {
+      page.drawText("No line items", {
+        x: tableX,
+        y,
+        size: 10,
+        font,
+        color: cMuted,
+      });
+      y -= rowH;
+    } else {
+      for (const it of itemRows.slice(0, 6)) {
+        const total = it.qty * it.unit;
+        page.drawText(it.desc.slice(0, 44), {
+          x: tableX,
+          y,
+          size: 10,
+          font: fontBold,
+          color: cText,
+        });
+
+        const sub = [
+          (() => {
+            const talentName = String(
+              talents.find(
+                (t) =>
+                  String((t as any)?.id || "") === String(it.talent_id || ""),
+              )?.name ||
+                talents.find(
+                  (t) =>
+                    String((t as any)?.id || "") === String(it.talent_id || ""),
+                )?.full_name ||
+                "",
+            ).trim();
+            const date = String(it.date_of_service || "").trim();
+            const rate = String(it.rate_type || "").trim();
+            return [talentName, date, rate].filter(Boolean).join(" • ");
+          })(),
+        ]
+          .filter(Boolean)
+          .join(" ");
+
+        if (sub) {
+          page.drawText(sub.slice(0, 60), {
+            x: tableX,
+            y: y - 12,
+            size: 9,
+            font,
+            color: cMuted,
+          });
+        }
+
+        page.drawText(String(it.qty), {
+          x: tableX + tableW - 170,
+          y,
+          size: 10,
+          font,
+          color: cText,
+        });
+        page.drawText(money(it.unit), {
+          x: tableX + tableW - 120,
+          y,
+          size: 10,
+          font,
+          color: cText,
+        });
+        page.drawText(money(total), {
+          x: tableX + tableW - 56,
+          y,
+          size: 10,
+          font: fontBold,
+          color: cText,
+        });
+
+        y -= rowH;
+        page.drawLine({
+          start: { x: tableX, y },
+          end: { x: tableX + tableW, y },
+          thickness: 1,
+          color: cBorder,
+        });
+        y -= 14;
+      }
+    }
+
+    page.drawText("EXPENSES", {
+      x: margin,
+      y,
+      size: 10,
+      font: fontBold,
+      color: cMuted,
+    });
+    y -= 10;
+    page.drawLine({
+      start: { x: tableX, y },
+      end: { x: tableX + tableW, y },
+      thickness: 1,
+      color: cBorder,
+    });
+    y -= 18;
+    page.drawText("DESCRIPTION", {
+      x: tableX,
+      y,
+      size: 9,
+      font: fontBold,
+      color: cMuted,
+    });
+    page.drawText("TAXABLE", {
+      x: tableX + tableW - 160,
+      y,
+      size: 9,
+      font: fontBold,
+      color: cMuted,
+    });
+    page.drawText("AMOUNT", {
+      x: tableX + tableW - 70,
+      y,
+      size: 9,
+      font: fontBold,
+      color: cMuted,
+    });
+    y -= 10;
+    page.drawLine({
+      start: { x: tableX, y },
+      end: { x: tableX + tableW, y },
+      thickness: 1,
+      color: cBorder,
+    });
+    y -= 18;
+
+    if (!expenses.length) {
+      page.drawText("No expenses", {
+        x: tableX,
+        y,
+        size: 10,
+        font,
+        color: cMuted,
+      });
+      y -= 28;
+    } else {
+      for (const e of expenses.slice(0, 4)) {
+        const desc = String(e.description || "").trim() || "Expense";
+        const amount = Number(e.amount || "0") || 0;
+        page.drawText(desc.slice(0, 44), {
+          x: tableX,
+          y,
+          size: 10,
+          font,
+          color: cText,
+        });
+        page.drawText("No", {
+          x: tableX + tableW - 160,
+          y,
+          size: 10,
+          font,
+          color: cText,
+        });
+        page.drawText(money(amount), {
+          x: tableX + tableW - 70,
+          y,
+          size: 10,
+          font: fontBold,
+          color: cText,
+        });
+        y -= 28;
+        page.drawLine({
+          start: { x: tableX, y },
+          end: { x: tableX + tableW, y },
+          thickness: 1,
+          color: cBorder,
+        });
+        y -= 14;
+      }
+    }
+
+    const bottomY = margin + 170;
+    if (y < bottomY) y = bottomY;
+
+    const lowerCardW = cardW;
+    const lowerCardH = 140;
+    const leftLowerX = margin;
+    const leftLowerY = margin + 20;
+    const rightLowerX = margin + lowerCardW + gap;
+    const rightLowerY = leftLowerY;
+
+    drawCard(leftLowerX, leftLowerY, lowerCardW, lowerCardH);
+    drawLabel(
+      "Payment instructions",
+      leftLowerX + 14,
+      leftLowerY + lowerCardH - 22,
+    );
+    page.drawText(String(paymentInstructions || "").slice(0, 140), {
+      x: leftLowerX + 14,
+      y: leftLowerY + lowerCardH - 46,
+      size: 10,
+      font,
+      color: cText,
+      lineHeight: 12,
+    });
+    page.drawLine({
+      start: { x: leftLowerX + 14, y: leftLowerY + 54 },
+      end: { x: leftLowerX + lowerCardW - 14, y: leftLowerY + 54 },
+      thickness: 1,
+      color: cBorder,
+    });
+    drawLabel("Footer", leftLowerX + 14, leftLowerY + 44);
+    page.drawText(String(footerText || "").slice(0, 90), {
+      x: leftLowerX + 14,
+      y: leftLowerY + 26,
+      size: 10,
+      font,
+      color: cText,
+    });
+
+    drawCard(rightLowerX, rightLowerY, lowerCardW, lowerCardH);
+    const tx = rightLowerX + 14;
+    let ty = rightLowerY + lowerCardH - 34;
+    const drawTotalRow = (label: string, value: string, bold = false) => {
+      page.drawText(label, { x: tx, y: ty, size: 10, font, color: cText });
+      page.drawText(value, {
+        x:
+          rightLowerX +
+          lowerCardW -
+          14 -
+          font.widthOfTextAtSize(value, bold ? 11 : 10),
+        y: ty,
+        size: bold ? 11 : 10,
+        font: bold ? fontBold : font,
+        color: cText,
+      });
+      ty -= 18;
+    };
+
+    drawTotalRow("Subtotal", money(subtotal), true);
+    drawTotalRow("Expenses", money(expensesTotal));
+    drawTotalRow("Discount", "-$0.00");
+    drawTotalRow("Tax (0%)", "$0.00");
+    page.drawLine({
+      start: { x: tx, y: ty + 6 },
+      end: { x: rightLowerX + lowerCardW - 14, y: ty + 6 },
+      thickness: 1,
+      color: cBorder,
+    });
+    ty -= 14;
+    drawTotalRow("Total", money(grandTotal), true);
+    drawTotalRow(
+      `Agency fee (${commissionPct}%)`,
+      money(agencyCommissionAmount),
+    );
+    drawTotalRow("Talent net", money(talentNetAmount));
+
+    const bytes = await doc.save();
+    return bytesToBase64(bytes);
+  };
+
+  const saveDraft = async () => {
+    const validation = validateInvoice();
+    if (!validation.ok) {
+      toast({
+        title: "Missing required fields",
+        description: validation.message,
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    try {
+      const resp = await createInvoice(buildCreateInvoicePayload());
+
+      const data = (resp as any)?.data ?? resp;
+      setInvoiceId(String((data as any)?.id || ""));
+      setInvoiceNumber(String((data as any)?.invoice_number || ""));
+
+      toast({
+        title: "Draft saved",
+        description: "Invoice draft created successfully.",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Failed to save draft",
+        description: String((e as any)?.message || e),
+        variant: "destructive" as any,
+      });
+    }
+  };
+
+  const onPickFile = async (file: File | null) => {
+    if (!file) return;
+    setUploadingFile(true);
+    try {
+      setAttachedFiles((prev) => [...prev, file]);
+      await uploadAgencyFile(file);
+      toast({
+        title: "File uploaded",
+        description: file.name,
+      });
+    } catch (e: any) {
+      toast({
+        title: "File upload failed",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+    } finally {
+      setUploadingFile(false);
+    }
+  };
+
+  const emailToClient = async () => {
+    if (emailSending) return;
+    const validation = validateInvoice();
+    if (!validation.ok) {
+      toast({
+        title: "Missing required fields",
+        description: validation.message,
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    const to = String((selectedClient as any)?.email || "").trim();
+    if (!to) {
+      toast({
+        title: "Missing client email",
+        description: "Selected client does not have an email address.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+
+    try {
+      setEmailSending(true);
+      toast({
+        title: "Sending invoice…",
+        description:
+          "Generating PDF and sending email in the background. Please keep this tab open.",
+      });
+
+      await ensureInvoiceSaved();
+
+      const agencyName =
+        String((profile as any)?.agency_name || "").trim() ||
+        String((profile as any)?.display_name || "").trim() ||
+        String((profile as any)?.company_name || "").trim() ||
+        String((profile as any)?.company || "").trim() ||
+        String((profile as any)?.name || "").trim() ||
+        String((profile as any)?.full_name || "").trim() ||
+        "Agency";
+      const subject = `Invoice from ${agencyName} (sent via Likelee)`;
+      const body = [
+        `Hello,`,
+        ``,
+        `Please find attached your invoice from ${agencyName}.`,
+        ``,
+        `This invoice is being delivered by Likelee on behalf of ${agencyName}.`,
+        `This is an automated message - do not reply.`,
+        ``,
+        `Invoice date: ${invoiceDate}`,
+        `Due date: ${dueDate}`,
+        ``,
+        `For any questions regarding this invoice, please contact ${agencyName} directly.`,
+      ].join("\n");
+
+      const invoicePdfBase64 = await generateInvoicePdfBase64();
+
+      const attachments = [
+        {
+          filename: invoiceNumber
+            ? `invoice-${invoiceNumber}.pdf`
+            : "invoice.pdf",
+          content_type: "application/pdf",
+          content_base64: invoicePdfBase64,
+        },
+        ...(await Promise.all(
+          attachedFiles.map(async (f) => ({
+            filename: f.name,
+            content_type: f.type || "application/octet-stream",
+            content_base64: await toBase64(f),
+          })),
+        )),
+      ];
+
+      await sendEmail({
+        to,
+        subject,
+        body,
+        attachments: attachments.length ? attachments : undefined,
+      });
+
+      setEmailSentOnce(true);
+
+      toast({
+        title: "Email sent",
+        description: `Sent to ${to}`,
+      });
+    } catch (e: any) {
+      toast({
+        title: "Failed to send email",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+    } finally {
+      setEmailSending(false);
+    }
+  };
+
+  const addLineItem = () => {
+    setItems((prev) => [
+      ...prev,
+      {
+        id: Math.random().toString(36).slice(2),
+        description: "",
+        talent_id: "",
+        date_of_service: "",
+        rate_type: "day",
+        quantity: "1",
+        unit_price: "0",
+      },
+    ]);
+  };
+
+  const updateLineItem = (
+    id: string,
+    field:
+      | "description"
+      | "talent_id"
+      | "date_of_service"
+      | "rate_type"
+      | "quantity"
+      | "unit_price",
+    value: string,
+  ) => {
+    setItems((prev) =>
+      prev.map((it) => (it.id === id ? { ...it, [field]: value } : it)),
+    );
+  };
 
   const addExpense = () => {
     setExpenses([
@@ -2929,12 +6649,76 @@ const GenerateInvoiceView = () => {
           <Button
             variant="outline"
             className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            onClick={() => setPreviewOpen(true)}
           >
             <Eye className="w-5 h-5" />
             Preview
           </Button>
         </div>
       </div>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-3xl rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900">
+              Invoice Preview
+            </DialogTitle>
+            <DialogDescription className="text-gray-500 font-medium">
+              Preview is generated from the current form values.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-gray-900">Invoice</p>
+                <p className="text-xs text-gray-600 font-medium">
+                  {invoiceNumber ||
+                    "(invoice number will be generated when saved)"}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-gray-600 font-medium">
+                  Invoice date: {invoiceDate}
+                </p>
+                <p className="text-xs text-gray-600 font-medium">
+                  Due date: {dueDate}
+                </p>
+              </div>
+            </div>
+            <Card className="p-4 bg-white border border-gray-100 rounded-xl">
+              <p className="text-xs font-bold text-gray-700 mb-2">Bill To</p>
+              <p className="text-sm font-bold text-gray-900">
+                {String((selectedClient as any)?.company || "") ||
+                  "(select a client)"}
+              </p>
+              <p className="text-xs text-gray-600 font-medium">
+                {String((selectedClient as any)?.email || "")}
+              </p>
+            </Card>
+            <Card className="p-4 bg-white border border-gray-100 rounded-xl">
+              <p className="text-xs font-bold text-gray-700 mb-2">Notes</p>
+              <p className="text-xs text-gray-700 font-medium whitespace-pre-wrap">
+                {notesInternal || "-"}
+              </p>
+            </Card>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              className="h-11 px-6 rounded-xl border-gray-200 font-bold"
+              onClick={() => setPreviewOpen(false)}
+            >
+              Close
+            </Button>
+            <Button
+              className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl"
+              onClick={() => window.print()}
+            >
+              Print
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
         <div className="space-y-6">
@@ -2997,8 +6781,9 @@ const GenerateInvoiceView = () => {
                 Invoice Number <span className="text-red-500">*</span>
               </Label>
               <Input
-                value={invoiceNumber}
-                onChange={(e) => setInvoiceNumber(e.target.value)}
+                value={invoiceNumber || ""}
+                placeholder="Generated when you save"
+                readOnly
                 className="h-12 rounded-xl border-gray-200"
               />
             </div>
@@ -3008,7 +6793,8 @@ const GenerateInvoiceView = () => {
               </Label>
               <Input
                 type="date"
-                defaultValue="2026-01-13"
+                value={invoiceDate}
+                onChange={(e) => setInvoiceDate(e.target.value)}
                 className="h-12 rounded-xl border-gray-200"
               />
             </div>
@@ -3019,17 +6805,18 @@ const GenerateInvoiceView = () => {
               <div className="flex gap-2">
                 <Input
                   type="date"
-                  defaultValue="2026-02-13"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
                   className="h-12 rounded-xl border-gray-200 flex-1"
                 />
-                <Select defaultValue="net30">
+                <Select value={paymentTerms} onValueChange={setPaymentTerms}>
                   <SelectTrigger className="h-12 rounded-xl border-gray-200 w-32">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    <SelectItem value="net15">Net 15</SelectItem>
-                    <SelectItem value="net30">Net 30</SelectItem>
-                    <SelectItem value="net60">Net 60</SelectItem>
+                    <SelectItem value="net_15">Net 15</SelectItem>
+                    <SelectItem value="net_30">Net 30</SelectItem>
+                    <SelectItem value="net_60">Net 60</SelectItem>
                     <SelectItem value="due-on-receipt">
                       Due on Receipt
                     </SelectItem>
@@ -3044,14 +6831,27 @@ const GenerateInvoiceView = () => {
               Bill To (Client Information){" "}
               <span className="text-red-500">*</span>
             </Label>
-            <Select>
+            <Select
+              value={selectedClientId}
+              onValueChange={setSelectedClientId}
+            >
               <SelectTrigger className="h-12 rounded-xl border-gray-200">
                 <SelectValue placeholder="Select client" />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
-                <SelectItem value="nike">Nike Global</SelectItem>
-                <SelectItem value="adidas">Adidas</SelectItem>
-                <SelectItem value="apple">Apple Inc.</SelectItem>
+                {clients.map((c) => {
+                  const id = String((c as any)?.id || "");
+                  const label =
+                    String((c as any)?.company || "").trim() ||
+                    String((c as any)?.contact_name || "").trim() ||
+                    String((c as any)?.email || "").trim() ||
+                    id;
+                  return (
+                    <SelectItem key={id} value={id}>
+                      {label}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>
@@ -3063,6 +6863,8 @@ const GenerateInvoiceView = () => {
               </Label>
               <Input
                 placeholder="Client purchase order number"
+                value={poNumber}
+                onChange={(e) => setPoNumber(e.target.value)}
                 className="h-12 rounded-xl border-gray-200"
               />
             </div>
@@ -3072,6 +6874,8 @@ const GenerateInvoiceView = () => {
               </Label>
               <Input
                 placeholder="Project name or reference"
+                value={projectReference}
+                onChange={(e) => setProjectReference(e.target.value)}
                 className="h-12 rounded-xl border-gray-200"
               />
             </div>
@@ -3085,94 +6889,146 @@ const GenerateInvoiceView = () => {
               <Button
                 variant="outline"
                 className="h-9 px-4 rounded-lg border-gray-200 font-bold flex items-center gap-2 text-sm"
+                onClick={addLineItem}
               >
                 <Plus className="w-4 h-4" />
                 Add Line Item
               </Button>
             </div>
-            <Card className="p-5 bg-gray-50 border border-gray-200 rounded-xl">
-              <p className="text-sm font-bold text-gray-900 mb-4">Item #1</p>
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                    Description
-                  </Label>
-                  <Textarea
-                    placeholder="e.g., Model services for brand photoshoot"
-                    className="min-h-[80px] rounded-xl border-gray-200 resize-none"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                      Talent
-                    </Label>
-                    <Select>
-                      <SelectTrigger className="h-11 rounded-xl border-gray-200">
-                        <SelectValue placeholder="Select talent" />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl">
-                        <SelectItem value="emma">Emma</SelectItem>
-                        <SelectItem value="milan">Milan</SelectItem>
-                        <SelectItem value="julia">Julia</SelectItem>
-                      </SelectContent>
-                    </Select>
+            <div className="space-y-4">
+              {items.map((it, idx) => (
+                <Card
+                  key={it.id}
+                  className="p-5 bg-gray-50 border border-gray-200 rounded-xl"
+                >
+                  <p className="text-sm font-bold text-gray-900 mb-4">
+                    Item #{idx + 1}
+                  </p>
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                        Description
+                      </Label>
+                      <Textarea
+                        value={it.description}
+                        onChange={(e) =>
+                          updateLineItem(it.id, "description", e.target.value)
+                        }
+                        placeholder="e.g., Model services for brand photoshoot"
+                        className="min-h-[80px] rounded-xl border-gray-200 resize-none"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                          Talent
+                        </Label>
+                        <Select
+                          value={it.talent_id}
+                          onValueChange={(v) =>
+                            updateLineItem(it.id, "talent_id", v)
+                          }
+                        >
+                          <SelectTrigger className="h-11 rounded-xl border-gray-200">
+                            <SelectValue placeholder="Select talent" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl">
+                            {talents.map((t) => {
+                              const id = String((t as any)?.id || "");
+                              const label =
+                                String((t as any)?.stage_name || "").trim() ||
+                                String((t as any)?.full_name || "").trim() ||
+                                String((t as any)?.name || "").trim() ||
+                                id;
+                              return (
+                                <SelectItem key={id} value={id}>
+                                  {label}
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                          Date of Service
+                        </Label>
+                        <Input
+                          type="date"
+                          value={it.date_of_service}
+                          onChange={(e) =>
+                            updateLineItem(
+                              it.id,
+                              "date_of_service",
+                              e.target.value,
+                            )
+                          }
+                          className="h-11 rounded-xl border-gray-200"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                          Rate Type
+                        </Label>
+                        <Select
+                          value={it.rate_type}
+                          onValueChange={(v) =>
+                            updateLineItem(it.id, "rate_type", v as any)
+                          }
+                        >
+                          <SelectTrigger className="h-11 rounded-xl border-gray-200">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl">
+                            <SelectItem value="day">Day Rate</SelectItem>
+                            <SelectItem value="hourly">Hourly Rate</SelectItem>
+                            <SelectItem value="project">
+                              Project Rate
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                          Quantity/Hours
+                        </Label>
+                        <Input
+                          type="number"
+                          value={it.quantity}
+                          onChange={(e) =>
+                            updateLineItem(it.id, "quantity", e.target.value)
+                          }
+                          className="h-11 rounded-xl border-gray-200"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs font-bold text-gray-700 mb-2 block">
+                          Unit Price ({currency})
+                        </Label>
+                        <Input
+                          type="number"
+                          value={it.unit_price}
+                          onChange={(e) =>
+                            updateLineItem(it.id, "unit_price", e.target.value)
+                          }
+                          className="h-11 rounded-xl border-gray-200"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center pt-3 border-t border-gray-200">
+                      <span className="text-sm font-bold text-gray-700">
+                        Line Total:
+                      </span>
+                      <span className="text-lg font-bold text-gray-900">
+                        {formatMoney.format(calcLineTotal(it))}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                      Date of Service
-                    </Label>
-                    <Input
-                      type="date"
-                      className="h-11 rounded-xl border-gray-200"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                      Rate Type
-                    </Label>
-                    <Select defaultValue="day">
-                      <SelectTrigger className="h-11 rounded-xl border-gray-200">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl">
-                        <SelectItem value="day">Day Rate</SelectItem>
-                        <SelectItem value="hourly">Hourly Rate</SelectItem>
-                        <SelectItem value="project">Project Rate</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                      Quantity/Hours
-                    </Label>
-                    <Input
-                      type="number"
-                      defaultValue="1"
-                      className="h-11 rounded-xl border-gray-200"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs font-bold text-gray-700 mb-2 block">
-                      Unit Price ($)
-                    </Label>
-                    <Input
-                      type="number"
-                      defaultValue="0"
-                      className="h-11 rounded-xl border-gray-200"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-between items-center pt-3 border-t border-gray-200">
-                  <span className="text-sm font-bold text-gray-700">
-                    Line Total:
-                  </span>
-                  <span className="text-lg font-bold text-gray-900">$0.00</span>
-                </div>
-              </div>
-            </Card>
+                </Card>
+              ))}
+            </div>
           </div>
 
           <Card className="p-5 bg-white border border-gray-100 rounded-2xl">
@@ -3251,7 +7107,10 @@ const GenerateInvoiceView = () => {
                 <Label className="text-xs font-bold text-gray-700 mb-2 block">
                   Currency
                 </Label>
-                <Select defaultValue="usd">
+                <Select
+                  value={currency.toLowerCase()}
+                  onValueChange={(v) => setCurrency(v.toUpperCase())}
+                >
                   <SelectTrigger className="h-11 rounded-xl border-gray-200">
                     <SelectValue />
                   </SelectTrigger>
@@ -3322,22 +7181,26 @@ const GenerateInvoiceView = () => {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-700 font-medium">
-                    Subtotal (1 items)
+                    Subtotal ({items.length} items)
                   </span>
-                  <span className="text-sm font-bold text-gray-900">$0.00</span>
+                  <span className="text-sm font-bold text-gray-900">
+                    {formatMoney.format(subtotal)}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-700 font-medium">
-                    Agency Commission (20%)
+                    Agency Commission ({commissionPct}%)
                   </span>
-                  <span className="text-sm font-bold text-red-600">-$0.00</span>
+                  <span className="text-sm font-bold text-red-600">
+                    -{formatMoney.format(agencyCommissionAmount)}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center pb-3 border-b border-indigo-200">
                   <span className="text-sm text-gray-700 font-medium">
                     Talent Net Amount
                   </span>
                   <span className="text-sm font-bold text-green-600">
-                    $0.00
+                    {formatMoney.format(talentNetAmount)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center pt-2">
@@ -3345,7 +7208,7 @@ const GenerateInvoiceView = () => {
                     Grand Total
                   </span>
                   <span className="text-2xl font-bold text-indigo-600">
-                    $0.00
+                    {formatMoney.format(grandTotal)}
                   </span>
                 </div>
               </div>
@@ -3359,6 +7222,8 @@ const GenerateInvoiceView = () => {
               </Label>
               <Textarea
                 placeholder="Internal notes, special terms, or additional details..."
+                value={notesInternal}
+                onChange={(e) => setNotesInternal(e.target.value)}
                 className="min-h-[100px] rounded-xl border-gray-200 resize-none"
               />
             </div>
@@ -3367,7 +7232,8 @@ const GenerateInvoiceView = () => {
                 Payment Instructions
               </Label>
               <Textarea
-                defaultValue="Payment due within 30 days. Please reference invoice number on payment."
+                value={paymentInstructions}
+                onChange={(e) => setPaymentInstructions(e.target.value)}
                 className="min-h-[100px] rounded-xl border-gray-200 resize-none"
               />
             </div>
@@ -3378,7 +7244,8 @@ const GenerateInvoiceView = () => {
               Invoice Footer Text
             </Label>
             <Input
-              defaultValue="Thank you for your business!"
+              value={footerText}
+              onChange={(e) => setFooterText(e.target.value)}
               className="h-11 rounded-xl border-gray-200"
             />
           </div>
@@ -3390,19 +7257,43 @@ const GenerateInvoiceView = () => {
             <p className="text-xs text-gray-500 font-medium mb-3">
               Attach contracts, usage agreements, or supporting documents
             </p>
+            <input
+              id={fileInputId}
+              type="file"
+              className="hidden"
+              onChange={(e) => onPickFile(e.target.files?.[0] || null)}
+            />
             <Button
               variant="outline"
               className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+              onClick={() => {
+                const el = document.getElementById(
+                  fileInputId,
+                ) as HTMLInputElement | null;
+                el?.click();
+              }}
+              disabled={uploadingFile}
             >
               <Upload className="w-4 h-4" />
-              Upload File
+              {uploadingFile ? "Uploading..." : "Upload File"}
             </Button>
+            {attachedFiles.length > 0 && (
+              <div className="mt-3 space-y-1">
+                {attachedFiles.map((f) => (
+                  <p key={f.name} className="text-xs text-gray-700 font-medium">
+                    {f.name}
+                  </p>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex gap-3 pt-6 border-t border-gray-200">
             <Button
               variant="outline"
               className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+              onClick={saveDraft}
+              disabled={!invoiceFormOk}
             >
               <Save className="w-4 h-4" />
               Save as Draft
@@ -3410,17 +7301,38 @@ const GenerateInvoiceView = () => {
             <Button
               variant="outline"
               className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+              onClick={markAsSent}
+              disabled={!invoiceId}
             >
               <CheckCircle2 className="w-4 h-4" />
               Mark as Sent
             </Button>
-            <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2">
+            <Button
+              variant="outline"
+              className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+              onClick={markAsPaid}
+              disabled={!invoiceId}
+            >
+              <DollarSign className="w-4 h-4" />
+              Mark as Paid
+            </Button>
+            <Button
+              className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
+              onClick={emailToClient}
+              disabled={emailSending || !invoiceFormOk}
+            >
               <Send className="w-4 h-4" />
-              Email to Client
+              {emailSending
+                ? "Generating PDF & sending…"
+                : emailSentOnce
+                  ? "Send again"
+                  : "Email to Client"}
             </Button>
             <Button
               variant="outline"
               className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+              onClick={downloadPdf}
+              disabled={!invoiceFormOk}
             >
               <Download className="w-4 h-4" />
               Download PDF
@@ -3448,9 +7360,12 @@ const GenerateInvoiceView = () => {
 
 const InvoiceManagementView = ({
   setActiveSubTab,
+  activeSubTab,
 }: {
   setActiveSubTab: (tab: string) => void;
+  activeSubTab: string;
 }) => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
@@ -3458,11 +7373,17 @@ const InvoiceManagementView = ({
   const [showPaymentHistory, setShowPaymentHistory] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
 
+  const { toast } = useToast();
+
+  const [loadingInvoices, setLoadingInvoices] = useState(false);
+  const [invoiceRows, setInvoiceRows] = useState<any[]>([]);
+  const [clientRows, setClientRows] = useState<any[]>([]);
+
   // Filter states
   const [issueDateFrom, setIssueDateFrom] = useState("");
   const [issueDateTo, setIssueDateTo] = useState("");
   const [minAmount, setMinAmount] = useState("");
-  const [maxAmount, setMaxAmount] = useState("10000");
+  const [maxAmount, setMaxAmount] = useState("");
   const [showOverdueOnly, setShowOverdueOnly] = useState(false);
   const [currencyFilter, setCurrencyFilter] = useState("all");
 
@@ -3470,10 +7391,246 @@ const InvoiceManagementView = ({
     setIssueDateFrom("");
     setIssueDateTo("");
     setMinAmount("");
-    setMaxAmount("10000");
+    setMaxAmount("");
     setShowOverdueOnly(false);
     setCurrencyFilter("all");
   };
+
+  const asArray = (v: any) => {
+    if (Array.isArray(v)) return v;
+    if (Array.isArray(v?.data)) return v.data;
+    if (Array.isArray(v?.items)) return v.items;
+    if (Array.isArray(v?.rows)) return v.rows;
+    return [] as any[];
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setLoadingInvoices(true);
+      try {
+        const [inv, clients] = await Promise.all([
+          listInvoices({}),
+          getAgencyClients(),
+        ]);
+        if (!mounted) return;
+        setInvoiceRows(asArray(inv));
+        setClientRows(asArray(clients));
+      } catch (e: any) {
+        toast({
+          title: "Failed to load invoices",
+          description: String(e?.message || e),
+          variant: "destructive" as any,
+        });
+      } finally {
+        if (mounted) setLoadingInvoices(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [toast]);
+
+  const clientNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const c of clientRows) {
+      const id = String((c as any)?.id || "");
+      if (!id) continue;
+      const name =
+        String((c as any)?.company || "").trim() ||
+        String((c as any)?.contact_name || "").trim() ||
+        String((c as any)?.email || "").trim();
+      if (name) m.set(id, name);
+    }
+    return m;
+  }, [clientRows]);
+
+  const money = (cents: number, currency: string) => {
+    const n = Math.round(Number(cents || 0)) / 100;
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: String(currency || "USD").toUpperCase(),
+      }).format(n);
+    } catch {
+      return `${String(currency || "USD").toUpperCase()} ${n.toFixed(2)}`;
+    }
+  };
+
+  const formatDate = (s: any) => {
+    const v = String(s || "");
+    if (!v) return "";
+    const d = new Date(v);
+    if (Number.isNaN(d.getTime())) return v;
+    return d.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const formatDateTime = (s: any) => {
+    const v = String(s || "");
+    if (!v) return "";
+    const d = new Date(v);
+    if (Number.isNaN(d.getTime())) return v;
+    return d.toLocaleString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const normalizedInvoices = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return invoiceRows.map((inv) => {
+      const invoiceId = String((inv as any)?.id || "");
+      const statusRaw = String(
+        (inv as any)?.status ??
+          (inv as any)?.invoice_status ??
+          (inv as any)?.invoice?.status ??
+          "draft",
+      );
+      const sentAt = (inv as any)?.sent_at ?? (inv as any)?.sentAt;
+      const paidAt = (inv as any)?.paid_at ?? (inv as any)?.paidAt;
+      const dueDateStr = String((inv as any)?.due_date || "");
+      const due = dueDateStr ? new Date(dueDateStr) : null;
+      const inferredStatus = (() => {
+        // If the DB has lifecycle timestamps but the status wasn't backfilled, infer it.
+        if (statusRaw === "void") return "void";
+        if (paidAt) return "paid";
+        if (sentAt) return "sent";
+        return statusRaw;
+      })();
+
+      const isOverdue =
+        inferredStatus !== "paid" &&
+        inferredStatus !== "void" &&
+        due &&
+        due < today;
+
+      return {
+        id: invoiceId,
+        invoiceNumber: String((inv as any)?.invoice_number || ""),
+        clientId: String((inv as any)?.client_id || ""),
+        clientName:
+          clientNameById.get(String((inv as any)?.client_id || "")) ||
+          String((inv as any)?.bill_to_company || "") ||
+          "(unknown)",
+        issueDate: String((inv as any)?.invoice_date || ""),
+        dueDate: dueDateStr,
+        amountCents: Number((inv as any)?.total_cents || 0) || 0,
+        currency: String((inv as any)?.currency || "USD"),
+        status: isOverdue ? "overdue" : inferredStatus,
+        sentAt: sentAt ? String(sentAt) : "",
+        paidAt: paidAt ? String(paidAt) : "",
+        createdAt: String((inv as any)?.created_at || ""),
+        updatedAt: String((inv as any)?.updated_at || ""),
+      };
+    });
+  }, [clientNameById, invoiceRows]);
+
+  const filteredInvoices = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    const min = Number(minAmount || "") || 0;
+    const max = Number(maxAmount || "") || 0;
+    const from = issueDateFrom ? new Date(issueDateFrom) : null;
+    const to = issueDateTo ? new Date(issueDateTo) : null;
+
+    const matchesCurrency = (cur: string) => {
+      if (currencyFilter === "all") return true;
+      return String(cur || "").toLowerCase() === currencyFilter.toLowerCase();
+    };
+
+    let out = normalizedInvoices.filter((inv) => {
+      if (statusFilter !== "all" && inv.status !== statusFilter) return false;
+      if (!matchesCurrency(inv.currency)) return false;
+
+      if (q) {
+        const hay = `${inv.invoiceNumber} ${inv.clientName}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+
+      if (from) {
+        const d = inv.issueDate ? new Date(inv.issueDate) : null;
+        if (!d || d < from) return false;
+      }
+      if (to) {
+        const d = inv.issueDate ? new Date(inv.issueDate) : null;
+        if (!d || d > to) return false;
+      }
+
+      const amount = inv.amountCents / 100;
+      if (minAmount !== "" && amount < min) return false;
+      if (maxAmount !== "" && max > 0 && amount > max) return false;
+
+      if (showOverdueOnly && inv.status !== "overdue") return false;
+
+      return true;
+    });
+
+    const byInvoice = (a: any, b: any) =>
+      a.invoiceNumber.localeCompare(b.invoiceNumber);
+    const byClient = (a: any, b: any) =>
+      a.clientName.localeCompare(b.clientName);
+    const byIssue = (a: any, b: any) =>
+      new Date(a.issueDate).getTime() - new Date(b.issueDate).getTime();
+    const byDue = (a: any, b: any) =>
+      new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+    const byAmount = (a: any, b: any) =>
+      (a.amountCents || 0) - (b.amountCents || 0);
+
+    switch (sortBy) {
+      case "oldest":
+        out = out.sort(byIssue);
+        break;
+      case "newest":
+        out = out.sort((a, b) => byIssue(b, a));
+        break;
+      case "due-soonest":
+        out = out.sort(byDue);
+        break;
+      case "due-latest":
+        out = out.sort((a, b) => byDue(b, a));
+        break;
+      case "amount-high":
+        out = out.sort((a, b) => byAmount(b, a));
+        break;
+      case "amount-low":
+        out = out.sort(byAmount);
+        break;
+      case "client-az":
+        out = out.sort(byClient);
+        break;
+      case "client-za":
+        out = out.sort((a, b) => byClient(b, a));
+        break;
+      case "invoice-asc":
+        out = out.sort(byInvoice);
+        break;
+      case "invoice-desc":
+        out = out.sort((a, b) => byInvoice(b, a));
+        break;
+      default:
+        break;
+    }
+
+    return out;
+  }, [
+    currencyFilter,
+    issueDateFrom,
+    issueDateTo,
+    maxAmount,
+    minAmount,
+    normalizedInvoices,
+    searchTerm,
+    showOverdueOnly,
+    sortBy,
+    statusFilter,
+  ]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -3485,9 +7642,7 @@ const InvoiceManagementView = ({
         return "bg-green-50 text-green-700 border-green-200";
       case "overdue":
         return "bg-red-50 text-red-700 border-red-200";
-      case "partial":
-        return "bg-purple-50 text-purple-700 border-purple-200";
-      case "cancelled":
+      case "void":
         return "bg-gray-50 text-gray-700 border-gray-200";
       default:
         return "bg-gray-50 text-gray-700 border-gray-200";
@@ -3501,6 +7656,7 @@ const InvoiceManagementView = ({
     { id: "Talent Statements", label: "Talent Statements", icon: Receipt },
     { id: "Financial Reports", label: "Financial Reports", icon: BarChart2 },
     { id: "Expense Tracking", label: "Expense Tracking", icon: CreditCard },
+    { id: "Connect Bank", label: "Connect Bank", icon: CreditCard },
   ];
 
   return (
@@ -3510,7 +7666,7 @@ const InvoiceManagementView = ({
         <div className="flex items-center gap-2">
           {accountingTabs.map((tab) => {
             const Icon = tab.icon;
-            const isActive = tab.id === "Invoice Management";
+            const isActive = tab.id === activeSubTab;
             return (
               <button
                 key={tab.id}
@@ -3595,16 +7751,10 @@ const InvoiceManagementView = ({
                 <span className="text-gray-900">Overdue</span>
               </div>
             </SelectItem>
-            <SelectItem value="partial" className="font-bold">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-purple-500 rounded-sm"></div>
-                <span className="text-gray-900">Partial</span>
-              </div>
-            </SelectItem>
-            <SelectItem value="cancelled" className="font-bold">
+            <SelectItem value="void" className="font-bold">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-gray-400 rounded-sm"></div>
-                <span className="text-gray-900">Cancelled</span>
+                <span className="text-gray-900">Void</span>
               </div>
             </SelectItem>
           </SelectContent>
@@ -3741,7 +7891,11 @@ const InvoiceManagementView = ({
       )}
 
       <div className="text-sm text-gray-700 font-bold">
-        Showing <span className="font-bold text-gray-900">1 of 1</span> invoices
+        Showing{" "}
+        <span className="font-bold text-gray-900">
+          {filteredInvoices.length} of {normalizedInvoices.length}
+        </span>{" "}
+        invoices
       </div>
 
       <Card className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
@@ -3776,7 +7930,7 @@ const InvoiceManagementView = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {MOCK_INVOICES.map((invoice) => (
+              {filteredInvoices.map((invoice) => (
                 <tr
                   key={invoice.id}
                   className="hover:bg-gray-50 transition-colors"
@@ -3796,17 +7950,17 @@ const InvoiceManagementView = ({
                   </td>
                   <td className="px-6 py-3">
                     <span className="text-sm text-gray-700 font-bold">
-                      {invoice.issueDate}
+                      {formatDate(invoice.issueDate)}
                     </span>
                   </td>
                   <td className="px-6 py-3">
                     <span className="text-sm text-gray-700 font-bold">
-                      {invoice.dueDate}
+                      {formatDate(invoice.dueDate)}
                     </span>
                   </td>
                   <td className="px-6 py-3">
                     <span className="text-sm font-bold text-gray-900">
-                      {invoice.amount}
+                      {money(invoice.amountCents, invoice.currency)}
                     </span>
                   </td>
                   <td className="px-6 py-3">
@@ -3824,6 +7978,13 @@ const InvoiceManagementView = ({
                         variant="ghost"
                         className="w-8 h-8 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"
                         title="View Invoice"
+                        onClick={() => {
+                          if (!invoice.id) return;
+                          setActiveSubTab("Invoice Generation");
+                          navigate({
+                            search: `?invoiceId=${encodeURIComponent(invoice.id)}`,
+                          });
+                        }}
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
@@ -3832,6 +7993,13 @@ const InvoiceManagementView = ({
                         variant="ghost"
                         className="w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg"
                         title="Edit Invoice"
+                        onClick={() => {
+                          if (!invoice.id) return;
+                          setActiveSubTab("Invoice Generation");
+                          navigate({
+                            search: `?invoiceId=${encodeURIComponent(invoice.id)}`,
+                          });
+                        }}
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
@@ -3840,6 +8008,13 @@ const InvoiceManagementView = ({
                         variant="ghost"
                         className="w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg"
                         title="Download PDF"
+                        onClick={() => {
+                          if (!invoice.id) return;
+                          setActiveSubTab("Invoice Generation");
+                          navigate({
+                            search: `?invoiceId=${encodeURIComponent(invoice.id)}`,
+                          });
+                        }}
                       >
                         <Download className="w-4 h-4" />
                       </Button>
@@ -3898,19 +8073,45 @@ const InvoiceManagementView = ({
                 <p className="text-xs font-bold text-gray-700 mb-1">
                   Invoice Total
                 </p>
-                <p className="text-2xl font-bold text-blue-600">$3</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {money(
+                    Number((selectedInvoice as any)?.amountCents || 0) || 0,
+                    String((selectedInvoice as any)?.currency || "USD"),
+                  )}
+                </p>
               </Card>
               <Card className="p-4 bg-green-50 border border-green-100 rounded-xl">
                 <p className="text-xs font-bold text-gray-700 mb-1">
                   Total Paid
                 </p>
-                <p className="text-2xl font-bold text-green-600">$3</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {money(
+                    ((selectedInvoice as any)?.paidAt
+                      ? Number((selectedInvoice as any)?.amountCents || 0) || 0
+                      : 0) || 0,
+                    String((selectedInvoice as any)?.currency || "USD"),
+                  )}
+                </p>
               </Card>
               <Card className="p-4 bg-orange-50 border border-orange-100 rounded-xl">
                 <p className="text-xs font-bold text-gray-700 mb-1">
                   Remaining Balance
                 </p>
-                <p className="text-2xl font-bold text-orange-600">$0</p>
+                <p className="text-2xl font-bold text-orange-600">
+                  {money(
+                    Math.max(
+                      0,
+                      (Number((selectedInvoice as any)?.amountCents || 0) ||
+                        0) -
+                        ((selectedInvoice as any)?.paidAt
+                          ? Number(
+                              (selectedInvoice as any)?.amountCents || 0,
+                            ) || 0
+                          : 0),
+                    ),
+                    String((selectedInvoice as any)?.currency || "USD"),
+                  )}
+                </p>
               </Card>
             </div>
 
@@ -3919,38 +8120,86 @@ const InvoiceManagementView = ({
               <h4 className="text-sm font-bold text-gray-900 mb-3">
                 Payment Transactions
               </h4>
-              <Card className="p-4 bg-green-50 border border-green-100 rounded-xl">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <CheckCircle2 className="w-5 h-5 text-green-600" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start mb-1">
-                      <div>
-                        <p className="text-sm font-bold text-gray-900">
-                          Payment #1
-                        </p>
+              {(() => {
+                const inv: any = selectedInvoice || {};
+                const currency = String(inv.currency || "USD");
+                const events: Array<{
+                  key: string;
+                  kind: "paid" | "sent" | "created" | "void";
+                  at: string;
+                }> = [];
+
+                const status = String(inv.status || "").toLowerCase();
+                if (String(inv.createdAt || ""))
+                  events.push({
+                    key: "created",
+                    kind: "created",
+                    at: String(inv.createdAt),
+                  });
+                if (String(inv.sentAt || ""))
+                  events.push({
+                    key: "sent",
+                    kind: "sent",
+                    at: String(inv.sentAt),
+                  });
+                if (String(inv.paidAt || ""))
+                  events.push({
+                    key: "paid",
+                    kind: "paid",
+                    at: String(inv.paidAt),
+                  });
+                if (status === "void")
+                  events.push({
+                    key: "void",
+                    kind: "void",
+                    at: String(inv.updatedAt || inv.createdAt || ""),
+                  });
+
+                const payments = events.filter((e) => e.kind === "paid");
+                if (!payments.length) {
+                  return (
+                    <Card className="p-4 bg-gray-50 border border-gray-200 rounded-xl">
+                      <p className="text-sm font-bold text-gray-900">
+                        No payments recorded
+                      </p>
+                      <p className="text-xs text-gray-600 font-medium">
+                        This invoice has not been marked as paid.
+                      </p>
+                    </Card>
+                  );
+                }
+
+                return payments.map((p, idx) => (
+                  <Card
+                    key={p.key}
+                    className="p-4 bg-green-50 border border-green-100 rounded-xl"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <CheckCircle2 className="w-5 h-5 text-green-600" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start mb-1">
+                          <div>
+                            <p className="text-sm font-bold text-gray-900">
+                              Payment #{idx + 1}
+                            </p>
+                            <p className="text-xs text-gray-600 font-medium">
+                              {formatDateTime(p.at)}
+                            </p>
+                          </div>
+                          <span className="text-lg font-bold text-green-600">
+                            {money(Number(inv.amountCents || 0) || 0, currency)}
+                          </span>
+                        </div>
                         <p className="text-xs text-gray-600 font-medium">
-                          January 27, 2026 • Wire
+                          Invoice marked as paid
                         </p>
                       </div>
-                      <span className="text-lg font-bold text-green-600">
-                        $3
-                      </span>
                     </div>
-                    <p className="text-xs text-gray-600 font-medium">
-                      Full payment received
-                    </p>
-                  </div>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="w-8 h-8 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </Card>
+                  </Card>
+                ));
+              })()}
             </div>
           </div>
 
@@ -4279,14 +8528,10 @@ const ScoutingHubView = ({
   activeTab: string;
   setActiveTab: (tab: string) => void;
 }) => {
-  const queryClient = useQueryClient();
   const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
   const [prospectToEdit, setProspectToEdit] = useState<ScoutingProspect | null>(
     null,
   );
-  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
-  const [eventToEdit, setEventToEdit] = useState<ScoutingEvent | null>(null);
-  const [isPlanTripModalOpen, setIsPlanTripModalOpen] = useState(false);
 
   const tabs = [
     "Prospect Pipeline",
@@ -4406,27 +8651,10 @@ const ScoutingHubView = ({
         )}
         {activeTab === "Analytics" && <ScoutingAnalyticsTab />}
       </div>
-      <ProspectModal
+      <ProspectModalAlt
         open={isProspectModalOpen}
         onOpenChange={setIsProspectModalOpen}
         prospect={prospectToEdit}
-      />
-      <CreateEventModal
-        open={isEventModalOpen}
-        onOpenChange={setIsEventModalOpen}
-        event={eventToEdit}
-        onSuccess={() => {
-          queryClient.invalidateQueries({ queryKey: ["scouting-events"] });
-        }}
-      />
-      <PlanTripModal
-        isOpen={isPlanTripModalOpen}
-        onClose={() => setIsPlanTripModalOpen(false)}
-        onPlan={async (trip) => {
-          console.log("Planning trip:", trip);
-          setIsPlanTripModalOpen(false);
-          refreshScoutingData();
-        }}
       />
     </div>
   );
@@ -4441,14 +8669,16 @@ const ProspectDetailsSheet = ({
   onClose: () => void;
   onEdit: (prospect: ScoutingProspect) => void;
 }) => {
+  if (!prospect) return null;
+
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const handleStatusChange = async (newStatus: string) => {
-    if (!prospect) return;
     try {
-      await scoutingService.updateProspect(prospect.id, { status: newStatus });
+      await scoutingService.updateProspect(prospect.id, {
+        status: newStatus as any,
+      });
       await queryClient.invalidateQueries({ queryKey: ["prospects"] });
       toast({
         title: "Status Updated",
@@ -4456,108 +8686,21 @@ const ProspectDetailsSheet = ({
       });
     } catch (error) {
       console.error("Error updating status:", error);
-      toast({ title: "Error", description: "Failed to update status." });
+      toast({
+        title: "Error",
+        description: "Failed to update status. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
-  if (!prospect) return null;
-
   return (
     <Sheet open={!!prospect} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="max-w-none sm:max-w-none md:max-w-none lg:max-w-none w-[75vw] lg:w-[860px] xl:w-[960px] p-0 flex flex-col">
-        <SheetHeader className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex-1 bg-gray-50/70 border rounded-xl p-3">
-              <div className="flex items-center justify-between">
-                <Label className="text-sm font-bold text-gray-600">
-                  Status
-                </Label>
-                <Badge
-                  className={`capitalize border px-3 py-1 ${STATUS_COLORS[prospect.status] || "bg-gray-100 text-gray-700 border-gray-200"}`}
-                >
-                  {STATUS_MAP[prospect.status] || prospect.status}
-                </Badge>
-              </div>
-              <Select
-                onValueChange={handleStatusChange}
-                defaultValue={prospect.status}
-                disabled={["offer_sent", "signed", "declined"].includes(
-                  prospect.status,
-                )}
-              >
-                <SelectTrigger className="w-full h-10 text-sm font-semibold mt-2 bg-white">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS[prospect.status] || "bg-gray-400"}`}
-                    ></span>
-                    <SelectValue />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem
-                    value="new_lead"
-                    className="text-sm font-semibold"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.new_lead}`}
-                      ></span>
-                      <span>{STATUS_MAP.new_lead}</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem
-                    value="in_contact"
-                    className="text-sm font-semibold"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.in_contact}`}
-                      ></span>
-                      <span>{STATUS_MAP.in_contact}</span>
-                    </div>
-                  </SelectItem>
-                  <SelectGroup>
-                    <SelectLabel className="px-2 py-1.5 text-xs font-semibold text-gray-500">
-                      Test Shoot
-                    </SelectLabel>
-                    <SelectItem
-                      value="test_shoot_pending"
-                      className="text-sm font-semibold bg-gray-50/50"
-                    >
-                      <div className="flex items-center gap-2 pl-6">
-                        <span
-                          className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.test_shoot_pending}`}
-                        ></span>
-                        <span>Pending</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem
-                      value="test_shoot_success"
-                      className="text-sm font-semibold bg-gray-50/50"
-                    >
-                      <div className="flex items-center gap-2 pl-6">
-                        <span
-                          className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.test_shoot_success}`}
-                        ></span>
-                        <span>Success</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem
-                      value="test_shoot_failed"
-                      className="text-sm font-semibold bg-gray-50/50"
-                    >
-                      <div className="flex items-center gap-2 pl-6">
-                        <span
-                          className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.test_shoot_failed}`}
-                        ></span>
-                        <span>Failed</span>
-                      </div>
-                    </SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+      <SheetContent className="w-[650px] sm:max-w-none bg-white p-0 flex flex-col">
+        <SheetHeader className="p-6 border-b">
+          <SheetTitle className="text-xl font-bold">
+            Prospect Details
+          </SheetTitle>
         </SheetHeader>
 
         {/* Scrollable content */}
@@ -4575,47 +8718,9 @@ const ProspectDetailsSheet = ({
                 </div>
               </div>
               <div className="flex-1 pt-2">
-                <div className="flex justify-between items-start">
-                  <h2 className="text-3xl font-bold text-gray-900">
-                    {prospect.full_name}
-                  </h2>
-                  {prospect.status === "test_shoot_success" ? (
-                    <Button
-                      onClick={() =>
-                        (window.location.href = `/scoutingoffers?prospectId=${prospect.id}`)
-                      }
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-6 rounded-lg shadow-sm flex items-center gap-2"
-                    >
-                      <FileText className="w-4 h-4" />
-                      Send Offer
-                    </Button>
-                  ) : ["offer_sent", "opened", "signed", "declined"].includes(
-                      prospect.status,
-                    ) ? (
-                    <div className="flex items-center gap-3">
-                      <Button
-                        onClick={() =>
-                          (window.location.href = `/scoutingoffers?prospectId=${prospect.id}`)
-                        }
-                        className="bg-white hover:bg-gray-50 border text-gray-700 font-bold h-9 px-4 rounded-lg shadow-sm flex items-center gap-2"
-                      >
-                        <FileText className="w-4 h-4" />
-                        View Offers
-                      </Button>
-                      {prospect.status === "signed" && (
-                        <Button
-                          onClick={() =>
-                            navigate("/addtalent", { state: { prospect } })
-                          }
-                          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-9 px-4 rounded-lg shadow-sm flex items-center gap-2"
-                        >
-                          <Plus className="w-4 h-4" />
-                          Add Talent
-                        </Button>
-                      )}
-                    </div>
-                  ) : null}
-                </div>
+                <h2 className="text-3xl font-bold text-gray-900">
+                  {prospect.full_name}
+                </h2>
                 <div className="flex flex-wrap items-center gap-2 mt-3">
                   {prospect.categories?.map((cat) => (
                     <Badge key={cat} variant="outline" className="font-medium">
@@ -4635,6 +8740,36 @@ const ProspectDetailsSheet = ({
                   </span>
                 </div>
               </div>
+            </div>
+            <div className="p-4 rounded-xl border bg-gray-50/70">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="font-semibold text-gray-700">Status</h3>
+                <Badge
+                  className={`capitalize border ${STATUS_COLORS[prospect.status as keyof typeof STATUS_COLORS] || "bg-gray-100 text-gray-700"}`}
+                >
+                  {STATUS_MAP[prospect.status as keyof typeof STATUS_MAP] ||
+                    prospect.status.replace("_", " ")}
+                </Badge>
+              </div>
+              <Select
+                defaultValue={prospect.status}
+                onValueChange={handleStatusChange}
+              >
+                <SelectTrigger className="h-11 text-base bg-white border-gray-200">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(STATUS_MAP).map(([value, label]) => (
+                    <SelectItem
+                      key={value}
+                      value={value}
+                      className="font-medium"
+                    >
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -4807,27 +8942,14 @@ const ProspectPipelineTab = ({
   onEditProspect: (prospect: ScoutingProspect) => void;
 }) => {
   const { user } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState("all");
   const [selectedProspect, setSelectedProspect] =
     useState<ScoutingProspect | null>(null);
-
-  // Filter states - initialize from URL
-  const [searchInput, setSearchInput] = useState(
-    searchParams.get("search") || "",
-  );
-  const [statusFilter, setStatusFilter] = useState(
-    searchParams.get("status") || "all",
-  );
-  const [sourceFilter, setSourceFilter] = useState(
-    searchParams.get("source") || "all",
-  );
-
-  // Debounce search input
-  const debouncedSearch = useDebounce(searchInput, 300);
-
-  // Fetch all prospects for stats (unfiltered)
-  const { data: allProspects } = useQuery({
-    queryKey: ["prospects-all", user?.id],
+  const { data: prospects, isLoading } = useQuery({
+    queryKey: ["prospects", user?.id],
     queryFn: async () => {
       if (!user) return [];
       const agencyId = await scoutingService.getUserAgencyId();
@@ -4837,44 +8959,6 @@ const ProspectPipelineTab = ({
     enabled: !!user,
   });
 
-  // Fetch filtered prospects
-  const { data: prospects, isLoading } = useQuery({
-    queryKey: [
-      "prospects",
-      user?.id,
-      debouncedSearch,
-      statusFilter,
-      sourceFilter,
-    ],
-    queryFn: async () => {
-      if (!user) return [];
-      const agencyId = await scoutingService.getUserAgencyId();
-      if (!agencyId) return [];
-      return scoutingService.getProspects(agencyId, {
-        searchQuery: debouncedSearch,
-        statusFilter,
-        sourceFilter,
-      });
-    },
-    enabled: !!user,
-    refetchInterval: 5000, // Poll every 5 seconds for real-time pipeline updates
-  });
-
-  // Update URL when filters change
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (debouncedSearch) params.set("search", debouncedSearch);
-    else params.delete("search");
-
-    if (statusFilter !== "all") params.set("status", statusFilter);
-    else params.delete("status");
-
-    if (sourceFilter !== "all") params.set("source", sourceFilter);
-    else params.delete("source");
-
-    setSearchParams(params, { replace: true });
-  }, [debouncedSearch, statusFilter, sourceFilter, setSearchParams]);
-
   useEffect(() => {
     if (selectedProspect && prospects) {
       const updated = prospects.find((p) => p.id === selectedProspect.id);
@@ -4882,34 +8966,32 @@ const ProspectPipelineTab = ({
     }
   }, [prospects]);
 
-  // Calculate stats from all prospects (not filtered)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(searchInput.trim());
+    }, 250);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
   const stats = [
     {
       label: "New Leads",
-      count: allProspects?.filter((p) => p.status === "new_lead").length || 0,
+      count: prospects?.filter((p) => p.status === "new").length || 0,
       color: "border-blue-200 bg-blue-50/30",
     },
     {
       label: "In Contact",
-      count: allProspects?.filter((p) => p.status === "in_contact").length || 0,
+      count: prospects?.filter((p) => p.status === "contacted").length || 0,
       color: "border-yellow-200 bg-yellow-50/30",
     },
     {
       label: "Test Shoots",
-      count:
-        allProspects?.filter((p) => p.status.startsWith("test_shoot")).length ||
-        0,
-      color: "border-orange-200 bg-orange-50/30",
+      count: prospects?.filter((p) => p.status === "test_shoot").length || 0,
+      color: "border-purple-200 bg-purple-50/30",
     },
     {
-      label: "Offers",
-      count:
-        allProspects?.filter(
-          (p) =>
-            p.status === "offer_sent" ||
-            p.status === "signed" ||
-            p.status === "declined",
-        ).length || 0,
+      label: "Offers Sent",
+      count: prospects?.filter((p) => p.status === "offer_sent").length || 0,
       color: "border-green-200 bg-green-50/30",
     },
   ];
@@ -5075,13 +9157,6 @@ const ProspectPipelineTab = ({
           ))}
         </div>
 
-        {/* Results count */}
-        {hasActiveFilters && prospects && (
-          <div className="mb-4 text-sm text-gray-600">
-            Showing {prospects.length} of {allProspects?.length || 0} prospects
-          </div>
-        )}
-
         {isLoading ? (
           <div className="text-center py-24">Loading prospects...</div>
         ) : !prospects || prospects.length === 0 ? (
@@ -5126,7 +9201,7 @@ const ProspectPipelineTab = ({
                     TEST SHOOTS
                   </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-600">
-                    OFFERS
+                    OFFERS SENT
                   </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-600">
                     SOURCE
@@ -5157,47 +9232,23 @@ const ProspectPipelineTab = ({
                       <div className="text-xs">{p.phone}</div>
                     </td>
                     <td className="px-4 py-3">
-                      {p.status === "new_lead" ? (
+                      {p.status === "new" ? (
                         <CheckCircle2 className="w-5 h-5 text-blue-500" />
                       ) : null}
                     </td>
                     <td className="px-4 py-3">
-                      {p.status === "in_contact" ? (
+                      {p.status === "contacted" ? (
                         <CheckCircle2 className="w-5 h-5 text-yellow-500" />
                       ) : null}
                     </td>
                     <td className="px-4 py-3">
-                      {p.status.startsWith("test_shoot") && (
-                        <Badge
-                          className={`capitalize border ${STATUS_COLORS[p.status] || "bg-gray-100 text-gray-700 border-gray-200"}`}
-                        >
-                          {p.status.replace("test_shoot_", "")}
-                        </Badge>
-                      )}
+                      {p.status === "test_shoot" ? (
+                        <CheckCircle2 className="w-5 h-5 text-purple-500" />
+                      ) : null}
                     </td>
                     <td className="px-4 py-3">
-                      {p.status === "signed" ? (
-                        <Badge
-                          className={`capitalize border ${STATUS_COLORS.signed}`}
-                        >
-                          {STATUS_MAP.signed}
-                        </Badge>
-                      ) : p.status === "declined" ? (
-                        <Badge
-                          className={`capitalize border ${STATUS_COLORS.declined}`}
-                        >
-                          {STATUS_MAP.declined}
-                        </Badge>
-                      ) : p.status === "opened" ? (
-                        <Badge
-                          className={`capitalize border ${STATUS_COLORS.opened}`}
-                        >
-                          Opened
-                        </Badge>
-                      ) : p.status === "offer_sent" ? (
-                        <Badge className="capitalize border bg-gray-100 text-gray-700 border-gray-200">
-                          Awaiting
-                        </Badge>
+                      {p.status === "offer_sent" ? (
+                        <CheckCircle2 className="w-5 h-5 text-green-500" />
                       ) : null}
                     </td>
                     <td className="px-4 py-3 text-gray-600 font-medium">
@@ -5537,20 +9588,20 @@ const OpenCallsTab = ({
                 <div className="flex justify-between items-start mb-3">
                   <Badge
                     className={`rounded-md font-bold px-2 py-0.5 text-[10px] border shadow-sm ${
-                      event.status === "published"
+                      String((event as any).status) === "published"
                         ? "bg-green-50 text-green-700 border-green-100"
-                        : event.status === "draft"
+                        : String((event as any).status) === "draft"
                           ? "bg-gray-50 text-gray-600 border-gray-100"
-                          : event.status === "scheduled"
+                          : String((event as any).status) === "scheduled"
                             ? "bg-blue-50 text-blue-700 border-blue-100"
-                            : event.status === "completed"
+                            : String((event as any).status) === "completed"
                               ? "bg-indigo-50 text-indigo-700 border-indigo-100"
-                              : event.status === "cancelled"
+                              : String((event as any).status) === "cancelled"
                                 ? "bg-red-50 text-red-700 border-red-100"
                                 : "bg-gray-50 text-gray-600 border-gray-100"
                     }`}
                   >
-                    {event.status.toUpperCase()}
+                    {String((event as any).status || "").toUpperCase()}
                   </Badge>
                   <div className="flex items-center gap-1 text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">
                     <Clock className="w-3 h-3" />
@@ -13073,7 +17124,9 @@ export default function AgencyDashboard() {
   const [activeTab, setActiveTabState] = useState(
     searchParams.get("tab") || "dashboard",
   );
-  const [activeSubTab, setActiveSubTab] = useState("All Talent");
+  const [activeSubTab, setActiveSubTab] = useState(
+    searchParams.get("subTab") || "All Talent",
+  );
   const [activeScoutingTab, setActiveScoutingTabState] = useState(
     searchParams.get("scoutingTab") || "Prospect Pipeline",
   );
@@ -13326,6 +17379,22 @@ export default function AgencyDashboard() {
     );
   };
 
+  useEffect(() => {
+    if (activeTab !== "accounting") return;
+    const validAccountingSubTabs = new Set([
+      "Connect Bank",
+      "Invoice Generation",
+      "Invoice Management",
+      "Payment Tracking",
+      "Talent Statements",
+      "Financial Reports",
+      "Expense Tracking",
+    ]);
+    if (!validAccountingSubTabs.has(activeSubTab)) {
+      setActiveSubTab("Connect Bank");
+    }
+  }, [activeSubTab, activeTab]);
+
   // Sidebar Items
   interface SidebarItem {
     id: string;
@@ -13369,6 +17438,20 @@ export default function AgencyDashboard() {
             subItems: ["Analytics Dashboard", "Royalties & Payouts"],
           },
           {
+            id: "accounting",
+            label: "Accounting & Invoicing",
+            icon: CreditCard,
+            subItems: [
+              "Invoice Generation",
+              "Invoice Management",
+              "Payment Tracking",
+              "Talent Statements",
+              "Financial Reports",
+              "Expense Tracking",
+              "Connect Bank",
+            ],
+          },
+          {
             id: "settings",
             label: "Settings",
             icon: Settings,
@@ -13409,6 +17492,7 @@ export default function AgencyDashboard() {
               "Talent Statements",
               "Financial Reports",
               "Expense Tracking",
+              "Connect Bank",
             ],
           },
           {
@@ -13820,9 +17904,13 @@ export default function AgencyDashboard() {
           )}
           {activeTab === "accounting" && (
             <div>
+              {activeSubTab === "Connect Bank" && <ConnectBankView />}
               {activeSubTab === "Invoice Generation" && <GenerateInvoiceView />}
               {activeSubTab === "Invoice Management" && (
-                <InvoiceManagementView setActiveSubTab={setActiveSubTab} />
+                <InvoiceManagementView
+                  setActiveSubTab={setActiveSubTab}
+                  activeSubTab={activeSubTab}
+                />
               )}
               {activeSubTab === "Payment Tracking" && <PaymentTrackingView />}
               {activeSubTab === "Talent Statements" && <TalentStatementsView />}

@@ -76,6 +76,9 @@ import CreatorDashboard from "./CreatorDashboard";
 
 import AgencyDashboard from "./AgencyDashboard";
 
+import StripeConnectReturn from "./StripeConnectReturn";
+import StripeConnectRefresh from "./StripeConnectRefresh";
+
 import AddTalent from "./AddTalent";
 
 import BrandDashboard from "./BrandDashboard";
@@ -369,6 +372,15 @@ function PagesContent() {
               <AgencyDashboard />
             </ProtectedRoute>
           }
+        />
+
+        <Route
+          path="/stripe/connect/return"
+          element={<StripeConnectReturn />}
+        />
+        <Route
+          path="/stripe/connect/refresh"
+          element={<StripeConnectRefresh />}
         />
 
         <Route

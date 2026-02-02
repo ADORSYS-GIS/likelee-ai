@@ -13,6 +13,37 @@ pub fn build_router(state: AppState) -> Router {
         .allow_headers(Any);
     Router::new()
         .route("/api/health", get(crate::health::health))
+        // Invoices (Agency Dashboard)
+        .route(
+            "/api/invoices",
+            get(crate::invoices::list).post(crate::invoices::create),
+        )
+        .route(
+            "/api/invoices/:id",
+            get(crate::invoices::get).post(crate::invoices::update),
+        )
+        .route(
+            "/api/invoices/:id/mark-sent",
+            post(crate::invoices::mark_sent),
+        )
+        .route(
+            "/api/invoices/:id/mark-paid",
+            post(crate::invoices::mark_paid),
+        )
+        .route(
+            "/api/invoices/:id/void",
+            post(crate::invoices::void_invoice),
+        )
+        // Talent Statements (Agency Dashboard)
+        .route(
+            "/api/talent-statements",
+            get(crate::talent_statements::list),
+        )
+        // Expenses (Agency Dashboard)
+        .route(
+            "/api/expenses",
+            get(crate::expenses::list).post(crate::expenses::create),
+        )
         .route("/api/kyc/session", post(crate::kyc::create_session))
         .route("/api/kyc/status", get(crate::kyc::get_status))
         .route(
@@ -27,14 +58,14 @@ pub fn build_router(state: AppState) -> Router {
         // Agencies
         .route("/api/agency-register", post(crate::agencies::register))
         .route("/api/agency-profile", post(crate::agencies::update))
-        .route(
-            "/api/agency-profile/user",
-            get(crate::agencies::get_by_user),
-        )
         .route("/api/agency/talents", get(crate::agencies::list_talents))
         .route(
             "/api/agency/clients",
             get(crate::agencies::list_clients).post(crate::agencies::create_client),
+        )
+        .route(
+            "/api/agency-profile/user",
+            get(crate::agencies::get_profile),
         )
         .route(
             "/api/agency/clients/:id",
@@ -210,6 +241,15 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/payouts/request", post(crate::payouts::request_payout))
         .route("/api/payouts/history", get(crate::payouts::get_history))
         .route("/webhooks/stripe", post(crate::payouts::stripe_webhook))
+        // Agency Stripe Connect (Accounting)
+        .route(
+            "/api/agency/payouts/onboarding_link",
+            post(crate::payouts::create_agency_onboarding_link),
+        )
+        .route(
+            "/api/agency/payouts/account_status",
+            get(crate::payouts::get_agency_account_status),
+        )
         // Integrations: Core
         .route(
             "/api/integrations/core/send-email",

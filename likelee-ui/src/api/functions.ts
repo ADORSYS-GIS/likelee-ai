@@ -115,6 +115,12 @@ export const getPayoutsAccountStatus = async (profileId: string) => {
   return { data: resp } as any;
 };
 
+// Agency Stripe Connect (Accounting)
+export const getAgencyPayoutsAccountStatus = async () => {
+  const resp = await base44Client.get(`/api/agency/payouts/account_status`);
+  return { data: resp } as any;
+};
+
 export const getPayoutBalance = async (profileId: string) => {
   const resp = await base44Client.get(`/api/payouts/balance`, {
     params: { profile_id: profileId },
@@ -131,6 +137,14 @@ export const getStripeOAuthUrl = async (profileId: string) => {
     },
   );
   // Backend returns { url }, adapt to UI expectations
+  return { data: { status: "ok", url: (resp as any)?.url } } as any;
+};
+
+export const getAgencyStripeOnboardingLink = async () => {
+  const resp = await base44Client.post(
+    `/api/agency/payouts/onboarding_link`,
+    {},
+  );
   return { data: { status: "ok", url: (resp as any)?.url } } as any;
 };
 
@@ -177,6 +191,48 @@ export const getAgencyClients = () => base44Client.get(`/api/agency/clients`);
 export const createAgencyClient = (data: any) =>
   base44Client.post(`/api/agency/clients`, data);
 
+// Invoices (Agency Dashboard)
+export const listInvoices = (params?: {
+  status?: string;
+  date_start?: string;
+  date_end?: string;
+}) => base44Client.get(`/api/invoices`, { params: params || {} });
+
+export const getInvoice = (id: string) =>
+  base44Client.get(`/api/invoices/${id}`);
+
+// Talent Statements (Agency Dashboard)
+export const listTalentStatements = (params?: {
+  talent_id?: string;
+  year?: number;
+}) => base44Client.get(`/api/talent-statements`, { params: params || {} });
+
+// Expenses (Agency Dashboard)
+export const listExpenses = (params?: {
+  date_start?: string;
+  date_end?: string;
+  category?: string;
+  status?: string;
+}) => base44Client.get(`/api/expenses`, { params: params || {} });
+
+export const createExpense = (data: any) =>
+  base44Client.post(`/api/expenses`, data);
+
+export const createInvoice = (data: any) =>
+  base44Client.post(`/api/invoices`, data);
+
+export const updateInvoice = (id: string, data: any) =>
+  base44Client.post(`/api/invoices/${id}`, data);
+
+export const markInvoiceSent = (id: string) =>
+  base44Client.post(`/api/invoices/${id}/mark-sent`, {});
+
+export const markInvoicePaid = (id: string) =>
+  base44Client.post(`/api/invoices/${id}/mark-paid`, {});
+
+export const voidInvoice = (id: string) =>
+  base44Client.post(`/api/invoices/${id}/void`, {});
+
 // Book-Outs (Availability)
 export const listBookOuts = (params?: {
   date_start?: string;
@@ -203,3 +259,23 @@ export const listBookingNotifications = (params?: { limit?: number }) =>
   base44Client.get(`/api/notifications/booking-notifications`, {
     params: params || {},
   });
+
+// Agency files (multipart)
+export const uploadAgencyFile = async (file: File) => {
+  const fd = new FormData();
+  fd.append("file", file);
+  // Do NOT set Content-Type manually; let the browser add the multipart boundary
+  return base44Client.post(`/api/agency/files/upload`, fd);
+};
+
+// Email
+export const sendEmail = (data: {
+  to: string;
+  subject: string;
+  body: string;
+  attachments?: Array<{
+    filename: string;
+    content_type: string;
+    content_base64: string;
+  }>;
+}) => base44Client.post(`/api/integrations/core/send-email`, data);
