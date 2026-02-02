@@ -20,7 +20,14 @@ async fn main() {
     tracing_subscriber::fmt().with_env_filter(filter).init();
     info!(port, endpoint_base = %cfg.veriff_base_url, "Starting likelee-server");
 
-    let _pg = Postgrest::new(format!("{}/rest/v1", cfg.supabase_url))
+    let supabase_base = cfg.supabase_url.trim_end_matches('/');
+    let postgrest_base = if supabase_base.ends_with("/rest/v1") {
+        supabase_base.to_string()
+    } else {
+        format!("{}/rest/v1", supabase_base)
+    };
+
+    let pg = Postgrest::new(postgrest_base.clone())
         .insert_header("apikey", cfg.supabase_service_key.clone())
         .insert_header(
             "Authorization",
@@ -29,7 +36,7 @@ async fn main() {
 
     // Ensure Storage buckets and policies exist (Option B: server-only writes)
     {
-        let rpc = Postgrest::new(format!("{}/rest/v1", cfg.supabase_url))
+        let rpc = Postgrest::new(postgrest_base.clone())
             .insert_header("apikey", cfg.supabase_service_key.clone())
             .insert_header(
                 "Authorization",
@@ -69,12 +76,7 @@ async fn main() {
     };
 
     let state = likelee_server::config::AppState {
-        pg: Postgrest::new(format!("{}/rest/v1", cfg.supabase_url))
-            .insert_header("apikey", cfg.supabase_service_key.clone())
-            .insert_header(
-                "Authorization",
-                format!("Bearer {}", cfg.supabase_service_key),
-            ),
+        pg,
         veriff: likelee_server::config::VeriffConfig {
             base_url: cfg.veriff_base_url,
             api_key: cfg.veriff_api_key,

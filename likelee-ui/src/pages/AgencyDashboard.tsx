@@ -113,9 +113,15 @@ import { Switch } from "@/components/ui/switch";
 import { BookingsView } from "@/components/Bookings/BookingsView";
 import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
 import FileStorageView from "@/components/dashboard/settings/FileStorageView";
+import DashboardView from "@/components/agency/DashboardView";
+import RosterView from "@/components/agency/RosterView";
 import PerformanceTiers from "@/components/dashboard/PerformanceTiers";
 import { useAuth } from "../auth/AuthProvider";
+
 import {
+  getAgencyRoster,
+  getAgencyProfile,
+  createOrganizationKycSession,
   listBookings,
   createBooking as apiCreateBooking,
   updateBooking as apiUpdateBooking,
@@ -131,6 +137,10 @@ import {
   getAgencyPayoutsAccountStatus,
   getAgencyStripeOnboardingLink,
   notifyBookingCreatedEmail,
+  getAgencyLicensingRequests,
+  updateAgencyLicensingRequestsStatus,
+  getAgencyLicensingRequestsPaySplit,
+  setAgencyLicensingRequestsPaySplit,
   createInvoice,
   markInvoiceSent,
   markInvoicePaid,
@@ -860,7 +870,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 // duplicate imports removed below (already imported earlier in file)
-import { useAuth } from "../auth/AuthProvider";
 
 // STATUS_MAP is defined earlier in this file; removing duplicate declaration here.
 
@@ -1084,6 +1093,971 @@ const STATUS_DOT_COLORS: { [key: string]: string } = {
   test_shoot: "bg-orange-500",
 };
 
+const AddClientModal = ({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) => {
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden rounded-2xl border-none">
+        <div className="p-8 space-y-6">
+          <div className="flex justify-between items-center">
+            <DialogTitle className="text-2xl font-bold text-gray-900">
+              Add New Client
+            </DialogTitle>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-gray-700">
+                Company Name *
+              </Label>
+              <Input
+                placeholder="Company Inc."
+                className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-gray-700">
+                Industry
+              </Label>
+              <Input
+                placeholder="Fashion, Tech, etc."
+                className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-bold text-gray-700">Website</Label>
+            <Input
+              placeholder="company.com"
+              className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-bold text-gray-700">
+              Pipeline Stage
+            </Label>
+            <Select defaultValue="lead">
+              <SelectTrigger className="h-11 bg-gray-50 border-gray-200 rounded-xl">
+                <SelectValue placeholder="Select stage" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="lead">Lead</SelectItem>
+                <SelectItem value="prospect">Prospect</SelectItem>
+                <SelectItem value="active">Active Client</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-bold text-gray-700">
+              Tags (comma-separated)
+            </Label>
+            <Input
+              placeholder="Fashion, Commercial, High-Budget"
+              className="h-11 bg-gray-50 border-gray-200 rounded-xl"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm font-bold text-gray-700">Notes</Label>
+            <Textarea
+              placeholder="Add notes about this client..."
+              className="min-h-[100px] bg-gray-50 border-gray-200 rounded-xl resize-none"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="h-11 px-8 rounded-xl border-gray-200 font-bold"
+            >
+              Cancel
+            </Button>
+            <Button className="h-11 px-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl">
+              Add Client
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const ClientProfileModal = ({
+  client,
+  isOpen,
+  onClose,
+}: {
+  client: Client;
+  isOpen: boolean;
+  onClose: () => void;
+}) => {
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[900px] p-0 overflow-hidden rounded-2xl border-none">
+        <div className="p-8 space-y-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center">
+              <Building2 className="w-6 h-6 text-gray-400" />
+            </div>
+            <div className="flex items-center gap-3">
+              <DialogTitle className="text-2xl font-bold text-gray-900">
+                {client.name}
+              </DialogTitle>
+              <Badge className="bg-green-100 text-green-700 border-none font-bold text-[10px]">
+                {client.status}
+              </Badge>
+            </div>
+          </div>
+
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="w-full justify-start bg-gray-50/50 p-1 rounded-xl h-12 mb-6">
+              <TabsTrigger
+                value="overview"
+                className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
+              >
+                Overview
+              </TabsTrigger>
+              <TabsTrigger
+                value="contacts"
+                className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
+              >
+                Contacts
+              </TabsTrigger>
+              <TabsTrigger
+                value="communications"
+                className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
+              >
+                Communications
+              </TabsTrigger>
+              <TabsTrigger
+                value="bookings"
+                className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
+              >
+                Bookings
+              </TabsTrigger>
+              <TabsTrigger
+                value="files"
+                className="flex-1 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-sm"
+              >
+                Files & Notes
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview" className="space-y-6 mt-0">
+              <div className="grid grid-cols-2 gap-6">
+                <Card className="p-6 border-gray-100 rounded-2xl shadow-sm">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Building2 className="w-5 h-5 text-gray-400" />
+                    <h4 className="font-bold text-gray-900">
+                      Company Information
+                    </h4>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
+                        Industry
+                      </p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {client.industry}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
+                        Website
+                      </p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {client.website}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold uppercase tracking-wider mb-2">
+                        Tags
+                      </p>
+                      <div className="flex gap-2">
+                        {client.tags.map((tag) => (
+                          <Badge
+                            key={tag}
+                            variant="outline"
+                            className="text-[10px] font-bold text-gray-500 border-gray-200"
+                          >
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-6 border-gray-100 rounded-2xl shadow-sm">
+                  <div className="flex items-center gap-2 mb-4">
+                    <TrendingUp className="w-5 h-5 text-gray-400" />
+                    <h4 className="font-bold text-gray-900">
+                      Client Preferences
+                    </h4>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
+                        Preferred Talent Types
+                      </p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {client.preferences?.talentTypes.join(", ") || "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
+                        Budget Range
+                      </p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {client.preferences?.budgetRange || "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 font-bold uppercase tracking-wider">
+                        Booking Lead Time
+                      </p>
+                      <p className="text-sm font-bold text-gray-900">
+                        {client.preferences?.leadTime || "—"}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="font-bold text-gray-900">Client Metrics</h4>
+                <div className="grid grid-cols-4 gap-4">
+                  <Card className="p-4 bg-purple-50/50 border-purple-100 rounded-xl text-center">
+                    <span className="text-2xl font-bold text-purple-600 block">
+                      {client.metrics?.revenue || "—"}
+                    </span>
+                    <span className="text-[10px] font-bold text-purple-400 uppercase">
+                      Total Revenue
+                    </span>
+                  </Card>
+                  <Card className="p-4 bg-green-50/50 border-green-100 rounded-xl text-center">
+                    <span className="text-2xl font-bold text-green-600 block">
+                      {client.metrics?.bookings || 0}
+                    </span>
+                    <span className="text-[10px] font-bold text-green-400 uppercase">
+                      Total Bookings
+                    </span>
+                  </Card>
+                  <Card className="p-4 bg-blue-50/50 border-blue-100 rounded-xl text-center">
+                    <span className="text-2xl font-bold text-blue-600 block">
+                      {client.metrics?.packagesSent || 0}
+                    </span>
+                    <span className="text-[10px] font-bold text-blue-400 uppercase">
+                      Packages Sent
+                    </span>
+                  </Card>
+                  <Card className="p-4 bg-orange-50/50 border-orange-100 rounded-xl text-center">
+                    <span className="text-2xl font-bold text-orange-600 block">
+                      {client.metrics?.lastBookingDate || "—"}
+                    </span>
+                    <span className="text-[10px] font-bold text-orange-400 uppercase">
+                      Last Booking
+                    </span>
+                  </Card>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="contacts" className="space-y-6 mt-0">
+              <div className="flex justify-between items-center">
+                <h4 className="font-bold text-gray-900">Contact List</h4>
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
+                  <Plus className="w-4 h-4" />
+                  Add Contact
+                </Button>
+              </div>
+              <div className="mt-0">
+                <div className="flex flex-wrap gap-4 mb-6 pb-6 border-b border-gray-200">
+                  <div className="flex-1 min-w-[200px]">
+                    <Input
+                      placeholder="Search talent..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="border-2 border-gray-300"
+                    />
+                  </div>
+
+                  <div className="w-40 border-2 border-gray-300">
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                    >
+                      <option value="all">All Status</option>
+                      <option value="active">Active</option>
+                      <option value="pending">Pending</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                  </div>
+
+                  {(searchQuery || statusFilter !== "all") && (
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setSearchQuery("");
+                        setStatusFilter("all");
+                      }}
+                      className="text-gray-600"
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      Clear Filters
+                    </Button>
+                  )}
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="px-4 py-3 text-left">
+                          <button
+                            onClick={() => handleSort("name")}
+                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
+                          >
+                            Talent
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </th>
+                        <th className="px-4 py-3 text-left">
+                          <button
+                            onClick={() => handleSort("status")}
+                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
+                          >
+                            Status
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
+                          AI Usage
+                        </th>
+                        <th className="px-4 py-3 text-left">
+                          <button
+                            onClick={() => handleSort("instagram_followers")}
+                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
+                          >
+                            Followers
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
+                          Assets
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
+                          Top Brand
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
+                          License Expiry
+                        </th>
+                        <th className="px-4 py-3 text-left">
+                          <button
+                            onClick={() => handleSort("earnings_30d")}
+                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
+                          >
+                            30D Earnings
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </th>
+                        <th className="px-4 py-3 text-left">
+                          <button
+                            onClick={() => handleSort("projected_earnings")}
+                            className="flex items-center gap-2 text-xs font-semibold text-gray-700 uppercase hover:text-gray-900"
+                          >
+                            Projected
+                            <ArrowUpDown className="w-3 h-3" />
+                          </button>
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {filteredRoster.map((talent) => (
+                        <tr
+                          key={talent.id}
+                          onClick={() => setSelectedTalent(talent)}
+                          className="hover:bg-gray-50 cursor-pointer transition-colors"
+                        >
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={talent.headshot}
+                                alt={talent.name}
+                                className="w-12 h-12 object-cover border-2 border-gray-200"
+                              />
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-gray-900">
+                                    {talent.name}
+                                  </span>
+                                  {talent.verified && (
+                                    <CheckCircle2 className="w-4 h-4 text-green-600" />
+                                  )}
+                                </div>
+                                <span className="text-xs text-gray-500">
+                                  {talent.categories.join(", ")}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4">
+                            <span
+                              className={
+                                talent.status === "active"
+                                  ? "bg-green-100 text-green-800"
+                                  : talent.status === "pending"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : "bg-gray-100 text-gray-800"
+                              }
+                            >
+                              {talent.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex gap-1">
+                              {talent.ai_usage_types.includes("video") && (
+                                <Badge variant="outline" className="text-xs">
+                                  <Video className="w-3 h-3 mr-1" />
+                                  Video
+                                </Badge>
+                              )}
+                              {talent.ai_usage_types.includes("image") && (
+                                <Badge variant="outline" className="text-xs">
+                                  <ImageIcon className="w-3 h-3 mr-1" />
+                                  Image
+                                </Badge>
+                              )}
+                              {talent.ai_usage_types.includes("voice") && (
+                                <Badge variant="outline" className="text-xs">
+                                  <Mic className="w-3 h-3 mr-1" />
+                                  Voice
+                                </Badge>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-1 text-sm text-gray-700">
+                              <Instagram className="w-4 h-4 text-purple-600" />
+                              {talent.instagram_followers.toLocaleString()}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 text-sm text-gray-700">
+                            {talent.assets_count}
+                          </td>
+                          <td className="px-4 py-4 text-sm text-gray-700">
+                            {talent.top_brand}
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`text-sm ${isLicenseExpired(talent.license_expiry) ? "text-red-600 font-medium" : isLicenseExpiring(talent.license_expiry) ? "text-orange-600 font-medium" : "text-gray-700"}`}
+                              >
+                                {talent.license_expiry !== "—"
+                                  ? new Date(
+                                      talent.license_expiry,
+                                    ).toLocaleDateString()
+                                  : "—"}
+                              </span>
+                              {isLicenseExpiring(talent.license_expiry) && (
+                                <Clock className="w-4 h-4 text-orange-500" />
+                              )}
+                              {isLicenseExpired(talent.license_expiry) && (
+                                <XCircle className="w-4 h-4 text-red-500" />
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 text-sm font-medium text-gray-900">
+                            ${talent.earnings_30d.toLocaleString()}
+                          </td>
+                          <td className="px-4 py-4 text-sm text-gray-700">
+                            ${talent.projected_earnings.toLocaleString()}
+                          </td>
+                          <td className="px-4 py-4">
+                            <ChevronRight className="w-5 h-5 text-gray-400" />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-center py-12">
+                  <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 text-lg">
+                    Campaign tracking coming soon
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-center py-12">
+                  <Shield className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 text-lg">
+                    License management coming soon
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-center py-12">
+                  <TrendingUp className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 text-lg mb-2">
+                    Advanced Analytics
+                  </p>
+                  <p className="text-gray-400 text-sm mb-6">
+                    Upgrade to Agency Pro to unlock revenue forecasting,
+                    performance charts, and insights.
+                  </p>
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                    Upgrade to Pro
+                  </Button>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="communications" className="space-y-6 mt-0">
+              <div className="flex justify-between items-center">
+                <h4 className="font-bold text-gray-900">
+                  Communication History
+                </h4>
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
+                  <Plus className="w-4 h-4" />
+                  Log Communication
+                </Button>
+              </div>
+              <div className="space-y-4">
+                {MOCK_COMMUNICATIONS.map((comm, idx) => (
+                  <Card
+                    key={idx}
+                    className="p-6 border-gray-100 rounded-2xl shadow-sm"
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center">
+                          {comm.type === "email" && (
+                            <Mail className="w-5 h-5 text-indigo-600" />
+                          )}
+                          {comm.type === "call" && (
+                            <Phone className="w-5 h-5 text-indigo-600" />
+                          )}
+                          {comm.type === "meeting" && (
+                            <Video className="w-5 h-5 text-indigo-600" />
+                          )}
+                        </div>
+                        <div>
+                          <h5 className="font-bold text-gray-900">
+                            {comm.subject}
+                          </h5>
+                          <p className="text-sm text-gray-600 font-medium">
+                            {comm.date} • {comm.participants}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className="bg-gray-50 text-gray-600 border-gray-100 font-bold px-3 py-1"
+                      >
+                        {comm.type}
+                      </Badge>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="bookings" className="space-y-6 mt-0">
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <Calendar className="w-16 h-16 text-gray-200 mb-4" />
+                <h4 className="text-xl font-bold text-gray-900">
+                  No Bookings Yet
+                </h4>
+                <p className="text-gray-500">
+                  This client hasn't made any bookings through the platform yet.
+                </p>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="files" className="space-y-6 mt-0">
+              <Card className="p-6 border-gray-100 rounded-2xl shadow-sm space-y-4">
+                <h4 className="font-bold text-gray-900">Notes</h4>
+                <Textarea
+                  defaultValue="Prefers diverse talent, always books for multi-day shoots."
+                  className="min-h-[120px] bg-white border-gray-200 rounded-xl resize-none font-medium"
+                />
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 rounded-xl">
+                  Save Notes
+                </Button>
+              </Card>
+
+              <Card className="p-6 border-gray-100 rounded-2xl shadow-sm space-y-6">
+                <div className="flex justify-between items-center">
+                  <h4 className="font-bold text-gray-900">Files & Documents</h4>
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
+                    <Plus className="w-4 h-4" />
+                    Upload File
+                  </Button>
+                </div>
+                <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
+                  <File className="w-12 h-12 text-gray-300 mb-3" />
+                  <p className="text-gray-500 font-bold">
+                    No files uploaded yet
+                  </p>
+                </div>
+              </Card>
+            </TabsContent>
+          </Tabs>
+
+          <div className="flex justify-between items-center pt-6 border-t border-gray-100">
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="h-10 px-4 rounded-xl border-gray-200 text-gray-600 font-bold"
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Edit Client
+              </Button>
+              <Button
+                variant="outline"
+                className="h-10 px-4 rounded-xl border-red-100 text-red-500 hover:bg-red-50 font-bold"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Client
+              </Button>
+            </div>
+            <Button
+              onClick={onClose}
+              className="h-10 px-8 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-xl"
+            >
+              Close
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const ClientCard = ({
+  client,
+  onViewProfile,
+}: {
+  client: Client;
+  onViewProfile: () => void;
+}) => {
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "Active Client":
+        return "bg-emerald-50 text-emerald-800 border-emerald-100";
+      case "Prospect":
+        return "bg-blue-50 text-blue-800 border-blue-100";
+      case "Lead":
+        return "bg-gray-50 text-gray-800 border-gray-100";
+      default:
+        return "bg-gray-50 text-gray-800 border-gray-100";
+    }
+  };
+
+  return (
+    <Card className="p-8 bg-white border border-gray-100 rounded-2xl hover:shadow-md transition-shadow">
+      <div className="flex flex-col lg:flex-row justify-between gap-6">
+        <div className="flex gap-6">
+          <div className="w-16 h-16 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center">
+            <Building2 className="w-10 h-10 text-gray-500" />
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-3">
+              <h3 className="text-xl font-bold text-gray-900">{client.name}</h3>
+              <Badge
+                variant="outline"
+                className={`${getStatusColor(client.status)} font-bold text-[11px] px-2.5 py-1 rounded-lg border shadow-sm`}
+              >
+                {client.status}
+              </Badge>
+              <div className="flex gap-1.5">
+                {client.tags.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="outline"
+                    className="text-[11px] font-bold text-gray-900 border-gray-200 px-2.5 py-1 rounded-lg bg-white shadow-sm flex items-center gap-1.5"
+                  >
+                    <Tag className="w-3 h-3 text-gray-900" />
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-sm text-gray-600 font-medium">
+              <span className="flex items-center gap-1.5">
+                <Building2 className="w-4 h-4 text-gray-400" />
+                {client.industry}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Globe className="w-4 h-4 text-gray-400" />
+                {client.website}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Users className="w-4 h-4 text-gray-400" />
+                {client.contacts} contacts
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-sm mt-2.5 font-medium">
+              <span className="text-gray-500">
+                Total Revenue:{" "}
+                <span className="font-bold text-gray-900">
+                  {client.totalRevenue}
+                </span>
+              </span>
+              <span className="text-gray-500">
+                Bookings:{" "}
+                <span className="font-bold text-gray-900">
+                  {client.bookings}
+                </span>
+              </span>
+              <span className="text-gray-500">
+                Last Booking:{" "}
+                <span className="font-bold text-gray-900">
+                  {client.lastBooking}
+                </span>
+              </span>
+              <span className="text-gray-500">
+                Next Follow-up:{" "}
+                <span className="font-bold text-gray-900">
+                  {client.nextFollowUp}
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-10 px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50"
+          >
+            <Mail className="w-4 h-4 mr-2" />
+            Email
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-10 px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50"
+          >
+            <Phone className="w-4 h-4 mr-2" />
+            Call
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-10 px-4 rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-gray-50"
+          >
+            <Package className="w-4 h-4 mr-2" />
+            Send Package
+          </Button>
+          <Button
+            onClick={onViewProfile}
+            className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl"
+          >
+            View Profile
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
+const ClientCRMViewDemo = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [stageFilter, setStageFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("last-booking");
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+
+  const filteredClients = MOCK_CLIENTS.filter((client) => {
+    const matchesSearch =
+      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.industry.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStage =
+      stageFilter === "all" ||
+      client.status.toLowerCase().includes(stageFilter.toLowerCase());
+    return matchesSearch && matchesStage;
+  });
+
+  return (
+    <div className="space-y-8">
+      {/* Demo Mode Alert */}
+      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center justify-center gap-3 shadow-sm">
+        <p className="text-sm font-bold text-blue-800">
+          <span className="font-black">Demo Mode:</span> This is a preview of
+          the Agency Dashboard for talent and modeling agencies.
+        </p>
+      </div>
+
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Client Relationship Management
+          </h1>
+          <p className="text-gray-600 font-medium">
+            Manage client relationships, track communications, and monitor
+            pipeline
+          </p>
+        </div>
+        <Button
+          onClick={() => setIsAddModalOpen(true)}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2 rounded-xl flex items-center gap-2"
+        >
+          <Plus className="w-5 h-5" />
+          Add Client
+        </Button>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="p-6 bg-green-50/50 border-green-100 rounded-2xl">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-green-100 rounded-lg">
+              <TrendingUp className="w-5 h-5 text-green-600" />
+            </div>
+            <span className="text-base font-bold text-green-800">
+              Active Clients
+            </span>
+          </div>
+          <span className="text-3xl font-bold text-green-900">1</span>
+        </Card>
+        <Card className="p-6 bg-blue-50/50 border-blue-100 rounded-2xl">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Users className="w-5 h-5 text-blue-600" />
+            </div>
+            <span className="text-base font-bold text-blue-800">Prospects</span>
+          </div>
+          <span className="text-3xl font-bold text-blue-900">1</span>
+        </Card>
+        <Card className="p-6 bg-purple-50/50 border-purple-100 rounded-2xl">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <DollarSign className="w-5 h-5 text-purple-600" />
+            </div>
+            <span className="text-base font-bold text-purple-800">
+              Total Revenue
+            </span>
+          </div>
+          <span className="text-3xl font-bold text-purple-900">$495K</span>
+        </Card>
+        <Card className="p-6 bg-orange-50/50 border-orange-100 rounded-2xl">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 bg-orange-100 rounded-lg">
+              <Clock className="w-5 h-5 text-orange-600" />
+            </div>
+            <span className="text-base font-bold text-orange-800">
+              Follow-ups Due
+            </span>
+          </div>
+          <span className="text-3xl font-bold text-orange-900">0</span>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col md:flex-row gap-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Input
+            placeholder="Search clients..."
+            className="pl-12 h-12 bg-white border-gray-100 rounded-xl text-base"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <Select value={stageFilter} onValueChange={setStageFilter}>
+          <SelectTrigger className="w-full md:w-56 h-12 bg-white border-gray-100 rounded-xl text-base">
+            <SelectValue placeholder="All Stages" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Stages</SelectItem>
+            <SelectItem value="leads">Leads</SelectItem>
+            <SelectItem value="prospects">Prospects</SelectItem>
+            <SelectItem value="active">Active Clients</SelectItem>
+            <SelectItem value="inactive">Inactive</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="w-full md:w-56 h-12 bg-white border-gray-100 rounded-xl text-base">
+            <SelectValue placeholder="Last Booking" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="last-booking">Last Booking</SelectItem>
+            <SelectItem value="revenue">Total Revenue</SelectItem>
+            <SelectItem value="name">Company Name</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Client List */}
+      <div className="space-y-4">
+        {filteredClients.map((client) => (
+          <ClientCard
+            key={client.id}
+            client={client}
+            onViewProfile={() => setSelectedClient(client)}
+          />
+        ))}
+      </div>
+
+      <AddClientModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+      />
+      {selectedClient && (
+        <ClientProfileModal
+          client={selectedClient}
+          isOpen={!!selectedClient}
+          onClose={() => setSelectedClient(null)}
+        />
+      )}
+    </div>
+  );
+};
+
+const StorageUsageCard = () => (
+  <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
+    <div className="flex justify-between items-center mb-4">
+      <div className="flex items-center gap-2">
+        <HardDrive className="w-5 h-5 text-indigo-600" />
+        <span className="text-base font-bold text-gray-900">Storage Usage</span>
+      </div>
+      <span className="text-sm font-bold text-gray-900">
+        <span className="text-indigo-600">12.4 GB</span> of 50 GB used
+      </span>
+    </div>
+    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mb-3">
+      <div
+        className="h-full bg-indigo-600 rounded-full"
+        style={{ width: "24.8%" }}
+      />
+    </div>
+    <div className="flex justify-between items-center">
+      <p className="text-sm text-gray-500 font-medium">
+        37.6 GB remaining • Professional Plan
+      </p>
+      <Button variant="link" className="text-indigo-600 font-bold p-0 h-auto">
+        Upgrade Plan
+      </Button>
+    </div>
+  </Card>
+);
 const ProspectModalAlt = ({
   open,
   onOpenChange,
@@ -1897,34 +2871,6 @@ const MOCK_INVOICES = [
     status: "draft",
   },
 ];
-
-const StorageUsageCard = () => (
-  <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
-    <div className="flex justify-between items-center mb-4">
-      <div className="flex items-center gap-2">
-        <HardDrive className="w-5 h-5 text-indigo-600" />
-        <span className="text-base font-bold text-gray-900">Storage Usage</span>
-      </div>
-      <span className="text-sm font-bold text-gray-900">
-        <span className="text-indigo-600">12.4 GB</span> of 50 GB used
-      </span>
-    </div>
-    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mb-3">
-      <div
-        className="h-full bg-indigo-600 rounded-full"
-        style={{ width: "24.8%" }}
-      />
-    </div>
-    <div className="flex justify-between items-center">
-      <p className="text-sm text-gray-500 font-medium">
-        37.6 GB remaining • Professional Plan
-      </p>
-      <Button variant="link" className="text-indigo-600 font-bold p-0 h-auto">
-        Upgrade Plan
-      </Button>
-    </div>
-  </Card>
-);
 
 const FolderCard = ({ folder }: { folder: FolderItem }) => {
   const getFolderColor = (type: string) => {
@@ -9779,7 +10725,7 @@ const ScoutingAnalyticsTab = () => {
   );
 };
 
-const DashboardView = ({ onKYC }: { onKYC: () => void }) => (
+const InlineDashboardView = ({ onKYC }: { onKYC: () => void }) => (
   <div className="space-y-8">
     {/* KYC Verification Alert */}
     <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
@@ -10211,13 +11157,11 @@ const DashboardView = ({ onKYC }: { onKYC: () => void }) => (
   </div>
 );
 
-const RosterView = ({
+const InlineRosterView = ({
   searchTerm,
   setSearchTerm,
   statusFilter,
   setStatusFilter,
-  consentFilter,
-  setConsentFilter,
   sortConfig,
   setSortConfig,
   profile,
@@ -10226,8 +11170,6 @@ const RosterView = ({
   setSearchTerm: (s: string) => void;
   statusFilter: string;
   setStatusFilter: (s: string) => void;
-  consentFilter: string;
-  setConsentFilter: (s: string) => void;
   sortConfig: { key: string; direction: "asc" | "desc" } | null;
   setSortConfig: (c: { key: string; direction: "asc" | "desc" } | null) => void;
   profile: any;
@@ -10264,13 +11206,6 @@ const RosterView = ({
       );
     }
 
-    // Consent
-    if (consentFilter !== "All Consent") {
-      data = data.filter(
-        (t) => t.consent.toLowerCase() === consentFilter.toLowerCase(),
-      );
-    }
-
     // Sort
     if (sortConfig) {
       data.sort((a, b) => {
@@ -10286,12 +11221,11 @@ const RosterView = ({
     }
 
     return data;
-  }, [searchTerm, statusFilter, consentFilter, sortConfig]);
+  }, [searchTerm, statusFilter, sortConfig]);
 
   const clearFilters = () => {
     setSearchTerm("");
     setStatusFilter("All Status");
-    setConsentFilter("All Consent");
     setSortConfig(null);
   };
 
@@ -10317,7 +11251,7 @@ const RosterView = ({
             <div>
               <div className="flex items-center gap-3">
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {profile?.agency_name || "Agency Name"}
+                  {agencyName || profile?.agency_name || "Agency Name"}
                 </h1>
                 {/* Verified Badge */}
                 <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">
@@ -10468,7 +11402,7 @@ const RosterView = ({
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-gray-400" />
             <span className="font-medium">
-              {TALENT_DATA.length} / 15 seats used
+              {(rosterQuery.data || []).length} / {seatsLimit || 0} seats used
             </span>
           </div>
         </div>
@@ -10612,28 +11546,15 @@ const RosterView = ({
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
-                <div className="relative">
-                  <select
-                    value={consentFilter}
-                    onChange={(e) => setConsentFilter(e.target.value)}
-                    className="appearance-none px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 h-10 w-48 pr-10 hover:border-gray-400"
-                  >
-                    <option>All Consent</option>
-                    <option>Complete</option>
-                    <option>Missing</option>
-                    <option>Expiring</option>
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                </div>
                 {(searchTerm ||
                   statusFilter !== "All Status" ||
-                  consentFilter !== "All Consent" ||
                   sortConfig) && (
                   <button
                     onClick={clearFilters}
                     className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
                   >
-                    <X className="w-4 h-4" /> Clear Filters
+                    <X className="w-4 h-4" />
+                    Clear Filters
                   </button>
                 )}
               </div>
@@ -10658,14 +11579,6 @@ const RosterView = ({
                         className="flex items-center gap-1 hover:text-gray-600 transition-colors uppercase"
                       >
                         Status <ArrowUpDown className="w-3 h-3" />
-                      </button>
-                    </th>
-                    <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                      <button
-                        onClick={() => handleSort("consent")}
-                        className="flex items-center gap-1 hover:text-gray-600 transition-colors uppercase"
-                      >
-                        Consent <ArrowUpDown className="w-3 h-3" />
                       </button>
                     </th>
                     <th className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
@@ -10750,49 +11663,6 @@ const RosterView = ({
                           className={`px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider ${talent.status === "active" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"}`}
                         >
                           {talent.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${
-                            talent.consent === "complete"
-                              ? "bg-green-50 text-green-600"
-                              : talent.consent === "missing"
-                                ? "bg-red-50 text-red-600"
-                                : "bg-orange-50 text-orange-600"
-                          }`}
-                        >
-                          {talent.consent === "complete" ||
-                          talent.consent === "active" ? (
-                            <svg
-                              className="w-3 h-3"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2.3}
-                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                              />
-                            </svg>
-                          ) : (
-                            <svg
-                              className="w-3 h-3"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2.3}
-                                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                              />
-                            </svg>
-                          )}
-                          {talent.consent}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -10950,44 +11820,187 @@ const RosterView = ({
 };
 
 const LicensingRequestsView = () => {
-  const requests = [
-    {
-      id: 1,
-      brand: "Aime Leon Dore",
-      campaign: "Holiday Gift Guide 2025",
-      talents: ["Emma", "Milan"],
-      budget: "$8,000 - $12,000",
-      scope: "Social Media + E-commerce",
-      regions: "North America",
-      deadline: "11/28/2025",
-      status: "reviewing",
-      statusColor: "bg-blue-100 text-blue-700",
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["agency", "licensing-requests"],
+    queryFn: async () => {
+      const resp = await getAgencyLicensingRequests();
+      return resp as any[];
     },
-    {
-      id: 2,
-      brand: "Byredo",
-      campaign: "Winter Fragrance Campaign",
-      talents: ["Julia"],
-      budget: "$15,000 - $20,000",
-      scope: "Digital Campaign + Print",
-      regions: "North America, Europe",
-      deadline: "12/10/2025",
-      status: "negotiating",
-      statusColor: "bg-yellow-100 text-yellow-700",
-    },
-    {
-      id: 3,
-      brand: "Outdoor Voices",
-      campaign: "Holiday Activewear Collection",
-      talents: ["Carla", "Luisa"],
-      budget: "$10,000 - $15,000",
-      scope: "Social Media + Website",
-      regions: "North America",
-      deadline: "12/5/2025",
-      status: "pending",
-      statusColor: "bg-gray-100 text-gray-700",
-    },
-  ];
+  });
+
+  const [payModalOpen, setPayModalOpen] = useState(false);
+  const [payModalLoading, setPayModalLoading] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<any | null>(null);
+  const [totalPaymentAmount, setTotalPaymentAmount] = useState<string>("");
+  const [agencyPercent, setAgencyPercent] = useState<string>("");
+
+  const talentCount = (selectedGroup?.talents || []).length || 0;
+  const totalNum = Number(totalPaymentAmount);
+  const agencyPercentNum = Number(agencyPercent);
+  const agencyTotal =
+    Number.isFinite(totalNum) && Number.isFinite(agencyPercentNum)
+      ? (totalNum * agencyPercentNum) / 100
+      : 0;
+  const talentTotal =
+    Number.isFinite(totalNum) && Number.isFinite(agencyTotal)
+      ? totalNum - agencyTotal
+      : 0;
+  const perTalentTalent =
+    talentCount > 0 && Number.isFinite(talentTotal)
+      ? talentTotal / talentCount
+      : 0;
+  const hasMissingTalentNames = (selectedGroup?.talents || []).some(
+    (t: any) => !(t?.talent_name || "").trim(),
+  );
+  const formatMoney = (n: number) =>
+    Number.isFinite(n)
+      ? n.toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
+      : "--";
+
+  const statusStyle = (status: string) => {
+    if (status === "approved") return "bg-green-100 text-green-700";
+    if (status === "rejected") return "bg-red-100 text-red-700";
+    return "bg-gray-100 text-gray-700";
+  };
+
+  const formatBudget = (min?: number | null, max?: number | null) => {
+    const minOk = typeof min === "number" && Number.isFinite(min);
+    const maxOk = typeof max === "number" && Number.isFinite(max);
+    const fmt = (n: number) =>
+      n.toLocaleString(undefined, {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      });
+
+    if (minOk && maxOk) return `${fmt(min!)} - ${fmt(max!)}`;
+    if (minOk) return fmt(min!);
+    if (maxOk) return fmt(max!);
+    return "—";
+  };
+
+  const openPayModal = async (group: any) => {
+    setSelectedGroup(group);
+    setPayModalOpen(true);
+    if (!group?.pay_set) {
+      setTotalPaymentAmount("");
+      setAgencyPercent("");
+      setPayModalLoading(false);
+      return;
+    }
+
+    setPayModalLoading(true);
+    try {
+      const ids = (group?.talents || [])
+        .map((t: any) => t.licensing_request_id)
+        .filter(Boolean)
+        .join(",");
+      const resp = await getAgencyLicensingRequestsPaySplit(ids);
+      const total = (resp as any)?.total_payment_amount;
+      const ap = (resp as any)?.agency_percent;
+      setTotalPaymentAmount(
+        typeof total === "number" && Number.isFinite(total)
+          ? String(total)
+          : "",
+      );
+      setAgencyPercent(
+        typeof ap === "number" && Number.isFinite(ap) ? String(ap) : "",
+      );
+    } catch {
+      setTotalPaymentAmount("");
+      setAgencyPercent("");
+    } finally {
+      setPayModalLoading(false);
+    }
+  };
+
+  const updateGroupStatus = async (
+    group: any,
+    status: "pending" | "approved" | "rejected",
+  ) => {
+    const ids = (group?.talents || [])
+      .map((t: any) => t.licensing_request_id)
+      .filter(Boolean);
+    if (!ids.length) return;
+
+    const notes =
+      status === "pending"
+        ? window.prompt("Counter offer message (optional)") || undefined
+        : undefined;
+
+    try {
+      await updateAgencyLicensingRequestsStatus({
+        licensing_request_ids: ids,
+        status,
+        notes,
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["agency", "licensing-requests"],
+      });
+    } catch (e: any) {
+      toast({
+        title: "Update failed",
+        description: e?.message || "Could not update licensing request",
+        variant: "destructive" as any,
+      });
+    }
+  };
+
+  const savePaySplit = async () => {
+    if (!selectedGroup) return;
+    const ids = (selectedGroup?.talents || [])
+      .map((t: any) => t.licensing_request_id)
+      .filter(Boolean);
+    if (!ids.length) return;
+
+    const total = Number(totalPaymentAmount);
+    const ap = Number(agencyPercent);
+    if (!Number.isFinite(total) || total < 0) {
+      toast({ title: "Invalid total amount", variant: "destructive" as any });
+      return;
+    }
+    if (!agencyPercent.trim()) {
+      toast({
+        title: "Agency percent is required",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    if (!Number.isFinite(ap) || ap < 0 || ap > 100) {
+      toast({ title: "Invalid agency percent", variant: "destructive" as any });
+      return;
+    }
+
+    setPayModalLoading(true);
+    try {
+      await setAgencyLicensingRequestsPaySplit({
+        licensing_request_ids: ids,
+        total_payment_amount: total,
+        agency_percent: ap,
+      });
+      toast({ title: "Pay updated" });
+      setPayModalOpen(false);
+      setSelectedGroup(null);
+      await queryClient.invalidateQueries({
+        queryKey: ["agency", "licensing-requests"],
+      });
+    } catch (e: any) {
+      toast({
+        title: "Save failed",
+        description: e?.message || "Could not save pay split",
+        variant: "destructive" as any,
+      });
+    } finally {
+      setPayModalLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -11002,32 +12015,56 @@ const LicensingRequestsView = () => {
       </div>
 
       <div className="space-y-6">
-        {requests.map((req) => (
+        {isLoading && (
+          <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
+            <div className="text-gray-500 font-medium">Loading...</div>
+          </Card>
+        )}
+
+        {!isLoading && error && (
+          <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
+            <div className="text-red-600 font-medium">
+              Failed to load licensing requests
+            </div>
+          </Card>
+        )}
+
+        {!isLoading && !error && (data || []).length === 0 && (
+          <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
+            <div className="text-gray-500 font-medium">
+              No licensing requests yet
+            </div>
+          </Card>
+        )}
+
+        {(data || []).map((group: any) => (
           <Card
-            key={req.id}
+            key={group.group_key}
             className="p-8 bg-white border-2 border-gray-900 rounded-none overflow-hidden relative"
           >
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h3 className="text-xl font-bold text-gray-900 mb-1">
-                  {req.brand}
+                  {group.brand_name || "Unknown brand"}
                 </h3>
-                <p className="text-gray-500 font-medium">{req.campaign}</p>
+                <p className="text-gray-500 font-medium">
+                  {(group.campaign_title || "").trim() || "—"}
+                </p>
               </div>
               <span
-                className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${req.statusColor}`}
+                className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyle(group.status)}`}
               >
-                {req.status}
+                {group.status}
               </span>
             </div>
 
             <div className="flex flex-wrap gap-2 mb-8">
-              {req.talents.map((t) => (
+              {(group.talents || []).map((t: any) => (
                 <span
-                  key={t}
+                  key={t.licensing_request_id}
                   className="px-3 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded uppercase"
                 >
-                  {t}
+                  {(t.talent_name || "").trim() || "Talent"}
                 </span>
               ))}
             </div>
@@ -11039,7 +12076,7 @@ const LicensingRequestsView = () => {
                     Budget Range
                   </p>
                   <p className="text-sm font-bold text-gray-900">
-                    {req.budget}
+                    {formatBudget(group.budget_min, group.budget_max)}
                   </p>
                 </div>
                 <div>
@@ -11047,7 +12084,7 @@ const LicensingRequestsView = () => {
                     Regions
                   </p>
                   <p className="text-sm font-bold text-gray-900">
-                    {req.regions}
+                    {group.regions || "—"}
                   </p>
                 </div>
               </div>
@@ -11056,7 +12093,9 @@ const LicensingRequestsView = () => {
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
                     Usage Scope
                   </p>
-                  <p className="text-sm font-bold text-gray-900">{req.scope}</p>
+                  <p className="text-sm font-bold text-gray-900">
+                    {(group.usage_scope || "").trim() || "—"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
@@ -11064,38 +12103,159 @@ const LicensingRequestsView = () => {
                   </p>
                   <div className="flex items-center gap-1.5 font-bold text-gray-900 text-sm">
                     <Calendar className="w-4 h-4 text-gray-400" />
-                    {req.deadline}
+                    {group.deadline
+                      ? new Date(group.deadline).toLocaleDateString()
+                      : "—"}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Button className="bg-green-600 hover:bg-green-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2">
-                <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
-                  <span className="text-[10px]">✓</span>
-                </div>
-                Approve
-              </Button>
-              <Button
-                variant="outline"
-                className="border-gray-300 text-gray-700 font-bold h-11 rounded-md"
-              >
-                Counter Offer
-              </Button>
-              <Button
-                variant="outline"
-                className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
-              >
-                <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
-                  <span className="text-[10px]">✕</span>
-                </div>
-                Decline
-              </Button>
-            </div>
+            {group.status === "approved" ? (
+              <div>
+                <Button
+                  onClick={() => openPayModal(group)}
+                  className={`w-full font-bold h-11 rounded-md flex items-center justify-center gap-2 ${group.pay_set ? "bg-white text-gray-900 border border-gray-300 hover:bg-gray-50" : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 animate-pulse"}`}
+                >
+                  {group.pay_set ? (
+                    <>
+                      <Eye className="w-4 h-4" /> View Pay
+                    </>
+                  ) : (
+                    <>
+                      <DollarSign className="w-4 h-4" /> Set Pay
+                    </>
+                  )}
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Button
+                  onClick={() => updateGroupStatus(group, "approved")}
+                  className="bg-green-600 hover:bg-green-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                >
+                  <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
+                    <span className="text-[10px]">✓</span>
+                  </div>
+                  Approve
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => updateGroupStatus(group, "pending")}
+                  className="border-gray-300 text-gray-700 font-bold h-11 rounded-md"
+                >
+                  Counter Offer
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => updateGroupStatus(group, "rejected")}
+                  className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                >
+                  <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
+                    <span className="text-[10px]">✕</span>
+                  </div>
+                  Decline
+                </Button>
+              </div>
+            )}
           </Card>
         ))}
       </div>
+
+      <Dialog open={payModalOpen} onOpenChange={setPayModalOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Pay split</DialogTitle>
+            <DialogDescription>
+              Set total campaign pay and agency percent. The system will split
+              total evenly across talents.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Total payment amount</Label>
+              <Input
+                value={totalPaymentAmount}
+                onChange={(e) => setTotalPaymentAmount(e.target.value)}
+                placeholder="e.g. 12000"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Agency percent</Label>
+              <Input
+                value={agencyPercent}
+                onChange={(e) => setAgencyPercent(e.target.value)}
+                placeholder="e.g. 20"
+              />
+            </div>
+
+            <div className="p-4 bg-white border border-gray-200 rounded-lg">
+              <div className="text-sm font-bold text-gray-900 mb-2">
+                Preview
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                    Amount left for talents
+                  </div>
+                  <div className="text-sm font-bold text-gray-900">
+                    {formatMoney(talentTotal)}
+                  </div>
+                </div>
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                    Per-talent payout
+                  </div>
+                  <div className="text-sm font-bold text-gray-900">
+                    {formatMoney(perTalentTalent)}
+                  </div>
+                </div>
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                    Agency final amount
+                  </div>
+                  <div className="text-sm font-bold text-gray-900">
+                    {formatMoney(agencyTotal)}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <div className="text-sm font-bold text-gray-900 mb-2">
+                Talents
+              </div>
+              {hasMissingTalentNames && (
+                <div className="mb-3 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-2">
+                  Some talent names could not be resolved. This usually means
+                  the licensing requests were created with talent IDs that do
+                  not match existing agency roster members.
+                </div>
+              )}
+              <div className="flex flex-wrap gap-2">
+                {(selectedGroup?.talents || []).map((t: any) => (
+                  <span
+                    key={t.licensing_request_id}
+                    className="px-3 py-1 bg-white border border-gray-200 text-gray-800 text-[10px] font-bold rounded uppercase"
+                  >
+                    {(t.talent_name || "").trim() || "Unknown talent"}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="mt-6">
+            <Button variant="outline" onClick={() => setPayModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={savePaySplit} disabled={payModalLoading}>
+              {payModalLoading ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -17117,6 +18277,12 @@ export default function AgencyDashboard() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
+  const normalizeSubTab = (subTab: string | null) => {
+    if (!subTab) return subTab;
+    if (subTab === "All-Talent") return "All Talent";
+    return subTab;
+  };
+
   // Initialize state from URL params
   const [agencyMode, setAgencyModeState] = useState<"AI" | "IRL">(
     (searchParams.get("mode") as "AI" | "IRL") || "AI",
@@ -17124,8 +18290,19 @@ export default function AgencyDashboard() {
   const [activeTab, setActiveTabState] = useState(
     searchParams.get("tab") || "dashboard",
   );
-  const [activeSubTab, setActiveSubTab] = useState(
-    searchParams.get("subTab") || "All Talent",
+  const [activeSubTab, setActiveSubTabState] = useState(
+    normalizeSubTab(searchParams.get("subTab")) ||
+      (searchParams.get("tab") === "licensing"
+        ? "Licensing Requests"
+        : searchParams.get("tab") === "roster"
+          ? "All Talent"
+          : searchParams.get("tab") === "protection"
+            ? "Protect & Usage"
+            : searchParams.get("tab") === "analytics"
+              ? "Analytics Dashboard"
+              : searchParams.get("tab") === "settings"
+                ? "General Settings"
+                : "All Talent"),
   );
   const [activeScoutingTab, setActiveScoutingTabState] = useState(
     searchParams.get("scoutingTab") || "Prospect Pipeline",
@@ -17138,7 +18315,7 @@ export default function AgencyDashboard() {
   ]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
-  const [consentFilter, setConsentFilter] = useState("All Consent");
+  const [categoryFilter, setCategoryFilter] = useState("All Categories");
   const [sortConfig, setSortConfig] = useState<{
     key: string;
     direction: "asc" | "desc";
@@ -17148,6 +18325,57 @@ export default function AgencyDashboard() {
   const [kycLoading, setKycLoading] = useState(false);
   const [bookings, setBookings] = useState<any[]>([]);
   const [bookOuts, setBookOuts] = useState<any[]>([]);
+
+  const rosterQuery = useQuery({
+    queryKey: ["agency-roster", user?.id],
+    queryFn: async () => {
+      const resp = await getAgencyRoster();
+      return (resp as any) || null;
+    },
+    enabled: !!user?.id,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (!user?.id) return;
+    if (activeTab !== "roster") return;
+    if (activeSubTab !== "All Talent") return;
+    if (!rosterQuery.data) {
+      rosterQuery.refetch();
+    }
+  }, [activeTab, activeSubTab, user?.id]);
+
+  const rosterTalents = ((rosterQuery.data as any)?.talents ??
+    (Array.isArray(rosterQuery.data) ? rosterQuery.data : [])) as any[];
+  const activeCampaigns = Number(
+    (rosterQuery.data as any)?.active_campaigns ?? 0,
+  );
+  const earnings30dTotalCents = Number(
+    (rosterQuery.data as any)?.earnings_30d_total_cents ?? 0,
+  );
+  const earningsPrev30dTotalCents = Number(
+    (rosterQuery.data as any)?.earnings_prev_30d_total_cents ?? 0,
+  );
+
+  const agencyProfileQuery = useQuery({
+    queryKey: ["agency-profile", user?.id],
+    queryFn: async () => {
+      const resp = await getAgencyProfile();
+      return resp as any;
+    },
+    enabled: !!user?.id,
+  });
+
+  const agencyName =
+    (agencyProfileQuery.data as any)?.agency_name ||
+    (profile as any)?.agency_name ||
+    "Agency Name";
+  const seatsLimit = Number(
+    (agencyProfileQuery.data as any)?.seats_limit ||
+      (profile as any)?.seats_limit ||
+      0,
+  );
 
   // Load persisted bookings on mount
   useEffect(() => {
@@ -17283,6 +18511,34 @@ export default function AgencyDashboard() {
   };
 
   // Wrapper functions to update both state and URL params
+  const setTabAndSubTab = (tab: string, subTab?: string | null) => {
+    setActiveTabState(tab);
+    if (subTab !== undefined) {
+      setActiveSubTabState(subTab || "");
+    }
+
+    setSearchParams((prev) => {
+      const prevTab = prev.get("tab") || "";
+      const prevSubTab = prev.get("subTab");
+      const nextSubTab = subTab && subTab.length > 0 ? subTab : null;
+
+      const tabChanged = prevTab !== tab;
+      const subChanged = (prevSubTab || null) !== nextSubTab;
+      if (!tabChanged && !subChanged) {
+        return prev;
+      }
+
+      const newParams = new URLSearchParams(prev);
+      newParams.set("tab", tab);
+      if (nextSubTab) {
+        newParams.set("subTab", nextSubTab);
+      } else {
+        newParams.delete("subTab");
+      }
+      return newParams;
+    });
+  };
+
   const setAgencyMode = (mode: "AI" | "IRL") => {
     setAgencyModeState(mode);
     setSearchParams((prev) => {
@@ -17292,13 +18548,24 @@ export default function AgencyDashboard() {
     });
   };
 
+  const setActiveSubTab = (subTab: string) => {
+    setTabAndSubTab(activeTab, subTab);
+  };
+
   const setActiveTab = (tab: string) => {
-    setActiveTabState(tab);
-    setSearchParams((prev) => {
-      const newParams = new URLSearchParams(prev);
-      newParams.set("tab", tab);
-      return newParams;
-    });
+    const defaultSubTab =
+      tab === "licensing"
+        ? "Licensing Requests"
+        : tab === "roster"
+          ? "All Talent"
+          : tab === "protection"
+            ? "Protect & Usage"
+            : tab === "analytics"
+              ? "Analytics Dashboard"
+              : tab === "settings"
+                ? "General Settings"
+                : null;
+    setTabAndSubTab(tab, defaultSubTab);
   };
 
   const setActiveScoutingTab = (tab: string) => {
@@ -17309,6 +18576,52 @@ export default function AgencyDashboard() {
       return newParams;
     });
   };
+
+  useEffect(() => {
+    const tabParam = searchParams.get("tab") || "dashboard";
+    const subParam = normalizeSubTab(searchParams.get("subTab"));
+
+    setActiveTabState((prev) => (prev === tabParam ? prev : tabParam));
+
+    if (subParam) {
+      setActiveSubTabState((prev) => (prev === subParam ? prev : subParam));
+      return;
+    }
+
+    const defaultSubTab =
+      tabParam === "licensing"
+        ? "Licensing Requests"
+        : tabParam === "roster"
+          ? "All Talent"
+          : tabParam === "protection"
+            ? "Protect & Usage"
+            : tabParam === "analytics"
+              ? "Analytics Dashboard"
+              : tabParam === "settings"
+                ? "General Settings"
+                : null;
+
+    if (!defaultSubTab) {
+      return;
+    }
+
+    setActiveSubTabState((prev) =>
+      prev === defaultSubTab ? prev : defaultSubTab,
+    );
+
+    setSearchParams((prev) => {
+      const prevTab = prev.get("tab") || "";
+      const prevSubTab = prev.get("subTab") || "";
+      if (prevTab === tabParam && prevSubTab === defaultSubTab) {
+        return prev;
+      }
+
+      const newParams = new URLSearchParams(prev);
+      newParams.set("tab", tabParam);
+      newParams.set("subTab", defaultSubTab);
+      return newParams;
+    });
+  }, [searchParams, setSearchParams]);
 
   // Helper for API URLs
   const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
@@ -17549,9 +18862,12 @@ export default function AgencyDashboard() {
           </div>
           <div className="flex flex-col min-w-0">
             <h2 className="font-bold text-gray-900 text-base leading-tight truncate">
-              {profile?.agency_name || "Agency Name"}
+              {agencyName || profile?.agency_name || "Agency Name"}
             </h2>
-            <p className="text-sm text-gray-500 font-medium truncate">
+            <p
+              className="text-sm text-gray-500 font-medium truncate"
+              title={user?.email}
+            >
               {profile?.email || user?.email}
             </p>
           </div>
@@ -17564,10 +18880,7 @@ export default function AgencyDashboard() {
                 onClick={() => {
                   if (item.subItems) {
                     toggleExpanded(item.id);
-                    if (item.id === "settings") {
-                      setActiveTab("settings");
-                      setActiveSubTab("General Settings");
-                    }
+                    setActiveTab(item.id);
                   } else {
                     setActiveTab(item.id);
                     setSidebarOpen(false);
@@ -17599,8 +18912,7 @@ export default function AgencyDashboard() {
                     <button
                       key={subItem}
                       onClick={() => {
-                        setActiveTab(item.id);
-                        setActiveSubTab(subItem);
+                        setTabAndSubTab(item.id, subItem);
                         setSidebarOpen(false);
                       }}
                       className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
@@ -17755,10 +19067,13 @@ export default function AgencyDashboard() {
                       </div>
                       <div className="min-w-0">
                         <h3 className="font-bold text-gray-900 truncate">
-                          {profile?.agency_name || "Agency Name"}
+                          {agencyName || profile?.agency_name || "Agency Name"}
                         </h3>
-                        <p className="text-xs text-gray-500 truncate">
-                          Agency Account
+                        <p
+                          className="text-xs text-gray-500 truncate"
+                          title={user?.email || ""}
+                        >
+                          {profile?.email || user?.email || "Agency Account"}
                         </p>
                       </div>
                     </div>
@@ -17838,18 +19153,32 @@ export default function AgencyDashboard() {
 
         {/* Dynamic Dashboard Content */}
         <main className="flex-1 overflow-auto px-12 py-8 bg-gray-50">
-          {activeTab === "dashboard" && <DashboardView onKYC={handleKYC} />}
+          {activeTab === "dashboard" && (
+            <DashboardView
+              onKYC={handleKYC}
+              agencyName={agencyName}
+              rosterData={rosterTalents}
+            />
+          )}
           {activeTab === "roster" && activeSubTab === "All Talent" && (
             <RosterView
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
               statusFilter={statusFilter}
               setStatusFilter={setStatusFilter}
-              consentFilter={consentFilter}
-              setConsentFilter={setConsentFilter}
+              categoryFilter={categoryFilter}
+              setCategoryFilter={setCategoryFilter}
               sortConfig={sortConfig}
               setSortConfig={setSortConfig}
-              profile={profile}
+              agencyMode={agencyMode}
+              rosterData={rosterTalents}
+              activeCampaigns={activeCampaigns}
+              earnings30dTotalCents={earnings30dTotalCents}
+              earningsPrev30dTotalCents={earningsPrev30dTotalCents}
+              agencyName={agencyName}
+              seatsLimit={seatsLimit}
+              isLoading={rosterQuery.isLoading}
+              onRosterChanged={() => rosterQuery.refetch()}
             />
           )}
           {activeTab === "roster" && activeSubTab === "Performance Tiers" && (
@@ -17870,12 +19199,7 @@ export default function AgencyDashboard() {
           {activeTab === "protection" && activeSubTab === "Compliance Hub" && (
             <ComplianceHubView />
           )}
-          {activeTab === "analytics" &&
-            activeSubTab === "Analytics Dashboard" && (
-              <AnalyticsDashboardView />
-            )}
-          {activeTab === "analytics" &&
-            activeSubTab === "Royalties & Payouts" && <RoyaltiesPayoutsView />}
+          {activeTab === "analytics" && <PlaceholderView title="Analytics" />}
           {activeTab === "settings" && activeSubTab === "General Settings" && (
             <GeneralSettingsView />
           )}
