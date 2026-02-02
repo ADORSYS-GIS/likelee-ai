@@ -1,4 +1,4 @@
--- 0003_assets_storage_moderation.sql
+-- 0002_assets_storage_moderation.sql
 -- Combined migration for storage, moderation, and assets (images/voice)
 
 BEGIN;
@@ -316,6 +316,7 @@ CREATE TABLE IF NOT EXISTS public.brand_voice_assets (
 
 CREATE INDEX IF NOT EXISTS idx_brand_voice_assets_folder ON public.brand_voice_assets(folder_id);
 
+
 ALTER TABLE public.brand_licenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.brand_voice_folders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.brand_voice_assets ENABLE ROW LEVEL SECURITY;
@@ -338,5 +339,73 @@ BEGIN
     );
   END IF;
 END$$;
+
+CREATE TABLE IF NOT EXISTS public.licensing_requests (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
+  brand_id uuid REFERENCES public.brands(id) ON DELETE SET NULL,
+  talent_id uuid NOT NULL REFERENCES public.agency_users(id) ON DELETE CASCADE,
+  status text NOT NULL CHECK (status IN ('pending', 'approved', 'rejected')) DEFAULT 'pending',
+  notes text,
+  decided_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_licensing_requests_agency_id ON public.licensing_requests (agency_id);
+CREATE INDEX IF NOT EXISTS idx_licensing_requests_brand_id ON public.licensing_requests (brand_id);
+CREATE INDEX IF NOT EXISTS idx_licensing_requests_talent_id ON public.licensing_requests (talent_id);
+CREATE INDEX IF NOT EXISTS idx_licensing_requests_status ON public.licensing_requests (status);
+CREATE INDEX IF NOT EXISTS idx_licensing_requests_created_at ON public.licensing_requests (created_at);
+
+ALTER TABLE public.licensing_requests ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Agencies can view their licensing requests" ON public.licensing_requests;
+CREATE POLICY "Agencies can view their licensing requests" ON public.licensing_requests
+FOR SELECT
+USING (agency_id = auth.uid());
+
+DROP POLICY IF EXISTS "Agencies can create their licensing requests" ON public.licensing_requests;
+CREATE POLICY "Agencies can create their licensing requests" ON public.licensing_requests
+FOR INSERT
+WITH CHECK (agency_id = auth.uid());
+
+DROP POLICY IF EXISTS "Agencies can update their licensing requests" ON public.licensing_requests;
+CREATE POLICY "Agencies can update their licensing requests" ON public.licensing_requests
+FOR UPDATE
+USING (agency_id = auth.uid())
+WITH CHECK (agency_id = auth.uid());
+
+DROP POLICY IF EXISTS "Agencies can delete their licensing requests" ON public.licensing_requests;
+CREATE POLICY "Agencies can delete their licensing requests" ON public.licensing_requests
+FOR DELETE
+USING (agency_id = auth.uid());
+
+alter table if exists public.campaigns
+add column if not exists licensing_request_id uuid;
+
+do $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'campaigns_licensing_request_id_fkey'
+  ) THEN
+    ALTER TABLE public.campaigns
+      ADD CONSTRAINT campaigns_licensing_request_id_fkey
+      FOREIGN KEY (licensing_request_id)
+      REFERENCES public.licensing_requests(id)
+      ON DELETE SET NULL;
+  END IF;
+END $$;
+
+create index IF not exists idx_campaigns_licensing_request_id on public.campaigns (licensing_request_id);
+
+ALTER TABLE IF EXISTS public.licensing_requests
+  ADD COLUMN IF NOT EXISTS campaign_title text,
+  ADD COLUMN IF NOT EXISTS budget_min numeric(12,2),
+  ADD COLUMN IF NOT EXISTS budget_max numeric(12,2),
+  ADD COLUMN IF NOT EXISTS usage_scope text,
+  ADD COLUMN IF NOT EXISTS regions text,
+  ADD COLUMN IF NOT EXISTS deadline date;
 
 COMMIT;
