@@ -85,7 +85,7 @@ BEGIN
     WITH earnings AS (
         SELECT 
             c.talent_id,
-            SUM(c.talent_earnings_cents) as total_earnings
+            SUM(c.talent_earnings_cents)::BIGINT as total_earnings
         FROM public.campaigns c
         WHERE c.agency_id = p_agency_id
           AND c.status = 'Completed'

@@ -148,7 +148,11 @@ export const PerformanceTiers: React.FC = () => {
       });
       if (!resp.ok) {
         const text = await resp.text();
-        throw new Error(`Failed to fetch: ${resp.status} ${text}`);
+        // If the backend sent a "Dashboard Error: ..." message, use it directly
+        if (text.includes("Dashboard Error:")) {
+          throw new Error(text.split("Dashboard Error:")[1].trim());
+        }
+        throw new Error(text || `Error ${resp.status}`);
       }
       return resp.json();
     },
@@ -203,11 +207,28 @@ export const PerformanceTiers: React.FC = () => {
 
   if (error) {
     return (
-      <Card className="w-full border-red-200 bg-red-50">
-        <CardContent className="p-4 text-red-600">
-          Error: {(error as Error).message}
-        </CardContent>
-      </Card>
+      <div className="max-w-7xl mx-auto p-8">
+        <Card className="w-full border-red-100 bg-red-50/50 rounded-2xl shadow-sm">
+          <CardContent className="p-8 flex flex-col items-center text-center space-y-4">
+            <div className="p-3 bg-red-100 rounded-full">
+              <AlertCircle className="w-8 h-8 text-red-600" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-lg font-bold text-gray-900">Unable to load Performance Dashboard</h3>
+              <p className="text-sm text-red-600 font-medium">
+                {(error as Error).message}
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => queryClient.invalidateQueries({ queryKey: ["performance-tiers"] })}
+              className="mt-2 border-red-200 text-red-700 hover:bg-red-100 font-bold px-8 rounded-xl"
+            >
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
@@ -288,14 +309,14 @@ export const PerformanceTiers: React.FC = () => {
           const avgEarnings =
             group.talents.length > 0
               ? group.talents.reduce((acc, t) => acc + t.earnings_30d, 0) /
-                group.talents.length
+              group.talents.length
               : 0;
           const avgBookings =
             group.talents.length > 0
               ? group.talents.reduce(
-                  (acc, t) => acc + t.bookings_this_month,
-                  0,
-                ) / group.talents.length
+                (acc, t) => acc + t.bookings_this_month,
+                0,
+              ) / group.talents.length
               : 0;
           const percentOfRoster =
             totalTalents > 0

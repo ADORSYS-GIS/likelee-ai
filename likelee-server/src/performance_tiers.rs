@@ -73,9 +73,14 @@ pub async fn configure_performance_tiers(
     if !resp.status().is_success() {
         let status = resp.status();
         let text = resp.text().await.unwrap_or_default();
+        let friendly_msg = serde_json::from_str::<serde_json::Value>(&text)
+            .ok()
+            .and_then(|v| v.get("message").and_then(|m| m.as_str()).map(|s| s.to_string()))
+            .unwrap_or_else(|| text.clone());
+
         return Err((
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
-            format!("Database error: {}", text),
+            format!("Configuration Error: {}", friendly_msg),
         ));
     }
 
@@ -100,9 +105,14 @@ pub async fn get_performance_tiers(
     if !resp.status().is_success() {
         let status = resp.status();
         let text = resp.text().await.unwrap_or_default();
+        let friendly_msg = serde_json::from_str::<serde_json::Value>(&text)
+            .ok()
+            .and_then(|v| v.get("message").and_then(|m| m.as_str()).map(|s| s.to_string()))
+            .unwrap_or_else(|| text.clone());
+
         return Err((
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
-            format!("Failed to fetch performance tiers: {}", text),
+            format!("Tiers Error: {}", friendly_msg),
         ));
     }
 
@@ -146,9 +156,14 @@ pub async fn get_performance_tiers(
     if !resp.status().is_success() {
         let status = resp.status();
         let text = resp.text().await.unwrap_or_default();
+        let friendly_msg = serde_json::from_str::<serde_json::Value>(&text)
+            .ok()
+            .and_then(|v| v.get("message").and_then(|m| m.as_str()).map(|s| s.to_string()))
+            .unwrap_or_else(|| text.clone());
+
         return Err((
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
-            format!("Failed to fetch agency config: {}", text),
+            format!("Agency Config Error: {}", friendly_msg),
         ));
     }
 
@@ -191,9 +206,14 @@ pub async fn get_performance_tiers(
     if !resp.status().is_success() {
         let status = resp.status();
         let text = resp.text().await.unwrap_or_default();
+        let friendly_msg = serde_json::from_str::<serde_json::Value>(&text)
+            .ok()
+            .and_then(|v| v.get("message").and_then(|m| m.as_str()).map(|s| s.to_string()))
+            .unwrap_or_else(|| text.clone());
+
         return Err((
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
-            format!("Failed to fetch talents: {}", text),
+            format!("Talents Error: {}", friendly_msg),
         ));
     }
 
@@ -223,9 +243,16 @@ pub async fn get_performance_tiers(
     if !resp.status().is_success() {
         let status = resp.status();
         let text = resp.text().await.unwrap_or_default();
+        
+        // Try to parse friendly message from Supabase error JSON
+        let friendly_msg = serde_json::from_str::<serde_json::Value>(&text)
+            .ok()
+            .and_then(|v| v.get("message").and_then(|m| m.as_str()).map(|s| s.to_string()))
+            .unwrap_or_else(|| text.clone());
+
         return Err((
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
-            format!("Failed to fetch performance stats: {}", text),
+            format!("Dashboard Error: {}", friendly_msg),
         ));
     }
 
