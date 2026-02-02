@@ -30,6 +30,7 @@ export default function Layout({ children, currentPageName }) {
     currentPageName?.includes("Dashboard") ||
     location.pathname.includes("/CreatorDashboard") ||
     location.pathname.includes("/BrandDashboard") ||
+    location.pathname.includes("/AgencyDashboard") ||
     location.pathname.includes("/TalentDashboard");
 
   // Scroll to top on route change

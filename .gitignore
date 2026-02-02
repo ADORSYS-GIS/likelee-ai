@@ -99,7 +99,6 @@ dist
 
 # Gatsby build output
 .cache/
-public
 
 # Sapper build output
 __sapper__
