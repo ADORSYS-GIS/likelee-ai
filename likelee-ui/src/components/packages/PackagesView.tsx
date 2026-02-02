@@ -52,11 +52,11 @@ export function PackagesView() {
         toast({ title: "Link copied to clipboard!" });
     };
 
-    const filteredPackages = packages?.data?.filter((p: any) =>
+    const filteredPackages = (packages as any)?.filter((p: any) =>
         p.title.toLowerCase().includes(searchTerm.toLowerCase())
     ) || [];
 
-    const realStats = statsData?.data || {
+    const realStats = (statsData as any) || {
         total_packages: 0,
         active_shares: 0,
         total_views: 0,
@@ -165,7 +165,7 @@ export function PackagesView() {
                                             <Clock className="w-3.5 h-3.5" /> Created {format(new Date(pkg.created_at), 'MMM d, yyyy')}
                                         </span>
                                         <span className="flex items-center gap-1.5">
-                                            <Eye className="w-3.5 h-3.5" /> {pkg.stats?.view_count || 0} Views
+                                            <Eye className="w-3.5 h-3.5" /> {pkg.stats?.[0]?.view_count || 0} Views
                                         </span>
                                     </div>
                                 </div>

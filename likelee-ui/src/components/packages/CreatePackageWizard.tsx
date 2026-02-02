@@ -81,7 +81,7 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
     const createMutation = useMutation({
         mutationFn: (data: any) => packageApi.createPackage(data),
         onSuccess: (data: any) => {
-            setCreatedPackage(data.data);
+            setCreatedPackage(data);
             setShowSuccess(true);
             queryClient.invalidateQueries({ queryKey: ["agency-packages"] });
             queryClient.invalidateQueries({ queryKey: ["agency-package-stats"] });
@@ -151,9 +151,10 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
     const handleSubmit = () => {
         if (formData.client_name === "" || formData.client_email === "") return toast({ title: "Required", description: "Client details are required to send the package", variant: "destructive" });
 
+        const itemsArray = Array.isArray(formData.items) ? formData.items : [formData.items];
         const finalData = {
             ...formData,
-            items: formData.items.map(({ talent, assets, ...item }) => ({
+            items: itemsArray.map(({ talent, assets, ...item }) => ({
                 ...item,
                 asset_ids: assets.map((asset: any) => ({
                     asset_id: asset.id,
@@ -546,12 +547,12 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                             <div className="flex gap-2">
                                                 <Input
                                                     readOnly
-                                                    value={`${window.location.origin}/packages/${createdPackage.access_token}`}
+                                                    value={`${window.location.origin}/share/package/${createdPackage.access_token}`}
                                                     className="bg-white border-gray-200 font-bold text-indigo-600 h-12"
                                                 />
                                                 <Button
                                                     onClick={() => {
-                                                        navigator.clipboard.writeText(`${window.location.origin}/packages/${createdPackage.access_token}`);
+                                                        navigator.clipboard.writeText(`${window.location.origin}/share/package/${createdPackage.access_token}`);
                                                         toast({ title: "Link Copied", description: "The portal address is now in your clipboard." });
                                                     }}
                                                     className="bg-white border-2 border-indigo-100 text-indigo-600 hover:bg-white h-12 w-12 p-0"

@@ -2,7 +2,6 @@ use axum::{
     extract::{Path, State},
     http::StatusCode,
     Json,
-    extract::Multipart,
 };
 use serde::{Deserialize, Serialize};
 use crate::auth::AuthUser;
@@ -63,15 +62,22 @@ pub async fn list_packages(
     let resp = state
         .pg
         .from("agency_talent_packages")
-        .select("*, stats:agency_talent_package_stats(*)")
+        .select("*, items:agency_talent_package_items(id), stats:agency_talent_package_stats(*)")
         .eq("agency_id", &user.id)
         .order("created_at.desc")
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let err_text = resp.text().await.unwrap_or_default();
+        tracing::error!("list_packages database error: [{}] {}", status, err_text);
+        return Err((StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR), err_text));
+    }
+
     let text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let packages: serde_json::Value = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let packages: serde_json::Value = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse packages JSON: {}, body: {}", e, text)))?;
 
     Ok(Json(packages))
 }
@@ -81,21 +87,24 @@ pub async fn create_package(
     user: AuthUser,
     Json(payload): Json<CreatePackageRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    // Helper to treat empty strings as None
+    let sanitize = |s: &Option<String>| s.as_ref().filter(|v| !v.trim().is_empty()).map(|v| v.clone());
+
     // 1. Insert Package metadata
     let package_insert = serde_json::json!({
         "agency_id": user.id,
         "title": payload.title,
-        "description": payload.description,
-        "cover_image_url": payload.cover_image_url,
-        "primary_color": payload.primary_color,
-        "secondary_color": payload.secondary_color,
-        "custom_message": payload.custom_message,
+        "description": sanitize(&payload.description),
+        "cover_image_url": sanitize(&payload.cover_image_url),
+        "primary_color": sanitize(&payload.primary_color),
+        "secondary_color": sanitize(&payload.secondary_color),
+        "custom_message": sanitize(&payload.custom_message),
         "allow_comments": payload.allow_comments.unwrap_or(true),
         "allow_favorites": payload.allow_favorites.unwrap_or(true),
         "allow_callbacks": payload.allow_callbacks.unwrap_or(true),
-        "expires_at": payload.expires_at,
-        "client_name": payload.client_name,
-        "client_email": payload.client_email,
+        "expires_at": sanitize(&payload.expires_at),
+        "client_name": sanitize(&payload.client_name),
+        "client_email": sanitize(&payload.client_email),
     });
 
     let resp = state
@@ -106,19 +115,87 @@ pub async fn create_package(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    let status_code_val = resp.status();
+    if !status_code_val.is_success() {
+        let error_text = resp.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+        tracing::error!("Failed to create package: {}", error_text);
+        let status = StatusCode::from_u16(status_code_val.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        return Err((status, format!("Database error: {}", error_text)));
+    }
+
     let text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let created_packages: Vec<serde_json::Value> = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    
-    let package = created_packages.first().ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Failed to create package".to_string()))?;
-    let package_id = package["id"].as_str().ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Package ID missing".to_string()))?;
+    tracing::info!("Package created response: {}", text);
+    let packages: serde_json::Value = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let package = match packages {
+        serde_json::Value::Array(ref arr) => arr.first().ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Failed to create package".to_string()))?,
+        serde_json::Value::Object(_) => &packages,
+        _ => return Err((StatusCode::INTERNAL_SERVER_ERROR, "Unexpected package response shape".to_string())),
+    };
+    let package_id = package["id"].as_str().ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Package ID missing in response".to_string()))?;
+
+    // 1.5 Initialize Stats
+    let _ = state.pg
+        .from("agency_talent_package_stats")
+        .insert(serde_json::json!({ "package_id": package_id }).to_string())
+        .execute()
+        .await;
 
     // 2. Insert Items and Assets
+    // First, verify ownership of all talents
+    let supplied_talent_ids: Vec<String> = payload.items.iter().map(|i| i.talent_id.clone()).collect();
+    
+    if !supplied_talent_ids.is_empty() {
+        tracing::info!("Verifying ownership for talents: {:?} by user/agency: {}", supplied_talent_ids, user.id);
+        
+        let verify_resp = state
+            .pg
+            .from("agency_users")
+            .select("id,agency_id")
+            .in_("id", supplied_talent_ids.clone())
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        if !verify_resp.status().is_success() {
+             let err_text = verify_resp.text().await.unwrap_or_default();
+             tracing::error!("Ownership verification query failed: {}", err_text);
+             return Err((StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to verify talent ownership: {}", err_text)));
+        }
+
+        let verify_text = verify_resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let verified_rows: Vec<serde_json::Value> = serde_json::from_str(&verify_text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        use std::collections::HashSet;
+        let mut found_ids = HashSet::new();
+
+        for row in verified_rows {
+            if let Some(resp_id) = row["id"].as_str() {
+                // Verify this talent belongs to the current user (agency)
+                let row_agency_id = row["agency_id"].as_str().unwrap_or("");
+                if row_agency_id != user.id {
+                    tracing::error!("Security Alert: User {} tried to access talent {} belonging to agency {}", user.id, resp_id, row_agency_id);
+                    return Err((StatusCode::FORBIDDEN, format!("Access denied: Talent {} does not belong to your agency", resp_id)));
+                }
+                found_ids.insert(resp_id.to_string());
+            }
+        }
+
+        for requested_id in &supplied_talent_ids {
+            if !found_ids.contains(requested_id) {
+                tracing::error!("Talent ID {} not found in database", requested_id);
+                return Err((StatusCode::BAD_REQUEST, format!("Talent ID {} not found", requested_id)));
+            }
+        }
+    }
+    
     for (item_idx, item_req) in payload.items.iter().enumerate() {
         let item_insert = serde_json::json!({
             "package_id": package_id,
             "talent_id": item_req.talent_id,
             "sort_order": item_idx,
         });
+            // ... insert item
+
 
         let item_resp = state
             .pg
@@ -129,8 +206,14 @@ pub async fn create_package(
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
         let item_text = item_resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let created_items: Vec<serde_json::Value> = serde_json::from_str(&item_text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let item = created_items.first().ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Failed to create item".to_string()))?;
+        let created_items: serde_json::Value = serde_json::from_str(&item_text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let item = match created_items {
+            serde_json::Value::Array(ref arr) => arr
+                .first()
+                .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Failed to create item".to_string()))?,
+            serde_json::Value::Object(_) => &created_items,
+            _ => return Err((StatusCode::INTERNAL_SERVER_ERROR, "Unexpected item response shape".to_string())),
+        };
         let item_id = item["id"].as_str().ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Item ID missing".to_string()))?;
 
         for (asset_idx, asset_req) in item_req.asset_ids.iter().enumerate() {
@@ -156,7 +239,7 @@ pub async fn create_package(
         if !client_email.trim().is_empty() {
             let agency_name = fetch_agency_name(&state, &user.id).await.unwrap_or_else(|_| "Premier Talent Agency".to_string());
             let client_name = payload.client_name.as_deref().unwrap_or("Client");
-            let package_url = format!("{}/packages/{}", state.frontend_url, package["access_token"].as_str().unwrap_or(""));
+            let package_url = format!("{}/share/package/{}", state.frontend_url, package["access_token"].as_str().unwrap_or(""));
             
             let subject = format!("New Talent Selection from {}", agency_name);
             let body = format!(
@@ -179,8 +262,16 @@ pub async fn create_package(
                 client_name, agency_name, payload.title, payload.description.as_deref().unwrap_or(""), package_url
             );
 
-            let _ = crate::email::send_email_core(&state, client_email, &subject, &body, true).await;
+            tracing::info!("Sending package email: To={}, Subject={}, FrontendURL={}, Agency={}, Client={}", client_email, subject, state.frontend_url, agency_name, client_name);
+            match crate::email::send_email_core(&state, client_email, &subject, &body, true).await {
+                Ok(_) => tracing::info!("Package email SENT SUCCESSFULLY to {}", client_email),
+                Err((code, msg)) => tracing::error!("FAILED TO SEND package email to {}: [{}] {}", client_email, code, msg),
+            }
+        } else {
+            tracing::warn!("Client email provided but is empty after trimming: '{:?}'", payload.client_email);
         }
+    } else {
+        tracing::info!("No client email provided in payload, skipping email step");
     }
 
     Ok(Json(package.clone()))
@@ -213,7 +304,7 @@ pub async fn get_package(
     let resp = state
         .pg
         .from("agency_talent_packages")
-        .select("*, items:agency_talent_package_items(*, assets:agency_talent_package_item_assets(*)), stats:agency_talent_package_stats(*)")
+        .select("*, items:agency_talent_package_items(*, talent:agency_users(*), assets:agency_talent_package_item_assets(*)), stats:agency_talent_package_stats(*)")
         .eq("agency_id", &user.id)
         .eq("id", &id)
         .single()
@@ -221,8 +312,14 @@ pub async fn get_package(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let err_text = resp.text().await.unwrap_or_default();
+        return Err((StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR), err_text));
+    }
+
     let text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let package: serde_json::Value = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let package: serde_json::Value = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("failed to parse package: {}", e)))?;
 
     Ok(Json(package))
 }
@@ -284,8 +381,21 @@ pub async fn get_dashboard_stats(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    if !stats_resp.status().is_success() {
+        let status = stats_resp.status();
+        let err_text = stats_resp.text().await.unwrap_or_default();
+        tracing::error!("get_agency_package_stats RPC error: [{}] {}", status, err_text);
+        // Fallback to zeros instead of 500 error if RPC fails
+        return Ok(Json(serde_json::json!({
+            "total_packages": total_packages,
+            "active_shares": active_shares,
+            "total_views": 0,
+            "conversion_rate": "0.0%",
+        })));
+    }
+
     let stats_text = stats_resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let stats_arr: Vec<serde_json::Value> = serde_json::from_str(&stats_text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let stats_arr: Vec<serde_json::Value> = serde_json::from_str(&stats_text).unwrap_or_default();
     
     let stats = stats_arr.first().cloned().unwrap_or(serde_json::json!({
         "total_views": 0,
@@ -319,15 +429,21 @@ pub async fn get_public_package(
     let resp = state
         .pg
         .from("agency_talent_packages")
-        .select("*, items:agency_talent_package_items(*, talent:creators(*), assets:agency_talent_package_item_assets(*))")
+        .select("*, agency:agencies(agency_name), items:agency_talent_package_items(*, talent:agency_users(id, stage_name, full_legal_name, profile_photo_url), assets:agency_talent_package_item_assets(*))")
         .eq("access_token", &token)
         .single()
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let err_text = resp.text().await.unwrap_or_default();
+        return Err((StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR), err_text));
+    }
+
     let text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let package: serde_json::Value = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let package: serde_json::Value = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse public package: {}", e)))?;
 
     // Check if expired
     if let Some(expires_at) = package["expires_at"].as_str() {
@@ -365,9 +481,15 @@ pub async fn create_interaction(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    if !package_resp.status().is_success() {
+        let status = package_resp.status();
+        let err_text = package_resp.text().await.unwrap_or_default();
+        return Err((StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::NOT_FOUND), err_text));
+    }
+
     let package_text = package_resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let package: serde_json::Value = serde_json::from_str(&package_text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let package_id = package["id"].as_str().ok_or((StatusCode::NOT_FOUND, "Package not found".to_string()))?;
+    let package: serde_json::Value = serde_json::from_str(&package_text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse interaction package: {}", e)))?;
+    let package_id = package["id"].as_str().ok_or((StatusCode::NOT_FOUND, "Package ID missing".to_string()))?;
 
     let mut interaction = payload.clone();
     interaction.as_object_mut().unwrap().insert("package_id".to_string(), serde_json::json!(package_id));

@@ -47,7 +47,7 @@ export function PublicPackageView() {
         );
     }
 
-    if (error || !packageData?.data) {
+    if (error || !packageData) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-white p-6 text-center">
                 <AlertCircle className="w-16 h-16 text-red-500 mb-6" />
@@ -60,7 +60,7 @@ export function PublicPackageView() {
         );
     }
 
-    const pkg = packageData.data;
+    const pkg = packageData as any;
     const primaryColor = pkg.primary_color || "#6366F1";
     const secondaryColor = pkg.secondary_color || "#06B6D4";
 
@@ -110,7 +110,7 @@ export function PublicPackageView() {
                     </div>
                     <div className="flex flex-col items-end gap-2">
                         <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Curated by</span>
-                        <h2 className="text-lg font-black uppercase tracking-tight" style={{ color: primaryColor }}>{pkg.agency_name || "Premier Talent Agency"}</h2>
+                        <h2 className="text-lg font-black uppercase tracking-tight" style={{ color: primaryColor }}>{pkg.agency?.agency_name || pkg.agency_name || "Premier Talent Agency"}</h2>
                     </div>
                 </div>
             </header>
@@ -153,7 +153,7 @@ export function PublicPackageView() {
                                 <div className="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex justify-between items-end translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
                                     <div className="text-white">
                                         <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">{talent.categories?.[0] || 'Talent'}</p>
-                                        <h3 className="text-3xl font-black uppercase tracking-tighter">{talent.full_name}</h3>
+                                        <h3 className="text-3xl font-black uppercase tracking-tighter">{talent.stage_name || talent.full_legal_name || talent.full_name}</h3>
                                     </div>
                                     <ChevronRight className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                                 </div>
@@ -240,7 +240,7 @@ export function PublicPackageView() {
                                 <div className="flex justify-between items-start mb-10">
                                     <div className="space-y-2">
                                         <Badge variant="secondary" className="bg-gray-100 font-black uppercase text-[10px]">{selectedTalent.categories?.[0]}</Badge>
-                                        <h2 className="text-4xl font-black text-gray-900 uppercase tracking-tighter">{selectedTalent.full_name}</h2>
+                                        <h2 className="text-4xl font-black text-gray-900 uppercase tracking-tighter">{selectedTalent.stage_name || selectedTalent.full_legal_name || selectedTalent.full_name}</h2>
                                     </div>
                                     <div className="flex gap-2">
                                         <Button variant="outline" size="icon" className="rounded-full border-2" style={{ borderColor: primaryColor, color: primaryColor }} onClick={() => handleFavorite(selectedTalent.id)}>
