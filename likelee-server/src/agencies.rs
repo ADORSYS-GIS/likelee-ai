@@ -968,30 +968,6 @@ pub async fn delete_client(
     Ok(Json(v))
 }
 
-pub async fn get_by_user(
-    State(state): State<AppState>,
-    user: AuthUser,
-) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let resp = state
-        .pg
-        .from("agencies")
-        .select("*")
-        .eq("id", &user.id)
-        .single()
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    let text = resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let v: serde_json::Value = serde_json::from_str(&text)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    Ok(Json(v))
-}
-
 pub async fn list_contacts(
     State(state): State<AppState>,
     Path(client_id): Path<String>,
