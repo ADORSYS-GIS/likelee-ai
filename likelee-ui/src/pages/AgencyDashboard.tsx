@@ -654,10 +654,11 @@ const ProspectModal = ({
                     selectedCategories.includes(cat) ? "default" : "secondary"
                   }
                   onClick={() => toggleCategory(cat)}
-                  className={`${selectedCategories.includes(cat)
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "bg-gray-100 hover:bg-gray-200 text-gray-900"
-                    } font-medium`}
+                  className={`${
+                    selectedCategories.includes(cat)
+                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                  } font-medium`}
                 >
                   {cat}
                 </Button>
@@ -1572,8 +1573,8 @@ const ClientProfileModal = ({
                               >
                                 {talent.license_expiry !== "—"
                                   ? new Date(
-                                    talent.license_expiry,
-                                  ).toLocaleDateString()
+                                      talent.license_expiry,
+                                    ).toLocaleDateString()
                                   : "—"}
                               </span>
                               {isLicenseExpiring(talent.license_expiry) && (
@@ -2358,10 +2359,11 @@ const ProspectModalAlt = ({
                     selectedCategories.includes(cat) ? "default" : "secondary"
                   }
                   onClick={() => toggleCategory(cat)}
-                  className={`${selectedCategories.includes(cat)
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "bg-gray-100 hover:bg-gray-200 text-gray-900"
-                    } font-medium`}
+                  className={`${
+                    selectedCategories.includes(cat)
+                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                  } font-medium`}
                 >
                   {cat}
                 </Button>
@@ -4600,9 +4602,9 @@ const PaymentTrackingView = () => {
     return invoiceRows.map((inv) => {
       const statusRaw = String(
         (inv as any)?.status ??
-        (inv as any)?.invoice_status ??
-        (inv as any)?.invoice?.status ??
-        "draft",
+          (inv as any)?.invoice_status ??
+          (inv as any)?.invoice?.status ??
+          "draft",
       );
       const dueDateStr = String((inv as any)?.due_date || "");
       const due = dueDateStr ? new Date(dueDateStr) : null;
@@ -5047,9 +5049,9 @@ const FinancialReportsView = () => {
     return invoiceRows.map((inv) => {
       const statusRaw = String(
         (inv as any)?.status ??
-        (inv as any)?.invoice_status ??
-        (inv as any)?.invoice?.status ??
-        "draft",
+          (inv as any)?.invoice_status ??
+          (inv as any)?.invoice?.status ??
+          "draft",
       );
       const dueDateStr = String((inv as any)?.due_date || "");
       const due = dueDateStr ? new Date(dueDateStr) : null;
@@ -5147,7 +5149,7 @@ const FinancialReportsView = () => {
         payablesTotals.set(
           "USD",
           (payablesTotals.get("USD") || 0) +
-          (Number((l as any)?.net_cents || 0) || 0),
+            (Number((l as any)?.net_cents || 0) || 0),
         );
       }
     }
@@ -5742,14 +5744,14 @@ const FinancialReportsView = () => {
       <thead><tr><th>Metric</th><th style="text-align:right;">Value</th></tr></thead>
       <tbody>
         ${tableRows([
-      ["Total Revenue", moneyTotals(summary.revenueTotals)],
-      ["Pending", moneyTotals(summary.pendingTotals)],
-      ["Outstanding Receivables", moneyTotals(summary.receivablesTotals)],
-      ["Expenses", moneyTotals(expensesTotals)],
-      ["Net Income", moneyTotals(netIncomeTotals)],
-      ["Commission", moneyTotals(summary.commissionTotals)],
-      ["Sales Tax", moneyTotals(taxTotals)],
-    ])}
+          ["Total Revenue", moneyTotals(summary.revenueTotals)],
+          ["Pending", moneyTotals(summary.pendingTotals)],
+          ["Outstanding Receivables", moneyTotals(summary.receivablesTotals)],
+          ["Expenses", moneyTotals(expensesTotals)],
+          ["Net Income", moneyTotals(netIncomeTotals)],
+          ["Commission", moneyTotals(summary.commissionTotals)],
+          ["Sales Tax", moneyTotals(taxTotals)],
+        ])}
       </tbody>
     </table>
 
@@ -5758,11 +5760,11 @@ const FinancialReportsView = () => {
       <thead><tr><th>Client</th><th style="text-align:right;">Revenue</th></tr></thead>
       <tbody>
         ${topClientsByRevenue
-        .map(
-          (c) =>
-            `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${c.clientName}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${moneyTotals(c.totals)}</td></tr>`,
-        )
-        .join("")}
+          .map(
+            (c) =>
+              `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${c.clientName}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${moneyTotals(c.totals)}</td></tr>`,
+          )
+          .join("")}
       </tbody>
     </table>
 
@@ -5771,11 +5773,11 @@ const FinancialReportsView = () => {
       <thead><tr><th>Talent</th><th style="text-align:right;">Gross</th></tr></thead>
       <tbody>
         ${topTalentByRevenue
-        .map(
-          (t) =>
-            `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${t.talentName}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${money(t.grossCents, "USD")}</td></tr>`,
-        )
-        .join("")}
+          .map(
+            (t) =>
+              `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${t.talentName}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${money(t.grossCents, "USD")}</td></tr>`,
+          )
+          .join("")}
       </tbody>
     </table>
 
@@ -5784,11 +5786,11 @@ const FinancialReportsView = () => {
       <thead><tr><th>Aging Bucket</th><th style="text-align:right;">Amount</th><th style="text-align:right;">Invoices</th></tr></thead>
       <tbody>
         ${receivables.bucketDefs
-        .map(
-          (b) =>
-            `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${b.label}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${moneyTotals(receivables.bucketTotals.get(b.key) || new Map())}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${receivables.bucketCounts.get(b.key) || 0}</td></tr>`,
-        )
-        .join("")}
+          .map(
+            (b) =>
+              `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${b.label}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${moneyTotals(receivables.bucketTotals.get(b.key) || new Map())}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${receivables.bucketCounts.get(b.key) || 0}</td></tr>`,
+          )
+          .join("")}
       </tbody>
     </table>
 
@@ -5969,10 +5971,11 @@ const FinancialReportsView = () => {
             <button
               key={tab.id}
               onClick={() => setActiveReportTab(tab.id)}
-              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${activeReportTab === tab.id
-                ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
-                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                }`}
+              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${
+                activeReportTab === tab.id
+                  ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              }`}
             >
               {tab.label}
             </button>
@@ -7147,11 +7150,11 @@ const GenerateInvoiceView = () => {
                 (t) =>
                   String((t as any)?.id || "") === String(it.talent_id || ""),
               )?.name ||
-              talents.find(
-                (t) =>
-                  String((t as any)?.id || "") === String(it.talent_id || ""),
-              )?.full_name ||
-              "",
+                talents.find(
+                  (t) =>
+                    String((t as any)?.id || "") === String(it.talent_id || ""),
+                )?.full_name ||
+                "",
             ).trim();
             const date = String(it.date_of_service || "").trim();
             const rate = String(it.rate_type || "").trim();
@@ -7680,10 +7683,11 @@ const GenerateInvoiceView = () => {
             <div className="flex gap-3">
               <Button
                 variant={createFrom === "booking" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "booking"
-                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                  : "border-gray-200 text-gray-700"
-                  }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
+                  createFrom === "booking"
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "border-gray-200 text-gray-700"
+                }`}
                 onClick={() => setCreateFrom("booking")}
               >
                 <Calendar className="w-5 h-5" />
@@ -7691,10 +7695,11 @@ const GenerateInvoiceView = () => {
               </Button>
               <Button
                 variant={createFrom === "manual" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "manual"
-                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                  : "border-gray-200 text-gray-700"
-                  }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
+                  createFrom === "manual"
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "border-gray-200 text-gray-700"
+                }`}
                 onClick={() => setCreateFrom("manual")}
               >
                 <FileText className="w-5 h-5" />
@@ -8439,9 +8444,9 @@ const InvoiceManagementView = ({
       const invoiceId = String((inv as any)?.id || "");
       const statusRaw = String(
         (inv as any)?.status ??
-        (inv as any)?.invoice_status ??
-        (inv as any)?.invoice?.status ??
-        "draft",
+          (inv as any)?.invoice_status ??
+          (inv as any)?.invoice?.status ??
+          "draft",
       );
       const sentAt = (inv as any)?.sent_at ?? (inv as any)?.sentAt;
       const paidAt = (inv as any)?.paid_at ?? (inv as any)?.paidAt;
@@ -8620,10 +8625,11 @@ const InvoiceManagementView = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveSubTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${isActive
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "text-gray-700 hover:bg-gray-50"
-                  }`}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                  isActive
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
               >
                 <Icon className="w-4 h-4" />
                 {tab.label}
@@ -9051,11 +9057,11 @@ const InvoiceManagementView = ({
                       0,
                       (Number((selectedInvoice as any)?.amountCents || 0) ||
                         0) -
-                      ((selectedInvoice as any)?.paidAt
-                        ? Number(
-                          (selectedInvoice as any)?.amountCents || 0,
-                        ) || 0
-                        : 0),
+                        ((selectedInvoice as any)?.paidAt
+                          ? Number(
+                              (selectedInvoice as any)?.amountCents || 0,
+                            ) || 0
+                          : 0),
                     ),
                     String((selectedInvoice as any)?.currency || "USD"),
                   )}
@@ -9538,10 +9544,11 @@ const ScoutingHubView = ({
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab
-              ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
-              : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
-              }`}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+              activeTab === tab
+                ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+                : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
+            }`}
           >
             {tab}
           </button>
@@ -10534,18 +10541,19 @@ const OpenCallsTab = ({
               <div className="p-4">
                 <div className="flex justify-between items-start mb-3">
                   <Badge
-                    className={`rounded-md font-bold px-2 py-0.5 text-[10px] border shadow-sm ${String((event as any).status) === "published"
-                      ? "bg-green-50 text-green-700 border-green-100"
-                      : String((event as any).status) === "draft"
-                        ? "bg-gray-50 text-gray-600 border-gray-100"
-                        : String((event as any).status) === "scheduled"
-                          ? "bg-blue-50 text-blue-700 border-blue-100"
-                          : String((event as any).status) === "completed"
-                            ? "bg-indigo-50 text-indigo-700 border-indigo-100"
-                            : String((event as any).status) === "cancelled"
-                              ? "bg-red-50 text-red-700 border-red-100"
-                              : "bg-gray-50 text-gray-600 border-gray-100"
-                      }`}
+                    className={`rounded-md font-bold px-2 py-0.5 text-[10px] border shadow-sm ${
+                      String((event as any).status) === "published"
+                        ? "bg-green-50 text-green-700 border-green-100"
+                        : String((event as any).status) === "draft"
+                          ? "bg-gray-50 text-gray-600 border-gray-100"
+                          : String((event as any).status) === "scheduled"
+                            ? "bg-blue-50 text-blue-700 border-blue-100"
+                            : String((event as any).status) === "completed"
+                              ? "bg-indigo-50 text-indigo-700 border-indigo-100"
+                              : String((event as any).status) === "cancelled"
+                                ? "bg-red-50 text-red-700 border-red-100"
+                                : "bg-gray-50 text-gray-600 border-gray-100"
+                    }`}
                   >
                     {String((event as any).status || "").toUpperCase()}
                   </Badge>
@@ -10725,7 +10733,14 @@ const ScoutingAnalyticsTab = () => {
   );
 };
 
-const InlineDashboardView = ({ onKYC, overview, performance, breakdown, pipeline, activity }: {
+const InlineDashboardView = ({
+  onKYC,
+  overview,
+  performance,
+  breakdown,
+  pipeline,
+  activity,
+}: {
   onKYC: () => void;
   overview: any;
   performance: any;
@@ -10748,8 +10763,8 @@ const InlineDashboardView = ({ onKYC, overview, performance, breakdown, pipeline
                 KYC Verification Required
               </h3>
               <p className="text-sm text-gray-500">
-                To enable payouts and licensing for your talent, please
-                complete your agency's ID verification.
+                To enable payouts and licensing for your talent, please complete
+                your agency's ID verification.
               </p>
             </div>
           </div>
@@ -10832,22 +10847,21 @@ const InlineDashboardView = ({ onKYC, overview, performance, breakdown, pipeline
           {overview?.pending_actions.licensing_requests +
             overview?.pending_actions.expiring_licenses >
             0 && (
-              <Badge
-                variant="default"
-                className="bg-red-600 hover:bg-red-700 text-white border-0 h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]"
-              >
-                {overview?.pending_actions.licensing_requests +
-                  overview?.pending_actions.expiring_licenses}
-              </Badge>
-            )}
+            <Badge
+              variant="default"
+              className="bg-red-600 hover:bg-red-700 text-white border-0 h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]"
+            >
+              {overview?.pending_actions.licensing_requests +
+                overview?.pending_actions.expiring_licenses}
+            </Badge>
+          )}
         </div>
         <h3 className="text-sm font-medium text-gray-500 mb-1">
           Pending Actions
         </h3>
         <div className="space-y-1">
           <p className="text-xs text-gray-600">
-            • {overview?.pending_actions.licensing_requests} licensing
-            requests
+            • {overview?.pending_actions.licensing_requests} licensing requests
           </p>
           <p className="text-xs text-gray-600">
             • {overview?.pending_actions.expiring_licenses} expiring license
@@ -10913,9 +10927,7 @@ const InlineDashboardView = ({ onKYC, overview, performance, breakdown, pipeline
                   </div>
                 )}
                 <div className="flex-1">
-                  <p className="font-bold text-gray-900 text-sm">
-                    {item.name}
-                  </p>
+                  <p className="font-bold text-gray-900 text-sm">{item.name}</p>
                   <p className="text-xs text-gray-500">
                     {item.earnings_formatted}
                   </p>
@@ -10957,9 +10969,7 @@ const InlineDashboardView = ({ onKYC, overview, performance, breakdown, pipeline
                   </div>
                 )}
                 <div className="flex-1">
-                  <p className="font-bold text-gray-900 text-sm">
-                    {item.name}
-                  </p>
+                  <p className="font-bold text-gray-900 text-sm">{item.name}</p>
                   <p className="text-xs text-gray-500">
                     Last: {item.payment_formatted}
                   </p>
@@ -11102,9 +11112,7 @@ const InlineDashboardView = ({ onKYC, overview, performance, breakdown, pipeline
     {/* Section 4: Licensing Pipeline (Detailed) */}
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="p-6 border-b border-gray-100">
-        <h2 className="text-lg font-bold text-gray-900">
-          Licensing Pipeline
-        </h2>
+        <h2 className="text-lg font-bold text-gray-900">Licensing Pipeline</h2>
       </div>
       <div className="p-6 grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="p-6 bg-white border border-yellow-200 shadow-sm rounded-xl">
@@ -11343,11 +11351,11 @@ const InlineRosterView = ({
                 {(kycStatus === "approved" ||
                   kycStatus === "verified" ||
                   kycStatus === "active") && (
-                    <div className="flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1 rounded-full border border-green-100 text-[10px] font-bold uppercase tracking-wider shadow-sm">
-                      <BadgeCheck className="w-3.5 h-3.5" />
-                      Verified Agency
-                    </div>
-                  )}
+                  <div className="flex items-center gap-1.5 bg-green-50 text-green-700 px-3 py-1 rounded-full border border-green-100 text-[10px] font-bold uppercase tracking-wider shadow-sm">
+                    <BadgeCheck className="w-3.5 h-3.5" />
+                    Verified Agency
+                  </div>
+                )}
                 <div className="bg-blue-600 text-white px-2 py-0.5 rounded text-xs font-bold">
                   Marketplace: Public
                 </div>
@@ -11416,8 +11424,8 @@ const InlineRosterView = ({
               {(kycStatus === "approved" ||
                 kycStatus === "verified" ||
                 kycStatus === "active") && (
-                  <BadgeCheck className="w-3.5 h-3.5 text-[#32C8D1] ml-1" />
-                )}
+                <BadgeCheck className="w-3.5 h-3.5 text-[#32C8D1] ml-1" />
+              )}
             </Button>
             <Button
               variant="outline"
@@ -11634,14 +11642,14 @@ const InlineRosterView = ({
                 {(searchTerm ||
                   statusFilter !== "All Status" ||
                   sortConfig) && (
-                    <button
-                      onClick={clearFilters}
-                      className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                      Clear Filters
-                    </button>
-                  )}
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                    Clear Filters
+                  </button>
+                )}
               </div>
             </div>
 
@@ -11943,9 +11951,9 @@ const LicensingRequestsView = () => {
   const formatMoney = (n: number) =>
     Number.isFinite(n)
       ? n.toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
       : "--";
 
   const statusStyle = (status: string) => {
@@ -12849,9 +12857,9 @@ const LicenseTemplatesView = () => {
     const updatedTemplates = templates.map((t) =>
       t.id === editingTemplate.id
         ? {
-          ...editingTemplate,
-          pricing: editingTemplate.pricingRange,
-        }
+            ...editingTemplate,
+            pricing: editingTemplate.pricingRange,
+          }
         : t,
     );
     setTemplates(updatedTemplates);
@@ -13663,10 +13671,11 @@ const ProtectionUsageView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === tab
-                ? "border-indigo-600 text-indigo-600"
-                : "border-transparent text-gray-500 hover:text-gray-900"
-                }`}
+              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${
+                activeTab === tab
+                  ? "border-indigo-600 text-indigo-600"
+                  : "border-transparent text-gray-500 hover:text-gray-900"
+              }`}
             >
               {tab}
             </button>
@@ -15837,7 +15846,7 @@ const ComplianceHubView = () => {
       title: "Action Required",
       description: message,
       action: (
-        <ToastAction altText="Try again" onClick={() => { }}>
+        <ToastAction altText="Try again" onClick={() => {}}>
           OK
         </ToastAction>
       ),
@@ -16000,10 +16009,11 @@ const ComplianceHubView = () => {
             <Button
               disabled={selectedTalentIds.length === 0}
               variant="outline"
-              className={`text-xs font-bold h-8 gap-2 ${selectedTalentIds.length === 0
-                ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
-                : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
-                }`}
+              className={`text-xs font-bold h-8 gap-2 ${
+                selectedTalentIds.length === 0
+                  ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
+                  : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
+              }`}
               onClick={handleSendRenewalRequests}
             >
               <RefreshCw
@@ -16496,10 +16506,11 @@ const RoyaltiesPayoutsView = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-              }`}
+            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
+              activeTab === tab
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+            }`}
           >
             {tab}
           </button>
@@ -17381,10 +17392,11 @@ const AnalyticsDashboardView = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                  }`}
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
+                  activeTab === tab
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+                }`}
               >
                 {tab}
               </button>
@@ -18447,17 +18459,17 @@ export default function AgencyDashboard() {
   );
   const [activeSubTab, setActiveSubTabState] = useState(
     normalizeSubTab(searchParams.get("subTab")) ||
-    (searchParams.get("tab") === "licensing"
-      ? "Licensing Requests"
-      : searchParams.get("tab") === "roster"
-        ? "All Talent"
-        : searchParams.get("tab") === "protection"
-          ? "Protect & Usage"
-          : searchParams.get("tab") === "analytics"
-            ? "Analytics Dashboard"
-            : searchParams.get("tab") === "settings"
-              ? "General Settings"
-              : "All Talent"),
+      (searchParams.get("tab") === "licensing"
+        ? "Licensing Requests"
+        : searchParams.get("tab") === "roster"
+          ? "All Talent"
+          : searchParams.get("tab") === "protection"
+            ? "Protect & Usage"
+            : searchParams.get("tab") === "analytics"
+              ? "Analytics Dashboard"
+              : searchParams.get("tab") === "settings"
+                ? "General Settings"
+                : "All Talent"),
   );
   const [activeScoutingTab, setActiveScoutingTabState] = useState(
     searchParams.get("scoutingTab") || "Prospect Pipeline",
@@ -18532,8 +18544,8 @@ export default function AgencyDashboard() {
     "Agency Name";
   const seatsLimit = Number(
     (agencyProfileQuery.data as any)?.seats_limit ||
-    (profile as any)?.seats_limit ||
-    0,
+      (profile as any)?.seats_limit ||
+      0,
   );
 
   // Load persisted bookings on mount
@@ -18992,107 +19004,107 @@ export default function AgencyDashboard() {
   const sidebarItems: SidebarItem[] =
     agencyMode === "AI"
       ? [
-        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-        {
-          id: "roster",
-          label: "Roster",
-          icon: Users,
-          subItems: ["All Talent", "Performance Tiers"],
-        },
-        {
-          id: "licensing",
-          label: "Licensing",
-          icon: FileText,
-          subItems: [
-            "Licensing Requests",
-            "Active Licenses",
-            "License Templates",
-          ],
-        },
-        {
-          id: "protection",
-          label: "Protection & Usage",
-          icon: Shield,
-          subItems: ["Protect & Usage", "Compliance Hub"],
-          badges: { "Compliance Hub": "NEW" },
-        },
-        {
-          id: "analytics",
-          label: "Analytics",
-          icon: BarChart2,
-          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-        },
-        {
-          id: "accounting",
-          label: "Accounting & Invoicing",
-          icon: CreditCard,
-          subItems: [
-            "Invoice Generation",
-            "Invoice Management",
-            "Payment Tracking",
-            "Talent Statements",
-            "Financial Reports",
-            "Expense Tracking",
-            "Connect Bank",
-          ],
-        },
-        {
-          id: "settings",
-          label: "Settings",
-          icon: Settings,
-          subItems: ["General Settings", "File Storage"],
-        },
-      ]
+          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          {
+            id: "roster",
+            label: "Roster",
+            icon: Users,
+            subItems: ["All Talent", "Performance Tiers"],
+          },
+          {
+            id: "licensing",
+            label: "Licensing",
+            icon: FileText,
+            subItems: [
+              "Licensing Requests",
+              "Active Licenses",
+              "License Templates",
+            ],
+          },
+          {
+            id: "protection",
+            label: "Protection & Usage",
+            icon: Shield,
+            subItems: ["Protect & Usage", "Compliance Hub"],
+            badges: { "Compliance Hub": "NEW" },
+          },
+          {
+            id: "analytics",
+            label: "Analytics",
+            icon: BarChart2,
+            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+          },
+          {
+            id: "accounting",
+            label: "Accounting & Invoicing",
+            icon: CreditCard,
+            subItems: [
+              "Invoice Generation",
+              "Invoice Management",
+              "Payment Tracking",
+              "Talent Statements",
+              "Financial Reports",
+              "Expense Tracking",
+              "Connect Bank",
+            ],
+          },
+          {
+            id: "settings",
+            label: "Settings",
+            icon: Settings,
+            subItems: ["General Settings", "File Storage"],
+          },
+        ]
       : [
-        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-        {
-          id: "roster",
-          label: "Roster",
-          icon: Users,
-          subItems: ["All Talent", "Performance Tiers"],
-        },
-        { id: "scouting", label: "Scouting", icon: Target },
-        { id: "client-crm", label: "Client CRM", icon: Building2 },
-        {
-          id: "bookings",
-          label: "Bookings",
-          icon: Calendar,
-          subItems: [
-            "Calendar & Schedule",
-            "Booking Requests",
-            "Client Database",
-            "Talent Availability",
-            "Notifications",
-            "Management & Analytics",
-          ],
-        },
-        {
-          id: "accounting",
-          label: "Accounting & Invoicing",
-          icon: CreditCard,
-          subItems: [
-            "Invoice Generation",
-            "Invoice Management",
-            "Payment Tracking",
-            "Talent Statements",
-            "Financial Reports",
-            "Expense Tracking",
-            "Connect Bank",
-          ],
-        },
-        {
-          id: "analytics",
-          label: "Analytics",
-          icon: BarChart2,
-          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-        },
-        {
-          id: "settings",
-          label: "Settings",
-          icon: Settings,
-          subItems: ["General Settings", "File Storage"],
-        },
-      ];
+          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          {
+            id: "roster",
+            label: "Roster",
+            icon: Users,
+            subItems: ["All Talent", "Performance Tiers"],
+          },
+          { id: "scouting", label: "Scouting", icon: Target },
+          { id: "client-crm", label: "Client CRM", icon: Building2 },
+          {
+            id: "bookings",
+            label: "Bookings",
+            icon: Calendar,
+            subItems: [
+              "Calendar & Schedule",
+              "Booking Requests",
+              "Client Database",
+              "Talent Availability",
+              "Notifications",
+              "Management & Analytics",
+            ],
+          },
+          {
+            id: "accounting",
+            label: "Accounting & Invoicing",
+            icon: CreditCard,
+            subItems: [
+              "Invoice Generation",
+              "Invoice Management",
+              "Payment Tracking",
+              "Talent Statements",
+              "Financial Reports",
+              "Expense Tracking",
+              "Connect Bank",
+            ],
+          },
+          {
+            id: "analytics",
+            label: "Analytics",
+            icon: BarChart2,
+            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+          },
+          {
+            id: "settings",
+            label: "Settings",
+            icon: Settings,
+            subItems: ["General Settings", "File Storage"],
+          },
+        ];
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
@@ -19158,14 +19170,16 @@ export default function AgencyDashboard() {
                     setSidebarOpen(false);
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
-                  ? "bg-indigo-50 text-indigo-700"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === item.id && !item.subItems
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                    }`}
+                  className={`w-5 h-5 ${
+                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
+                  }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.subItems && (
@@ -19185,10 +19199,11 @@ export default function AgencyDashboard() {
                         setTabAndSubTab(item.id, subItem);
                         setSidebarOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
-                        ? "text-indigo-700 bg-indigo-50 font-bold"
-                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                        }`}
+                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                        activeTab === item.id && activeSubTab === subItem
+                          ? "text-indigo-700 bg-indigo-50 font-bold"
+                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                      }`}
                     >
                       <span className="truncate">{subItem}</span>
                       {item.badges && item.badges[subItem] && (
@@ -19349,10 +19364,10 @@ export default function AgencyDashboard() {
                     {(dashboardData?.overview?.kyc_status === "approved" ||
                       dashboardData?.overview?.kyc_status === "verified" ||
                       dashboardData?.overview?.kyc_status === "active") && (
-                        <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0.5 text-xs font-bold gap-1 mt-2">
-                          <ShieldCheck className="w-3 h-3" /> Verified
-                        </Badge>
-                      )}
+                      <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0.5 text-xs font-bold gap-1 mt-2">
+                        <ShieldCheck className="w-3 h-3" /> Verified
+                      </Badge>
+                    )}
                   </div>
 
                   <div className="p-2">
