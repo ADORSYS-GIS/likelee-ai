@@ -27,6 +27,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::invoices::mark_sent),
         )
         .route(
+            "/api/invoices/:id/send-payment-reminder",
+            post(crate::invoices::send_payment_reminder),
+        )
+        .route(
             "/api/invoices/:id/mark-paid",
             post(crate::invoices::mark_paid),
         )
@@ -82,6 +86,31 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/agency/clients/:id/communications",
             get(crate::agencies::list_communications).post(crate::agencies::create_communication),
+        )
+        // Agency Storage (S3-backed via Supabase Storage)
+        .route(
+            "/api/agency/storage/usage",
+            get(crate::agencies::get_agency_storage_usage),
+        )
+        .route(
+            "/api/agency/storage/folders",
+            get(crate::agencies::list_agency_folders).post(crate::agencies::create_agency_folder),
+        )
+        .route(
+            "/api/agency/storage/files",
+            get(crate::agencies::list_agency_files),
+        )
+        .route(
+            "/api/agency/storage/files/upload",
+            post(crate::agencies::upload_agency_storage_file),
+        )
+        .route(
+            "/api/agency/storage/files/:file_id",
+            delete(crate::agencies::delete_agency_storage_file),
+        )
+        .route(
+            "/api/agency/storage/files/:file_id/signed-url",
+            get(crate::agencies::get_agency_storage_file_signed_url),
         )
         .route(
             "/api/agency/files/upload",

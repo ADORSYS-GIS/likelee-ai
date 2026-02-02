@@ -17422,16 +17422,98 @@ export default function AgencyDashboard() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
+  const getDefaultSubTab = (tab: string, mode: "AI" | "IRL") => {
+    if (tab === "settings") return "General Settings";
+    if (tab === "roster") return "All Talent";
+    if (tab === "analytics") return "Analytics Dashboard";
+    if (tab === "accounting") return "Connect Bank";
+    if (tab === "protection") return mode === "AI" ? "Protect & Usage" : "";
+    if (tab === "licensing") return mode === "AI" ? "Licensing Requests" : "";
+    if (tab === "bookings") return "Calendar & Schedule";
+    return "";
+  };
+
+  const getValidTabs = (mode: "AI" | "IRL") => {
+    return new Set(
+      mode === "AI"
+        ? [
+            "dashboard",
+            "roster",
+            "licensing",
+            "protection",
+            "analytics",
+            "accounting",
+            "settings",
+            "file-storage",
+          ]
+        : [
+            "dashboard",
+            "roster",
+            "scouting",
+            "client-crm",
+            "bookings",
+            "accounting",
+            "analytics",
+            "settings",
+            "file-storage",
+          ],
+    );
+  };
+
+  const getValidSubTabs = (tab: string, mode: "AI" | "IRL") => {
+    switch (tab) {
+      case "settings":
+        return new Set(["General Settings", "File Storage"]);
+      case "roster":
+        return new Set(["All Talent", "Performance Tiers"]);
+      case "analytics":
+        return new Set(["Analytics Dashboard", "Royalties & Payouts"]);
+      case "accounting":
+        return new Set([
+          "Connect Bank",
+          "Invoice Generation",
+          "Invoice Management",
+          "Payment Tracking",
+          "Talent Statements",
+          "Financial Reports",
+          "Expense Tracking",
+        ]);
+      case "licensing":
+        return new Set([
+          "Licensing Requests",
+          "Active Licenses",
+          "License Templates",
+        ]);
+      case "protection":
+        return new Set(["Protect & Usage", "Compliance Hub"]);
+      case "bookings":
+        return new Set([
+          "Calendar & Schedule",
+          "Booking Requests",
+          "Client Database",
+          "Talent Availability",
+          "Notifications",
+          "Management & Analytics",
+        ]);
+      default:
+        return null;
+    }
+  };
+
   // Initialize state from URL params
   const [agencyMode, setAgencyModeState] = useState<"AI" | "IRL">(
     (searchParams.get("mode") as "AI" | "IRL") || "AI",
   );
-  const [activeTab, setActiveTabState] = useState(
-    searchParams.get("tab") || "dashboard",
-  );
-  const [activeSubTab, setActiveSubTab] = useState(
-    searchParams.get("subTab") || "All Talent",
-  );
+  const [activeTab, setActiveTabState] = useState(() => {
+    return searchParams.get("tab") || "dashboard";
+  });
+  const [activeSubTab, setActiveSubTabState] = useState(() => {
+    const tab = searchParams.get("tab") || "dashboard";
+    const mode = ((searchParams.get("mode") as "AI" | "IRL") || "AI") as
+      | "AI"
+      | "IRL";
+    return searchParams.get("subTab") || getDefaultSubTab(tab, mode);
+  });
   const [activeScoutingTab, setActiveScoutingTabState] = useState(
     searchParams.get("scoutingTab") || "Prospect Pipeline",
   );
@@ -17606,6 +17688,16 @@ export default function AgencyDashboard() {
     });
   };
 
+  const setActiveSubTab = (subTab: string) => {
+    setActiveSubTabState(subTab);
+    setSearchParams((prev) => {
+      const newParams = new URLSearchParams(prev);
+      if (subTab) newParams.set("subTab", subTab);
+      else newParams.delete("subTab");
+      return newParams;
+    });
+  };
+
   const setActiveScoutingTab = (tab: string) => {
     setActiveScoutingTabState(tab);
     setSearchParams((prev) => {
@@ -17683,6 +17775,26 @@ export default function AgencyDashboard() {
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
   };
+
+  // Prevent blank pages on refresh: validate tab/subTab combos and fall back to Dashboard.
+  useEffect(() => {
+    const validTabs = getValidTabs(agencyMode);
+    if (!validTabs.has(activeTab)) {
+      setActiveTab("dashboard");
+      setActiveSubTab("");
+      return;
+    }
+
+    const validSubTabs = getValidSubTabs(activeTab, agencyMode);
+    if (validSubTabs) {
+      if (!validSubTabs.has(activeSubTab)) {
+        setActiveSubTab(getDefaultSubTab(activeTab, agencyMode));
+      }
+    } else {
+      if (activeSubTab) setActiveSubTab("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agencyMode, activeTab]);
 
   useEffect(() => {
     if (activeTab !== "accounting") return;

@@ -8,6 +8,60 @@ use serde_json::json;
 
 use crate::config::AppState;
 
+pub fn send_plain_text_email(
+    state: &AppState,
+    to: &str,
+    subject: &str,
+    body: &str,
+    reply_to: Option<&str>,
+) -> Result<(), &'static str> {
+    if state.smtp_host.is_empty() || state.smtp_user.is_empty() {
+        return Err("smtp_not_configured");
+    }
+
+    let from_addr = state.email_from.parse().map_err(|_| "invalid_from_address")?;
+    let to_addr = to.parse().map_err(|_| "invalid_to_address")?;
+
+    let mut builder = Message::builder().from(from_addr).to(to_addr).subject(subject);
+    if let Some(rp) = reply_to {
+        if let Ok(addr) = rp.parse() {
+            builder = builder.reply_to(addr);
+        }
+    }
+
+    let email = builder
+        .singlepart(SinglePart::plain(body.to_string()))
+        .map_err(|_| "build_message_failed")?;
+
+    let creds = lettre::transport::smtp::authentication::Credentials::new(
+        state.smtp_user.clone(),
+        state.smtp_password.clone(),
+    );
+
+    let mailer = if state.smtp_port == 465 {
+        let tls = TlsParameters::new(state.smtp_host.clone()).map_err(|_| "tls_parameters_init_failed")?;
+        SmtpTransport::relay(&state.smtp_host)
+            .map_err(|_| "smtp_relay_init_failed")?
+            .port(465)
+            .tls(Tls::Wrapper(tls))
+            .credentials(creds)
+            .build()
+    } else {
+        let relay = SmtpTransport::starttls_relay(&state.smtp_host)
+            .or_else(|_| SmtpTransport::relay(&state.smtp_host))
+            .map_err(|_| "smtp_relay_init_failed")?;
+        relay.port(state.smtp_port).credentials(creds).build()
+    };
+
+    match mailer.send(&email) {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            tracing::error!("smtp_send_failed: {}", e);
+            Err("smtp_send_failed")
+        }
+    }
+}
+
 #[derive(Deserialize)]
 pub struct SendEmailRequest {
     pub to: String,
@@ -44,6 +98,32 @@ pub async fn send_email(
 
     tracing::info!("send_email dest={}", dest);
 
+    let mut multipart = MultiPart::mixed().singlepart(SinglePart::plain(payload.body.clone()));
+    if let Some(atts) = payload.attachments.as_ref() {
+        for att in atts {
+            let bytes = match general_purpose::STANDARD.decode(att.content_base64.trim()) {
+                Ok(b) => b,
+                Err(_) => {
+                    return (
+                        StatusCode::BAD_REQUEST,
+                        Json(json!({"status":"error","error":"invalid_attachment_base64"})),
+                    )
+                }
+            };
+            let ct = match att.content_type.parse() {
+                Ok(v) => v,
+                Err(_) => {
+                    return (
+                        StatusCode::BAD_REQUEST,
+                        Json(json!({"status":"error","error":"invalid_attachment_content_type"})),
+                    )
+                }
+            };
+            multipart =
+                multipart.singlepart(LettreAttachment::new(att.filename.clone()).body(bytes, ct));
+        }
+    }
+
     // SMTP is required (lettre-only). If not configured, return 500.
     if state.smtp_host.is_empty() || state.smtp_user.is_empty() {
         return (
@@ -70,32 +150,6 @@ pub async fn send_email(
             )
         }
     };
-
-    let mut multipart = MultiPart::mixed().singlepart(SinglePart::plain(payload.body.clone()));
-    if let Some(atts) = payload.attachments.as_ref() {
-        for att in atts {
-            let bytes = match general_purpose::STANDARD.decode(att.content_base64.trim()) {
-                Ok(b) => b,
-                Err(_) => {
-                    return (
-                        StatusCode::BAD_REQUEST,
-                        Json(json!({"status":"error","error":"invalid_attachment_base64"})),
-                    )
-                }
-            };
-            let ct = match att.content_type.parse() {
-                Ok(v) => v,
-                Err(_) => {
-                    return (
-                        StatusCode::BAD_REQUEST,
-                        Json(json!({"status":"error","error":"invalid_attachment_content_type"})),
-                    )
-                }
-            };
-            multipart =
-                multipart.singlepart(LettreAttachment::new(att.filename.clone()).body(bytes, ct));
-        }
-    }
 
     let email = match Message::builder()
         .from(from_addr)
@@ -159,9 +213,12 @@ pub async fn send_email(
 
     match mailer.send(&email) {
         Ok(_) => (StatusCode::OK, Json(json!({"status":"ok"}))),
-        Err(e) => (
-            StatusCode::BAD_GATEWAY,
-            Json(json!({"status":"error","error":"smtp_send_failed","detail": e.to_string()})),
-        ),
+        Err(e) => {
+            tracing::error!("smtp_send_failed: {}", e);
+            (
+                StatusCode::BAD_GATEWAY,
+                Json(json!({"status":"error","error":"smtp_send_failed"})),
+            )
+        }
     }
 }

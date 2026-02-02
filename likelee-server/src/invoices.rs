@@ -1,4 +1,9 @@
-use crate::{auth::AuthUser, config::AppState};
+use crate::{
+    auth::AuthUser,
+    config::AppState,
+    email,
+    email_templates::{load_active_email_template, render_placeholders},
+};
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
@@ -48,7 +53,126 @@ pub async fn list(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
     Ok(Json(v))
+}
+
+pub async fn send_payment_reminder(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(id): Path<String>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let current = ensure_invoice_owned(&state, &user, &id).await?;
+
+    let status = current
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("draft");
+    if status != "sent" {
+        return Err((
+            StatusCode::CONFLICT,
+            "Only sent invoices can be reminded".to_string(),
+        ));
+    }
+
+    let dest = current
+        .get("bill_to_email")
+        .and_then(|x| x.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if dest.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "missing_destination".to_string()));
+    }
+
+    let invoice_number = current
+        .get("invoice_number")
+        .and_then(|x| x.as_str())
+        .unwrap_or("")
+        .to_string();
+    let invoice_total_cents = current
+        .get("total_cents")
+        .and_then(|x| x.as_i64())
+        .unwrap_or(0);
+    let invoice_total = format!("${:.2}", (invoice_total_cents as f64) / 100.0);
+    let due_date = current
+        .get("due_date")
+        .and_then(|x| x.as_str())
+        .unwrap_or("")
+        .to_string();
+    let client_name = current
+        .get("bill_to_company")
+        .and_then(|x| x.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    let mut agency_email: Option<String> = None;
+    let mut agency_name: Option<String> = None;
+    let resp = state
+        .pg
+        .from("agencies")
+        .select("email,agency_name")
+        .eq("id", &user.id)
+        .single()
+        .execute()
+        .await
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "db_error".to_string()))?;
+    let status = resp.status();
+    let txt = resp
+        .text()
+        .await
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "db_error".to_string()))?;
+    if status.is_success() {
+        if let Ok(v) = serde_json::from_str::<serde_json::Value>(&txt) {
+            agency_email = v
+                .get("email")
+                .and_then(|x| x.as_str())
+                .map(|s| s.to_string());
+            agency_name = v
+                .get("agency_name")
+                .and_then(|x| x.as_str())
+                .map(|s| s.to_string());
+        }
+    }
+
+    let fallback_subject = "Payment Reminder - Invoice {invoice_number}".to_string();
+    let fallback_body =
+        "Dear {client_name},\n\nThis is a friendly reminder that invoice {invoice_number} for {invoice_total} is due on {due_date}.\n\nIf you have already made the payment, please disregard this message.\n\nThank you,\n{agency_name}".to_string();
+
+    let vars: Vec<(&str, String)> = vec![
+        ("client_name", client_name),
+        ("invoice_number", invoice_number),
+        ("invoice_total", invoice_total),
+        ("due_date", due_date),
+        (
+            "agency_name",
+            agency_name.clone().unwrap_or_else(|| "".to_string()),
+        ),
+    ];
+
+    let (subject, body) = match load_active_email_template(&state, &user.id, "payment_reminder")
+        .await
+    {
+        Ok(Some(tpl)) => (
+            render_placeholders(&tpl.subject, &vars),
+            render_placeholders(&tpl.body, &vars),
+        ),
+        _ => (
+            render_placeholders(&fallback_subject, &vars),
+            render_placeholders(&fallback_body, &vars),
+        ),
+    };
+
+    email::send_plain_text_email(
+        &state,
+        &dest,
+        &subject,
+        &body,
+        agency_email.as_deref(),
+    )
+    .map_err(|code| (StatusCode::BAD_GATEWAY, code.to_string()))?;
+
+    Ok(Json(json!({"status":"ok"})))
 }
 
 #[derive(Debug, Deserialize)]
@@ -218,11 +342,12 @@ async fn get_client_snapshot(
     let text = resp
         .text()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "db_error".to_string()))?;
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err((code, text));
+        tracing::warn!("mark_sent_db_error: {}", text);
+        return Err((code, "db_error".to_string()));
     }
 
     let v: serde_json::Value = serde_json::from_str(&text)
@@ -250,11 +375,12 @@ async fn get_booking(
     let text = resp
         .text()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "db_error".to_string()))?;
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err((code, text));
+        tracing::warn!("mark_sent_db_error: {}", text);
+        return Err((code, "db_error".to_string()));
     }
 
     let v: serde_json::Value = serde_json::from_str(&text)
@@ -282,11 +408,12 @@ async fn ensure_invoice_owned(
     let text = resp
         .text()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "db_error".to_string()))?;
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err((code, text));
+        tracing::warn!("mark_sent_db_error: {}", text);
+        return Err((code, "db_error".to_string()));
     }
 
     let v: serde_json::Value = serde_json::from_str(&text)
@@ -831,7 +958,7 @@ pub async fn update(
         .eq("agency_id", &user.id)
         .execute()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "db_error".to_string()))?;
 
     let status = resp.status();
     let text = resp
@@ -880,7 +1007,7 @@ pub async fn mark_sent(
         .eq("agency_id", &user.id)
         .execute()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "db_error".to_string()))?;
 
     let status = resp.status();
     let text = resp
@@ -895,6 +1022,114 @@ pub async fn mark_sent(
 
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    // Best-effort: send invoice email to client using agency template (if configured)
+    // Do not fail mark-sent if email sending fails.
+    {
+        let dest = current
+            .get("bill_to_email")
+            .and_then(|x| x.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if !dest.is_empty() {
+            let invoice_number = current
+                .get("invoice_number")
+                .and_then(|x| x.as_str())
+                .unwrap_or("")
+                .to_string();
+            let invoice_total_cents = current
+                .get("total_cents")
+                .and_then(|x| x.as_i64())
+                .unwrap_or(0);
+            let invoice_total = format!("${:.2}", (invoice_total_cents as f64) / 100.0);
+            let payment_terms = current
+                .get("payment_terms")
+                .and_then(|x| x.as_str())
+                .unwrap_or("")
+                .to_string();
+            let due_date = current
+                .get("due_date")
+                .and_then(|x| x.as_str())
+                .unwrap_or("")
+                .to_string();
+            let client_name = current
+                .get("bill_to_company")
+                .and_then(|x| x.as_str())
+                .unwrap_or("")
+                .to_string();
+
+            let mut agency_email: Option<String> = None;
+            let mut agency_name: Option<String> = None;
+            if let Ok(resp) = state
+                .pg
+                .from("agencies")
+                .select("email,agency_name")
+                .eq("id", &user.id)
+                .single()
+                .execute()
+                .await
+            {
+                if resp.status().is_success() {
+                    if let Ok(txt) = resp.text().await {
+                        if let Ok(v) = serde_json::from_str::<serde_json::Value>(&txt) {
+                            agency_email = v
+                                .get("email")
+                                .and_then(|x| x.as_str())
+                                .map(|s| s.to_string());
+                            agency_name = v
+                                .get("agency_name")
+                                .and_then(|x| x.as_str())
+                                .map(|s| s.to_string());
+                        }
+                    }
+                }
+            }
+
+            let fallback_subject = format!(
+                "Invoice {invoice_number} from {agency_name}",
+                invoice_number = invoice_number,
+                agency_name = agency_name.clone().unwrap_or_else(|| "".to_string())
+            );
+            let fallback_body =
+                "Dear {client_name},\n\nPlease find attached invoice {invoice_number} for the amount of {invoice_total}.\n\nPayment terms: {payment_terms}\n\nThank you for your business.\n\n{agency_name}".to_string();
+
+            let vars: Vec<(&str, String)> = vec![
+                ("client_name", client_name),
+                ("invoice_number", invoice_number),
+                ("invoice_total", invoice_total),
+                ("payment_terms", payment_terms),
+                ("due_date", due_date),
+                (
+                    "agency_name",
+                    agency_name.clone().unwrap_or_else(|| "".to_string()),
+                ),
+            ];
+
+            let (subject, body) = match load_active_email_template(&state, &user.id, "invoice_email")
+                .await
+            {
+                Ok(Some(tpl)) => (
+                    render_placeholders(&tpl.subject, &vars),
+                    render_placeholders(&tpl.body, &vars),
+                ),
+                _ => (
+                    render_placeholders(&fallback_subject, &vars),
+                    render_placeholders(&fallback_body, &vars),
+                ),
+            };
+
+            if let Err(code) = email::send_plain_text_email(
+                &state,
+                &dest,
+                &subject,
+                &body,
+                agency_email.as_deref(),
+            ) {
+                tracing::warn!("invoice_email_send_failed code={}", code);
+            }
+        }
+    }
     Ok(Json(v))
 }
 

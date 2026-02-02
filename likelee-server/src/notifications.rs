@@ -3,12 +3,15 @@ use axum::{
     http::StatusCode,
     Json,
 };
-use lettre::transport::smtp::client::{Tls, TlsParameters};
-use lettre::{message::SinglePart, Message, SmtpTransport, Transport};
 use serde::Deserialize;
 use serde_json::json;
 
-use crate::{auth::AuthUser, config::AppState};
+use crate::{
+    auth::AuthUser,
+    config::AppState,
+    email,
+    email_templates::{load_active_email_template, render_placeholders},
+};
 
 #[derive(Deserialize)]
 pub struct BookingCreatedEmailRequest {
@@ -97,8 +100,8 @@ pub async fn booking_created_email(
     let rate_cents = b.get("rate_cents").and_then(|v| v.as_i64()).unwrap_or(0);
     let rate_type = b.get("rate_type").and_then(|v| v.as_str()).unwrap_or("");
 
-    // Build subject/body using Test Notifications email style (adapted)
-    let subject = format!("New Booking: {} on {}", client_name, date_str);
+    // Defaults (fallback if no active template)
+    let fallback_subject = format!("New Booking: {} on {}", client_name, date_str);
     let mut lines: Vec<String> = vec![];
     lines.push(format!("Hi {},", talent_name));
     lines.push(String::new());
@@ -117,15 +120,20 @@ pub async fn booking_created_email(
     if !location.is_empty() {
         lines.push(format!("Location: {}", location));
     }
-    if rate_cents > 0 {
+    let rate_str = if rate_cents > 0 {
         let dollars = (rate_cents as f64) / 100.0;
         if !rate_type.is_empty() {
-            lines.push(format!("Rate: ${:.2} {}", dollars, rate_type));
+            format!("${:.2} {}", dollars, rate_type)
         } else {
-            lines.push(format!("Rate: ${:.2}", dollars));
+            format!("${:.2}", dollars)
         }
+    } else {
+        String::new()
+    };
+    if !rate_str.is_empty() {
+        lines.push(format!("Rate: {}", rate_str));
     }
-    let body = lines.join("\n");
+    let fallback_body = lines.join("\n");
 
     // Resolve destination: talent email from DB
     // Try creators by id, else fallback by agency_users -> creator_id chain, else by full name match (best-effort)
@@ -250,10 +258,11 @@ pub async fn booking_created_email(
 
     // Resolve agency email to use as Reply-To if available
     let mut agency_email: Option<String> = None;
+    let mut agency_name: Option<String> = None;
     if let Ok(resp) = state
         .pg
         .from("agencies")
-        .select("email")
+        .select("email,agency_name")
         .eq("id", &user.id)
         .single()
         .execute()
@@ -266,80 +275,45 @@ pub async fn booking_created_email(
                         .get("email")
                         .and_then(|x| x.as_str())
                         .map(|s| s.to_string());
+                    agency_name = v
+                        .get("agency_name")
+                        .and_then(|x| x.as_str())
+                        .map(|s| s.to_string());
                 }
             }
         }
     }
-    // Validate SMTP config
-    if state.smtp_host.is_empty() || state.smtp_user.is_empty() {
-        return Err((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "smtp_not_configured".into(),
-        ));
-    }
 
-    // Build and send email
-    let from_addr = state.email_from.parse().map_err(|_| {
+    let vars: Vec<(&str, String)> = vec![
+        ("talent_name", talent_name.to_string()),
+        ("client_name", client_name.to_string()),
+        ("booking_date", date_str.to_string()),
+        ("call_time", call_time.to_string()),
+        ("location", location.to_string()),
+        ("rate", rate_str.clone()),
         (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "invalid_from_address".into(),
-        )
-    })?;
-    let to_addr = dest
-        .parse()
-        .map_err(|_| (StatusCode::BAD_REQUEST, "invalid_to_address".into()))?;
-    let mut builder = Message::builder()
-        .from(from_addr)
-        .to(to_addr)
-        .subject(subject.clone());
-    if let Some(rp) = agency_email.as_ref() {
-        if let Ok(addr) = rp.parse() {
-            builder = builder.reply_to(addr);
-        }
-    }
-    let email = builder
-        .singlepart(SinglePart::plain(body.clone()))
-        .map_err(|_| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "build_message_failed".into(),
-            )
-        })?;
+            "agency_name",
+            agency_name.clone().unwrap_or_else(|| "".to_string()),
+        ),
+    ];
 
-    let creds = lettre::transport::smtp::authentication::Credentials::new(
-        state.smtp_user.clone(),
-        state.smtp_password.clone(),
-    );
-    let mailer = if state.smtp_port == 465 {
-        let tls = TlsParameters::new(state.smtp_host.clone()).map_err(|_| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "tls_parameters_init_failed".into(),
-            )
-        })?;
-        SmtpTransport::relay(&state.smtp_host)
-            .map_err(|_| {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "smtp_relay_init_failed".into(),
-                )
-            })?
-            .port(465)
-            .tls(Tls::Wrapper(tls))
-            .credentials(creds)
-            .build()
-    } else {
-        let relay = SmtpTransport::starttls_relay(&state.smtp_host)
-            .or_else(|_| SmtpTransport::relay(&state.smtp_host))
-            .map_err(|_| {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "smtp_relay_init_failed".into(),
-                )
-            })?;
-        relay.port(state.smtp_port).credentials(creds).build()
+    let (subject, body) = match load_active_email_template(&state, &user.id, "booking_confirmation")
+        .await
+    {
+        Ok(Some(tpl)) => (
+            render_placeholders(&tpl.subject, &vars),
+            render_placeholders(&tpl.body, &vars),
+        ),
+        _ => (fallback_subject, fallback_body),
     };
-    let send_res = mailer.send(&email);
+
+    let send_res = email::send_plain_text_email(
+        &state,
+        &dest,
+        &subject,
+        &body,
+        agency_email.as_deref(),
+    );
 
     // Log notification regardless of SMTP result (status success/error)
     let status_ok = send_res.is_ok();
@@ -362,6 +336,6 @@ pub async fn booking_created_email(
 
     match send_res {
         Ok(_) => Ok(Json(json!({"status":"ok"}))),
-        Err(e) => Err((StatusCode::BAD_GATEWAY, format!("smtp_send_failed: {}", e))),
+        Err(code) => Err((StatusCode::BAD_GATEWAY, code.to_string())),
     }
 }

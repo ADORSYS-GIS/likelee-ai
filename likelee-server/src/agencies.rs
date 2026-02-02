@@ -252,6 +252,590 @@ pub struct AgencyFileUploadResponse {
     pub client_id: Option<String>,
 }
 
+#[derive(Serialize)]
+pub struct StorageUsageOut {
+    pub used_bytes: i64,
+    pub limit_bytes: i64,
+}
+
+#[derive(Deserialize)]
+pub struct CreateAgencyFolderIn {
+    pub name: String,
+    pub parent_id: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub struct ListAgencyFilesQuery {
+    pub folder_id: Option<String>,
+    pub limit: Option<u32>,
+    pub offset: Option<u32>,
+}
+
+#[derive(Deserialize)]
+pub struct ListAgencyFoldersQuery {
+    pub limit: Option<u32>,
+    pub offset: Option<u32>,
+}
+
+async fn ensure_storage_settings_row(
+    state: &AppState,
+    agency_id: &str,
+) -> Result<i64, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("agency_storage_settings")
+        .select("storage_limit_bytes")
+        .eq("agency_id", agency_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        let code =
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        return Err((code, text));
+    }
+
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if let Some(limit) = v
+        .as_array()
+        .and_then(|a| a.first())
+        .and_then(|o| o.get("storage_limit_bytes"))
+        .and_then(|x| x.as_i64())
+    {
+        return Ok(limit);
+    }
+
+    // Insert default row (10GB default at DB level)
+    let insert = serde_json::json!({
+        "agency_id": agency_id,
+    });
+    let ins = state
+        .pg
+        .from("agency_storage_settings")
+        .insert(insert.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = ins.status();
+    let text = ins
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        let code =
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        return Err((code, text));
+    }
+
+    // Fetch again to return limit
+    let resp2 = state
+        .pg
+        .from("agency_storage_settings")
+        .select("storage_limit_bytes")
+        .eq("agency_id", agency_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status2 = resp2.status();
+    let text2 = resp2
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status2.is_success() {
+        let code =
+            StatusCode::from_u16(status2.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        return Err((code, text2));
+    }
+    let v2: serde_json::Value = serde_json::from_str(&text2)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let limit = v2
+        .as_array()
+        .and_then(|a| a.first())
+        .and_then(|o| o.get("storage_limit_bytes"))
+        .and_then(|x| x.as_i64())
+        .unwrap_or(10_737_418_240);
+    Ok(limit)
+}
+
+async fn get_agency_used_storage_bytes(
+    state: &AppState,
+    agency_id: &str,
+) -> Result<i64, (StatusCode, String)> {
+    // Avoid PostgREST aggregates (may be disabled depending on Supabase config).
+    // Sum in Rust instead.
+    let resp = state
+        .pg
+        .from("agency_files")
+        .select("size_bytes")
+        .eq("agency_id", agency_id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        let code =
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        return Err((code, text));
+    }
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let used = v
+        .as_array()
+        .map(|rows| {
+            rows.iter()
+                .map(|r| r.get("size_bytes").and_then(|x| x.as_i64()).unwrap_or(0))
+                .sum::<i64>()
+        })
+        .unwrap_or(0);
+    Ok(used)
+}
+
+pub async fn get_agency_storage_usage(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<StorageUsageOut>, (StatusCode, String)> {
+    let limit = ensure_storage_settings_row(&state, &user.id).await?;
+    let used = get_agency_used_storage_bytes(&state, &user.id).await?;
+    Ok(Json(StorageUsageOut {
+        used_bytes: used,
+        limit_bytes: limit,
+    }))
+}
+
+pub async fn list_agency_folders(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Query(q): Query<ListAgencyFoldersQuery>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let mut req = state
+        .pg
+        .from("agency_folders")
+        .select("id,agency_id,parent_id,name,created_at")
+        .eq("agency_id", &user.id)
+        .order("created_at.asc");
+    if q.limit.is_some() || q.offset.is_some() {
+        let limit = q.limit.unwrap_or(50) as usize;
+        let offset = q.offset.unwrap_or(0) as usize;
+        let to = offset.saturating_add(limit.saturating_sub(1));
+        req = req.range(offset, to);
+    }
+    let resp = req
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        let code =
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        return Err((code, text));
+    }
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(v))
+}
+
+pub async fn create_agency_folder(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(input): Json<CreateAgencyFolderIn>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let body = serde_json::json!({
+        "agency_id": user.id,
+        "parent_id": input.parent_id,
+        "name": input.name,
+    });
+    let resp = state
+        .pg
+        .from("agency_folders")
+        .insert(body.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        let code =
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        return Err((code, text));
+    }
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(v))
+}
+
+pub async fn list_agency_files(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Query(q): Query<ListAgencyFilesQuery>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let mut req = state
+        .pg
+        .from("agency_files")
+        .select("id,file_name,storage_bucket,storage_path,public_url,folder_id,size_bytes,mime_type,created_at")
+        .eq("agency_id", &user.id)
+        .order("created_at.desc");
+    if let Some(folder_id) = q.folder_id.as_ref().filter(|s| !s.is_empty()) {
+        req = req.eq("folder_id", folder_id);
+    }
+    if q.limit.is_some() || q.offset.is_some() {
+        let limit = q.limit.unwrap_or(50) as usize;
+        let offset = q.offset.unwrap_or(0) as usize;
+        let to = offset.saturating_add(limit.saturating_sub(1));
+        req = req.range(offset, to);
+    }
+    let resp = req
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        let code =
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        return Err((code, text));
+    }
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(v))
+}
+
+pub async fn get_agency_storage_file_signed_url(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(file_id): Path<String>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("agency_files")
+        .select("storage_bucket,storage_path,agency_id")
+        .eq("id", &file_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let arr: serde_json::Value = serde_json::from_str(&text).unwrap_or(serde_json::json!([]));
+    let row = arr
+        .as_array()
+        .and_then(|a| a.first())
+        .ok_or((StatusCode::NOT_FOUND, "file not found".to_string()))?;
+
+    let agency_id = row
+        .get("agency_id")
+        .and_then(|v| v.as_str())
+        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "missing agency_id".into()))?;
+    if agency_id != user.id {
+        return Err((StatusCode::FORBIDDEN, "Access denied".into()));
+    }
+    let bucket = row
+        .get("storage_bucket")
+        .and_then(|v| v.as_str())
+        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "missing storage_bucket".into()))?;
+    let path = row
+        .get("storage_path")
+        .and_then(|v| v.as_str())
+        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "missing storage_path".into()))?;
+
+    let url = format!(
+        "{}/storage/v1/object/sign/{}/{}",
+        state.supabase_url, bucket, path
+    );
+    let body = serde_json::json!({ "expiresIn": 3600 });
+    let http = reqwest::Client::new();
+    let sign_resp = http
+        .post(&url)
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
+        .header("apikey", state.supabase_service_key.clone())
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    if !sign_resp.status().is_success() {
+        let msg = sign_resp.text().await.unwrap_or_default();
+        return Err((StatusCode::BAD_GATEWAY, format!("sign url failed: {msg}")));
+    }
+
+    let signed_json: serde_json::Value = sign_resp
+        .json()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    let signed_path = signed_json
+        .get("signedURL")
+        .and_then(|v| v.as_str())
+        .ok_or((StatusCode::BAD_GATEWAY, "invalid sign response".into()))?;
+    let full_url = format!("{}/storage/v1{}", state.supabase_url, signed_path);
+    Ok(Json(serde_json::json!({ "url": full_url })))
+}
+
+pub async fn upload_agency_storage_file(
+    State(state): State<AppState>,
+    user: AuthUser,
+    mut multipart: Multipart,
+) -> Result<Json<AgencyFileUploadResponse>, (StatusCode, String)> {
+    let mut file_name = None;
+    let mut mime_type = None;
+    let mut folder_id: Option<String> = None;
+    let mut bytes: Vec<u8> = vec![];
+
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?
+    {
+        let name = field.name().unwrap_or("").to_string();
+        match name.as_str() {
+            "folder_id" => {
+                let txt = field
+                    .text()
+                    .await
+                    .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+                if !txt.trim().is_empty() {
+                    folder_id = Some(txt);
+                }
+            }
+            "file" => {
+                file_name = field.file_name().map(|s| s.to_string());
+                mime_type = field.content_type().map(|s| s.to_string());
+                let data = field
+                    .bytes()
+                    .await
+                    .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+                bytes = data.to_vec();
+            }
+            _ => {}
+        }
+    }
+
+    if bytes.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "missing file".into()));
+    }
+
+    // Quota enforcement
+    let limit = ensure_storage_settings_row(&state, &user.id).await?;
+    let used = get_agency_used_storage_bytes(&state, &user.id).await?;
+    let new_size = bytes.len() as i64;
+    if used + new_size > limit {
+        return Err((StatusCode::PAYLOAD_TOO_LARGE, "storage_quota_exceeded".into()));
+    }
+
+    let fname = file_name.unwrap_or_else(|| "upload.bin".to_string());
+    let sanitized = fname
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect::<String>();
+
+    let bucket = state.supabase_bucket_private.clone();
+    let folder_segment = folder_id.clone().unwrap_or_else(|| "root".to_string());
+    let path = format!(
+        "agencies/{}/storage/{}/{}_{}",
+        user.id,
+        folder_segment,
+        chrono::Utc::now().timestamp_millis(),
+        sanitized
+    );
+
+    let storage_url = format!(
+        "{}/storage/v1/object/{}/{}",
+        state.supabase_url, bucket, path
+    );
+    let http = reqwest::Client::new();
+    let mut req = http
+        .post(&storage_url)
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
+        .header("apikey", state.supabase_service_key.clone());
+    if let Some(ct) = mime_type.as_ref().filter(|s| !s.is_empty()) {
+        req = req.header("content-type", ct.clone());
+    }
+    let up = req
+        .body(bytes)
+        .send()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    if !up.status().is_success() {
+        let msg = up.text().await.unwrap_or_default();
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            format!("storage upload failed: {msg}"),
+        ));
+    }
+
+    let public_url = None;
+    let insert = serde_json::json!({
+        "agency_id": user.id,
+        "file_name": fname,
+        "storage_bucket": bucket,
+        "storage_path": path,
+        "public_url": public_url,
+        "folder_id": folder_id,
+        "size_bytes": new_size,
+        "mime_type": mime_type,
+    });
+    let resp = state
+        .pg
+        .from("agency_files")
+        .insert(insert.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let txt = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let arr: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+    let rec = arr
+        .first()
+        .cloned()
+        .unwrap_or(serde_json::json!({"id": ""}));
+    let id = rec
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    Ok(Json(AgencyFileUploadResponse {
+        id,
+        file_name: fname,
+        public_url,
+        storage_bucket: state.supabase_bucket_private.clone(),
+        storage_path: insert
+            .get("storage_path")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
+        client_id: None,
+    }))
+}
+
+pub async fn delete_agency_storage_file(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(file_id): Path<String>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    // 1) Fetch file and verify ownership
+    let resp = state
+        .pg
+        .from("agency_files")
+        .select("storage_bucket,storage_path,agency_id")
+        .eq("id", &file_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let arr: serde_json::Value = serde_json::from_str(&text).unwrap_or(serde_json::json!([]));
+    let row = arr
+        .as_array()
+        .and_then(|a| a.first())
+        .ok_or((StatusCode::NOT_FOUND, "file not found".to_string()))?;
+
+    let agency_id = row
+        .get("agency_id")
+        .and_then(|v| v.as_str())
+        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "missing agency_id".into()))?;
+    if agency_id != user.id {
+        return Err((StatusCode::FORBIDDEN, "Access denied".into()));
+    }
+    let bucket = row
+        .get("storage_bucket")
+        .and_then(|v| v.as_str())
+        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "missing storage_bucket".into()))?
+        .to_string();
+    let path = row
+        .get("storage_path")
+        .and_then(|v| v.as_str())
+        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "missing storage_path".into()))?
+        .to_string();
+
+    // 2) Delete object from Supabase Storage
+    let storage_url = format!(
+        "{}/storage/v1/object/{}/{}",
+        state.supabase_url, bucket, path
+    );
+    let http = reqwest::Client::new();
+    let del = http
+        .delete(&storage_url)
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
+        .header("apikey", state.supabase_service_key.clone())
+        .send()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    if !del.status().is_success() {
+        let msg = del.text().await.unwrap_or_default();
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            format!("storage delete failed: {msg}"),
+        ));
+    }
+
+    // 3) Delete metadata row
+    let resp = state
+        .pg
+        .from("agency_files")
+        .eq("id", &file_id)
+        .delete()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        let code =
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        return Err((code, text));
+    }
+
+    Ok(Json(serde_json::json!({ "ok": true })))
+}
+
 // Upload an agency file (contracts, call sheets, references) to Supabase Storage and record it.
 pub async fn upload_agency_file(
     State(state): State<AppState>,

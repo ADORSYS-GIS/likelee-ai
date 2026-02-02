@@ -10,6 +10,7 @@ pub mod creator_rates;
 pub mod creators;
 pub mod dashboard;
 pub mod email;
+pub mod email_templates;
 pub mod expenses;
 pub mod face_profiles;
 pub mod health;
