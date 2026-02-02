@@ -36,12 +36,7 @@ export function PublicPackageView() {
     });
 
     const interactionMutation = useMutation({
-        mutationFn: (data: any) => packageApi.createInteraction(token!, data),
-        onSuccess: () => {
-            setCommentOpen(false);
-            setComment("");
-            // Logic for success message
-        }
+        mutationFn: (data: any) => packageApi.createInteraction(token!, data)
     });
 
     if (isLoading) {
@@ -94,33 +89,38 @@ export function PublicPackageView() {
         });
     };
 
-    const submitInteractions = (talentId: string) => {
+    const submitInteractions = async (talentId: string) => {
+        const interactions: Promise<any>[] = [];
         const pending = pendingNotes[talentId];
+
         if (selectedFavorites.has(talentId)) {
-            interactionMutation.mutate({
-                talent_id: talentId,
-                type: 'favorite'
-            });
+            interactions.push(interactionMutation.mutateAsync({ talent_id: talentId, type: 'favorite' }));
         }
         if (selectedCallbacks.has(talentId)) {
-            interactionMutation.mutate({
-                talent_id: talentId,
-                type: 'callback'
-            });
+            interactions.push(interactionMutation.mutateAsync({ talent_id: talentId, type: 'callback' }));
         }
         if (pending?.comment) {
-            interactionMutation.mutate({
+            interactions.push(interactionMutation.mutateAsync({
                 talent_id: talentId,
                 type: 'comment',
                 content: pending.comment,
                 client_name: pending.clientName
-            });
+            }));
         }
-        setPendingNotes((prev) => {
-            const next = { ...prev };
-            delete next[talentId];
-            return next;
-        });
+
+        try {
+            await Promise.all(interactions);
+            // On success, clear local state and close modal
+            setSelectedFavorites(new Set());
+            setSelectedCallbacks(new Set());
+            setPendingNotes({});
+            setComment("");
+            setClientName("");
+            setSelectedItem(null);
+        } catch (error) {
+            console.error("Failed to save interactions:", error);
+            // Optionally, show an error message to the user
+        }
     };
 
     const hasUnsavedChanges =
@@ -429,10 +429,10 @@ export function PublicPackageView() {
                                     <Button
                                         className="w-full h-12 rounded-full font-black uppercase text-[11px] tracking-widest"
                                         style={{ backgroundColor: primaryColor }}
-                                        disabled={!hasUnsavedChanges}
+                                        disabled={!hasUnsavedChanges || interactionMutation.isPending}
                                         onClick={() => submitInteractions(selectedTalent.id)}
                                     >
-                                        Save Changes
+                                        {interactionMutation.isPending ? 'Saving...' : 'Save Changes'}
                                     </Button>
                                 </div>
                             </div>
