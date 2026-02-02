@@ -262,9 +262,9 @@ export function PublicPackageView() {
 
                                 <div className="grid grid-cols-3 gap-8 mb-12">
                                     {[
-                                        { label: 'Location', value: selectedTalent.city || 'NY / Global', icon: MapPin },
-                                        { label: 'Ethnicity', value: selectedTalent.race || 'Global', icon: Globe },
-                                        { label: 'Availability', value: 'Immediate', icon: Calendar },
+                                        { label: 'Location', value: selectedTalent.city, icon: MapPin },
+                                        { label: 'Ethnicity', value: selectedTalent.race_ethnicity, icon: Globe },
+                                        { label: 'Availability', value: selectedTalent.availability, icon: Calendar },
                                     ].map((stat, i) => (
                                         <div key={i} className="space-y-1">
                                             <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-1.5"><stat.icon className="w-3 h-3" /> {stat.label}</p>
@@ -276,7 +276,7 @@ export function PublicPackageView() {
                                 <div className="space-y-4 mb-12">
                                     <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">Internal Bio</h3>
                                     <p className="text-gray-500 font-medium leading-relaxed">
-                                        {selectedTalent.bio || "This premium talent selection represents our highest tier of visual creators. Suitable for broad campaign reaches and international branding."}
+                                        {selectedTalent.bio_notes || selectedTalent.bio}
                                     </p>
                                 </div>
 
