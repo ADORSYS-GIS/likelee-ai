@@ -21,6 +21,10 @@ export function PublicPackageView() {
     const { token } = useParams<{ token: string }>();
     const [selectedItem, setSelectedItem] = useState<any>(null);
     const selectedTalent = selectedItem?.talent;
+    const [selectedFavorites, setSelectedFavorites] = useState<Set<string>>(new Set());
+    const [selectedCallbacks, setSelectedCallbacks] = useState<Set<string>>(new Set());
+    const [pendingNotes, setPendingNotes] = useState<Record<string, { comment: string; clientName: string }>>({});
+    const [lockedComments, setLockedComments] = useState<Record<string, boolean>>({});
     const [commentOpen, setCommentOpen] = useState(false);
     const [comment, setComment] = useState("");
     const [clientName, setClientName] = useState("");
@@ -66,22 +70,73 @@ export function PublicPackageView() {
     const primaryColor = pkg.primary_color || "#6366F1";
     const secondaryColor = pkg.secondary_color || "#06B6D4";
 
-    const handleFavorite = (talentId: string) => {
-        interactionMutation.mutate({
-            talent_id: talentId,
-            type: 'favorite'
+    const toggleFavorite = (talentId: string) => {
+        setSelectedFavorites((prev) => {
+            const next = new Set(prev);
+            if (next.has(talentId)) {
+                next.delete(talentId);
+            } else {
+                next.add(talentId);
+            }
+            return next;
         });
     };
 
-    const submitComment = () => {
-        if (!comment || !selectedItem) return;
-        interactionMutation.mutate({
-            talent_id: selectedItem.talent.id,
-            type: 'comment',
-            content: comment,
-            client_name: clientName
+    const toggleCallback = (talentId: string) => {
+        setSelectedCallbacks((prev) => {
+            const next = new Set(prev);
+            if (next.has(talentId)) {
+                next.delete(talentId);
+            } else {
+                next.add(talentId);
+            }
+            return next;
         });
     };
+
+    const submitInteractions = (talentId: string) => {
+        const pending = pendingNotes[talentId];
+        if (selectedFavorites.has(talentId)) {
+            interactionMutation.mutate({
+                talent_id: talentId,
+                type: 'favorite'
+            });
+        }
+        if (selectedCallbacks.has(talentId)) {
+            interactionMutation.mutate({
+                talent_id: talentId,
+                type: 'callback'
+            });
+        }
+        if (pending?.comment) {
+            interactionMutation.mutate({
+                talent_id: talentId,
+                type: 'comment',
+                content: pending.comment,
+                client_name: pending.clientName
+            });
+        }
+        setPendingNotes((prev) => {
+            const next = { ...prev };
+            delete next[talentId];
+            return next;
+        });
+    };
+
+    const hasUnsavedChanges =
+        selectedFavorites.size > 0 ||
+        selectedCallbacks.size > 0 ||
+        Object.values(pendingNotes).some((note) => note.comment || note.clientName);
+
+    useEffect(() => {
+        const handler = (event: BeforeUnloadEvent) => {
+            if (!hasUnsavedChanges) return;
+            event.preventDefault();
+            event.returnValue = '';
+        };
+        window.addEventListener('beforeunload', handler);
+        return () => window.removeEventListener('beforeunload', handler);
+    }, [hasUnsavedChanges]);
 
     return (
         <div className="min-h-screen bg-white pb-20 overflow-x-hidden" style={{ "--selection-bg": primaryColor } as any}>
@@ -145,12 +200,20 @@ export function PublicPackageView() {
                                     </div>
                                 )}
 
-                                {/* Overlay Tags */}
-                                <div className="absolute top-6 left-6 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                    <Badge className="bg-white/90 backdrop-blur text-gray-900 hover:bg-white p-2">
-                                        <CheckCircle2 className="w-4 h-4" />
-                                    </Badge>
-                                </div>
+                                {/* Favorite Toggle */}
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleFavorite(talent.id);
+                                    }}
+                                    className="absolute top-6 left-6 flex items-center justify-center w-10 h-10 rounded-full bg-white/90 backdrop-blur shadow-sm"
+                                >
+                                    <Heart
+                                        className={`w-5 h-5 ${selectedFavorites.has(talent.id) ? 'text-red-500' : 'text-gray-500'}`}
+                                        fill={selectedFavorites.has(talent.id) ? 'currentColor' : 'none'}
+                                    />
+                                </button>
 
                                 <div className="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex justify-between items-end translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
                                     <div className="text-white">
@@ -161,32 +224,6 @@ export function PublicPackageView() {
                                 </div>
                             </div>
 
-                            <div className="flex justify-between items-center bg-gray-50 rounded-2xl p-4 border border-transparent hover:border-gray-200 transition-all">
-                                <div className="flex gap-4">
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); handleFavorite(talent.id); }}
-                                        className="flex flex-col items-center gap-1 group/btn"
-                                    >
-                                        <Heart className="w-5 h-5 text-gray-400 group-hover/btn:text-red-500 transition-colors" />
-                                        <span className="text-[8px] font-black uppercase tracking-widest text-gray-400">Save</span>
-                                    </button>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); setSelectedItem(item); setCommentOpen(true); }}
-                                        className="flex flex-col items-center gap-1 group/btn"
-                                    >
-                                        <MessageSquare className="w-5 h-5 text-gray-400 group-hover/btn:text-gray-900 transition-colors" />
-                                        <span className="text-[8px] font-black uppercase tracking-widest text-gray-400">Notes</span>
-                                    </button>
-                                </div>
-                                <Button
-                                    variant="link"
-                                    className="text-[10px] font-black uppercase tracking-widest p-0 h-auto"
-                                    style={{ color: primaryColor }}
-                                    onClick={() => setSelectedItem(item)}
-                                >
-                                    View Card
-                                </Button>
-                            </div>
                         </motion.div>
                     );
                 })}
@@ -247,15 +284,30 @@ export function PublicPackageView() {
                                         <Badge variant="secondary" className="bg-gray-100 font-black uppercase text-[10px]">{selectedTalent.categories?.[0]}</Badge>
                                         <h2 className="text-4xl font-black text-gray-900 uppercase tracking-tighter">{selectedTalent.stage_name || selectedTalent.full_legal_name || selectedTalent.full_name}</h2>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <Button variant="outline" size="icon" className="rounded-full border-2" style={{ borderColor: primaryColor, color: primaryColor }} onClick={() => handleFavorite(selectedTalent.id)}>
-                                            <Heart className="w-5 h-5" />
+                                    <div className="flex flex-wrap gap-2">
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="rounded-full border-2"
+                                            style={{ borderColor: primaryColor, color: primaryColor }}
+                                            onClick={() => toggleFavorite(selectedTalent.id)}
+                                        >
+                                            <Heart
+                                                className={`${selectedFavorites.has(selectedTalent.id) ? 'text-red-500' : ''}`}
+                                                fill={selectedFavorites.has(selectedTalent.id) ? 'currentColor' : 'none'}
+                                            />
                                         </Button>
                                         <Button
-                                            className="rounded-full h-10 px-6 font-black uppercase text-[10px] tracking-widest gap-2"
-                                            style={{ backgroundColor: primaryColor }}
+                                            variant={selectedCallbacks.has(selectedTalent.id) ? "default" : "outline"}
+                                            className="rounded-full h-9 px-4 font-black uppercase text-[9px] tracking-widest"
+                                            style={
+                                                selectedCallbacks.has(selectedTalent.id)
+                                                    ? { backgroundColor: primaryColor }
+                                                    : { borderColor: primaryColor, color: primaryColor }
+                                            }
+                                            onClick={() => toggleCallback(selectedTalent.id)}
                                         >
-                                            Request Callback <ChevronRight className="w-4 h-4" />
+                                            Request Callback
                                         </Button>
                                     </div>
                                 </div>
@@ -290,7 +342,25 @@ export function PublicPackageView() {
                                         <Input
                                             placeholder="Your Name"
                                             value={clientName}
-                                            onChange={(e) => setClientName(e.target.value)}
+                                            readOnly={!!selectedItem && lockedComments[selectedItem.talent.id]}
+                                            onClick={() => {
+                                                if (!selectedItem) return;
+                                                setLockedComments((prev) => ({
+                                                    ...prev,
+                                                    [selectedItem.talent.id]: false
+                                                }));
+                                            }}
+                                            onChange={(e) => {
+                                                setClientName(e.target.value);
+                                                if (!selectedItem) return;
+                                                setPendingNotes((prev) => ({
+                                                    ...prev,
+                                                    [selectedItem.talent.id]: {
+                                                        comment,
+                                                        clientName: e.target.value
+                                                    }
+                                                }));
+                                            }}
                                             className="bg-gray-50 border-transparent focus:bg-white h-12 font-bold"
                                         />
                                         <div className="relative">
@@ -298,19 +368,72 @@ export function PublicPackageView() {
                                                 placeholder="Add a comment or share your thoughts on this talent..."
                                                 className="bg-gray-50 border-transparent focus:bg-white min-h-[100px] font-medium"
                                                 value={comment}
-                                                onChange={(e) => setComment(e.target.value)}
+                                                readOnly={!!selectedItem && lockedComments[selectedItem.talent.id]}
+                                                onClick={() => {
+                                                    if (!selectedItem) return;
+                                                    setLockedComments((prev) => ({
+                                                        ...prev,
+                                                        [selectedItem.talent.id]: false
+                                                    }));
+                                                }}
+                                                onFocus={() => {
+                                                    if (!selectedItem) return;
+                                                    setLockedComments((prev) => ({
+                                                        ...prev,
+                                                        [selectedItem.talent.id]: false
+                                                    }));
+                                                }}
+                                                onChange={(e) => {
+                                                setComment(e.target.value);
+                                                if (!selectedItem) return;
+                                                setPendingNotes((prev) => ({
+                                                    ...prev,
+                                                    [selectedItem.talent.id]: {
+                                                        comment: e.target.value,
+                                                        clientName
+                                                    }
+                                                }));
+                                            }}
                                             />
                                             <Button
+                                                type="button"
                                                 size="icon"
-                                                className="absolute bottom-4 right-4 rounded-xl"
+                                                className={`absolute bottom-4 right-4 rounded-xl shadow-lg shadow-black/10 ring-1 ring-white/60 transition-transform ${
+                                                    !comment || (selectedItem && lockedComments[selectedItem.talent.id])
+                                                        ? 'opacity-40 grayscale cursor-not-allowed'
+                                                        : 'hover:-translate-y-0.5'
+                                                }`}
                                                 style={{ backgroundColor: primaryColor }}
-                                                onClick={submitComment}
-                                                disabled={interactionMutation.isPending || !comment}
+                                                onClick={() => {
+                                                    if (!selectedItem) return;
+                                                    setPendingNotes((prev) => ({
+                                                        ...prev,
+                                                        [selectedItem.talent.id]: {
+                                                            comment,
+                                                            clientName
+                                                        }
+                                                    }));
+                                                    setLockedComments((prev) => ({
+                                                        ...prev,
+                                                        [selectedItem.talent.id]: true
+                                                    }));
+                                                }}
+                                                disabled={!comment || (selectedItem && lockedComments[selectedItem.talent.id])}
                                             >
                                                 <Send className="w-4 h-4" />
                                             </Button>
                                         </div>
                                     </div>
+                                </div>
+                                <div className="pt-6">
+                                    <Button
+                                        className="w-full h-12 rounded-full font-black uppercase text-[11px] tracking-widest"
+                                        style={{ backgroundColor: primaryColor }}
+                                        disabled={!hasUnsavedChanges}
+                                        onClick={() => submitInteractions(selectedTalent.id)}
+                                    >
+                                        Save Changes
+                                    </Button>
                                 </div>
                             </div>
                         </motion.div>
