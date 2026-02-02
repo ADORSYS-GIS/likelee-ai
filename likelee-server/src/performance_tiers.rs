@@ -75,7 +75,11 @@ pub async fn configure_performance_tiers(
         let text = resp.text().await.unwrap_or_default();
         let friendly_msg = serde_json::from_str::<serde_json::Value>(&text)
             .ok()
-            .and_then(|v| v.get("message").and_then(|m| m.as_str()).map(|s| s.to_string()))
+            .and_then(|v| {
+                v.get("message")
+                    .and_then(|m| m.as_str())
+                    .map(|s| s.to_string())
+            })
             .unwrap_or_else(|| text.clone());
 
         return Err((
@@ -101,13 +105,17 @@ pub async fn get_performance_tiers(
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    
+
     if !resp.status().is_success() {
         let status = resp.status();
         let text = resp.text().await.unwrap_or_default();
         let friendly_msg = serde_json::from_str::<serde_json::Value>(&text)
             .ok()
-            .and_then(|v| v.get("message").and_then(|m| m.as_str()).map(|s| s.to_string()))
+            .and_then(|v| {
+                v.get("message")
+                    .and_then(|m| m.as_str())
+                    .map(|s| s.to_string())
+            })
             .unwrap_or_else(|| text.clone());
 
         return Err((
@@ -120,8 +128,12 @@ pub async fn get_performance_tiers(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let tiers_db: Vec<TierRuleDb> = serde_json::from_str(&text)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Parse error (tiers): {}", e)))?;
+    let tiers_db: Vec<TierRuleDb> = serde_json::from_str(&text).map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Parse error (tiers): {}", e),
+        )
+    })?;
 
     // Map to TierRule with system defaults
     let mut tiers_json: Vec<TierRule> = tiers_db
@@ -158,7 +170,11 @@ pub async fn get_performance_tiers(
         let text = resp.text().await.unwrap_or_default();
         let friendly_msg = serde_json::from_str::<serde_json::Value>(&text)
             .ok()
-            .and_then(|v| v.get("message").and_then(|m| m.as_str()).map(|s| s.to_string()))
+            .and_then(|v| {
+                v.get("message")
+                    .and_then(|m| m.as_str())
+                    .map(|s| s.to_string())
+            })
             .unwrap_or_else(|| text.clone());
 
         return Err((
@@ -171,8 +187,12 @@ pub async fn get_performance_tiers(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let agency_data: Vec<serde_json::Value> = serde_json::from_str(&text)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Parse error (agency): {}", e)))?;
+    let agency_data: Vec<serde_json::Value> = serde_json::from_str(&text).map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Parse error (agency): {}", e),
+        )
+    })?;
 
     let performance_config = agency_data
         .first()
@@ -208,7 +228,11 @@ pub async fn get_performance_tiers(
         let text = resp.text().await.unwrap_or_default();
         let friendly_msg = serde_json::from_str::<serde_json::Value>(&text)
             .ok()
-            .and_then(|v| v.get("message").and_then(|m| m.as_str()).map(|s| s.to_string()))
+            .and_then(|v| {
+                v.get("message")
+                    .and_then(|m| m.as_str())
+                    .map(|s| s.to_string())
+            })
             .unwrap_or_else(|| text.clone());
 
         return Err((
@@ -221,21 +245,31 @@ pub async fn get_performance_tiers(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let talents_json: Vec<serde_json::Value> = serde_json::from_str(&text)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Parse error (talents): {}", e)))?;
+    let talents_json: Vec<serde_json::Value> = serde_json::from_str(&text).map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Parse error (talents): {}", e),
+        )
+    })?;
 
     // 3. Calculate Real-Time Metrics via RPC
     let now = chrono::Utc::now();
     let month_start = now.format("%Y-%m-01").to_string();
-    let thirty_days_ago = (now - chrono::Duration::days(30)).format("%Y-%m-%d").to_string();
+    let thirty_days_ago = (now - chrono::Duration::days(30))
+        .format("%Y-%m-%d")
+        .to_string();
 
     let resp = state
         .pg
-        .rpc("get_agency_performance_stats", json!({
-            "p_agency_id": agency_id,
-            "p_earnings_start_date": thirty_days_ago,
-            "p_bookings_start_date": month_start,
-        }).to_string())
+        .rpc(
+            "get_agency_performance_stats",
+            json!({
+                "p_agency_id": agency_id,
+                "p_earnings_start_date": thirty_days_ago,
+                "p_bookings_start_date": month_start,
+            })
+            .to_string(),
+        )
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -243,11 +277,15 @@ pub async fn get_performance_tiers(
     if !resp.status().is_success() {
         let status = resp.status();
         let text = resp.text().await.unwrap_or_default();
-        
+
         // Try to parse friendly message from Supabase error JSON
         let friendly_msg = serde_json::from_str::<serde_json::Value>(&text)
             .ok()
-            .and_then(|v| v.get("message").and_then(|m| m.as_str()).map(|s| s.to_string()))
+            .and_then(|v| {
+                v.get("message")
+                    .and_then(|m| m.as_str())
+                    .map(|s| s.to_string())
+            })
             .unwrap_or_else(|| text.clone());
 
         return Err((
@@ -260,12 +298,16 @@ pub async fn get_performance_tiers(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let stats: Vec<PerformanceStats> = serde_json::from_str(&text)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Parse error (stats): {}", e)))?;
+    let stats: Vec<PerformanceStats> = serde_json::from_str(&text).map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Parse error (stats): {}", e),
+        )
+    })?;
 
     let mut earnings_map: HashMap<String, f64> = HashMap::new();
     let mut bookings_map: HashMap<String, i64> = HashMap::new();
-    
+
     for s in stats {
         earnings_map.insert(s.talent_id.clone(), s.earnings_cents as f64 / 100.0);
         bookings_map.insert(s.talent_id, s.booking_count);

@@ -214,14 +214,20 @@ export const PerformanceTiers: React.FC = () => {
               <AlertCircle className="w-8 h-8 text-red-600" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-gray-900">Unable to load Performance Dashboard</h3>
+              <h3 className="text-lg font-bold text-gray-900">
+                Unable to load Performance Dashboard
+              </h3>
               <p className="text-sm text-red-600 font-medium">
                 {(error as Error).message}
               </p>
             </div>
             <Button
               variant="outline"
-              onClick={() => queryClient.invalidateQueries({ queryKey: ["performance-tiers"] })}
+              onClick={() =>
+                queryClient.invalidateQueries({
+                  queryKey: ["performance-tiers"],
+                })
+              }
               className="mt-2 border-red-200 text-red-700 hover:bg-red-100 font-bold px-8 rounded-xl"
             >
               Try Again
@@ -309,14 +315,14 @@ export const PerformanceTiers: React.FC = () => {
           const avgEarnings =
             group.talents.length > 0
               ? group.talents.reduce((acc, t) => acc + t.earnings_30d, 0) /
-              group.talents.length
+                group.talents.length
               : 0;
           const avgBookings =
             group.talents.length > 0
               ? group.talents.reduce(
-                (acc, t) => acc + t.bookings_this_month,
-                0,
-              ) / group.talents.length
+                  (acc, t) => acc + t.bookings_this_month,
+                  0,
+                ) / group.talents.length
               : 0;
           const percentOfRoster =
             totalTalents > 0
