@@ -86,7 +86,7 @@ const AssetGallery = ({ assets }) => {
           )}
         </button>
 
-        <div className="flex gap-4 overflow-x-auto pb-2">
+        <div className="mt-auto flex gap-4 overflow-x-auto pb-2 pt-2 min-h-[88px] flex-shrink-0">
           {gridAssets.map((asset, index) => (
             <button
               key={index}

@@ -280,11 +280,11 @@ export function PublicPackageView() {
 
                             <div className="flex-1 p-12 overflow-y-auto flex flex-col">
                                 <div className="flex justify-between items-start mb-10">
-                                    <div className="space-y-2">
+                                    <div className="space-y-2 min-w-0 mr-4">
                                         <Badge variant="secondary" className="bg-gray-100 font-black uppercase text-[10px]">{selectedTalent.categories?.[0]}</Badge>
-                                        <h2 className="text-4xl font-black text-gray-900 uppercase tracking-tighter">{selectedTalent.stage_name || selectedTalent.full_legal_name || selectedTalent.full_name}</h2>
+                                        <h2 className="text-4xl font-black text-gray-900 uppercase tracking-tighter break-words">{selectedTalent.stage_name || selectedTalent.full_legal_name || selectedTalent.full_name}</h2>
                                     </div>
-                                    <div className="flex flex-wrap gap-2">
+                                    <div className="flex flex-wrap gap-2 flex-shrink-0">
                                         <Button
                                             variant="outline"
                                             size="icon"
