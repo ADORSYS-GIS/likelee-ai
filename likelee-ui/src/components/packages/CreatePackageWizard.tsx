@@ -33,8 +33,9 @@ import { AssetSelector } from "./AssetSelector";
 interface CreatePackageWizardProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    packageToEdit?: any | null;
+    packageToEdit?: any;
     onSuccess?: () => void;
+    mode?: "template" | "package" | "send-from-template";
 }
 
 const STEPS = [
@@ -44,7 +45,7 @@ const STEPS = [
     { id: "send", title: "Send", icon: Send },
 ];
 
-export function CreatePackageWizard({ open, onOpenChange, packageToEdit, onSuccess }: CreatePackageWizardProps) {
+export function CreatePackageWizard({ open, onOpenChange, packageToEdit, onSuccess, mode = "package" }: CreatePackageWizardProps) {
     const [step, setStep] = useState(0);
     const [showTalentSelector, setShowTalentSelector] = useState(false);
     const [isNavigating, setIsNavigating] = useState(false);
@@ -55,6 +56,8 @@ export function CreatePackageWizard({ open, onOpenChange, packageToEdit, onSucce
     const { toast } = useToast();
     const queryClient = useQueryClient();
     const isEditMode = !!packageToEdit;
+    const isTemplateMode = mode === "template";
+    const totalSteps = isTemplateMode ? 3 : 4; // Templates only have 3 steps
 
 
     const initialFormData = {
@@ -123,6 +126,8 @@ export function CreatePackageWizard({ open, onOpenChange, packageToEdit, onSucce
             setCreatedPackage(data);
             setShowSuccess(true);
             queryClient.invalidateQueries({ queryKey: ["agency-packages"] });
+            queryClient.invalidateQueries({ queryKey: ["agency-package-templates"] });
+            queryClient.invalidateQueries({ queryKey: ["agency-sent-packages"] });
             queryClient.invalidateQueries({ queryKey: ["agency-package-stats"] });
             if (onSuccess) onSuccess();
         },
@@ -142,7 +147,7 @@ export function CreatePackageWizard({ open, onOpenChange, packageToEdit, onSucce
         setIsNavigating(true);
         // Artificial delay to prevent double-click and show feedback
         await new Promise(r => setTimeout(r, 400));
-        setStep((s) => Math.min(s + 1, STEPS.length - 1));
+        setStep((s) => Math.min(s + 1, totalSteps - 1));
         setIsNavigating(false);
     };
 
@@ -173,11 +178,15 @@ export function CreatePackageWizard({ open, onOpenChange, packageToEdit, onSucce
     };
 
     const handleSubmit = () => {
-        if (formData.client_name === "" || formData.client_email === "") return toast({ title: "Required", description: "Client details are required to send the package", variant: "destructive" });
+        // For templates, client details are optional. For packages, they're required.
+        if (!isTemplateMode && (formData.client_name === "" || formData.client_email === "")) {
+            return toast({ title: "Required", description: "Client details are required to send the package", variant: "destructive" });
+        }
 
         const itemsArray = Array.isArray(formData.items) ? formData.items : [formData.items];
         const finalData = {
             ...formData,
+            is_template: isTemplateMode,
             items: itemsArray.map(({ talent, assets, ...item }) => ({
                 ...item,
                 asset_ids: assets.map((asset: any) => ({

@@ -18,6 +18,7 @@ import {
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { CreatePackageWizard } from "./CreatePackageWizard";
+import { TemplateCard } from "./TemplateCard";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import {
@@ -32,16 +33,25 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export function PackagesView() {
+    const [activeTab, setActiveTab] = useState<"templates" | "sent">("templates");
     const [searchTerm, setSearchTerm] = useState("");
     const [showWizard, setShowWizard] = useState(false);
+    const [wizardMode, setWizardMode] = useState<"template" | "package" | "send-from-template">("template");
     const [editingPackage, setEditingPackage] = useState<any | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
     const { toast } = useToast();
     const queryClient = useQueryClient();
 
-    const { data: packages, isLoading } = useQuery({
-        queryKey: ["agency-packages"],
-        queryFn: () => packageApi.listPackages(),
+    const { data: templates, isLoading: isTemplatesLoading } = useQuery({
+        queryKey: ["agency-package-templates"],
+        queryFn: () => packageApi.listTemplates(),
+        enabled: activeTab === "templates",
+    });
+
+    const { data: sentPackages, isLoading: isSentLoading } = useQuery({
+        queryKey: ["agency-sent-packages"],
+        queryFn: () => packageApi.listSentPackages(),
+        enabled: activeTab === "sent",
     });
 
     const { data: statsData, isLoading: isStatsLoading } = useQuery({
@@ -71,7 +81,10 @@ export function PackagesView() {
         toast({ title: "Link copied to clipboard!" });
     };
 
-    const filteredPackages = (packages as any)?.filter((p: any) =>
+    const currentPackages = activeTab === "templates" ? templates : sentPackages;
+    const isLoading = activeTab === "templates" ? isTemplatesLoading : isSentLoading;
+
+    const filteredPackages = (currentPackages as any)?.filter((p: any) =>
         p.title.toLowerCase().includes(searchTerm.toLowerCase())
     ) || [];
 
@@ -107,12 +120,34 @@ export function PackagesView() {
                 ))}
             </div>
 
+            {/* Tabs */}
+            <div className="flex gap-2 border-b border-gray-200">
+                <button
+                    onClick={() => setActiveTab("templates")}
+                    className={`px-6 py-3 font-bold text-sm uppercase tracking-wider transition-all ${activeTab === "templates"
+                        ? "border-b-2 border-indigo-600 text-indigo-600"
+                        : "text-gray-500 hover:text-gray-700"
+                        }`}
+                >
+                    Templates
+                </button>
+                <button
+                    onClick={() => setActiveTab("sent")}
+                    className={`px-6 py-3 font-bold text-sm uppercase tracking-wider transition-all ${activeTab === "sent"
+                        ? "border-b-2 border-indigo-600 text-indigo-600"
+                        : "text-gray-500 hover:text-gray-700"
+                        }`}
+                >
+                    Packages Sent
+                </button>
+            </div>
+
             {/* Header & Search */}
             <div className="flex justify-between items-center gap-4">
                 <div className="flex-1 relative max-w-md">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <Input
-                        placeholder="Search packages..."
+                        placeholder={`Search ${activeTab === "templates" ? "templates" : "sent packages"}...`}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-10 h-12 bg-white border-gray-200 font-medium rounded-lg"
@@ -123,15 +158,18 @@ export function PackagesView() {
                         <Filter className="w-4 h-4 mr-2" /> Filter
                     </Button>
                     <Button
-                        onClick={() => setShowWizard(true)}
+                        onClick={() => {
+                            setWizardMode(activeTab === "templates" ? "template" : "package");
+                            setShowWizard(true);
+                        }}
                         className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg"
                     >
-                        <Plus className="w-4 h-4 mr-2" /> Package
+                        <Plus className="w-4 h-4 mr-2" /> {activeTab === "templates" ? "Template" : "Package"}
                     </Button>
                 </div>
             </div>
 
-            {/* Package List */}
+            {/* Package/Template List */}
             {isLoading ? (
                 <div className="flex items-center justify-center p-20">
                     <Loader2 className="w-10 h-10 animate-spin text-gray-400" />
@@ -141,15 +179,40 @@ export function PackagesView() {
                     <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6">
                         <Package className="w-10 h-10 text-gray-300" />
                     </div>
-                    <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">No Packages Found</h3>
-                    <p className="text-gray-500 font-medium mt-2 mb-8">Start by creating your first talent portfolio for a client.</p>
+                    <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">
+                        No {activeTab === "templates" ? "Templates" : "Packages"} Found
+                    </h3>
+                    <p className="text-gray-500 font-medium mt-2 mb-8">
+                        {activeTab === "templates"
+                            ? "Create reusable templates to send to multiple clients."
+                            : "Start by creating your first talent portfolio for a client."}
+                    </p>
                     <Button
-                        onClick={() => setShowWizard(true)}
+                        onClick={() => {
+                            setWizardMode(activeTab === "templates" ? "template" : "package");
+                            setShowWizard(true);
+                        }}
                         className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg px-6 h-10 rounded-lg shadow-md shadow-indigo-300"
                     >
                         +
                     </Button>
                 </Card>
+            ) : activeTab === "templates" ? (
+                // Templates Grid View
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {filteredPackages.map((template: any) => (
+                        <TemplateCard
+                            key={template.id}
+                            template={template}
+                            onEdit={() => fetchFullPackageMutation.mutate(template.id)}
+                            onSend={() => {
+                                // TODO: Implement send from template
+                                toast({ title: "Send from template coming soon!" });
+                            }}
+                            onDelete={() => setDeleteTarget(template)}
+                        />
+                    ))}
+                </div>
             ) : (
                 <div className="grid grid-cols-1 gap-4">
                     {filteredPackages.map((pkg: any) => (
@@ -241,6 +304,7 @@ export function PackagesView() {
                     }
                 }}
                 packageToEdit={editingPackage}
+                mode={wizardMode}
                 onSuccess={() => {
                     setShowWizard(false);
                     setEditingPackage(null);

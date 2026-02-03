@@ -41,6 +41,8 @@ pub struct CreatePackageRequest {
     pub client_name: Option<String>,
     pub client_email: Option<String>,
     pub items: Vec<PackageItemRequest>,
+    pub is_template: Option<bool>,
+    pub template_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -105,6 +107,8 @@ pub async fn create_package(
         "expires_at": sanitize(&payload.expires_at),
         "client_name": sanitize(&payload.client_name),
         "client_email": sanitize(&payload.client_email),
+        "is_template": payload.is_template.unwrap_or(false),
+        "template_id": sanitize(&payload.template_id),
     });
 
     let resp = state
@@ -240,8 +244,10 @@ pub async fn create_package(
         }
     }
 
-    // 3. Trigger Email Notification if client email is provided
-    if let Some(client_email) = &payload.client_email {
+    // 3. Trigger Email Notification if client email is provided AND not a template
+    let is_template = payload.is_template.unwrap_or(false);
+    if !is_template {
+        if let Some(client_email) = &payload.client_email {
         if !client_email.trim().is_empty() {
             let agency_name = fetch_agency_name(&state, &user.id).await.unwrap_or_else(|_| "Premier Talent Agency".to_string());
             let client_name = payload.client_name.as_deref().unwrap_or("Client");
@@ -279,6 +285,7 @@ pub async fn create_package(
     } else {
         tracing::info!("No client email provided in payload, skipping email step");
     }
+    } // End of !is_template check
 
     Ok(Json(package.clone()))
 }
