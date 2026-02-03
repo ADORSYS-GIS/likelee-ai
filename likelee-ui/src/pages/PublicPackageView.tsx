@@ -149,7 +149,7 @@ export function PublicPackageView() {
     };
 
     const hasUnsavedChanges = useMemo(() => {
-        const favoritesChanged = initialFavorites.size !== selectedFavorites.size || 
+        const favoritesChanged = initialFavorites.size !== selectedFavorites.size ||
             [...initialFavorites].some(id => !selectedFavorites.has(id)) ||
             [...selectedFavorites].some(id => !initialFavorites.has(id));
 
@@ -321,7 +321,7 @@ export function PublicPackageView() {
                         >
                             <div className="w-full md:w-[60%] h-1/2 md:h-full relative overflow-hidden bg-gray-100 flex items-center justify-center">
                                 {selectedItem.assets && selectedItem.assets.length > 0 ? (
-                                    <AssetGallery assets={selectedItem.assets} />
+                                    <AssetGallery assets={selectedItem.assets.map((a: any) => a.asset)} />
                                 ) : (
                                     <img
                                         src={selectedTalent.profile_photo_url}
@@ -445,25 +445,24 @@ export function PublicPackageView() {
                                                     }));
                                                 }}
                                                 onChange={(e) => {
-                                                setComment(e.target.value);
-                                                if (!selectedItem) return;
-                                                setPendingNotes((prev) => ({
-                                                    ...prev,
-                                                    [selectedItem.talent.id]: {
-                                                        comment: e.target.value,
-                                                        clientName
-                                                    }
-                                                }));
-                                            }}
+                                                    setComment(e.target.value);
+                                                    if (!selectedItem) return;
+                                                    setPendingNotes((prev) => ({
+                                                        ...prev,
+                                                        [selectedItem.talent.id]: {
+                                                            comment: e.target.value,
+                                                            clientName
+                                                        }
+                                                    }));
+                                                }}
                                             />
                                             <Button
                                                 type="button"
                                                 size="icon"
-                                                className={`absolute bottom-4 right-4 rounded-xl shadow-lg shadow-black/10 ring-1 ring-white/60 transition-transform ${
-                                                    !comment || (selectedItem && lockedComments[selectedItem.talent.id])
+                                                className={`absolute bottom-4 right-4 rounded-xl shadow-lg shadow-black/10 ring-1 ring-white/60 transition-transform ${!comment || (selectedItem && lockedComments[selectedItem.talent.id])
                                                         ? 'opacity-40 grayscale cursor-not-allowed'
                                                         : 'hover:-translate-y-0.5'
-                                                }`}
+                                                    }`}
                                                 style={{ backgroundColor: primaryColor }}
                                                 onClick={() => {
                                                     if (!selectedItem) return;
