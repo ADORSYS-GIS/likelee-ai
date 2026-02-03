@@ -19,7 +19,7 @@ BEGIN
         'access_token', p.access_token,
         'created_at', p.created_at,
         'updated_at', p.updated_at,
-        'agency', (SELECT jsonb_build_object('agency_name', a.agency_name) FROM agencies a WHERE a.id = p.agency_id),
+        'agency', (SELECT jsonb_build_object('agency_name', a.agency_name, 'logo_url', a.logo_url) FROM agencies a WHERE a.id = p.agency_id),
         'items', (SELECT jsonb_agg(
             jsonb_build_object(
                 'id', i.id,

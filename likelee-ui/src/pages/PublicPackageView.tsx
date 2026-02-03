@@ -165,9 +165,10 @@ export function PublicPackageView() {
                             {pkg.description || "Explore our latest talent selections curated specifically for your upcoming project."}
                         </p>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
+                    <div className="flex flex-col items-center gap-2">
                         <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Curated by</span>
-                        <h2 className="text-lg font-black uppercase tracking-tight" style={{ color: primaryColor }}>{pkg.agency?.agency_name || pkg.agency_name || "Premier Talent Agency"}</h2>
+                        {pkg.agency?.logo_url && <img src={pkg.agency.logo_url} alt={pkg.agency.agency_name} className="h-12 w-12 rounded-full object-cover" />}
+                        <h2 className="text-lg font-black uppercase tracking-tight text-center" style={{ color: primaryColor }}>{pkg.agency?.agency_name || pkg.agency_name || "Premier Talent Agency"}</h2>
                     </div>
                 </div>
             </header>
