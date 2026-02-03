@@ -30,7 +30,7 @@ export function TemplateCard({ template, onEdit, onSend, onDelete }: TemplateCar
             transition={{ duration: 0.2 }}
         >
             <Card
-                className="relative overflow-hidden border border-slate-200/80 hover:border-slate-300 hover:shadow-[0_18px_45px_-25px_rgba(15,23,42,0.55)] transition-all duration-300 h-[400px] group cursor-pointer bg-white"
+                className="relative overflow-hidden border border-blue-200/70 hover:border-blue-300 hover:shadow-[0_18px_45px_-25px_rgba(15,23,42,0.5)] transition-all duration-300 h-[400px] group cursor-pointer bg-white"
                 onClick={() => onSend()}
             >
                 {/* Background Image with Overlay */}
@@ -42,17 +42,17 @@ export function TemplateCard({ template, onEdit, onSend, onDelete }: TemplateCar
                                 alt={template.title}
                                 className="w-full h-full object-cover"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-900/35 to-slate-800/10" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-blue-950/70 via-slate-900/35 to-blue-800/15" />
                         </>
                     ) : (
                         <div
                             className="w-full h-full"
                             style={{
-                                background: `linear-gradient(145deg, rgba(226, 238, 251, 0.95) 0%, rgba(209, 226, 244, 0.85) 45%, rgba(186, 203, 221, 0.85) 100%)`
+                                background: `linear-gradient(145deg, rgba(220, 236, 255, 0.98) 0%, rgba(193, 218, 248, 0.92) 45%, rgba(165, 198, 238, 0.9) 100%)`
                             }}
                         >
-                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.6),transparent_55%),radial-gradient(circle_at_80%_0%,rgba(226,244,255,0.7),transparent_45%)]" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/20 via-transparent to-white/20" />
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.7),transparent_55%),radial-gradient(circle_at_80%_0%,rgba(210,232,255,0.9),transparent_45%)]" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-blue-900/25 via-transparent to-white/20" />
                         </div>
                     )}
                 </div>

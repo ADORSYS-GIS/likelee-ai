@@ -87,7 +87,9 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route(
             "/api/agency/packages/:id",
-            get(crate::packages::get_package).delete(crate::packages::delete_package),
+            get(crate::packages::get_package)
+                .delete(crate::packages::delete_package)
+                .put(crate::packages::update_package),
         )
         .route(
             "/api/public/packages/:token",

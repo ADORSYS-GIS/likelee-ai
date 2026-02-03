@@ -119,9 +119,27 @@ export function CreatePackageWizard({ open, onOpenChange, packageToEdit, onSucce
 
     const mutation = useMutation({
         mutationFn: (data: any) => {
+            // Sanitize payload for backend
+            const payload = {
+                ...data,
+                // Ensure items map assets correctly to asset_ids
+                items: data.items.map((item: any) => ({
+                    talent_id: item.talent_id || item.id, // Handle both if raw talent object
+                    asset_ids: (item.assets || item.asset_ids || []).map((asset: any) => ({
+                        asset_id: asset.asset_id || asset.id,
+                        asset_type: asset.asset_type || asset.type || "image"
+                    }))
+                })),
+                // Remove ID if present to avoid confusion in Create mode
+                id: undefined,
+                // Ensure template fields are handled
+                is_template: isTemplateMode,
+                template_id: mode === "send-from-template" && packageToEdit ? packageToEdit.id : undefined
+            };
+
             return isEditMode
-                ? packageApi.updatePackage(packageToEdit.id, data)
-                : packageApi.createPackage(data);
+                ? packageApi.updatePackage(packageToEdit.id, payload)
+                : packageApi.createPackage(payload);
         },
         onSuccess: (data: any) => {
             setCreatedPackage(data);

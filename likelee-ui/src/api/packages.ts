@@ -7,7 +7,7 @@ export const packageApi = {
 
     createPackage: (data: any) => base44Client.post("/api/agency/packages", data),
 
-    updatePackage: (id: string, data: any) => base44Client.post(`/api/agency/packages/${id}`, data),
+    updatePackage: (id: string, data: any) => base44Client.put(`/api/agency/packages/${id}`, data),
     getPackageStats: () => base44Client.get("/api/agency/packages/stats"),
 
     getPackage: (id: string) => base44Client.get(`/api/agency/packages/${id}`),
