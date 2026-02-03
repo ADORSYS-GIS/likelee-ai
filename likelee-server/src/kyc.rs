@@ -4,11 +4,14 @@ use axum::{
     http::StatusCode,
     Json,
 };
-use chrono::Utc;
+use chrono::{Datelike, Utc};
 use hmac::{Hmac, Mac};
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use sha2::Sha256;
 use tracing::{debug, error, info, warn};
+
+use crate::entitlements::{get_agency_plan_tier, veriff_monthly_limit};
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -92,7 +95,66 @@ pub async fn create_session(
     user: AuthUser,
     Json(req): Json<SessionRequest>,
 ) -> Result<Json<SessionResponse>, (StatusCode, String)> {
-    let profile_id = req.organization_id.as_ref().unwrap_or(&user.id);
+    // Agencies are capped per-agency per month, and should not be able to create sessions on
+    // behalf of arbitrary organization ids.
+    let profile_id = if user.role == "agency" {
+        &user.id
+    } else {
+        req.organization_id.as_ref().unwrap_or(&user.id)
+    };
+
+    if user.role == "agency" {
+        let tier = get_agency_plan_tier(&state, &user.id).await?;
+        let limit = veriff_monthly_limit(tier) as usize;
+
+        let now = chrono::Utc::now();
+        let month_start = chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(
+            chrono::NaiveDate::from_ymd_opt(now.year(), now.month(), 1)
+                .unwrap_or_else(|| chrono::NaiveDate::from_ymd_opt(1970, 1, 1).unwrap())
+                .and_hms_opt(0, 0, 0)
+                .unwrap(),
+            chrono::Utc,
+        );
+        let (next_year, next_month) = if now.month() == 12 {
+            (now.year() + 1, 1)
+        } else {
+            (now.year(), now.month() + 1)
+        };
+        let next_month_start = chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(
+            chrono::NaiveDate::from_ymd_opt(next_year, next_month, 1)
+                .unwrap_or_else(|| chrono::NaiveDate::from_ymd_opt(1970, 1, 1).unwrap())
+                .and_hms_opt(0, 0, 0)
+                .unwrap(),
+            chrono::Utc,
+        );
+
+        let usage_resp = state
+            .pg
+            .from("agency_veriff_sessions")
+            .select("id")
+            .eq("agency_id", &user.id)
+            .gte("created_at", &month_start.to_rfc3339())
+            .lt("created_at", &next_month_start.to_rfc3339())
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        let status = usage_resp.status();
+        let text = usage_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !status.is_success() {
+            let code =
+                StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+            return Err((code, text));
+        }
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+        if rows.len() >= limit {
+            return Err((StatusCode::FORBIDDEN, "veriff_monthly_limit_reached".to_string()));
+        }
+    }
+
     debug!(%profile_id, "Creating Veriff session");
     let veriff_body = VeriffCreateSessionBody {
         verification: VeriffVerification {
@@ -172,6 +234,20 @@ pub async fn create_session(
         return Err((StatusCode::BAD_GATEWAY, "unexpected veriff response".into()));
     };
     info!(%session_id, "Veriff session created");
+
+    // Track usage (agency monthly caps)
+    if user.role == "agency" && !session_id.is_empty() {
+        let row = json!({
+            "agency_id": user.id,
+            "veriff_session_id": session_id,
+        });
+        let _ = state
+            .pg
+            .from("agency_veriff_sessions")
+            .insert(row.to_string())
+            .execute()
+            .await;
+    }
 
     let payload = ProfileVerification {
         kyc_status: Some("pending".into()),

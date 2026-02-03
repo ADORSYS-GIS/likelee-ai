@@ -271,6 +271,10 @@ pub fn build_router(state: AppState) -> Router {
             "/api/agency/payouts/account_status",
             get(crate::payouts::get_agency_account_status),
         )
+        .route(
+            "/api/agency/billing/checkout",
+            post(crate::billing::create_agency_subscription_checkout),
+        )
         // Integrations: Core
         .route(
             "/api/integrations/core/send-email",

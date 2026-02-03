@@ -92,6 +92,11 @@ export const getBrandProfile = () =>
 export const getAgencyProfile = () =>
   base44Client.get(`/api/agency-profile/user`);
 
+// Agency billing (Stripe subscriptions)
+export const createAgencySubscriptionCheckout = (data: {
+  tier: "agency" | "scale";
+}) => base44Client.post(`/api/agency/billing/checkout`, data);
+
 export const updateBrandProfile = (data: any) =>
   base44Client.post(`/api/brand-profile`, data);
 

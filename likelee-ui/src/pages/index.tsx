@@ -76,6 +76,8 @@ import CreatorDashboard from "./CreatorDashboard";
 
 import AgencyDashboard from "./AgencyDashboard";
 
+import AgencySubscribe from "./AgencySubscribe";
+
 import StripeConnectReturn from "./StripeConnectReturn";
 import StripeConnectRefresh from "./StripeConnectRefresh";
 
@@ -202,6 +204,8 @@ const PAGES = {
   CreatorDashboard: CreatorDashboard,
 
   AgencyDashboard: AgencyDashboard,
+
+  AgencySubscribe: AgencySubscribe,
 
   AddTalent: AddTalent,
 
@@ -370,6 +374,24 @@ function PagesContent() {
           element={
             <ProtectedRoute allowedRoles={["agency"]}>
               <AgencyDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/AgencySubscribe"
+          element={
+            <ProtectedRoute allowedRoles={["agency"]}>
+              <AgencySubscribe />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/agencysubscribe"
+          element={
+            <ProtectedRoute allowedRoles={["agency"]}>
+              <AgencySubscribe />
             </ProtectedRoute>
           }
         />

@@ -159,6 +159,17 @@
   - Keep `likelee-server/.env.example` in sync.
   - Document the variables here under this section.
 
+### Stripe Subscriptions (Agency Billing)
+
+- `STRIPE_AGENCY_PRICE_ID`
+  - Stripe Price ID for the Agency subscription tier.
+- `STRIPE_SCALE_PRICE_ID`
+  - Stripe Price ID for the Scale subscription tier.
+- `STRIPE_CHECKOUT_SUCCESS_URL`
+  - URL Stripe redirects to after successful checkout.
+- `STRIPE_CHECKOUT_CANCEL_URL`
+  - URL Stripe redirects to after checkout is canceled.
+
 ### Stripe Connect (Agency Bank Connection)
 
 - `PAYOUTS_ENABLED` (bool)

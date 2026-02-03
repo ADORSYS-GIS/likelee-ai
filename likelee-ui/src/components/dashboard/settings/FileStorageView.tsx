@@ -227,8 +227,12 @@ const StorageUsageCard = () => (
       <p className="text-sm text-gray-500 font-medium">
         37.6 GB remaining • Professional Plan
       </p>
-      <Button variant="link" className="text-indigo-600 font-bold p-0 h-auto">
-        Upgrade Plan
+      <Button
+        variant="link"
+        className="text-indigo-600 font-bold p-0 h-auto"
+        asChild
+      >
+        <a href="/agencysubscribe">Upgrade Plan</a>
       </Button>
     </div>
   </Card>
@@ -1138,8 +1142,12 @@ const FileStorageView = () => {
           <p className="text-sm text-gray-500 font-medium">
             {bytesToHuman(Math.max(0, (usage?.limit_bytes || 0) - (usage?.used_bytes || 0)))} remaining
           </p>
-          <Button variant="link" className="text-indigo-600 font-bold p-0 h-auto">
-            Upgrade Plan
+          <Button
+            variant="link"
+            className="text-indigo-600 font-bold p-0 h-auto"
+            asChild
+          >
+            <a href="/agencysubscribe">Upgrade Plan</a>
           </Button>
         </div>
       </Card>

@@ -7,6 +7,39 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 
+use crate::entitlements::{get_agency_plan_tier, voice_clone_limit};
+
+async fn enforce_voice_clone_limit_for_agency(
+    state: &AppState,
+    agency_id: &str,
+) -> Result<(), (StatusCode, String)> {
+    let tier = get_agency_plan_tier(state, agency_id).await?;
+    let limit = voice_clone_limit(tier) as usize;
+    if limit == 0 {
+        return Err((StatusCode::FORBIDDEN, "voice_clone_not_included".to_string()));
+    }
+
+    let resp = state
+        .pg
+        .from("voice_models")
+        .select("id")
+        .eq("user_id", agency_id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    let status = resp.status();
+    let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+    if !status.is_success() {
+        let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
+        return Err((code, text));
+    }
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    if rows.len() >= limit {
+        return Err((StatusCode::FORBIDDEN, "voice_clone_limit_reached".to_string()));
+    }
+    Ok(())
+}
+
 #[derive(Deserialize)]
 pub struct UploadVoiceQuery {
     #[serde(default)]
@@ -139,6 +172,9 @@ pub async fn register_voice_model(
     user: AuthUser,
     Json(mut input): Json<RegisterModelIn>,
 ) -> Result<Json<RegisterModelOut>, (StatusCode, String)> {
+    if user.role == "agency" {
+        enforce_voice_clone_limit_for_agency(&state, &user.id).await?;
+    }
     input.user_id = user.id;
     let payload = serde_json::json!({
         "user_id": input.user_id,
@@ -286,6 +322,9 @@ pub async fn create_clone_from_recording(
     user: AuthUser,
     Json(mut input): Json<CreateCloneIn>,
 ) -> Result<Json<CreateCloneOut>, (StatusCode, String)> {
+    if user.role == "agency" {
+        enforce_voice_clone_limit_for_agency(&state, &user.id).await?;
+    }
     input.user_id = user.id;
     if state.elevenlabs_api_key.is_empty() {
         return Err((

@@ -11,7 +11,55 @@ use tracing::{error, info, warn};
 
 use crate::auth::AuthUser;
 use crate::config::AppState;
+use crate::entitlements::{docuseal_template_limit, get_agency_plan_tier};
 use crate::services::docuseal::DocuSealClient;
+
+async fn get_template_count(
+    state: &AppState,
+    agency_id: &str,
+) -> Result<usize, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("scouting_templates")
+        .select("id")
+        .eq("agency_id", agency_id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        return Err((code, text));
+    }
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    Ok(rows.len())
+}
+
+async fn enforce_template_limit_for_insert(
+    state: &AppState,
+    agency_id: &str,
+    inserts_requested: usize,
+) -> Result<usize, (StatusCode, String)> {
+    let tier = get_agency_plan_tier(state, agency_id).await?;
+    if let Some(limit) = docuseal_template_limit(tier) {
+        let current = get_template_count(state, agency_id).await?;
+        if current >= limit {
+            return Err((
+                StatusCode::FORBIDDEN,
+                "docuseal_template_limit_reached".to_string(),
+            ));
+        }
+        let remaining = limit.saturating_sub(current);
+        Ok(std::cmp::min(remaining, inserts_requested))
+    } else {
+        Ok(inserts_requested)
+    }
+}
 
 // ============================================================================
 // Request/Response Types
@@ -52,11 +100,13 @@ pub struct OfferResponse {
 /// GET /api/scouting/templates?agency_id=xxx
 pub async fn list_templates(
     State(state): State<AppState>,
-    Query(params): Query<std::collections::HashMap<String, String>>,
+    user: AuthUser,
+    Query(_params): Query<std::collections::HashMap<String, String>>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let agency_id = params
-        .get("agency_id")
-        .ok_or((StatusCode::BAD_REQUEST, "agency_id required".to_string()))?;
+    if user.role != "agency" {
+        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
+    }
+    let agency_id = user.id.clone();
 
     info!(agency_id = %agency_id, "Fetching templates");
 
@@ -98,10 +148,18 @@ pub async fn list_templates(
 /// POST /api/scouting/templates
 pub async fn create_template(
     State(state): State<AppState>,
+    user: AuthUser,
     Json(payload): Json<CreateTemplateRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
+    if user.role != "agency" {
+        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
+    }
+    let agency_id = user.id.clone();
+
+    let _ = enforce_template_limit_for_insert(&state, &agency_id, 1).await?;
+
     info!(
-        agency_id = %payload.agency_id,
+        agency_id = %agency_id,
         docuseal_template_id = payload.docuseal_template_id,
         "Creating template"
     );
@@ -121,7 +179,7 @@ pub async fn create_template(
         );
 
     let template_data = json!({
-        "agency_id": payload.agency_id,
+        "agency_id": agency_id,
         "docuseal_template_id": payload.docuseal_template_id,
         "name": payload.name,
         "description": payload.description,
@@ -742,10 +800,15 @@ pub async fn create_builder_token(
     user: AuthUser,
     Json(payload): Json<GetBuilderTokenRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
+    if user.role != "agency" {
+        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
+    }
+    let agency_id = user.id.clone();
+
     info!(
         user_id = %user.id,
-        agency_id = %payload.agency_id,
-        "Creating builder token"
+        agency_id = %agency_id,
+        "Creating DocuSeal builder token"
     );
 
     // Verify agency exists and get user details (simplified for now)
@@ -757,10 +820,10 @@ pub async fn create_builder_token(
             format!("Bearer {}", state.supabase_service_key),
         );
 
-    let agency_response = pg
+    let response = pg
         .from("agencies")
-        .select("name, contact_email") // Assuming these fields exist
-        .eq("id", &payload.agency_id)
+        .select("contact_email:email,name:agency_name")
+        .eq("id", &agency_id)
         .single()
         .execute()
         .await
@@ -769,7 +832,7 @@ pub async fn create_builder_token(
             (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
         })?;
 
-    let agency_body = agency_response.text().await.map_err(|e| {
+    let agency_body = response.text().await.map_err(|e| {
         error!(error = %e, "Failed to read agency response");
         (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
     })?;
@@ -823,10 +886,16 @@ pub struct SyncTemplatesRequest {
 /// POST /api/scouting/templates/sync
 pub async fn sync_templates(
     State(state): State<AppState>,
-    Json(payload): Json<SyncTemplatesRequest>,
+    user: AuthUser,
+    Json(_payload): Json<SyncTemplatesRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
+    if user.role != "agency" {
+        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
+    }
+    let agency_id = user.id.clone();
+
     info!(
-        agency_id = %payload.agency_id,
+        agency_id = %agency_id,
         "Syncing templates from DocuSeal"
     );
 
@@ -874,9 +943,14 @@ pub async fn sync_templates(
     //
     // Let's implement a simple sync that upserts based on docuseal_template_id.
 
+    // For Free tier we only allow inserting up to remaining quota; updates are always allowed.
+    let mut remaining_inserts = enforce_template_limit_for_insert(&state, &agency_id, usize::MAX)
+        .await
+        .unwrap_or(0);
+
     for template in templates_response.data {
         let template_data = json!({
-            "agency_id": payload.agency_id,
+            "agency_id": agency_id,
             "docuseal_template_id": template.id,
             "name": template.name,
             "description": "Synced from DocuSeal",
@@ -887,7 +961,7 @@ pub async fn sync_templates(
         let exists_response = pg
             .from("scouting_templates")
             .select("id")
-            .eq("agency_id", &payload.agency_id)
+            .eq("agency_id", &agency_id)
             .eq("docuseal_template_id", template.id.to_string())
             .execute()
             .await;
@@ -906,17 +980,21 @@ pub async fn sync_templates(
             let _ = pg
                 .from("scouting_templates")
                 .update(template_data.to_string())
-                .eq("agency_id", &payload.agency_id)
+                .eq("agency_id", &agency_id)
                 .eq("docuseal_template_id", template.id.to_string())
                 .execute()
                 .await;
         } else {
+            if remaining_inserts == 0 {
+                continue;
+            }
             info!(template_id = template.id, name = %template.name, "Inserting new template");
             let _ = pg
                 .from("scouting_templates")
                 .insert(template_data.to_string())
                 .execute()
                 .await;
+            remaining_inserts = remaining_inserts.saturating_sub(1);
         }
     }
     Ok(StatusCode::OK)
@@ -937,9 +1015,15 @@ pub async fn create_template_from_pdf(
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
     use base64::{engine::general_purpose, Engine as _};
 
+    if user.role != "agency" {
+        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
+    }
+    let agency_id = user.id.clone();
+
+    let _ = enforce_template_limit_for_insert(&state, &agency_id, 1).await?;
+
     info!(user_id = %user.id, "Processing PDF upload for template");
 
-    let mut agency_id = String::new();
     let mut file_name = String::new();
     let mut file_content = Vec::new();
 
@@ -949,12 +1033,7 @@ pub async fn create_template_from_pdf(
     })? {
         let name = field.name().unwrap_or_default().to_string();
 
-        if name == "agency_id" {
-            agency_id = field.text().await.map_err(|e| {
-                error!(error = %e, "Failed to read agency_id");
-                (StatusCode::BAD_REQUEST, e.to_string())
-            })?;
-        } else if name == "file" {
+        if name == "file" {
             file_name = field.file_name().unwrap_or("document.pdf").to_string();
             file_content = field
                 .bytes()
@@ -967,11 +1046,8 @@ pub async fn create_template_from_pdf(
         }
     }
 
-    if agency_id.is_empty() || file_content.is_empty() {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "Missing agency_id or file".to_string(),
-        ));
+    if file_content.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "Missing file".to_string()));
     }
 
     // Convert to base64 with Data URI prefix

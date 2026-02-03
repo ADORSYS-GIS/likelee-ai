@@ -1917,8 +1917,12 @@ const StorageUsageCard = () => (
       <p className="text-sm text-gray-500 font-medium">
         37.6 GB remaining • Professional Plan
       </p>
-      <Button variant="link" className="text-indigo-600 font-bold p-0 h-auto">
-        Upgrade Plan
+      <Button
+        variant="link"
+        className="text-indigo-600 font-bold p-0 h-auto"
+        asChild
+      >
+        <a href="/agencysubscribe">Upgrade Plan</a>
       </Button>
     </div>
   </Card>
@@ -10624,6 +10628,17 @@ const RosterView = ({
                 <h1 className="text-2xl font-bold text-gray-900">
                   {profile?.agency_name || "Agency Name"}
                 </h1>
+                <Badge
+                  className={`${
+                    String((profile as any)?.plan_tier || "free") === "agency"
+                      ? "bg-[#F18B6A]/15 text-[#E07A5A] border-[#F18B6A]/30"
+                      : String((profile as any)?.plan_tier || "free") === "scale"
+                        ? "bg-[#32C8D1]/15 text-[#32C8D1] border-[#32C8D1]/30"
+                        : "bg-gray-100 text-gray-700 border-gray-200"
+                  }`}
+                >
+                  {String((profile as any)?.plan_tier || "free").toUpperCase()}
+                </Badge>
                 {/* Verified Badge */}
                 <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">
                   <svg
@@ -11244,8 +11259,9 @@ const RosterView = ({
             <Button
               variant="default"
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8"
+              asChild
             >
-              Upgrade to Pro
+              <a href="/agencysubscribe">Upgrade to Pro</a>
             </Button>
           </div>
         )}
@@ -17971,6 +17987,19 @@ export default function AgencyDashboard() {
             <p className="text-sm text-gray-500 font-medium truncate">
               {profile?.email || user?.email}
             </p>
+            <div className="mt-1">
+              <Badge
+                className={`${
+                  String((profile as any)?.plan_tier || "free") === "agency"
+                    ? "bg-[#F18B6A]/15 text-[#E07A5A] border-[#F18B6A]/30"
+                    : String((profile as any)?.plan_tier || "free") === "scale"
+                      ? "bg-[#32C8D1]/15 text-[#32C8D1] border-[#32C8D1]/30"
+                      : "bg-gray-100 text-gray-700 border-gray-200"
+                }`}
+              >
+                {String((profile as any)?.plan_tier || "free").toUpperCase()}
+              </Badge>
+            </div>
           </div>
         </div>
 
@@ -18175,7 +18204,7 @@ export default function AgencyDashboard() {
                           {profile?.agency_name || "Agency Name"}
                         </h3>
                         <p className="text-xs text-gray-500 truncate">
-                          Agency Account
+                          Plan: {String((profile as any)?.plan_tier || "free").toUpperCase()}
                         </p>
                       </div>
                     </div>
@@ -18205,15 +18234,20 @@ export default function AgencyDashboard() {
                         <p className="text-xs text-gray-500">10 active users</p>
                       </div>
                     </button>
-                    <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group">
+                    <a
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group"
+                      href="/agencysubscribe"
+                    >
                       <CreditCard className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
                         <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
                           Billing & Subscription
                         </p>
-                        <p className="text-xs text-gray-500">Agency Pro Plan</p>
+                        <p className="text-xs text-gray-500">
+                          Current: {String((profile as any)?.plan_tier || "free").toUpperCase()}
+                        </p>
                       </div>
-                    </button>
+                    </a>
                     <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group">
                       <FileText className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
