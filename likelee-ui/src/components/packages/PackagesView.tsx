@@ -4,7 +4,7 @@ import {
     Plus, Search, Filter, MoreHorizontal, Eye,
     Share2, Trash2, Loader2, Package, TrendingUp,
     Clock, CheckCircle2, AlertCircle, Copy, ExternalLink,
-    Image as ImageIcon
+    Image as ImageIcon, ChevronLeft, ChevronRight
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,9 @@ import {
 
 export function PackagesView() {
     const [activeTab, setActiveTab] = useState<"templates" | "sent">("templates");
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 8;
+
     const [searchTerm, setSearchTerm] = useState("");
     const [showWizard, setShowWizard] = useState(false);
     const [wizardMode, setWizardMode] = useState<"template" | "package" | "send-from-template">("template");
@@ -64,6 +67,8 @@ export function PackagesView() {
         onSuccess: () => {
             toast({ title: "Package deleted" });
             queryClient.invalidateQueries({ queryKey: ["agency-packages"] });
+            queryClient.invalidateQueries({ queryKey: ["agency-package-templates"] });
+            queryClient.invalidateQueries({ queryKey: ["agency-sent-packages"] });
             queryClient.invalidateQueries({ queryKey: ["agency-package-stats"] });
         },
     });
@@ -72,6 +77,7 @@ export function PackagesView() {
         mutationFn: (id: string) => packageApi.getPackage(id),
         onSuccess: (fullPackageData) => {
             setEditingPackage(fullPackageData);
+            setShowWizard(true);
         },
     });
 
@@ -84,9 +90,16 @@ export function PackagesView() {
     const currentPackages = activeTab === "templates" ? templates : sentPackages;
     const isLoading = activeTab === "templates" ? isTemplatesLoading : isSentLoading;
 
+    // Filter packages
     const filteredPackages = (currentPackages as any)?.filter((p: any) =>
         p.title.toLowerCase().includes(searchTerm.toLowerCase())
     ) || [];
+
+    // Pagination Logic for Templates
+    const totalPages = Math.ceil(filteredPackages.length / ITEMS_PER_PAGE);
+    const paginatedTemplates = activeTab === "templates"
+        ? filteredPackages.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+        : [];
 
     const realStats = (statsData as any) || {
         total_packages: 0,
@@ -198,21 +211,65 @@ export function PackagesView() {
                     </Button>
                 </Card>
             ) : activeTab === "templates" ? (
-                // Templates Grid View
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {filteredPackages.map((template: any) => (
-                        <TemplateCard
-                            key={template.id}
-                            template={template}
-                            onEdit={() => fetchFullPackageMutation.mutate(template.id)}
-                            onSend={() => {
-                                // TODO: Implement send from template
-                                toast({ title: "Send from template coming soon!" });
-                            }}
-                            onDelete={() => setDeleteTarget(template)}
-                        />
-                    ))}
-                </div>
+                <>
+                    {/* Templates Grid View */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {paginatedTemplates.map((template: any) => (
+                            <TemplateCard
+                                key={template.id}
+                                template={template}
+                                onEdit={() => {
+                                    setWizardMode("template");
+                                    fetchFullPackageMutation.mutate(template.id);
+                                }}
+                                onSend={() => {
+                                    setWizardMode("send-from-template");
+                                    fetchFullPackageMutation.mutate(template.id);
+                                }}
+                                onDelete={() => setDeleteTarget(template)}
+                            />
+                        ))}
+                    </div>
+
+                    {/* Pagination Controls */}
+                    {totalPages > 1 && (
+                        <div className="flex justify-center items-center gap-4 mt-12 pt-4">
+                            <Button
+                                variant="ghost"
+                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                disabled={currentPage === 1}
+                                className="font-medium text-gray-500 hover:text-gray-900 px-2"
+                            >
+                                <ChevronLeft className="w-4 h-4 mr-1" /> Previous
+                            </Button>
+
+                            <div className="flex items-center gap-2">
+                                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                                    <Button
+                                        key={page}
+                                        variant={currentPage === page ? "default" : "outline"}
+                                        onClick={() => setCurrentPage(page)}
+                                        className={`w-10 h-10 p-0 rounded-lg font-bold text-sm transition-all ${currentPage === page
+                                                ? "bg-gray-900 text-white shadow-md hover:bg-gray-800"
+                                                : "text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900"
+                                            }`}
+                                    >
+                                        {page}
+                                    </Button>
+                                ))}
+                            </div>
+
+                            <Button
+                                variant="ghost"
+                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                disabled={currentPage === totalPages}
+                                className="font-medium text-gray-500 hover:text-gray-900 px-2"
+                            >
+                                Next <ChevronRight className="w-4 h-4 ml-1" />
+                            </Button>
+                        </div>
+                    )}
+                </>
             ) : (
                 <div className="grid grid-cols-1 gap-4">
                     {filteredPackages.map((pkg: any) => (
