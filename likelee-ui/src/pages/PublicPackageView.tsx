@@ -39,32 +39,6 @@ export function PublicPackageView() {
         mutationFn: (data: any) => packageApi.createInteraction(token!, data)
     });
 
-    if (isLoading) {
-        return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-white">
-                <Loader2 className="w-12 h-12 animate-spin text-gray-900 mb-4" />
-                <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Loading Portfolio...</p>
-            </div>
-        );
-    }
-
-    if (error || !packageData) {
-        return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-white p-6 text-center">
-                <AlertCircle className="w-16 h-16 text-red-500 mb-6" />
-                <h1 className="text-2xl font-black text-gray-900 uppercase tracking-tight">Access Denied</h1>
-                <p className="text-gray-500 max-w-md mt-2">This package may have expired or the link is invalid. Please contact the agency for a new link.</p>
-                <Button variant="outline" className="mt-8 border-2" onClick={() => window.location.href = '/'}>
-                    Return Home
-                </Button>
-            </div>
-        );
-    }
-
-    const pkg = packageData as any;
-    const primaryColor = pkg.primary_color || "#6366F1";
-    const secondaryColor = pkg.secondary_color || "#06B6D4";
-
     const toggleFavorite = (talentId: string) => {
         setSelectedFavorites((prev) => {
             const next = new Set(prev);
@@ -137,6 +111,32 @@ export function PublicPackageView() {
         window.addEventListener('beforeunload', handler);
         return () => window.removeEventListener('beforeunload', handler);
     }, [hasUnsavedChanges]);
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-white">
+                <Loader2 className="w-12 h-12 animate-spin text-gray-900 mb-4" />
+                <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Loading Portfolio...</p>
+            </div>
+        );
+    }
+
+    if (error || !packageData) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-white p-6 text-center">
+                <AlertCircle className="w-16 h-16 text-red-500 mb-6" />
+                <h1 className="text-2xl font-black text-gray-900 uppercase tracking-tight">Access Denied</h1>
+                <p className="text-gray-500 max-w-md mt-2">This package may have expired or the link is invalid. Please contact the agency for a new link.</p>
+                <Button variant="outline" className="mt-8 border-2" onClick={() => window.location.href = '/'}>
+                    Return Home
+                </Button>
+            </div>
+        );
+    }
+
+    const pkg = packageData as any;
+    const primaryColor = pkg.primary_color || "#6366F1";
+    const secondaryColor = pkg.secondary_color || "#06B6D4";
 
     return (
         <div className="min-h-screen bg-white pb-20 overflow-x-hidden" style={{ "--selection-bg": primaryColor } as any}>
