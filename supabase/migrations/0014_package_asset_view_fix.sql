@@ -25,27 +25,19 @@
                 jsonb_build_object(
                     'id', i.id,
                     'sort_order', i.sort_order,
-                    'talent', (SELECT jsonb_build_object(
-                        'id', u.id,
-                        'stage_name', u.stage_name,
-                        'full_legal_name', u.full_legal_name,
-                        'profile_photo_url', u.profile_photo_url,
-                        'bio_notes', u.bio_notes,
-                        'city', u.city,
-                        'race_ethnicity', u.race_ethnicity,
-                        'role_type', u.role_type
-                    ) FROM agency_users u WHERE u.id = i.talent_id),
-                    'assets', (SELECT jsonb_agg(
-                        jsonb_build_object(
-                            'id', a.id,
-                            'asset_id', a.asset_id,
-                            'asset_type', a.asset_type,
-                            'sort_order', a.sort_order,
-                            'asset_url', af.public_url
-                        )
-                    ) FROM agency_talent_package_item_assets a
-                    JOIN agency_files af ON a.asset_id = af.id
-                    WHERE a.item_id = i.id
+                    'talent', (SELECT to_jsonb(u) FROM agency_users u WHERE u.id = i.talent_id),
+                    'assets', (
+                        SELECT jsonb_agg(
+                           jsonb_build_object(
+                                'id', pa.id,
+                                'asset_id', pa.asset_id,
+                                'asset_type', pa.asset_type,
+                                'sort_order', pa.sort_order,
+                                'asset', (SELECT to_jsonb(af) FROM agency_files af WHERE af.id = pa.asset_id)
+                           )
+                        ) 
+                        FROM agency_talent_package_item_assets pa
+                        WHERE pa.item_id = i.id
                     )
                 )
             ) FROM agency_talent_package_items i WHERE i.package_id = p.id)

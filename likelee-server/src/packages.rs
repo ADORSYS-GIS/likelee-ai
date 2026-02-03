@@ -444,7 +444,7 @@ pub async fn get_package(
     let resp = state
         .pg
         .from("agency_talent_packages")
-        .select("*, items:agency_talent_package_items(*, talent:agency_users(*), assets:agency_talent_package_item_assets(*)), stats:agency_talent_package_stats(*)")
+        .select("*, items:agency_talent_package_items(*, talent:agency_users(*), assets:agency_talent_package_item_assets(*)), stats:agency_talent_package_stats(*), interactions:agency_talent_package_interactions(*)")
         .eq("agency_id", &user.id)
         .eq("id", &id)
         .single()
@@ -568,9 +568,7 @@ pub async fn get_public_package(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let resp = state
         .pg
-        .from("agency_talent_packages")
-        .select("*, agency:agencies(agency_name, logo_url), items:agency_talent_package_items(*, talent:agency_users(*), assets:agency_talent_package_item_assets(*, asset:assets_view(*))), interactions:agency_talent_package_interactions(*)")
-        .eq("access_token", &token)
+        .rpc("get_public_package_details", serde_json::json!({ "p_access_token": token }).to_string())
         .single()
         .execute()
         .await

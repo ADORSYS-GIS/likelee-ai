@@ -4,7 +4,7 @@ import {
     Plus, Search, Filter, MoreHorizontal, Eye,
     Share2, Trash2, Loader2, Package, TrendingUp,
     Clock, CheckCircle2, AlertCircle, Copy, ExternalLink,
-    Image as ImageIcon, ChevronLeft, ChevronRight
+    Image as ImageIcon, ChevronLeft, ChevronRight, Activity, MessageSquare
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CreatePackageWizard } from "./CreatePackageWizard";
 import { TemplateCard } from "./TemplateCard";
+import { PackageFeedbackDialog } from "./PackageFeedbackDialog";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import {
@@ -41,6 +42,7 @@ export function PackagesView() {
     const [showWizard, setShowWizard] = useState(false);
     const [wizardMode, setWizardMode] = useState<"template" | "package" | "send-from-template">("template");
     const [editingPackage, setEditingPackage] = useState<any | null>(null);
+    const [selectedFeedbackPackage, setSelectedFeedbackPackage] = useState<string | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
     const { toast } = useToast();
     const queryClient = useQueryClient();
@@ -250,8 +252,8 @@ export function PackagesView() {
                                         variant={currentPage === page ? "default" : "outline"}
                                         onClick={() => setCurrentPage(page)}
                                         className={`w-10 h-10 p-0 rounded-lg font-bold text-sm transition-all ${currentPage === page
-                                                ? "bg-gray-900 text-white shadow-md hover:bg-gray-800"
-                                                : "text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900"
+                                            ? "bg-gray-900 text-white shadow-md hover:bg-gray-800"
+                                            : "text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900"
                                             }`}
                                     >
                                         {page}
@@ -320,9 +322,10 @@ export function PackagesView() {
                                     </Button>
                                     <Button
                                         variant="outline"
-                                        className="h-10 px-4 font-black uppercase tracking-widest text-[10px] border-gray-200"
+                                        className="h-10 px-4 font-black uppercase tracking-widest text-[10px] border-gray-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors"
+                                        onClick={() => setSelectedFeedbackPackage(pkg.id)}
                                     >
-                                        View Analytics
+                                        <Activity className="w-3.5 h-3.5 mr-2" /> Client Activity
                                     </Button>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
@@ -366,6 +369,12 @@ export function PackagesView() {
                     setShowWizard(false);
                     setEditingPackage(null);
                 }}
+            />
+
+            <PackageFeedbackDialog
+                open={!!selectedFeedbackPackage}
+                onOpenChange={(open) => !open && setSelectedFeedbackPackage(null)}
+                packageId={selectedFeedbackPackage}
             />
 
             <AlertDialog open={!!deleteTarget} onOpenChange={(isOpen) => !isOpen && setDeleteTarget(null)}>
