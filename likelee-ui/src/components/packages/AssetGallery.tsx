@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-const AssetGallery = ({ assets }) => {
-  const [selectedIndex, setSelectedIndex] = useState(0);
+const AssetGallery = ({ assets, initialIndex = 0 }) => {
+  const [selectedIndex, setSelectedIndex] = useState(initialIndex);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [mainApi, setMainApi] = useState(null);
   const [thumbApi, setThumbApi] = useState(null);
@@ -13,6 +13,12 @@ const AssetGallery = ({ assets }) => {
     containScroll: 'keepSnaps',
     dragFree: true,
   });
+
+  useEffect(() => {
+    if (!viewerOpen) {
+        setSelectedIndex(initialIndex);
+    }
+  }, [initialIndex, viewerOpen]);
 
   useEffect(() => {
     setMainApi(mainApiInternal);

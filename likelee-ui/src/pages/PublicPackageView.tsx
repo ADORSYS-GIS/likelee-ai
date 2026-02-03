@@ -20,7 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 export function PublicPackageView() {
     const { token } = useParams<{ token: string }>();
     const [selectedItem, setSelectedItem] = useState<any>(null);
-    const selectedTalent = selectedItem?.talent;
+    const selectedTalent = selectedItem ? selectedItem.talent : null;
     const queryClient = useQueryClient();
     const [initialFavorites, setInitialFavorites] = useState<Set<string>>(new Set());
     const [initialCallbacks, setInitialCallbacks] = useState<Set<string>>(new Set());
@@ -37,6 +37,21 @@ export function PublicPackageView() {
         queryFn: () => packageApi.getPublicPackage(token!),
         enabled: !!token,
     });
+
+    const pkg = packageData as any;
+
+    const allAssets = useMemo(() => {
+        if (!pkg?.items) return [];
+        return pkg.items.flatMap((item: any) => item.assets?.map((a: any) => a.asset) || []).filter(Boolean);
+    }, [pkg]);
+
+    const initialAssetIndex = useMemo(() => {
+        if (!selectedItem || !allAssets.length) return 0;
+        const firstAssetOfSelectedItem = selectedItem.assets?.[0]?.asset;
+        if (!firstAssetOfSelectedItem) return 0;
+        const index = allAssets.findIndex(asset => asset.id === firstAssetOfSelectedItem.id);
+        return index > -1 ? index : 0;
+    }, [selectedItem, allAssets]);
 
     useEffect(() => {
         if (selectedItem && packageData) {
@@ -191,7 +206,6 @@ export function PublicPackageView() {
         );
     }
 
-    const pkg = packageData as any;
     const primaryColor = pkg.primary_color || "#6366F1";
     const secondaryColor = pkg.secondary_color || "#06B6D4";
 
@@ -317,8 +331,8 @@ export function PublicPackageView() {
                             className="bg-white w-full max-w-6xl rounded-3xl overflow-hidden shadow-2xl relative z-10 flex flex-col md:flex-row h-[90vh]"
                         >
                             <div className="w-full md:w-[60%] h-1/2 md:h-full relative overflow-hidden bg-gray-100 flex items-center justify-center">
-                                {selectedItem.assets && selectedItem.assets.length > 0 ? (
-                                    <AssetGallery assets={selectedItem.assets.map((a: any) => a.asset)} />
+                                {allAssets.length > 0 ? (
+                                    <AssetGallery assets={allAssets} initialIndex={initialAssetIndex} />
                                 ) : (
                                     <img
                                         src={selectedTalent.profile_photo_url}
