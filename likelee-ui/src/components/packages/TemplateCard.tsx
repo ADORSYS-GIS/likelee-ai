@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Send, Package as PackageIcon, MoreVertical } from "lucide-react";
+import { Send, Package as PackageIcon, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -94,18 +94,18 @@ export function TemplateCard({ template, onEdit, onSend, onDelete }: TemplateCar
                                             e.stopPropagation();
                                             onEdit();
                                         }}
-                                        className="font-bold text-xs uppercase tracking-wider cursor-pointer"
+                                        className="font-bold text-xs uppercase tracking-wider cursor-pointer flex items-center"
                                     >
-                                        Edit Template
+                                        <Pencil className="w-4 h-4 mr-2" /> Edit
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             onDelete();
                                         }}
-                                        className="font-bold text-xs uppercase tracking-wider text-red-600 cursor-pointer"
+                                        className="font-bold text-xs uppercase tracking-wider text-red-600 cursor-pointer flex items-center"
                                     >
-                                        Delete
+                                        <Trash2 className="w-4 h-4 mr-2" /> Delete
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
