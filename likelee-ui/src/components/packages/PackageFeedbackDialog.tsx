@@ -67,9 +67,15 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                                 const isCallback = interaction.type === "callback";
                                 // Find talent name from pkg.items 
                                 // (Logic: interaction has talent_id, pkg.items has talent embedded)
-                                const item = pkg.items.find((i: any) => i.talent_id === interaction.talent_id);
-                                const talentName = item?.talent?.full_name || "Unknown Talent";
-                                const talentImage = item?.talent?.profile_image_url;
+                                const item = pkg.items.find((i: any) =>
+                                    i.talent_id === interaction.talent_id || i.talent?.id === interaction.talent_id
+                                );
+                                const talentName =
+                                    item?.talent?.stage_name ||
+                                    item?.talent?.full_legal_name ||
+                                    item?.talent?.full_name ||
+                                    "Unknown Talent";
+                                const talentImage = item?.talent?.profile_photo_url;
 
                                 return (
                                     <div key={interaction.id || index} className="flex gap-4 group">
