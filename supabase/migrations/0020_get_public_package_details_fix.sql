@@ -45,7 +45,7 @@ BEGIN
                         ) FROM agency_users u WHERE u.id = i.talent_id
                     ),
                     'assets', (
-                        SELECT jsonb_agg(
+                        SELECT COALESCE(jsonb_agg(
                             jsonb_build_object(
                                 'id', pa.id,
                                 'asset_id', pa.asset_id,
@@ -53,17 +53,13 @@ BEGIN
                                 'sort_order', pa.sort_order,
                                 'asset', jsonb_build_object(
                                     'id', af.id,
-                                    'asset_url', af.public_url,
-                                    'asset_type', pa.asset_type
+                                    'asset_url', af.public_url
                                 )
                             )
-                        )
-                        FROM 
-                            agency_talent_package_item_assets pa
-                        JOIN 
-                            agency_files af ON pa.asset_id = af.id
-                        WHERE 
-                            pa.item_id = i.id
+                        ), '[]'::jsonb)
+                        FROM agency_talent_package_item_assets pa
+                        JOIN agency_files af ON pa.asset_id = af.id
+                        WHERE pa.item_id = i.id
                     )
                 )
             ) 

@@ -64,7 +64,7 @@ const AssetGallery = ({ assets, initialIndex = 0 }) => {
     return /\.(mp4|webm|ogg)(\?|$)/i.test(url);
   }, []);
 
-  const gridAssets = useMemo(() => (assets || []).filter(a => a && a.asset_url), [assets]);
+  const gridAssets = useMemo(() => (assets || []).filter(a => a && (a.asset_url || a.public_url || a.url)), [assets]);
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -75,7 +75,7 @@ const AssetGallery = ({ assets, initialIndex = 0 }) => {
           className="group relative w-full flex-1 min-h-0 overflow-hidden rounded-3xl bg-gray-200 shadow-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-          {gridAssets[selectedIndex] && isVideoAsset(gridAssets[selectedIndex]) ? (
+          {gridAssets.length > 0 && gridAssets[selectedIndex] && isVideoAsset(gridAssets[selectedIndex]) ? (
             <video
               src={gridAssets[selectedIndex].asset_url || gridAssets[selectedIndex].public_url || gridAssets[selectedIndex].url}
               className="h-full w-full object-cover"
@@ -92,28 +92,28 @@ const AssetGallery = ({ assets, initialIndex = 0 }) => {
           )}
         </button>
 
-        <div className="mt-auto flex gap-4 overflow-x-auto pb-2 pt-2 min-h-[88px] flex-shrink-0">
-          {gridAssets.map((asset, index) => (
-            <button
-              key={index}
-              type="button"
-              onClick={() => setSelectedIndex(index)}
-              className={`relative h-20 w-28 flex-shrink-0 overflow-hidden rounded-2xl border-2 transition ${index === selectedIndex ? 'border-indigo-500' : 'border-transparent'
-                }`}
-            >
-              {isVideoAsset(asset) ? (
-                <video
-                  src={asset.asset_url || asset.public_url || asset.url}
-                  className="h-full w-full object-cover"
-                  muted
-                  playsInline
-                />
-              ) : (
-                <img src={asset.asset_url || asset.public_url || asset.url} className="h-full w-full object-cover" alt={`Thumbnail ${index + 1}`} />
-              )}
-            </button>
-          ))}
-        </div>
+        {gridAssets.length > 0 && (
+            <div className="mt-auto flex gap-4 overflow-x-auto pb-2 pt-2 min-h-[88px] flex-shrink-0">
+            {gridAssets.map((asset, index) => (
+                <button
+                key={index}
+                type="button"
+                onClick={() => setSelectedIndex(index)}
+                className={`relative h-20 w-28 flex-shrink-0 overflow-hidden rounded-2xl border-2 transition ${index === selectedIndex ? 'border-indigo-500' : 'border-transparent'}`}>
+                {isVideoAsset(asset) ? (
+                    <video
+                    src={asset.asset_url || asset.public_url || asset.url}
+                    className="h-full w-full object-cover"
+                    muted
+                    playsInline
+                    />
+                ) : (
+                    <img src={asset.asset_url || asset.public_url || asset.url} className="h-full w-full object-cover" alt={`Thumbnail ${index + 1}`} />
+                )}
+                </button>
+            ))}
+            </div>
+        )}
       </div>
 
       {viewerOpen && (
@@ -162,25 +162,27 @@ const AssetGallery = ({ assets, initialIndex = 0 }) => {
               >
                 ✕
               </button>
-            </div>
-            <div className="py-4 px-6 bg-black/70" ref={thumbRef}>
-              <div className="flex gap-3">
-                {gridAssets.map((asset, index) => (
-                  <button
-                    type="button"
-                    key={index}
-                    onClick={() => onThumbClick(index)}
-                    className={`flex-[0_0_16%] rounded-lg overflow-hidden border-2 ${index === selectedIndex ? 'border-indigo-400' : 'border-transparent'
-                      }`}
-                  >
-                    {isVideoAsset(asset) ? (
-                      <video src={asset.asset_url || asset.public_url || asset.url} className="h-16 w-full object-cover" muted playsInline />
-                    ) : (
-                      <img src={asset.asset_url || asset.public_url || asset.url} className="h-16 w-full object-cover" alt={`Thumbnail ${index + 1}`} />
-                    )}
-                  </button>
-                ))}
-              </div>
+              {gridAssets.length > 0 && (
+                <div className="absolute bottom-0 left-0 right-0 p-4 z-10 bg-gradient-to-t from-black/50 to-transparent">
+                  <div className="overflow-hidden" ref={thumbRef}>
+                    <div className="flex space-x-3">
+                      {gridAssets.map((asset, index) => (
+                        <button
+                          key={asset.id || index}
+                          type="button"
+                          onClick={() => onThumbClick(index)}
+                          className={`flex-[0_0_16%] rounded-lg overflow-hidden border-2 ${index === selectedIndex ? 'border-indigo-400' : 'border-transparent'}`}>
+                          {isVideoAsset(asset) ? (
+                            <video src={asset.asset_url || asset.public_url || asset.url} className="h-16 w-full object-cover" muted playsInline />
+                          ) : (
+                            <img src={asset.asset_url || asset.public_url || asset.url} className="h-16 w-full object-cover" alt={`Thumbnail ${index + 1}`} />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
