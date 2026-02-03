@@ -5,7 +5,7 @@ import {
     Image as ImageIcon, User, Settings, Send, Search,
     Eye, EyeOff, Calendar, Palette, Type, Building2, Mail,
     GripVertical, Trash2, Globe, SwitchCamera, Layers,
-    Heart, MessageSquare, CheckCircle2
+    Heart, MessageSquare, CheckCircle2, Copy
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -55,7 +55,7 @@ export function CreatePackageWizard({ open, onOpenChange, packageToEdit, onSucce
     const [createdPackage, setCreatedPackage] = useState<any>(null);
     const { toast } = useToast();
     const queryClient = useQueryClient();
-    const isEditMode = !!packageToEdit;
+    const isEditMode = !!packageToEdit && mode !== "send-from-template";
     const isTemplateMode = mode === "template";
     const totalSteps = isTemplateMode ? 3 : 4; // Templates only have 3 steps
 
@@ -96,16 +96,17 @@ export function CreatePackageWizard({ open, onOpenChange, packageToEdit, onSucce
                 password_protected: packageToEdit.password_protected || false,
                 password: packageToEdit.password || "",
                 expires_at: packageToEdit.expires_at ? format(new Date(packageToEdit.expires_at), 'yyyy-MM-dd') : "",
-                client_name: packageToEdit.client_name || "",
-                client_email: packageToEdit.client_email || "",
+                // Clear client details if we are sending from a template
+                client_name: mode === "send-from-template" ? "" : (packageToEdit.client_name || ""),
+                client_email: mode === "send-from-template" ? "" : (packageToEdit.client_email || ""),
                 items: packageToEdit.items || [],
             });
-        } else if (open && !isEditMode) {
+        } else if (open && !isEditMode && mode !== "send-from-template") {
             setFormData(initialFormData);
         } else if (!open) {
             resetForm();
         }
-    }, [packageToEdit, open, isEditMode]);
+    }, [packageToEdit, open, isEditMode, mode]);
 
     const [searchTerm, setSearchTerm] = useState("");
     const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -202,6 +203,16 @@ export function CreatePackageWizard({ open, onOpenChange, packageToEdit, onSucce
         <>
             <Dialog open={open} onOpenChange={onOpenChange}>
                 <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0 overflow-hidden bg-white/95 backdrop-blur-xl rounded-2xl border-none shadow-[0_32px_128px_-12px_rgba(0,0,0,0.1)]">
+                    {/* Template Mode Banner */}
+                    {mode === "send-from-template" && (
+                        <div className="bg-indigo-50 border-b border-indigo-100 px-6 py-3 flex items-center justify-center gap-2">
+                            <Copy className="w-4 h-4 text-indigo-600" />
+                            <p className="text-xs font-bold text-indigo-700 uppercase tracking-widest">
+                                Creating new package from <span className="text-indigo-900">"{packageToEdit?.title}"</span> template
+                            </p>
+                        </div>
+                    )}
+
                     {/* Header */}
                     <div className="p-10 pb-0">
                         <div className="flex justify-between items-start mb-8">

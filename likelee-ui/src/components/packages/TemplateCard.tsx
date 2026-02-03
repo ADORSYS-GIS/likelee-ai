@@ -46,9 +46,9 @@ export function TemplateCard({ template, onEdit, onSend, onDelete }: TemplateCar
                         </>
                     ) : (
                         <div
-                            className="w-full h-full"
+                            className="w-full h-full bg-blue-500/10 backdrop-blur-sm"
                             style={{
-                                background: `linear-gradient(135deg, ${template.primary_color || '#6366F1'} 0%, ${template.secondary_color || '#06B6D4'} 100%)`
+                                background: `linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(6, 182, 212, 0.1) 100%)`
                             }}
                         >
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
@@ -81,7 +81,7 @@ export function TemplateCard({ template, onEdit, onSend, onDelete }: TemplateCar
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-8 w-8 text-white hover:bg-white/20 backdrop-blur-sm"
+                                        className="h-8 w-8 text-white hover:bg-white/20 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                                         onClick={(e) => e.stopPropagation()}
                                     >
                                         <MoreVertical className="w-4 h-4" />
@@ -113,7 +113,7 @@ export function TemplateCard({ template, onEdit, onSend, onDelete }: TemplateCar
 
                     {/* Send Button - Enable pointer events specifically for this */}
                     <Button
-                        className="w-full bg-white hover:bg-gray-100 text-gray-900 font-bold text-sm shadow-lg pointer-events-auto"
+                        className="w-full bg-white hover:bg-gray-100 text-gray-900 font-bold text-sm shadow-lg pointer-events-auto opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-y-4 group-hover:translate-y-0"
                         onClick={(e) => {
                             e.stopPropagation();
                             onSend();
