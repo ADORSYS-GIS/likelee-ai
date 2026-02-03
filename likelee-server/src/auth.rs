@@ -57,7 +57,7 @@ where
         let mut validation = Validation::default();
         validation.set_audience(&["authenticated"]);
         let token_data = decode::<Claims>(token, &decoding_key, &validation)
-            .map_err(|e| (StatusCode::UNAUTHORIZED, format!("Invalid token: {}", e)))?;
+            .map_err(|e| (StatusCode::UNAUTHORIZED, format!("Invalid token: {e}")))?;
 
         let user_id = token_data.claims.sub;
 

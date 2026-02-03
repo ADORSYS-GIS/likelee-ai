@@ -62,6 +62,77 @@ pub fn build_router(state: AppState) -> Router {
         // Agencies
         .route("/api/agency-register", post(crate::agencies::register))
         .route("/api/agency-profile", post(crate::agencies::update))
+        // Agency Dashboard
+        .route(
+            "/api/agency/dashboard/overview",
+            get(crate::agency_dashboard::get_dashboard_overview),
+        )
+        .route(
+            "/api/agency/dashboard/talent-performance",
+            get(crate::agency_dashboard::get_talent_performance),
+        )
+        .route(
+            "/api/agency/dashboard/revenue-breakdown",
+            get(crate::agency_dashboard::get_revenue_breakdown),
+        )
+        .route(
+            "/api/agency/dashboard/licensing-pipeline",
+            get(crate::agency_dashboard::get_licensing_pipeline),
+        )
+        .route(
+            "/api/agency/dashboard/recent-activity",
+            get(crate::agency_dashboard::get_recent_activity),
+        )
+        .route("/api/agency/roster", get(crate::agency_roster::get_roster))
+        .route(
+            "/api/agency/talent",
+            post(crate::agency_roster::create_talent),
+        )
+        .route(
+            "/api/agency/talent/:id",
+            post(crate::agency_roster::update_talent),
+        )
+        .route(
+            "/api/agency/talent/:id/campaigns",
+            get(crate::agency_roster::list_talent_campaigns),
+        )
+        .route(
+            "/api/agency/campaigns/:id",
+            post(crate::campaigns::update_campaign_split),
+        )
+        .route(
+            "/api/agency/licensing-requests",
+            get(crate::licensing_requests::list_for_agency),
+        )
+        .route(
+            "/api/agency/licensing-requests/status",
+            post(crate::licensing_requests::update_status_bulk),
+        )
+        .route(
+            "/api/agency/licensing-requests/pay-split",
+            get(crate::licensing_requests::get_pay_split)
+                .post(crate::licensing_requests::set_pay_split),
+        )
+        .route(
+            "/api/agency/digitals",
+            get(crate::digitals::list_agency_digitals),
+        )
+        .route(
+            "/api/agency/talent/:id/digitals",
+            get(crate::digitals::list_talent_digitals).post(crate::digitals::create_talent_digital),
+        )
+        .route(
+            "/api/agency/digitals/:id",
+            post(crate::digitals::update_digital),
+        )
+        .route(
+            "/api/agency/digitals/reminders",
+            post(crate::digitals::send_digitals_reminders),
+        )
+        .route(
+            "/api/agency/comp-cards/share",
+            post(crate::agency_clients::share_comp_card),
+        )
         .route("/api/agency/talents", get(crate::agencies::list_talents))
         .route(
             "/api/agency/clients",
@@ -125,6 +196,14 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::agencies::get_client_file_signed_url),
         )
         .route("/api/dashboard", get(crate::dashboard::get_dashboard))
+        .route(
+            "/api/agency/dashboard/performance-tiers",
+            get(crate::performance_tiers::get_performance_tiers),
+        )
+        .route(
+            "/api/agency/dashboard/performance-tiers/configure",
+            post(crate::performance_tiers::configure_performance_tiers),
+        )
         // Removed legacy Tavus routes
         .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))
         .route("/api/email/available", get(crate::creators::check_email))

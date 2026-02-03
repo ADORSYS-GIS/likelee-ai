@@ -40,16 +40,23 @@ pub struct ProfileVerification {
     pub verified_at: Option<String>,
 }
 
-async fn update_profile(
+async fn update_verification_status(
     state: &AppState,
-    user_id: &str,
+    profile_id: &str,
+    role: &str,
     payload: &ProfileVerification,
 ) -> Result<(), String> {
+    let table = match role {
+        "agency" => "agencies",
+        "brand" => "brands",
+        _ => "creators",
+    };
+
     let body = serde_json::to_string(payload).map_err(|e| e.to_string())?;
     match state
         .pg
-        .from("creators")
-        .eq("id", user_id)
+        .from(table)
+        .eq("id", profile_id)
         .update(body)
         .execute()
         .await
@@ -57,8 +64,9 @@ async fn update_profile(
         Ok(_) => {}
         Err(e) => {
             let msg = e.to_string();
-            if msg.contains("42703") || msg.contains("column") && msg.contains("does not exist") {
-                warn!(%msg, "profiles table missing verification columns; skipping profile update");
+            // If it's a "column does not exist" error, it might be an older migration state
+            if msg.contains("42703") || (msg.contains("column") && msg.contains("does not exist")) {
+                warn!(%msg, table, "Table missing verification columns; skipping update");
                 return Ok(());
             }
             return Err(msg);
@@ -73,6 +81,8 @@ struct VeriffVerification<'a> {
     vendor_data: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
     lang: Option<&'a str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    callback: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]
     features: Option<serde_json::Value>,
 }
@@ -156,10 +166,24 @@ pub async fn create_session(
     }
 
     debug!(%profile_id, "Creating Veriff session");
+    let vendor_data = format!("{}:{}", user.role, profile_id);
+    let callback_url = req.return_url.as_deref().and_then(|url| {
+        if url.starts_with("https://") {
+            Some(url)
+        } else {
+            warn!(
+                "Skipping Veriff return_url because it is not HTTPS: {}",
+                url
+            );
+            None
+        }
+    });
+
     let veriff_body = VeriffCreateSessionBody {
         verification: VeriffVerification {
-            vendor_data: profile_id,
+            vendor_data: &vendor_data,
             lang: None,
+            callback: callback_url,
             features: None,
         },
     };
@@ -260,7 +284,7 @@ pub async fn create_session(
         },
         verified_at: None,
     };
-    update_profile(&state, profile_id, &payload)
+    update_verification_status(&state, profile_id, &user.role, &payload)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
 
@@ -283,9 +307,15 @@ pub async fn get_status(
     Query(q): Query<StatusQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let profile_id = q.organization_id.as_ref().unwrap_or(&user.id);
+    let table = match user.role.as_str() {
+        "agency" => "agencies",
+        "brand" => "brands",
+        _ => "creators",
+    };
+
     let resp = state
         .pg
-        .from("creators")
+        .from(table)
         .select("kyc_status,liveness_status,kyc_provider,kyc_session_id,verified_at")
         .eq("id", profile_id)
         .execute()
@@ -372,10 +402,11 @@ pub async fn get_status(
                         kyc_session_id: Some(session_id.clone()),
                         verified_at: approved.then(|| chrono::Utc::now().to_rfc3339()),
                     };
-                    let _ = update_profile(&state, profile_id, &payload).await;
+                    let _ =
+                        update_verification_status(&state, profile_id, &user.role, &payload).await;
                     let resp2 = state
                         .pg
-                        .from("creators")
+                        .from(table)
                         .select(
                             "kyc_status,liveness_status,kyc_provider,kyc_session_id,verified_at",
                         )
@@ -454,10 +485,18 @@ pub async fn veriff_webhook(
 
     let parsed: VeriffWebhookBody = serde_json::from_slice(&body_bytes)
         .map_err(|e| (axum::http::StatusCode::BAD_REQUEST, e.to_string()))?;
-    let user_id = parsed.vendor_data.ok_or((
+    let vendor_data_raw = parsed.vendor_data.ok_or((
         axum::http::StatusCode::BAD_REQUEST,
         "missing vendorData".into(),
     ))?;
+
+    // vendor_data format: "role:id"
+    let parts: Vec<&str> = vendor_data_raw.splitn(2, ':').collect();
+    let (role, profile_id) = if parts.len() == 2 {
+        (parts[0], parts[1])
+    } else {
+        ("creator", parts[0]) // fallback for legacy sessions
+    };
     let status = parsed
         .decision
         .as_ref()
@@ -471,7 +510,7 @@ pub async fn veriff_webhook(
     } else {
         "pending"
     };
-    info!(%user_id, %mapped_status, "Received Veriff decision webhook");
+    info!(%profile_id, %role, %mapped_status, "Received Veriff decision webhook");
 
     let payload = ProfileVerification {
         kyc_status: Some(mapped_status.into()),
@@ -480,7 +519,7 @@ pub async fn veriff_webhook(
         kyc_session_id: parsed.session.map(|s| s.id),
         verified_at: approved.then(|| Utc::now().to_rfc3339()),
     };
-    update_profile(&state, &user_id, &payload)
+    update_verification_status(&state, profile_id, role, &payload)
         .await
         .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e))?;
     Ok(axum::http::StatusCode::OK)
