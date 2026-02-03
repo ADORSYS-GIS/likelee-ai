@@ -38,20 +38,16 @@ export function PublicPackageView() {
         enabled: !!token,
     });
 
+    const interactionMutation = useMutation({
+        mutationFn: (data: any) => packageApi.createInteraction(token!, data),
+    });
+
     const pkg = packageData as any;
 
-    const allAssets = useMemo(() => {
-        if (!pkg?.items) return [];
-        return pkg.items.flatMap((item: any) => item.assets?.map((a: any) => a.asset) || []).filter(Boolean);
-    }, [pkg]);
-
-    const initialAssetIndex = useMemo(() => {
-        if (!selectedItem || !allAssets.length) return 0;
-        const firstAssetOfSelectedItem = selectedItem.assets?.[0]?.asset;
-        if (!firstAssetOfSelectedItem) return 0;
-        const index = allAssets.findIndex(asset => asset.id === firstAssetOfSelectedItem.id);
-        return index > -1 ? index : 0;
-    }, [selectedItem, allAssets]);
+    const selectedAssets = useMemo(() => {
+        if (!selectedItem?.assets) return [];
+        return selectedItem.assets.map((a: any) => a.asset).filter(Boolean);
+    }, [selectedItem]);
 
     useEffect(() => {
         if (selectedItem && packageData) {
@@ -69,9 +65,6 @@ export function PublicPackageView() {
         }
     }, [selectedItem, packageData]);
 
-    const interactionMutation = useMutation({
-        mutationFn: (data: any) => packageApi.createInteraction(token!, data),
-    });
 
     const deleteInteractionMutation = useMutation({
         mutationFn: (data: { talent_id: string; type: 'favorite' | 'callback' }) => packageApi.deleteInteraction(token!, data),
@@ -331,8 +324,8 @@ export function PublicPackageView() {
                             className="bg-white w-full max-w-6xl rounded-3xl overflow-hidden shadow-2xl relative z-10 flex flex-col md:flex-row h-[90vh]"
                         >
                             <div className="w-full md:w-[60%] h-1/2 md:h-full relative overflow-hidden bg-gray-100 flex items-center justify-center">
-                                {allAssets.length > 0 ? (
-                                    <AssetGallery assets={allAssets} initialIndex={initialAssetIndex} />
+                                {selectedAssets.length > 0 ? (
+                                    <AssetGallery assets={selectedAssets} />
                                 ) : (
                                     <img
                                         src={selectedTalent.profile_photo_url}
