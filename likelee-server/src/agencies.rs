@@ -547,21 +547,21 @@ pub async fn get_agency_storage_file_signed_url(
         .and_then(|a| a.first())
         .ok_or((StatusCode::NOT_FOUND, "file not found".to_string()))?;
 
-    let agency_id = row
-        .get("agency_id")
-        .and_then(|v| v.as_str())
-        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "missing agency_id".into()))?;
+    let agency_id = row.get("agency_id").and_then(|v| v.as_str()).ok_or((
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "missing agency_id".into(),
+    ))?;
     if agency_id != user.id {
         return Err((StatusCode::FORBIDDEN, "Access denied".into()));
     }
-    let bucket = row
-        .get("storage_bucket")
-        .and_then(|v| v.as_str())
-        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "missing storage_bucket".into()))?;
-    let path = row
-        .get("storage_path")
-        .and_then(|v| v.as_str())
-        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "missing storage_path".into()))?;
+    let bucket = row.get("storage_bucket").and_then(|v| v.as_str()).ok_or((
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "missing storage_bucket".into(),
+    ))?;
+    let path = row.get("storage_path").and_then(|v| v.as_str()).ok_or((
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "missing storage_path".into(),
+    ))?;
 
     let url = format!(
         "{}/storage/v1/object/sign/{}/{}",
@@ -646,7 +646,10 @@ pub async fn upload_agency_storage_file(
     let used = get_agency_used_storage_bytes(&state, &user.id).await?;
     let new_size = bytes.len() as i64;
     if used + new_size > limit {
-        return Err((StatusCode::PAYLOAD_TOO_LARGE, "storage_quota_exceeded".into()));
+        return Err((
+            StatusCode::PAYLOAD_TOO_LARGE,
+            "storage_quota_exceeded".into(),
+        ));
     }
 
     let fname = file_name.unwrap_or_else(|| "upload.bin".to_string());
@@ -771,22 +774,28 @@ pub async fn delete_agency_storage_file(
         .and_then(|a| a.first())
         .ok_or((StatusCode::NOT_FOUND, "file not found".to_string()))?;
 
-    let agency_id = row
-        .get("agency_id")
-        .and_then(|v| v.as_str())
-        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "missing agency_id".into()))?;
+    let agency_id = row.get("agency_id").and_then(|v| v.as_str()).ok_or((
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "missing agency_id".into(),
+    ))?;
     if agency_id != user.id {
         return Err((StatusCode::FORBIDDEN, "Access denied".into()));
     }
     let bucket = row
         .get("storage_bucket")
         .and_then(|v| v.as_str())
-        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "missing storage_bucket".into()))?
+        .ok_or((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "missing storage_bucket".into(),
+        ))?
         .to_string();
     let path = row
         .get("storage_path")
         .and_then(|v| v.as_str())
-        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "missing storage_path".into()))?
+        .ok_or((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "missing storage_path".into(),
+        ))?
         .to_string();
 
     // 2) Delete object from Supabase Storage

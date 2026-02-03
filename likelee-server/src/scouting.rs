@@ -33,7 +33,8 @@ async fn get_template_count(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !status.is_success() {
-        let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        let code =
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
         return Err((code, text));
     }
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();

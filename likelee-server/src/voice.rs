@@ -16,7 +16,10 @@ async fn enforce_voice_clone_limit_for_agency(
     let tier = get_agency_plan_tier(state, agency_id).await?;
     let limit = voice_clone_limit(tier) as usize;
     if limit == 0 {
-        return Err((StatusCode::FORBIDDEN, "voice_clone_not_included".to_string()));
+        return Err((
+            StatusCode::FORBIDDEN,
+            "voice_clone_not_included".to_string(),
+        ));
     }
 
     let resp = state
@@ -35,7 +38,10 @@ async fn enforce_voice_clone_limit_for_agency(
     }
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
     if rows.len() >= limit {
-        return Err((StatusCode::FORBIDDEN, "voice_clone_limit_reached".to_string()));
+        return Err((
+            StatusCode::FORBIDDEN,
+            "voice_clone_limit_reached".to_string(),
+        ));
     }
     Ok(())
 }

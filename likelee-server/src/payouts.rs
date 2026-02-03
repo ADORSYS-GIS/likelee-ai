@@ -1152,12 +1152,18 @@ pub async fn stripe_webhook(
                     &state,
                     &agency_id,
                     &subscription_id,
-                    if customer_id.is_empty() { None } else { Some(customer_id.as_str()) },
+                    if customer_id.is_empty() {
+                        None
+                    } else {
+                        Some(customer_id.as_str())
+                    },
                 )
                 .await;
             }
         }
-        "customer.subscription.created" | "customer.subscription.updated" | "customer.subscription.deleted" => {
+        "customer.subscription.created"
+        | "customer.subscription.updated"
+        | "customer.subscription.deleted" => {
             let obj = payload_json
                 .get("data")
                 .and_then(|d| d.get("object"))
@@ -1182,7 +1188,11 @@ pub async fn stripe_webhook(
                     &state,
                     &agency_id,
                     subscription_id,
-                    if customer_id.is_empty() { None } else { Some(customer_id.as_str()) },
+                    if customer_id.is_empty() {
+                        None
+                    } else {
+                        Some(customer_id.as_str())
+                    },
                 )
                 .await;
             }
@@ -1210,7 +1220,11 @@ pub async fn stripe_webhook(
                 let _ = sync_agency_subscription_by_subscription_id(
                     &state,
                     &subscription_id,
-                    if customer_id.is_empty() { None } else { Some(customer_id.as_str()) },
+                    if customer_id.is_empty() {
+                        None
+                    } else {
+                        Some(customer_id.as_str())
+                    },
                 )
                 .await;
             }
@@ -1267,7 +1281,8 @@ pub async fn stripe_webhook(
                         .from("payout_requests")
                         .eq("stripe_transfer_id", tid)
                         .update(
-                            json!({"status":"failed","failure_reason":"transfer_reversed"}).to_string(),
+                            json!({"status":"failed","failure_reason":"transfer_reversed"})
+                                .to_string(),
                         )
                         .execute()
                         .await;
@@ -1284,45 +1299,48 @@ pub async fn stripe_webhook(
                 .and_then(|e| e.account.clone().map(|a| a.to_string()));
             if let Some(event) = typed_event {
                 if let stripe_sdk::EventObject::Payout(p) = event.data.object.clone() {
-                let pid = p.id.to_string();
-                let mut update = serde_json::Map::new();
-                if is_paid {
-                    update.insert("status".into(), json!("paid"));
-                }
-                if is_failed {
-                    update.insert("status".into(), json!("failed"));
-                }
-                if is_canceled {
-                    update.insert("status".into(), json!("canceled"));
-                }
-                update.insert("stripe_payout_id".into(), json!(pid));
-                if let (Some(btx), Some(acct_id)) = (p.balance_transaction, maybe_account) {
-                    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
-                    let connected_client = match acct_id.parse::<stripe_sdk::AccountId>() {
-                        Ok(id) => client.with_stripe_account(id),
-                        Err(_) => client, // fallback: use platform client, retrieval may fail but won't panic
-                    };
-                    let maybe_id = match btx {
-                        stripe_sdk::Expandable::Id(id) => Some(id),
-                        stripe_sdk::Expandable::Object(obj) => Some(obj.id),
-                    };
-                    if let Some(id) = maybe_id {
-                        if let Ok(bt) =
-                            stripe_sdk::BalanceTransaction::retrieve(&connected_client, &id, &[])
-                                .await
-                        {
-                            let fee = bt.fee.abs();
-                            update.insert("instant_fee_cents".into(), json!(fee));
+                    let pid = p.id.to_string();
+                    let mut update = serde_json::Map::new();
+                    if is_paid {
+                        update.insert("status".into(), json!("paid"));
+                    }
+                    if is_failed {
+                        update.insert("status".into(), json!("failed"));
+                    }
+                    if is_canceled {
+                        update.insert("status".into(), json!("canceled"));
+                    }
+                    update.insert("stripe_payout_id".into(), json!(pid));
+                    if let (Some(btx), Some(acct_id)) = (p.balance_transaction, maybe_account) {
+                        let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+                        let connected_client = match acct_id.parse::<stripe_sdk::AccountId>() {
+                            Ok(id) => client.with_stripe_account(id),
+                            Err(_) => client, // fallback: use platform client, retrieval may fail but won't panic
+                        };
+                        let maybe_id = match btx {
+                            stripe_sdk::Expandable::Id(id) => Some(id),
+                            stripe_sdk::Expandable::Object(obj) => Some(obj.id),
+                        };
+                        if let Some(id) = maybe_id {
+                            if let Ok(bt) = stripe_sdk::BalanceTransaction::retrieve(
+                                &connected_client,
+                                &id,
+                                &[],
+                            )
+                            .await
+                            {
+                                let fee = bt.fee.abs();
+                                update.insert("instant_fee_cents".into(), json!(fee));
+                            }
                         }
                     }
-                }
-                let _ = state
-                    .pg
-                    .from("payout_requests")
-                    .eq("stripe_payout_id", pid)
-                    .update(serde_json::Value::Object(update).to_string())
-                    .execute()
-                    .await;
+                    let _ = state
+                        .pg
+                        .from("payout_requests")
+                        .eq("stripe_payout_id", pid)
+                        .update(serde_json::Value::Object(update).to_string())
+                        .execute()
+                        .await;
                 }
             }
         }
@@ -1404,13 +1422,8 @@ async fn sync_agency_subscription_by_subscription_id(
     if agency_id.trim().is_empty() {
         return Ok(());
     }
-    sync_agency_subscription_from_stripe(
-        state,
-        agency_id.trim(),
-        subscription_id,
-        customer_id,
-    )
-    .await
+    sync_agency_subscription_from_stripe(state, agency_id.trim(), subscription_id, customer_id)
+        .await
 }
 
 async fn sync_agency_subscription_from_stripe(
@@ -1431,8 +1444,9 @@ async fn sync_agency_subscription_from_stripe(
 
     let status = sub.status.to_string();
     let cancel_at_period_end = sub.cancel_at_period_end;
-    let current_period_end = chrono::DateTime::<chrono::Utc>::from_timestamp(sub.current_period_end, 0)
-        .map(|dt| dt.to_rfc3339());
+    let current_period_end =
+        chrono::DateTime::<chrono::Utc>::from_timestamp(sub.current_period_end, 0)
+            .map(|dt| dt.to_rfc3339());
 
     let tier = stripe_subscription_to_plan_tier(state, &price_id);
     let plan_tier = match (tier, status.as_str()) {
@@ -1445,7 +1459,10 @@ async fn sync_agency_subscription_from_stripe(
     let mut update = serde_json::Map::new();
     update.insert("plan_tier".into(), json!(plan_tier));
     update.insert("stripe_subscription_id".into(), json!(subscription_id));
-    update.insert("plan_updated_at".into(), json!(chrono::Utc::now().to_rfc3339()));
+    update.insert(
+        "plan_updated_at".into(),
+        json!(chrono::Utc::now().to_rfc3339()),
+    );
     if let Some(cust) = customer_id {
         if !cust.trim().is_empty() {
             update.insert("stripe_customer_id".into(), json!(cust));

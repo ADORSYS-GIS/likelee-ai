@@ -297,23 +297,17 @@ pub async fn booking_created_email(
         ),
     ];
 
-    let (subject, body) = match load_active_email_template(&state, &user.id, "booking_confirmation")
-        .await
-    {
-        Ok(Some(tpl)) => (
-            render_placeholders(&tpl.subject, &vars),
-            render_placeholders(&tpl.body, &vars),
-        ),
-        _ => (fallback_subject, fallback_body),
-    };
+    let (subject, body) =
+        match load_active_email_template(&state, &user.id, "booking_confirmation").await {
+            Ok(Some(tpl)) => (
+                render_placeholders(&tpl.subject, &vars),
+                render_placeholders(&tpl.body, &vars),
+            ),
+            _ => (fallback_subject, fallback_body),
+        };
 
-    let send_res = email::send_plain_text_email(
-        &state,
-        &dest,
-        &subject,
-        &body,
-        agency_email.as_deref(),
-    );
+    let send_res =
+        email::send_plain_text_email(&state, &dest, &subject, &body, agency_email.as_deref());
 
     // Log notification regardless of SMTP result (status success/error)
     let status_ok = send_res.is_ok();

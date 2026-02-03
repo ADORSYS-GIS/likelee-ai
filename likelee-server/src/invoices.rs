@@ -150,27 +150,20 @@ pub async fn send_payment_reminder(
         ),
     ];
 
-    let (subject, body) = match load_active_email_template(&state, &user.id, "payment_reminder")
-        .await
-    {
-        Ok(Some(tpl)) => (
-            render_placeholders(&tpl.subject, &vars),
-            render_placeholders(&tpl.body, &vars),
-        ),
-        _ => (
-            render_placeholders(&fallback_subject, &vars),
-            render_placeholders(&fallback_body, &vars),
-        ),
-    };
+    let (subject, body) =
+        match load_active_email_template(&state, &user.id, "payment_reminder").await {
+            Ok(Some(tpl)) => (
+                render_placeholders(&tpl.subject, &vars),
+                render_placeholders(&tpl.body, &vars),
+            ),
+            _ => (
+                render_placeholders(&fallback_subject, &vars),
+                render_placeholders(&fallback_body, &vars),
+            ),
+        };
 
-    email::send_plain_text_email(
-        &state,
-        &dest,
-        &subject,
-        &body,
-        agency_email.as_deref(),
-    )
-    .map_err(|code| (StatusCode::BAD_GATEWAY, code.to_string()))?;
+    email::send_plain_text_email(&state, &dest, &subject, &body, agency_email.as_deref())
+        .map_err(|code| (StatusCode::BAD_GATEWAY, code.to_string()))?;
 
     Ok(Json(json!({"status":"ok"})))
 }
@@ -1106,18 +1099,17 @@ pub async fn mark_sent(
                 ),
             ];
 
-            let (subject, body) = match load_active_email_template(&state, &user.id, "invoice_email")
-                .await
-            {
-                Ok(Some(tpl)) => (
-                    render_placeholders(&tpl.subject, &vars),
-                    render_placeholders(&tpl.body, &vars),
-                ),
-                _ => (
-                    render_placeholders(&fallback_subject, &vars),
-                    render_placeholders(&fallback_body, &vars),
-                ),
-            };
+            let (subject, body) =
+                match load_active_email_template(&state, &user.id, "invoice_email").await {
+                    Ok(Some(tpl)) => (
+                        render_placeholders(&tpl.subject, &vars),
+                        render_placeholders(&tpl.body, &vars),
+                    ),
+                    _ => (
+                        render_placeholders(&fallback_subject, &vars),
+                        render_placeholders(&fallback_body, &vars),
+                    ),
+                };
 
             if let Err(code) = email::send_plain_text_email(
                 &state,

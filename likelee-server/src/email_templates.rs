@@ -39,7 +39,10 @@ pub async fn load_active_email_template(
 
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "db_error".to_string()))?;
-    let first = v.as_array().and_then(|a| a.first()).and_then(|x| x.as_object());
+    let first = v
+        .as_array()
+        .and_then(|a| a.first())
+        .and_then(|x| x.as_object());
     if let Some(obj) = first {
         let subject = obj
             .get("subject")

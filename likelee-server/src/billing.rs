@@ -76,7 +76,10 @@ pub async fn create_agency_subscription_checkout(
     }
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
     if rows.is_empty() {
-        return Err((StatusCode::NOT_FOUND, "agency_profile_not_found".to_string()));
+        return Err((
+            StatusCode::NOT_FOUND,
+            "agency_profile_not_found".to_string(),
+        ));
     }
 
     let row = rows[0].clone();
