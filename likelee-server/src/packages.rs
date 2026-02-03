@@ -478,7 +478,7 @@ pub async fn create_interaction(
     State(state): State<AppState>,
     Path(token): Path<String>,
     Json(payload): Json<serde_json::Value>,
-) -> Result<StatusCode, (StatusCode, String)> {
+) -> Result<(StatusCode, Json<serde_json::Value>), (StatusCode, String)> {
     // Verify package exists via token
     let package_resp = state
         .pg
@@ -503,7 +503,7 @@ pub async fn create_interaction(
     let mut interaction = payload.clone();
     interaction.as_object_mut().unwrap().insert("package_id".to_string(), serde_json::json!(package_id));
 
-    state
+    let insert_resp = state
         .pg
         .from("agency_talent_package_interactions")
         .insert(interaction.to_string())
@@ -511,5 +511,15 @@ pub async fn create_interaction(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    Ok(StatusCode::CREATED)
+    if !insert_resp.status().is_success() {
+        let status = insert_resp.status();
+        let err_text = insert_resp.text().await.unwrap_or_default();
+        tracing::error!("Failed to create interaction: [{}] {}", status, err_text);
+        return Err((StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR), err_text));
+    }
+
+    let text = insert_resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let created_interaction: serde_json::Value = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse created interaction: {}", e)))?;
+
+    Ok((StatusCode::CREATED, Json(created_interaction)))
 }

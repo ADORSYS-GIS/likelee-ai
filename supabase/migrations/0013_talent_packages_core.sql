@@ -46,7 +46,7 @@ CREATE INDEX IF NOT EXISTS idx_atp_client_email ON public.agency_talent_packages
 CREATE TABLE IF NOT EXISTS public.agency_talent_package_items (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     package_id uuid NOT NULL REFERENCES public.agency_talent_packages(id) ON DELETE CASCADE,
-    talent_id uuid NOT NULL REFERENCES public.creators(id) ON DELETE CASCADE,
+    talent_id uuid NOT NULL REFERENCES public.agency_users(id) ON DELETE CASCADE,
     sort_order integer DEFAULT 0,
     created_at timestamptz NOT NULL DEFAULT now()
 );
@@ -78,7 +78,7 @@ CHECK (asset_type IN ('reference_image', 'agency_file', 'image', 'video'));
 CREATE TABLE IF NOT EXISTS public.agency_talent_package_interactions (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     package_id uuid NOT NULL REFERENCES public.agency_talent_packages(id) ON DELETE CASCADE,
-    talent_id uuid REFERENCES public.creators(id) ON DELETE SET NULL, -- Null if general comment
+    talent_id uuid REFERENCES public.agency_users(id) ON DELETE SET NULL, -- Null if general comment
     type text NOT NULL CHECK (type IN ('favorite', 'comment', 'callback')),
     content text,
     client_name text,
@@ -119,6 +119,7 @@ ALTER TABLE public.agency_files
   ADD COLUMN IF NOT EXISTS talent_id uuid;
 
 -- Add the correct foreign key constraint to reference agency_users(id)
+ALTER TABLE public.agency_files DROP CONSTRAINT IF EXISTS agency_files_talent_id_fkey;
 ALTER TABLE public.agency_files
 ADD CONSTRAINT agency_files_talent_id_fkey
 FOREIGN KEY (talent_id) REFERENCES public.agency_users(id) ON DELETE CASCADE;
