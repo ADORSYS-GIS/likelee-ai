@@ -187,9 +187,6 @@ export function PublicPackageView() {
                 <AlertCircle className="w-16 h-16 text-red-500 mb-6" />
                 <h1 className="text-2xl font-black text-gray-900 uppercase tracking-tight">Access Denied</h1>
                 <p className="text-gray-500 max-w-md mt-2">This package may have expired or the link is invalid. Please contact the agency for a new link.</p>
-                <Button variant="outline" className="mt-8 border-2" onClick={() => window.location.href = '/'}>
-                    Return Home
-                </Button>
             </div>
         );
     }
