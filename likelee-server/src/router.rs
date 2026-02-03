@@ -95,7 +95,7 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route(
             "/api/public/packages/:token/interactions",
-            post(crate::packages::create_interaction),
+            post(crate::packages::create_interaction).delete(crate::packages::delete_interaction),
         )
         .route("/api/dashboard", get(crate::dashboard::get_dashboard))
         // Removed legacy Tavus routes

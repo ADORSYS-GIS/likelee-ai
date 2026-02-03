@@ -474,6 +474,61 @@ pub async fn get_public_package(
     Ok(Json(package))
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DeleteInteractionRequest {
+    pub talent_id: String,
+    #[serde(rename = "type")]
+    pub r#type: String,
+}
+
+pub async fn delete_interaction(
+    State(state): State<AppState>,
+    Path(token): Path<String>,
+    Json(payload): Json<DeleteInteractionRequest>,
+) -> Result<StatusCode, (StatusCode, String)> {
+    // 1. Verify package exists via token and get its ID
+    let package_resp = state
+        .pg
+        .from("agency_talent_packages")
+        .select("id")
+        .eq("access_token", &token)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !package_resp.status().is_success() {
+        let status = package_resp.status();
+        let err_text = package_resp.text().await.unwrap_or_default();
+        return Err((StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::NOT_FOUND), err_text));
+    }
+
+    let package_text = package_resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let package: serde_json::Value = serde_json::from_str(&package_text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse interaction package: {}", e)))?;
+    let package_id = package["id"].as_str().ok_or((StatusCode::NOT_FOUND, "Package ID missing".to_string()))?;
+
+    // 2. Delete the interaction
+    let delete_resp = state
+        .pg
+        .from("agency_talent_package_interactions")
+        .delete()
+        .eq("package_id", package_id)
+        .eq("talent_id", &payload.talent_id)
+        .eq("type", &payload.r#type)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !delete_resp.status().is_success() {
+        let status = delete_resp.status();
+        let err_text = delete_resp.text().await.unwrap_or_default();
+        tracing::error!("Failed to delete interaction: [{}] {}", status, err_text);
+        return Err((StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR), err_text));
+    }
+
+    Ok(StatusCode::NO_CONTENT)
+}
+
 pub async fn create_interaction(
     State(state): State<AppState>,
     Path(token): Path<String>,
@@ -503,13 +558,27 @@ pub async fn create_interaction(
     let mut interaction = payload.clone();
     interaction.as_object_mut().unwrap().insert("package_id".to_string(), serde_json::json!(package_id));
 
-    let insert_resp = state
-        .pg
-        .from("agency_talent_package_interactions")
-        .insert(interaction.to_string())
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let interaction_type = payload["type"].as_str().unwrap_or_default();
+
+    let insert_resp = if interaction_type == "favorite" || interaction_type == "callback" {
+        let params = serde_json::json!({
+            "interaction_data": interaction
+        });
+        state
+            .pg
+            .rpc("upsert_interaction", params.to_string())
+            .execute()
+            .await
+    } else {
+        state
+            .pg
+            .from("agency_talent_package_interactions")
+            .insert(interaction.to_string())
+            .execute()
+            .await
+    };
+
+    let insert_resp = insert_resp.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     if !insert_resp.status().is_success() {
         let status = insert_resp.status();

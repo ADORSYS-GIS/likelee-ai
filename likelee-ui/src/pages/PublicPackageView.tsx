@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     Heart, MessageSquare, Send, Calendar,
     MapPin, User, ChevronRight, Eye,
@@ -21,6 +21,9 @@ export function PublicPackageView() {
     const { token } = useParams<{ token: string }>();
     const [selectedItem, setSelectedItem] = useState<any>(null);
     const selectedTalent = selectedItem?.talent;
+    const queryClient = useQueryClient();
+    const [initialFavorites, setInitialFavorites] = useState<Set<string>>(new Set());
+    const [initialCallbacks, setInitialCallbacks] = useState<Set<string>>(new Set());
     const [selectedFavorites, setSelectedFavorites] = useState<Set<string>>(new Set());
     const [selectedCallbacks, setSelectedCallbacks] = useState<Set<string>>(new Set());
     const [pendingNotes, setPendingNotes] = useState<Record<string, { comment: string; clientName: string }>>({});
@@ -35,9 +38,47 @@ export function PublicPackageView() {
         enabled: !!token,
     });
 
+    useEffect(() => {
+        if (selectedItem && packageData) {
+            const talentId = selectedItem.talent.id;
+            const existingComment = (packageData.interactions || []).find(
+                (i: any) => i.talent_id === talentId && i.type === 'comment'
+            );
+            if (existingComment) {
+                setComment(existingComment.content || "");
+                setClientName(existingComment.client_name || "");
+            } else {
+                setComment("");
+                setClientName("");
+            }
+        }
+    }, [selectedItem, packageData]);
+
     const interactionMutation = useMutation({
-        mutationFn: (data: any) => packageApi.createInteraction(token!, data)
+        mutationFn: (data: any) => packageApi.createInteraction(token!, data),
     });
+
+    const deleteInteractionMutation = useMutation({
+        mutationFn: (data: { talent_id: string; type: 'favorite' | 'callback' }) => packageApi.deleteInteraction(token!, data),
+    });
+
+    useEffect(() => {
+        if (packageData) {
+            const initialFavs = new Set<string>();
+            const initialCalls = new Set<string>();
+            (packageData.interactions || []).forEach((interaction: any) => {
+                if (interaction.type === 'favorite') {
+                    initialFavs.add(interaction.talent_id);
+                } else if (interaction.type === 'callback') {
+                    initialCalls.add(interaction.talent_id);
+                }
+            });
+            setInitialFavorites(initialFavs);
+            setSelectedFavorites(initialFavs);
+            setInitialCallbacks(initialCalls);
+            setSelectedCallbacks(initialCalls);
+        }
+    }, [packageData]);
 
     const toggleFavorite = (talentId: string) => {
         setSelectedFavorites((prev) => {
@@ -64,17 +105,30 @@ export function PublicPackageView() {
     };
 
     const submitInteractions = async (talentId: string) => {
-        const interactions: Promise<any>[] = [];
-        const pending = pendingNotes[talentId];
+        const promises: Promise<any>[] = [];
 
-        if (selectedFavorites.has(talentId)) {
-            interactions.push(interactionMutation.mutateAsync({ talent_id: talentId, type: 'favorite' }));
+        // Determine changes for favorites
+        const isFavoriteInitially = initialFavorites.has(talentId);
+        const isFavoriteCurrently = selectedFavorites.has(talentId);
+        if (isFavoriteCurrently && !isFavoriteInitially) {
+            promises.push(interactionMutation.mutateAsync({ talent_id: talentId, type: 'favorite' }));
+        } else if (!isFavoriteCurrently && isFavoriteInitially) {
+            promises.push(deleteInteractionMutation.mutateAsync({ talent_id: talentId, type: 'favorite' }));
         }
-        if (selectedCallbacks.has(talentId)) {
-            interactions.push(interactionMutation.mutateAsync({ talent_id: talentId, type: 'callback' }));
+
+        // Determine changes for callbacks
+        const isCallbackInitially = initialCallbacks.has(talentId);
+        const isCallbackCurrently = selectedCallbacks.has(talentId);
+        if (isCallbackCurrently && !isCallbackInitially) {
+            promises.push(interactionMutation.mutateAsync({ talent_id: talentId, type: 'callback' }));
+        } else if (!isCallbackCurrently && isCallbackInitially) {
+            promises.push(deleteInteractionMutation.mutateAsync({ talent_id: talentId, type: 'callback' }));
         }
+
+        // Comments are always upserted
+        const pending = pendingNotes[talentId];
         if (pending?.comment) {
-            interactions.push(interactionMutation.mutateAsync({
+            promises.push(interactionMutation.mutateAsync({
                 talent_id: talentId,
                 type: 'comment',
                 content: pending.comment,
@@ -83,24 +137,30 @@ export function PublicPackageView() {
         }
 
         try {
-            await Promise.all(interactions);
-            // On success, clear local state and close modal
-            setSelectedFavorites(new Set());
-            setSelectedCallbacks(new Set());
+            await Promise.all(promises);
+            await queryClient.invalidateQueries({ queryKey: ["public-package", token] });
             setPendingNotes({});
             setComment("");
             setClientName("");
             setSelectedItem(null);
         } catch (error) {
             console.error("Failed to save interactions:", error);
-            // Optionally, show an error message to the user
         }
     };
 
-    const hasUnsavedChanges =
-        selectedFavorites.size > 0 ||
-        selectedCallbacks.size > 0 ||
-        Object.values(pendingNotes).some((note) => note.comment || note.clientName);
+    const hasUnsavedChanges = useMemo(() => {
+        const favoritesChanged = initialFavorites.size !== selectedFavorites.size || 
+            [...initialFavorites].some(id => !selectedFavorites.has(id)) ||
+            [...selectedFavorites].some(id => !initialFavorites.has(id));
+
+        const callbacksChanged = initialCallbacks.size !== selectedCallbacks.size ||
+            [...initialCallbacks].some(id => !selectedCallbacks.has(id)) ||
+            [...selectedCallbacks].some(id => !initialCallbacks.has(id));
+
+        const notesChanged = Object.values(pendingNotes).some((note) => note.comment || note.clientName);
+
+        return favoritesChanged || callbacksChanged || notesChanged;
+    }, [selectedFavorites, selectedCallbacks, pendingNotes, initialFavorites, initialCallbacks]);
 
     useEffect(() => {
         const handler = (event: BeforeUnloadEvent) => {
@@ -430,10 +490,10 @@ export function PublicPackageView() {
                                     <Button
                                         className="w-full h-12 rounded-full font-black uppercase text-[11px] tracking-widest"
                                         style={{ backgroundColor: primaryColor }}
-                                        disabled={!hasUnsavedChanges || interactionMutation.isPending}
+                                        disabled={!hasUnsavedChanges || interactionMutation.isPending || deleteInteractionMutation.isPending}
                                         onClick={() => submitInteractions(selectedTalent.id)}
                                     >
-                                        {interactionMutation.isPending ? 'Saving...' : 'Save Changes'}
+                                        {interactionMutation.isPending || deleteInteractionMutation.isPending ? 'Saving...' : 'Save Changes'}
                                     </Button>
                                 </div>
                             </div>
