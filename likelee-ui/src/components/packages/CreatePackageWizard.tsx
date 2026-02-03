@@ -228,7 +228,7 @@ export function CreatePackageWizard({ open, onOpenChange, packageToEdit, onSucce
 
                         {/* Step Bar */}
                         <div className="flex items-center gap-0 mb-10 max-w-2xl mx-auto">
-                            {STEPS.map((s, i) => (
+                            {STEPS.slice(0, totalSteps).map((s, i) => (
                                 <React.Fragment key={s.id}>
                                     <div className="flex items-center gap-3">
                                         <div className={`w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-black transition-all duration-500 ${step >= i ? "bg-indigo-600 text-white shadow-xl shadow-indigo-100" : "bg-gray-100 text-gray-400"}`}>
@@ -637,7 +637,7 @@ export function CreatePackageWizard({ open, onOpenChange, packageToEdit, onSucce
                             </Button>
 
                             <div className="flex gap-4">
-                                {step < STEPS.length - 1 ? (
+                                {step < totalSteps - 1 ? (
                                     <Button
                                         onClick={nextStep}
                                         disabled={isNavigating}
@@ -655,8 +655,8 @@ export function CreatePackageWizard({ open, onOpenChange, packageToEdit, onSucce
                                         disabled={mutation.isPending}
                                         className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg group flex items-center gap-2"
                                     >
-                                        {mutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                                        Publish & Send
+                                        {mutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : (isTemplateMode ? <Check className="w-5 h-5" /> : <Send className="w-5 h-5" />)}
+                                        {isTemplateMode ? (isEditMode ? "Save Template" : "Done") : "Publish & Send"}
                                     </Button>
                                 )}
                             </div>
