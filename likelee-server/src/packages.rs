@@ -373,8 +373,6 @@ pub async fn update_package(
         .await;
 
     // 4. Re-insert Items (Same logic as create)
-    // Verify ownership first (optional optimization: skip if same talents, but safer to verify)
-    let supplied_talent_ids: Vec<String> = payload.items.iter().map(|i| i.talent_id.clone()).collect();
     // ... skipping detailed ownership check for brevity in update, assuming frontend sends valid data or db constraints catch it ...
     // Actually, we SHOULD reuse the verification logic from Create for security.
     

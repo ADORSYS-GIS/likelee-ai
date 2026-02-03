@@ -54,11 +54,11 @@ const AssetGallery = ({ assets }) => {
 
   const isVideoAsset = useCallback((asset) => {
     if (asset?.asset_type === 'video') return true;
-    const url = asset?.asset_url || '';
+    const url = asset?.asset_url || asset?.public_url || asset?.url || '';
     return /\.(mp4|webm|ogg)(\?|$)/i.test(url);
   }, []);
 
-  const gridAssets = useMemo(() => assets || [], [assets]);
+  const gridAssets = useMemo(() => (assets || []).filter(a => a && a.asset_url), [assets]);
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -71,7 +71,7 @@ const AssetGallery = ({ assets }) => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           {gridAssets[selectedIndex] && isVideoAsset(gridAssets[selectedIndex]) ? (
             <video
-              src={gridAssets[selectedIndex].asset_url}
+              src={gridAssets[selectedIndex].asset_url || gridAssets[selectedIndex].public_url || gridAssets[selectedIndex].url}
               className="h-full w-full object-cover"
               muted
               playsInline
@@ -79,7 +79,7 @@ const AssetGallery = ({ assets }) => {
             />
           ) : (
             <img
-              src={gridAssets[selectedIndex]?.asset_url}
+              src={gridAssets[selectedIndex]?.asset_url || gridAssets[selectedIndex]?.public_url || gridAssets[selectedIndex]?.url}
               className="h-full w-full object-cover"
               alt={`Asset ${selectedIndex + 1}`}
             />
@@ -92,19 +92,18 @@ const AssetGallery = ({ assets }) => {
               key={index}
               type="button"
               onClick={() => setSelectedIndex(index)}
-              className={`relative h-20 w-28 flex-shrink-0 overflow-hidden rounded-2xl border-2 transition ${
-                index === selectedIndex ? 'border-indigo-500' : 'border-transparent'
-              }`}
+              className={`relative h-20 w-28 flex-shrink-0 overflow-hidden rounded-2xl border-2 transition ${index === selectedIndex ? 'border-indigo-500' : 'border-transparent'
+                }`}
             >
               {isVideoAsset(asset) ? (
                 <video
-                  src={asset.asset_url}
+                  src={asset.asset_url || asset.public_url || asset.url}
                   className="h-full w-full object-cover"
                   muted
                   playsInline
                 />
               ) : (
-                <img src={asset.asset_url} className="h-full w-full object-cover" alt={`Thumbnail ${index + 1}`} />
+                <img src={asset.asset_url || asset.public_url || asset.url} className="h-full w-full object-cover" alt={`Thumbnail ${index + 1}`} />
               )}
             </button>
           ))}
@@ -124,13 +123,13 @@ const AssetGallery = ({ assets }) => {
                   <div className="flex-[0_0_100%] h-full flex items-center justify-center" key={index}>
                     {isVideoAsset(asset) ? (
                       <video
-                        src={asset.asset_url}
+                        src={asset.asset_url || asset.public_url || asset.url}
                         className="max-h-full max-w-full object-contain"
                         controls
                       />
                     ) : (
                       <img
-                        src={asset.asset_url}
+                        src={asset.asset_url || asset.public_url || asset.url}
                         className="max-h-full max-w-full object-contain"
                         alt={`Asset ${index + 1}`}
                       />
@@ -165,14 +164,13 @@ const AssetGallery = ({ assets }) => {
                     type="button"
                     key={index}
                     onClick={() => onThumbClick(index)}
-                    className={`flex-[0_0_16%] rounded-lg overflow-hidden border-2 ${
-                      index === selectedIndex ? 'border-indigo-400' : 'border-transparent'
-                    }`}
+                    className={`flex-[0_0_16%] rounded-lg overflow-hidden border-2 ${index === selectedIndex ? 'border-indigo-400' : 'border-transparent'
+                      }`}
                   >
                     {isVideoAsset(asset) ? (
-                      <video src={asset.asset_url} className="h-16 w-full object-cover" muted playsInline />
+                      <video src={asset.asset_url || asset.public_url || asset.url} className="h-16 w-full object-cover" muted playsInline />
                     ) : (
-                      <img src={asset.asset_url} className="h-16 w-full object-cover" alt={`Thumbnail ${index + 1}`} />
+                      <img src={asset.asset_url || asset.public_url || asset.url} className="h-16 w-full object-cover" alt={`Thumbnail ${index + 1}`} />
                     )}
                   </button>
                 ))}
