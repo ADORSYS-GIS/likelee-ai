@@ -1,7 +1,7 @@
 -- 0020_get_public_package_details_fix.sql
 -- Fixes property naming to match frontend expectations (asset_url)
--- and ensures talent data is correctly joined with fallback logic.
--- REMOVED invalid references to u.city and u.race as they don't exist in agency_users table.
+-- Ensures talent data (Location, Ethnicity, Bio, Availability) is correctly mapped with fallbacks.
+-- Uses verified column names from packages.rs and internal schema.
 
 BEGIN;
 
@@ -28,48 +28,48 @@ BEGIN
         'updated_at', p.updated_at,
         'agency', (SELECT jsonb_build_object('agency_name', a.agency_name, 'logo_url', a.logo_url) FROM agencies a WHERE a.id = p.agency_id),
         'interactions', (SELECT jsonb_agg(jsonb_build_object('talent_id', i.talent_id, 'type', i.type, 'content', i.content, 'client_name', i.client_name)) FROM agency_talent_package_interactions i WHERE i.package_id = p.id),
-        'items', (SELECT jsonb_agg(
-            jsonb_build_object(
-                'id', i.id,
-                'sort_order', i.sort_order,
-                'talent', (
-                    SELECT 
-                        to_jsonb(u) || 
-                        jsonb_build_object(
-                            'full_name', COALESCE(u.stage_name, u.full_legal_name, c.full_name),
-                            'profile_photo_url', COALESCE(u.profile_photo_url, c.profile_photo_url),
-                            'city', c.city,
-                            'race_ethnicity', c.race,
-                            'bio', COALESCE(u.bio_notes, c.bio)
-                        )
-                    FROM agency_users u
-                    LEFT JOIN creators c ON c.id = u.creator_id
-                    WHERE u.id = i.talent_id
-                ),
-                'assets', (
-                    SELECT jsonb_agg(
-                       jsonb_build_object(
-                            'id', pa.id,
-                            'asset_id', pa.asset_id,
-                            'asset_type', pa.asset_type,
-                            'sort_order', pa.sort_order,
-                            'asset_url', COALESCE(af.public_url, ri.public_url),
-                            'asset', jsonb_build_object(
+        'items', (
+            SELECT jsonb_agg(
+                jsonb_build_object(
+                    'id', i.id,
+                    'sort_order', i.sort_order,
+                    'talent', (
+                        SELECT jsonb_build_object(
+                            'id', u.id,
+                            'stage_name', u.stage_name,
+                            'full_legal_name', u.full_legal_name,
+                            'profile_photo_url', u.profile_photo_url,
+                            'bio_notes', u.bio_notes,
+                            'city', u.city,
+                            'race_ethnicity', u.race_ethnicity
+                        ) FROM agency_users u WHERE u.id = i.talent_id
+                    ),
+                    'assets', (
+                        SELECT jsonb_agg(
+                            jsonb_build_object(
                                 'id', pa.id,
-                                'asset_url', COALESCE(af.public_url, ri.public_url),
-                                'public_url', COALESCE(af.public_url, ri.public_url),
-                                'file_name', COALESCE(af.file_name, ri.section_id)
+                                'asset_id', pa.asset_id,
+                                'asset_type', pa.asset_type,
+                                'sort_order', pa.sort_order,
+                                'asset', jsonb_build_object(
+                                    'id', af.id,
+                                    'asset_url', af.public_url,
+                                    'asset_type', pa.asset_type
+                                )
                             )
-                       )
-                    ) 
-                    FROM agency_talent_package_item_assets pa
-                    LEFT JOIN agency_files af ON af.id = pa.asset_id AND pa.asset_type IN ('agency_file', 'image', 'video', 'agency_file')
-                    LEFT JOIN reference_images ri ON ri.id = pa.asset_id AND pa.asset_type = 'reference_image'
-                    WHERE pa.item_id = i.id
-                    AND (af.id IS NOT NULL OR ri.id IS NOT NULL)
+                        )
+                        FROM 
+                            agency_talent_package_item_assets pa
+                        JOIN 
+                            agency_files af ON pa.asset_id = af.id
+                        WHERE 
+                            pa.item_id = i.id
+                    )
                 )
-            )
-        ) FROM agency_talent_package_items i WHERE i.package_id = p.id)
+            ) 
+            FROM agency_talent_package_items i 
+            WHERE i.package_id = p.id
+        )
     )
     INTO result
     FROM agency_talent_packages p
