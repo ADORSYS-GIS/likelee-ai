@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     Loader2, Plus, X, Check, ArrowRight, ArrowLeft,
@@ -13,6 +13,7 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
     DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { packageApi } from "@/api/packages";
 import { useToast } from "@/components/ui/use-toast";
 import { useDebounce } from "@/hooks/useDebounce";
+import { format } from 'date-fns';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -31,6 +33,8 @@ import { AssetSelector } from "./AssetSelector";
 interface CreatePackageWizardProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    packageToEdit?: any | null;
+    onSuccess?: () => void;
 }
 
 const STEPS = [
@@ -40,7 +44,7 @@ const STEPS = [
     { id: "send", title: "Send", icon: Send },
 ];
 
-export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardProps) {
+export function CreatePackageWizard({ open, onOpenChange, packageToEdit, onSuccess }: CreatePackageWizardProps) {
     const [step, setStep] = useState(0);
     const [showTalentSelector, setShowTalentSelector] = useState(false);
     const [isNavigating, setIsNavigating] = useState(false);
@@ -50,8 +54,10 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
     const [createdPackage, setCreatedPackage] = useState<any>(null);
     const { toast } = useToast();
     const queryClient = useQueryClient();
+    const isEditMode = !!packageToEdit;
 
-    const [formData, setFormData] = useState({
+
+    const initialFormData = {
         title: "",
         description: "",
         cover_image_url: "",
@@ -67,7 +73,36 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
         client_name: "",
         client_email: "",
         items: [] as any[],
-    });
+    };
+
+    const [formData, setFormData] = useState(initialFormData);
+
+    useEffect(() => {
+        if (open && packageToEdit) {
+            // packageToEdit.items already has embedded talent and assets data from getPackage API
+            setFormData({
+                title: packageToEdit.title || "",
+                description: packageToEdit.description || "",
+                cover_image_url: packageToEdit.cover_image_url || "",
+                primary_color: packageToEdit.primary_color || "#6366F1",
+                secondary_color: packageToEdit.secondary_color || "#06B6D4",
+                custom_message: packageToEdit.custom_message || "",
+                allow_comments: packageToEdit.allow_comments ?? true,
+                allow_favorites: packageToEdit.allow_favorites ?? true,
+                allow_callbacks: packageToEdit.allow_callbacks ?? true,
+                password_protected: packageToEdit.password_protected || false,
+                password: packageToEdit.password || "",
+                expires_at: packageToEdit.expires_at ? format(new Date(packageToEdit.expires_at), 'yyyy-MM-dd') : "",
+                client_name: packageToEdit.client_name || "",
+                client_email: packageToEdit.client_email || "",
+                items: packageToEdit.items || [],
+            });
+        } else if (open && !isEditMode) {
+            setFormData(initialFormData);
+        } else if (!open) {
+            resetForm();
+        }
+    }, [packageToEdit, open, isEditMode]);
 
     const [searchTerm, setSearchTerm] = useState("");
     const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -78,13 +113,18 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
         enabled: open && showTalentSelector,
     });
 
-    const createMutation = useMutation({
-        mutationFn: (data: any) => packageApi.createPackage(data),
+    const mutation = useMutation({
+        mutationFn: (data: any) => {
+            return isEditMode
+                ? packageApi.updatePackage(packageToEdit.id, data)
+                : packageApi.createPackage(data);
+        },
         onSuccess: (data: any) => {
             setCreatedPackage(data);
             setShowSuccess(true);
             queryClient.invalidateQueries({ queryKey: ["agency-packages"] });
             queryClient.invalidateQueries({ queryKey: ["agency-package-stats"] });
+            if (onSuccess) onSuccess();
         },
     });
 
@@ -92,23 +132,7 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
         setStep(0);
         setShowSuccess(false);
         setCreatedPackage(null);
-        setFormData({
-            title: "",
-            description: "",
-            cover_image_url: "",
-            primary_color: "#6366F1",
-            secondary_color: "#06B6D4",
-            custom_message: "",
-            allow_comments: true,
-            allow_favorites: true,
-            allow_callbacks: true,
-            password_protected: false,
-            password: "",
-            expires_at: "",
-            client_name: "",
-            client_email: "",
-            items: [],
-        });
+        setFormData(initialFormData);
     };
 
     const nextStep = async () => {
@@ -162,7 +186,7 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                 }))
             })),
         };
-        createMutation.mutate(finalData);
+        mutation.mutate(finalData);
     };
 
     return (
@@ -174,11 +198,11 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                         <div className="flex justify-between items-start mb-8">
                             <div>
                                 <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight">
-                                    Create a New Talent Package
+                                    {isEditMode ? "Edit Talent Package" : "Create a New Talent Package"}
                                 </DialogTitle>
-                                <p className="text-sm text-gray-500 font-medium mt-1">
+                                <DialogDescription className="text-sm text-gray-500 font-medium mt-1">
                                     Build a beautiful portfolio package to showcase your talent to clients
-                                </p>
+                                </DialogDescription>
                             </div>
                         </div>
 
@@ -303,50 +327,51 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                         <div className="space-y-4">
                                             <AnimatePresence mode="popLayout">
                                                 {formData.items.map((item, idx) => (
-                                                    <motion.div
-                                                        key={item.talent_id}
-                                                        layout
-                                                        initial={{ opacity: 0, scale: 0.95 }}
-                                                        animate={{ opacity: 1, scale: 1 }}
-                                                        exit={{ opacity: 0, scale: 0.95 }}
-                                                        className="group flex items-center justify-between p-4 bg-white border border-gray-200 rounded-2xl hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-50 transition-all duration-300"
-                                                    >
-                                                        <div className="flex items-center gap-6">
-                                                            <div className="hidden sm:block p-2 text-gray-200 group-hover:text-indigo-200 transition-colors cursor-grab active:cursor-grabbing">
-                                                                <GripVertical className="w-5 h-5" />
-                                                            </div>
-                                                            <div className="w-16 h-16 rounded-[1.25rem] bg-gray-100 overflow-hidden shadow-inner flex-shrink-0">
-                                                                <img src={item.talent.profile_photo_url} className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-500" />
-                                                            </div>
-                                                            <div>
-                                                                <h5 className="font-black text-gray-900 tracking-tight text-lg">{item.talent.full_name}</h5>
-                                                                <div className="flex items-center gap-2 mt-1">
-                                                                    <Badge variant="secondary" className="bg-gray-100 text-gray-700 text-[9px] font-bold uppercase tracking-wider border-none px-2 rounded-md">
-                                                                        {item.assets.length} Assets
-                                                                    </Badge>
-                                                                    <p className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">Selected</p>
+                                                    item.talent && (
+                                                        <motion.div
+                                                            key={item.talent_id}
+                                                            layout
+                                                            initial={{ opacity: 0, scale: 0.95 }}
+                                                            animate={{ opacity: 1, scale: 1 }}
+                                                            exit={{ opacity: 0, scale: 0.95 }}
+                                                            className="group flex items-center justify-between p-4 bg-white border border-gray-200 rounded-2xl hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-50 transition-all duration-300"
+                                                        >
+                                                            <div className="flex items-center gap-6">
+                                                                <div className="hidden sm:block p-2 text-gray-200 group-hover:text-indigo-200 transition-colors cursor-grab active:cursor-grabbing">
+                                                                    <GripVertical className="w-5 h-5" />
+                                                                </div>
+                                                                <div className="w-16 h-16 rounded-[1.25rem] bg-gray-100 overflow-hidden shadow-inner flex-shrink-0">
+                                                                    <img src={item.talent.profile_photo_url} className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-500" />
+                                                                </div>
+                                                                <div>
+                                                                    <h5 className="font-black text-gray-900 tracking-tight text-lg">{item.talent.full_name}</h5>
+                                                                    <div className="flex items-center gap-2 mt-1">
+                                                                        <Badge variant="secondary" className="bg-gray-100 text-gray-700 text-[9px] font-bold uppercase tracking-wider border-none px-2 rounded-md">
+                                                                            {item.assets.length} Assets
+                                                                        </Badge>
+                                                                        <p className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">Selected</p>
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
-                                                        <div className="flex items-center gap-4">
-                                                            <Button
-                                                                onClick={() => setActiveTalentForAssets({ id: item.talent_id, name: item.talent.full_name })}
-                                                                className={`h-10 px-6 rounded-full border-none text-xs font-bold uppercase tracking-wider gap-2 transition-all duration-300 ${item.assets.length > 0 ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-indigo-100 text-indigo-700 hover:bg-indigo-200"}`}
-                                                            >
-                                                                <Layers className="w-4 h-4" />
-                                                                {item.assets.length > 0 ? "Update Selection" : "Select Assets"}
-                                                            </Button>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                onClick={() => toggleTalentSelection(item.talent)}
-                                                                className="h-10 w-10 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-300"
-                                                            >
-                                                                <Trash2 className="w-4 h-4" />
-                                                            </Button>
-                                                        </div>
-                                                    </motion.div>
-                                                ))}
+                                                            <div className="flex items-center gap-4">
+                                                                <Button
+                                                                    onClick={() => setActiveTalentForAssets({ id: item.talent_id, name: item.talent.full_name })}
+                                                                    className={`h-10 px-6 rounded-full border-none text-xs font-bold uppercase tracking-wider gap-2 transition-all duration-300 ${item.assets.length > 0 ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-indigo-100 text-indigo-700 hover:bg-indigo-200"}`}
+                                                                >
+                                                                    <Layers className="w-4 h-4" />
+                                                                    {item.assets.length > 0 ? "Update Selection" : "Select Assets"}
+                                                                </Button>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    onClick={() => toggleTalentSelection(item.talent)}
+                                                                    className="h-10 w-10 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-300"
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </Button>
+                                                            </div>
+                                                        </motion.div>
+                                                    )))}
                                             </AnimatePresence>
                                             {formData.items.length === 0 && (
                                                 <div className="p-20 text-center border-2 border-dashed border-gray-200 rounded-[2rem] bg-white">
@@ -607,10 +632,10 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                                 ) : (
                                     <Button
                                         onClick={handleSubmit}
-                                        disabled={createMutation.isPending}
+                                        disabled={mutation.isPending}
                                         className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg group flex items-center gap-2"
                                     >
-                                        {createMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                                        {mutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                                         Publish & Send
                                     </Button>
                                 )}
@@ -625,7 +650,7 @@ export function CreatePackageWizard({ open, onOpenChange }: CreatePackageWizardP
                 <DialogContent className="max-w-2xl rounded-[3rem] p-10 border-none bg-white/95 backdrop-blur-xl shadow-2xl">
                     <DialogHeader className="mb-8">
                         <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight">
-                            Create a New Talent Package
+                            {isEditMode ? 'Edit Talent Package' : 'Create a New Talent Package'}
                         </DialogTitle>
                         <p className="text-sm text-gray-500 font-medium mt-1">
                             Build a beautiful portfolio package to showcase your talent to clients

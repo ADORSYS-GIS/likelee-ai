@@ -20,10 +20,22 @@ import {
 import { CreatePackageWizard } from "./CreatePackageWizard";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export function PackagesView() {
     const [searchTerm, setSearchTerm] = useState("");
     const [showWizard, setShowWizard] = useState(false);
+    const [editingPackage, setEditingPackage] = useState<any | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
     const { toast } = useToast();
     const queryClient = useQueryClient();
 
@@ -43,6 +55,13 @@ export function PackagesView() {
             toast({ title: "Package deleted" });
             queryClient.invalidateQueries({ queryKey: ["agency-packages"] });
             queryClient.invalidateQueries({ queryKey: ["agency-package-stats"] });
+        },
+    });
+
+    const fetchFullPackageMutation = useMutation({
+        mutationFn: (id: string) => packageApi.getPackage(id),
+        onSuccess: (fullPackageData) => {
+            setEditingPackage(fullPackageData);
         },
     });
 
@@ -192,12 +211,15 @@ export function PackagesView() {
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end" className="w-48">
-                                            <DropdownMenuItem className="font-bold text-xs uppercase tracking-widest p-3">
+                                            <DropdownMenuItem
+                                                className="font-bold text-xs uppercase tracking-widest p-3"
+                                                onClick={() => fetchFullPackageMutation.mutate(pkg.id)}
+                                            >
                                                 <Pencil className="w-4 h-4 mr-2" /> Edit Package
                                             </DropdownMenuItem>
                                             <DropdownMenuItem
                                                 className="font-bold text-xs uppercase tracking-widest p-3 text-red-600"
-                                                onClick={() => deleteMutation.mutate(pkg.id)}
+                                                onClick={() => setDeleteTarget(pkg)}
                                             >
                                                 <Trash2 className="w-4 h-4 mr-2" /> Delete
                                             </DropdownMenuItem>
@@ -210,7 +232,44 @@ export function PackagesView() {
                 </div>
             )}
 
-            <CreatePackageWizard open={showWizard} onOpenChange={setShowWizard} />
+            <CreatePackageWizard
+                open={showWizard || !!editingPackage}
+                onOpenChange={(isOpen) => {
+                    if (!isOpen) {
+                        setShowWizard(false);
+                        setEditingPackage(null);
+                    }
+                }}
+                packageToEdit={editingPackage}
+                onSuccess={() => {
+                    setShowWizard(false);
+                    setEditingPackage(null);
+                }}
+            />
+
+            <AlertDialog open={!!deleteTarget} onOpenChange={(isOpen) => !isOpen && setDeleteTarget(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the package "{deleteTarget?.title}".
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-red-600 hover:bg-red-700"
+                            onClick={() => {
+                                if (deleteTarget) {
+                                    deleteMutation.mutate(deleteTarget.id);
+                                    setDeleteTarget(null);
+                                }
+                            }}>
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
