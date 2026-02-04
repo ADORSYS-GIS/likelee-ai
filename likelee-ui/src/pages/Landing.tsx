@@ -84,7 +84,7 @@ export default function Landing() {
               <div className="absolute top-3 left-1/2 -translate-x-1/2 w-24 h-6 bg-black rounded-full z-20" />
               <video
                 className="w-full h-full object-cover"
-                src="/media/Nadege.mp4"
+                src="/media/rea1.mp4"
                 autoPlay
                 muted
                 playsInline
@@ -102,7 +102,7 @@ export default function Landing() {
               <div className="absolute top-3 left-1/2 -translate-x-1/2 w-24 h-6 bg-black rounded-full z-20" />
               <video
                 className="w-full h-full object-cover"
-                src="/media/reel2_likelee.mp4"
+                src="/media/real2.mp4"
                 autoPlay
                 muted
                 playsInline
@@ -197,7 +197,7 @@ export default function Landing() {
               <div className="absolute top-3 left-1/2 -translate-x-1/2 w-24 h-6 bg-black rounded-full z-20" />
               <video
                 className="w-full h-full object-cover"
-                src="/media/reel3_likelee.mp4"
+                src="/media/real3.mp4"
                 autoPlay
                 muted
                 playsInline
