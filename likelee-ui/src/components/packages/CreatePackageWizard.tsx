@@ -198,8 +198,17 @@ export function CreatePackageWizard({ open, onOpenChange, packageToEdit, onSucce
 
     const handleSubmit = () => {
         // For templates, client details are optional. For packages, they're required.
-        if (!isTemplateMode && (formData.client_name === "" || formData.client_email === "")) {
-            return toast({ title: "Required", description: "Client details are required to send the package", variant: "destructive" });
+        if (!isTemplateMode) {
+            if (!formData.client_name.trim()) {
+                return toast({ title: "Required", description: "Client Contact name is required.", variant: "destructive" });
+            }
+            if (!formData.client_email.trim()) {
+                return toast({ title: "Required", description: "Delivery Email is required.", variant: "destructive" });
+            }
+            const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/g;
+            if (!emailRegex.test(formData.client_email)) {
+                return toast({ title: "Invalid Email", description: "Please enter a valid email address for delivery.", variant: "destructive" });
+            }
         }
 
         const itemsArray = Array.isArray(formData.items) ? formData.items : [formData.items];
