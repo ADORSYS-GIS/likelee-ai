@@ -172,6 +172,12 @@
   - Keep `likelee-server/.env.example` in sync.
   - Document the variables here under this section.
 
+### KYC / Veriff
+
+- `KYC_BYPASS_VERIFF_LIMIT` (bool, default `false`)
+  - Temporary testing flag to bypass the agency Veriff monthly session limit.
+  - Must remain disabled in normal environments.
+
 ### Stripe Subscriptions (Agency Billing)
 
 - `STRIPE_AGENCY_PRICE_ID`

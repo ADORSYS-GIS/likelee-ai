@@ -1105,6 +1105,7 @@ export default function CreatorDashboard() {
   const [uploading, setUploading] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [kycLoading, setKycLoading] = useState(false);
+  const [kycSessionUrl, setKycSessionUrl] = useState<string | null>(null);
   const [activeCampaigns, setActiveCampaigns] =
     useState<any[]>(mockActiveCampaigns);
   const [pendingApprovals, setPendingApprovals] =
@@ -1488,14 +1489,10 @@ export default function CreatorDashboard() {
     }
     try {
       setKycLoading(true);
-      const res = await fetch(api(`/api/kyc/session`), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: user.id }),
+      const data: any = await base44.post("/api/kyc/session", {
+        user_id: user.id,
       });
-      if (!res.ok) throw new Error(await res.text());
-      const data = await res.json();
-      if (data.session_url) window.open(data.session_url, "_blank");
+      if (data.session_url) setKycSessionUrl(String(data.session_url));
     } catch (e: any) {
       toast({
         variant: "destructive",
@@ -8798,6 +8795,26 @@ export default function CreatorDashboard() {
               )}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!kycSessionUrl}
+        onOpenChange={(open) => {
+          if (!open) setKycSessionUrl(null);
+        }}
+      >
+        <DialogContent className="max-w-4xl h-[90vh] p-0 overflow-hidden">
+          <div className="w-full h-full bg-white">
+            {kycSessionUrl ? (
+              <iframe
+                title="KYC Verification"
+                src={kycSessionUrl}
+                className="w-full h-full"
+                allow="camera; microphone; fullscreen; clipboard-read; clipboard-write"
+              />
+            ) : null}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

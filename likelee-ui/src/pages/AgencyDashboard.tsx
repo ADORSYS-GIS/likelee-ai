@@ -88,6 +88,7 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { base44 } from "@/api/base44Client";
 import { useToast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
 import {
@@ -17451,6 +17452,7 @@ export default function AgencyDashboard() {
 
   const { toast } = useToast();
   const [kycLoading, setKycLoading] = useState(false);
+  const [kycSessionUrl, setKycSessionUrl] = useState<string | null>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [bookOuts, setBookOuts] = useState<any[]>([]);
 
@@ -17647,17 +17649,12 @@ export default function AgencyDashboard() {
         duration: 3000,
       });
 
-      const res = await fetch(api(`/api/kyc/session`), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: user.id }),
+      const data: any = await base44.post("/api/kyc/session", {
+        user_id: user.id,
       });
 
-      if (!res.ok) throw new Error(await res.text());
-      const data = await res.json();
-
       if (data.session_url) {
-        window.open(data.session_url, "_blank");
+        setKycSessionUrl(String(data.session_url));
       } else {
         throw new Error("No session URL returned");
       }
@@ -18224,6 +18221,26 @@ export default function AgencyDashboard() {
             </div>
           )}
         </main>
+
+        <Dialog
+          open={!!kycSessionUrl}
+          onOpenChange={(open) => {
+            if (!open) setKycSessionUrl(null);
+          }}
+        >
+          <DialogContent className="max-w-4xl h-[90vh] p-0 overflow-hidden">
+            <div className="w-full h-full bg-white">
+              {kycSessionUrl ? (
+                <iframe
+                  title="KYC Verification"
+                  src={kycSessionUrl}
+                  className="w-full h-full"
+                  allow="camera; microphone; fullscreen; clipboard-read; clipboard-write"
+                />
+              ) : null}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

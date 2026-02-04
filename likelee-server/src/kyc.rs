@@ -138,33 +138,35 @@ pub async fn create_session(
             chrono::Utc,
         );
 
-        let usage_resp = state
-            .pg
-            .from("agency_veriff_sessions")
-            .select("id")
-            .eq("agency_id", &user.id)
-            .gte("created_at", month_start.to_rfc3339())
-            .lt("created_at", next_month_start.to_rfc3339())
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !state.kyc_bypass_veriff_limit {
+            let usage_resp = state
+                .pg
+                .from("agency_veriff_sessions")
+                .select("id")
+                .eq("agency_id", &user.id)
+                .gte("created_at", month_start.to_rfc3339())
+                .lt("created_at", next_month_start.to_rfc3339())
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-        let status = usage_resp.status();
-        let text = usage_resp
-            .text()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !status.is_success() {
-            let code =
-                StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-            return Err((code, text));
-        }
-        let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
-        if rows.len() >= limit {
-            return Err((
-                StatusCode::FORBIDDEN,
-                "veriff_monthly_limit_reached".to_string(),
-            ));
+            let status = usage_resp.status();
+            let text = usage_resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            if !status.is_success() {
+                let code = StatusCode::from_u16(status.as_u16())
+                    .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+                return Err((code, text));
+            }
+            let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+            if rows.len() >= limit {
+                return Err((
+                    StatusCode::FORBIDDEN,
+                    "veriff_monthly_limit_reached".to_string(),
+                ));
+            }
         }
     }
 
