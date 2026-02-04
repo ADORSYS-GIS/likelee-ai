@@ -7,6 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Heart, Phone, Clock, User, MessageSquare, Check } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { packageApi } from "@/api/packages";
+import {
+    DropdownMenu,
+    DropdownMenuTrigger,
+    DropdownMenuContent,
+    DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 interface PackageFeedbackDialogProps {
     open: boolean;
@@ -31,19 +37,127 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
 
+    const favorites = interactions.filter((i: any) => i.type === "favorite");
+    const callbacks = interactions.filter((i: any) => i.type === "callback");
+    const selected = interactions.filter((i: any) => i.type === "selected");
+
+    const resolveTalent = (interaction: any) => {
+        const item = pkg?.items?.find((i: any) =>
+            i.talent_id === interaction.talent_id || i.talent?.id === interaction.talent_id
+        );
+        return {
+            name:
+                item?.talent?.stage_name ||
+                item?.talent?.full_legal_name ||
+                item?.talent?.full_name ||
+                "Unknown Talent",
+            image: item?.talent?.profile_photo_url,
+        };
+    };
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-2xl bg-white rounded-xl shadow-2xl border-none">
                 <DialogHeader className="mb-6">
-                    <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
-                        Client Activity
-                        <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 border-indigo-100">
-                            {pkg?.client_name || "Client"}
-                        </Badge>
-                    </DialogTitle>
-                    <DialogDescription className="text-base text-gray-500">
-                        Detailed timeline of client interactions with <strong>{pkg?.title}</strong>
-                    </DialogDescription>
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                            <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
+                                Client Activity
+                                <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 border-indigo-100">
+                                    {pkg?.client_name || "Client"}
+                                </Badge>
+                            </DialogTitle>
+                            <DialogDescription className="text-base text-gray-500">
+                                Detailed timeline of client interactions with <strong>{pkg?.title}</strong>
+                            </DialogDescription>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="icon" className="rounded-full border-2 border-emerald-200 text-emerald-600">
+                                        <Check className="w-4 h-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-64">
+                                    {selected.length === 0 ? (
+                                        <DropdownMenuItem disabled>No selections yet</DropdownMenuItem>
+                                    ) : (
+                                        selected.map((interaction: any, index: number) => {
+                                            const talent = resolveTalent(interaction);
+                                            return (
+                                                <DropdownMenuItem key={interaction.id || index} className="gap-3">
+                                                    <div className="w-6 h-6 rounded-full bg-gray-200 overflow-hidden">
+                                                        {talent.image ? (
+                                                            <img src={talent.image} alt={talent.name} className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <User className="w-3 h-3 m-1.5 text-gray-400" />
+                                                        )}
+                                                    </div>
+                                                    <span className="font-medium text-sm text-gray-700">{talent.name}</span>
+                                                </DropdownMenuItem>
+                                            );
+                                        })
+                                    )}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="icon" className="rounded-full border-2 border-red-200 text-red-600">
+                                        <Heart className="w-4 h-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-64">
+                                    {favorites.length === 0 ? (
+                                        <DropdownMenuItem disabled>No favorites yet</DropdownMenuItem>
+                                    ) : (
+                                        favorites.map((interaction: any, index: number) => {
+                                            const talent = resolveTalent(interaction);
+                                            return (
+                                                <DropdownMenuItem key={interaction.id || index} className="gap-3">
+                                                    <div className="w-6 h-6 rounded-full bg-gray-200 overflow-hidden">
+                                                        {talent.image ? (
+                                                            <img src={talent.image} alt={talent.name} className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <User className="w-3 h-3 m-1.5 text-gray-400" />
+                                                        )}
+                                                    </div>
+                                                    <span className="font-medium text-sm text-gray-700">{talent.name}</span>
+                                                </DropdownMenuItem>
+                                            );
+                                        })
+                                    )}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="icon" className="rounded-full border-2 border-green-200 text-green-600">
+                                        <Phone className="w-4 h-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-64">
+                                    {callbacks.length === 0 ? (
+                                        <DropdownMenuItem disabled>No callbacks yet</DropdownMenuItem>
+                                    ) : (
+                                        callbacks.map((interaction: any, index: number) => {
+                                            const talent = resolveTalent(interaction);
+                                            return (
+                                                <DropdownMenuItem key={interaction.id || index} className="gap-3">
+                                                    <div className="w-6 h-6 rounded-full bg-gray-200 overflow-hidden">
+                                                        {talent.image ? (
+                                                            <img src={talent.image} alt={talent.name} className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <User className="w-3 h-3 m-1.5 text-gray-400" />
+                                                        )}
+                                                    </div>
+                                                    <span className="font-medium text-sm text-gray-700">{talent.name}</span>
+                                                </DropdownMenuItem>
+                                            );
+                                        })
+                                    )}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    </div>
                 </DialogHeader>
 
                 {isLoading ? (
