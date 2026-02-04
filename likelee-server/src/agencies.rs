@@ -747,6 +747,7 @@ pub async fn upload_agency_storage_file(
             .unwrap_or("")
             .to_string(),
         client_id: None,
+        talent_id: None,
     }))
 }
 

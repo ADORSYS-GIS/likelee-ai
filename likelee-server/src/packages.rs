@@ -283,7 +283,7 @@ pub async fn create_package(
             );
 
             tracing::info!("Sending package email: To={}, Subject={}, FrontendURL={}, Agency={}, Client={}", client_email, subject, state.frontend_url, agency_name, client_name);
-            match crate::email::send_email_core(&state, client_email, &subject, &body, true).await {
+            match crate::email::send_email_core(&state, client_email, &subject, &body, true, None).await {
                 Ok(_) => tracing::info!("Package email SENT SUCCESSFULLY to {}", client_email),
                 Err((code, msg)) => tracing::error!("FAILED TO SEND package email to {}: [{}] {}", client_email, code, msg),
             }
