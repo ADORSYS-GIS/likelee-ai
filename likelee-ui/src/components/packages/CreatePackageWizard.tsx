@@ -218,8 +218,8 @@ export function CreatePackageWizard({ open, onOpenChange, packageToEdit, onSucce
             items: itemsArray.map(({ talent, assets, ...item }) => ({
                 ...item,
                 asset_ids: assets.map((asset: any) => ({
-                    asset_id: asset.id,
-                    asset_type: asset.type,
+                    asset_id: asset.asset_id || asset.id,
+                    asset_type: asset.asset_type || asset.type,
                 }))
             })),
         };
