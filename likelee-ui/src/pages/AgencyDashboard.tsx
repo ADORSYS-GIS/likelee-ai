@@ -17597,6 +17597,12 @@ export default function AgencyDashboard() {
     });
   };
 
+  useEffect(() => {
+    if (agencyMode !== "AI") return;
+    if (activeTab !== "accounting") return;
+    setActiveTab("dashboard");
+  }, [agencyMode, activeTab]);
+
   const setActiveTab = (tab: string) => {
     setActiveTabState(tab);
     setSearchParams((prev) => {
@@ -17741,20 +17747,6 @@ export default function AgencyDashboard() {
             label: "Analytics",
             icon: BarChart2,
             subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-          },
-          {
-            id: "accounting",
-            label: "Accounting & Invoicing",
-            icon: CreditCard,
-            subItems: [
-              "Invoice Generation",
-              "Invoice Management",
-              "Payment Tracking",
-              "Talent Statements",
-              "Financial Reports",
-              "Expense Tracking",
-              "Connect Bank",
-            ],
           },
           {
             id: "settings",

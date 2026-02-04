@@ -99,6 +99,18 @@ type StorageFile = {
   created_at: string;
 };
 
+const isPreviewableImage = (mimeType: string | null) => {
+  if (!mimeType) return false;
+  return mimeType.toLowerCase().startsWith("image/");
+};
+
+const fileExtension = (name: string) => {
+  const base = name.split("?")[0];
+  const idx = base.lastIndexOf(".");
+  if (idx === -1) return "";
+  return base.slice(idx + 1).toLowerCase();
+};
+
 const bytesToHuman = (bytes: number) => {
   if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
   const units = ["B", "KB", "MB", "GB", "TB"];
@@ -873,6 +885,9 @@ const FileStorageView = () => {
   const [usage, setUsage] = useState<StorageUsage | null>(null);
   const [folders, setFolders] = useState<StorageFolder[]>([]);
   const [files, setFiles] = useState<StorageFile[]>([]);
+  const [thumbnailUrlByFileId, setThumbnailUrlByFileId] = useState<
+    Record<string, string>
+  >({});
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMoreFolders, setIsLoadingMoreFolders] = useState(false);
@@ -899,6 +914,41 @@ const FileStorageView = () => {
     if (!q) return files;
     return files.filter((f) => f.file_name.toLowerCase().includes(q));
   }, [files, searchTerm]);
+
+  useEffect(() => {
+    let canceled = false;
+    const loadThumbnails = async () => {
+      const previewable = filteredFiles.filter(
+        (f) => isPreviewableImage(f.mime_type) && !thumbnailUrlByFileId[f.id],
+      );
+
+      if (previewable.length === 0) return;
+
+      const results = await Promise.allSettled(
+        previewable.map(async (f) => {
+          const resp: any = await getAgencyStorageFileSignedUrl(f.id);
+          const url = resp?.url;
+          if (!url) throw new Error("missing signed url");
+          return { fileId: f.id, url: String(url) };
+        }),
+      );
+
+      if (canceled) return;
+      setThumbnailUrlByFileId((prev) => {
+        const next = { ...prev };
+        results.forEach((r) => {
+          if (r.status !== "fulfilled") return;
+          next[r.value.fileId] = r.value.url;
+        });
+        return next;
+      });
+    };
+
+    loadThumbnails();
+    return () => {
+      canceled = true;
+    };
+  }, [filteredFiles, thumbnailUrlByFileId]);
 
   const loadInitial = async (folderId: string | null) => {
     setIsLoading(true);
@@ -1303,6 +1353,25 @@ const FileStorageView = () => {
                 key={f.id}
                 className="p-4 bg-white border border-gray-100 rounded-2xl"
               >
+                <div className="aspect-video bg-gray-50 rounded-xl overflow-hidden mb-3 flex items-center justify-center">
+                  {thumbnailUrlByFileId[f.id] ? (
+                    <img
+                      src={thumbnailUrlByFileId[f.id]}
+                      alt={f.file_name}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center gap-1.5">
+                      <File
+                        className={`w-8 h-8 ${isPreviewableImage(f.mime_type) ? "text-emerald-500" : "text-gray-400"}`}
+                      />
+                      <span className="text-[10px] font-black uppercase text-gray-400">
+                        {fileExtension(f.file_name) || "file"}
+                      </span>
+                    </div>
+                  )}
+                </div>
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-gray-900 truncate">
