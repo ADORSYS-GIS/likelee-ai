@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     Plus, Search, Filter, MoreHorizontal, Eye,
-    Share2, Trash2, Loader2, Package, TrendingUp,
+    Share2, Trash2, Loader2, Package, TrendingUp, Send,
     Clock, Calendar, CheckCircle2, AlertCircle, Copy, ExternalLink,
     Image as ImageIcon, ChevronLeft, ChevronRight, Activity, MessageSquare
 } from "lucide-react";
@@ -111,10 +111,10 @@ export function PackagesView() {
     };
 
     const stats = [
-        { label: "Total Packages", value: realStats.total_packages, icon: Package, color: "text-blue-600", bgColor: "bg-blue-100" },
-        { label: "Active Shares", value: realStats.active_shares, icon: CheckCircle2, color: "text-green-600", bgColor: "bg-green-100" },
-        { label: "Total Views", value: realStats.total_views.toLocaleString(), icon: Eye, color: "text-purple-600", bgColor: "bg-purple-100" },
-        { label: "Conversion", value: realStats.conversion_rate, icon: TrendingUp, color: "text-orange-600", bgColor: "bg-orange-100" },
+        { label: "Total Packages", value: realStats.total_packages, icon: Package, color: "text-blue-600", bgColor: "bg-blue-50" },
+        { label: "Active Shares", value: realStats.active_shares, icon: CheckCircle2, color: "text-green-600", bgColor: "bg-green-50" },
+        { label: "Total Views", value: realStats.total_views.toLocaleString(), icon: Eye, color: "text-purple-600", bgColor: "bg-purple-50" },
+        { label: "Conversion", value: realStats.conversion_rate, icon: TrendingUp, color: "text-orange-600", bgColor: "bg-orange-50" },
     ];
 
     return (
@@ -168,9 +168,6 @@ export function PackagesView() {
                     />
                 </div>
                 <div className="flex gap-3">
-                    <Button variant="outline" className="h-10 px-6 font-bold text-sm rounded-lg border-2">
-                        <Filter className="w-4 h-4 mr-2" /> Filter
-                    </Button>
                     <Button
                         onClick={() => {
                             setWizardMode(activeTab === "templates" ? "template" : "package");
@@ -303,7 +300,7 @@ export function PackagesView() {
                                             <ImageIcon className="w-8 h-8" />
                                         </div>
                                     )}
-                                    <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-full bg-white/90 backdrop-blur text-[8px] font-black uppercase tracking-tighter">
+                                    <div className="absolute top-2 left-2 px-2 py-1 rounded-full bg-blue-100 text-blue-800 border border-blue-200 text-[9px] font-black uppercase tracking-wider">
                                         {pkg.items?.length || 0} Talent
                                     </div>
                                 </div>
@@ -314,10 +311,10 @@ export function PackagesView() {
                                         <Badge className={statusClass}>{statusLabel}</Badge>
                                     </div>
                                     <div className="flex items-center gap-4 text-xs text-gray-500 font-bold uppercase tracking-widest">
-                                        <span className="flex items-center gap-1.5">
-                                            <Clock className="w-3.5 h-3.5" /> Created {format(new Date(pkg.created_at), 'MMM d, yyyy')}
+                                        <span className="flex items-center gap-1.5 text-blue-600">
+                                            <Clock className="w-3.5 h-3.5 text-blue-600" /> Created {format(new Date(pkg.created_at), 'MMM d, yyyy')}
                                         </span>
-                                        <span className="flex items-center gap-1.5">
+                                        <span className={`flex items-center gap-1.5 ${isExpired ? 'text-red-600' : isExpiringSoon ? 'text-yellow-700' : ''}`}>
                                             <Calendar className="w-3.5 h-3.5" />
                                             {pkg.expires_at
                                                 ? `Expires ${format(new Date(pkg.expires_at), 'MMM d, yyyy')}`
@@ -330,6 +327,20 @@ export function PackagesView() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
+                                    {isExpired && (
+                                        <Button
+                                            variant="outline"
+                                            className="h-10 px-4 border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 font-bold text-xs uppercase tracking-widest"
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                                setWizardMode("send-from-template");
+                                                fetchFullPackageMutation.mutate(pkg.id);
+                                            }}
+                                        >
+                                            <Send className="w-4 h-4 mr-2" />
+                                            Resend
+                                        </Button>
+                                    )}
                                     <Button
                                         variant="outline"
                                         size="icon"
@@ -364,16 +375,18 @@ export function PackagesView() {
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
-                                            <DropdownMenuItem
-                                                onClick={(event) => {
-                                                    event.stopPropagation();
-                                                    fetchFullPackageMutation.mutate(pkg.id);
-                                                    setWizardMode("package");
-                                                }}
-                                            >
-                                                <Pencil className="w-4 h-4 mr-2" />
-                                                Edit Package
-                                            </DropdownMenuItem>
+                                            {!isExpired && (
+                                                <DropdownMenuItem
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
+                                                        fetchFullPackageMutation.mutate(pkg.id);
+                                                        setWizardMode("package");
+                                                    }}
+                                                >
+                                                    <Pencil className="w-4 h-4 mr-2" />
+                                                    Edit Package
+                                                </DropdownMenuItem>
+                                            )}
                                             <DropdownMenuItem
                                                 onClick={(event) => {
                                                     event.stopPropagation();

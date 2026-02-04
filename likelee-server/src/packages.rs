@@ -1,6 +1,6 @@
 use axum::{
     extract::{Path, State},
-    http::StatusCode,
+    http::{HeaderMap, StatusCode},
     Json,
 };
 use serde::{Deserialize, Serialize};
@@ -43,6 +43,8 @@ pub struct CreatePackageRequest {
     pub items: Vec<PackageItemRequest>,
     pub is_template: Option<bool>,
     pub template_id: Option<String>,
+    pub password: Option<String>,
+    pub password_protected: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -109,6 +111,12 @@ pub async fn create_package(
         "client_email": sanitize(&payload.client_email),
         "is_template": payload.is_template.unwrap_or(false),
         "template_id": sanitize(&payload.template_id),
+        "password_protected": payload.password_protected.unwrap_or(false),
+        "password_hash": if payload.password_protected.unwrap_or(false) {
+            payload.password.as_ref().and_then(|p| bcrypt::hash(p, 10).ok())
+        } else {
+            None
+        },
     });
 
     let resp = state
@@ -329,7 +337,12 @@ pub async fn update_package(
         "expires_at": sanitize(&payload.expires_at),
         "client_name": sanitize(&payload.client_name),
         "client_email": sanitize(&payload.client_email),
-        // We don't update is_template or template_id usually, but valid to keep sync
+        "password_protected": payload.password_protected.unwrap_or(false),
+        "password_hash": if payload.password_protected.unwrap_or(false) {
+            payload.password.as_ref().filter(|p| !p.is_empty()).and_then(|p| bcrypt::hash(p, 10).ok())
+        } else {
+            None
+        },
         "updated_at": chrono::Utc::now().to_rfc3339(),
     });
 
@@ -563,7 +576,56 @@ pub async fn get_dashboard_stats(
 pub async fn get_public_package(
     State(state): State<AppState>,
     Path(token): Path<String>,
+    headers: HeaderMap,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    // 1. Fetch package metadata first to check for password protection
+    let meta_resp = state
+        .pg
+        .from("agency_talent_packages")
+        .select("id,password_protected,password_hash,expires_at")
+        .eq("access_token", &token)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !meta_resp.status().is_success() {
+        return Err((StatusCode::NOT_FOUND, "Package not found".to_string()));
+    }
+
+    let meta_text = meta_resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let package_meta: serde_json::Value = serde_json::from_str(&meta_text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    // 2. Check if expired
+    if let Some(expires_at) = package_meta["expires_at"].as_str() {
+        if let Ok(expires) = chrono::DateTime::parse_from_rfc3339(expires_at) {
+            if expires < chrono::Utc::now() {
+                return Err((StatusCode::GONE, "Package expired".to_string()));
+            }
+        }
+    }
+
+    // 3. Check for password if protected
+    if package_meta["password_protected"].as_bool().unwrap_or(false) {
+        let provided_password = headers
+            .get("X-Package-Password")
+            .and_then(|v| v.to_str().ok());
+
+        let stored_hash = package_meta["password_hash"].as_str();
+
+        match (provided_password, stored_hash) {
+            (Some(password), Some(hash)) => {
+                if !bcrypt::verify(password, hash).unwrap_or(false) {
+                    return Err((StatusCode::UNAUTHORIZED, "Invalid password".to_string()));
+                }
+            }
+            _ => {
+                return Err((StatusCode::UNAUTHORIZED, "Password required".to_string()));
+            }
+        }
+    }
+
+    // 4. If authorized, fetch full package details via RPC
     let resp = state
         .pg
         .rpc("get_public_package_details", serde_json::json!({ "p_access_token": token }).to_string())
@@ -572,31 +634,12 @@ pub async fn get_public_package(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    if !resp.status().is_success() {
-        let status = resp.status();
-        let err_text = resp.text().await.unwrap_or_default();
-        return Err((StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR), err_text));
-    }
-
     let text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let package: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse public package: {}", e)))?;
 
-    if package.is_null() {
-        return Err((StatusCode::NOT_FOUND, "Package not found".to_string()));
-    }
-
-    // Check if expired
-    if let Some(expires_at) = package["expires_at"].as_str() {
-        if let Ok(expires) = chrono::DateTime::parse_from_rfc3339(expires_at) {
-            if expires < chrono::Utc::now() {
-                return Err((StatusCode::GONE, "Package expired".to_string()));
-            }
-        }
-    }
-
-    // Increment view count
-    if let Some(id) = package["id"].as_str() {
+    // 5. Increment view count
+    if let Some(id) = package_meta["id"].as_str() {
         let _ = state.pg
             .rpc("increment_package_view", serde_json::json!({ "p_package_id": id }).to_string())
             .execute()

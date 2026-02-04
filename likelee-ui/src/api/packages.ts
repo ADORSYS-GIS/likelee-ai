@@ -25,7 +25,10 @@ export const packageApi = {
     deleteTalentAsset: (talentId: string, assetId: string) =>
         base44Client.delete(`/api/agency/talents/${talentId}/assets/${assetId}`),
 
-    getPublicPackage: (token: string) => base44Client.get(`/api/public/packages/${token}`),
+    getPublicPackage: (token: string, password?: string) => {
+        const headers = password ? { 'X-Package-Password': password } : {};
+        return base44Client.get(`/api/public/packages/${token}`, { headers });
+    },
 
     createInteraction: (token: string, data: any) =>
         base44Client.post(`/api/public/packages/${token}/interactions`, data),

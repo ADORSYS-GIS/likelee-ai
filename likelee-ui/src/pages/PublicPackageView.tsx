@@ -5,7 +5,7 @@ import {
     Heart, MessageSquare, Send, Calendar,
     MapPin, User, ChevronRight, Eye,
     CheckCircle2, Download, ExternalLink,
-    Loader2, AlertCircle, Play, X
+    Loader2, AlertCircle, Play, X, Lock
 } from "lucide-react";
 import { packageApi } from "@/api/packages";
 import AssetGallery from "@/components/packages/AssetGallery";
@@ -16,6 +16,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/components/ui/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 export function PublicPackageView() {
     const { token } = useParams<{ token: string }>();
@@ -31,11 +34,28 @@ export function PublicPackageView() {
     const [commentOpen, setCommentOpen] = useState(false);
     const [comment, setComment] = useState("");
     const [clientName, setClientName] = useState("");
+    const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
+    const [password, setPassword] = useState("");
+    const [passwordError, setPasswordError] = useState<string | null>(null);
 
-    const { data: packageData, isLoading, error } = useQuery({
+    const { data: packageData, isLoading, error, refetch } = useQuery({
         queryKey: ["public-package", token],
-        queryFn: () => packageApi.getPublicPackage(token!),
+        queryFn: () => packageApi.getPublicPackage(token!, password),
         enabled: !!token,
+        retry: false, // We will handle retries manually for password prompt
+        onError: (err: any) => {
+            const message = err?.message || "";
+            if (message.includes(" 401 ")) {
+                setShowPasswordPrompt(true);
+                if (password) {
+                    setPasswordError("Invalid password. Please try again.");
+                }
+            }
+        },
+        onSuccess: () => {
+            setShowPasswordPrompt(false);
+            setPasswordError(null);
+        }
     });
 
     const interactionMutation = useMutation({
@@ -71,6 +91,19 @@ export function PublicPackageView() {
     const deleteInteractionMutation = useMutation({
         mutationFn: (data: { talent_id: string; type: 'favorite' | 'callback' }) => packageApi.deleteInteraction(token!, data),
     });
+
+    const isPasswordError = (() => {
+        const message = (error as any)?.message || "";
+        return message.includes(" 401 ");
+    })();
+
+    useEffect(() => {
+        if (isPasswordError) {
+            setShowPasswordPrompt(true);
+        } else {
+            setShowPasswordPrompt(false);
+        }
+    }, [isPasswordError]);
 
     useEffect(() => {
         if (packageData) {
@@ -112,6 +145,11 @@ export function PublicPackageView() {
             }
             return next;
         });
+    };
+
+    const handlePasswordSubmit = () => {
+        setPasswordError(null);
+        refetch();
     };
 
     const submitInteractions = async (talentId: string) => {
@@ -191,12 +229,58 @@ export function PublicPackageView() {
         );
     }
 
-    if (error || !packageData) {
+    
+
+    if (showPasswordPrompt) {
+        return (
+            <Dialog open={showPasswordPrompt} onOpenChange={setShowPasswordPrompt}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2"><Lock className="w-5 h-5" /> Password Required</DialogTitle>
+                        <DialogDescription>
+                            This package is password protected. Please enter the password to view.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="password-input" className="text-right">
+                                Password
+                            </Label>
+                            <Input
+                                id="password-input"
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="col-span-3"
+                                onKeyPress={(e) => e.key === 'Enter' && handlePasswordSubmit()}
+                            />
+                        </div>
+                        {passwordError && <p className="col-span-4 text-red-500 text-sm text-center">{passwordError}</p>}
+                    </div>
+                    <DialogFooter>
+                        <Button type="submit" onClick={handlePasswordSubmit}>Unlock Package</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        )
+    }
+
+    if ((error && !isPasswordError) || (!isLoading && !packageData && !isPasswordError)) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-white p-6 text-center">
                 <AlertCircle className="w-16 h-16 text-red-500 mb-6" />
                 <h1 className="text-2xl font-black text-gray-900 uppercase tracking-tight">Access Denied</h1>
                 <p className="text-gray-500 max-w-md mt-2">This package may have expired or the link is invalid. Please contact the agency for a new link.</p>
+                <Button variant="outline" className="mt-8 border-2" onClick={() => window.location.href = '/'}>
+                    Return Home
+                </Button>
+            </div>
+        );
+    }
+if (!packageData) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-white text-gray-500">
+                Loading package...
             </div>
         );
     }
