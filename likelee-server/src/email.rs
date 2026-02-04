@@ -14,6 +14,7 @@ pub struct SendEmailRequest {
     pub subject: String,
     pub body: String,
     pub attachments: Option<Vec<EmailAttachment>>,
+    pub is_html: Option<bool>,
 }
 
 #[derive(Deserialize)]
@@ -133,86 +134,80 @@ pub async fn send_email(
     // Determine destination:
     // - Use payload.to when provided (normal behavior for app emails like invoices)
     // - Fall back to configured EMAIL_CONTACT_TO only when payload.to is empty
-    let dest = if !payload.to.trim().is_empty() {
+    let to = if !payload.to.trim().is_empty() {
         payload.to.trim().to_string()
     } else {
         state.email_contact_to.trim().to_string()
     };
-    if dest.is_empty() {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(json!({"status":"error","error":"missing_destination"})),
-        );
-    }
 
-    tracing::info!("send_email dest={}", dest);
-
-    // SMTP is required (lettre-only). If not configured, return 500.
-    if state.smtp_host.is_empty() || state.smtp_user.is_empty() {
-        return (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"status":"error","error":"smtp_not_configured"})),
-        );
-    }
-
-    let from_addr = match state.email_from.parse() {
-        Ok(a) => a,
-        Err(_) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"status":"error","error":"invalid_from_address"})),
-            )
-        }
-    };
-    let to_addr = match dest.parse() {
-        Ok(a) => a,
-        Err(_) => {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(json!({"status":"error","error":"invalid_to_address"})),
-            )
-        }
-    };
-
-    let mut multipart = MultiPart::mixed().singlepart(SinglePart::plain(payload.body.clone()));
-    if let Some(atts) = payload.attachments.as_ref() {
-        for att in atts {
-            let bytes = match general_purpose::STANDARD.decode(att.content_base64.trim()) {
-                Ok(b) => b,
-                Err(_) => {
-                    return (
-                        StatusCode::BAD_REQUEST,
-                        Json(json!({"status":"error","error":"invalid_attachment_base64"})),
-                    )
-                }
-            };
-            let ct = match att.content_type.parse() {
-                Ok(v) => v,
-                Err(_) => {
-                    return (
-                        StatusCode::BAD_REQUEST,
-                        Json(json!({"status":"error","error":"invalid_attachment_content_type"})),
-                    )
-                }
-            };
-            multipart =
-                multipart.singlepart(LettreAttachment::new(att.filename.clone()).body(bytes, ct));
-        }
-    }
-
-    let email = match Message::builder()
-        .from(from_addr)
-        .to(to_addr)
-        .subject(payload.subject.clone())
-        .multipart(multipart)
+    match send_email_core(
+        &state,
+        &to,
+        &payload.subject,
+        &payload.body,
+        payload.is_html.unwrap_or(false),
+        payload.attachments.as_deref(),
+    )
+    .await
     {
-        Ok(m) => m,
-        Err(_) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"status":"error","error":"build_message_failed"})),
-            )
+        Ok(_) => (StatusCode::OK, Json(json!({"status":"ok"}))),
+        Err((code, msg)) => (code, Json(json!({"status":"error", "error": msg}))),
+    }
+}
+
+pub async fn send_email_core(
+    state: &AppState,
+    to: &str,
+    subject: &str,
+    body: &str,
+    is_html: bool,
+    attachments: Option<&[EmailAttachment]>,
+) -> Result<(), (StatusCode, String)> {
+    if to.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "missing_destination".to_string()));
+    }
+
+    if state.smtp_host.is_empty() || state.smtp_user.is_empty() {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, "smtp_not_configured".to_string()));
+    }
+
+    let from_addr = state.email_from.parse()
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "invalid_from_address".to_string()))?;
+    
+    let to_addr = to.parse()
+        .map_err(|_| (StatusCode::BAD_REQUEST, "invalid_to_address".to_string()))?;
+
+    let part = if is_html {
+        SinglePart::html(body.to_string())
+    } else {
+        SinglePart::plain(body.to_string())
+    };
+
+    let email = if let Some(atts) = attachments {
+        let mut multipart = MultiPart::mixed().singlepart(part);
+        for att in atts {
+            let bytes = general_purpose::STANDARD
+                .decode(att.content_base64.trim())
+                .map_err(|_| (StatusCode::BAD_REQUEST, "invalid_attachment_base64".to_string()))?;
+            let ct = att
+                .content_type
+                .parse()
+                .map_err(|_| (StatusCode::BAD_REQUEST, "invalid_attachment_content_type".to_string()))?;
+            multipart = multipart.singlepart(LettreAttachment::new(att.filename.clone()).body(bytes, ct));
         }
+        Message::builder()
+            .from(from_addr)
+            .to(to_addr)
+            .subject(subject.to_string())
+            .multipart(multipart)
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "build_message_failed".to_string()))?
+    } else {
+        Message::builder()
+            .from(from_addr)
+            .to(to_addr)
+            .subject(subject.to_string())
+            .singlepart(part)
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "build_message_failed".to_string()))?
     };
 
     let creds = lettre::transport::smtp::authentication::Credentials::new(
@@ -221,50 +216,25 @@ pub async fn send_email(
     );
 
     let mailer = if state.smtp_port == 465 {
-        let tls = match TlsParameters::new(state.smtp_host.clone()) {
-            Ok(p) => p,
-            Err(_) => {
-                return (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(json!({"status":"error","error":"tls_parameters_init_failed"})),
-                )
-            }
-        };
-        let builder = match SmtpTransport::relay(&state.smtp_host) {
-            Ok(b) => b,
-            Err(_) => {
-                return (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(json!({"status":"error","error":"smtp_relay_init_failed"})),
-                )
-            }
-        };
-        builder
+        let tls = TlsParameters::new(state.smtp_host.clone())
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "tls_parameters_init_failed".to_string()))?;
+        
+        SmtpTransport::relay(&state.smtp_host)
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "smtp_relay_init_failed".to_string()))?
             .port(465)
             .tls(Tls::Wrapper(tls))
             .credentials(creds)
             .build()
     } else {
-        let relay = match SmtpTransport::starttls_relay(&state.smtp_host) {
-            Ok(r) => r,
-            Err(_) => match SmtpTransport::relay(&state.smtp_host) {
-                Ok(r2) => r2,
-                Err(_) => {
-                    return (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        Json(json!({"status":"error","error":"smtp_relay_init_failed"})),
-                    )
-                }
-            },
-        };
+        let relay = SmtpTransport::starttls_relay(&state.smtp_host)
+            .or_else(|_| SmtpTransport::relay(&state.smtp_host))
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "smtp_relay_init_failed".to_string()))?;
+        
         relay.port(state.smtp_port).credentials(creds).build()
     };
 
-    match mailer.send(&email) {
-        Ok(_) => (StatusCode::OK, Json(json!({"status":"ok"}))),
-        Err(e) => (
-            StatusCode::BAD_GATEWAY,
-            Json(json!({"status":"error","error":"smtp_send_failed","detail": e.to_string()})),
-        ),
-    }
+    mailer.send(&email)
+        .map_err(|e| (StatusCode::BAD_GATEWAY, format!("smtp_send_failed: {}", e)))?;
+
+    Ok(())
 }

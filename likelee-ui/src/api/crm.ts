@@ -1,4 +1,5 @@
 import { base44 as base44Client } from "./base44Client";
+export { base44Client };
 
 export const listClients = () => base44Client.get("/api/agency/clients");
 

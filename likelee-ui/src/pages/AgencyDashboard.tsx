@@ -5,6 +5,10 @@ import { ScoutingMap } from "@/components/scouting/map/ScoutingMap";
 import { ScoutingTrips } from "@/components/scouting/ScoutingTrips";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useDebounce } from "@/hooks/useDebounce";
+import { searchLocations } from "@/components/scouting/map/geocoding";
+import { CreatePackageWizard } from "@/components/packages/CreatePackageWizard";
+import { PackagesView } from "@/components/packages/PackagesView";
 import {
   LayoutDashboard,
   Users,
@@ -17453,6 +17457,7 @@ export default function AgencyDashboard() {
   const [kycLoading, setKycLoading] = useState(false);
   const [bookings, setBookings] = useState<any[]>([]);
   const [bookOuts, setBookOuts] = useState<any[]>([]);
+  const [showCreatePackageWizard, setShowCreatePackageWizard] = useState(false);
 
   // Load persisted bookings on mount
   useEffect(() => {
@@ -17748,6 +17753,7 @@ export default function AgencyDashboard() {
             icon: BarChart2,
             subItems: ["Analytics Dashboard", "Royalties & Payouts"],
           },
+          { id: "packages", label: "Talent Packages", icon: Package },
           {
             id: "settings",
             label: "Settings",
@@ -17798,6 +17804,7 @@ export default function AgencyDashboard() {
             icon: BarChart2,
             subItems: ["Analytics Dashboard", "Royalties & Payouts"],
           },
+          { id: "packages", label: "Talent Packages", icon: Package },
           {
             id: "settings",
             label: "Settings",
@@ -18173,6 +18180,7 @@ export default function AgencyDashboard() {
             )}
           {activeTab === "analytics" &&
             activeSubTab === "Royalties & Payouts" && <RoyaltiesPayoutsView />}
+          {activeTab === "packages" && <PackagesView />}
           {activeTab === "settings" && activeSubTab === "General Settings" && (
             <GeneralSettingsView />
           )}
