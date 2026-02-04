@@ -127,8 +127,7 @@ export function PackagesView() {
                             <div className={`p-2 rounded-lg ${s.bgColor} transition-colors border border-transparent`}>
                                 <s.icon className={`w-5 h-5 ${s.color}`} />
                             </div>
-                            <Badge variant="secondary" className="bg-gray-100 text-[10px] font-black uppercase tracking-widest">+4%</Badge>
-                        </div>
+                                                    </div>
                         <p className="text-[11px] font-black text-gray-700 uppercase tracking-widest">{s.label}</p>
                         <h3 className="text-3xl font-black text-gray-900 tracking-tighter mt-1">{s.value}</h3>
                     </Card>
@@ -284,10 +283,10 @@ export function PackagesView() {
                         const isExpiringSoon = !isExpired && daysRemaining !== null && daysRemaining <= 2;
                         const statusLabel = isExpired ? "Expired" : "Active";
                         const statusClass = isExpired
-                            ? "bg-red-50 text-red-600 border-red-100"
+                            ? "bg-red-100 text-red-700 border-red-200"
                             : isExpiringSoon
-                                ? "bg-amber-50 text-amber-700 border-amber-100"
-                                : "bg-blue-50 text-blue-700 border-blue-100";
+                                ? "bg-yellow-100 text-yellow-800 border-yellow-200"
+                                : "bg-blue-100 text-blue-700 border-blue-200";
 
                         return (
                         <Card

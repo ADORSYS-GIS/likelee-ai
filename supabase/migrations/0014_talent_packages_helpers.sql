@@ -38,7 +38,7 @@ BEGIN
     FROM public.agency_talent_packages p
     LEFT JOIN public.agency_talent_package_stats s ON s.package_id = p.id
     LEFT JOIN public.agency_talent_package_interactions i ON i.package_id = p.id
-    WHERE p.agency_id = p_agency_id;
+    WHERE p.agency_id = p_agency_id AND p.is_template = false AND p.client_name IS NOT NULL;
 END;
 $$;
 
