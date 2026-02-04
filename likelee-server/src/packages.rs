@@ -541,7 +541,6 @@ pub async fn get_dashboard_stats(
             "total_packages": total_packages,
             "active_shares": active_shares,
             "total_views": 0,
-            "conversion_rate": "0.0%",
         })));
     }
 
@@ -555,20 +554,11 @@ pub async fn get_dashboard_stats(
     }));
 
     let views = stats["total_views"].as_i64().unwrap_or(0);
-    let favorites = stats["total_favorites"].as_i64().unwrap_or(0);
-    let callbacks = stats["total_callbacks"].as_i64().unwrap_or(0);
-
-    let conversion = if views > 0 {
-        ((favorites + callbacks) as f64 / views as f64) * 100.0
-    } else {
-        0.0
-    };
 
     Ok(Json(serde_json::json!({
         "total_packages": total_packages,
         "active_shares": active_shares,
         "total_views": views,
-        "conversion_rate": format!("{:.1}%", conversion),
     })))
 }
 

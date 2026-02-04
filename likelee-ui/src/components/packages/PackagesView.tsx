@@ -135,7 +135,6 @@ export function PackagesView() {
     total_packages: 0,
     active_shares: 0,
     total_views: 0,
-    conversion_rate: "0%",
   };
 
   const stats = [
@@ -160,19 +159,12 @@ export function PackagesView() {
       color: "text-purple-600",
       bgColor: "bg-purple-50",
     },
-    {
-      label: "Conversion",
-      value: realStats.conversion_rate,
-      icon: TrendingUp,
-      color: "text-orange-600",
-      bgColor: "bg-orange-50",
-    },
   ];
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
       {/* Stats Row */}
-      <div className="grid grid-cols-4 gap-6">
+      <div className="grid grid-cols-3 gap-6">
         {stats.map((s, i) => (
           <Card
             key={i}
