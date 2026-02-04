@@ -106,7 +106,7 @@ pub async fn create_package(
     let sanitize = |s: &Option<String>| {
         s.as_ref()
             .filter(|v| !v.trim().is_empty())
-            .map(|v| v.clone())
+            .cloned()
     };
 
     // 1. Insert Package metadata
@@ -433,7 +433,7 @@ pub async fn update_package(
     let sanitize = |s: &Option<String>| {
         s.as_ref()
             .filter(|v| !v.trim().is_empty())
-            .map(|v| v.clone())
+            .cloned()
     };
 
     // 2. Update Metadata
