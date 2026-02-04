@@ -143,8 +143,8 @@ pub async fn create_session(
             .from("agency_veriff_sessions")
             .select("id")
             .eq("agency_id", &user.id)
-            .gte("created_at", &month_start.to_rfc3339())
-            .lt("created_at", &next_month_start.to_rfc3339())
+            .gte("created_at", month_start.to_rfc3339())
+            .lt("created_at", next_month_start.to_rfc3339())
             .execute()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;

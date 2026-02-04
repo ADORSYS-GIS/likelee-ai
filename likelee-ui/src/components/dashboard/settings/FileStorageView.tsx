@@ -1038,10 +1038,9 @@ const FileStorageView = () => {
       const msg = String(e?.message || e);
       toast({
         title: "Upload failed",
-        description:
-          msg.includes("storage_quota_exceeded")
-            ? "Storage quota exceeded. Upgrade your plan to increase storage."
-            : msg,
+        description: msg.includes("storage_quota_exceeded")
+          ? "Storage quota exceeded. Upgrade your plan to increase storage."
+          : msg,
         variant: "destructive" as any,
       });
     } finally {
@@ -1084,7 +1083,10 @@ const FileStorageView = () => {
   const usagePct = useMemo(() => {
     if (!usage) return 0;
     if (usage.limit_bytes <= 0) return 0;
-    return Math.min(100, Math.max(0, (usage.used_bytes / usage.limit_bytes) * 100));
+    return Math.min(
+      100,
+      Math.max(0, (usage.used_bytes / usage.limit_bytes) * 100),
+    );
   }, [usage]);
 
   return (
@@ -1123,7 +1125,9 @@ const FileStorageView = () => {
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-2">
             <HardDrive className="w-5 h-5 text-indigo-600" />
-            <span className="text-base font-bold text-gray-900">Storage Usage</span>
+            <span className="text-base font-bold text-gray-900">
+              Storage Usage
+            </span>
           </div>
           <span className="text-sm font-bold text-gray-900">
             <span className="text-indigo-600">
@@ -1140,7 +1144,10 @@ const FileStorageView = () => {
         </div>
         <div className="flex justify-between items-center">
           <p className="text-sm text-gray-500 font-medium">
-            {bytesToHuman(Math.max(0, (usage?.limit_bytes || 0) - (usage?.used_bytes || 0)))} remaining
+            {bytesToHuman(
+              Math.max(0, (usage?.limit_bytes || 0) - (usage?.used_bytes || 0)),
+            )}{" "}
+            remaining
           </p>
           <Button
             variant="link"
@@ -1214,7 +1221,8 @@ const FileStorageView = () => {
                 folder={{
                   id: folder.id,
                   name: folder.name,
-                  fileCount: files.filter((f) => f.folder_id === folder.id).length,
+                  fileCount: files.filter((f) => f.folder_id === folder.id)
+                    .length,
                   totalSize: "",
                   type: "others",
                 }}
@@ -1262,8 +1270,11 @@ const FileStorageView = () => {
                     {f.file_name}
                   </p>
                   <p className="text-xs text-gray-500 font-medium">
-                    {bytesToHuman(f.size_bytes)} • {isoToShortDate(f.created_at)}
-                    {f.folder_id ? ` • ${folderNameById.get(f.folder_id) || "Folder"}` : ""}
+                    {bytesToHuman(f.size_bytes)} •{" "}
+                    {isoToShortDate(f.created_at)}
+                    {f.folder_id
+                      ? ` • ${folderNameById.get(f.folder_id) || "Folder"}`
+                      : ""}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -1303,11 +1314,18 @@ const FileStorageView = () => {
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="w-8 h-8 rounded-xl">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-8 h-8 rounded-xl"
+                      >
                         <MoreVertical className="w-4 h-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-40 rounded-xl">
+                    <DropdownMenuContent
+                      align="end"
+                      className="w-40 rounded-xl"
+                    >
                       <DropdownMenuItem
                         className="font-bold text-gray-700 cursor-pointer"
                         onClick={() => onDownloadFile(f.id)}

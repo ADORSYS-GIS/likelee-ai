@@ -38,7 +38,8 @@ const tiers: Tier[] = [
   {
     name: "Agency",
     priceLabel: "$500",
-    description: "Minimum paid plan for agencies using the platform operationally.",
+    description:
+      "Minimum paid plan for agencies using the platform operationally.",
     features: [
       "200GB storage",
       "Email services included",
@@ -73,7 +74,8 @@ const tiers: Tier[] = [
   {
     name: "Enterprise",
     priceLabel: "Custom",
-    description: "Custom storage, security, SLAs, onboarding, and integrations.",
+    description:
+      "Custom storage, security, SLAs, onboarding, and integrations.",
     features: [
       "Custom storage + custom caps",
       "Security/compliance options",
@@ -95,9 +97,12 @@ export default function AgencySubscribe() {
 
   React.useEffect(() => {
     if (!success) return;
-    navigate(`${createPageUrl("AgencyDashboard")}?tab=settings&subTab=General%20Settings`, {
-      replace: true,
-    });
+    navigate(
+      `${createPageUrl("AgencyDashboard")}?tab=settings&subTab=General%20Settings`,
+      {
+        replace: true,
+      },
+    );
   }, [navigate, success]);
 
   const onContact = () => {
@@ -144,8 +149,12 @@ export default function AgencySubscribe() {
               <CreditCard className="w-5 h-5 text-white" />
             </div>
             <div>
-              <div className="text-lg font-bold text-white">Billing & Subscription</div>
-              <div className="text-xs text-gray-400">Choose a plan for your agency</div>
+              <div className="text-lg font-bold text-white">
+                Billing & Subscription
+              </div>
+              <div className="text-xs text-gray-400">
+                Choose a plan for your agency
+              </div>
             </div>
           </div>
           <Button
@@ -160,20 +169,27 @@ export default function AgencySubscribe() {
 
       <section className="px-6 pt-12 pb-10 text-center">
         <div className="flex items-center justify-center gap-3 mb-5 flex-wrap">
-          <Badge className="bg-white/10 text-white border-white/20">Plans are billed monthly</Badge>
+          <Badge className="bg-white/10 text-white border-white/20">
+            Plans are billed monthly
+          </Badge>
           {success && (
             <Badge className="bg-[#32C8D1]/20 text-[#32C8D1] border-[#32C8D1]/35">
               Subscription started
             </Badge>
           )}
           {canceled && (
-            <Badge className="bg-white/10 text-white border-white/20">Checkout canceled</Badge>
+            <Badge className="bg-white/10 text-white border-white/20">
+              Checkout canceled
+            </Badge>
           )}
         </div>
-        <h1 className="text-4xl md:text-6xl font-bold mb-4">Upgrade Your Agency Plan</h1>
+        <h1 className="text-4xl md:text-6xl font-bold mb-4">
+          Upgrade Your Agency Plan
+        </h1>
         <p className="text-lg text-gray-400 max-w-3xl mx-auto">
-          Our minimum paid plan starts at $500/month per agency. Paid plans include operational
-          capabilities like deep analytics, voice cloning, KYC with caps, and priority support.
+          Our minimum paid plan starts at $500/month per agency. Paid plans
+          include operational capabilities like deep analytics, voice cloning,
+          KYC with caps, and priority support.
         </p>
       </section>
 
@@ -206,7 +222,9 @@ export default function AgencySubscribe() {
                     Recommended
                   </Badge>
                 ) : tier.isFree ? (
-                  <Badge className="bg-white/10 text-white border-white/20">Starter</Badge>
+                  <Badge className="bg-white/10 text-white border-white/20">
+                    Starter
+                  </Badge>
                 ) : (
                   <Badge className="bg-white/10 text-white border-white/20">
                     {tier.name === "Agency" ? "Pro" : "Tier"}
@@ -215,7 +233,9 @@ export default function AgencySubscribe() {
               </div>
 
               <div className="flex items-baseline mb-2">
-                <span className="text-4xl font-bold text-white">{tier.priceLabel}</span>
+                <span className="text-4xl font-bold text-white">
+                  {tier.priceLabel}
+                </span>
                 {tier.priceLabel !== "Custom" && (
                   <span className="text-gray-400 ml-2">/ month</span>
                 )}
@@ -237,11 +257,14 @@ export default function AgencySubscribe() {
                     ? onContact
                     : tier.ctaAction === "pay_agency"
                       ? onPayAgency
-                    : tier.ctaAction === "pay_scale"
-                      ? onPayScale
-                      : onBack
+                      : tier.ctaAction === "pay_scale"
+                        ? onPayScale
+                        : onBack
                 }
-                disabled={tier.ctaAction === "pay_agency" || tier.ctaAction === "pay_scale"}
+                disabled={
+                  tier.ctaAction === "pay_agency" ||
+                  tier.ctaAction === "pay_scale"
+                }
                 className={`w-full h-11 font-bold ${
                   tier.highlight
                     ? "bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:opacity-95 shadow-xl shadow-[#32C8D1]/25"
@@ -267,10 +290,12 @@ export default function AgencySubscribe() {
             <div className="flex items-start gap-3">
               <ShieldCheck className="w-5 h-5 text-[#32C8D1] mt-0.5" />
               <div>
-                <div className="text-white font-bold mb-1">Veriff included with caps</div>
+                <div className="text-white font-bold mb-1">
+                  Veriff included with caps
+                </div>
                 <div className="text-gray-400 text-sm">
-                  Paid plans include Veriff identity verification with monthly caps per agency.
-                  Overage is billed per verification.
+                  Paid plans include Veriff identity verification with monthly
+                  caps per agency. Overage is billed per verification.
                 </div>
               </div>
             </div>

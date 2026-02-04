@@ -69,10 +69,12 @@ fn send_email_smtp_internal(
         ));
     }
 
-    let parsed_from: Mailbox = state
-        .email_from
-        .parse::<Mailbox>()
-        .map_err(|_e| (StatusCode::INTERNAL_SERVER_ERROR, "invalid_from_address".to_string()))?;
+    let parsed_from: Mailbox = state.email_from.parse::<Mailbox>().map_err(|_e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "invalid_from_address".to_string(),
+        )
+    })?;
     let from_addr = match from_name {
         Some(name) if !name.trim().is_empty() => Mailbox {
             name: Some(name.trim().to_string()),

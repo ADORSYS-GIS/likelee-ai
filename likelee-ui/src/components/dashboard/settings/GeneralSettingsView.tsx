@@ -335,7 +335,8 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
   const [showActivityModal, setShowActivityModal] = useState(false);
   const [selectedMember, setSelectedMember] = useState<any>(null);
-  const [defaultCommissionRate, setDefaultCommissionRate] = useState<number>(20);
+  const [defaultCommissionRate, setDefaultCommissionRate] =
+    useState<number>(20);
   const [divisionCommissions, setDivisionCommissions] = useState<
     { id: string; name: string; count: number; rate: number }[]
   >([
@@ -345,7 +346,9 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
     { id: "curve", name: "Curve", count: 12, rate: 20 },
   ]);
   const [showDivisionModal, setShowDivisionModal] = useState(false);
-  const [editingDivisionId, setEditingDivisionId] = useState<string | null>(null);
+  const [editingDivisionId, setEditingDivisionId] = useState<string | null>(
+    null,
+  );
   const [divisionDraft, setDivisionDraft] = useState({
     name: "",
     count: 0,
@@ -365,7 +368,9 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
   const [isLoadingEmailTemplates, setIsLoadingEmailTemplates] = useState(false);
   const [isSavingEmailTemplates, setIsSavingEmailTemplates] = useState(false);
   const [showEmailTemplateModal, setShowEmailTemplateModal] = useState(false);
-  const [editingTemplateKey, setEditingTemplateKey] = useState<string | null>(null);
+  const [editingTemplateKey, setEditingTemplateKey] = useState<string | null>(
+    null,
+  );
   const [emailTemplateDraft, setEmailTemplateDraft] = useState({
     name: "",
     subject: "",
@@ -577,7 +582,8 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
             ? (data as any).prefs
             : null;
           const recipientsObj =
-            (data as any)?.recipients && typeof (data as any).recipients === "object"
+            (data as any)?.recipients &&
+            typeof (data as any).recipients === "object"
               ? (data as any).recipients
               : null;
 
@@ -588,7 +594,8 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
               return {
                 ...d,
                 channels: {
-                  email: typeof ch.email === "boolean" ? ch.email : d.channels.email,
+                  email:
+                    typeof ch.email === "boolean" ? ch.email : d.channels.email,
                   sms: false,
                   push: false,
                 },
@@ -605,7 +612,9 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                 ? recipientsObj.primaryEmail
                 : profile.email || "",
             smsNumber:
-              typeof recipientsObj?.smsNumber === "string" ? recipientsObj.smsNumber : "",
+              typeof recipientsObj?.smsNumber === "string"
+                ? recipientsObj.smsNumber
+                : "",
             additionalEmails:
               typeof recipientsObj?.additionalEmails === "string"
                 ? recipientsObj.additionalEmails
@@ -641,7 +650,8 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
             const seedPayload = {
               agency_id: profile.id,
               default_currency: taxCurrencySettings.defaultCurrency,
-              currency_display_format: taxCurrencySettings.currencyDisplayFormat,
+              currency_display_format:
+                taxCurrencySettings.currencyDisplayFormat,
               default_tax_rate: Number(
                 String(taxCurrencySettings.defaultTaxRatePct || "0").replace(
                   /,/g,
@@ -653,7 +663,10 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                 !!taxCurrencySettings.includeTaxInDisplayedPrices,
               default_payment_terms: taxCurrencySettings.defaultPaymentTerms,
               late_payment_fee: Number(
-                String(taxCurrencySettings.latePaymentFeePct || "0").replace(/,/g, "."),
+                String(taxCurrencySettings.latePaymentFeePct || "0").replace(
+                  /,/g,
+                  ".",
+                ),
               ),
               invoice_prefix: taxCurrencySettings.invoicePrefix,
               updated_at: new Date().toISOString(),
@@ -669,17 +682,22 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
           setTaxCurrencySettings((prev) => ({
             ...prev,
             defaultCurrency:
-              typeof d.default_currency === "string" ? d.default_currency : prev.defaultCurrency,
+              typeof d.default_currency === "string"
+                ? d.default_currency
+                : prev.defaultCurrency,
             currencyDisplayFormat:
               typeof d.currency_display_format === "string"
                 ? d.currency_display_format
                 : prev.currencyDisplayFormat,
             defaultTaxRatePct:
-              typeof d.default_tax_rate === "number" || typeof d.default_tax_rate === "string"
+              typeof d.default_tax_rate === "number" ||
+              typeof d.default_tax_rate === "string"
                 ? String(d.default_tax_rate)
                 : prev.defaultTaxRatePct,
             taxDisplayName:
-              typeof d.tax_display_name === "string" ? d.tax_display_name : prev.taxDisplayName,
+              typeof d.tax_display_name === "string"
+                ? d.tax_display_name
+                : prev.taxDisplayName,
             includeTaxInDisplayedPrices:
               typeof d.include_tax_in_displayed_prices === "boolean"
                 ? d.include_tax_in_displayed_prices
@@ -689,11 +707,14 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                 ? d.default_payment_terms
                 : prev.defaultPaymentTerms,
             latePaymentFeePct:
-              typeof d.late_payment_fee === "number" || typeof d.late_payment_fee === "string"
+              typeof d.late_payment_fee === "number" ||
+              typeof d.late_payment_fee === "string"
                 ? String(d.late_payment_fee)
                 : prev.latePaymentFeePct,
             invoicePrefix:
-              typeof d.invoice_prefix === "string" ? d.invoice_prefix : prev.invoicePrefix,
+              typeof d.invoice_prefix === "string"
+                ? d.invoice_prefix
+                : prev.invoicePrefix,
           }));
         } catch (e: any) {
           toast({
@@ -979,7 +1000,10 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
             : t,
         );
       }
-      const base = name.toLowerCase().replace(/[^a-z0-9]+/g, "_").slice(0, 32);
+      const base = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "_")
+        .slice(0, 32);
       const template_key = `${base}_${Math.random().toString(16).slice(2, 8)}`;
       return [
         {
@@ -1688,11 +1712,15 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEditDivision(division)}>
+                          <DropdownMenuItem
+                            onClick={() => openEditDivision(division)}
+                          >
                             <Edit2 className="w-4 h-4 mr-2" />
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => removeDivision(division.id)}>
+                          <DropdownMenuItem
+                            onClick={() => removeDivision(division.id)}
+                          >
                             <Trash2 className="w-4 h-4 mr-2" />
                             Remove
                           </DropdownMenuItem>
@@ -1822,7 +1850,9 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                             variant="outline"
                             size="icon"
                             className="w-7 h-7 rounded-lg border-gray-200"
-                            onClick={() => openEditEmailTemplate(template as any)}
+                            onClick={() =>
+                              openEditEmailTemplate(template as any)
+                            }
                           >
                             <Edit2 className="w-3 h-3 text-gray-500" />
                           </Button>
@@ -1830,7 +1860,9 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                             variant="outline"
                             size="icon"
                             className="w-7 h-7 rounded-lg border-gray-200"
-                            onClick={() => duplicateEmailTemplate(template as any)}
+                            onClick={() =>
+                              duplicateEmailTemplate(template as any)
+                            }
                           >
                             <Copy className="w-3 h-3 text-gray-500" />
                           </Button>
@@ -2023,10 +2055,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Switch
-                          checked={false}
-                          disabled
-                        />
+                        <Switch checked={false} disabled />
                         <span className="text-xs font-bold text-gray-900 opacity-60">
                           SMS
                         </span>
@@ -2035,10 +2064,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Switch
-                          checked={false}
-                          disabled
-                        />
+                        <Switch checked={false} disabled />
                         <span className="text-xs font-bold text-gray-900 opacity-60">
                           Push
                         </span>
@@ -2476,7 +2502,9 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
           <div className="space-y-6">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h3 className="text-xl font-bold text-gray-900">Team Management</h3>
+                <h3 className="text-xl font-bold text-gray-900">
+                  Team Management
+                </h3>
                 <p className="text-sm text-gray-500 font-medium hidden sm:block">
                   Manage team members, roles, and permissions
                 </p>
@@ -2501,10 +2529,12 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                       Coming Soon
                     </h4>
                     <p className="text-sm text-gray-500 font-medium mt-1">
-                      Team management (members, roles, and permissions) is not available yet.
+                      Team management (members, roles, and permissions) is not
+                      available yet.
                     </p>
                     <p className="text-xs text-gray-500 font-medium mt-3">
-                      You’ll be able to invite teammates, assign roles, and manage access from this page.
+                      You’ll be able to invite teammates, assign roles, and
+                      manage access from this page.
                     </p>
                   </div>
                 </div>
@@ -2550,7 +2580,8 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                       Integrations are not available yet.
                     </p>
                     <p className="text-xs text-gray-500 font-medium mt-3">
-                      You’ll be able to connect tools like accounting, payments, and calendars from this page.
+                      You’ll be able to connect tools like accounting, payments,
+                      and calendars from this page.
                     </p>
                   </div>
                 </div>

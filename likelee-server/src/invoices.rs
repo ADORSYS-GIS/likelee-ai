@@ -144,10 +144,7 @@ pub async fn send_payment_reminder(
         ("invoice_number", invoice_number),
         ("invoice_total", invoice_total),
         ("due_date", due_date),
-        (
-            "agency_name",
-            agency_name.clone().unwrap_or_else(|| "".to_string()),
-        ),
+        ("agency_name", agency_name.clone().unwrap_or_default()),
     ];
 
     let (subject, body) =
@@ -162,8 +159,14 @@ pub async fn send_payment_reminder(
             ),
         };
 
-    email::send_plain_text_email(&state, &dest, &subject, &body, agency_email.as_deref())
-        .map_err(|code| (StatusCode::BAD_GATEWAY, code.to_string()))?;
+    email::send_plain_text_email(&state, &dest, &subject, &body, agency_email.as_deref()).map_err(
+        |(code, msg)| {
+            (
+                StatusCode::BAD_GATEWAY,
+                format!("email_send_failed upstream_status={} message={}", code, msg),
+            )
+        },
+    )?;
 
     Ok(Json(json!({"status":"ok"})))
 }
@@ -1082,7 +1085,7 @@ pub async fn mark_sent(
             let fallback_subject = format!(
                 "Invoice {invoice_number} from {agency_name}",
                 invoice_number = invoice_number,
-                agency_name = agency_name.clone().unwrap_or_else(|| "".to_string())
+                agency_name = agency_name.clone().unwrap_or_default()
             );
             let fallback_body =
                 "Dear {client_name},\n\nPlease find attached invoice {invoice_number} for the amount of {invoice_total}.\n\nPayment terms: {payment_terms}\n\nThank you for your business.\n\n{agency_name}".to_string();
@@ -1093,10 +1096,7 @@ pub async fn mark_sent(
                 ("invoice_total", invoice_total),
                 ("payment_terms", payment_terms),
                 ("due_date", due_date),
-                (
-                    "agency_name",
-                    agency_name.clone().unwrap_or_else(|| "".to_string()),
-                ),
+                ("agency_name", agency_name.clone().unwrap_or_default()),
             ];
 
             let (subject, body) =
@@ -1118,7 +1118,7 @@ pub async fn mark_sent(
                 &body,
                 agency_email.as_deref(),
             ) {
-                tracing::warn!("invoice_email_send_failed code={}", code);
+                tracing::warn!("invoice_email_send_failed error={:?}", code);
             }
         }
     }

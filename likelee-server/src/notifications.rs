@@ -291,10 +291,7 @@ pub async fn booking_created_email(
         ("call_time", call_time.to_string()),
         ("location", location.to_string()),
         ("rate", rate_str.clone()),
-        (
-            "agency_name",
-            agency_name.clone().unwrap_or_else(|| "".to_string()),
-        ),
+        ("agency_name", agency_name.clone().unwrap_or_default()),
     ];
 
     let (subject, body) =
@@ -330,6 +327,9 @@ pub async fn booking_created_email(
 
     match send_res {
         Ok(_) => Ok(Json(json!({"status":"ok"}))),
-        Err(code) => Err((StatusCode::BAD_GATEWAY, code.to_string())),
+        Err((code, msg)) => Err((
+            StatusCode::BAD_GATEWAY,
+            format!("email_send_failed upstream_status={} message={}", code, msg),
+        )),
     }
 }
