@@ -527,11 +527,9 @@ export function PublicPackageView() {
                 {/* Favorite Toggle */}
                 <button
                   type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleFavorite(talent.id);
-                  }}
-                  className="absolute top-6 left-6 flex items-center justify-center w-10 h-10 rounded-full bg-white/90 backdrop-blur shadow-sm"
+                  disabled
+                  aria-disabled="true"
+                  className="pointer-events-none absolute top-6 left-6 flex items-center justify-center w-10 h-10 rounded-full bg-white/90 backdrop-blur shadow-sm"
                 >
                   <Heart
                     className={`w-5 h-5 ${selectedFavorites.has(talent.id) ? "text-red-500" : "text-gray-500"}`}
@@ -544,11 +542,9 @@ export function PublicPackageView() {
                 {/* Selected Toggle */}
                 <button
                   type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleSelected(talent.id);
-                  }}
-                  className="absolute top-6 right-6 flex items-center justify-center w-10 h-10 rounded-full bg-white/90 backdrop-blur shadow-sm"
+                  disabled
+                  aria-disabled="true"
+                  className="pointer-events-none absolute top-6 right-6 flex items-center justify-center w-10 h-10 rounded-full bg-white/90 backdrop-blur shadow-sm"
                 >
                   <Check
                     className={`w-5 h-5 ${selectedSelections.has(talent.id) ? "text-emerald-600" : "text-gray-500"}`}
