@@ -33,6 +33,6 @@ export const packageApi = {
     createInteraction: (token: string, data: any) =>
         base44Client.post(`/api/public/packages/${token}/interactions`, data),
 
-    deleteInteraction: (token: string, data: { talent_id: string; type: 'favorite' | 'callback' }) =>
+    deleteInteraction: (token: string, data: { talent_id: string; type: 'favorite' | 'callback' | 'selected' }) =>
         base44Client.delete(`/api/public/packages/${token}/interactions`, { data }),
 };

@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Heart, Phone, Clock, User, MessageSquare } from "lucide-react";
+import { Loader2, Heart, Phone, Clock, User, MessageSquare, Check } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { packageApi } from "@/api/packages";
 
@@ -65,6 +65,7 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                             {sortedInteractions.map((interaction: any, index: number) => {
                                 const isFavorite = interaction.type === "favorite";
                                 const isCallback = interaction.type === "callback";
+                                const isSelected = interaction.type === "selected";
                                 // Find talent name from pkg.items 
                                 // (Logic: interaction has talent_id, pkg.items has talent embedded)
                                 const item = pkg.items.find((i: any) =>
@@ -80,9 +81,20 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                                 return (
                                     <div key={interaction.id || index} className="flex gap-4 group">
                                         <div className="flex flex-col items-center">
-                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border-4 border-white shadow-sm z-10 ${isFavorite ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"
-                                                }`}>
-                                                {isFavorite ? <Heart className="w-4 h-4 fill-current" /> : <Phone className="w-4 h-4" />}
+                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border-4 border-white shadow-sm z-10 ${
+                                            isFavorite
+                                                ? "bg-red-100 text-red-600"
+                                                : isSelected
+                                                    ? "bg-emerald-100 text-emerald-600"
+                                                    : "bg-green-100 text-green-600"
+                                            }`}>
+                                                {isFavorite ? (
+                                                    <Heart className="w-4 h-4 fill-current" />
+                                                ) : isSelected ? (
+                                                    <Check className="w-4 h-4" />
+                                                ) : (
+                                                    <Phone className="w-4 h-4" />
+                                                )}
                                             </div>
                                             {index !== sortedInteractions.length - 1 && (
                                                 <div className="w-0.5 grow bg-gray-100 mt-2 group-last:hidden" />
@@ -94,7 +106,11 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                                                 <div className="flex justify-between items-start mb-2">
                                                     <div>
                                                         <h4 className="font-bold text-gray-900 text-sm">
-                                                            {isFavorite ? "Favorited a Talent" : "Requested Callback"}
+                                                            {isFavorite
+                                                                ? "Favorited a Talent"
+                                                                : isSelected
+                                                                    ? "Selected a Talent"
+                                                                    : "Requested Callback"}
                                                         </h4>
                                                         <p className="text-xs text-gray-400 font-medium">
                                                             {format(new Date(interaction.created_at), "MMM d, yyyy 'at' h:mm a")}

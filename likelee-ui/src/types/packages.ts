@@ -49,7 +49,7 @@ export interface TalentPackageInteraction {
     id: string;
     package_id: string;
     talent_id?: string;
-    type: 'favorite' | 'comment' | 'callback';
+    type: 'favorite' | 'comment' | 'callback' | 'selected';
     content?: string;
     client_name?: string;
     client_email?: string;

@@ -735,7 +735,10 @@ pub async fn create_interaction(
 
     let interaction_type = payload["type"].as_str().unwrap_or_default();
 
-    let insert_resp = if interaction_type == "favorite" || interaction_type == "callback" {
+    let insert_resp = if interaction_type == "favorite"
+        || interaction_type == "callback"
+        || interaction_type == "selected"
+    {
         let params = serde_json::json!({
             "interaction_data": interaction
         });

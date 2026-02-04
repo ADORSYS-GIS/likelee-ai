@@ -5,7 +5,7 @@ import {
     Heart, MessageSquare, Send, Calendar,
     MapPin, User, ChevronRight, Eye,
     CheckCircle2, Download, ExternalLink,
-    Loader2, AlertCircle, Play, X, Lock
+    Loader2, AlertCircle, Play, X, Lock, Check
 } from "lucide-react";
 import { packageApi } from "@/api/packages";
 import AssetGallery from "@/components/packages/AssetGallery";
@@ -29,6 +29,8 @@ export function PublicPackageView() {
     const [initialCallbacks, setInitialCallbacks] = useState<Set<string>>(new Set());
     const [selectedFavorites, setSelectedFavorites] = useState<Set<string>>(new Set());
     const [selectedCallbacks, setSelectedCallbacks] = useState<Set<string>>(new Set());
+    const [initialSelections, setInitialSelections] = useState<Set<string>>(new Set());
+    const [selectedSelections, setSelectedSelections] = useState<Set<string>>(new Set());
     const [pendingNotes, setPendingNotes] = useState<Record<string, { comment: string; clientName: string }>>({});
     const [lockedComments, setLockedComments] = useState<Record<string, boolean>>({});
     const [commentOpen, setCommentOpen] = useState(false);
@@ -89,7 +91,7 @@ export function PublicPackageView() {
 
 
     const deleteInteractionMutation = useMutation({
-        mutationFn: (data: { talent_id: string; type: 'favorite' | 'callback' }) => packageApi.deleteInteraction(token!, data),
+        mutationFn: (data: { talent_id: string; type: 'favorite' | 'callback' | 'selected' }) => packageApi.deleteInteraction(token!, data),
     });
 
     const isPasswordError = (() => {
@@ -109,17 +111,22 @@ export function PublicPackageView() {
         if (packageData) {
             const initialFavs = new Set<string>();
             const initialCalls = new Set<string>();
+            const initialSelected = new Set<string>();
             (packageData.interactions || []).forEach((interaction: any) => {
                 if (interaction.type === 'favorite') {
                     initialFavs.add(interaction.talent_id);
                 } else if (interaction.type === 'callback') {
                     initialCalls.add(interaction.talent_id);
+                } else if (interaction.type === 'selected') {
+                    initialSelected.add(interaction.talent_id);
                 }
             });
             setInitialFavorites(initialFavs);
             setSelectedFavorites(initialFavs);
             setInitialCallbacks(initialCalls);
             setSelectedCallbacks(initialCalls);
+            setInitialSelections(initialSelected);
+            setSelectedSelections(initialSelected);
         }
     }, [packageData]);
 
@@ -137,6 +144,18 @@ export function PublicPackageView() {
 
     const toggleCallback = (talentId: string) => {
         setSelectedCallbacks((prev) => {
+            const next = new Set(prev);
+            if (next.has(talentId)) {
+                next.delete(talentId);
+            } else {
+                next.add(talentId);
+            }
+            return next;
+        });
+    };
+
+    const toggleSelected = (talentId: string) => {
+        setSelectedSelections((prev) => {
             const next = new Set(prev);
             if (next.has(talentId)) {
                 next.delete(talentId);
@@ -173,6 +192,15 @@ export function PublicPackageView() {
             promises.push(deleteInteractionMutation.mutateAsync({ talent_id: talentId, type: 'callback' }));
         }
 
+        // Determine changes for selected
+        const isSelectedInitially = initialSelections.has(talentId);
+        const isSelectedCurrently = selectedSelections.has(talentId);
+        if (isSelectedCurrently && !isSelectedInitially) {
+            promises.push(interactionMutation.mutateAsync({ talent_id: talentId, type: 'selected' }));
+        } else if (!isSelectedCurrently && isSelectedInitially) {
+            promises.push(deleteInteractionMutation.mutateAsync({ talent_id: talentId, type: 'selected' }));
+        }
+
         // Comments are always upserted
         const pending = pendingNotes[talentId];
         if (pending?.comment) {
@@ -205,10 +233,22 @@ export function PublicPackageView() {
             [...initialCallbacks].some(id => !selectedCallbacks.has(id)) ||
             [...selectedCallbacks].some(id => !initialCallbacks.has(id));
 
+        const selectionsChanged = initialSelections.size !== selectedSelections.size ||
+            [...initialSelections].some(id => !selectedSelections.has(id)) ||
+            [...selectedSelections].some(id => !initialSelections.has(id));
+
         const notesChanged = Object.values(pendingNotes).some((note) => note.comment || note.clientName);
 
-        return favoritesChanged || callbacksChanged || notesChanged;
-    }, [selectedFavorites, selectedCallbacks, pendingNotes, initialFavorites, initialCallbacks]);
+        return favoritesChanged || callbacksChanged || selectionsChanged || notesChanged;
+    }, [
+        selectedFavorites,
+        selectedCallbacks,
+        selectedSelections,
+        pendingNotes,
+        initialFavorites,
+        initialCallbacks,
+        initialSelections,
+    ]);
 
     useEffect(() => {
         const handler = (event: BeforeUnloadEvent) => {
@@ -366,6 +406,20 @@ if (!packageData) {
                                     />
                                 </button>
 
+                                {/* Selected Toggle */}
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleSelected(talent.id);
+                                    }}
+                                    className="absolute top-6 right-6 flex items-center justify-center w-10 h-10 rounded-full bg-white/90 backdrop-blur shadow-sm"
+                                >
+                                    <Check
+                                        className={`w-5 h-5 ${selectedSelections.has(talent.id) ? 'text-emerald-600' : 'text-gray-500'}`}
+                                    />
+                                </button>
+
                                 <div className="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex justify-between items-end translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
                                     <div className="text-white">
                                         <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">{talent.categories?.[0] || 'Talent'}</p>
@@ -447,6 +501,19 @@ if (!packageData) {
                                                 className={`${selectedFavorites.has(selectedTalent.id) ? 'text-red-500' : ''}`}
                                                 fill={selectedFavorites.has(selectedTalent.id) ? 'currentColor' : 'none'}
                                             />
+                                        </Button>
+                                        <Button
+                                            variant={selectedSelections.has(selectedTalent.id) ? "default" : "outline"}
+                                            size="icon"
+                                            className="rounded-full border-2"
+                                            style={
+                                                selectedSelections.has(selectedTalent.id)
+                                                    ? { backgroundColor: "#10B981", borderColor: "#10B981", color: "white" }
+                                                    : { borderColor: "#10B981", color: "#10B981" }
+                                            }
+                                            onClick={() => toggleSelected(selectedTalent.id)}
+                                        >
+                                            <Check className="w-4 h-4" />
                                         </Button>
                                         <Button
                                             variant={selectedCallbacks.has(selectedTalent.id) ? "default" : "outline"}
