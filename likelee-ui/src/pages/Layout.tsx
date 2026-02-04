@@ -33,6 +33,11 @@ export default function Layout({ children, currentPageName }) {
     location.pathname.includes("/AgencyDashboard") ||
     location.pathname.includes("/TalentDashboard");
 
+  const isLandingPage =
+    currentPageName === "Landing" ||
+    location.pathname === "/" ||
+    location.pathname.toLowerCase() === "/landing";
+
   // Scroll to top on route change
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -536,47 +541,16 @@ export default function Layout({ children, currentPageName }) {
             {/* Desktop Navigation */}
             {!isDashboardPage && (
               <div className="hidden md:flex items-center gap-1">
-                {/* For Business Dropdown */}
-                <div className="relative group">
-                  <Link
-                    to={createPageUrl("AgencySelection")}
-                    className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
-                      location.pathname === createPageUrl("AgencySelection")
-                        ? "text-gray-900 bg-gray-100"
-                        : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
-                  >
-                    {t("agencies")}
-                  </Link>
-
-                  {/* Dropdown Menu */}
-                  <div className="absolute top-full left-0 mt-2 w-64 bg-white border-2 border-gray-200 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                    <div className="p-2">
-                      <Link
-                        to={createPageUrl("TalentAgency")}
-                        className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                      >
-                        <div className="font-semibold text-gray-900">
-                          {t("talentAgencyLabel")}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {t("talentAgencySub")}
-                        </div>
-                      </Link>
-                      <Link
-                        to={createPageUrl("SportsAgency")}
-                        className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-                      >
-                        <div className="font-semibold text-gray-900">
-                          {t("sportsAgency")}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {t("sportsAgencySub")}
-                        </div>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
+                <Link
+                  to={createPageUrl("AgencySelection")}
+                  className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all relative ${
+                    location.pathname === createPageUrl("AgencySelection")
+                      ? "text-gray-900 bg-gray-100"
+                      : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
+                >
+                  {t("agencies")}
+                </Link>
 
                 <Link
                   to={createPageUrl("AboutUs")}
@@ -603,7 +577,7 @@ export default function Layout({ children, currentPageName }) {
                 {!authenticated ? (
                   <Link
                     to="/Login"
-                    className="px-6 py-2 text-sm font-bold text-white bg-black rounded-lg hover:bg-gray-800 transition-all shadow-sm"
+                    className="px-5 py-2 text-sm font-bold text-white bg-[#32C8D1] rounded-md hover:bg-[#2AB8C1] transition-all"
                   >
                     {t("common.signIn")}
                   </Link>
@@ -631,7 +605,7 @@ export default function Layout({ children, currentPageName }) {
 
             {/* Language Switcher and Mobile Menu Button */}
             <div className="flex items-center gap-2">
-              <LanguageSwitcher />
+              {!isLandingPage && <LanguageSwitcher />}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="md:hidden text-gray-600 hover:text-gray-900 p-2"
@@ -650,36 +624,17 @@ export default function Layout({ children, currentPageName }) {
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-gray-100 bg-white">
             <div className="px-4 py-3 space-y-1">
-              {/* Mobile For Business with sub-items */}
-              <div>
-                <Link
-                  to={createPageUrl("AgencySelection")}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
-                    location.pathname === createPageUrl("AgencySelection")
-                      ? "text-gray-900 bg-gray-100"
-                      : "text-gray-700 hover:bg-gray-50"
-                  }`}
-                >
-                  {t("agencies")}
-                </Link>
-                <div className="ml-4 mt-1 space-y-1">
-                  <Link
-                    to={createPageUrl("TalentAgency")}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg"
-                  >
-                    {t("talentAgencyLabel")}
-                  </Link>
-                  <Link
-                    to={createPageUrl("SportsAgency")}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg"
-                  >
-                    {t("sportsAgency")}
-                  </Link>
-                </div>
-              </div>
+              <Link
+                to={createPageUrl("AgencySelection")}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-4 py-3 text-base font-semibold rounded-lg transition-all ${
+                  location.pathname === createPageUrl("AgencySelection")
+                    ? "text-gray-900 bg-gray-100"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                {t("agencies")}
+              </Link>
 
               <Link
                 to={createPageUrl("AboutUs")}
@@ -704,16 +659,18 @@ export default function Layout({ children, currentPageName }) {
               >
                 {t("contact")}
               </Link>
-              <div className="px-4 py-3">
-                <LanguageSwitcher />
-              </div>
+              {!isLandingPage && (
+                <div className="px-4 py-3">
+                  <LanguageSwitcher />
+                </div>
+              )}
 
               <div className="pt-4 px-4">
                 {!authenticated ? (
                   <Link
                     to="/Login"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center gap-2 w-full py-3 text-base font-bold text-white bg-[#32C8D1] rounded-lg shadow-sm"
+                    className="flex items-center justify-center gap-2 w-full py-3 text-base font-bold text-white bg-[#32C8D1] rounded-md"
                   >
                     <LogIn className="w-5 h-5" />
                     {t("common.signIn")}
