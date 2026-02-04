@@ -1248,7 +1248,11 @@ pub async fn list_talents(
         .unwrap_or(&vec![])
         .iter()
         .map(|r| {
-            let id = r.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            let id = r
+                .get("id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
             let full_name = r
                 .get("stage_name")
                 .and_then(|v| v.as_str())
@@ -1290,10 +1294,17 @@ pub async fn list_talent_assets(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if rows.is_empty() {
-        return Err((StatusCode::FORBIDDEN, "Access denied to this talent".to_string()));
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Access denied to this talent".to_string(),
+        ));
     }
 
     // 2. Fetch images from reference_images
@@ -1308,8 +1319,12 @@ pub async fn list_talent_assets(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let images_text = images_resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let images: Vec<serde_json::Value> = serde_json::from_str(&images_text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let images_text = images_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let images: Vec<serde_json::Value> = serde_json::from_str(&images_text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     // 3. Fetch files from agency_files
     let files_resp = state
@@ -1322,11 +1337,15 @@ pub async fn list_talent_assets(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let files_text = files_resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let files: Vec<serde_json::Value> = serde_json::from_str(&files_text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let files_text = files_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let files: Vec<serde_json::Value> = serde_json::from_str(&files_text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let mut assets = vec![];
-    
+
     // Add reference images
     for img in images {
         assets.push(json!({
@@ -1343,8 +1362,10 @@ pub async fn list_talent_assets(
     // Add agency files (could be videos or high-res photos)
     for file in files {
         let fname = file["file_name"].as_str().unwrap_or("");
-        let is_video = fname.to_lowercase().ends_with(".mp4") || fname.to_lowercase().ends_with(".mov") || fname.to_lowercase().ends_with(".webm");
-        
+        let is_video = fname.to_lowercase().ends_with(".mp4")
+            || fname.to_lowercase().ends_with(".mov")
+            || fname.to_lowercase().ends_with(".webm");
+
         assets.push(json!({
             "id": file["id"],
             "url": file["public_url"],
@@ -1384,7 +1405,10 @@ pub async fn delete_talent_asset(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     if !agency_user_resp.status().is_success() {
-        return Err((StatusCode::FORBIDDEN, "Access denied to this talent".to_string()));
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Access denied to this talent".to_string(),
+        ));
     }
 
     // 2. Find the file record in `agency_files` to get its storage path.
@@ -1406,19 +1430,28 @@ pub async fn delete_talent_asset(
         return Err((StatusCode::NOT_FOUND, "Asset not found".to_string()));
     }
 
-    let file_text = file_resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let file_json: serde_json::Value = serde_json::from_str(&file_text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let storage_path = file_json["storage_path"].as_str().ok_or_else(|| (StatusCode::INTERNAL_SERVER_ERROR, "Storage path not found for asset".to_string()))?;
+    let file_text = file_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let file_json: serde_json::Value = serde_json::from_str(&file_text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let storage_path = file_json["storage_path"].as_str().ok_or_else(|| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Storage path not found for asset".to_string(),
+        )
+    })?;
 
     // 3. Delete the file from Supabase Storage.
-    let storage_url = format!(
-        "{}/storage/v1/object/{}",
-        state.supabase_url, storage_path
-    );
+    let storage_url = format!("{}/storage/v1/object/{}", state.supabase_url, storage_path);
     let http = reqwest::Client::new();
     let delete_resp = http
         .delete(&storage_url)
-        .header("Authorization", format!("Bearer {}", state.supabase_service_key))
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
         .header("apikey", state.supabase_service_key.clone())
         .send()
         .await
@@ -1428,7 +1461,11 @@ pub async fn delete_talent_asset(
         // Log the error but proceed to delete the DB record anyway.
         // It's better to have a dangling DB record than an orphaned file.
         let error_body = delete_resp.text().await.unwrap_or_default();
-        tracing::error!("Failed to delete file from storage: {}. Path: {}", error_body, storage_path);
+        tracing::error!(
+            "Failed to delete file from storage: {}. Path: {}",
+            error_body,
+            storage_path
+        );
     }
 
     // 4. Delete the record from the `agency_files` table.
@@ -1462,10 +1499,17 @@ pub async fn upload_talent_asset(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if rows.is_empty() {
-        return Err((StatusCode::FORBIDDEN, "Access denied to this talent".to_string()));
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Access denied to this talent".to_string(),
+        ));
     }
 
     // 2. Extract file
@@ -1530,7 +1574,10 @@ pub async fn upload_talent_asset(
             format!("Bearer {}", state.supabase_service_key),
         )
         .header("apikey", state.supabase_service_key.clone())
-        .header("content-type", content_type.unwrap_or_else(|| "application/octet-stream".to_string()))
+        .header(
+            "content-type",
+            content_type.unwrap_or_else(|| "application/octet-stream".to_string()),
+        )
         .body(bytes)
         .send()
         .await
@@ -1572,8 +1619,15 @@ pub async fn upload_talent_asset(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let arr: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
-    let rec = arr.first().cloned().unwrap_or(serde_json::json!({"id": ""}));
-    let id = rec.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let rec = arr
+        .first()
+        .cloned()
+        .unwrap_or(serde_json::json!({"id": ""}));
+    let id = rec
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
 
     Ok(Json(AgencyFileUploadResponse {
         id,

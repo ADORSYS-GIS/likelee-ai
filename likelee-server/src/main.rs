@@ -20,11 +20,12 @@ async fn main() {
     tracing_subscriber::fmt().with_env_filter(filter).init();
     info!(port, endpoint_base = %cfg.veriff_base_url, "Starting likelee-server");
 
-    let pg_url = if cfg.supabase_url.ends_with("/rest/v1") || cfg.supabase_url.ends_with("/rest/v1/") {
-        cfg.supabase_url.clone()
-    } else {
-        format!("{}/rest/v1", cfg.supabase_url)
-    };
+    let pg_url =
+        if cfg.supabase_url.ends_with("/rest/v1") || cfg.supabase_url.ends_with("/rest/v1/") {
+            cfg.supabase_url.clone()
+        } else {
+            format!("{}/rest/v1", cfg.supabase_url)
+        };
     let pg = Postgrest::new(&pg_url)
         .insert_header("apikey", cfg.supabase_service_key.clone())
         .insert_header(
