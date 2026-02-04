@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     Plus, Search, Filter, MoreHorizontal, Eye,
     Share2, Trash2, Loader2, Package, TrendingUp,
-    Clock, CheckCircle2, AlertCircle, Copy, ExternalLink,
+    Clock, Calendar, CheckCircle2, AlertCircle, Copy, ExternalLink,
     Image as ImageIcon, ChevronLeft, ChevronRight, Activity, MessageSquare
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -274,8 +274,27 @@ export function PackagesView() {
                 </>
             ) : (
                 <div className="grid grid-cols-1 gap-4">
-                    {filteredPackages.map((pkg: any) => (
-                        <Card key={pkg.id} className="p-6 bg-white border border-gray-200 hover:border-gray-900 transition-all duration-300 group">
+                    {filteredPackages.map((pkg: any) => {
+                        const expiresAt = pkg.expires_at ? new Date(pkg.expires_at) : null;
+                        const now = new Date();
+                        const daysRemaining = expiresAt
+                            ? Math.ceil((expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+                            : null;
+                        const isExpired = expiresAt ? expiresAt.getTime() < now.getTime() : false;
+                        const isExpiringSoon = !isExpired && daysRemaining !== null && daysRemaining <= 2;
+                        const statusLabel = isExpired ? "Expired" : "Active";
+                        const statusClass = isExpired
+                            ? "bg-red-50 text-red-600 border-red-100"
+                            : isExpiringSoon
+                                ? "bg-amber-50 text-amber-700 border-amber-100"
+                                : "bg-blue-50 text-blue-700 border-blue-100";
+
+                        return (
+                        <Card
+                            key={pkg.id}
+                            className="p-6 bg-white border border-gray-200 hover:border-gray-900 transition-all duration-300 group cursor-pointer"
+                            onClick={() => setSelectedFeedbackPackage(pkg.id)}
+                        >
                             <div className="flex items-center gap-6">
                                 <div className="w-32 h-20 rounded-xl bg-gray-100 flex-shrink-0 relative overflow-hidden border border-gray-100">
                                     {pkg.cover_image_url ? (
@@ -293,65 +312,86 @@ export function PackagesView() {
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-3 mb-1">
                                         <h4 className="text-lg font-black text-gray-900 uppercase tracking-tight truncate">{pkg.title}</h4>
-                                        <Badge className={
-                                            !pkg.expires_at || new Date(pkg.expires_at) > new Date()
-                                                ? "bg-green-50 text-green-600 border-green-100"
-                                                : "bg-red-50 text-red-600 border-red-100"
-                                        }>
-                                            {!pkg.expires_at || new Date(pkg.expires_at) > new Date() ? "Active" : "Expired"}
-                                        </Badge>
+                                        <Badge className={statusClass}>{statusLabel}</Badge>
                                     </div>
                                     <div className="flex items-center gap-4 text-xs text-gray-500 font-bold uppercase tracking-widest">
                                         <span className="flex items-center gap-1.5">
                                             <Clock className="w-3.5 h-3.5" /> Created {format(new Date(pkg.created_at), 'MMM d, yyyy')}
                                         </span>
                                         <span className="flex items-center gap-1.5">
-                                            <Eye className="w-3.5 h-3.5" /> {pkg.stats?.[0]?.view_count || 0} Views
+                                            <Calendar className="w-3.5 h-3.5" />
+                                            {pkg.expires_at
+                                                ? `Expires ${format(new Date(pkg.expires_at), 'MMM d, yyyy')}`
+                                                : "No Expiry"}
+                                        </span>
+                                        <span className="flex items-center gap-1.5">
+                                            <Eye className="w-3.5 h-3.5" />
+                                            {(Array.isArray(pkg.stats) ? pkg.stats[0]?.view_count : pkg.stats?.view_count) || 0} Views
                                         </span>
                                     </div>
                                 </div>
-
                                 <div className="flex items-center gap-3">
                                     <Button
                                         variant="outline"
                                         size="icon"
                                         className="h-10 w-10 border-gray-200"
-                                        onClick={() => copyToClipboard(pkg.access_token)}
+                                        onClick={(event) => {
+                                            event.stopPropagation();
+                                            copyToClipboard(pkg.access_token);
+                                        }}
                                     >
                                         <Share2 className="w-4 h-4" />
                                     </Button>
                                     <Button
                                         variant="outline"
-                                        className="h-10 px-4 font-black uppercase tracking-widest text-[10px] border-gray-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 transition-colors"
-                                        onClick={() => setSelectedFeedbackPackage(pkg.id)}
+                                        className="h-10 px-4 border-gray-200 font-bold text-xs uppercase tracking-widest"
+                                        onClick={(event) => {
+                                            event.stopPropagation();
+                                            setSelectedFeedbackPackage(pkg.id);
+                                        }}
                                     >
-                                        <Activity className="w-3.5 h-3.5 mr-2" /> Client Activity
+                                        <Activity className="w-4 h-4 mr-2" />
+                                        Client Activity
                                     </Button>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-10 w-10">
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                className="h-10 w-10 border-gray-200"
+                                                onClick={(event) => event.stopPropagation()}
+                                            >
                                                 <MoreHorizontal className="w-4 h-4" />
                                             </Button>
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="w-48">
+                                        <DropdownMenuContent align="end">
                                             <DropdownMenuItem
-                                                className="font-bold text-xs uppercase tracking-widest p-3"
-                                                onClick={() => fetchFullPackageMutation.mutate(pkg.id)}
+                                                onClick={(event) => {
+                                                    event.stopPropagation();
+                                                    fetchFullPackageMutation.mutate(pkg.id);
+                                                    setWizardMode("package");
+                                                }}
                                             >
-                                                <Pencil className="w-4 h-4 mr-2" /> Edit Package
+                                                <Pencil className="w-4 h-4 mr-2" />
+                                                Edit Package
                                             </DropdownMenuItem>
                                             <DropdownMenuItem
-                                                className="font-bold text-xs uppercase tracking-widest p-3 text-red-600"
-                                                onClick={() => setDeleteTarget(pkg)}
+                                                onClick={(event) => {
+                                                    event.stopPropagation();
+                                                    setDeleteTarget(pkg);
+                                                }}
+                                                className="text-red-600"
                                             >
-                                                <Trash2 className="w-4 h-4 mr-2" /> Delete
+                                                <Trash2 className="w-4 h-4 mr-2" />
+                                                Delete
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </div>
                             </div>
                         </Card>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
 
@@ -377,7 +417,10 @@ export function PackagesView() {
                 packageId={selectedFeedbackPackage}
             />
 
-            <AlertDialog open={!!deleteTarget} onOpenChange={(isOpen) => !isOpen && setDeleteTarget(null)}>
+            <AlertDialog
+                open={!!deleteTarget}
+                onOpenChange={(isOpen) => !isOpen && setDeleteTarget(null)}
+            >
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
@@ -394,7 +437,8 @@ export function PackagesView() {
                                     deleteMutation.mutate(deleteTarget.id);
                                     setDeleteTarget(null);
                                 }
-                            }}>
+                            }}
+                        >
                             Delete
                         </AlertDialogAction>
                     </AlertDialogFooter>
