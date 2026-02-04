@@ -252,7 +252,7 @@ function _getCurrentPage(url) {
 // Create a wrapper component that uses useLocation inside the Router context
 function AppRoutes() {
   const location = useLocation();
-  const isPublicPackage = location.pathname.startsWith('/share/package/');
+  const isPublicPackage = location.pathname.startsWith("/share/package/");
 
   const currentPage = _getCurrentPage(location.pathname);
 
@@ -439,10 +439,7 @@ function AppRoutes() {
         }
       />
 
-      <Route
-        path="/CreatorSignupOptions"
-        element={<CreatorSignupOptions />}
-      />
+      <Route path="/CreatorSignupOptions" element={<CreatorSignupOptions />} />
 
       <Route path="/SAGAFTRAAlignment" element={<SAGAFTRAAlignment />} />
 

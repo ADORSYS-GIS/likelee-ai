@@ -1,1 +1,152 @@
-{"id": "0c9305c2-cd01-41c0-a401-0a83b02ddd9f", "items": [{"id": "b99ff922-c0e7-4447-b634-325ddf66c437", "assets": [{"id": "dcdd5a44-283e-47b7-bf9b-193110f18ab1", "asset": {"id": "84dc7bb5-1fe8-49bd-b38d-c0903e08000c", "asset_url": "https://himyrgwyrsmltmzlbuxm.supabase.co/storage/v1/object/public/likelee-public/agency/64f62d2e-ba5a-4b71-87a1-19bcd260b697/talents/profile_f93ed6b4-4193-441f-9654-94b011142078.jpeg", "asset_type": "image"}, "asset_id": "84dc7bb5-1fe8-49bd-b38d-c0903e08000c", "asset_type": "image", "sort_order": 0}, {"id": "3c20f419-5b50-4a99-a7a2-e826cc42559e", "asset": {"id": "ad0a5018-a282-46b4-8b12-903b8f6e7257", "asset_url": null, "asset_type": "image"}, "asset_id": "ad0a5018-a282-46b4-8b12-903b8f6e7257", "asset_type": "image", "sort_order": 2}, {"id": "699d5cdc-6cb8-414e-b0af-6c371db6db52", "asset": {"id": "8f3ee193-71aa-4bbe-b8f9-a93de3554ce2", "asset_url": null, "asset_type": "image"}, "asset_id": "8f3ee193-71aa-4bbe-b8f9-a93de3554ce2", "asset_type": "image", "sort_order": 1}, {"id": "90670576-03bd-466a-8d03-3d6be21a426d", "asset": {"id": "30747d70-1aa4-4321-b9be-4773fa7a7878", "asset_url": null, "asset_type": "image"}, "asset_id": "30747d70-1aa4-4321-b9be-4773fa7a7878", "asset_type": "image", "sort_order": 3}], "talent": {"id": "aebd0267-11f9-4921-87d8-441dad701c56", "city": "City", "bio_notes": "Multi-skilled creative with strong experience in performance, collaboration, and fast-paced environments.", "stage_name": "David", "race_ethnicity": ["Black / African American"], "full_legal_name": "Morgan ", "profile_photo_url": "https://himyrgwyrsmltmzlbuxm.supabase.co/storage/v1/object/public/likelee-public/agency/64f62d2e-ba5a-4b71-87a1-19bcd260b697/talents/profile_f93ed6b4-4193-441f-9654-94b011142078.jpeg"}, "sort_order": 0}, {"id": "b1b5eb0b-0a74-4c7a-bf38-0cec48a77955", "assets": [{"id": "1838c8d3-499b-485b-aa93-ea096df38222", "asset": {"id": "9ca6823d-53d7-45e1-863f-d0ff74f2fac7", "asset_url": null, "asset_type": "image"}, "asset_id": "9ca6823d-53d7-45e1-863f-d0ff74f2fac7", "asset_type": "image", "sort_order": 1}, {"id": "a0085585-8b88-4aa0-a95c-866dad8662dd", "asset": {"id": "5fbdeae5-25b1-43c8-8365-4a0605eb51d2", "asset_url": null, "asset_type": "image"}, "asset_id": "5fbdeae5-25b1-43c8-8365-4a0605eb51d2", "asset_type": "image", "sort_order": 4}, {"id": "826cff0b-796f-4520-ae17-1bbd3811f484", "asset": {"id": "108b2a1a-f839-413e-8eda-d2f8e0b28a15", "asset_url": null, "asset_type": "image"}, "asset_id": "108b2a1a-f839-413e-8eda-d2f8e0b28a15", "asset_type": "image", "sort_order": 2}, {"id": "670b24f3-b817-44a2-9634-62d763030864", "asset": {"id": "0f0910e4-7a7d-4f45-b51a-d02ffa68a145", "asset_url": null, "asset_type": "image"}, "asset_id": "0f0910e4-7a7d-4f45-b51a-d02ffa68a145", "asset_type": "image", "sort_order": 3}, {"id": "b5e08c9d-59b3-4b1b-9d10-979288e4ef40", "asset": {"id": "a176879f-5835-44a0-ad0d-98c2428fab15", "asset_url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQu0L6pRImdoEN5IyVuF9HRjeHOlsiFEzyekw&s", "asset_type": "image"}, "asset_id": "a176879f-5835-44a0-ad0d-98c2428fab15", "asset_type": "image", "sort_order": 0}], "talent": {"id": "8d6562cf-d5a5-45bc-be9d-4584fd0fc9a9", "city": "Los Angeles", "bio_notes": "", "stage_name": "Lisa", "race_ethnicity": ["Black / African American"], "full_legal_name": "Longla ", "profile_photo_url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQu0L6pRImdoEN5IyVuF9HRjeHOlsiFEzyekw&s"}, "sort_order": 1}], "title": "Commercial open world", "agency": {"logo_url": "https://himyrgwyrsmltmzlbuxm.supabase.co/storage/v1/object/public/likelee-public/agency-logos/64f62d2e-ba5a-4b71-87a1-19bcd260b697-0.6662077135624993.jpg", "agency_name": "Elite Sports"}, "agency_id": "64f62d2e-ba5a-4b71-87a1-19bcd260b697", "created_at": "2026-02-04T00:49:23.05433+00:00", "expires_at": "2026-02-13T00:00:00+00:00", "updated_at": "2026-02-04T06:40:45.913044+00:00", "description": "Warm, authentic, and diverse talent suitable for home, technology, and lifestyle commercial spots. Selection focuses on expressive, relatable faces that translate well on camera and have valid commercial rights.", "access_token": "823ccbe6f70a33f331cae95f1819c3ae", "primary_color": "#64f2da", "allow_comments": true, "custom_message": "Hello Mark, attached is the casting deck for the Smart Home commercial. We focused on finding talent that feels genuinely warm and approachable. All listed talent have full commercial availability for the shooting dates in October.", "allow_callbacks": true, "allow_favorites": true, "cover_image_url": "https://homeandtech.store/cdn/shop/files/Untitled_design_03e4e57b-5e8d-4347-b597-65067922bbf3.png?v=1750585451", "secondary_color": "#b2d507"}
+{
+  "id": "0c9305c2-cd01-41c0-a401-0a83b02ddd9f",
+  "items": [
+    {
+      "id": "b99ff922-c0e7-4447-b634-325ddf66c437",
+      "assets": [
+        {
+          "id": "dcdd5a44-283e-47b7-bf9b-193110f18ab1",
+          "asset": {
+            "id": "84dc7bb5-1fe8-49bd-b38d-c0903e08000c",
+            "asset_url": "https://himyrgwyrsmltmzlbuxm.supabase.co/storage/v1/object/public/likelee-public/agency/64f62d2e-ba5a-4b71-87a1-19bcd260b697/talents/profile_f93ed6b4-4193-441f-9654-94b011142078.jpeg",
+            "asset_type": "image"
+          },
+          "asset_id": "84dc7bb5-1fe8-49bd-b38d-c0903e08000c",
+          "asset_type": "image",
+          "sort_order": 0
+        },
+        {
+          "id": "3c20f419-5b50-4a99-a7a2-e826cc42559e",
+          "asset": {
+            "id": "ad0a5018-a282-46b4-8b12-903b8f6e7257",
+            "asset_url": null,
+            "asset_type": "image"
+          },
+          "asset_id": "ad0a5018-a282-46b4-8b12-903b8f6e7257",
+          "asset_type": "image",
+          "sort_order": 2
+        },
+        {
+          "id": "699d5cdc-6cb8-414e-b0af-6c371db6db52",
+          "asset": {
+            "id": "8f3ee193-71aa-4bbe-b8f9-a93de3554ce2",
+            "asset_url": null,
+            "asset_type": "image"
+          },
+          "asset_id": "8f3ee193-71aa-4bbe-b8f9-a93de3554ce2",
+          "asset_type": "image",
+          "sort_order": 1
+        },
+        {
+          "id": "90670576-03bd-466a-8d03-3d6be21a426d",
+          "asset": {
+            "id": "30747d70-1aa4-4321-b9be-4773fa7a7878",
+            "asset_url": null,
+            "asset_type": "image"
+          },
+          "asset_id": "30747d70-1aa4-4321-b9be-4773fa7a7878",
+          "asset_type": "image",
+          "sort_order": 3
+        }
+      ],
+      "talent": {
+        "id": "aebd0267-11f9-4921-87d8-441dad701c56",
+        "city": "City",
+        "bio_notes": "Multi-skilled creative with strong experience in performance, collaboration, and fast-paced environments.",
+        "stage_name": "David",
+        "race_ethnicity": ["Black / African American"],
+        "full_legal_name": "Morgan ",
+        "profile_photo_url": "https://himyrgwyrsmltmzlbuxm.supabase.co/storage/v1/object/public/likelee-public/agency/64f62d2e-ba5a-4b71-87a1-19bcd260b697/talents/profile_f93ed6b4-4193-441f-9654-94b011142078.jpeg"
+      },
+      "sort_order": 0
+    },
+    {
+      "id": "b1b5eb0b-0a74-4c7a-bf38-0cec48a77955",
+      "assets": [
+        {
+          "id": "1838c8d3-499b-485b-aa93-ea096df38222",
+          "asset": {
+            "id": "9ca6823d-53d7-45e1-863f-d0ff74f2fac7",
+            "asset_url": null,
+            "asset_type": "image"
+          },
+          "asset_id": "9ca6823d-53d7-45e1-863f-d0ff74f2fac7",
+          "asset_type": "image",
+          "sort_order": 1
+        },
+        {
+          "id": "a0085585-8b88-4aa0-a95c-866dad8662dd",
+          "asset": {
+            "id": "5fbdeae5-25b1-43c8-8365-4a0605eb51d2",
+            "asset_url": null,
+            "asset_type": "image"
+          },
+          "asset_id": "5fbdeae5-25b1-43c8-8365-4a0605eb51d2",
+          "asset_type": "image",
+          "sort_order": 4
+        },
+        {
+          "id": "826cff0b-796f-4520-ae17-1bbd3811f484",
+          "asset": {
+            "id": "108b2a1a-f839-413e-8eda-d2f8e0b28a15",
+            "asset_url": null,
+            "asset_type": "image"
+          },
+          "asset_id": "108b2a1a-f839-413e-8eda-d2f8e0b28a15",
+          "asset_type": "image",
+          "sort_order": 2
+        },
+        {
+          "id": "670b24f3-b817-44a2-9634-62d763030864",
+          "asset": {
+            "id": "0f0910e4-7a7d-4f45-b51a-d02ffa68a145",
+            "asset_url": null,
+            "asset_type": "image"
+          },
+          "asset_id": "0f0910e4-7a7d-4f45-b51a-d02ffa68a145",
+          "asset_type": "image",
+          "sort_order": 3
+        },
+        {
+          "id": "b5e08c9d-59b3-4b1b-9d10-979288e4ef40",
+          "asset": {
+            "id": "a176879f-5835-44a0-ad0d-98c2428fab15",
+            "asset_url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQu0L6pRImdoEN5IyVuF9HRjeHOlsiFEzyekw&s",
+            "asset_type": "image"
+          },
+          "asset_id": "a176879f-5835-44a0-ad0d-98c2428fab15",
+          "asset_type": "image",
+          "sort_order": 0
+        }
+      ],
+      "talent": {
+        "id": "8d6562cf-d5a5-45bc-be9d-4584fd0fc9a9",
+        "city": "Los Angeles",
+        "bio_notes": "",
+        "stage_name": "Lisa",
+        "race_ethnicity": ["Black / African American"],
+        "full_legal_name": "Longla ",
+        "profile_photo_url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQu0L6pRImdoEN5IyVuF9HRjeHOlsiFEzyekw&s"
+      },
+      "sort_order": 1
+    }
+  ],
+  "title": "Commercial open world",
+  "agency": {
+    "logo_url": "https://himyrgwyrsmltmzlbuxm.supabase.co/storage/v1/object/public/likelee-public/agency-logos/64f62d2e-ba5a-4b71-87a1-19bcd260b697-0.6662077135624993.jpg",
+    "agency_name": "Elite Sports"
+  },
+  "agency_id": "64f62d2e-ba5a-4b71-87a1-19bcd260b697",
+  "created_at": "2026-02-04T00:49:23.05433+00:00",
+  "expires_at": "2026-02-13T00:00:00+00:00",
+  "updated_at": "2026-02-04T06:40:45.913044+00:00",
+  "description": "Warm, authentic, and diverse talent suitable for home, technology, and lifestyle commercial spots. Selection focuses on expressive, relatable faces that translate well on camera and have valid commercial rights.",
+  "access_token": "823ccbe6f70a33f331cae95f1819c3ae",
+  "primary_color": "#64f2da",
+  "allow_comments": true,
+  "custom_message": "Hello Mark, attached is the casting deck for the Smart Home commercial. We focused on finding talent that feels genuinely warm and approachable. All listed talent have full commercial availability for the shooting dates in October.",
+  "allow_callbacks": true,
+  "allow_favorites": true,
+  "cover_image_url": "https://homeandtech.store/cdn/shop/files/Untitled_design_03e4e57b-5e8d-4347-b597-65067922bbf3.png?v=1750585451",
+  "secondary_color": "#b2d507"
+}
