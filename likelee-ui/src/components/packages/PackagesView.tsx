@@ -292,7 +292,7 @@ export function PackagesView() {
                         return (
                         <Card
                             key={pkg.id}
-                            className="p-6 bg-white border border-gray-200 hover:border-gray-900 transition-all duration-300 group cursor-pointer"
+                            className="p-6 bg-white border border-gray-200 hover:border-gray-900 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
                             onClick={() => setSelectedFeedbackPackage(pkg.id)}
                         >
                             <div className="flex items-center gap-6">
