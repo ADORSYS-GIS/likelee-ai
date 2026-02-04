@@ -103,11 +103,7 @@ pub async fn create_package(
     Json(payload): Json<CreatePackageRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     // Helper to treat empty strings as None
-    let sanitize = |s: &Option<String>| {
-        s.as_ref()
-            .filter(|v| !v.trim().is_empty())
-            .cloned()
-    };
+    let sanitize = |s: &Option<String>| s.as_ref().filter(|v| !v.trim().is_empty()).cloned();
 
     // 1. Insert Package metadata
     let package_insert = serde_json::json!({
@@ -430,11 +426,7 @@ pub async fn update_package(
     }
 
     // Helper to treat empty strings as None
-    let sanitize = |s: &Option<String>| {
-        s.as_ref()
-            .filter(|v| !v.trim().is_empty())
-            .cloned()
-    };
+    let sanitize = |s: &Option<String>| s.as_ref().filter(|v| !v.trim().is_empty()).cloned();
 
     // 2. Update Metadata
     let package_update = serde_json::json!({
