@@ -26,8 +26,8 @@ BEGIN
         'access_token', p.access_token,
         'created_at', p.created_at,
         'updated_at', p.updated_at,
-        'agency', (SELECT jsonb_build_object('agency_name', a.agency_name, 'logo_url', a.logo_url) FROM agencies a WHERE a.id = p.agency_id),
-        'interactions', (SELECT jsonb_agg(jsonb_build_object('talent_id', i.talent_id, 'type', i.type, 'content', i.content, 'client_name', i.client_name)) FROM agency_talent_package_interactions i WHERE i.package_id = p.id),
+        'agency', (SELECT jsonb_build_object('agency_name', a.agency_name, 'logo_url', a.logo_url) FROM public.agencies a WHERE a.id = p.agency_id),
+        'interactions', (SELECT jsonb_agg(jsonb_build_object('talent_id', i.talent_id, 'type', i.type, 'content', i.content, 'client_name', i.client_name)) FROM public.agency_talent_package_interactions i WHERE i.package_id = p.id),
         'items', (
             SELECT jsonb_agg(
                 jsonb_build_object(
@@ -42,37 +42,47 @@ BEGIN
                             'bio_notes', u.bio_notes,
                             'city', u.city,
                             'race_ethnicity', u.race_ethnicity
-                        ) FROM agency_users u WHERE u.id = i.talent_id
+                        ) FROM public.agency_users u WHERE u.id = i.talent_id
                     ),
-                    'assets', (
-                        SELECT COALESCE(jsonb_agg(
+                    'assets', COALESCE((
+                        SELECT jsonb_agg(
                             jsonb_build_object(
                                 'id', pa.id,
                                 'asset_id', pa.asset_id,
                                 'asset_type', pa.asset_type,
                                 'sort_order', pa.sort_order,
                                 'asset', jsonb_build_object(
-                                    'id', af.id,
-                                    'asset_url', af.public_url
+                                    'id', pa.asset_id,
+                                    'asset_url', COALESCE(
+                                        (SELECT public_url FROM public.agency_files WHERE id = pa.asset_id LIMIT 1),
+                                        (SELECT public_url FROM public.reference_images WHERE id = pa.asset_id LIMIT 1),
+                                        -- Construct URL from storage path if public_url is missing
+                                        (SELECT 'https://himyrgwyrsmltmzlbuxm.supabase.co/storage/v1/object/public/' || storage_bucket || '/' || storage_path
+                                         FROM public.agency_files WHERE id = pa.asset_id LIMIT 1),
+                                        (SELECT 'https://himyrgwyrsmltmzlbuxm.supabase.co/storage/v1/object/public/' || storage_bucket || '/' || storage_path
+                                         FROM public.reference_images WHERE id = pa.asset_id LIMIT 1),
+                                        (SELECT public_url FROM public.images WHERE id = pa.asset_id LIMIT 1),
+                                        (SELECT public_url FROM public.videos WHERE id = pa.asset_id LIMIT 1)
+                                    ),
+                                    'asset_type', pa.asset_type
                                 )
                             )
-                        ), '[]'::jsonb)
-                        FROM agency_talent_package_item_assets pa
-                        JOIN agency_files af ON pa.asset_id = af.id
+                        )
+                        FROM public.agency_talent_package_item_assets pa
                         WHERE pa.item_id = i.id
-                    )
+                    ), '[]'::jsonb)
                 )
             ) 
-            FROM agency_talent_package_items i 
+            FROM public.agency_talent_package_items i 
             WHERE i.package_id = p.id
         )
     )
     INTO result
-    FROM agency_talent_packages p
+    FROM public.agency_talent_packages p
     WHERE p.access_token = p_access_token;
 
     RETURN result;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 COMMIT;

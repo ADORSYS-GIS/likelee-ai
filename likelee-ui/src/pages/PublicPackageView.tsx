@@ -46,7 +46,9 @@ export function PublicPackageView() {
 
     const selectedAssets = useMemo(() => {
         if (!selectedItem?.assets) return [];
-        return selectedItem.assets.map((a: any) => a.asset).filter(Boolean);
+        return selectedItem.assets
+            .map((a: any) => a.asset || a)
+            .filter((asset: any) => asset?.asset_url || asset?.public_url || asset?.url);
     }, [selectedItem]);
 
     useEffect(() => {
