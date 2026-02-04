@@ -407,10 +407,7 @@ function AppRoutes() {
         }
       />
 
-      <Route
-        path="/stripe/connect/return"
-        element={<StripeConnectReturn />}
-      />
+      <Route path="/stripe/connect/return" element={<StripeConnectReturn />} />
       <Route
         path="/stripe/connect/refresh"
         element={<StripeConnectRefresh />}
