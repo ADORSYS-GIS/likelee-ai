@@ -57,7 +57,7 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl bg-white rounded-xl shadow-2xl border-none">
+            <DialogContent className="max-w-3xl bg-white rounded-xl shadow-2xl border-none" hideClose>
                 <DialogHeader className="mb-6">
                     <div className="flex flex-wrap items-start justify-between gap-4">
                         <div>
@@ -130,7 +130,7 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                             </DropdownMenu>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="icon" className="rounded-full border-2 border-green-200 text-green-600">
+                                    <Button variant="outline" size="icon" className="rounded-full border-2 border-blue-200 text-blue-600">
                                         <Phone className="w-4 h-4" />
                                     </Button>
                                 </DropdownMenuTrigger>
@@ -200,7 +200,7 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                                                 ? "bg-red-100 text-red-600"
                                                 : isSelected
                                                     ? "bg-emerald-100 text-emerald-600"
-                                                    : "bg-green-100 text-green-600"
+                                                    : "bg-blue-100 text-blue-600"
                                             }`}>
                                                 {isFavorite ? (
                                                     <Heart className="w-4 h-4 fill-current" />
