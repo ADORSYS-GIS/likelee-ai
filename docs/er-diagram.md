@@ -408,4 +408,94 @@ Notes
 - Optional normalization
   - bookings.client_name is denormalized; can add client_id → agency_clients(id) if you want strict FK linkage.
 
-If you want, I can try another patch to commit this to docs/er-diagram.md now; otherwise, you can paste it manually.
+## Agency Invoicing Addendum (0009)
+
+```mermaid
+erDiagram
+  AGENCIES {
+    uuid id PK
+  }
+
+  AGENCY_CLIENTS {
+    uuid id PK
+    uuid agency_id FK "REFERENCES agencies(id)"
+  }
+
+  BOOKINGS {
+    uuid id PK
+    uuid agency_user_id
+  }
+
+  AGENCY_INVOICE_COUNTERS {
+    uuid agency_id PK "REFERENCES agencies(id)"
+    integer counter
+    timestamptz updated_at
+  }
+
+  AGENCY_INVOICES {
+    uuid id PK
+    uuid agency_id FK "REFERENCES agencies(id)"
+    uuid client_id FK "REFERENCES agency_clients(id)"
+    uuid booking_id FK "REFERENCES bookings(id)"
+    text invoice_number
+    text status
+    date invoice_date
+    date due_date
+    integer subtotal_cents
+    integer expenses_cents
+    integer tax_cents
+    integer total_cents
+    integer agency_fee_cents
+    integer talent_net_cents
+    timestamptz created_at
+    timestamptz updated_at
+  }
+
+  AGENCY_INVOICE_ITEMS {
+    uuid id PK
+    uuid invoice_id FK "REFERENCES agency_invoices(id)"
+    integer sort_order
+    text description
+    uuid talent_id
+    date date_of_service
+    numeric quantity
+    integer unit_price_cents
+    integer line_total_cents
+    timestamptz created_at
+  }
+
+  AGENCY_INVOICE_EXPENSES {
+    uuid id PK
+    uuid invoice_id FK "REFERENCES agency_invoices(id)"
+    integer sort_order
+    text description
+    integer amount_cents
+    boolean taxable
+    timestamptz created_at
+  }
+
+  AGENCIES ||--|| AGENCY_INVOICE_COUNTERS : agency_id
+  AGENCIES ||--o{ AGENCY_INVOICES : agency_id
+  AGENCY_CLIENTS ||--o{ AGENCY_INVOICES : client_id
+  BOOKINGS ||--o{ AGENCY_INVOICES : booking_id
+  AGENCY_INVOICES ||--o{ AGENCY_INVOICE_ITEMS : invoice_id
+  AGENCY_INVOICES ||--o{ AGENCY_INVOICE_EXPENSES : invoice_id
+```
+
+## Agency Commission Settings Addendum (0014)
+
+```mermaid
+erDiagram
+  AGENCIES {
+    uuid id PK
+  }
+
+  AGENCY_COMMISSION_SETTINGS {
+    uuid agency_id PK "REFERENCES agencies(id)"
+    integer default_commission_bps
+    jsonb division_commissions
+    timestamptz updated_at
+  }
+
+  AGENCIES ||--|| AGENCY_COMMISSION_SETTINGS : agency_id
+```

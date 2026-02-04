@@ -13,6 +13,41 @@ pub fn build_router(state: AppState) -> Router {
         .allow_headers(Any);
     Router::new()
         .route("/api/health", get(crate::health::health))
+        // Invoices (Agency Dashboard)
+        .route(
+            "/api/invoices",
+            get(crate::invoices::list).post(crate::invoices::create),
+        )
+        .route(
+            "/api/invoices/:id",
+            get(crate::invoices::get).post(crate::invoices::update),
+        )
+        .route(
+            "/api/invoices/:id/mark-sent",
+            post(crate::invoices::mark_sent),
+        )
+        .route(
+            "/api/invoices/:id/send-payment-reminder",
+            post(crate::invoices::send_payment_reminder),
+        )
+        .route(
+            "/api/invoices/:id/mark-paid",
+            post(crate::invoices::mark_paid),
+        )
+        .route(
+            "/api/invoices/:id/void",
+            post(crate::invoices::void_invoice),
+        )
+        // Talent Statements (Agency Dashboard)
+        .route(
+            "/api/talent-statements",
+            get(crate::talent_statements::list),
+        )
+        // Expenses (Agency Dashboard)
+        .route(
+            "/api/expenses",
+            get(crate::expenses::list).post(crate::expenses::create),
+        )
         .route("/api/kyc/session", post(crate::kyc::create_session))
         .route("/api/kyc/status", get(crate::kyc::get_status))
         .route(
@@ -27,9 +62,76 @@ pub fn build_router(state: AppState) -> Router {
         // Agencies
         .route("/api/agency-register", post(crate::agencies::register))
         .route("/api/agency-profile", post(crate::agencies::update))
+        // Agency Dashboard
         .route(
-            "/api/agency-profile/user",
-            get(crate::agencies::get_by_user),
+            "/api/agency/dashboard/overview",
+            get(crate::agency_dashboard::get_dashboard_overview),
+        )
+        .route(
+            "/api/agency/dashboard/talent-performance",
+            get(crate::agency_dashboard::get_talent_performance),
+        )
+        .route(
+            "/api/agency/dashboard/revenue-breakdown",
+            get(crate::agency_dashboard::get_revenue_breakdown),
+        )
+        .route(
+            "/api/agency/dashboard/licensing-pipeline",
+            get(crate::agency_dashboard::get_licensing_pipeline),
+        )
+        .route(
+            "/api/agency/dashboard/recent-activity",
+            get(crate::agency_dashboard::get_recent_activity),
+        )
+        .route("/api/agency/roster", get(crate::agency_roster::get_roster))
+        .route(
+            "/api/agency/talent",
+            post(crate::agency_roster::create_talent),
+        )
+        .route(
+            "/api/agency/talent/:id",
+            post(crate::agency_roster::update_talent),
+        )
+        .route(
+            "/api/agency/talent/:id/campaigns",
+            get(crate::agency_roster::list_talent_campaigns),
+        )
+        .route(
+            "/api/agency/campaigns/:id",
+            post(crate::campaigns::update_campaign_split),
+        )
+        .route(
+            "/api/agency/licensing-requests",
+            get(crate::licensing_requests::list_for_agency),
+        )
+        .route(
+            "/api/agency/licensing-requests/status",
+            post(crate::licensing_requests::update_status_bulk),
+        )
+        .route(
+            "/api/agency/licensing-requests/pay-split",
+            get(crate::licensing_requests::get_pay_split)
+                .post(crate::licensing_requests::set_pay_split),
+        )
+        .route(
+            "/api/agency/digitals",
+            get(crate::digitals::list_agency_digitals),
+        )
+        .route(
+            "/api/agency/talent/:id/digitals",
+            get(crate::digitals::list_talent_digitals).post(crate::digitals::create_talent_digital),
+        )
+        .route(
+            "/api/agency/digitals/:id",
+            post(crate::digitals::update_digital),
+        )
+        .route(
+            "/api/agency/digitals/reminders",
+            post(crate::digitals::send_digitals_reminders),
+        )
+        .route(
+            "/api/agency/comp-cards/share",
+            post(crate::agency_clients::share_comp_card),
         )
         .route("/api/agency/talents", get(crate::agencies::list_talents))
         .route(
@@ -49,6 +151,10 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::agencies::list_clients).post(crate::agencies::create_client),
         )
         .route(
+            "/api/agency-profile/user",
+            get(crate::agencies::get_profile),
+        )
+        .route(
             "/api/agency/clients/:id",
             post(crate::agencies::update_client).delete(crate::agencies::delete_client),
         )
@@ -63,6 +169,31 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/agency/clients/:id/communications",
             get(crate::agencies::list_communications).post(crate::agencies::create_communication),
+        )
+        // Agency Storage (S3-backed via Supabase Storage)
+        .route(
+            "/api/agency/storage/usage",
+            get(crate::agencies::get_agency_storage_usage),
+        )
+        .route(
+            "/api/agency/storage/folders",
+            get(crate::agencies::list_agency_folders).post(crate::agencies::create_agency_folder),
+        )
+        .route(
+            "/api/agency/storage/files",
+            get(crate::agencies::list_agency_files),
+        )
+        .route(
+            "/api/agency/storage/files/upload",
+            post(crate::agencies::upload_agency_storage_file),
+        )
+        .route(
+            "/api/agency/storage/files/:file_id",
+            delete(crate::agencies::delete_agency_storage_file),
+        )
+        .route(
+            "/api/agency/storage/files/:file_id/signed-url",
+            get(crate::agencies::get_agency_storage_file_signed_url),
         )
         .route(
             "/api/agency/files/upload",
@@ -100,6 +231,14 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::packages::create_interaction).delete(crate::packages::delete_interaction),
         )
         .route("/api/dashboard", get(crate::dashboard::get_dashboard))
+        .route(
+            "/api/agency/dashboard/performance-tiers",
+            get(crate::performance_tiers::get_performance_tiers),
+        )
+        .route(
+            "/api/agency/dashboard/performance-tiers/configure",
+            post(crate::performance_tiers::configure_performance_tiers),
+        )
         // Removed legacy Tavus routes
         .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))
         .route("/api/email/available", get(crate::creators::check_email))
@@ -237,6 +376,19 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/payouts/request", post(crate::payouts::request_payout))
         .route("/api/payouts/history", get(crate::payouts::get_history))
         .route("/webhooks/stripe", post(crate::payouts::stripe_webhook))
+        // Agency Stripe Connect (Accounting)
+        .route(
+            "/api/agency/payouts/onboarding_link",
+            post(crate::payouts::create_agency_onboarding_link),
+        )
+        .route(
+            "/api/agency/payouts/account_status",
+            get(crate::payouts::get_agency_account_status),
+        )
+        .route(
+            "/api/agency/billing/checkout",
+            post(crate::billing::create_agency_subscription_checkout),
+        )
         // Integrations: Core
         .route(
             "/api/integrations/core/send-email",

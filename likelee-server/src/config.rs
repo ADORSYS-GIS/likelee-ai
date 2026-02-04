@@ -124,6 +124,18 @@ pub struct ServerConfig {
     #[envconfig(from = "STRIPE_WEBHOOK_SECRET", default = "")]
     pub stripe_webhook_secret: String,
 
+    #[envconfig(from = "STRIPE_AGENCY_PRICE_ID", default = "")]
+    pub stripe_agency_price_id: String,
+
+    #[envconfig(from = "STRIPE_SCALE_PRICE_ID", default = "")]
+    pub stripe_scale_price_id: String,
+
+    #[envconfig(from = "STRIPE_CHECKOUT_SUCCESS_URL", default = "")]
+    pub stripe_checkout_success_url: String,
+
+    #[envconfig(from = "STRIPE_CHECKOUT_CANCEL_URL", default = "")]
+    pub stripe_checkout_cancel_url: String,
+
     // Payout Logic
     #[envconfig(from = "PAYOUTS_ENABLED", default = "false")]
     pub payouts_enabled: bool,
@@ -192,6 +204,11 @@ pub struct AppState {
     pub stripe_return_url: String,
     pub stripe_refresh_url: String,
     pub stripe_webhook_secret: String,
+
+    pub stripe_agency_price_id: String,
+    pub stripe_scale_price_id: String,
+    pub stripe_checkout_success_url: String,
+    pub stripe_checkout_cancel_url: String,
 
     // Payout Logic
     pub payouts_enabled: bool,

@@ -54,7 +54,7 @@ pub async fn generate_avatar(
         other => {
             return Err((
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("unexpected response from creators select: {}", other),
+                format!("unexpected response from creators select: {other}"),
             ))
         }
     };

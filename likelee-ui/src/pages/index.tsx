@@ -76,6 +76,11 @@ import CreatorDashboard from "./CreatorDashboard";
 
 import AgencyDashboard from "./AgencyDashboard";
 
+import AgencySubscribe from "./AgencySubscribe";
+
+import StripeConnectReturn from "./StripeConnectReturn";
+import StripeConnectRefresh from "./StripeConnectRefresh";
+
 import AddTalent from "./AddTalent";
 
 import BrandDashboard from "./BrandDashboard";
@@ -200,6 +205,8 @@ const PAGES = {
   CreatorDashboard: CreatorDashboard,
 
   AgencyDashboard: AgencyDashboard,
+
+  AgencySubscribe: AgencySubscribe,
 
   AddTalent: AddTalent,
 
@@ -501,6 +508,173 @@ function AppRoutes() {
       />
       <Route path="/Unauthorized" element={<Unauthorized />} />
     </Routes>
+        <Route
+          path="/AgencyDashboard"
+          element={
+            <ProtectedRoute allowedRoles={["agency"]}>
+              <AgencyDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/AgencySubscribe"
+          element={
+            <ProtectedRoute allowedRoles={["agency"]}>
+              <AgencySubscribe />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/agencysubscribe"
+          element={
+            <ProtectedRoute allowedRoles={["agency"]}>
+              <AgencySubscribe />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/stripe/connect/return"
+          element={<StripeConnectReturn />}
+        />
+        <Route
+          path="/stripe/connect/refresh"
+          element={<StripeConnectRefresh />}
+        />
+
+        <Route
+          path="/AddTalent"
+          element={
+            <ProtectedRoute>
+              <AddTalent />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/BrandDashboard"
+          element={
+            <ProtectedRoute allowedRoles={["brand"]}>
+              <BrandDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/MarketingAgencyDashboard"
+          element={
+            <ProtectedRoute allowedRoles={["agency"]}>
+              <MarketingAgencyDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/BrandCampaignDashboard"
+          element={
+            <ProtectedRoute allowedRoles={["brand"]}>
+              <BrandCampaignDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/PostJob"
+          element={
+            <ProtectedRoute allowedRoles={["brand", "agency"]}>
+              <PostJob />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route path="/SportsAgency" element={<SportsAgency />} />
+
+        <Route
+          path="/SportsAgencyDashboard"
+          element={
+            <ProtectedRoute allowedRoles={["agency"]}>
+              <SportsAgencyDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/scoutingoffers"
+          element={
+            <ProtectedRoute allowedRoles={["agency"]}>
+              <ScoutingOffers />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/CreatorSignupOptions"
+          element={<CreatorSignupOptions />}
+        />
+
+        <Route path="/SAGAFTRAAlignment" element={<SAGAFTRAAlignment />} />
+
+        <Route path="/AboutUs" element={<AboutUs />} />
+
+        <Route path="/CommercialRights" element={<CommercialRights />} />
+
+        <Route
+          path="/LicensingSettings"
+          element={
+            <ProtectedRoute allowedRoles={["creator"]}>
+              <LicensingSettings />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/CameoUpload"
+          element={
+            <ProtectedRoute allowedRoles={["creator"]}>
+              <CameoUpload />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/RoyaltyWallet"
+          element={
+            <ProtectedRoute allowedRoles={["creator"]}>
+              <RoyaltyWallet />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/PublicProfile"
+          element={
+            <ProtectedRoute allowedRoles={["creator"]}>
+              <PublicProfile />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route path="/BrandDiscoverFaces" element={<BrandDiscoverFaces />} />
+
+        <Route path="/Login" element={<Login />} />
+        <Route path="/login" element={<Login />} />
+
+        <Route path="/Register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/update-password" element={<UpdatePassword />} />
+        <Route
+          path="/TwoFactorSetup"
+          element={
+            <ProtectedRoute>
+              <TwoFactorSetup />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/Unauthorized" element={<Unauthorized />} />
+      </Routes>
+    </Layout>
   );
 
   if (isPublicPackage) {

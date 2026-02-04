@@ -48,6 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const [initialized, setInitialized] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<any | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
 
   const fetchProfile = async (
@@ -57,20 +58,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     role?: string,
   ) => {
     try {
-      let table = "creators";
-      const effectiveRole = role || "creator";
+      const roleHint = (role || "").trim();
+      const roleToTable: Record<string, string> = {
+        creator: "creators",
+        brand: "brands",
+        agency: "agencies",
+      };
 
-      if (effectiveRole === "brand") {
-        table = "brands";
-      } else if (effectiveRole === "agency") {
-        table = "agencies";
+      const tryFetch = async (table: string) => {
+        const { data, error } = await supabase
+          .from(table)
+          .select("*")
+          .eq("id", userId)
+          .maybeSingle();
+        return { data, error };
+      };
+
+      let table = roleToTable[roleHint] || "";
+      let data: any = null;
+      let error: any = null;
+
+      if (table) {
+        const resp = await tryFetch(table);
+        data = resp.data;
+        error = resp.error;
+      } else {
+        for (const candidate of ["agencies", "brands", "creators"]) {
+          const resp = await tryFetch(candidate);
+          if (resp.error) {
+            error = resp.error;
+            continue;
+          }
+          if (resp.data) {
+            data = resp.data;
+            table = candidate;
+            error = null;
+            break;
+          }
+        }
       }
-
-      const { data, error } = await supabase
-        .from(table)
-        .select("*")
-        .eq("id", userId)
-        .maybeSingle();
 
       if (error) {
         // Ignore AbortError which happens on rapid re-renders/navigation
@@ -86,8 +112,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (data) {
         // Add role to profile object for convenience
-        setProfile({ ...data, role: role || data.role });
-      } else if (userEmail && table === "creators") {
+        let resolvedRole = roleHint;
+        if (!resolvedRole) {
+          if (table === "agencies") resolvedRole = "agency";
+          else if (table === "brands") resolvedRole = "brand";
+          else resolvedRole = String((data as any)?.role || "creator");
+        }
+        setProfile({ ...data, role: resolvedRole || (data as any)?.role });
+      } else if (userEmail && (table === "creators" || !table)) {
         // Profile missing in profiles table, create it (only for creators)
         console.log("Profile missing, creating new profile for:", userId);
         const { data: newProfile, error: insertError } = await supabase
@@ -97,7 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               id: userId,
               email: userEmail,
               full_name: userFullName,
-              role: role || "creator",
+              role: roleHint || "creator",
             },
           ])
           .select()
@@ -116,13 +148,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (existingProfile)
               setProfile({
                 ...existingProfile,
-                role: role || existingProfile.role,
+                role: roleHint || existingProfile.role,
               });
           } else {
             console.error("Error creating profile:", insertError);
           }
         } else if (newProfile) {
-          setProfile({ ...newProfile, role: role || newProfile.role });
+          setProfile({ ...newProfile, role: roleHint || newProfile.role });
         }
       }
     } catch (err) {
@@ -136,9 +168,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      (event, _session) => {
+        const session = _session;
         const currentUser = session?.user ?? null;
         setUser(currentUser);
+        setSession(session);
 
         if (currentUser && (currentUser.email_confirmed_at || session)) {
           // Prevent infinite loop: only fetch if profile is not already loaded or if user changed
@@ -160,6 +194,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data }) => {
       const currentUser = data.session?.user ?? null;
       setUser(currentUser);
+      setSession(data.session);
       // Avoid double-fetching profile; rely on onAuthStateChange handler above
       setInitialized(true);
     });
@@ -177,7 +212,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       authenticated: !!user,
       user,
       profile,
-      token: undefined,
+      token: session?.access_token,
       login: async (email, password) => {
         if (!supabase) throw new Error("Supabase not configured");
         const { error } = await supabase.auth.signInWithPassword({

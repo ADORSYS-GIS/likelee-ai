@@ -117,6 +117,14 @@ CREATE TABLE IF NOT EXISTS public.brands (
     roles_needed jsonb,
     status text DEFAULT 'waitlist',
     onboarding_step text DEFAULT 'email_verification',
+    
+    -- Verification status
+    kyc_status text DEFAULT 'not_started',
+    liveness_status text DEFAULT 'not_started',
+    kyc_provider text,
+    kyc_session_id text,
+    verified_at timestamptz,
+
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now()
 );
@@ -143,6 +151,14 @@ CREATE TABLE IF NOT EXISTS public.agencies (
     bulk_onboard text,
     status text DEFAULT 'waitlist',
     onboarding_step text DEFAULT 'email_verification',
+    
+    -- Verification status
+    kyc_status text DEFAULT 'not_started',
+    liveness_status text DEFAULT 'not_started',
+    kyc_provider text,
+    kyc_session_id text,
+    verified_at timestamptz,
+
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now()
 );

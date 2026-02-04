@@ -5,11 +5,25 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tracing::warn;
+use tracing::{info, warn};
 
+use crate::auth::AuthUser;
 use crate::config::AppState;
 use std::str::FromStr;
 // use stripe_sdk; // Implicitly available
+
+fn extract_bank_last4(acct: &stripe_sdk::Account) -> Option<String> {
+    for ea in acct.external_accounts.data.iter() {
+        if let stripe_sdk::ExternalAccount::BankAccount(ba) = ea {
+            if let Some(last4) = ba.last4.as_ref() {
+                if !last4.trim().is_empty() {
+                    return Some(last4.clone());
+                }
+            }
+        }
+    }
+    None
+}
 
 pub async fn create_onboarding_link(
     State(state): State<AppState>,
@@ -171,6 +185,16 @@ pub async fn get_account_status(
         }
     };
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    if rows.is_empty() {
+        return (
+            StatusCode::NOT_FOUND,
+            Json(json!({
+                "status":"error",
+                "error":"profile_not_found",
+                "message":"No creator profile row found for this profile_id. Use the agency endpoints (/api/agency/payouts/*) for agency bank connection."
+            })),
+        );
+    }
     let row = rows.first().cloned().unwrap_or(json!({}));
     let connected = row
         .get("stripe_connect_account_id")
@@ -189,6 +213,7 @@ pub async fn get_account_status(
 
     // If connected, fetch live status from Stripe
     let mut transfers_enabled = false;
+    let mut bank_last4: Option<String> = None;
     if connected {
         if let Some(acct_id) = row
             .get("stripe_connect_account_id")
@@ -197,14 +222,16 @@ pub async fn get_account_status(
         {
             let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
             if let Ok(parsed) = acct_id.parse::<stripe_sdk::AccountId>() {
-                match stripe_sdk::Account::retrieve(&client, &parsed, &[]).await {
+                match stripe_sdk::Account::retrieve(&client, &parsed, &["external_accounts"]).await
+                {
                     Ok(acct) => {
                         payouts_enabled = payouts_enabled || acct.payouts_enabled.unwrap_or(false);
-                        if let Some(caps) = acct.capabilities {
+                        if let Some(ref caps) = acct.capabilities {
                             if let Some(tr) = caps.transfers {
                                 transfers_enabled = tr == stripe_sdk::CapabilityStatus::Active;
                             }
                         }
+                        bank_last4 = extract_bank_last4(&acct);
                     }
                     Err(e) => warn!(error=%e, "stripe retrieve account failed"),
                 }
@@ -219,7 +246,363 @@ pub async fn get_account_status(
             "connected": connected,
             "payouts_enabled": payouts_enabled,
             "transfers_enabled": transfers_enabled,
-            "last_error": last_error
+            "last_error": last_error,
+            "bank_last4": bank_last4
+        })),
+    )
+}
+
+pub async fn create_agency_onboarding_link(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> (StatusCode, Json<serde_json::Value>) {
+    info!("Creating agency onboarding link for user: {}", user.id);
+    if !state.payouts_enabled {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"status":"error","error":"payouts_disabled"})),
+        );
+    }
+    if state.stripe_secret_key.trim().is_empty() {
+        return (
+            StatusCode::PRECONDITION_FAILED,
+            Json(json!({"status":"error","error":"stripe_not_configured"})),
+        );
+    }
+
+    let agency_resp = match state
+        .pg
+        .from("agencies")
+        .select("id,stripe_connect_account_id")
+        .eq("id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+    {
+        Ok(r) => r,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status":"error","error":e.to_string()})),
+            )
+        }
+    };
+    let status = agency_resp.status();
+    let text = agency_resp.text().await.unwrap_or_default();
+    if !status.is_success() {
+        // Most likely the agencies table is missing the Stripe columns (migration not applied)
+        if text.contains("does not exist")
+            && (text.contains("stripe_connect_account_id")
+                || text.contains("payouts_enabled")
+                || text.contains("last_payout_error"))
+        {
+            return (
+                StatusCode::PRECONDITION_FAILED,
+                Json(json!({
+                    "status":"error",
+                    "error":"agency_schema_outdated",
+                    "message":"Database schema is missing Stripe Connect columns on public.agencies. Please apply migration supabase/migrations/0013_agency_stripe_connect.sql and restart the server."
+                })),
+            );
+        }
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"status":"error","error":text})),
+        );
+    }
+    let mut rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    if rows.is_empty() {
+        // Self-heal: if the authenticated user has no agencies row, create a minimal profile row.
+        // This keeps Stripe Connect state anchored to a stable agency record.
+        let email = match user.email.as_deref() {
+            Some(e) if !e.trim().is_empty() => e,
+            _ => {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "status":"error",
+                        "error":"agency_profile_missing_email",
+                        "message":"Authenticated user has no email in token claims; cannot auto-create agency profile row. Please complete agency registration first."
+                    })),
+                )
+            }
+        };
+
+        let minimal_agency = json!({
+            "id": user.id,
+            "agency_name": "Agency",
+            "email": email,
+            "status": "active",
+            "onboarding_step": "complete"
+        });
+        let insert_resp = state
+            .pg
+            .from("agencies")
+            .auth(state.supabase_service_key.clone())
+            .insert(minimal_agency.to_string())
+            .execute()
+            .await;
+        if let Err(e) = insert_resp {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status":"error","error":e.to_string()})),
+            );
+        }
+
+        // Re-fetch after insertion
+        let agency_resp = match state
+            .pg
+            .from("agencies")
+            .select("id,stripe_connect_account_id")
+            .eq("id", &user.id)
+            .limit(1)
+            .execute()
+            .await
+        {
+            Ok(r) => r,
+            Err(e) => {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(json!({"status":"error","error":e.to_string()})),
+                )
+            }
+        };
+        let status = agency_resp.status();
+        let text = agency_resp.text().await.unwrap_or_default();
+        if !status.is_success() {
+            if text.contains("does not exist")
+                && (text.contains("stripe_connect_account_id")
+                    || text.contains("payouts_enabled")
+                    || text.contains("last_payout_error"))
+            {
+                return (
+                    StatusCode::PRECONDITION_FAILED,
+                    Json(json!({
+                        "status":"error",
+                        "error":"agency_schema_outdated",
+                        "message":"Database schema is missing Stripe Connect columns on public.agencies. Please apply migration supabase/migrations/0013_agency_stripe_connect.sql and restart the server."
+                    })),
+                );
+            }
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status":"error","error":text})),
+            );
+        }
+        rows = serde_json::from_str(&text).unwrap_or_default();
+        if rows.is_empty() {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "status":"error",
+                    "error":"agency_profile_create_failed",
+                    "message":"Failed to auto-create agency profile row."
+                })),
+            );
+        }
+    }
+
+    let mut account_id = rows[0]
+        .get("stripe_connect_account_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+
+    if account_id.is_empty() {
+        let mut params = stripe_sdk::CreateAccount::new();
+        params.type_ = Some(stripe_sdk::AccountType::Express);
+        match stripe_sdk::Account::create(&client, params).await {
+            Ok(acct) => {
+                account_id = acct.id.to_string();
+                let body = json!({"stripe_connect_account_id": account_id});
+                let _ = state
+                    .pg
+                    .from("agencies")
+                    .eq("id", &user.id)
+                    .update(body.to_string())
+                    .execute()
+                    .await;
+            }
+            Err(e) => {
+                return (
+                    StatusCode::BAD_GATEWAY,
+                    Json(json!({"status":"error","error":e.to_string()})),
+                )
+            }
+        }
+    }
+
+    let account_id_parsed = match account_id.parse::<stripe_sdk::AccountId>() {
+        Ok(v) => v,
+        Err(_) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({"status":"error","error":"invalid_account_id"})),
+            )
+        }
+    };
+    let mut link_params = stripe_sdk::CreateAccountLink::new(
+        account_id_parsed,
+        stripe_sdk::AccountLinkType::AccountOnboarding,
+    );
+    link_params.return_url = Some(state.stripe_return_url.as_str());
+    link_params.refresh_url = Some(state.stripe_refresh_url.as_str());
+    match stripe_sdk::AccountLink::create(&client, link_params).await {
+        Ok(link) => (StatusCode::OK, Json(json!({"url": link.url}))),
+        Err(e) => (
+            StatusCode::BAD_GATEWAY,
+            Json(json!({"status":"error","error":e.to_string()})),
+        ),
+    }
+}
+
+pub async fn get_agency_account_status(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> (StatusCode, Json<serde_json::Value>) {
+    let resp = match state
+        .pg
+        .from("agencies")
+        .select("id,stripe_connect_account_id,payouts_enabled,last_payout_error")
+        .eq("id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+    {
+        Ok(r) => r,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status":"error","error":e.to_string()})),
+            )
+        }
+    };
+    let status = resp.status();
+    let text = match resp.text().await {
+        Ok(t) => t,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status":"error","error":e.to_string()})),
+            )
+        }
+    };
+    if !status.is_success() {
+        if text.contains("does not exist")
+            && (text.contains("stripe_connect_account_id")
+                || text.contains("payouts_enabled")
+                || text.contains("last_payout_error"))
+        {
+            return (
+                StatusCode::PRECONDITION_FAILED,
+                Json(json!({
+                    "status":"error",
+                    "error":"agency_schema_outdated",
+                    "message":"Database schema is missing Stripe Connect columns on public.agencies. Please apply migration supabase/migrations/0013_agency_stripe_connect.sql and restart the server."
+                })),
+            );
+        }
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"status":"error","error":text})),
+        );
+    }
+    let mut rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    if rows.is_empty() {
+        // Mirror onboarding behavior: try to self-heal by creating a minimal agencies row.
+        // This avoids "agency_not_found" when the user is authenticated but profile creation was skipped.
+        let email = match user.email.as_deref() {
+            Some(e) if !e.trim().is_empty() => e,
+            _ => "",
+        };
+
+        if !email.is_empty() {
+            let minimal_agency = json!({
+                "id": user.id,
+                "agency_name": "Agency",
+                "email": email,
+                "status": "active",
+                "onboarding_step": "complete"
+            });
+            let _ = state
+                .pg
+                .from("agencies")
+                .auth(state.supabase_service_key.clone())
+                .insert(minimal_agency.to_string())
+                .execute()
+                .await;
+
+            // Re-fetch
+            if let Ok(r) = state
+                .pg
+                .from("agencies")
+                .select("id,stripe_connect_account_id,payouts_enabled,last_payout_error")
+                .eq("id", &user.id)
+                .limit(1)
+                .execute()
+                .await
+            {
+                if let Ok(t) = r.text().await {
+                    rows = serde_json::from_str(&t).unwrap_or_default();
+                }
+            }
+        }
+    }
+    let row = rows.first().cloned().unwrap_or(json!({}));
+    let connected = row
+        .get("stripe_connect_account_id")
+        .and_then(|v| v.as_str())
+        .map(|s| !s.is_empty())
+        .unwrap_or(false);
+    let mut payouts_enabled = row
+        .get("payouts_enabled")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let last_error = row
+        .get("last_payout_error")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    let mut transfers_enabled = false;
+    let mut bank_last4: Option<String> = None;
+    if connected {
+        if let Some(acct_id) = row
+            .get("stripe_connect_account_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+        {
+            let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+            if let Ok(parsed) = acct_id.parse::<stripe_sdk::AccountId>() {
+                match stripe_sdk::Account::retrieve(&client, &parsed, &["external_accounts"]).await
+                {
+                    Ok(acct) => {
+                        payouts_enabled = payouts_enabled || acct.payouts_enabled.unwrap_or(false);
+                        if let Some(ref caps) = acct.capabilities {
+                            if let Some(tr) = caps.transfers {
+                                transfers_enabled = tr == stripe_sdk::CapabilityStatus::Active;
+                            }
+                        }
+                        bank_last4 = extract_bank_last4(&acct);
+                    }
+                    Err(e) => warn!(error=%e, "stripe retrieve account failed"),
+                }
+            } else {
+                warn!("invalid stripe account id in agency: {}", acct_id);
+            }
+        }
+    }
+
+    (
+        StatusCode::OK,
+        Json(json!({
+            "connected": connected,
+            "payouts_enabled": payouts_enabled,
+            "transfers_enabled": transfers_enabled,
+            "last_error": last_error,
+            "bank_last4": bank_last4
         })),
     )
 }
@@ -693,20 +1076,32 @@ pub async fn stripe_webhook(
         }
     };
     let payload = String::from_utf8_lossy(&body).to_string();
-    let event =
-        match stripe_sdk::Webhook::construct_event(&payload, &sig, &state.stripe_webhook_secret) {
-            Ok(e) => e,
-            Err(e) => {
-                return (
-                    StatusCode::BAD_REQUEST,
-                    Json(json!({"status":"error","error":e.to_string()})),
-                )
-            }
-        };
+    let payload_json: serde_json::Value =
+        serde_json::from_str(&payload).unwrap_or_else(|_| json!({}));
+
+    // Verify Stripe signature without relying on full event deserialization.
+    // Some Stripe event payloads may include fields that newer API versions add,
+    // which can cause async-stripe's Event struct deserialization to fail.
+    if let Err(e) = verify_stripe_signature(&payload, &sig, &state.stripe_webhook_secret) {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"status":"error","error":e})),
+        );
+    }
+
+    // Best-effort: also parse into typed Event to support Connect/payout handling.
+    // If this fails, we still process subscription events from raw JSON.
+    let typed_event: Option<stripe_sdk::Event> = serde_json::from_str(&payload).ok();
+    let etype = payload_json
+        .get("type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
     // Store raw event
     let body = json!({
         "provider": "stripe",
-        "event_type": event.type_.to_string(),
+        "event_type": etype,
         "payload": serde_json::from_str::<serde_json::Value>(&payload).unwrap_or(json!({}))
     });
     let _ = state
@@ -717,59 +1112,181 @@ pub async fn stripe_webhook(
         .await;
 
     // Minimal handlers
-    let etype = event.type_.to_string();
     match etype.as_str() {
+        // ====================================================================
+        // Subscriptions (Agency billing)
+        // ====================================================================
+        // Checkout completion gives us a subscription id, but the plan tier should be
+        // derived from the subscription items/price id.
+        "checkout.session.completed" => {
+            let obj = payload_json
+                .get("data")
+                .and_then(|d| d.get("object"))
+                .cloned()
+                .unwrap_or(json!({}));
+
+            let agency_id = obj
+                .get("client_reference_id")
+                .and_then(|v| v.as_str())
+                .or_else(|| {
+                    obj.get("metadata")
+                        .and_then(|m| m.get("agency_id"))
+                        .and_then(|v| v.as_str())
+                })
+                .unwrap_or("")
+                .to_string();
+
+            let subscription_id = obj
+                .get("subscription")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let customer_id = obj
+                .get("customer")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+
+            if !agency_id.is_empty() && !subscription_id.is_empty() {
+                let _ = sync_agency_subscription_from_stripe(
+                    &state,
+                    &agency_id,
+                    &subscription_id,
+                    if customer_id.is_empty() {
+                        None
+                    } else {
+                        Some(customer_id.as_str())
+                    },
+                )
+                .await;
+            }
+        }
+        "customer.subscription.created"
+        | "customer.subscription.updated"
+        | "customer.subscription.deleted" => {
+            let obj = payload_json
+                .get("data")
+                .and_then(|d| d.get("object"))
+                .cloned()
+                .unwrap_or(json!({}));
+
+            let subscription_id = obj.get("id").and_then(|v| v.as_str()).unwrap_or("");
+            let customer_id = obj
+                .get("customer")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let agency_id = obj
+                .get("metadata")
+                .and_then(|m| m.get("agency_id"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+
+            if !agency_id.is_empty() && !subscription_id.trim().is_empty() {
+                let _ = sync_agency_subscription_from_stripe(
+                    &state,
+                    &agency_id,
+                    subscription_id,
+                    if customer_id.is_empty() {
+                        None
+                    } else {
+                        Some(customer_id.as_str())
+                    },
+                )
+                .await;
+            }
+        }
+        "invoice.paid" => {
+            let obj = payload_json
+                .get("data")
+                .and_then(|d| d.get("object"))
+                .cloned()
+                .unwrap_or(json!({}));
+
+            let subscription_id = obj
+                .get("subscription")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let customer_id = obj
+                .get("customer")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+
+            if !subscription_id.is_empty() {
+                // We may not have agency_id on invoice; fetch subscription and read metadata.
+                let _ = sync_agency_subscription_by_subscription_id(
+                    &state,
+                    &subscription_id,
+                    if customer_id.is_empty() {
+                        None
+                    } else {
+                        Some(customer_id.as_str())
+                    },
+                )
+                .await;
+            }
+        }
         // Connected Account status updates
         "account.updated" => {
-            if let stripe_sdk::EventObject::Account(acct) = event.data.object {
-                let account_id = acct.id.to_string();
-                let payouts_enabled = acct.payouts_enabled.unwrap_or(false);
-                let disabled_reason = acct
-                    .requirements
-                    .and_then(|r| r.disabled_reason)
-                    .unwrap_or_default();
-                if !account_id.is_empty() {
-                    let _ = state
-                        .pg
-                        .from("creators")
-                        .eq("stripe_connect_account_id", account_id)
-                        .update(
-                            json!({
-                                "payouts_enabled": payouts_enabled,
-                                "last_payout_error": disabled_reason
-                            })
-                            .to_string(),
-                        )
-                        .execute()
-                        .await;
+            if let Some(event) = typed_event {
+                if let stripe_sdk::EventObject::Account(acct) = event.data.object {
+                    let account_id = acct.id.to_string();
+                    let payouts_enabled = acct.payouts_enabled.unwrap_or(false);
+                    let disabled_reason = acct
+                        .requirements
+                        .and_then(|r| r.disabled_reason)
+                        .unwrap_or_default();
+                    if !account_id.is_empty() {
+                        let _ = state
+                            .pg
+                            .from("creators")
+                            .eq("stripe_connect_account_id", account_id)
+                            .update(
+                                json!({
+                                    "payouts_enabled": payouts_enabled,
+                                    "last_payout_error": disabled_reason
+                                })
+                                .to_string(),
+                            )
+                            .execute()
+                            .await;
+                    }
                 }
             }
         }
         // Transfer lifecycle
         "transfer.created" => {
-            if let stripe_sdk::EventObject::Transfer(t) = event.data.object {
-                let tid = t.id.to_string();
-                let _ = state
-                    .pg
-                    .from("payout_requests")
-                    .eq("stripe_transfer_id", tid)
-                    .update(json!({"status":"processing"}).to_string())
-                    .execute()
-                    .await;
+            if let Some(event) = typed_event {
+                if let stripe_sdk::EventObject::Transfer(t) = event.data.object {
+                    let tid = t.id.to_string();
+                    let _ = state
+                        .pg
+                        .from("payout_requests")
+                        .eq("stripe_transfer_id", tid)
+                        .update(json!({"status":"processing"}).to_string())
+                        .execute()
+                        .await;
+                }
             }
         }
         "transfer.reversed" => {
-            if let stripe_sdk::EventObject::Transfer(t) = event.data.object {
-                let tid = t.id.to_string();
-                let _ = state
-                    .pg
-                    .from("payout_requests")
-                    .eq("stripe_transfer_id", tid)
-                    .update(
-                        json!({"status":"failed","failure_reason":"transfer_reversed"}).to_string(),
-                    )
-                    .execute()
-                    .await;
+            if let Some(event) = typed_event {
+                if let stripe_sdk::EventObject::Transfer(t) = event.data.object {
+                    let tid = t.id.to_string();
+                    let _ = state
+                        .pg
+                        .from("payout_requests")
+                        .eq("stripe_transfer_id", tid)
+                        .update(
+                            json!({"status":"failed","failure_reason":"transfer_reversed"})
+                                .to_string(),
+                        )
+                        .execute()
+                        .await;
+                }
             }
         }
         // Payout lifecycle on connected accounts
@@ -777,51 +1294,210 @@ pub async fn stripe_webhook(
             let is_paid = etype == "payout.paid";
             let is_failed = etype == "payout.failed";
             let is_canceled = etype == "payout.canceled";
-            let maybe_account = event.account.clone().map(|a| a.to_string());
-            if let stripe_sdk::EventObject::Payout(p) = event.data.object.clone() {
-                let pid = p.id.to_string();
-                let mut update = serde_json::Map::new();
-                if is_paid {
-                    update.insert("status".into(), json!("paid"));
-                }
-                if is_failed {
-                    update.insert("status".into(), json!("failed"));
-                }
-                if is_canceled {
-                    update.insert("status".into(), json!("canceled"));
-                }
-                update.insert("stripe_payout_id".into(), json!(pid));
-                if let (Some(btx), Some(acct_id)) = (p.balance_transaction, maybe_account) {
-                    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
-                    let connected_client = match acct_id.parse::<stripe_sdk::AccountId>() {
-                        Ok(id) => client.with_stripe_account(id),
-                        Err(_) => client, // fallback: use platform client, retrieval may fail but won't panic
-                    };
-                    let maybe_id = match btx {
-                        stripe_sdk::Expandable::Id(id) => Some(id),
-                        stripe_sdk::Expandable::Object(obj) => Some(obj.id),
-                    };
-                    if let Some(id) = maybe_id {
-                        if let Ok(bt) =
-                            stripe_sdk::BalanceTransaction::retrieve(&connected_client, &id, &[])
-                                .await
-                        {
-                            let fee = bt.fee.abs();
-                            update.insert("instant_fee_cents".into(), json!(fee));
+            let maybe_account = typed_event
+                .as_ref()
+                .and_then(|e| e.account.clone().map(|a| a.to_string()));
+            if let Some(event) = typed_event {
+                if let stripe_sdk::EventObject::Payout(p) = event.data.object.clone() {
+                    let pid = p.id.to_string();
+                    let mut update = serde_json::Map::new();
+                    if is_paid {
+                        update.insert("status".into(), json!("paid"));
+                    }
+                    if is_failed {
+                        update.insert("status".into(), json!("failed"));
+                    }
+                    if is_canceled {
+                        update.insert("status".into(), json!("canceled"));
+                    }
+                    update.insert("stripe_payout_id".into(), json!(pid));
+                    if let (Some(btx), Some(acct_id)) = (p.balance_transaction, maybe_account) {
+                        let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+                        let connected_client = match acct_id.parse::<stripe_sdk::AccountId>() {
+                            Ok(id) => client.with_stripe_account(id),
+                            Err(_) => client, // fallback: use platform client, retrieval may fail but won't panic
+                        };
+                        let maybe_id = match btx {
+                            stripe_sdk::Expandable::Id(id) => Some(id),
+                            stripe_sdk::Expandable::Object(obj) => Some(obj.id),
+                        };
+                        if let Some(id) = maybe_id {
+                            if let Ok(bt) = stripe_sdk::BalanceTransaction::retrieve(
+                                &connected_client,
+                                &id,
+                                &[],
+                            )
+                            .await
+                            {
+                                let fee = bt.fee.abs();
+                                update.insert("instant_fee_cents".into(), json!(fee));
+                            }
                         }
                     }
+                    let _ = state
+                        .pg
+                        .from("payout_requests")
+                        .eq("stripe_payout_id", pid)
+                        .update(serde_json::Value::Object(update).to_string())
+                        .execute()
+                        .await;
                 }
-                let _ = state
-                    .pg
-                    .from("payout_requests")
-                    .eq("stripe_payout_id", pid)
-                    .update(serde_json::Value::Object(update).to_string())
-                    .execute()
-                    .await;
             }
         }
         _ => {}
     }
 
     (StatusCode::OK, Json(json!({"status":"ok"})))
+}
+
+fn verify_stripe_signature(payload: &str, sig_header: &str, secret: &str) -> Result<(), String> {
+    if secret.trim().is_empty() {
+        return Err("stripe_webhook_secret_not_configured".to_string());
+    }
+
+    let mut timestamp: Option<&str> = None;
+    let mut signatures: Vec<&str> = Vec::new();
+
+    for part in sig_header.split(',') {
+        let mut it = part.splitn(2, '=');
+        let k = it.next().unwrap_or("").trim();
+        let v = it.next().unwrap_or("").trim();
+        if k == "t" {
+            timestamp = Some(v);
+        }
+        if k == "v1" {
+            signatures.push(v);
+        }
+    }
+
+    let t = timestamp.ok_or_else(|| "missing_signature_timestamp".to_string())?;
+    if signatures.is_empty() {
+        return Err("missing_v1_signature".to_string());
+    }
+
+    let signed_payload = format!("{t}.{payload}");
+    let mut mac = hmac::Hmac::<sha2::Sha256>::new_from_slice(secret.as_bytes())
+        .map_err(|_| "invalid_webhook_secret".to_string())?;
+    use hmac::Mac as _;
+    mac.update(signed_payload.as_bytes());
+    let expected = hex::encode(mac.finalize().into_bytes());
+
+    let valid = signatures.iter().any(|s| expected == *s);
+    if !valid {
+        return Err("invalid_signature".to_string());
+    }
+    Ok(())
+}
+
+fn stripe_subscription_to_plan_tier(state: &AppState, price_id: &str) -> Option<&'static str> {
+    if !state.stripe_scale_price_id.trim().is_empty() && price_id == state.stripe_scale_price_id {
+        return Some("scale");
+    }
+    if !state.stripe_agency_price_id.trim().is_empty() && price_id == state.stripe_agency_price_id {
+        return Some("agency");
+    }
+    None
+}
+
+async fn fetch_subscription(
+    state: &AppState,
+    subscription_id: &str,
+) -> Result<stripe_sdk::Subscription, String> {
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let parsed = subscription_id
+        .parse::<stripe_sdk::SubscriptionId>()
+        .map_err(|_| "invalid_subscription_id".to_string())?;
+    stripe_sdk::Subscription::retrieve(&client, &parsed, &[])
+        .await
+        .map_err(|e| e.to_string())
+}
+
+async fn sync_agency_subscription_by_subscription_id(
+    state: &AppState,
+    subscription_id: &str,
+    customer_id: Option<&str>,
+) -> Result<(), String> {
+    let sub = fetch_subscription(state, subscription_id).await?;
+    let agency_id = sub.metadata.get("agency_id").cloned().unwrap_or_default();
+    if agency_id.trim().is_empty() {
+        return Ok(());
+    }
+    sync_agency_subscription_from_stripe(state, agency_id.trim(), subscription_id, customer_id)
+        .await
+}
+
+async fn sync_agency_subscription_from_stripe(
+    state: &AppState,
+    agency_id: &str,
+    subscription_id: &str,
+    customer_id: Option<&str>,
+) -> Result<(), String> {
+    let sub = fetch_subscription(state, subscription_id).await?;
+
+    let price_id = sub
+        .items
+        .data
+        .first()
+        .and_then(|i| i.price.as_ref())
+        .map(|p| p.id.to_string())
+        .unwrap_or_default();
+
+    let status = sub.status.to_string();
+    let cancel_at_period_end = sub.cancel_at_period_end;
+    let current_period_end =
+        chrono::DateTime::<chrono::Utc>::from_timestamp(sub.current_period_end, 0)
+            .map(|dt| dt.to_rfc3339());
+
+    let tier = stripe_subscription_to_plan_tier(state, &price_id);
+    let plan_tier = match (tier, status.as_str()) {
+        (Some(t), "active") | (Some(t), "trialing") => t,
+        // When canceled/unpaid/etc, fall back to free.
+        _ => "free",
+    };
+
+    // Update agency profile
+    let mut update = serde_json::Map::new();
+    update.insert("plan_tier".into(), json!(plan_tier));
+    update.insert("stripe_subscription_id".into(), json!(subscription_id));
+    update.insert(
+        "plan_updated_at".into(),
+        json!(chrono::Utc::now().to_rfc3339()),
+    );
+    if let Some(cust) = customer_id {
+        if !cust.trim().is_empty() {
+            update.insert("stripe_customer_id".into(), json!(cust));
+        }
+    }
+    let _ = state
+        .pg
+        .from("agencies")
+        .eq("id", agency_id)
+        .update(serde_json::Value::Object(update).to_string())
+        .execute()
+        .await;
+
+    // Best-effort: write audit row. Ignore conflicts/errors.
+    let mut sub_row = serde_json::Map::new();
+    sub_row.insert("agency_id".into(), json!(agency_id));
+    sub_row.insert("stripe_subscription_id".into(), json!(subscription_id));
+    sub_row.insert("stripe_price_id".into(), json!(price_id));
+    sub_row.insert("status".into(), json!(status));
+    sub_row.insert("cancel_at_period_end".into(), json!(cancel_at_period_end));
+    if let Some(cust) = customer_id {
+        if !cust.trim().is_empty() {
+            sub_row.insert("stripe_customer_id".into(), json!(cust));
+        }
+    }
+    if let Some(cpe) = current_period_end {
+        sub_row.insert("current_period_end".into(), json!(cpe));
+    }
+    let _ = state
+        .pg
+        .from("agency_subscriptions")
+        .insert(serde_json::Value::Object(sub_row).to_string())
+        .execute()
+        .await;
+
+    info!(agency_id = %agency_id, plan_tier = %plan_tier, subscription_id = %subscription_id, "synced agency plan tier from stripe subscription");
+    Ok(())
 }
