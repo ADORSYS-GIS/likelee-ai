@@ -1,7 +1,7 @@
 use crate::auth::AuthUser;
 use crate::config::AppState;
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::{HeaderMap, StatusCode},
     Json,
 };
@@ -59,16 +59,28 @@ pub struct PackageAssetRequest {
     pub asset_type: String,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct ListPackagesQuery {
+    pub is_template: Option<bool>,
+}
+
 pub async fn list_packages(
     State(state): State<AppState>,
     user: AuthUser,
+    Query(query): Query<ListPackagesQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let resp = state
+    let mut db_query = state
         .pg
         .from("agency_talent_packages")
         .select("*, items:agency_talent_package_items(id), stats:agency_talent_package_stats(*)")
         .eq("agency_id", &user.id)
-        .order("created_at.desc")
+        .order("created_at.desc");
+
+    if let Some(is_template) = query.is_template {
+        db_query = db_query.eq("is_template", is_template.to_string());
+    }
+
+    let resp = db_query
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -646,6 +658,7 @@ pub async fn get_dashboard_stats(
         .from("agency_talent_packages")
         .select("id,expires_at")
         .eq("agency_id", &user.id)
+        .eq("is_template", "false")
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;

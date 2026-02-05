@@ -87,6 +87,7 @@ import {
   Image as ImageIcon,
   Mic,
   Link as LinkIcon,
+  Pencil,
 } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { Button } from "@/components/ui/button";
