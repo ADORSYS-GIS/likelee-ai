@@ -174,6 +174,9 @@ pub struct ServerConfig {
     #[envconfig(from = "DOCUSEAL_USER_EMAIL", default = "")]
     pub docuseal_user_email: String,
 
+    #[envconfig(from = "KYC_BYPASS_VERIFF_LIMIT", default = "false")]
+    pub kyc_bypass_veriff_limit: bool,
+
     #[envconfig(from = "FRONTEND_URL", default = "http://localhost:5173")]
     pub frontend_url: String,
 }
@@ -232,5 +235,7 @@ pub struct AppState {
     pub docuseal_app_url: String,
     pub docuseal_webhook_url: String,
     pub docuseal_user_email: String,
+
+    pub kyc_bypass_veriff_limit: bool,
     pub frontend_url: String,
 }

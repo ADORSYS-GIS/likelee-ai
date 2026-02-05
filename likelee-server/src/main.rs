@@ -134,6 +134,9 @@ async fn main() {
         docuseal_app_url: cfg.docuseal_app_url.clone(),
         docuseal_webhook_url: cfg.docuseal_webhook_url.clone(),
         docuseal_user_email: cfg.docuseal_user_email.clone(),
+
+        kyc_bypass_veriff_limit: cfg.kyc_bypass_veriff_limit,
+
         frontend_url: cfg.frontend_url.clone(),
     };
 
