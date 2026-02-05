@@ -6,6 +6,8 @@ import {
   Users,
   DollarSign,
   AlertCircle,
+  Clock,
+  CheckCircle2,
   Trophy,
   TrendingUp,
   ShieldAlert,
@@ -17,12 +19,16 @@ interface DashboardViewProps {
   onKYC: () => void;
   agencyName: string;
   rosterData: any[];
+  kycStatus?: string | null;
+  kycLoading?: boolean;
 }
 
 const DashboardView = ({
   onKYC,
   agencyName,
   rosterData,
+  kycStatus,
+  kycLoading,
 }: DashboardViewProps) => {
   // Real data calculations
   const totalTalent = rosterData.length;
@@ -64,14 +70,42 @@ const DashboardView = ({
               To enable payouts and licensing for your talent, please complete
               your agency's ID verification.
             </p>
+            <div className="mt-2 flex items-center gap-2">
+              {kycStatus === "approved" ? (
+                <CheckCircle2 className="w-4 h-4 text-green-600" />
+              ) : kycStatus === "pending" ? (
+                <Clock className="w-4 h-4 text-yellow-600" />
+              ) : (
+                <AlertCircle className="w-4 h-4 text-gray-500" />
+              )}
+              <Badge
+                variant="outline"
+                className={
+                  kycStatus === "approved"
+                    ? "bg-green-100 text-green-700"
+                    : kycStatus === "pending"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : "bg-gray-100 text-gray-700"
+                }
+              >
+                {kycStatus === "approved"
+                  ? "Approved"
+                  : kycStatus === "pending"
+                    ? "Pending"
+                    : "Not started"}
+              </Badge>
+            </div>
           </div>
         </div>
         <Button
           variant="default"
           className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 h-12 rounded-xl"
           onClick={onKYC}
+          disabled={
+            !!kycLoading || kycStatus === "approved" || kycStatus === "pending"
+          }
         >
-          Complete KYC
+          {kycStatus === "pending" ? "KYC Pending" : "Complete KYC"}
         </Button>
       </div>
 

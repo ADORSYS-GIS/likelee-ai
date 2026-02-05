@@ -15,10 +15,12 @@ pub async fn get_dashboard(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<DashboardResponse>, (StatusCode, String)> {
+    let select_cols = "id, email, full_name, city, state, bio, vibes, content_types, industries, primary_platform, platform_handle, visibility, kyc_status, verified_at, cameo_front_url, cameo_left_url, cameo_right_url, avatar_canonical_url, base_monthly_price_cents, currency_code, profile_photo_url, accept_negotiations, content_restrictions, brand_exclusivity";
+
     let resp = state
         .pg
         .from("creators")
-        .select("id, email, full_name, city, state, bio, vibes, content_types, industries, primary_platform, platform_handle, visibility, kyc_status, verified_at, cameo_front_url, cameo_left_url, cameo_right_url, avatar_canonical_url, base_monthly_price_cents, currency_code, profile_photo_url, accept_negotiations, content_restrictions, brand_exclusivity")
+        .select(select_cols)
         .eq("id", &user.id)
         .execute()
         .await
@@ -27,8 +29,31 @@ pub async fn get_dashboard(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let rows: serde_json::Value = serde_json::from_str(&text)
+    let mut rows: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    // Backwards compatibility: if creators row was created with a random UUID instead of auth.users.id,
+    // fall back to email lookup.
+    let empty = rows.as_array().map(|a| a.is_empty()).unwrap_or(true);
+    if empty {
+        if let Some(email) = user.email.as_deref() {
+            let resp2 = state
+                .pg
+                .from("creators")
+                .select(select_cols)
+                .eq("email", email)
+                .limit(1)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let text2 = resp2
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            rows = serde_json::from_str(&text2)
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        }
+    }
     let profile = rows
         .as_array()
         .and_then(|a| a.first())

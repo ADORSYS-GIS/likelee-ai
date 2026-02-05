@@ -922,6 +922,132 @@ export default function CreatorDashboard() {
     }
   };
 
+  useEffect(() => {
+    if (!kycSessionUrl) return;
+
+    const rootElementId = "veriff-kyc-embedded-creator";
+    let cancelled = false;
+
+    const loadIncontextScript = () => {
+      const w = window as any;
+      if (w.veriffSDK?.createVeriffFrame) return Promise.resolve();
+
+      return new Promise<void>((resolve, reject) => {
+        const existing = document.querySelector(
+          'script[data-likelee-veriff-incontext="1"]',
+        ) as HTMLScriptElement | null;
+        if (existing) {
+          existing.addEventListener("load", () => resolve(), { once: true });
+          existing.addEventListener("error", () => reject(), { once: true });
+          return;
+        }
+
+        const s = document.createElement("script");
+        s.src = "https://cdn.veriff.me/incontext/js/v2.5.0/veriff.js";
+        s.async = true;
+        s.setAttribute("data-likelee-veriff-incontext", "1");
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error("Failed to load Veriff InContext"));
+        document.body.appendChild(s);
+      });
+    };
+
+    (async () => {
+      try {
+        setKycEmbedLoading(true);
+        await loadIncontextScript();
+        if (cancelled) return;
+
+        const container = document.getElementById(rootElementId);
+        if (container) container.innerHTML = "";
+
+        const w = window as any;
+        if (!w.veriffSDK?.createVeriffFrame) {
+          throw new Error("Veriff SDK not available");
+        }
+
+        veriffFrameRef.current = w.veriffSDK.createVeriffFrame({
+          url: kycSessionUrl,
+          embedded: true,
+          embeddedOptions: {
+            rootElementID: rootElementId,
+          },
+          onEvent: (msg: any) => {
+            if (msg === "SUBMITTED") {
+              setCreator((prev: any) => ({ ...prev, kyc_status: "pending" }));
+              setShowKycModal(false);
+              setKycSessionUrl(null);
+              refreshVerificationFromDashboard();
+            }
+          },
+        });
+
+        setKycEmbedLoading(false);
+      } catch (e: any) {
+        toast({
+          variant: "destructive",
+          title: "Verification Failed",
+          description:
+            e?.message || "Failed to load verification. Please try again.",
+        });
+        setKycEmbedLoading(false);
+        setKycSessionUrl(null);
+        setShowKycModal(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      try {
+        veriffFrameRef.current?.close?.();
+      } catch {
+        // ignore
+      }
+      veriffFrameRef.current = null;
+      const container = document.getElementById(rootElementId);
+      if (container) container.innerHTML = "";
+    };
+  }, [kycSessionUrl]);
+
+  useEffect(() => {
+    if (!showKycModal) return;
+    if (!authenticated || !user?.id) return;
+
+    let active = true;
+    const interval = window.setInterval(async () => {
+      try {
+        const rows: any = await base44.get("/api/kyc/status");
+        const row = Array.isArray(rows) && rows.length ? rows[0] : null;
+        const status = row?.kyc_status;
+        if (!active || !status) return;
+
+        if (status === "approved") {
+          toast({
+            title: "Verification Complete",
+            description: "Your verification is approved.",
+          });
+          setShowKycModal(false);
+          setKycSessionUrl(null);
+        } else if (status === "declined") {
+          toast({
+            variant: "destructive",
+            title: "Verification Complete",
+            description: "Your verification was declined.",
+          });
+          setShowKycModal(false);
+          setKycSessionUrl(null);
+        }
+      } catch {
+        // ignore polling errors
+      }
+    }, 2500);
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [authenticated, showKycModal, user?.id]);
+
   // Creatify: Check avatar status
   const handleRefreshAvatarStatus = async () => {
     if (!user?.id) return;
@@ -1105,7 +1231,10 @@ export default function CreatorDashboard() {
   const [uploading, setUploading] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [kycLoading, setKycLoading] = useState(false);
+  const [showKycModal, setShowKycModal] = useState(false);
   const [kycSessionUrl, setKycSessionUrl] = useState<string | null>(null);
+  const veriffFrameRef = useRef<any>(null);
+  const [kycEmbedLoading, setKycEmbedLoading] = useState(false);
   const [activeCampaigns, setActiveCampaigns] =
     useState<any[]>(mockActiveCampaigns);
   const [pendingApprovals, setPendingApprovals] =
@@ -1477,6 +1606,26 @@ export default function CreatorDashboard() {
     })();
   }, [initialized, authenticated, user?.id, API_BASE]);
 
+  // Sync verification status from backend on load
+  useEffect(() => {
+    if (!initialized || !authenticated || !user?.id) return;
+    refreshVerificationFromDashboard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialized, authenticated, user?.id]);
+
+  // Keep status fresh while pending (even if modal is closed)
+  useEffect(() => {
+    if (!initialized || !authenticated || !user?.id) return;
+    if (creator?.kyc_status !== "pending") return;
+
+    const interval = window.setInterval(() => {
+      refreshVerificationFromDashboard();
+    }, 10 * 60 * 1000);
+
+    return () => window.clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [creator?.kyc_status, initialized, authenticated, user?.id]);
+
   // Verification actions from dashboard
   const startVerificationFromDashboard = async () => {
     if (!authenticated || !user?.id) {
@@ -1487,11 +1636,31 @@ export default function CreatorDashboard() {
       });
       return;
     }
+
+    if (creator?.kyc_status === "pending") {
+      toast({
+        title: "Verification In Progress",
+        description: "Your KYC verification is already pending.",
+      });
+      return;
+    }
+    if (creator?.kyc_status === "approved") {
+      toast({
+        title: "Already Verified",
+        description: "Your KYC verification is already approved.",
+      });
+      return;
+    }
+
     try {
+      setShowKycModal(true);
+      setKycEmbedLoading(true);
       setKycLoading(true);
       const data: any = await base44.post("/api/kyc/session", {
         user_id: user.id,
       });
+      // Optimistic UI: once a session is created, verification is in progress.
+      setCreator((prev: any) => ({ ...prev, kyc_status: "pending" }));
       if (data.session_url) setKycSessionUrl(String(data.session_url));
     } catch (e: any) {
       toast({
@@ -1499,6 +1668,8 @@ export default function CreatorDashboard() {
         title: "Verification Failed",
         description: `Failed to start verification: ${e?.message || e}`,
       });
+      setShowKycModal(false);
+      setKycSessionUrl(null);
     } finally {
       setKycLoading(false);
     }
@@ -3959,24 +4130,41 @@ export default function CreatorDashboard() {
                   )}
                 </span>
               </div>
-              <Badge
-                variant="outline"
-                className={
-                  creator?.kyc_status === "approved"
-                    ? "bg-green-100 text-green-700"
-                    : creator?.kyc_status === "pending"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : creator?.kyc_status === "rejected"
-                        ? "bg-red-100 text-red-700"
-                        : "bg-gray-100 text-gray-700"
-                }
-              >
-                {creator?.kyc_status
-                  ? t(
-                      `creatorDashboard.verificationStatus.${creator.kyc_status}`,
-                    )
-                  : t("creatorDashboard.verificationStatus.notStarted")}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge
+                  variant="outline"
+                  className={
+                    creator?.kyc_status === "approved"
+                      ? "bg-green-100 text-green-700"
+                      : creator?.kyc_status === "pending"
+                        ? "bg-yellow-100 text-yellow-700"
+                        : creator?.kyc_status === "rejected"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-gray-100 text-gray-700"
+                  }
+                >
+                  {creator?.kyc_status
+                    ? t(
+                        `creatorDashboard.verificationStatus.${creator.kyc_status}`,
+                      )
+                    : t("creatorDashboard.verificationStatus.notStarted")}
+                </Badge>
+                {creator?.kyc_status !== "approved" && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={refreshVerificationFromDashboard}
+                    disabled={kycLoading}
+                    className="h-8 px-2"
+                    title={t("creatorDashboard.verificationStatus.refreshStatus")}
+                  >
+                    <RefreshCw
+                      className={`w-4 h-4 ${kycLoading ? "animate-spin" : ""}`}
+                    />
+                  </Button>
+                )}
+              </div>
             </div>
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-3">
@@ -3992,7 +4180,11 @@ export default function CreatorDashboard() {
             <div className="flex flex-col sm:flex-row gap-2 pt-2">
               <Button
                 onClick={startVerificationFromDashboard}
-                disabled={kycLoading || creator?.kyc_status === "approved"}
+                disabled={
+                  kycLoading ||
+                  creator?.kyc_status === "approved" ||
+                  creator?.kyc_status === "pending"
+                }
                 variant="outline"
                 className="border-2 border-gray-300 w-full sm:w-auto"
               >
@@ -8799,21 +8991,33 @@ export default function CreatorDashboard() {
       </Dialog>
 
       <Dialog
-        open={!!kycSessionUrl}
+        open={showKycModal}
         onOpenChange={(open) => {
-          if (!open) setKycSessionUrl(null);
+          setShowKycModal(open);
+          if (!open) {
+            setKycSessionUrl(null);
+            setKycEmbedLoading(false);
+          }
         }}
       >
         <DialogContent className="max-w-4xl h-[90vh] p-0 overflow-hidden">
+          <DialogHeader className="sr-only">
+            <DialogTitle>KYC Verification</DialogTitle>
+            <DialogDescription>
+              Complete identity verification securely in this modal.
+            </DialogDescription>
+          </DialogHeader>
           <div className="w-full h-full bg-white">
-            {kycSessionUrl ? (
-              <iframe
-                title="KYC Verification"
-                src={kycSessionUrl}
-                className="w-full h-full"
-                allow="camera; microphone; fullscreen; clipboard-read; clipboard-write"
-              />
-            ) : null}
+            {(kycEmbedLoading || !kycSessionUrl) && (
+              <div className="absolute inset-0 z-10 bg-white flex flex-col items-center justify-center gap-3">
+                <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+                <p className="text-sm text-gray-700">Starting verification…</p>
+              </div>
+            )}
+            <div
+              id="veriff-kyc-embedded-creator"
+              className="w-full h-full"
+            />
           </div>
         </DialogContent>
       </Dialog>

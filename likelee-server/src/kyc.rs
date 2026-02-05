@@ -40,6 +40,70 @@ pub struct ProfileVerification {
     pub verified_at: Option<String>,
 }
 
+async fn resolve_profile_id_for_role(
+    state: &AppState,
+    user: &AuthUser,
+    requested_profile_id: &str,
+) -> Result<String, (StatusCode, String)> {
+    if user.role != "creator" {
+        return Ok(requested_profile_id.to_string());
+    }
+
+    // For creators, historically some rows may have been created with a random UUID
+    // rather than auth.users.id. If id lookup fails, fall back to email lookup.
+    let by_id = state
+        .pg
+        .from("creators")
+        .select("id")
+        .eq("id", requested_profile_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text = by_id
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let rows: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let found = rows.as_array().map(|a| !a.is_empty()).unwrap_or(false);
+    if found {
+        return Ok(requested_profile_id.to_string());
+    }
+
+    let email = user.email.as_deref().ok_or((
+        StatusCode::BAD_REQUEST,
+        "missing email for creator profile lookup".to_string(),
+    ))?;
+    let by_email = state
+        .pg
+        .from("creators")
+        .select("id")
+        .eq("email", email)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let text2 = by_email
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let rows2: serde_json::Value = serde_json::from_str(&text2)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let resolved = rows2
+        .as_array()
+        .and_then(|a| a.first())
+        .and_then(|r| r.get("id"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .ok_or((
+            StatusCode::NOT_FOUND,
+            "creator profile not found".to_string(),
+        ))?;
+
+    Ok(resolved)
+}
+
 async fn update_verification_status(
     state: &AppState,
     profile_id: &str,
@@ -107,11 +171,12 @@ pub async fn create_session(
 ) -> Result<Json<SessionResponse>, (StatusCode, String)> {
     // Agencies are capped per-agency per month, and should not be able to create sessions on
     // behalf of arbitrary organization ids.
-    let profile_id = if user.role == "agency" {
+    let requested_profile_id = if user.role == "agency" {
         &user.id
     } else {
         req.organization_id.as_ref().unwrap_or(&user.id)
     };
+    let profile_id = resolve_profile_id_for_role(&state, &user, requested_profile_id).await?;
 
     if user.role == "agency" {
         let tier = get_agency_plan_tier(&state, &user.id).await?;
@@ -170,7 +235,7 @@ pub async fn create_session(
         }
     }
 
-    debug!(%profile_id, "Creating Veriff session");
+    debug!(profile_id = %profile_id, "Creating Veriff session");
     let vendor_data = format!("{}:{}", user.role, profile_id);
     let callback_url = req.return_url.as_deref().and_then(|url| {
         if url.starts_with("https://") {
@@ -289,7 +354,7 @@ pub async fn create_session(
         },
         verified_at: None,
     };
-    update_verification_status(&state, profile_id, &user.role, &payload)
+    update_verification_status(&state, &profile_id, &user.role, &payload)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
 
@@ -311,7 +376,8 @@ pub async fn get_status(
     user: AuthUser,
     Query(q): Query<StatusQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let profile_id = q.organization_id.as_ref().unwrap_or(&user.id);
+    let requested_profile_id = q.organization_id.as_ref().unwrap_or(&user.id);
+    let profile_id = resolve_profile_id_for_role(&state, &user, requested_profile_id).await?;
     let table = match user.role.as_str() {
         "agency" => "agencies",
         "brand" => "brands",
@@ -322,7 +388,7 @@ pub async fn get_status(
         .pg
         .from(table)
         .select("kyc_status,liveness_status,kyc_provider,kyc_session_id,verified_at")
-        .eq("id", profile_id)
+        .eq("id", &profile_id)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -408,14 +474,14 @@ pub async fn get_status(
                         verified_at: approved.then(|| chrono::Utc::now().to_rfc3339()),
                     };
                     let _ =
-                        update_verification_status(&state, profile_id, &user.role, &payload).await;
+                        update_verification_status(&state, &profile_id, &user.role, &payload).await;
                     let resp2 = state
                         .pg
                         .from(table)
                         .select(
                             "kyc_status,liveness_status,kyc_provider,kyc_session_id,verified_at",
                         )
-                        .eq("id", profile_id)
+                        .eq("id", &profile_id)
                         .execute()
                         .await
                         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
