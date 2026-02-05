@@ -5,6 +5,10 @@ import { ScoutingMap } from "@/components/scouting/map/ScoutingMap";
 import { ScoutingTrips } from "@/components/scouting/ScoutingTrips";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useDebounce } from "@/hooks/useDebounce";
+import { searchLocations } from "@/components/scouting/map/geocoding";
+import { CreatePackageWizard } from "@/components/packages/CreatePackageWizard";
+import { PackagesView } from "@/components/packages/PackagesView";
 import {
   LayoutDashboard,
   Users,
@@ -84,6 +88,7 @@ import {
   Loader2,
   Mic,
   Link as LinkIcon,
+  Pencil,
 } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { Button } from "@/components/ui/button";
@@ -140,22 +145,49 @@ import {
 import ClientCRMView from "@/components/crm/ClientCRMView";
 import * as crmApi from "@/api/crm";
 
-const STATUS_MAP = {
-  // legacy/basic statuses
-  new: "New Lead",
-  contacted: "In Contact",
-  meeting: "Meeting Scheduled",
-  test_shoot: "Test Shoots",
-  offer_sent: "Offer Sent",
-  signed: "Signed",
-  declined: "Declined",
-  // extended statuses
+const STATUS_MAP: { [key: string]: string } = {
   new_lead: "New Lead",
   in_contact: "In Contact",
   test_shoot_pending: "Test Shoot (Pending)",
   test_shoot_success: "Test Shoot (Success)",
   test_shoot_failed: "Test Shoot (Failed)",
+  offer_sent: "Offer Sent",
   opened: "Offer Opened",
+  signed: "Signed",
+  declined: "Declined",
+};
+
+const MANUAL_STATUSES = [
+  "new_lead",
+  "in_contact",
+  "test_shoot_pending",
+  "test_shoot_success",
+  "test_shoot_failed",
+  "offer_sent",
+];
+
+const STATUS_COLORS: { [key: string]: string } = {
+  new_lead: "bg-blue-50 text-blue-700 border-blue-200",
+  in_contact: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  test_shoot_pending: "bg-orange-50 text-orange-700 border-orange-200",
+  test_shoot_success: "bg-teal-50 text-teal-700 border-teal-200",
+  test_shoot_failed: "bg-rose-50 text-rose-700 border-rose-200",
+  offer_sent: "bg-purple-50 text-purple-700 border-purple-200",
+  opened: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  signed: "bg-green-50 text-green-700 border-green-200",
+  declined: "bg-red-50 text-red-700 border-red-200",
+};
+
+const STATUS_DOT_COLORS: { [key: string]: string } = {
+  new_lead: "bg-blue-500",
+  in_contact: "bg-yellow-500",
+  test_shoot_pending: "bg-orange-500",
+  test_shoot_success: "bg-teal-500",
+  test_shoot_failed: "bg-rose-500",
+  offer_sent: "bg-purple-500",
+  opened: "bg-yellow-500",
+  signed: "bg-green-500",
+  declined: "bg-red-500",
 };
 
 const ConnectBankView = () => {
@@ -347,24 +379,6 @@ const ConnectBankView = () => {
       </Card>
     </div>
   );
-};
-
-const STATUS_COLORS: { [key: string]: string } = {
-  // basic statuses
-  new: "bg-blue-50 text-blue-700 border-blue-200",
-  contacted: "bg-yellow-50 text-yellow-700 border-yellow-200",
-  meeting: "bg-purple-50 text-purple-700 border-purple-200",
-  test_shoot: "bg-orange-50 text-orange-700 border-orange-200",
-  offer_sent: "bg-green-50 text-green-700 border-green-200",
-  signed: "bg-green-50 text-green-700 border-green-200",
-  declined: "bg-red-50 text-red-700 border-red-200",
-  // extended statuses
-  new_lead: "bg-blue-50 text-blue-700 border-blue-200",
-  in_contact: "bg-yellow-50 text-yellow-700 border-yellow-200",
-  test_shoot_pending: "bg-orange-50 text-orange-700 border-orange-200",
-  test_shoot_success: "bg-teal-50 text-teal-700 border-teal-200",
-  test_shoot_failed: "bg-rose-50 text-rose-700 border-rose-200",
-  opened: "bg-yellow-50 text-yellow-700 border-yellow-200",
 };
 
 const ProspectModal = ({
@@ -1058,30 +1072,6 @@ const ConnectBankViewAlt = () => {
       </Card>
     </div>
   );
-};
-
-const MANUAL_STATUSES = [
-  "new_lead",
-  "in_contact",
-  "test_shoot_pending",
-  "test_shoot_success",
-  "test_shoot_failed",
-  "offer_sent",
-];
-
-const STATUS_DOT_COLORS: { [key: string]: string } = {
-  new_lead: "bg-blue-500",
-  in_contact: "bg-yellow-500",
-  test_shoot_pending: "bg-orange-500",
-  test_shoot_success: "bg-teal-500",
-  test_shoot_failed: "bg-rose-500",
-  offer_sent: "bg-purple-500",
-  signed: "bg-green-500",
-  declined: "bg-red-500",
-  new: "bg-blue-500",
-  contacted: "bg-yellow-500",
-  meeting: "bg-purple-500",
-  test_shoot: "bg-orange-500",
 };
 
 const ProspectModalAlt = ({
@@ -8979,6 +8969,7 @@ const ProspectDetailsSheet = ({
   if (!prospect) return null;
 
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleStatusChange = async (newStatus: string) => {
@@ -9004,10 +8995,99 @@ const ProspectDetailsSheet = ({
   return (
     <Sheet open={!!prospect} onOpenChange={(open) => !open && onClose()}>
       <SheetContent className="w-[650px] sm:max-w-none bg-white p-0 flex flex-col">
-        <SheetHeader className="p-6 border-b">
-          <SheetTitle className="text-xl font-bold">
-            Prospect Details
-          </SheetTitle>
+        <SheetHeader className="p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 bg-gray-50/70 border rounded-xl p-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-bold text-gray-600">
+                  Status
+                </Label>
+                <Badge
+                  className={`capitalize border px-3 py-1 ${STATUS_COLORS[prospect.status] || "bg-gray-100 text-gray-700 border-gray-200"}`}
+                >
+                  {STATUS_MAP[prospect.status] || prospect.status}
+                </Badge>
+              </div>
+              <Select
+                onValueChange={handleStatusChange}
+                defaultValue={prospect.status}
+                disabled={["offer_sent", "signed", "declined"].includes(
+                  prospect.status,
+                )}
+              >
+                <SelectTrigger className="w-full h-10 text-sm font-semibold mt-2 bg-white">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS[prospect.status] || "bg-gray-400"}`}
+                    ></span>
+                    <SelectValue />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem
+                    value="new_lead"
+                    className="text-sm font-semibold"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.new_lead}`}
+                      ></span>
+                      <span>{STATUS_MAP.new_lead}</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem
+                    value="in_contact"
+                    className="text-sm font-semibold"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.in_contact}`}
+                      ></span>
+                      <span>{STATUS_MAP.in_contact}</span>
+                    </div>
+                  </SelectItem>
+                  <SelectGroup>
+                    <SelectLabel className="px-2 py-1.5 text-xs font-semibold text-gray-500">
+                      Test Shoot
+                    </SelectLabel>
+                    <SelectItem
+                      value="test_shoot_pending"
+                      className="text-sm font-semibold bg-gray-50/50"
+                    >
+                      <div className="flex items-center gap-2 pl-6">
+                        <span
+                          className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.test_shoot_pending}`}
+                        ></span>
+                        <span>Pending</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem
+                      value="test_shoot_success"
+                      className="text-sm font-semibold bg-gray-50/50"
+                    >
+                      <div className="flex items-center gap-2 pl-6">
+                        <span
+                          className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.test_shoot_success}`}
+                        ></span>
+                        <span>Success</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem
+                      value="test_shoot_failed"
+                      className="text-sm font-semibold bg-gray-50/50"
+                    >
+                      <div className="flex items-center gap-2 pl-6">
+                        <span
+                          className={`w-2.5 h-2.5 rounded-full ${STATUS_DOT_COLORS.test_shoot_failed}`}
+                        ></span>
+                        <span>Failed</span>
+                      </div>
+                    </SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </SheetHeader>
 
         {/* Scrollable content */}
@@ -9025,9 +9105,47 @@ const ProspectDetailsSheet = ({
                 </div>
               </div>
               <div className="flex-1 pt-2">
-                <h2 className="text-3xl font-bold text-gray-900">
-                  {prospect.full_name}
-                </h2>
+                <div className="flex justify-between items-start">
+                  <h2 className="text-3xl font-bold text-gray-900">
+                    {prospect.full_name}
+                  </h2>
+                  {prospect.status === "test_shoot_success" ? (
+                    <Button
+                      onClick={() =>
+                        (window.location.href = `/scoutingoffers?prospectId=${prospect.id}`)
+                      }
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-6 rounded-lg shadow-sm flex items-center gap-2"
+                    >
+                      <FileText className="w-4 h-4" />
+                      Send Offer
+                    </Button>
+                  ) : ["offer_sent", "opened", "signed", "declined"].includes(
+                      prospect.status,
+                    ) ? (
+                    <div className="flex items-center gap-3">
+                      <Button
+                        onClick={() =>
+                          (window.location.href = `/scoutingoffers?prospectId=${prospect.id}`)
+                        }
+                        className="bg-white hover:bg-gray-50 border text-gray-700 font-bold h-9 px-4 rounded-lg shadow-sm flex items-center gap-2"
+                      >
+                        <FileText className="w-4 h-4" />
+                        View Offers
+                      </Button>
+                      {prospect.status === "signed" && (
+                        <Button
+                          onClick={() =>
+                            navigate("/addtalent", { state: { prospect } })
+                          }
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-9 px-4 rounded-lg shadow-sm flex items-center gap-2"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Add Talent
+                        </Button>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
                 <div className="flex flex-wrap items-center gap-2 mt-3">
                   {prospect.categories?.map((cat) => (
                     <Badge key={cat} variant="outline" className="font-medium">
@@ -9047,36 +9165,6 @@ const ProspectDetailsSheet = ({
                   </span>
                 </div>
               </div>
-            </div>
-            <div className="p-4 rounded-xl border bg-gray-50/70">
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="font-semibold text-gray-700">Status</h3>
-                <Badge
-                  className={`capitalize border ${STATUS_COLORS[prospect.status as keyof typeof STATUS_COLORS] || "bg-gray-100 text-gray-700"}`}
-                >
-                  {STATUS_MAP[prospect.status as keyof typeof STATUS_MAP] ||
-                    prospect.status.replace("_", " ")}
-                </Badge>
-              </div>
-              <Select
-                defaultValue={prospect.status}
-                onValueChange={handleStatusChange}
-              >
-                <SelectTrigger className="h-11 text-base bg-white border-gray-200">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(STATUS_MAP).map(([value, label]) => (
-                    <SelectItem
-                      key={value}
-                      value={value}
-                      className="font-medium"
-                    >
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
           </div>
 
@@ -9508,7 +9596,7 @@ const ProspectPipelineTab = ({
                     TEST SHOOTS
                   </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-600">
-                    OFFERS SENT
+                    OFFERS
                   </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-600">
                     SOURCE
@@ -9539,23 +9627,47 @@ const ProspectPipelineTab = ({
                       <div className="text-xs">{p.phone}</div>
                     </td>
                     <td className="px-4 py-3">
-                      {p.status === "new" ? (
+                      {p.status === "new_lead" ? (
                         <CheckCircle2 className="w-5 h-5 text-blue-500" />
                       ) : null}
                     </td>
                     <td className="px-4 py-3">
-                      {p.status === "contacted" ? (
+                      {p.status === "in_contact" ? (
                         <CheckCircle2 className="w-5 h-5 text-yellow-500" />
                       ) : null}
                     </td>
                     <td className="px-4 py-3">
-                      {p.status === "test_shoot" ? (
-                        <CheckCircle2 className="w-5 h-5 text-purple-500" />
-                      ) : null}
+                      {p.status.startsWith("test_shoot") && (
+                        <Badge
+                          className={`capitalize border ${STATUS_COLORS[p.status] || "bg-gray-100 text-gray-700 border-gray-200"}`}
+                        >
+                          {p.status.replace("test_shoot_", "")}
+                        </Badge>
+                      )}
                     </td>
                     <td className="px-4 py-3">
-                      {p.status === "offer_sent" ? (
-                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      {p.status === "signed" ? (
+                        <Badge
+                          className={`capitalize border ${STATUS_COLORS.signed}`}
+                        >
+                          {STATUS_MAP.signed}
+                        </Badge>
+                      ) : p.status === "declined" ? (
+                        <Badge
+                          className={`capitalize border ${STATUS_COLORS.declined}`}
+                        >
+                          {STATUS_MAP.declined}
+                        </Badge>
+                      ) : p.status === "opened" ? (
+                        <Badge
+                          className={`capitalize border ${STATUS_COLORS.opened}`}
+                        >
+                          Opened
+                        </Badge>
+                      ) : p.status === "offer_sent" ? (
+                        <Badge className="capitalize border bg-gray-100 text-gray-700 border-gray-200">
+                          Awaiting
+                        </Badge>
                       ) : null}
                     </td>
                     <td className="px-4 py-3 text-gray-600 font-medium">
@@ -17518,6 +17630,7 @@ export default function AgencyDashboard() {
   const veriffFrameRef = React.useRef<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [bookOuts, setBookOuts] = useState<any[]>([]);
+  const [showCreatePackageWizard, setShowCreatePackageWizard] = useState(false);
 
   const refreshAgencyKycStatus = async () => {
     if (!authenticated || !user?.id) return;
@@ -17841,6 +17954,12 @@ export default function AgencyDashboard() {
     });
   };
 
+  useEffect(() => {
+    if (agencyMode !== "AI") return;
+    if (activeTab !== "accounting") return;
+    setActiveTab("dashboard");
+  }, [agencyMode, activeTab]);
+
   const setActiveTab = (tab: string) => {
     setActiveTabState(tab);
     setSearchParams((prev) => {
@@ -18003,20 +18122,7 @@ export default function AgencyDashboard() {
             icon: BarChart2,
             subItems: ["Analytics Dashboard", "Royalties & Payouts"],
           },
-          {
-            id: "accounting",
-            label: "Accounting & Invoicing",
-            icon: CreditCard,
-            subItems: [
-              "Invoice Generation",
-              "Invoice Management",
-              "Payment Tracking",
-              "Talent Statements",
-              "Financial Reports",
-              "Expense Tracking",
-              "Connect Bank",
-            ],
-          },
+          { id: "packages", label: "Talent Packages", icon: Package },
           {
             id: "settings",
             label: "Settings",
@@ -18067,6 +18173,7 @@ export default function AgencyDashboard() {
             icon: BarChart2,
             subItems: ["Analytics Dashboard", "Royalties & Payouts"],
           },
+          { id: "packages", label: "Talent Packages", icon: Package },
           {
             id: "settings",
             label: "Settings",
@@ -18450,6 +18557,7 @@ export default function AgencyDashboard() {
             )}
           {activeTab === "analytics" &&
             activeSubTab === "Royalties & Payouts" && <RoyaltiesPayoutsView />}
+          {activeTab === "packages" && <PackagesView />}
           {activeTab === "settings" && activeSubTab === "General Settings" && (
             <GeneralSettingsView />
           )}

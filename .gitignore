@@ -138,3 +138,9 @@ supabase/scripts/remove_columns.py
 supabase/scripts/transform_csv.py
 supabase/scripts/transform_csv.ts
 supabase/scripts/transformed_import.sql
+
+# Debugging artifacts
+package_full.json
+raw_rpc_output.json
+rpc_output.json
+

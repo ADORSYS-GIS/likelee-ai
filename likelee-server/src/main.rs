@@ -20,14 +20,13 @@ async fn main() {
     tracing_subscriber::fmt().with_env_filter(filter).init();
     info!(port, endpoint_base = %cfg.veriff_base_url, "Starting likelee-server");
 
-    let supabase_base = cfg.supabase_url.trim_end_matches('/');
-    let postgrest_base = if supabase_base.ends_with("/rest/v1") {
-        supabase_base.to_string()
-    } else {
-        format!("{}/rest/v1", supabase_base)
-    };
-
-    let pg = Postgrest::new(postgrest_base.clone())
+    let pg_url =
+        if cfg.supabase_url.ends_with("/rest/v1") || cfg.supabase_url.ends_with("/rest/v1/") {
+            cfg.supabase_url.clone()
+        } else {
+            format!("{}/rest/v1", cfg.supabase_url)
+        };
+    let pg = Postgrest::new(&pg_url)
         .insert_header("apikey", cfg.supabase_service_key.clone())
         .insert_header(
             "Authorization",
@@ -36,7 +35,7 @@ async fn main() {
 
     // Ensure Storage buckets and policies exist (Option B: server-only writes)
     {
-        let rpc = Postgrest::new(postgrest_base.clone())
+        let rpc = Postgrest::new(&pg_url)
             .insert_header("apikey", cfg.supabase_service_key.clone())
             .insert_header(
                 "Authorization",
@@ -137,6 +136,9 @@ async fn main() {
         docuseal_user_email: cfg.docuseal_user_email.clone(),
 
         kyc_bypass_veriff_limit: cfg.kyc_bypass_veriff_limit,
+
+        frontend_url: cfg.frontend_url.clone(),
+
     };
 
     let app = likelee_server::router::build_router(state);
