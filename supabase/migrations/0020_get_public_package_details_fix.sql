@@ -53,16 +53,19 @@
                                     'sort_order', pa.sort_order,
                                     'asset', jsonb_build_object(
                                         'id', pa.asset_id,
-                                        'asset_url', COALESCE(
+                                        'public_url', COALESCE(
                                             (SELECT public_url FROM public.agency_files WHERE id = pa.asset_id LIMIT 1),
                                             (SELECT public_url FROM public.reference_images WHERE id = pa.asset_id LIMIT 1),
-                                            -- Construct URL from storage path if public_url is missing
-                                            (SELECT 'https://himyrgwyrsmltmzlbuxm.supabase.co/storage/v1/object/public/' || storage_bucket || '/' || storage_path
-                                            FROM public.agency_files WHERE id = pa.asset_id LIMIT 1),
-                                            (SELECT 'https://himyrgwyrsmltmzlbuxm.supabase.co/storage/v1/object/public/' || storage_bucket || '/' || storage_path
-                                            FROM public.reference_images WHERE id = pa.asset_id LIMIT 1),
                                             (SELECT public_url FROM public.images WHERE id = pa.asset_id LIMIT 1),
                                             (SELECT public_url FROM public.videos WHERE id = pa.asset_id LIMIT 1)
+                                        ),
+                                        'storage_bucket', COALESCE(
+                                            (SELECT storage_bucket FROM public.agency_files WHERE id = pa.asset_id LIMIT 1),
+                                            (SELECT storage_bucket FROM public.reference_images WHERE id = pa.asset_id LIMIT 1)
+                                        ),
+                                        'storage_path', COALESCE(
+                                            (SELECT storage_path FROM public.agency_files WHERE id = pa.asset_id LIMIT 1),
+                                            (SELECT storage_path FROM public.reference_images WHERE id = pa.asset_id LIMIT 1)
                                         ),
                                         'asset_type', pa.asset_type
                                     )
