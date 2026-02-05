@@ -3,7 +3,7 @@ import { base44Client } from "./crm";
 export const packageApi = {
   listPackages: () => base44Client.get("/api/agency/packages"),
   listTemplates: () =>
-    base44Client.get("/api/agency/packages?is_template=true"),
+    base44Client.get("/api/agency/packages"),
   listSentPackages: () =>
     base44Client.get("/api/agency/packages?is_template=false"),
 
