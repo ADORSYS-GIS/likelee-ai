@@ -135,6 +135,18 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route("/api/agency/talents", get(crate::agencies::list_talents))
         .route(
+            "/api/agency/talents/:id/assets",
+            get(crate::agencies::list_talent_assets),
+        )
+        .route(
+            "/api/agency/talents/:id/assets/upload",
+            post(crate::agencies::upload_talent_asset),
+        )
+        .route(
+            "/api/agency/talents/:talent_id/assets/:asset_id",
+            delete(crate::agencies::delete_talent_asset),
+        )
+        .route(
             "/api/agency/clients",
             get(crate::agencies::list_clients).post(crate::agencies::create_client),
         )
@@ -194,6 +206,29 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/agency/clients/:id/files/:file_id/signed-url",
             get(crate::agencies::get_client_file_signed_url),
+        )
+        // Talent Packages
+        .route(
+            "/api/agency/packages",
+            get(crate::packages::list_packages).post(crate::packages::create_package),
+        )
+        .route(
+            "/api/agency/packages/stats",
+            get(crate::packages::get_dashboard_stats),
+        )
+        .route(
+            "/api/agency/packages/:id",
+            get(crate::packages::get_package)
+                .delete(crate::packages::delete_package)
+                .put(crate::packages::update_package),
+        )
+        .route(
+            "/api/public/packages/:token",
+            get(crate::packages::get_public_package),
+        )
+        .route(
+            "/api/public/packages/:token/interactions",
+            post(crate::packages::create_interaction).delete(crate::packages::delete_interaction),
         )
         .route("/api/dashboard", get(crate::dashboard::get_dashboard))
         .route(

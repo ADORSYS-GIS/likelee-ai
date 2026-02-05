@@ -52,7 +52,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "date-fns": "^3.6.0",
-    "embla-carousel-react": "^8.5.2",
+    "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.4.7",
     "html-to-image": "^1.11.11",
     "i18next": "^25.7.3",
