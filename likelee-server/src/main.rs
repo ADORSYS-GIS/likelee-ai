@@ -138,7 +138,6 @@ async fn main() {
         kyc_bypass_veriff_limit: cfg.kyc_bypass_veriff_limit,
 
         frontend_url: cfg.frontend_url.clone(),
-
     };
 
     let app = likelee_server::router::build_router(state);

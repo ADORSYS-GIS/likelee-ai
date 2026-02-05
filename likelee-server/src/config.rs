@@ -179,7 +179,6 @@ pub struct ServerConfig {
 
     #[envconfig(from = "FRONTEND_URL", default = "http://localhost:5173")]
     pub frontend_url: String,
-
 }
 
 #[derive(Clone)]
@@ -239,5 +238,4 @@ pub struct AppState {
 
     pub kyc_bypass_veriff_limit: bool,
     pub frontend_url: String,
-
 }

@@ -1618,9 +1618,12 @@ export default function CreatorDashboard() {
     if (!initialized || !authenticated || !user?.id) return;
     if (creator?.kyc_status !== "pending") return;
 
-    const interval = window.setInterval(() => {
-      refreshVerificationFromDashboard();
-    }, 10 * 60 * 1000);
+    const interval = window.setInterval(
+      () => {
+        refreshVerificationFromDashboard();
+      },
+      10 * 60 * 1000,
+    );
 
     return () => window.clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -4157,7 +4160,9 @@ export default function CreatorDashboard() {
                     onClick={refreshVerificationFromDashboard}
                     disabled={kycLoading}
                     className="h-8 px-2"
-                    title={t("creatorDashboard.verificationStatus.refreshStatus")}
+                    title={t(
+                      "creatorDashboard.verificationStatus.refreshStatus",
+                    )}
                   >
                     <RefreshCw
                       className={`w-4 h-4 ${kycLoading ? "animate-spin" : ""}`}
@@ -9014,10 +9019,7 @@ export default function CreatorDashboard() {
                 <p className="text-sm text-gray-700">Starting verification…</p>
               </div>
             )}
-            <div
-              id="veriff-kyc-embedded-creator"
-              className="w-full h-full"
-            />
+            <div id="veriff-kyc-embedded-creator" className="w-full h-full" />
           </div>
         </DialogContent>
       </Dialog>

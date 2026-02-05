@@ -17663,17 +17663,20 @@ export default function AgencyDashboard() {
     if (agencyKycStatus !== "pending") return;
 
     let active = true;
-    const interval = window.setInterval(async () => {
-      try {
-        const rows: any = await base44.get("/api/kyc/status");
-        const row = Array.isArray(rows) && rows.length ? rows[0] : null;
-        const status = row?.kyc_status;
-        if (!active || typeof status !== "string") return;
-        setAgencyKycStatus(status);
-      } catch {
-        // ignore
-      }
-    }, 10 * 60 * 1000);
+    const interval = window.setInterval(
+      async () => {
+        try {
+          const rows: any = await base44.get("/api/kyc/status");
+          const row = Array.isArray(rows) && rows.length ? rows[0] : null;
+          const status = row?.kyc_status;
+          if (!active || typeof status !== "string") return;
+          setAgencyKycStatus(status);
+        } catch {
+          // ignore
+        }
+      },
+      10 * 60 * 1000,
+    );
 
     return () => {
       active = false;
@@ -18623,13 +18626,12 @@ export default function AgencyDashboard() {
               {(kycEmbedLoading || !kycSessionUrl) && (
                 <div className="absolute inset-0 z-10 bg-white flex flex-col items-center justify-center gap-3">
                   <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
-                  <p className="text-sm text-gray-700">Starting verification…</p>
+                  <p className="text-sm text-gray-700">
+                    Starting verification…
+                  </p>
                 </div>
               )}
-              <div
-                id="veriff-kyc-embedded-agency"
-                className="w-full h-full"
-              />
+              <div id="veriff-kyc-embedded-agency" className="w-full h-full" />
             </div>
           </DialogContent>
         </Dialog>
