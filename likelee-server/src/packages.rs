@@ -658,7 +658,6 @@ pub async fn get_dashboard_stats(
         .from("agency_talent_packages")
         .select("id,expires_at")
         .eq("agency_id", &user.id)
-        .eq("is_template", "false")
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
