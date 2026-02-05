@@ -818,8 +818,11 @@ pub async fn get_public_package(
             if let Some(assets) = item.get_mut("assets").and_then(|a| a.as_array_mut()) {
                 for asset_container in assets {
                     if let Some(asset) = asset_container.get_mut("asset") {
-                        let public_url = asset.get("public_url").and_then(|v| v.as_str());
-                        if public_url.is_none() || public_url.unwrap_or("").is_empty() {
+                        let public_url = asset
+                            .get("public_url")
+                            .and_then(|v| v.as_str())
+                            .map(str::to_string);
+                        if public_url.as_deref().unwrap_or("").is_empty() {
                             if let (Some(bucket), Some(path)) = (
                                 asset.get("storage_bucket").and_then(|v| v.as_str()),
                                 asset.get("storage_path").and_then(|v| v.as_str()),
@@ -835,11 +838,11 @@ pub async fn get_public_package(
                                     );
                                 }
                             }
-                        } else {
-                            if let Some(obj) = asset.as_object_mut() {
-                                let url = public_url.unwrap().to_string();
-                                obj.insert("asset_url".to_string(), serde_json::Value::String(url));
-                            }
+                        } else if let (Some(obj), Some(url)) = (asset.as_object_mut(), public_url) {
+                            obj.insert(
+                                "asset_url".to_string(),
+                                serde_json::Value::String(url),
+                            );
                         }
                     }
                 }
