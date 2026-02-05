@@ -34,14 +34,59 @@ export const scoutingService = {
 
   // --- Prospects ---
 
-  async getProspects(agencyId: string) {
+  async getProspects(
+    agencyId: string,
+    options?: {
+      searchQuery?: string;
+      statusFilter?: string;
+      sourceFilter?: string;
+      categoryFilter?: string[];
+      minRating?: number;
+      sortBy?: string;
+      sortOrder?: "asc" | "desc";
+    },
+  ) {
     if (!supabase) throw new Error("Supabase client not initialized");
 
-    const { data, error } = await supabase
+    let query = supabase
       .from("scouting_prospects")
       .select("*")
-      .eq("agency_id", agencyId)
-      .order("created_at", { ascending: false });
+      .eq("agency_id", agencyId);
+
+    // Apply search filter (case-insensitive search across multiple fields)
+    if (options?.searchQuery && options.searchQuery.trim()) {
+      const searchTerm = `%${options.searchQuery.trim()}%`;
+      query = query.or(
+        `full_name.ilike.${searchTerm},email.ilike.${searchTerm},instagram_handle.ilike.${searchTerm},notes.ilike.${searchTerm}`,
+      );
+    }
+
+    // Apply status filter
+    if (options?.statusFilter && options.statusFilter !== "all") {
+      query = query.eq("status", options.statusFilter);
+    }
+
+    // Apply source filter
+    if (options?.sourceFilter && options.sourceFilter !== "all") {
+      query = query.eq("source", options.sourceFilter);
+    }
+
+    // Apply category filter (array contains)
+    if (options?.categoryFilter && options.categoryFilter.length > 0) {
+      query = query.contains("categories", options.categoryFilter);
+    }
+
+    // Apply minimum rating filter
+    if (options?.minRating && options.minRating > 0) {
+      query = query.gte("rating", options.minRating);
+    }
+
+    // Apply sorting
+    const sortBy = options?.sortBy || "created_at";
+    const sortOrder = options?.sortOrder || "desc";
+    query = query.order(sortBy, { ascending: sortOrder === "asc" });
+
+    const { data, error } = await query;
 
     if (error) throw error;
     return data as ScoutingProspect[];
@@ -104,6 +149,19 @@ export const scoutingService = {
     return data as ScoutingProspect;
   },
 
+  async getProspect(id: string) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data, error } = await supabase
+      .from("scouting_prospects")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) throw error;
+    return data as ScoutingProspect;
+  },
+
   async deleteProspect(id: string) {
     if (!supabase) throw new Error("Supabase client not initialized");
 
@@ -116,7 +174,6 @@ export const scoutingService = {
   },
 
   // --- Trips ---
-
   async getTrips(agencyId: string) {
     if (!supabase) throw new Error("Supabase client not initialized");
 
@@ -128,6 +185,87 @@ export const scoutingService = {
 
     if (error) throw error;
     return data as ScoutingTrip[];
+  },
+
+  async createTrip(
+    trip: Omit<ScoutingTrip, "id" | "created_at" | "updated_at">,
+  ) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data, error } = await supabase
+      .from("scouting_trips")
+      .insert(trip)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as ScoutingTrip;
+  },
+
+  async updateTrip(id: string, updates: Partial<ScoutingTrip>) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data, error } = await supabase
+      .from("scouting_trips")
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as ScoutingTrip;
+  },
+
+  // --- Territories ---
+  async getTerritories(agencyId: string) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data, error } = await supabase
+      .from("scouting_territories")
+      .select("*")
+      .eq("agency_id", agencyId);
+
+    if (error) throw error;
+    return data;
+  },
+
+  async createTerritory(territory: any) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data, error } = await supabase
+      .from("scouting_territories")
+      .insert(territory)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  // --- Locations ---
+  async getLocations(agencyId: string) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data, error } = await supabase
+      .from("scouting_locations")
+      .select("*")
+      .eq("agency_id", agencyId);
+
+    if (error) throw error;
+    return data;
+  },
+
+  async createLocation(location: any) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data, error } = await supabase
+      .from("scouting_locations")
+      .insert(location)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
   },
 
   // --- Submissions ---
@@ -160,34 +298,77 @@ export const scoutingService = {
     return data as ScoutingEvent[];
   },
 
+  async createEvent(
+    event: Omit<ScoutingEvent, "id" | "created_at" | "updated_at">,
+  ) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data, error } = await supabase
+      .from("scouting_events")
+      .insert(event)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as ScoutingEvent;
+  },
+
+  async updateEvent(id: string, updates: Partial<ScoutingEvent>) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { data, error } = await supabase
+      .from("scouting_events")
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as ScoutingEvent;
+  },
+
+  async deleteEvent(id: string) {
+    if (!supabase) throw new Error("Supabase client not initialized");
+
+    const { error } = await supabase
+      .from("scouting_events")
+      .delete()
+      .eq("id", id);
+
+    if (error) throw error;
+  },
+
   // --- Analytics ---
 
   async getAnalytics(agencyId: string) {
     if (!supabase) throw new Error("Supabase client not initialized");
 
-    // For now, we'll fetch all prospects and calculate stats client-side
-    // In the future, this should be replaced by a database view or RPC call
     const { data: prospects, error } = await supabase
       .from("scouting_prospects")
-      .select("status")
+      .select("status, source, discovery_date, updated_at")
       .eq("agency_id", agencyId);
 
     if (error) throw error;
 
     const stats = {
-      new_leads: 0,
+      totalProspects: prospects?.length || 0,
+      newLeads: 0,
       contacted: 0,
       meeting: 0,
       signed: 0,
-      rejected: 0,
-      total: 0,
+      declined: 0,
+      conversionRate: 0,
+      avgTimeToSign: 0,
+      sources: {} as Record<string, number>,
     };
 
-    prospects?.forEach((p: { status: string }) => {
-      stats.total++;
+    let totalDaysToSign = 0;
+    let signedCountForAvg = 0;
+
+    prospects?.forEach((p) => {
       switch (p.status) {
         case "new":
-          stats.new_leads++;
+          stats.newLeads++;
           break;
         case "contacted":
           stats.contacted++;
@@ -197,12 +378,34 @@ export const scoutingService = {
           break;
         case "signed":
           stats.signed++;
+          if (p.discovery_date && p.updated_at) {
+            const start = new Date(p.discovery_date);
+            const end = new Date(p.updated_at);
+            const diffTime = Math.abs(end.getTime() - start.getTime());
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            totalDaysToSign += diffDays;
+            signedCountForAvg++;
+          }
           break;
-        case "rejected":
-          stats.rejected++;
+        case "declined":
+          stats.declined++;
           break;
       }
+
+      if (p.source) {
+        stats.sources[p.source] = (stats.sources[p.source] || 0) + 1;
+      }
     });
+
+    if (stats.totalProspects > 0) {
+      stats.conversionRate = Math.round(
+        (stats.signed / stats.totalProspects) * 100,
+      );
+    }
+
+    if (signedCountForAvg > 0) {
+      stats.avgTimeToSign = Math.round(totalDaysToSign / signedCountForAvg);
+    }
 
     return stats;
   },
