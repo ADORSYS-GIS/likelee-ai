@@ -21,11 +21,14 @@ pub struct LicenseTemplate {
     pub territory: String,
     pub exclusivity: String,
     pub modifications_allowed: Option<String>,
-    pub pricing_range_min_cents: Option<i64>,
-    pub pricing_range_max_cents: Option<i64>,
-    pub additional_terms: Option<String>,
+    pub license_fee: Option<i64>,
+    pub custom_terms: Option<String>,
     pub usage_count: i32,
     pub created_at: Option<String>,
+    pub docuseal_template_id: Option<i32>,
+    pub client_name: Option<String>,
+    pub talent_name: Option<String>,
+    pub start_date: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -38,9 +41,13 @@ pub struct CreateTemplateRequest {
     pub territory: String,
     pub exclusivity: String,
     pub modifications_allowed: Option<String>,
-    pub pricing_range_min_cents: Option<i64>,
-    pub pricing_range_max_cents: Option<i64>,
-    pub additional_terms: Option<String>,
+    pub license_fee: Option<i64>,
+    pub custom_terms: Option<String>,
+    pub docuseal_template_id: Option<i32>,
+    pub document_base64: Option<String>,
+    pub client_name: Option<String>,
+    pub talent_name: Option<String>,
+    pub start_date: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -68,9 +75,14 @@ pub async fn list(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    let status = resp.status();
     let text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let templates: Vec<LicenseTemplate> = serde_json::from_str(&text).unwrap_or(vec![]);
+    
+    if !status.is_success() {
+        return Err((StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR), text));
+    }
 
+    let templates: Vec<LicenseTemplate> = serde_json::from_str(&text).unwrap_or(vec![]);
     Ok(Json(templates))
 }
 
@@ -90,7 +102,13 @@ pub async fn stats(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    let status = resp.status();
     let text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    
+    if !status.is_success() {
+        return Err((StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR), text));
+    }
+
     let templates: Vec<LicenseTemplate> = serde_json::from_str(&text).unwrap_or(vec![]);
 
     let total_templates = templates.len() as i64;
@@ -121,7 +139,7 @@ pub async fn stats(
 
     let total_value: i64 = templates
         .iter()
-        .map(|t| (t.pricing_range_min_cents.unwrap_or(0) + t.pricing_range_max_cents.unwrap_or(0)) / 2)
+        .map(|t| t.license_fee.unwrap_or(0))
         .sum();
     
     let avg_val = if total_templates > 0 {
@@ -162,9 +180,12 @@ pub async fn create(
         "territory": payload.territory,
         "exclusivity": payload.exclusivity,
         "modifications_allowed": payload.modifications_allowed,
-        "pricing_range_min_cents": payload.pricing_range_min_cents,
-        "pricing_range_max_cents": payload.pricing_range_max_cents,
-        "additional_terms": payload.additional_terms,
+        "license_fee": payload.license_fee,
+        "custom_terms": payload.custom_terms,
+        "docuseal_template_id": payload.docuseal_template_id,
+        "client_name": payload.client_name,
+        "talent_name": payload.talent_name,
+        "start_date": payload.start_date,
     });
 
     let resp = state
@@ -175,10 +196,16 @@ pub async fn create(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    let status = resp.status();
     let text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let created: Vec<LicenseTemplate> = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    
+    if !status.is_success() {
+        return Err((StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR), text));
+    }
 
-    created.into_iter().next().ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Failed to create template".to_string()).into()).map(Json)
+    let created: Vec<LicenseTemplate> = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse created template: {}. Raw response: {}", e, text)))?;
+
+    created.into_iter().next().ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Failed to create template (empty response)".to_string())).map(Json)
 }
 
 /// PUT /api/license-templates/:id
@@ -199,9 +226,12 @@ pub async fn update(
         "territory": payload.territory,
         "exclusivity": payload.exclusivity,
         "modifications_allowed": payload.modifications_allowed,
-        "pricing_range_min_cents": payload.pricing_range_min_cents,
-        "pricing_range_max_cents": payload.pricing_range_max_cents,
-        "additional_terms": payload.additional_terms,
+        "license_fee": payload.license_fee,
+        "custom_terms": payload.custom_terms,
+        "docuseal_template_id": payload.docuseal_template_id,
+        "client_name": payload.client_name,
+        "talent_name": payload.talent_name,
+        "start_date": payload.start_date,
         "updated_at": chrono::Utc::now().to_rfc3339(),
     });
 
@@ -215,10 +245,16 @@ pub async fn update(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    let status = resp.status();
     let text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let updated: Vec<LicenseTemplate> = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    
+    if !status.is_success() {
+        return Err((StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR), text));
+    }
 
-    updated.into_iter().next().ok_or((StatusCode::NOT_FOUND, "Template not found".to_string()).into()).map(Json)
+    let updated: Vec<LicenseTemplate> = serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse updated template: {}. Raw response: {}", e, text)))?;
+
+    updated.into_iter().next().ok_or((StatusCode::NOT_FOUND, "Template not found".to_string())).map(Json)
 }
 
 /// DELETE /api/license-templates/:id
@@ -278,9 +314,11 @@ pub async fn copy(
         "territory": original.territory,
         "exclusivity": original.exclusivity,
         "modifications_allowed": original.modifications_allowed,
-        "pricing_range_min_cents": original.pricing_range_min_cents,
-        "pricing_range_max_cents": original.pricing_range_max_cents,
-        "additional_terms": original.additional_terms,
+        "license_fee": original.license_fee,
+        "custom_terms": original.custom_terms,
+        "client_name": original.client_name,
+        "talent_name": original.talent_name,
+        "start_date": original.start_date,
         "usage_count": 0,
     });
 
@@ -292,8 +330,135 @@ pub async fn copy(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    let create_status = create_resp.status();
     let create_text = create_resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let created: Vec<LicenseTemplate> = serde_json::from_str(&create_text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    
+    if !create_status.is_success() {
+        return Err((StatusCode::from_u16(create_status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR), create_text));
+    }
 
-    created.into_iter().next().ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Failed to copy template".to_string()).into()).map(Json)
+    let created: Vec<LicenseTemplate> = serde_json::from_str(&create_text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse copied template: {}. Raw response: {}", e, create_text)))?;
+
+    created.into_iter().next().ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Failed to copy template".to_string())).map(Json)
+}
+
+#[derive(Debug, Deserialize)]
+pub struct BuilderTokenRequest {
+    pub template_name: String,
+    pub docuseal_template_id: Option<i32>,
+    pub external_id: Option<String>,
+}
+
+pub async fn create_builder_token(
+    State(state): State<AppState>,
+    _auth_user: AuthUser,
+    Json(req): Json<BuilderTokenRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    use crate::services::docuseal::DocuSealClient;
+
+    // 1. Determine the template ID to look up in our database
+    let template_id = if let Some(ext_id) = &req.external_id {
+        if ext_id.starts_with("temp-") {
+             // Form: temp-UUID-timestamp (UUID has hyphens, timestamp is at the end)
+             // Remove "temp-" prefix
+             let stripped = ext_id.strip_prefix("temp-").unwrap_or(ext_id);
+             // Find the last hyphen which separates the UUID from the timestamp
+             if let Some(last_hyphen_idx) = stripped.rfind('-') {
+                 stripped[..last_hyphen_idx].to_string()
+             } else {
+                 stripped.to_string()
+             }
+        } else {
+             ext_id.clone()
+        }
+    } else {
+        req.docuseal_template_id.map(|id| id.to_string()).unwrap_or_default()
+    };
+
+    // 2. Fetch template from DB to get pre-fill values
+    let mut values = None;
+    if !template_id.is_empty() {
+        tracing::info!("Looking up template with ID: {}", template_id);
+        let resp = state.pg.from("license_templates")
+            .select("*")
+            .eq("id", &template_id)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        
+        let text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let templates: Vec<LicenseTemplate> = serde_json::from_str(&text).unwrap_or_default();
+        
+        if let Some(license_template) = templates.first() {
+            let talent_names = license_template.talent_name.clone().unwrap_or_default();
+            let fee_str = format!("${:.2}", license_template.license_fee.unwrap_or(0) as f64 / 100.0);
+            let start_date = license_template
+                .start_date
+                .clone()
+                .and_then(|date| {
+                    chrono::NaiveDate::parse_from_str(&date, "%Y-%m-%d")
+                        .ok()
+                        .map(|parsed| parsed.format("%m/%d/%Y").to_string())
+                        .or(Some(date))
+                })
+                .unwrap_or_default();
+            
+            // Clean nested role structure (matches "First Party" in your template)
+            let mut role_data = serde_json::Map::new();
+            role_data.insert("Client/Brand Name".to_string(), json!(license_template.client_name.clone().unwrap_or_default()));
+            role_data.insert("Talent Name".to_string(), json!(talent_names));
+            role_data.insert("License Fee".to_string(), json!(fee_str));
+            role_data.insert("Category".to_string(), json!(license_template.category));
+            role_data.insert("Description".to_string(), json!(license_template.description.clone().unwrap_or_default()));
+            role_data.insert("Usage Scope".to_string(), json!(license_template.usage_scope.clone().unwrap_or_default()));
+            role_data.insert("Territory".to_string(), json!(license_template.territory));
+            role_data.insert("Exclusivity".to_string(), json!(license_template.exclusivity));
+            role_data.insert("Duration".to_string(), json!(license_template.duration_days));
+            role_data.insert("Start Date".to_string(), json!(start_date));
+            role_data.insert("Custom Terms".to_string(), json!(license_template.custom_terms.clone().unwrap_or_default()));
+            role_data.insert("Template Name".to_string(), json!(license_template.template_name));
+
+            // We only need the nested structure for role-assigned fields
+            values = Some(json!({
+                "First Party": role_data
+            }));
+            
+            tracing::info!("Generated pre-fill values: {:?}", values);
+        } else {
+            tracing::warn!("No template found with ID: {}", template_id);
+        }
+    } else {
+        tracing::warn!("Template ID is empty, skipping pre-fill");
+    }
+
+    // 3. Determine which DocuSeal template to use
+    let docuseal_template_id = if !state.docuseal_master_template_id.is_empty() {
+        state.docuseal_master_template_id.parse::<i32>().ok()
+    } else {
+        req.docuseal_template_id
+    };
+
+    let docuseal = DocuSealClient::new(
+        state.docuseal_api_key.clone(),
+        state.docuseal_base_url.clone(),
+    );
+    
+    
+    let target_email = state.docuseal_user_email.clone();
+
+
+    let token = docuseal.create_builder_token_with_external_id(
+        target_email.clone(),
+        target_email.clone(), 
+        target_email, 
+        docuseal_template_id,
+        req.external_id,
+        values.clone(),
+    ).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(Json(json!({ 
+        "token": token, 
+        "values": values,
+        "docuseal_user_email": state.docuseal_user_email.clone()
+    })))
 }

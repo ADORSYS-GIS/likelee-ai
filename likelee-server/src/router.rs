@@ -77,7 +77,15 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route(
             "/api/agency/licensing-requests",
-            get(crate::licensing_requests::list_for_agency),
+            get(crate::licensing_requests::list_for_agency).post(crate::licensing_requests::create),
+        )
+        .route(
+            "/api/agency/active-licenses",
+            get(crate::active_licenses::list),
+        )
+        .route(
+            "/api/agency/active-licenses/stats",
+            get(crate::active_licenses::stats),
         )
         // License Templates
         .route(
@@ -95,6 +103,35 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/license-templates/:id/copy",
             post(crate::license_templates::copy),
+        )
+        .route(
+            "/api/docuseal/builder-token",
+            post(crate::license_templates::create_builder_token),
+        )
+        // License Submissions
+        .route(
+            "/api/license-submissions",
+            get(crate::license_submissions::list).post(crate::license_submissions::create),
+        )
+        .route(
+            "/api/license-submissions/draft",
+            post(crate::license_submissions::create_draft),
+        )
+        .route(
+            "/api/license-submissions/create-and-send",
+            post(crate::license_submissions::create_and_send),
+        )
+        .route(
+            "/api/license-submissions/:id/finalize",
+            post(crate::license_submissions::finalize),
+        )
+        .route(
+            "/api/license-submissions/:id",
+            get(crate::license_submissions::get).delete(crate::license_submissions::archive),
+        )
+        .route(
+            "/api/license-submissions/:id/resend",
+            post(crate::license_submissions::resend),
         )
         .route(
             "/api/agency/licensing-requests/status",

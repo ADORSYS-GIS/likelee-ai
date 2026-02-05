@@ -187,6 +187,12 @@ export const updateCampaignSplit = (
 export const getAgencyLicensingRequests = () =>
   base44Client.get(`/api/agency/licensing-requests`);
 
+export const getAgencyActiveLicenses = (params?: { status?: string; search?: string }) =>
+  base44Client.get(`/api/agency/active-licenses`, { params });
+
+export const getAgencyActiveLicensesStats = () =>
+  base44Client.get(`/api/agency/active-licenses/stats`);
+
 export const updateAgencyLicensingRequestsStatus = (data: {
   licensing_request_ids: string[];
   status: "pending" | "approved" | "rejected";

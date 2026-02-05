@@ -802,7 +802,7 @@ pub async fn create_builder_token(
     );
 
     let token = docuseal_client
-        .create_builder_token(user_email, name, integration_email, payload.template_id)
+        .create_builder_token(user_email, name, integration_email, payload.template_id, None)
         .map_err(|e| {
             error!(error = %e, "Failed to create builder token");
             (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())

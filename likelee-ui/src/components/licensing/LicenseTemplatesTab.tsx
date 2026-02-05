@@ -21,6 +21,9 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
+import { TemplateModal } from "./TemplateModal";
+import { DocuSealBuilderModal } from "./DocuSealBuilderModal";
+import { SendContractModal } from "./SendContractModal";
 import {
     getLicenseTemplates,
     getTemplateStats,
@@ -31,7 +34,7 @@ import {
     LicenseTemplate,
     CreateTemplateRequest,
 } from "@/api/licenseTemplates";
-import { TemplateModal } from "./TemplateModal";
+import { finalizeLicenseSubmission, createLicenseSubmissionDraft } from "@/api/licenseSubmissions";
 
 const CATEGORIES = [
     "All Categories",
@@ -47,13 +50,24 @@ export const LicenseTemplatesTab: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("All Categories");
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingTemplate, setEditingTemplate] = useState<LicenseTemplate | null>(
-        null
-    );
+    const [editingTemplate, setEditingTemplate] = useState<LicenseTemplate | null>(null);
+    const [isSendModalOpen, setIsSendModalOpen] = useState(false);
+    const [sendTemplateId, setSendTemplateId] = useState<string | null>(null);
+    const [sendLicenseFee, setSendLicenseFee] = useState<number | undefined>(undefined);
+    const [sendDocusealTemplateId, setSendDocusealTemplateId] = useState<number | null>(null);
+
     const [templateToDelete, setTemplateToDelete] = useState<{
         id: string;
         name: string;
     } | null>(null);
+    const [builderTarget, setBuilderTarget] = useState<{
+        id: string;
+        docuseal_template_id: number;
+        template_name: string;
+        external_id?: string;
+    } | null>(null);
+
+    const [builderMode, setBuilderMode] = useState<"template" | "submission">("template");
 
     const { toast } = useToast();
     const queryClient = useQueryClient();
@@ -72,10 +86,19 @@ export const LicenseTemplatesTab: React.FC = () => {
     // Mutations
     const createMutation = useMutation({
         mutationFn: createLicenseTemplate,
-        onSuccess: () => {
+        onSuccess: (data: LicenseTemplate) => {
             queryClient.invalidateQueries({ queryKey: ["license-templates"] });
             queryClient.invalidateQueries({ queryKey: ["license-templates-stats"] });
             toast({ title: "Success", description: "Template created successfully" });
+            // Automatically open builder for the new template
+            if (data.docuseal_template_id) {
+                setBuilderTarget({
+                    id: data.id,
+                    docuseal_template_id: data.docuseal_template_id,
+                    template_name: data.template_name
+                });
+                setBuilderMode("template");
+            }
         },
         onError: () => {
             toast({ title: "Error", description: "Failed to create template", variant: "destructive" });
@@ -85,10 +108,19 @@ export const LicenseTemplatesTab: React.FC = () => {
     const updateMutation = useMutation({
         mutationFn: ({ id, data }: { id: string; data: CreateTemplateRequest }) =>
             updateLicenseTemplate(id, data),
-        onSuccess: () => {
+        onSuccess: (data: LicenseTemplate) => {
             queryClient.invalidateQueries({ queryKey: ["license-templates"] });
             queryClient.invalidateQueries({ queryKey: ["license-templates-stats"] });
             toast({ title: "Success", description: "Template updated successfully" });
+            // Automatically open builder after update
+            if (data.docuseal_template_id) {
+                setBuilderTarget({
+                    id: data.id,
+                    docuseal_template_id: data.docuseal_template_id,
+                    template_name: data.template_name
+                });
+                setBuilderMode("template");
+            }
         },
         onError: () => {
             toast({ title: "Error", description: "Failed to update template", variant: "destructive" });
@@ -118,6 +150,30 @@ export const LicenseTemplatesTab: React.FC = () => {
             toast({ title: "Error", description: "Failed to copy template", variant: "destructive" });
         },
     });
+
+    // UseTemplate logic:
+    // Direct Builder Open (No backend draft)
+    const handleUseTemplate = (template: LicenseTemplate) => {
+        // Set builder target directly from template info
+        setBuilderTarget({
+            ...template,
+            docuseal_template_id: template.docuseal_template_id,
+            template_name: template.template_name,
+            // Generate a stable externalId for this session
+            external_id: `temp-${template.id}-${Date.now()}`
+        } as any);
+        setBuilderMode("submission");
+    };
+
+    const handleUseSuccess = () => {
+        setIsSendModalOpen(false);
+        setSendTemplateId(null);
+        setSendDocusealTemplateId(null);
+        setSendLicenseFee(undefined);
+        queryClient.invalidateQueries({ queryKey: ["license-submissions"] });
+        queryClient.invalidateQueries({ queryKey: ["license-templates"] });
+        toast({ title: "Sent", description: "Contract sent successfully!" });
+    };
 
     // Handlers
     const handleCreate = async (data: CreateTemplateRequest) => {
@@ -173,19 +229,14 @@ export const LicenseTemplatesTab: React.FC = () => {
         return matchesSearch && matchesCategory;
     });
 
-    const formatPrice = (min?: number, max?: number) => {
-        if (min === undefined && max === undefined) return "Not set";
-        const format = (cents: number) =>
-            (cents / 100).toLocaleString("en-US", {
-                style: "currency",
-                currency: "USD",
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-            });
-
-        if (min !== undefined && max === undefined) return `${format(min)}+`;
-        if (min === undefined && max !== undefined) return `Up to ${format(max)}`;
-        return `${format(min ?? 0)} - ${format(max ?? 0)}`;
+    const formatPrice = (amount?: number) => {
+        if (amount === undefined) return "Not set";
+        return (amount / 100).toLocaleString("en-US", {
+            style: "currency",
+            currency: "USD",
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+        });
     };
 
     return (
@@ -356,17 +407,19 @@ export const LicenseTemplatesTab: React.FC = () => {
                                         </span>
                                     </div>
                                     <div className="flex justify-between items-center pb-2 border-b border-gray-100 mb-2">
-                                        <span className="text-gray-500">Pricing:</span>
+                                        <span className="text-gray-500">License Fee:</span>
                                         <span className="font-bold text-green-600 text-lg">
-                                            {formatPrice(
-                                                template.pricing_range_min_cents,
-                                                template.pricing_range_max_cents
-                                            )}
+                                            {template.license_fee
+                                                ? `$${(template.license_fee / 100).toLocaleString()}`
+                                                : "N/A"}
                                         </span>
                                     </div>
                                 </div>
 
-                                <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2">
+                                <Button
+                                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2"
+                                    onClick={() => handleUseTemplate(template)}
+                                >
                                     Use This Template
                                 </Button>
                             </CardContent>
@@ -381,6 +434,52 @@ export const LicenseTemplatesTab: React.FC = () => {
                 onSave={handleSave}
                 initialData={editingTemplate}
             />
+
+            {sendTemplateId && sendDocusealTemplateId && (
+                <SendContractModal
+                    isOpen={isSendModalOpen}
+                    onClose={() => setIsSendModalOpen(false)}
+                    templateId={sendTemplateId}
+                    docusealTemplateId={sendDocusealTemplateId}
+                    licenseFee={sendLicenseFee}
+                    onSuccess={handleUseSuccess}
+                />
+            )}
+
+            {/* UseTemplateModal removed for direct flow */}
+
+            {builderTarget && (
+                <DocuSealBuilderModal
+                    open={!!builderTarget}
+                    onClose={() => setBuilderTarget(null)}
+                    templateName={builderTarget.template_name}
+                    docusealTemplateId={builderTarget.docuseal_template_id}
+                    // For submissions, we want a unique session ID.
+                    // Using `template-${id}-${timestamp}` creates a unique editing session without a DB record.
+                    externalId={builderTarget.external_id || builderTarget.id}
+                    onSave={async (docusealId) => {
+                        if (builderMode === "submission") {
+                            // Open Send Modal instead of immediate finalize
+                            // builderTarget.id is the License Template ID here
+                            setSendTemplateId(builderTarget.id);
+                            setSendDocusealTemplateId(docusealId);
+                            // Pass along the license fee from the template to the modal context
+                            setSendLicenseFee(builderTarget.license_fee);
+
+                            setBuilderTarget(null); // Close builder
+                            setIsSendModalOpen(true);
+                        } else {
+                            // Persist the DocuSeal ID back to our DB for global template
+                            try {
+                                queryClient.invalidateQueries({ queryKey: ["license-templates"] });
+                            } catch (err) {
+                                console.error("Failed to update template DocuSeal ID:", err);
+                            }
+                            setBuilderTarget(null);
+                        }
+                    }}
+                />
+            )}
 
             <Dialog
                 open={!!templateToDelete}

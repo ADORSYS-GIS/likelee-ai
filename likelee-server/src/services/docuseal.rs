@@ -7,6 +7,8 @@ pub struct CreateSubmissionRequest {
     pub template_id: i32,
     pub send_email: bool,
     pub submitters: Vec<Submitter>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub values: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Serialize)]
@@ -15,11 +17,14 @@ pub struct Submitter {
     pub email: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub role: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub values: Option<serde_json::Value>,
 }
 
 // Represents the actual object returned inside the array from DocuSeal's submission API
 #[derive(Debug, Deserialize, Clone)]
 pub struct DocuSealSubmitter {
+    #[serde(alias = "id")]
     pub submission_id: i32,
     pub slug: String,
 }
@@ -79,6 +84,18 @@ impl DocuSealClient {
         submitter_name: String,
         submitter_email: String,
     ) -> Result<CreateSubmissionResponse, Box<dyn std::error::Error>> {
+        self.create_submission_with_values(template_id, submitter_name, submitter_email, None)
+            .await
+    }
+
+    /// Create a new submission with custom values
+    pub async fn create_submission_with_values(
+        &self,
+        template_id: i32,
+        submitter_name: String,
+        submitter_email: String,
+        values: Option<serde_json::Value>,
+    ) -> Result<CreateSubmissionResponse, Box<dyn std::error::Error>> {
         let url = format!("{}/submissions", self.base_url);
 
         let request_body = CreateSubmissionRequest {
@@ -88,7 +105,9 @@ impl DocuSealClient {
                 name: submitter_name,
                 email: submitter_email,
                 role: Some("Signer".to_string()),
+                values: None, 
             }],
+            values,
         };
 
         info!(
@@ -219,12 +238,34 @@ impl DocuSealClient {
     }
 
     /// Create a JWT token for the embedded builder
+    /// Create a JWT token for the embedded builder (legacy signature)
     pub fn create_builder_token(
         &self,
         user_email: String,
         user_name: String,
         integration_email: String,
         template_id: Option<i32>,
+        values: Option<serde_json::Value>,
+    ) -> Result<String, Box<dyn std::error::Error>> {
+        self.create_builder_token_with_external_id(
+            user_email,
+            user_name,
+            integration_email,
+            template_id,
+            None,
+            values,
+        )
+    }
+
+    /// Create a JWT token for the embedded builder with external_id support
+    pub fn create_builder_token_with_external_id(
+        &self,
+        user_email: String,
+        user_name: String,
+        integration_email: String,
+        template_id: Option<i32>,
+        external_id: Option<String>,
+        values: Option<serde_json::Value>,
     ) -> Result<String, Box<dyn std::error::Error>> {
         use jsonwebtoken::{encode, EncodingKey, Header};
 
@@ -232,10 +273,19 @@ impl DocuSealClient {
         struct BuilderClaims {
             user_email: String,
             name: String,
-            // integration_email identifies the user in DocuSeal
             integration_email: String,
             #[serde(skip_serializing_if = "Option::is_none")]
             template_id: Option<i32>,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            external_id: Option<String>,
+            #[serde(default)]
+            send_button: bool,
+            #[serde(default)]
+            save_button: bool,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            values: Option<serde_json::Value>,
+            #[serde(skip_serializing_if = "Option::is_none")]
+            submitters: Option<serde_json::Value>,
             exp: usize,
         }
 
@@ -244,13 +294,58 @@ impl DocuSealClient {
             .expect("valid timestamp")
             .timestamp() as usize;
 
+        // Try to derive submitters array if values is a nested role map
+        let submitters = if let Some(vals) = &values {
+            if let Some(obj) = vals.as_object() {
+                let mut subs = Vec::new();
+                for (role, role_values) in obj {
+                    if let Some(rv_obj) = role_values.as_object() {
+                        let mut fields_list = Vec::new();
+                        for (k, v) in rv_obj {
+                            let default_value = if let Some(s) = v.as_str() {
+                                s.to_string()
+                            } else {
+                                v.to_string()
+                            };
+                            fields_list.push(json!({
+                                "name": k,
+                                "default_value": default_value
+                            }));
+                        }
+                        subs.push(json!({
+                            "email": user_email.clone(),
+                            "role": role,
+                            "fields": fields_list
+                        }));
+                    }
+                }
+                if !subs.is_empty() {
+                    Some(json!(subs))
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
         let claims = BuilderClaims {
             user_email,
             name: user_name,
             integration_email,
             template_id,
+            external_id,
+            send_button: false,
+            save_button: true,
+            values,
+            submitters,
             exp: expiration,
         };
+
+
+        tracing::info!("DocuSeal Builder JWT Claims: {:?}", claims);
 
         let token = encode(
             &Header::default(),

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
     Dialog,
@@ -48,6 +48,8 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
     onSave,
     initialData,
 }) => {
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
     const {
         register,
         handleSubmit,
@@ -60,12 +62,16 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
             template_name: "",
             category: "",
             exclusivity: "",
-            duration_days: 30, // Default duration
+            duration_days: 30,
+            client_name: "",
+            talent_name: "",
+            start_date: "",
         },
     });
 
     useEffect(() => {
         if (isOpen) {
+            setSelectedFile(null); // Reset file on open
             if (initialData) {
                 reset({
                     template_name: initialData.template_name,
@@ -76,9 +82,12 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                     territory: initialData.territory,
                     exclusivity: initialData.exclusivity,
                     modifications_allowed: initialData.modifications_allowed,
-                    pricing_range_min_cents: initialData.pricing_range_min_cents,
-                    pricing_range_max_cents: initialData.pricing_range_max_cents,
-                    additional_terms: initialData.additional_terms,
+                    license_fee: initialData.license_fee ? initialData.license_fee / 100 : undefined,
+                    custom_terms: initialData.custom_terms,
+                    docuseal_template_id: initialData.docuseal_template_id,
+                    client_name: initialData.client_name,
+                    talent_name: initialData.talent_name,
+                    start_date: initialData.start_date,
                 });
             } else {
                 reset({
@@ -90,33 +99,96 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                     territory: "Worldwide",
                     exclusivity: "",
                     modifications_allowed: "",
-                    pricing_range_min_cents: undefined,
-                    pricing_range_max_cents: undefined,
-                    additional_terms: "",
+                    license_fee: undefined,
+                    custom_terms: "",
+                    docuseal_template_id: undefined,
+                    client_name: "",
+                    talent_name: "",
+                    start_date: "",
                 });
             }
         }
     }, [isOpen, initialData, reset]);
 
-    // Hook for Select components
     const categoryValue = watch("category");
     const exclusivityValue = watch("exclusivity");
 
+    const fileToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => {
+                const base64 = reader.result?.toString().split(",")[1];
+                resolve(base64 || "");
+            };
+            reader.onerror = (error) => reject(error);
+        });
+    };
+
     const onSubmit = async (data: CreateTemplateRequest) => {
-        await onSave(data);
+        let document_base64 = undefined;
+        try {
+            if (selectedFile) {
+                document_base64 = await fileToBase64(selectedFile);
+            }
+        } catch (err) {
+            console.error("File to base64 conversion failed:", err);
+        }
+
+        // Convert dollars back to cents for API
+        const payload = {
+            ...data,
+            license_fee: data.license_fee ? Math.round(data.license_fee * 100) : undefined,
+            // Ensure empty docuseal_template_id is undefined, not ""
+            docuseal_template_id: data.docuseal_template_id || undefined,
+            document_base64,
+        };
+        await onSave(payload);
         onClose();
     };
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
+                <DialogHeader className="pb-4">
                     <DialogTitle>
                         {initialData ? "Edit Template" : "New Template"}
                     </DialogTitle>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                    <div className="bg-blue-50/50 p-4 rounded-lg border border-blue-100 space-y-4">
+                        <h3 className="text-sm font-semibold text-blue-900 border-b border-blue-100 pb-2">Deal Specifics</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="client_name">Client/Brand Name</Label>
+                                <Input
+                                    id="client_name"
+                                    {...register("client_name")}
+                                    placeholder="Enter client name"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="talent_name">Talent Name (comma-separated)</Label>
+                                <Input
+                                    id="talent_name"
+                                    {...register("talent_name")}
+                                    placeholder="e.g. Talent A, Talent B"
+                                />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="start_date">Start Date</Label>
+                                <Input
+                                    id="start_date"
+                                    type="date"
+                                    {...register("start_date")}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="template_name">Template Name *</Label>
@@ -146,7 +218,6 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                                     ))}
                                 </SelectContent>
                             </Select>
-                            {/* Hidden input for validation if needed, or rely on Select state */}
                         </div>
                     </div>
 
@@ -207,39 +278,25 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                         </Select>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="modifications_allowed">Modifications Allowed</Label>
-                        <Textarea
-                            id="modifications_allowed"
-                            {...register("modifications_allowed")}
-                            placeholder="e.g. Minor edits allowed..."
-                        />
-                    </div>
-
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label>Pricing Range (Min - Max Cents)</Label>
-                            <div className="flex gap-2">
-                                <Input
-                                    placeholder="Min"
-                                    type="number"
-                                    {...register("pricing_range_min_cents", { valueAsNumber: true })}
-                                />
-                                <Input
-                                    placeholder="Max"
-                                    type="number"
-                                    {...register("pricing_range_max_cents", { valueAsNumber: true })}
-                                />
-                            </div>
-                            <p className="text-xs text-gray-500">Enter amounts in cents (e.g. 1000 = $10.00)</p>
+                            <Label htmlFor="license_fee">License Fee ($)</Label>
+                            <Input
+                                id="license_fee"
+                                placeholder="Amount ($)"
+                                type="number"
+                                step="0.01"
+                                {...register("license_fee", { valueAsNumber: true })}
+                            />
+                            <p className="text-xs text-gray-500">Enter amount in dollars (e.g. 10.00)</p>
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="additional_terms">Additional Terms</Label>
+                        <Label htmlFor="custom_terms">Custom Terms</Label>
                         <Textarea
-                            id="additional_terms"
-                            {...register("additional_terms")}
+                            id="custom_terms"
+                            {...register("custom_terms")}
                             placeholder="Any extra conditions..."
                         />
                     </div>

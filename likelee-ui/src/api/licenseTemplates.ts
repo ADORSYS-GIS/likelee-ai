@@ -11,11 +11,14 @@ export interface LicenseTemplate {
     territory: string;
     exclusivity: string;
     modifications_allowed?: string;
-    pricing_range_min_cents?: number;
-    pricing_range_max_cents?: number;
-    additional_terms?: string;
+    license_fee?: number;
+    custom_terms?: string;
     usage_count: number;
     created_at?: string;
+    docuseal_template_id?: number;
+    client_name?: string;
+    talent_name?: string;
+    start_date?: string;
 }
 
 export interface CreateTemplateRequest {
@@ -27,9 +30,13 @@ export interface CreateTemplateRequest {
     territory: string;
     exclusivity: string;
     modifications_allowed?: string;
-    pricing_range_min_cents?: number;
-    pricing_range_max_cents?: number;
-    additional_terms?: string;
+    license_fee?: number;
+    custom_terms?: string;
+    docuseal_template_id?: number;
+    document_base64?: string;
+    client_name?: string;
+    talent_name?: string;
+    start_date?: string;
 }
 
 export interface TemplateStats {
@@ -67,3 +74,16 @@ export const deleteLicenseTemplate = async (id: string): Promise<void> => {
 export const copyLicenseTemplate = async (id: string): Promise<LicenseTemplate> => {
     return await base44.post<LicenseTemplate>(`/api/license-templates/${id}/copy`);
 };
+
+export const createBuilderToken = async (
+    template_name: string,
+    docuseal_template_id?: number,
+    external_id?: string
+): Promise<{ token: string; values: any; docuseal_user_email: string }> => {
+    return await base44.post<{ token: string; values: any; docuseal_user_email: string }>("/api/docuseal/builder-token", {
+        template_name,
+        docuseal_template_id,
+        external_id,
+    });
+};
+

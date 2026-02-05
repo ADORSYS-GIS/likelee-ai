@@ -139,6 +139,8 @@ import {
   getAgencyStripeOnboardingLink,
   notifyBookingCreatedEmail,
   getAgencyLicensingRequests,
+  getAgencyActiveLicenses,
+  getAgencyActiveLicensesStats,
   updateAgencyLicensingRequestsStatus,
   getAgencyLicensingRequestsPaySplit,
   setAgencyLicensingRequestsPaySplit,
@@ -150,6 +152,8 @@ import {
 } from "@/api/functions";
 import ClientCRMView from "@/components/crm/ClientCRMView";
 import * as crmApi from "@/api/crm";
+import { LicenseSubmissionsTab } from "@/components/licensing/LicenseSubmissionsTab";
+import { ActiveLicenseDetailsSheet } from "@/components/licensing/ActiveLicenseDetailsSheet";
 
 const STATUS_MAP = {
   // legacy/basic statuses
@@ -648,8 +652,8 @@ const ProspectModal = ({
                   }
                   onClick={() => toggleCategory(cat)}
                   className={`${selectedCategories.includes(cat)
-                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-900"
                     } font-medium`}
                 >
                   {cat}
@@ -2352,8 +2356,8 @@ const ProspectModalAlt = ({
                   }
                   onClick={() => toggleCategory(cat)}
                   className={`${selectedCategories.includes(cat)
-                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-900"
                     } font-medium`}
                 >
                   {cat}
@@ -5963,8 +5967,8 @@ const FinancialReportsView = () => {
               key={tab.id}
               onClick={() => setActiveReportTab(tab.id)}
               className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${activeReportTab === tab.id
-                  ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                 }`}
             >
               {tab.label}
@@ -7674,8 +7678,8 @@ const GenerateInvoiceView = () => {
               <Button
                 variant={createFrom === "booking" ? "default" : "outline"}
                 className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "booking"
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "border-gray-200 text-gray-700"
+                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                  : "border-gray-200 text-gray-700"
                   }`}
                 onClick={() => setCreateFrom("booking")}
               >
@@ -7685,8 +7689,8 @@ const GenerateInvoiceView = () => {
               <Button
                 variant={createFrom === "manual" ? "default" : "outline"}
                 className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "manual"
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "border-gray-200 text-gray-700"
+                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                  : "border-gray-200 text-gray-700"
                   }`}
                 onClick={() => setCreateFrom("manual")}
               >
@@ -8614,8 +8618,8 @@ const InvoiceManagementView = ({
                 key={tab.id}
                 onClick={() => setActiveSubTab(tab.id)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${isActive
-                    ? "bg-indigo-600 text-white shadow-sm"
-                    : "text-gray-700 hover:bg-gray-50"
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-gray-700 hover:bg-gray-50"
                   }`}
               >
                 <Icon className="w-4 h-4" />
@@ -9532,8 +9536,8 @@ const ScoutingHubView = ({
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
-                : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
+              ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+              : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
               }`}
           >
             {tab}
@@ -10528,16 +10532,16 @@ const OpenCallsTab = ({
                 <div className="flex justify-between items-start mb-3">
                   <Badge
                     className={`rounded-md font-bold px-2 py-0.5 text-[10px] border shadow-sm ${String((event as any).status) === "published"
-                        ? "bg-green-50 text-green-700 border-green-100"
-                        : String((event as any).status) === "draft"
-                          ? "bg-gray-50 text-gray-600 border-gray-100"
-                          : String((event as any).status) === "scheduled"
-                            ? "bg-blue-50 text-blue-700 border-blue-100"
-                            : String((event as any).status) === "completed"
-                              ? "bg-indigo-50 text-indigo-700 border-indigo-100"
-                              : String((event as any).status) === "cancelled"
-                                ? "bg-red-50 text-red-700 border-red-100"
-                                : "bg-gray-50 text-gray-600 border-gray-100"
+                      ? "bg-green-50 text-green-700 border-green-100"
+                      : String((event as any).status) === "draft"
+                        ? "bg-gray-50 text-gray-600 border-gray-100"
+                        : String((event as any).status) === "scheduled"
+                          ? "bg-blue-50 text-blue-700 border-blue-100"
+                          : String((event as any).status) === "completed"
+                            ? "bg-indigo-50 text-indigo-700 border-indigo-100"
+                            : String((event as any).status) === "cancelled"
+                              ? "bg-red-50 text-red-700 border-red-100"
+                              : "bg-gray-50 text-gray-600 border-gray-100"
                       }`}
                   >
                     {String((event as any).status || "").toUpperCase()}
@@ -11830,6 +11834,11 @@ const LicensingRequestsView = () => {
   const [totalPaymentAmount, setTotalPaymentAmount] = useState<string>("");
   const [agencyPercent, setAgencyPercent] = useState<string>("");
 
+  const [counterOfferModalOpen, setCounterOfferModalOpen] = useState(false);
+  const [counterOfferReason, setCounterOfferReason] = useState("");
+  const [currentCounterOfferGroup, setCurrentCounterOfferGroup] = useState<any | null>(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
   const talentCount = (selectedGroup?.talents || []).length || 0;
   const totalNum = Number(totalPaymentAmount);
   const agencyPercentNum = Number(agencyPercent);
@@ -11857,8 +11866,9 @@ const LicensingRequestsView = () => {
       : "--";
 
   const statusStyle = (status: string) => {
-    if (status === "approved") return "bg-green-100 text-green-700";
-    if (status === "rejected") return "bg-red-100 text-red-700";
+    if (status === "approved" || status === "confirmed") return "bg-green-100 text-green-700";
+    if (status === "rejected" || status === "declined") return "bg-red-100 text-red-700";
+    if (status === "negotiating") return "bg-amber-100 text-amber-700 border border-amber-200";
     return "bg-gray-100 text-gray-700";
   };
 
@@ -11916,24 +11926,32 @@ const LicensingRequestsView = () => {
 
   const updateGroupStatus = async (
     group: any,
-    status: "pending" | "approved" | "rejected",
+    status: "pending" | "approved" | "rejected" | "negotiating" | "declined",
+    notes?: string,
   ) => {
     const ids = (group?.talents || [])
       .map((t: any) => t.licensing_request_id)
       .filter(Boolean);
     if (!ids.length) return;
 
-    const notes =
-      status === "pending"
-        ? window.prompt("Counter offer message (optional)") || undefined
-        : undefined;
+    if (status === "negotiating" && !notes) {
+      setCurrentCounterOfferGroup(group);
+      setCounterOfferReason("");
+      setCounterOfferModalOpen(true);
+      return;
+    }
 
+    setIsUpdatingStatus(true);
     try {
       await updateAgencyLicensingRequestsStatus({
         licensing_request_ids: ids,
         status,
         notes,
       });
+      toast({
+        title: status === "negotiating" ? "Counter offer sent" : `Status updated to ${status}`,
+      });
+      setCounterOfferModalOpen(false);
       await queryClient.invalidateQueries({
         queryKey: ["agency", "licensing-requests"],
       });
@@ -11943,7 +11961,14 @@ const LicensingRequestsView = () => {
         description: e?.message || "Could not update licensing request",
         variant: "destructive" as any,
       });
+    } finally {
+      setIsUpdatingStatus(false);
     }
+  };
+
+  const handleSendCounterOffer = () => {
+    if (!currentCounterOfferGroup || !counterOfferReason.trim()) return;
+    updateGroupStatus(currentCounterOfferGroup, "negotiating", counterOfferReason.trim());
   };
 
   const savePaySplit = async () => {
@@ -12104,7 +12129,7 @@ const LicensingRequestsView = () => {
               </div>
             </div>
 
-            {group.status === "approved" ? (
+            {(group.status === "approved" || group.status === "confirmed") ? (
               <div>
                 <Button
                   onClick={() => openPayModal(group)}
@@ -12112,11 +12137,11 @@ const LicensingRequestsView = () => {
                 >
                   {group.pay_set ? (
                     <>
-                      <Eye className="w-4 h-4" /> View Pay
+                      <Eye className="w-4 h-4" /> View Pay Split
                     </>
                   ) : (
                     <>
-                      <DollarSign className="w-4 h-4" /> Set Pay
+                      <DollarSign className="w-4 h-4" /> Set Pay Split
                     </>
                   )}
                 </Button>
@@ -12134,14 +12159,15 @@ const LicensingRequestsView = () => {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => updateGroupStatus(group, "pending")}
-                  className="border-gray-300 text-gray-700 font-bold h-11 rounded-md"
+                  onClick={() => updateGroupStatus(group, "negotiating")}
+                  className="border-amber-200 text-amber-700 hover:bg-amber-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
                 >
+                  <RefreshCw className="w-4 h-4" />
                   Counter Offer
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => updateGroupStatus(group, "rejected")}
+                  onClick={() => updateGroupStatus(group, "declined")}
                   className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
                 >
                   <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
@@ -12249,112 +12275,92 @@ const LicensingRequestsView = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+
+      <Dialog open={counterOfferModalOpen} onOpenChange={setCounterOfferModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Counter Offer</DialogTitle>
+            <DialogDescription>
+              Provide a reason or custom message for the brand regarding your counter offer.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="counter-reason">Reason / Message</Label>
+              <Textarea
+                id="counter-reason"
+                placeholder="e.g. Budget is too low for this scope, we propose $15,000..."
+                value={counterOfferReason}
+                onChange={(e) => setCounterOfferReason(e.target.value)}
+                className="min-h-[120px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCounterOfferModalOpen(false)} disabled={isUpdatingStatus}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSendCounterOffer}
+              disabled={isUpdatingStatus || !counterOfferReason.trim()}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+            >
+              {isUpdatingStatus ? "Sending..." : "Send Counter Offer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div >
   );
 };
 
 const ActiveLicensesView = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
+  const [selectedLicense, setSelectedLicense] = useState<any>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-  const licenses = [
-    {
-      id: "LIC-001",
-      talent: "Emma",
-      talentImg: TALENT_DATA.find((t) => t.name === "Emma")?.img || "",
-      type: "Cosmetics Campaign",
-      brand: "Glamour Beauty Co.",
-      duration: "2025-01-15 to 2025-07-15",
-      daysLeft: "180 days left",
-      scope: "Social Media, E-commerce, Print",
-      value: "$8,500",
-      status: "Active",
-      statusColor: "bg-green-500",
-      autoRenew: true,
-    },
-    {
-      id: "LIC-002",
-      talent: "Sergine",
-      talentImg: TALENT_DATA.find((t) => t.name === "Sergine")?.img || "",
-      type: "Fashion Editorial",
-      brand: "Vogue Magazine",
-      duration: "2024-12-01 to 2025-06-01",
-      daysLeft: "150 days left",
-      scope: "Print, Digital Editorial",
-      value: "$12,000",
-      status: "Active",
-      statusColor: "bg-green-500",
-      autoRenew: false,
-    },
-    {
-      id: "LIC-003",
-      talent: "Milan",
-      talentImg: TALENT_DATA.find((t) => t.name === "Milan")?.img || "",
-      type: "Athletic Wear Campaign",
-      brand: "Nike Performance",
-      duration: "2025-01-01 to 2025-03-01",
-      daysLeft: "45 days left",
-      scope: "TV, Digital, Out-of-Home",
-      value: "$25,000",
-      status: "Expiring",
-      statusColor: "bg-orange-500",
-      autoRenew: true,
-    },
-    {
-      id: "LIC-004",
-      talent: "Julia",
-      talentImg: TALENT_DATA.find((t) => t.name === "Julia")?.img || "",
-      type: "Tech Product Launch",
-      brand: "Apple Inc.",
-      duration: "2024-11-15 to 2025-02-15",
-      daysLeft: "30 days left",
-      scope: "Global Digital, Social",
-      value: "$45,000",
-      status: "Expiring",
-      statusColor: "bg-orange-600",
-      autoRenew: false,
-    },
-    {
-      id: "LIC-005",
-      talent: "Emma",
-      talentImg: TALENT_DATA.find((t) => t.name === "Emma")?.img || "",
-      type: "Luxury Watch Campaign",
-      brand: "Rolex",
-      duration: "2024-08-01 to 2024-12-31",
-      daysLeft: "Expired 15 days ago",
-      scope: "Print, Digital, Retail",
-      value: "$35,000",
-      status: "Expired",
-      statusColor: "bg-gray-500",
-      autoRenew: false,
-    },
-    {
-      id: "LIC-006",
-      talent: "Sergine",
-      talentImg: TALENT_DATA.find((t) => t.name === "Sergine")?.img || "",
-      type: "Beverage Campaign",
-      brand: "Coca-Cola",
-      duration: "2024-09-01 to 2025-09-01",
-      daysLeft: "270 days left",
-      scope: "TV, Digital, Social, OOH",
-      value: "$60,000",
-      status: "Active",
-      statusColor: "bg-green-500",
-      autoRenew: true,
-    },
-  ];
+  const handleViewDetails = (license: any) => {
+    setSelectedLicense(license);
+    setIsDetailsOpen(true);
+  };
 
-  const filteredLicenses = licenses.filter((lic) => {
-    const matchesSearch =
-      lic.talent.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lic.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lic.brand.toLowerCase().includes(searchTerm.toLowerCase());
+  const handleRenew = (license: any) => {
+    // renewal logic
+  };
 
-    const matchesFilter =
-      filterStatus === "All" || lic.status.includes(filterStatus);
-
-    return matchesSearch && matchesFilter;
+  const { data: licenses = [], isLoading: isLicensesLoading } = useQuery<any[]>({
+    queryKey: ["agency", "active-licenses", filterStatus, searchTerm],
+    queryFn: async () => {
+      const params: any = {};
+      if (filterStatus !== "All") params.status = filterStatus;
+      if (searchTerm) params.search = searchTerm;
+      return await getAgencyActiveLicenses(params);
+    }
   });
+
+  const { data: stats } = useQuery({
+    queryKey: ["agency", "active-licenses", "stats"],
+    queryFn: () => getAgencyActiveLicensesStats()
+  });
+
+  const statusColor = (status: string) => {
+    switch (status) {
+      case "Active": return "bg-green-500";
+      case "Expiring": return "bg-orange-500";
+      case "Expired": return "bg-gray-500";
+      default: return "bg-gray-400";
+    }
+  };
+
+  const formatMoney = (val: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(val);
+  };
 
   return (
     <div className="space-y-8">
@@ -12380,7 +12386,7 @@ const ActiveLicensesView = () => {
           {
             icon: CheckCircle2,
             label: "Active Licenses",
-            value: "3",
+            value: stats?.active_count?.toString() || "0",
             color: "text-green-600",
             bg: "bg-green-50",
             border: "border-green-100",
@@ -12388,7 +12394,7 @@ const ActiveLicensesView = () => {
           {
             icon: Clock,
             label: "Expiring Soon",
-            value: "2",
+            value: stats?.expiring_count?.toString() || "0",
             color: "text-orange-600",
             bg: "bg-orange-50",
             border: "border-orange-100",
@@ -12396,7 +12402,7 @@ const ActiveLicensesView = () => {
           {
             icon: AlertCircle,
             label: "Expired",
-            value: "1",
+            value: stats?.expired_count?.toString() || "0",
             color: "text-red-600",
             bg: "bg-red-50",
             border: "border-red-100",
@@ -12404,7 +12410,7 @@ const ActiveLicensesView = () => {
           {
             icon: DollarSign,
             label: "Total Value",
-            value: "$185,500",
+            value: formatMoney(stats?.total_value || 0),
             color: "text-indigo-600",
             bg: "bg-indigo-50",
             border: "border-indigo-100",
@@ -12488,31 +12494,53 @@ const ActiveLicensesView = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filteredLicenses.map((lic) => (
+              {isLicensesLoading && (
+                <tr>
+                  <td colSpan={8} className="px-6 py-20 text-center text-gray-500 font-medium">
+                    Loading licenses...
+                  </td>
+                </tr>
+              )}
+              {!isLicensesLoading && licenses.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-6 py-20 text-center text-gray-500 font-medium">
+                    No active licenses found
+                  </td>
+                </tr>
+              )}
+              {licenses.map((lic: any) => (
                 <tr
                   key={lic.id}
                   className="hover:bg-gray-50/50 transition-colors"
                 >
                   <td className="px-6 py-8 whitespace-nowrap">
                     <div className="flex items-center gap-3">
-                      <img
-                        src={lic.talentImg}
-                        alt={lic.talent}
-                        className="w-10 h-10 rounded-lg object-cover bg-gray-100"
-                      />
+                      <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+                        {lic.talent_avatar ? (
+                          <img
+                            src={lic.talent_avatar}
+                            alt={lic.talent_name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-400">
+                            <User className="w-5 h-5" />
+                          </div>
+                        )}
+                      </div>
                       <div>
                         <p className="font-bold text-gray-900 text-sm leading-none mb-1">
-                          {lic.talent}
+                          {lic.talent_name}
                         </p>
                         <p className="text-[10px] font-bold text-gray-400">
-                          {lic.id}
+                          ID: {lic.id.substring(0, 8)}
                         </p>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-8">
                     <p className="text-sm font-bold text-gray-900 leading-tight max-w-[150px]">
-                      {lic.type}
+                      {lic.license_type}
                     </p>
                   </td>
                   <td className="px-6 py-8">
@@ -12522,40 +12550,37 @@ const ActiveLicensesView = () => {
                   </td>
                   <td className="px-6 py-8">
                     <p className="text-xs font-bold text-gray-900 mb-1">
-                      {lic.duration.split(" to ")[0]}
+                      {lic.start_date || "—"}
                     </p>
                     <p className="text-[10px] font-medium text-gray-400 mb-1">
-                      to {lic.duration.split(" to ")[1]}
+                      to {lic.end_date || "Permanent"}
                     </p>
-                    <p className="text-[10px] font-bold text-gray-400 italic">
-                      {lic.daysLeft}
-                    </p>
+                    {lic.days_left !== null && (
+                      <p className="text-[10px] font-bold text-gray-400 italic">
+                        {lic.days_left < 0 ? `Expired ${Math.abs(lic.days_left)} days ago` : `${lic.days_left} days left`}
+                      </p>
+                    )}
                   </td>
                   <td className="px-6 py-8">
                     <p className="text-xs font-medium text-gray-600 max-w-[140px] leading-relaxed">
-                      {lic.scope}
+                      {lic.usage_scope}
                     </p>
                   </td>
                   <td className="px-6 py-8">
                     <p className="text-sm font-bold text-gray-900 mb-2">
-                      {lic.value}
+                      {formatMoney(lic.value)}
                     </p>
-                    {lic.autoRenew && (
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold w-fit border border-blue-100">
-                        <RefreshCw className="w-3-5 h-3-5" /> Auto-renew
-                      </div>
-                    )}
                   </td>
                   <td className="px-6 py-8 whitespace-nowrap">
                     <span
-                      className={`px-3 py-1.5 rounded-lg text-[10px] font-black text-white uppercase tracking-wider shadow-sm ${lic.statusColor}`}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-black text-white uppercase tracking-wider shadow-sm ${statusColor(lic.status)}`}
                     >
                       {lic.status}
                     </span>
                   </td>
                   <td className="px-6 py-8 whitespace-nowrap text-center">
                     <div className="flex justify-center gap-2">
-                      {lic.status.includes("Expiring") && (
+                      {lic.status === "Expiring" && (
                         <Button className="h-9 px-4 bg-green-600 hover:bg-green-700 text-white text-[11px] font-extrabold rounded-lg flex items-center gap-2 shadow-md shadow-green-100 transition-all active:scale-95">
                           <RefreshCw className="w-3.5 h-3.5" /> Renew
                         </Button>
@@ -12563,6 +12588,7 @@ const ActiveLicensesView = () => {
                       <Button
                         variant="outline"
                         className="h-9 w-9 p-0 border-gray-200 text-gray-400 hover:text-gray-900 hover:border-gray-300 rounded-lg bg-white shadow-sm transition-all active:scale-95"
+                        onClick={() => handleViewDetails(lic)}
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
@@ -12574,6 +12600,12 @@ const ActiveLicensesView = () => {
           </table>
         </div>
       </div>
+      <ActiveLicenseDetailsSheet
+        license={selectedLicense}
+        open={isDetailsOpen}
+        onClose={() => setIsDetailsOpen(false)}
+        onRenew={handleRenew}
+      />
     </div>
   );
 };
@@ -13572,8 +13604,8 @@ const ProtectionUsageView = () => {
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === tab
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:text-gray-900"
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-gray-500 hover:text-gray-900"
                 }`}
             >
               {tab}
@@ -15909,8 +15941,8 @@ const ComplianceHubView = () => {
               disabled={selectedTalentIds.length === 0}
               variant="outline"
               className={`text-xs font-bold h-8 gap-2 ${selectedTalentIds.length === 0
-                  ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
-                  : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
+                ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
+                : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
                 }`}
               onClick={handleSendRenewalRequests}
             >
@@ -16405,8 +16437,8 @@ const RoyaltiesPayoutsView = () => {
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
               }`}
           >
             {tab}
@@ -17290,8 +17322,8 @@ const AnalyticsDashboardView = () => {
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
                   }`}
               >
                 {tab}
@@ -18724,6 +18756,7 @@ export default function AgencyDashboard() {
             "Licensing Requests",
             "Active Licenses",
             "License Templates",
+            "License Submissions",
           ],
         },
         {
@@ -18876,8 +18909,8 @@ export default function AgencyDashboard() {
                   }
                 }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  ? "bg-indigo-50 text-indigo-700"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                   }`}
               >
                 <item.icon
@@ -18903,8 +18936,8 @@ export default function AgencyDashboard() {
                         setSidebarOpen(false);
                       }}
                       className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
-                          ? "text-indigo-700 bg-indigo-50 font-bold"
-                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                        ? "text-indigo-700 bg-indigo-50 font-bold"
+                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
                         }`}
                     >
                       <span className="truncate">{subItem}</span>
@@ -19179,6 +19212,8 @@ export default function AgencyDashboard() {
           )}
           {activeTab === "licensing" &&
             activeSubTab === "License Templates" && <LicenseTemplatesTab />}
+          {activeTab === "licensing" &&
+            activeSubTab === "License Submissions" && <LicenseSubmissionsTab />}
           {activeTab === "protection" && activeSubTab === "Protect & Usage" && (
             <ProtectionUsageView />
           )}
