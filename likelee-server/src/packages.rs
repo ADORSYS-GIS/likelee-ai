@@ -1,7 +1,7 @@
 use crate::auth::AuthUser;
 use crate::config::AppState;
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::{HeaderMap, StatusCode},
     Json,
 };
@@ -59,16 +59,28 @@ pub struct PackageAssetRequest {
     pub asset_type: String,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct ListPackagesQuery {
+    pub is_template: Option<bool>,
+}
+
 pub async fn list_packages(
     State(state): State<AppState>,
     user: AuthUser,
+    Query(query): Query<ListPackagesQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let resp = state
+    let mut db_query = state
         .pg
         .from("agency_talent_packages")
         .select("*, items:agency_talent_package_items(id), stats:agency_talent_package_stats(*)")
         .eq("agency_id", &user.id)
-        .order("created_at.desc")
+        .order("created_at.desc");
+
+    if let Some(is_template) = query.is_template {
+        db_query = db_query.eq("is_template", is_template.to_string());
+    }
+
+    let resp = db_query
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -794,12 +806,46 @@ pub async fn get_public_package(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let package: serde_json::Value = serde_json::from_str(&text).map_err(|e| {
+    let mut package: serde_json::Value = serde_json::from_str(&text).map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("Failed to parse public package: {}", e),
         )
     })?;
+
+    if let Some(items) = package.get_mut("items").and_then(|i| i.as_array_mut()) {
+        for item in items {
+            if let Some(assets) = item.get_mut("assets").and_then(|a| a.as_array_mut()) {
+                for asset_container in assets {
+                    if let Some(asset) = asset_container.get_mut("asset") {
+                        let public_url = asset
+                            .get("public_url")
+                            .and_then(|v| v.as_str())
+                            .map(str::to_string);
+                        if public_url.as_deref().unwrap_or("").is_empty() {
+                            if let (Some(bucket), Some(path)) = (
+                                asset.get("storage_bucket").and_then(|v| v.as_str()),
+                                asset.get("storage_path").and_then(|v| v.as_str()),
+                            ) {
+                                let constructed_url = format!(
+                                    "{}/storage/v1/object/public/{}/{}",
+                                    state.supabase_url, bucket, path
+                                );
+                                if let Some(obj) = asset.as_object_mut() {
+                                    obj.insert(
+                                        "asset_url".to_string(),
+                                        serde_json::Value::String(constructed_url),
+                                    );
+                                }
+                            }
+                        } else if let (Some(obj), Some(url)) = (asset.as_object_mut(), public_url) {
+                            obj.insert("asset_url".to_string(), serde_json::Value::String(url));
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     // 5. Increment view count
     if let Some(id) = package_meta["id"].as_str() {

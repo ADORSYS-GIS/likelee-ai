@@ -1,8 +1,9 @@
 export type ScoutingStatus =
-  | "new"
-  | "contacted"
-  | "meeting"
-  | "test_shoot"
+  | "new_lead"
+  | "in_contact"
+  | "test_shoot_pending"
+  | "test_shoot_success"
+  | "test_shoot_failed"
   | "offer_sent"
   | "signed"
   | "declined";
@@ -30,6 +31,23 @@ export interface ScoutingProspect {
   discovery_date?: string; // ISO date string
   discovery_location?: string;
   referred_by?: string;
+  is_signed?: boolean;
+  neighborhood?: string;
+  social_activity_concentration?: number;
+  competition_presence?: string;
+  demographics?: {
+    age_range?: string;
+    income_level?: string;
+    ethnicity?: string;
+    style_trends?: string[];
+  };
+  social_post_locations?: {
+    lat: number;
+    lng: number;
+    platform: string;
+    post_url: string;
+  }[];
+  trending_score?: number;
 
   assigned_agent_id?: string;
   assigned_agent_name?: string;
@@ -47,9 +65,29 @@ export interface ScoutingTrip {
   name: string;
   location: string;
   start_date?: string;
+  start_time?: string;
   end_date?: string;
+  end_time?: string;
   status: "planned" | "ongoing" | "completed";
+  trip_type?: "Open Scouting" | "Specific Casting" | "Event Coverage" | "Other";
   description?: string;
+  scout_ids?: string[];
+  scout_names?: string[];
+  route?: any[];
+  prospects_approached?: number;
+  prospects_submitted?: number;
+  prospects_agreed?: number;
+  prospects_added?: number;
+  conversion_rate?: number;
+  total_cost?: number;
+  photos?: string[];
+  latitude?: number;
+  longitude?: number;
+  weather?: string;
+  best_locations?: ScoutingTripLocation[];
+  locations_visited?: ScoutingTripLocation[];
+  weather_forecast?: any;
+  historical_weather_success_correlation?: number;
   created_at: string;
   updated_at: string;
 }
@@ -61,7 +99,36 @@ export interface ScoutingEvent {
   event_date: string;
   location: string;
   description?: string;
-  status: "scheduled" | "completed" | "cancelled";
+  status: "draft" | "scheduled" | "completed" | "cancelled" | "published";
+
+  event_type?: string;
+  casting_for?: string;
+  start_time?: string;
+  end_time?: string;
+  looking_for?: string[];
+  min_age?: number;
+  max_age?: number;
+  gender_preference?: string;
+  special_skills?: string;
+  what_to_bring?: string;
+  dress_code?: string;
+  location_details?: string;
+  virtual_link?: string;
+  max_attendees?: number;
+  registration_required?: boolean;
+  internal_notes?: string;
+  contact_name?: string;
+  contact_email?: string;
+  contact_phone?: string;
+  targeted_talent_goal?: number;
+  registration_fee?: number;
+  expected_attendance?: number;
+  is_attending?: boolean;
+  prospects_to_meet?: string[];
+  past_success_rate?: number;
+  calendar_event_id?: string;
+  sync_with_calendar?: boolean;
+
   created_at: string;
   updated_at: string;
 }
@@ -77,4 +144,67 @@ export interface ScoutingSubmission {
   submitted_at: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface ScoutingAnalytics {
+  id: string;
+  agency_id: string;
+  metric_name: string;
+  metric_value: any;
+  period_start: string;
+  period_end: string;
+  created_at: string;
+}
+
+export interface ScoutingTerritory {
+  id: string;
+  agency_id: string;
+  name: string;
+  boundary: any; // GeoJSON polygon
+  assigned_scout_id?: string;
+  color?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ScoutingTripLocation {
+  id: string;
+  name: string;
+  date?: string;
+  time?: string;
+  prospects_found?: number;
+  lat?: number;
+  lng?: number;
+}
+
+export type OfferStatus = "pending" | "sent" | "signed" | "declined" | "voided";
+
+export interface ScoutingTemplate {
+  id: string;
+  agency_id: string;
+  docuseal_template_id: number;
+  name: string;
+  description?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ScoutingOffer {
+  id: string;
+  prospect_id: string;
+  agency_id: string;
+  template_id: string;
+  docuseal_submission_id?: number;
+  document_name?: string;
+  status: OfferStatus;
+  signing_url?: string;
+  signed_document_url?: string;
+  sent_at?: string;
+  signed_at?: string;
+  created_at: string;
+  updated_at: string;
+
+  // Joined data
+  prospect?: Pick<ScoutingProspect, "full_name" | "email" | "status">;
+  template?: Pick<ScoutingTemplate, "name">;
 }
