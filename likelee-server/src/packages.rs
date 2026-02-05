@@ -839,10 +839,7 @@ pub async fn get_public_package(
                                 }
                             }
                         } else if let (Some(obj), Some(url)) = (asset.as_object_mut(), public_url) {
-                            obj.insert(
-                                "asset_url".to_string(),
-                                serde_json::Value::String(url),
-                            );
+                            obj.insert("asset_url".to_string(), serde_json::Value::String(url));
                         }
                     }
                 }
