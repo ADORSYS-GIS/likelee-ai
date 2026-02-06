@@ -158,12 +158,8 @@ import {
   markInvoicePaid,
   uploadAgencyFile,
   sendEmail,
-  getAgencyLicensingRequests,
   getAgencyActiveLicenses,
   getAgencyActiveLicensesStats,
-  updateAgencyLicensingRequestsStatus,
-  getAgencyLicensingRequestsPaySplit,
-  setAgencyLicensingRequestsPaySplit,
 } from "@/api/functions";
 import ClientCRMView from "@/components/crm/ClientCRMView";
 import * as crmApi from "@/api/crm";
