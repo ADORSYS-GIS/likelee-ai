@@ -51,6 +51,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { AssetSelector } from "./AssetSelector";
+import { ensureHexColor } from "@/utils/color";
 
 interface CreatePackageWizardProps {
   open: boolean;
@@ -426,7 +427,7 @@ export function CreatePackageWizard({
                           <div className="flex items-center gap-3 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm shadow-gray-100">
                             <input
                               type="color"
-                              value={formData.primary_color}
+                              value={ensureHexColor(formData.primary_color)}
                               onChange={(e) =>
                                 setFormData({
                                   ...formData,
@@ -444,7 +445,7 @@ export function CreatePackageWizard({
                           <div className="flex items-center gap-3 bg-white p-3 rounded-2xl border border-gray-100 shadow-sm shadow-gray-100">
                             <input
                               type="color"
-                              value={formData.secondary_color}
+                              value={ensureHexColor(formData.secondary_color, "#06B6D4")}
                               onChange={(e) =>
                                 setFormData({
                                   ...formData,

@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -158,9 +159,9 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
               <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight">
                 Select Assets for {talentName}
               </DialogTitle>
-              <p className="text-sm text-gray-500 font-medium mt-1">
+              <DialogDescription className="text-sm text-gray-500 font-medium mt-1">
                 Choose the best photos and videos to showcase in this package
-              </p>
+              </DialogDescription>
             </div>
             <div className="flex items-center gap-4">
               <input
@@ -254,7 +255,7 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
                             }
                           >
                             {deleteMutation.isPending &&
-                            deleteMutation.variables?.assetId === asset.id ? (
+                              deleteMutation.variables?.assetId === asset.id ? (
                               <Loader2 className="w-4 h-4 animate-spin" />
                             ) : (
                               <Trash2 className="w-4 h-4" />

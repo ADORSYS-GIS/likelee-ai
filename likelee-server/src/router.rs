@@ -167,6 +167,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::licensing_requests::update_status_bulk),
         )
         .route(
+            "/api/webhooks/licenseContract",
+            post(crate::license_submissions::handle_webhook),
+        )
+        .route(
             "/api/agency/licensing-requests/pay-split",
             get(crate::licensing_requests::get_pay_split)
                 .post(crate::licensing_requests::set_pay_split),

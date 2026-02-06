@@ -7,9 +7,10 @@ use axum::{
     http::StatusCode,
     Json,
 };
-// removed unused import
+use postgrest::Postgrest;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use tracing::{error, info};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct LicenseSubmission {
@@ -254,17 +255,13 @@ pub async fn preview(
         .or_else(|| license_template.start_date.clone())
         .unwrap_or_else(|| "-".to_string());
 
-    let custom_terms_extra = req
+    let combined_custom_terms = req
         .custom_terms
         .clone()
         .or_else(|| submission_data["custom_terms"].as_str().map(String::from))
+        .filter(|s| !s.trim().is_empty())
+        .or_else(|| license_template.custom_terms.clone())
         .unwrap_or_default();
-
-    let combined_custom_terms = format!(
-        "{}\n{}",
-        license_template.custom_terms.as_deref().unwrap_or_default(),
-        custom_terms_extra
-    );
 
     // 4. Determine DocuSeal template id
     let docuseal_template_id = req
@@ -457,7 +454,7 @@ pub async fn finalize(
         .or(license_template.start_date.as_deref())
         .unwrap_or("-");
 
-    let custom_terms = submission_data["custom_terms"].as_str().unwrap_or("");
+
     
     // Build fields array for pre-filling (DocuSeal API standard format)
     use crate::services::docuseal::SubmitterField;
@@ -531,7 +528,12 @@ pub async fn finalize(
         readonly: Some(true),
     });
     
-    let combined_terms = format!("{}\n{}", license_template.custom_terms.as_deref().unwrap_or_default(), custom_terms);
+    let combined_terms = submission_data["custom_terms"]
+        .as_str()
+        .filter(|s| !s.trim().is_empty())
+        .map(String::from)
+        .or_else(|| license_template.custom_terms.clone())
+        .unwrap_or_default();
     fields.push(SubmitterField {
         name: "Custom Terms".to_string(),
         default_value: Some(combined_terms),
@@ -1062,3 +1064,100 @@ pub async fn create_and_send(
     Ok(Json(submission.clone()))
 }
 
+
+#[derive(Debug, Deserialize)]
+pub struct DocuSealWebhookEvent {
+    pub event_type: String,
+    pub timestamp: String,
+    pub data: serde_json::Value,
+}
+
+/// POST /api/webhooks/license-contract
+pub async fn handle_webhook(
+    State(state): State<AppState>,
+    Json(payload): Json<DocuSealWebhookEvent>,
+) -> Result<axum::http::StatusCode, (axum::http::StatusCode, String)> {
+    info!(
+        event_type = %payload.event_type,
+        "Received DocuSeal licensing webhook"
+    );
+
+    let status_update = match payload.event_type.as_str() {
+        "submission.started" | "submission.opened" | "submission.viewed" | "form.started"
+        | "form.viewed" => Some("opened"),
+        "submission.completed" | "form.completed" => Some("completed"),
+        "submission.declined" | "form.declined" => Some("declined"),
+        _ => None,
+    };
+
+    if status_update.is_none() {
+        return Ok(axum::http::StatusCode::OK);
+    }
+
+    let new_status = status_update.unwrap();
+    let submission_id = payload.data["submission_id"]
+        .as_i64()
+        .or_else(|| payload.data["id"].as_i64())
+        .ok_or_else(|| {
+            error!("Missing submission id in licensing webhook payload");
+            (axum::http::StatusCode::BAD_REQUEST, "Missing submission id".to_string())
+        })?;
+
+    let pg = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
+        .insert_header("apikey", &state.supabase_service_key)
+        .insert_header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        );
+
+    // Update license_submissions
+    let sub_response = pg
+        .from("license_submissions")
+        .select("id")
+        .eq("docuseal_submission_id", submission_id.to_string())
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if sub_response.status().is_success() {
+        let sub_text = sub_response.text().await.map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let sub: serde_json::Value = serde_json::from_str(&sub_text).map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        
+        if let Some(sub_id) = sub["id"].as_str() {
+            let mut update_json = json!({ "status": new_status });
+            if new_status == "completed" {
+                update_json["signed_at"] = json!(chrono::Utc::now().to_rfc3339());
+                
+                // Extract signed document URL if available
+                if let Some(url) = payload.data["documents"]
+                    .as_array()
+                    .and_then(|docs| docs.first())
+                    .and_then(|doc| doc["url"].as_str()) {
+                    update_json["signed_document_url"] = json!(url);
+                }
+            }
+
+            let _ = pg.from("license_submissions")
+                .update(update_json.to_string())
+                .eq("id", sub_id)
+                .execute()
+                .await;
+
+            // Also update licensing_requests if it exists
+            let lr_status = match new_status {
+                "completed" => "approved",
+                "declined" => "rejected",
+                _ => new_status,
+            };
+            
+            let _ = pg.from("licensing_requests")
+                .update(json!({ "status": lr_status }).to_string())
+                .eq("submission_id", sub_id)
+                .execute()
+                .await;
+        }
+    }
+
+    Ok(axum::http::StatusCode::OK)
+}

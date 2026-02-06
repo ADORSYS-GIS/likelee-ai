@@ -1440,50 +1440,6 @@ pub async fn handle_webhook(
         }
     }
 
-    // 2. Fallback to license_submissions if not a scouting offer
-    let sub_response = pg
-        .from("license_submissions")
-        .select("id")
-        .eq("docuseal_submission_id", submission_id.to_string())
-        .single()
-        .execute()
-        .await;
-
-    if let Ok(resp) = sub_response {
-        if resp.status().is_success() {
-            let sub_body = resp.text().await.unwrap_or_default();
-            if let Ok(sub) = serde_json::from_str::<serde_json::Value>(&sub_body) {
-                if let Some(sub_id) = sub["id"].as_str() {
-                    let mut update_json = json!({ "status": new_status });
-                    if new_status == "completed" {
-                        update_json["signed_at"] = json!(chrono::Utc::now().to_rfc3339());
-                    }
-
-                    let _ = pg.from("license_submissions")
-                        .update(update_json.to_string())
-                        .eq("id", sub_id)
-                        .execute()
-                        .await;
-
-                    // Also update licensing_requests if it exists
-                    let lr_status = match new_status {
-                        "completed" => "approved",
-                        "declined" => "rejected",
-                        _ => new_status,
-                    };
-                    
-                    let _ = pg.from("licensing_requests")
-                        .update(json!({ "status": lr_status }).to_string())
-                        .eq("submission_id", sub_id)
-                        .execute()
-                        .await;
-                    
-                    return Ok(StatusCode::OK);
-                }
-            }
-        }
-    }
-
-    info!("No offer or submission found for submission_id: {}", submission_id);
+    info!("No offer found for submission_id: {}", submission_id);
     Ok(StatusCode::OK)
 }

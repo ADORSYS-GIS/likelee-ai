@@ -36,8 +36,10 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { ensureHexColor } from "@/utils/color";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -72,9 +74,9 @@ const InviteTeamMemberModal = ({
           <DialogTitle className="text-xl font-bold text-gray-900">
             Invite Team Member
           </DialogTitle>
-          <p className="text-sm text-gray-500 font-medium">
+          <DialogDescription className="text-sm text-gray-500 font-medium">
             Send an email invitation to join your agency team
-          </p>
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-6 py-4">
           <div className="space-y-2">
@@ -185,9 +187,9 @@ const EditPermissionsModal = ({
           <DialogTitle className="text-xl font-bold text-gray-900">
             Edit Permissions - {member.name}
           </DialogTitle>
-          <p className="text-sm text-gray-500 font-medium">
+          <DialogDescription className="text-sm text-gray-500 font-medium">
             Role: {member.role}
-          </p>
+          </DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto p-6 pt-2 space-y-8">
           {sections.map((section) => (
@@ -284,9 +286,9 @@ const ActivityLogModal = ({
           <DialogTitle className="text-xl font-bold text-gray-900">
             Activity Log - {member.name}
           </DialogTitle>
-          <p className="text-sm text-gray-500 font-medium">
+          <DialogDescription className="text-sm text-gray-500 font-medium">
             Recent actions and system events
-          </p>
+          </DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto p-6 pt-2 space-y-4">
           {activities.map((activity, idx) => (
@@ -583,7 +585,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
             : null;
           const recipientsObj =
             (data as any)?.recipients &&
-            typeof (data as any).recipients === "object"
+              typeof (data as any).recipients === "object"
               ? (data as any).recipients
               : null;
 
@@ -691,7 +693,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                 : prev.currencyDisplayFormat,
             defaultTaxRatePct:
               typeof d.default_tax_rate === "number" ||
-              typeof d.default_tax_rate === "string"
+                typeof d.default_tax_rate === "string"
                 ? String(d.default_tax_rate)
                 : prev.defaultTaxRatePct,
             taxDisplayName:
@@ -708,7 +710,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                 : prev.defaultPaymentTerms,
             latePaymentFeePct:
               typeof d.late_payment_fee === "number" ||
-              typeof d.late_payment_fee === "string"
+                typeof d.late_payment_fee === "string"
                 ? String(d.late_payment_fee)
                 : prev.latePaymentFeePct,
             invoicePrefix:
@@ -991,12 +993,12 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
         return prev.map((t) =>
           t.template_key === editingTemplateKey
             ? {
-                ...t,
-                name,
-                subject,
-                body,
-                is_active: emailTemplateDraft.is_active,
-              }
+              ...t,
+              name,
+              subject,
+              body,
+              is_active: emailTemplateDraft.is_active,
+            }
             : t,
         );
       }
@@ -1267,11 +1269,10 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-lg transition-all whitespace-nowrap ${
-                activeTab === tab
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-lg transition-all whitespace-nowrap ${activeTab === tab
                   ? "bg-white text-gray-900 shadow-sm"
                   : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
-              }`}
+                }`}
             >
               {tab}
             </button>
@@ -1294,13 +1295,13 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                   {(kycStatus === "approved" ||
                     kycStatus === "verified" ||
                     kycStatus === "active") && (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 rounded-full border border-green-100 shadow-sm animate-in fade-in zoom-in-95 duration-500">
-                      <BadgeCheck className="w-3.5 h-3.5 text-green-600" />
-                      <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider">
-                        Verified
-                      </span>
-                    </div>
-                  )}
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 rounded-full border border-green-100 shadow-sm animate-in fade-in zoom-in-95 duration-500">
+                        <BadgeCheck className="w-3.5 h-3.5 text-green-600" />
+                        <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider">
+                          Verified
+                        </span>
+                      </div>
+                    )}
                 </div>
               </div>
 
@@ -1520,7 +1521,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                       <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-gray-200 shadow-sm shrink-0 overflow-hidden">
                         <input
                           type="color"
-                          value={primaryColor}
+                          value={ensureHexColor(primaryColor, "#4F46E5")}
                           onChange={(e) => setPrimaryColor(e.target.value)}
                           className="absolute inset-0 w-full h-full cursor-pointer"
                           style={{
@@ -1552,7 +1553,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                       <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-gray-200 shadow-sm shrink-0 overflow-hidden">
                         <input
                           type="color"
-                          value={secondaryColor}
+                          value={ensureHexColor(secondaryColor, "#10B981")}
                           onChange={(e) => setSecondaryColor(e.target.value)}
                           className="absolute inset-0 w-full h-full cursor-pointer"
                           style={{
@@ -2039,12 +2040,12 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                               prev.map((p) =>
                                 p.key === pref.key
                                   ? {
-                                      ...p,
-                                      channels: {
-                                        ...p.channels,
-                                        email: !!checked,
-                                      },
-                                    }
+                                    ...p,
+                                    channels: {
+                                      ...p.channels,
+                                      email: !!checked,
+                                    },
+                                  }
                                   : p,
                               ),
                             )
