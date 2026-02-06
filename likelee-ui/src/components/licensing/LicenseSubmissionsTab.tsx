@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/components/ui/use-toast";
-import { RefreshCw, Archive, CheckCircle, Clock, AlertTriangle, XCircle, Mail, ExternalLink, Eye } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { RefreshCw, Archive, CheckCircle, Clock, AlertTriangle, XCircle, Mail, ExternalLink, Eye, Download, Info } from "lucide-react";
 import { format } from "date-fns";
 
 export const LicenseSubmissionsTab = () => {
@@ -45,7 +46,8 @@ export const LicenseSubmissionsTab = () => {
         }
     });
 
-    const getStatusBadge = (status: string) => {
+    const getStatusBadge = (sub: LicenseSubmission) => {
+        const status = sub.status;
         switch (status.toLowerCase()) {
             case "completed":
             case "signed":
@@ -55,7 +57,21 @@ export const LicenseSubmissionsTab = () => {
             case "opened":
                 return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200"><ExternalLink className="w-3 h-3 mr-1" /> Opened</Badge>;
             case "declined":
-                return <Badge className="bg-red-100 text-red-800 border-red-200"><XCircle className="w-3 h-3 mr-1" /> Declined</Badge>;
+                return (
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger>
+                                <Badge className="bg-red-100 text-red-800 border-red-200 cursor-help"><XCircle className="w-3 h-3 mr-1" /> Declined</Badge>
+                            </TooltipTrigger>
+                            {sub.decline_reason && (
+                                <TooltipContent className="max-w-[300px]">
+                                    <p className="font-semibold mb-1">Reason:</p>
+                                    <p>{sub.decline_reason}</p>
+                                </TooltipContent>
+                            )}
+                        </Tooltip>
+                    </TooltipProvider>
+                );
             case "expired":
                 return <Badge className="bg-gray-100 text-gray-800 border-gray-200"><Clock className="w-3 h-3 mr-1" /> Expired</Badge>;
             default:
@@ -110,13 +126,18 @@ export const LicenseSubmissionsTab = () => {
                                                 </div>
                                             </TableCell>
                                             <TableCell>{sub.template_name}</TableCell>
-                                            <TableCell>{getStatusBadge(sub.status)}</TableCell>
+                                            <TableCell>{getStatusBadge(sub)}</TableCell>
                                             <TableCell className="text-sm text-muted-foreground">
-                                                {format(new Date(sub.sent_at), "MMM d, yyyy")}
+                                                {format(new Date(sub.sent_at || sub.created_at), "MMM d, yyyy")}
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex gap-2">
-                                                    {sub.status !== 'completed' && (
+                                                    {sub.signed_document_url && (
+                                                        <Button variant="ghost" size="icon" title="Download Contract" onClick={() => window.open(sub.signed_document_url, '_blank')}>
+                                                            <Download className="h-4 w-4 text-gray-500 hover:text-green-600" />
+                                                        </Button>
+                                                    )}
+                                                    {sub.status !== 'completed' && sub.status !== 'signed' && (
                                                         <Button variant="ghost" size="icon" title="Resend Email" onClick={() => resendMutation.mutate(sub.id)}>
                                                             <RefreshCw className="h-4 w-4 text-gray-500 hover:text-blue-600" />
                                                         </Button>
