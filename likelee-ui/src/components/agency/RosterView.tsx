@@ -41,6 +41,7 @@ import CompCardModal from "./CompCardModal";
 import {
   createTalentDigitals,
   getAgencyDigitals,
+  getAgencyPayoutsAccountStatus,
   getTalentDigitals,
   sendCoreEmail,
 } from "@/api/functions";
@@ -68,6 +69,12 @@ interface RosterViewProps {
   earnings30dTotalCents?: number;
   earningsPrev30dTotalCents?: number;
   agencyName: string;
+  agencyEmail?: string;
+  agencyWebsite?: string;
+  logoUrl?: string;
+  kycStatus?: string | null;
+  onEditProfile?: () => void;
+  onViewMarketplace?: () => void;
   seatsLimit: number;
   isLoading?: boolean;
   onRosterChanged?: () => void;
@@ -88,6 +95,12 @@ const RosterView = ({
   earnings30dTotalCents = 0,
   earningsPrev30dTotalCents = 0,
   agencyName,
+  agencyEmail,
+  agencyWebsite,
+  logoUrl,
+  kycStatus,
+  onEditProfile,
+  onViewMarketplace,
   seatsLimit,
   isLoading = false,
   onRosterChanged,
@@ -137,6 +150,37 @@ const RosterView = ({
     tattoos: "any",
     piercings: "any",
   };
+
+  const [stripeStatusLoading, setStripeStatusLoading] = useState(false);
+  const [stripeConnected, setStripeConnected] = useState<boolean | null>(null);
+  const [stripeReady, setStripeReady] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setStripeStatusLoading(true);
+      try {
+        const resp = await getAgencyPayoutsAccountStatus();
+        const data = (resp as any)?.data ?? resp;
+        const connected = Boolean((data as any)?.connected);
+        const ready = Boolean(
+          (data as any)?.payouts_enabled || (data as any)?.transfers_enabled,
+        );
+        if (!mounted) return;
+        setStripeConnected(connected);
+        setStripeReady(ready);
+      } catch {
+        if (!mounted) return;
+        setStripeConnected(null);
+        setStripeReady(null);
+      } finally {
+        if (mounted) setStripeStatusLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const [advancedFilters, setAdvancedFilters] = useState(
     defaultAdvancedFilters,
@@ -787,33 +831,48 @@ const RosterView = ({
       <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex items-start gap-4">
-            <div className="w-16 h-16 bg-white border border-gray-200 rounded-lg flex items-center justify-center p-2 shadow-sm">
-              <span className="font-serif text-2xl font-bold text-gray-900">
-                {agencyName.substring(0, 2).toUpperCase()}
-              </span>
+            <div className="w-16 h-16 bg-white border border-gray-200 rounded-lg flex items-center justify-center p-2 shadow-sm overflow-hidden">
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt={agencyName}
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <span className="font-serif text-2xl font-bold text-gray-900">
+                  {String(agencyName).substring(0, 2).toUpperCase()}
+                </span>
+              )}
             </div>
             <div>
               <div className="flex items-center gap-3">
                 <h1 className="text-2xl font-bold text-gray-900">
                   {agencyName}
                 </h1>
-                <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">
-                  <CheckCircle2 className="w-3 h-3" />
-                  Verified Agency
-                </div>
-                <div className="bg-blue-600 text-white px-2 py-0.5 rounded text-xs font-bold">
-                  Marketplace: Public
-                </div>
+                {kycStatus === "approved" && (
+                  <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Verified Agency
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-4 mt-2 text-sm text-gray-500 font-medium">
-                <span className="flex items-center gap-1">
-                  <MapPin className="w-4 h-4 text-gray-400" />
-                  U.S.
-                </span>
-                <span className="flex items-center gap-1">
-                  <Globe className="w-4 h-4 text-gray-400" />
-                  https://cmmodels.com/
-                </span>
+                {!!agencyEmail && (
+                  <span className="flex items-center gap-1 truncate">
+                    <span className="truncate">{agencyEmail}</span>
+                  </span>
+                )}
+                {!!agencyWebsite && (
+                  <a
+                    className="flex items-center gap-1 truncate hover:underline"
+                    href={agencyWebsite}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <Globe className="w-4 h-4 text-gray-400" />
+                    <span className="truncate">{agencyWebsite}</span>
+                  </a>
+                )}
               </div>
             </div>
           </div>
@@ -821,6 +880,8 @@ const RosterView = ({
             <Button
               variant="outline"
               className="text-gray-700 border-gray-300 gap-2"
+              onClick={() => onEditProfile?.()}
+              disabled={!onEditProfile}
             >
               <Pencil className="w-4 h-4" />
               Edit Profile
@@ -828,6 +889,8 @@ const RosterView = ({
             <Button
               variant="outline"
               className="text-gray-700 border-gray-300 gap-2"
+              onClick={() => onViewMarketplace?.()}
+              disabled={!onViewMarketplace}
             >
               <Eye className="w-4 h-4" />
               View Marketplace
@@ -839,12 +902,20 @@ const RosterView = ({
 
         <div className="flex flex-wrap gap-8 text-sm text-gray-600">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-green-500" />
-            <span className="font-medium">Stripe Connected</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-green-500" />
-            <span className="font-medium">ElevenLabs Connected</span>
+            <ShieldCheck
+              className={`w-4 h-4 ${
+                stripeReady ? "text-green-500" : "text-gray-300"
+              }`}
+            />
+            <span className="font-medium">
+              {stripeStatusLoading
+                ? "Stripe status"
+                : stripeConnected
+                  ? stripeReady
+                    ? "Stripe Connected"
+                    : "Stripe Connected (setup incomplete)"
+                  : "Stripe Not Connected"}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-gray-400" />
