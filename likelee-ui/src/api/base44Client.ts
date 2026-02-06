@@ -123,8 +123,8 @@ export const base44 = {
     const {
       data: { session },
     } = supabase
-      ? await supabase.auth.getSession()
-      : { data: { session: null } };
+        ? await supabase.auth.getSession()
+        : { data: { session: null } };
     const token = session?.access_token;
 
     const isForm = typeof FormData !== "undefined" && data instanceof FormData;
@@ -174,10 +174,7 @@ export const base44 = {
       const txt = await res.text();
       throw new Error(`DELETE ${full} failed: ${res.status} ${txt}`);
     }
-<<<<<<< HEAD
-=======
 
->>>>>>> origin/main
     if (res.status === 204) {
       return {} as T;
     }
