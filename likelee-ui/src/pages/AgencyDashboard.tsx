@@ -12102,9 +12102,10 @@ const ActiveLicensesView = () => {
                       {lic.days_left_label}
                     </p>
                   </td>
-                  <td className="px-6 py-8">
                     <p className="text-xs font-medium text-gray-600 max-w-[140px] leading-relaxed">
-                      {(lic.usage_scope || []).join(", ")}
+                      {Array.isArray(lic.usage_scope)
+                        ? lic.usage_scope.join(", ")
+                        : String(lic.usage_scope || "")}
                     </p>
                   </td>
                   <td className="px-6 py-8">
@@ -12152,7 +12153,7 @@ const ActiveLicensesView = () => {
         onClose={() => setIsDetailsOpen(false)}
         onRenew={handleRenew}
       />
-    </div>
+    </div >
   );
 };
 
