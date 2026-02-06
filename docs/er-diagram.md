@@ -481,3 +481,21 @@ erDiagram
   AGENCY_INVOICES ||--o{ AGENCY_INVOICE_ITEMS : invoice_id
   AGENCY_INVOICES ||--o{ AGENCY_INVOICE_EXPENSES : invoice_id
 ```
+
+## Agency Commission Settings Addendum (0014)
+
+```mermaid
+erDiagram
+  AGENCIES {
+    uuid id PK
+  }
+
+  AGENCY_COMMISSION_SETTINGS {
+    uuid agency_id PK "REFERENCES agencies(id)"
+    integer default_commission_bps
+    jsonb division_commissions
+    timestamptz updated_at
+  }
+
+  AGENCIES ||--|| AGENCY_COMMISSION_SETTINGS : agency_id
+```

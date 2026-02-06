@@ -48,6 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const [initialized, setInitialized] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<any | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
 
   const fetchProfile = async (
@@ -167,9 +168,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      (event, _session) => {
+        const session = _session;
         const currentUser = session?.user ?? null;
         setUser(currentUser);
+        setSession(session);
 
         if (currentUser && (currentUser.email_confirmed_at || session)) {
           // Prevent infinite loop: only fetch if profile is not already loaded or if user changed
@@ -191,6 +194,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data }) => {
       const currentUser = data.session?.user ?? null;
       setUser(currentUser);
+      setSession(data.session);
       // Avoid double-fetching profile; rely on onAuthStateChange handler above
       setInitialized(true);
     });
@@ -208,7 +212,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       authenticated: !!user,
       user,
       profile,
-      token: undefined,
+      token: session?.access_token,
       login: async (email, password) => {
         if (!supabase) throw new Error("Supabase not configured");
         const { error } = await supabase.auth.signInWithPassword({

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Folder,
   FolderPlus,
@@ -48,6 +48,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  createAgencyStorageFolder,
+  deleteAgencyStorageFile,
+  getAgencyStorageFileSignedUrl,
+  getAgencyStorageUsage,
+  listAgencyStorageFilesPaged,
+  listAgencyStorageFoldersPaged,
+  uploadAgencyStorageFile,
+} from "@/api/functions";
+import { useToast } from "@/components/ui/use-toast";
 
 interface FileItem {
   id: string;
@@ -67,6 +77,61 @@ interface FolderItem {
   totalSize: string;
   type: string;
 }
+
+type StorageUsage = {
+  used_bytes: number;
+  limit_bytes: number;
+};
+
+type StorageFolder = {
+  id: string;
+  name: string;
+  parent_id: string | null;
+  created_at: string;
+};
+
+type StorageFile = {
+  id: string;
+  file_name: string;
+  folder_id: string | null;
+  size_bytes: number;
+  mime_type: string | null;
+  created_at: string;
+};
+
+const isPreviewableImage = (mimeType: string | null) => {
+  if (!mimeType) return false;
+  return mimeType.toLowerCase().startsWith("image/");
+};
+
+const fileExtension = (name: string) => {
+  const base = name.split("?")[0];
+  const idx = base.lastIndexOf(".");
+  if (idx === -1) return "";
+  return base.slice(idx + 1).toLowerCase();
+};
+
+const bytesToHuman = (bytes: number) => {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.min(
+    units.length - 1,
+    Math.floor(Math.log(bytes) / Math.log(1024)),
+  );
+  const v = bytes / Math.pow(1024, i);
+  const rounded = i === 0 ? Math.round(v) : Math.round(v * 10) / 10;
+  return `${rounded} ${units[i]}`;
+};
+
+const isoToShortDate = (iso: string) => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
 
 const MOCK_FOLDERS: FolderItem[] = [
   {
@@ -174,8 +239,12 @@ const StorageUsageCard = () => (
       <p className="text-sm text-gray-500 font-medium">
         37.6 GB remaining • Professional Plan
       </p>
-      <Button variant="link" className="text-indigo-600 font-bold p-0 h-auto">
-        Upgrade Plan
+      <Button
+        variant="link"
+        className="text-indigo-600 font-bold p-0 h-auto"
+        asChild
+      >
+        <a href="/agencysubscribe">Upgrade Plan</a>
       </Button>
     </div>
   </Card>
@@ -425,9 +494,15 @@ const FileRow = ({
 const NewFolderModal = ({
   isOpen,
   onClose,
+  folderName,
+  onFolderNameChange,
+  onCreate,
 }: {
   isOpen: boolean;
   onClose: () => void;
+  folderName: string;
+  onFolderNameChange: (v: string) => void;
+  onCreate: () => void;
 }) => (
   <Dialog open={isOpen} onOpenChange={onClose}>
     <DialogContent className="sm:max-w-[425px] rounded-2xl">
@@ -445,6 +520,8 @@ const NewFolderModal = ({
           <Input
             placeholder="e.g., Q1 2024 Campaigns"
             className="h-11 rounded-xl border-gray-200"
+            value={folderName}
+            onChange={(e) => onFolderNameChange(e.target.value)}
           />
         </div>
         <div className="space-y-2">
@@ -472,7 +549,11 @@ const NewFolderModal = ({
         >
           Cancel
         </Button>
-        <Button className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl">
+        <Button
+          className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl"
+          onClick={onCreate}
+          disabled={!folderName.trim()}
+        >
           Create Folder
         </Button>
       </DialogFooter>
@@ -791,6 +872,7 @@ const ShareFileModal = ({
 };
 
 const FileStorageView = () => {
+  const { toast } = useToast();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchTerm, setSearchTerm] = useState("");
   const [isNewFolderModalOpen, setIsNewFolderModalOpen] = useState(false);
@@ -800,16 +882,265 @@ const FileStorageView = () => {
   const [selectedFileForShare, setSelectedFileForShare] =
     useState<FileItem | null>(null);
 
+  const [usage, setUsage] = useState<StorageUsage | null>(null);
+  const [folders, setFolders] = useState<StorageFolder[]>([]);
+  const [files, setFiles] = useState<StorageFile[]>([]);
+  const [thumbnailUrlByFileId, setThumbnailUrlByFileId] = useState<
+    Record<string, string>
+  >({});
+  const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMoreFolders, setIsLoadingMoreFolders] = useState(false);
+  const [isLoadingMoreFiles, setIsLoadingMoreFiles] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const FOLDERS_PAGE_SIZE = 5;
+  const FILES_PAGE_SIZE = 10;
+  const [foldersOffset, setFoldersOffset] = useState(0);
+  const [filesOffset, setFilesOffset] = useState(0);
+  const [hasMoreFolders, setHasMoreFolders] = useState(true);
+  const [hasMoreFiles, setHasMoreFiles] = useState(true);
+
+  const folderNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    folders.forEach((f) => m.set(f.id, f.name));
+    return m;
+  }, [folders]);
+
+  const filteredFiles = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return files;
+    return files.filter((f) => f.file_name.toLowerCase().includes(q));
+  }, [files, searchTerm]);
+
+  useEffect(() => {
+    let canceled = false;
+    const loadThumbnails = async () => {
+      const previewable = filteredFiles.filter(
+        (f) => isPreviewableImage(f.mime_type) && !thumbnailUrlByFileId[f.id],
+      );
+
+      if (previewable.length === 0) return;
+
+      const results = await Promise.allSettled(
+        previewable.map(async (f) => {
+          const resp: any = await getAgencyStorageFileSignedUrl(f.id);
+          const url = resp?.url;
+          if (!url) throw new Error("missing signed url");
+          return { fileId: f.id, url: String(url) };
+        }),
+      );
+
+      if (canceled) return;
+      setThumbnailUrlByFileId((prev) => {
+        const next = { ...prev };
+        results.forEach((r) => {
+          if (r.status !== "fulfilled") return;
+          next[r.value.fileId] = r.value.url;
+        });
+        return next;
+      });
+    };
+
+    loadThumbnails();
+    return () => {
+      canceled = true;
+    };
+  }, [filteredFiles, thumbnailUrlByFileId]);
+
+  const loadInitial = async (folderId: string | null) => {
+    setIsLoading(true);
+    try {
+      setFolders([]);
+      setFiles([]);
+      setFoldersOffset(0);
+      setFilesOffset(0);
+      setHasMoreFolders(true);
+      setHasMoreFiles(true);
+
+      const [u, f, fl] = await Promise.all([
+        getAgencyStorageUsage(),
+        listAgencyStorageFoldersPaged({ limit: FOLDERS_PAGE_SIZE, offset: 0 }),
+        listAgencyStorageFilesPaged({
+          folder_id: folderId || undefined,
+          limit: FILES_PAGE_SIZE,
+          offset: 0,
+        }),
+      ]);
+      const foldersPage = ((f as any) || []) as StorageFolder[];
+      const filesPage = ((fl as any) || []) as StorageFile[];
+      setUsage(u as any);
+      setFolders(foldersPage);
+      setFiles(filesPage);
+      setFoldersOffset(foldersPage.length);
+      setFilesOffset(filesPage.length);
+      setHasMoreFolders(foldersPage.length === FOLDERS_PAGE_SIZE);
+      setHasMoreFiles(filesPage.length === FILES_PAGE_SIZE);
+    } catch (e: any) {
+      toast({
+        title: "Failed to load storage",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadInitial(activeFolderId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeFolderId]);
+
+  const loadMoreFolders = async () => {
+    if (isLoadingMoreFolders || !hasMoreFolders) return;
+    setIsLoadingMoreFolders(true);
+    try {
+      const page = (await listAgencyStorageFoldersPaged({
+        limit: FOLDERS_PAGE_SIZE,
+        offset: foldersOffset,
+      })) as any;
+      const rows = (page || []) as StorageFolder[];
+      setFolders((prev) => [...prev, ...rows]);
+      setFoldersOffset((prev) => prev + rows.length);
+      setHasMoreFolders(rows.length === FOLDERS_PAGE_SIZE);
+    } catch (e: any) {
+      toast({
+        title: "Failed to load more folders",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+    } finally {
+      setIsLoadingMoreFolders(false);
+    }
+  };
+
+  const loadMoreFiles = async () => {
+    if (isLoadingMoreFiles || !hasMoreFiles) return;
+    setIsLoadingMoreFiles(true);
+    try {
+      const page = (await listAgencyStorageFilesPaged({
+        folder_id: activeFolderId || undefined,
+        limit: FILES_PAGE_SIZE,
+        offset: filesOffset,
+      })) as any;
+      const rows = (page || []) as StorageFile[];
+      setFiles((prev) => [...prev, ...rows]);
+      setFilesOffset((prev) => prev + rows.length);
+      setHasMoreFiles(rows.length === FILES_PAGE_SIZE);
+    } catch (e: any) {
+      toast({
+        title: "Failed to load more files",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+    } finally {
+      setIsLoadingMoreFiles(false);
+    }
+  };
+
+  const onCreateFolder = async () => {
+    const name = newFolderName.trim();
+    if (!name) return;
+    try {
+      await createAgencyStorageFolder({
+        name,
+        parent_id: null,
+      });
+      setNewFolderName("");
+      setIsNewFolderModalOpen(false);
+      await loadInitial(activeFolderId);
+      toast({
+        title: "Folder created",
+        description: name,
+      });
+    } catch (e: any) {
+      toast({
+        title: "Failed to create folder",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+    }
+  };
+
+  const onPickFiles = () => {
+    fileInputRef.current?.click();
+  };
+
+  const onUploadFiles = async (picked: FileList | null) => {
+    if (!picked || picked.length === 0) return;
+    setIsUploading(true);
+    try {
+      for (const file of Array.from(picked)) {
+        await uploadAgencyStorageFile({
+          file,
+          folder_id: activeFolderId || undefined,
+        });
+      }
+      await loadInitial(activeFolderId);
+      toast({
+        title: "Upload complete",
+        description: `${picked.length} file(s) uploaded.`,
+      });
+    } catch (e: any) {
+      const msg = String(e?.message || e);
+      toast({
+        title: "Upload failed",
+        description: msg.includes("storage_quota_exceeded")
+          ? "Storage quota exceeded. Upgrade your plan to increase storage."
+          : msg,
+        variant: "destructive" as any,
+      });
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const onDownloadFile = async (fileId: string) => {
+    try {
+      const resp: any = await getAgencyStorageFileSignedUrl(fileId);
+      const url = resp?.url;
+      if (!url) throw new Error("missing signed url");
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (e: any) {
+      toast({
+        title: "Failed to download file",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+    }
+  };
+
+  const onDeleteFile = async (fileId: string) => {
+    try {
+      await deleteAgencyStorageFile(fileId);
+      await loadInitial(activeFolderId);
+      toast({
+        title: "File deleted",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Failed to delete file",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+    }
+  };
+
+  const usagePct = useMemo(() => {
+    if (!usage) return 0;
+    if (usage.limit_bytes <= 0) return 0;
+    return Math.min(
+      100,
+      Math.max(0, (usage.used_bytes / usage.limit_bytes) * 100),
+    );
+  }, [usage]);
+
   return (
     <div className="space-y-8">
-      {/* Demo Mode Alert */}
-      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-center justify-center gap-3 shadow-sm">
-        <p className="text-sm font-bold text-blue-800">
-          <span className="font-black">Demo Mode:</span> This is a preview of
-          the Agency Dashboard for talent and modeling agencies.
-        </p>
-      </div>
-
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
@@ -830,16 +1161,61 @@ const FileStorageView = () => {
             New Folder
           </Button>
           <Button
-            onClick={() => setIsUploadModalOpen(true)}
+            onClick={onPickFiles}
+            disabled={isUploading}
             className="h-9 px-3 sm:h-11 sm:px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2 text-xs sm:text-sm"
           >
             <Upload className="w-4 h-4 sm:w-5 sm:h-5" />
-            Upload Files
+            {isUploading ? "Uploading..." : "Upload Files"}
           </Button>
         </div>
       </div>
 
-      <StorageUsageCard />
+      <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center gap-2">
+            <HardDrive className="w-5 h-5 text-indigo-600" />
+            <span className="text-base font-bold text-gray-900">
+              Storage Usage
+            </span>
+          </div>
+          <span className="text-sm font-bold text-gray-900">
+            <span className="text-indigo-600">
+              {bytesToHuman(usage?.used_bytes || 0)}
+            </span>{" "}
+            of {bytesToHuman(usage?.limit_bytes || 0)} used
+          </span>
+        </div>
+        <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mb-3">
+          <div
+            className="h-full bg-indigo-600 rounded-full"
+            style={{ width: `${usagePct}%` }}
+          />
+        </div>
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-gray-500 font-medium">
+            {bytesToHuman(
+              Math.max(0, (usage?.limit_bytes || 0) - (usage?.used_bytes || 0)),
+            )}{" "}
+            remaining
+          </p>
+          <Button
+            variant="link"
+            className="text-indigo-600 font-bold p-0 h-auto"
+            asChild
+          >
+            <a href="/agencysubscribe">Upgrade Plan</a>
+          </Button>
+        </div>
+      </Card>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={(e) => onUploadFiles(e.target.files)}
+      />
 
       <div className="space-y-4">
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -853,32 +1229,20 @@ const FileStorageView = () => {
             />
           </div>
           <div className="flex gap-3 w-full md:w-auto">
-            <Select defaultValue="name-asc">
-              <SelectTrigger className="h-12 bg-white border-gray-100 rounded-xl text-base flex-1 md:w-48">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="name-asc">Name (A-Z)</SelectItem>
-                <SelectItem value="name-desc">Name (Z-A)</SelectItem>
-                <SelectItem value="date-desc">Date (Newest)</SelectItem>
-                <SelectItem value="date-asc">Date (Oldest)</SelectItem>
-                <SelectItem value="size-desc">Size (Largest)</SelectItem>
-              </SelectContent>
-            </Select>
             <div className="flex bg-gray-100 p-1 rounded-xl">
               <Button
-                variant={viewMode === "grid" ? "white" : "ghost"}
+                variant={viewMode === "grid" ? "secondary" : "ghost"}
                 size="sm"
-                className={`h-10 px-4 rounded-lg font-bold ${viewMode === "grid" ? "shadow-sm" : "text-gray-500"}`}
+                className={`h-10 px-4 rounded-lg font-bold ${viewMode === "grid" ? "shadow-sm bg-white" : "text-gray-500"}`}
                 onClick={() => setViewMode("grid")}
               >
                 <Grid className="w-4 h-4 mr-2" />
                 Grid
               </Button>
               <Button
-                variant={viewMode === "list" ? "white" : "ghost"}
+                variant={viewMode === "list" ? "secondary" : "ghost"}
                 size="sm"
-                className={`h-10 px-4 rounded-lg font-bold ${viewMode === "list" ? "shadow-sm" : "text-gray-500"}`}
+                className={`h-10 px-4 rounded-lg font-bold ${viewMode === "list" ? "shadow-sm bg-white" : "text-gray-500"}`}
                 onClick={() => setViewMode("list")}
               >
                 <List className="w-4 h-4 mr-2" />
@@ -890,50 +1254,189 @@ const FileStorageView = () => {
       </div>
 
       <div className="space-y-6">
-        <h3 className="text-lg font-bold text-gray-900">Folders</h3>
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-bold text-gray-900">Folders</h3>
+          <Button
+            variant="ghost"
+            className="font-bold text-gray-600"
+            onClick={() => setActiveFolderId(null)}
+          >
+            All
+          </Button>
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
-          {MOCK_FOLDERS.map((folder) => (
-            <FolderCard key={folder.id} folder={folder} />
+          {folders.map((folder) => (
+            <div key={folder.id} onClick={() => setActiveFolderId(folder.id)}>
+              <FolderCard
+                folder={{
+                  id: folder.id,
+                  name: folder.name,
+                  fileCount: files.filter((f) => f.folder_id === folder.id)
+                    .length,
+                  totalSize: "",
+                  type: "others",
+                }}
+              />
+            </div>
           ))}
+        </div>
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            className="h-10 px-5 rounded-xl font-bold"
+            onClick={loadMoreFolders}
+            disabled={!hasMoreFolders || isLoadingMoreFolders}
+          >
+            {isLoadingMoreFolders
+              ? "Loading..."
+              : hasMoreFolders
+                ? "Load more folders"
+                : "No more folders"}
+          </Button>
         </div>
       </div>
 
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h3 className="text-lg font-bold text-gray-900">Recent Files</h3>
+          <h3 className="text-lg font-bold text-gray-900">Files</h3>
           <span className="text-sm text-gray-500 font-medium">
-            {MOCK_FILES.length} files
+            {filteredFiles.length} files
           </span>
         </div>
 
-        {viewMode === "grid" ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
-            {MOCK_FILES.map((file) => (
-              <FileCard
-                key={file.id}
-                file={file}
-                onPreview={setSelectedFileForPreview}
-                onShare={setSelectedFileForShare}
-              />
+        {isLoading ? (
+          <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
+            <p className="text-sm font-bold text-gray-700">Loading...</p>
+          </Card>
+        ) : viewMode === "list" ? (
+          <div className="space-y-3">
+            {filteredFiles.map((f) => (
+              <div
+                key={f.id}
+                className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-gray-900 truncate">
+                    {f.file_name}
+                  </p>
+                  <p className="text-xs text-gray-500 font-medium">
+                    {bytesToHuman(f.size_bytes)} •{" "}
+                    {isoToShortDate(f.created_at)}
+                    {f.folder_id
+                      ? ` • ${folderNameById.get(f.folder_id) || "Folder"}`
+                      : ""}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    variant="outline"
+                    className="h-9 px-3 rounded-xl font-bold"
+                    onClick={() => onDownloadFile(f.id)}
+                  >
+                    Download
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-9 px-3 rounded-xl font-bold text-red-600 border-red-200"
+                    onClick={() => onDeleteFile(f.id)}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </div>
             ))}
           </div>
         ) : (
-          <div className="space-y-3">
-            {MOCK_FILES.map((file) => (
-              <FileRow
-                key={file.id}
-                file={file}
-                onPreview={setSelectedFileForPreview}
-                onShare={setSelectedFileForShare}
-              />
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+            {filteredFiles.map((f) => (
+              <Card
+                key={f.id}
+                className="p-4 bg-white border border-gray-100 rounded-2xl"
+              >
+                <div className="aspect-video bg-gray-50 rounded-xl overflow-hidden mb-3 flex items-center justify-center">
+                  {thumbnailUrlByFileId[f.id] ? (
+                    <img
+                      src={thumbnailUrlByFileId[f.id]}
+                      alt={f.file_name}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center gap-1.5">
+                      <File
+                        className={`w-8 h-8 ${isPreviewableImage(f.mime_type) ? "text-emerald-500" : "text-gray-400"}`}
+                      />
+                      <span className="text-[10px] font-black uppercase text-gray-400">
+                        {fileExtension(f.file_name) || "file"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-gray-900 truncate">
+                      {f.file_name}
+                    </p>
+                    <p className="text-xs text-gray-500 font-medium mt-1">
+                      {bytesToHuman(f.size_bytes)}
+                    </p>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-8 h-8 rounded-xl"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className="w-40 rounded-xl"
+                    >
+                      <DropdownMenuItem
+                        className="font-bold text-gray-700 cursor-pointer"
+                        onClick={() => onDownloadFile(f.id)}
+                      >
+                        <Download className="w-4 h-4 mr-2" /> Download
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="font-bold text-red-600 cursor-pointer"
+                        onClick={() => onDeleteFile(f.id)}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </Card>
             ))}
           </div>
         )}
+
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            className="h-10 px-5 rounded-xl font-bold"
+            onClick={loadMoreFiles}
+            disabled={!hasMoreFiles || isLoadingMoreFiles || isLoading}
+          >
+            {isLoadingMoreFiles
+              ? "Loading..."
+              : hasMoreFiles
+                ? "Load more files"
+                : "No more files"}
+          </Button>
+        </div>
       </div>
 
       <NewFolderModal
         isOpen={isNewFolderModalOpen}
         onClose={() => setIsNewFolderModalOpen(false)}
+        folderName={newFolderName}
+        onFolderNameChange={setNewFolderName}
+        onCreate={onCreateFolder}
       />
       <UploadFilesModal
         isOpen={isUploadModalOpen}

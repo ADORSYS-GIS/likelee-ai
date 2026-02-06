@@ -112,7 +112,44 @@ export const base44 = {
     }
     return (await res.json()) as T;
   },
-  async delete<T = any>(url: string, config?: RequestConfig): Promise<T> {
+  async put<T = any>(
+    url: string,
+    data?: any,
+    config?: RequestConfig,
+  ): Promise<T> {
+    const full = buildUrl(API_BASE, url, config?.params);
+
+    // Get token from Supabase
+    const {
+      data: { session },
+    } = supabase
+      ? await supabase.auth.getSession()
+      : { data: { session: null } };
+    const token = session?.access_token;
+
+    const isForm = typeof FormData !== "undefined" && data instanceof FormData;
+    const headers = {
+      ...(isForm ? {} : { "Content-Type": "application/json" }),
+      ...(config?.headers || {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+
+    const body = isForm
+      ? data
+      : data !== undefined
+        ? JSON.stringify(data)
+        : undefined;
+    const res = await fetch(full, { method: "PUT", headers, body });
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(`PUT ${full} failed: ${res.status} ${txt}`);
+    }
+    return (await res.json()) as T;
+  },
+  async delete<T = any>(
+    url: string,
+    config?: RequestConfig & { data?: any },
+  ): Promise<T> {
     const full = buildUrl(API_BASE, url, config?.params);
 
     // Get token from Supabase
@@ -124,15 +161,23 @@ export const base44 = {
     const token = session?.access_token;
 
     const headers = {
+      "Content-Type": "application/json",
       ...(config?.headers || {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
 
-    const res = await fetch(full, { method: "DELETE", headers });
+    const body =
+      config?.data !== undefined ? JSON.stringify(config.data) : undefined;
+
+    const res = await fetch(full, { method: "DELETE", headers, body });
     if (!res.ok) {
       const txt = await res.text();
       throw new Error(`DELETE ${full} failed: ${res.status} ${txt}`);
     }
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
     if (res.status === 204) {
       return {} as T;
     }

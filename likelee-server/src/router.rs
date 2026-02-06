@@ -27,6 +27,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::invoices::mark_sent),
         )
         .route(
+            "/api/invoices/:id/send-payment-reminder",
+            post(crate::invoices::send_payment_reminder),
+        )
+        .route(
             "/api/invoices/:id/mark-paid",
             post(crate::invoices::mark_paid),
         )
@@ -58,6 +62,27 @@ pub fn build_router(state: AppState) -> Router {
         // Agencies
         .route("/api/agency-register", post(crate::agencies::register))
         .route("/api/agency-profile", post(crate::agencies::update))
+        // Agency Dashboard
+        .route(
+            "/api/agency/dashboard/overview",
+            get(crate::agency_dashboard::get_dashboard_overview),
+        )
+        .route(
+            "/api/agency/dashboard/talent-performance",
+            get(crate::agency_dashboard::get_talent_performance),
+        )
+        .route(
+            "/api/agency/dashboard/revenue-breakdown",
+            get(crate::agency_dashboard::get_revenue_breakdown),
+        )
+        .route(
+            "/api/agency/dashboard/licensing-pipeline",
+            get(crate::agency_dashboard::get_licensing_pipeline),
+        )
+        .route(
+            "/api/agency/dashboard/recent-activity",
+            get(crate::agency_dashboard::get_recent_activity),
+        )
         .route("/api/agency/roster", get(crate::agency_roster::get_roster))
         .route(
             "/api/agency/talent",
@@ -168,6 +193,18 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route("/api/agency/talents", get(crate::agencies::list_talents))
         .route(
+            "/api/agency/talents/:id/assets",
+            get(crate::agencies::list_talent_assets),
+        )
+        .route(
+            "/api/agency/talents/:id/assets/upload",
+            post(crate::agencies::upload_talent_asset),
+        )
+        .route(
+            "/api/agency/talents/:talent_id/assets/:asset_id",
+            delete(crate::agencies::delete_talent_asset),
+        )
+        .route(
             "/api/agency/clients",
             get(crate::agencies::list_clients).post(crate::agencies::create_client),
         )
@@ -191,6 +228,31 @@ pub fn build_router(state: AppState) -> Router {
             "/api/agency/clients/:id/communications",
             get(crate::agencies::list_communications).post(crate::agencies::create_communication),
         )
+        // Agency Storage (S3-backed via Supabase Storage)
+        .route(
+            "/api/agency/storage/usage",
+            get(crate::agencies::get_agency_storage_usage),
+        )
+        .route(
+            "/api/agency/storage/folders",
+            get(crate::agencies::list_agency_folders).post(crate::agencies::create_agency_folder),
+        )
+        .route(
+            "/api/agency/storage/files",
+            get(crate::agencies::list_agency_files),
+        )
+        .route(
+            "/api/agency/storage/files/upload",
+            post(crate::agencies::upload_agency_storage_file),
+        )
+        .route(
+            "/api/agency/storage/files/:file_id",
+            delete(crate::agencies::delete_agency_storage_file),
+        )
+        .route(
+            "/api/agency/storage/files/:file_id/signed-url",
+            get(crate::agencies::get_agency_storage_file_signed_url),
+        )
         .route(
             "/api/agency/files/upload",
             post(crate::agencies::upload_agency_file),
@@ -202,6 +264,29 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/agency/clients/:id/files/:file_id/signed-url",
             get(crate::agencies::get_client_file_signed_url),
+        )
+        // Talent Packages
+        .route(
+            "/api/agency/packages",
+            get(crate::packages::list_packages).post(crate::packages::create_package),
+        )
+        .route(
+            "/api/agency/packages/stats",
+            get(crate::packages::get_dashboard_stats),
+        )
+        .route(
+            "/api/agency/packages/:id",
+            get(crate::packages::get_package)
+                .delete(crate::packages::delete_package)
+                .put(crate::packages::update_package),
+        )
+        .route(
+            "/api/public/packages/:token",
+            get(crate::packages::get_public_package),
+        )
+        .route(
+            "/api/public/packages/:token/interactions",
+            post(crate::packages::create_interaction).delete(crate::packages::delete_interaction),
         )
         .route("/api/dashboard", get(crate::dashboard::get_dashboard))
         .route(
@@ -357,6 +442,10 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/agency/payouts/account_status",
             get(crate::payouts::get_agency_account_status),
+        )
+        .route(
+            "/api/agency/billing/checkout",
+            post(crate::billing::create_agency_subscription_checkout),
         )
         // Integrations: Core
         .route(

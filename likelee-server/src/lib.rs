@@ -2,9 +2,11 @@
 
 pub mod agencies;
 pub mod agency_clients;
+pub mod agency_dashboard;
 pub mod agency_roster;
 pub mod auth;
 pub mod avatar;
+pub mod billing;
 pub mod book_outs;
 pub mod bookings;
 pub mod brands;
@@ -16,6 +18,8 @@ pub mod creators;
 pub mod dashboard;
 pub mod digitals;
 pub mod email;
+pub mod email_templates;
+pub mod entitlements;
 pub mod expenses;
 pub mod face_profiles;
 pub mod health;
@@ -27,6 +31,7 @@ pub mod license_submissions;
 pub mod licensing_requests;
 pub mod moderation;
 pub mod notifications;
+pub mod packages;
 pub mod payouts;
 pub mod performance_tiers;
 pub mod reference_images;

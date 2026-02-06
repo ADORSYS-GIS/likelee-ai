@@ -51,10 +51,9 @@ pub async fn search_faces(
 
     if let Some(search) = q.query {
         if !search.is_empty() {
-            let search_val = format!("*{}*", search);
+            let search_val = format!("*{search}*");
             request = request.or(format!(
-                "full_name.ilike.{},tagline.ilike.{},bio.ilike.{}",
-                search_val, search_val, search_val
+                "full_name.ilike.{search_val},tagline.ilike.{search_val},bio.ilike.{search_val}"
             ));
         }
     }

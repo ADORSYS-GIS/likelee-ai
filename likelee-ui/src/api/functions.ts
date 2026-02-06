@@ -92,6 +92,11 @@ export const getBrandProfile = () =>
 export const getAgencyProfile = () =>
   base44Client.get(`/api/agency-profile/user`);
 
+// Agency billing (Stripe subscriptions)
+export const createAgencySubscriptionCheckout = (data: {
+  tier: "agency" | "scale";
+}) => base44Client.post(`/api/agency/billing/checkout`, data);
+
 export const updateBrandProfile = (data: any) =>
   base44Client.post(`/api/brand-profile`, data);
 
@@ -157,6 +162,21 @@ export const exchangeStripeOAuthCode = async (
   return { data: { status: "error", error: "not_supported" } } as any;
 };
 
+// Agency Dashboard API
+export const getAgencyDashboardOverview = () =>
+  base44Client.get("/api/agency/dashboard/overview");
+
+export const getAgencyTalentPerformance = () =>
+  base44Client.get("/api/agency/dashboard/talent-performance");
+
+export const getAgencyRevenueBreakdown = () =>
+  base44Client.get("/api/agency/dashboard/revenue-breakdown");
+
+export const getAgencyLicensingPipeline = () =>
+  base44Client.get("/api/agency/dashboard/licensing-pipeline");
+
+export const getAgencyRecentActivity = () =>
+  base44Client.get("/api/agency/dashboard/recent-activity");
 // Agency Roster
 export const getAgencyRoster = () => base44Client.get("/api/agency/roster");
 
@@ -355,7 +375,53 @@ export const uploadAgencyFile = async (file: File) => {
   return base44Client.post(`/api/agency/files/upload`, fd);
 };
 
+// Agency storage (File Storage)
+export const getAgencyStorageUsage = () =>
+  base44Client.get(`/api/agency/storage/usage`);
+
+export const listAgencyStorageFolders = () =>
+  base44Client.get(`/api/agency/storage/folders`);
+
+export const createAgencyStorageFolder = (data: {
+  name: string;
+  parent_id?: string | null;
+}) => base44Client.post(`/api/agency/storage/folders`, data);
+
+export const listAgencyStorageFoldersPaged = (params?: {
+  limit?: number;
+  offset?: number;
+}) => base44Client.get(`/api/agency/storage/folders`, { params: params || {} });
+
+export const listAgencyStorageFiles = (params?: { folder_id?: string }) =>
+  base44Client.get(`/api/agency/storage/files`, { params: params || {} });
+
+export const listAgencyStorageFilesPaged = (params?: {
+  folder_id?: string;
+  limit?: number;
+  offset?: number;
+}) => base44Client.get(`/api/agency/storage/files`, { params: params || {} });
+
+export const uploadAgencyStorageFile = async (data: {
+  file: File;
+  folder_id?: string;
+}) => {
+  const fd = new FormData();
+  fd.append("file", data.file);
+  if (data.folder_id) fd.append("folder_id", data.folder_id);
+  return base44Client.post(`/api/agency/storage/files/upload`, fd);
+};
+
+export const deleteAgencyStorageFile = (file_id: string) =>
+  base44Client.delete(`/api/agency/storage/files/${file_id}`);
+
+export const getAgencyStorageFileSignedUrl = (file_id: string) =>
+  base44Client.get(`/api/agency/storage/files/${file_id}/signed-url`);
+
 // Email
+export const getEmailTemplates = () => base44Client.get(`/api/email/templates`);
+export const saveEmailTemplate = (data: any) =>
+  base44Client.post(`/api/email/templates`, data);
+
 export const sendEmail = (data: {
   to: string;
   subject: string;

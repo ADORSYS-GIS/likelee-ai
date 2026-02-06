@@ -124,6 +124,18 @@ pub struct ServerConfig {
     #[envconfig(from = "STRIPE_WEBHOOK_SECRET", default = "")]
     pub stripe_webhook_secret: String,
 
+    #[envconfig(from = "STRIPE_AGENCY_PRICE_ID", default = "")]
+    pub stripe_agency_price_id: String,
+
+    #[envconfig(from = "STRIPE_SCALE_PRICE_ID", default = "")]
+    pub stripe_scale_price_id: String,
+
+    #[envconfig(from = "STRIPE_CHECKOUT_SUCCESS_URL", default = "")]
+    pub stripe_checkout_success_url: String,
+
+    #[envconfig(from = "STRIPE_CHECKOUT_CANCEL_URL", default = "")]
+    pub stripe_checkout_cancel_url: String,
+
     // Payout Logic
     #[envconfig(from = "PAYOUTS_ENABLED", default = "false")]
     pub payouts_enabled: bool,
@@ -167,6 +179,12 @@ pub struct ServerConfig {
 
     #[envconfig(from = "DOCUSEAL_MASTER_TEMPLATE_NAME", default = "")]
     pub docuseal_master_template_name: String,
+
+    #[envconfig(from = "KYC_BYPASS_VERIFF_LIMIT", default = "false")]
+    pub kyc_bypass_veriff_limit: bool,
+
+    #[envconfig(from = "FRONTEND_URL", default = "http://localhost:5173")]
+    pub frontend_url: String,
 }
 
 #[derive(Clone)]
@@ -196,6 +214,11 @@ pub struct AppState {
     pub stripe_refresh_url: String,
     pub stripe_webhook_secret: String,
 
+    pub stripe_agency_price_id: String,
+    pub stripe_scale_price_id: String,
+    pub stripe_checkout_success_url: String,
+    pub stripe_checkout_cancel_url: String,
+
     // Payout Logic
     pub payouts_enabled: bool,
     pub payout_auto_approve_threshold_cents: u32,
@@ -221,4 +244,7 @@ pub struct AppState {
     pub docuseal_user_email: String,
     pub docuseal_master_template_id: String,
     pub docuseal_master_template_name: String,
+
+    pub kyc_bypass_veriff_limit: bool,
+    pub frontend_url: String,
 }
