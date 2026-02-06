@@ -10234,7 +10234,9 @@ const DashboardView = ({
         </div>
         <div>
           <h3 className="text-lg font-bold text-gray-900">
-            {kycStatus === "approved" ? "KYC Completed" : "KYC Verification Required"}
+            {kycStatus === "approved"
+              ? "KYC Completed"
+              : "KYC Verification Required"}
           </h3>
           <p className="text-sm text-gray-500">
             {kycStatus === "approved"
@@ -18107,9 +18109,13 @@ export default function AgencyDashboard() {
     user?.email ||
     "";
   const agencyWebsite =
-    (agencyProfileQuery.data as any)?.website || (profile as any)?.website || "";
+    (agencyProfileQuery.data as any)?.website ||
+    (profile as any)?.website ||
+    "";
   const agencyLogoUrl =
-    (agencyProfileQuery.data as any)?.logo_url || (profile as any)?.logo_url || "";
+    (agencyProfileQuery.data as any)?.logo_url ||
+    (profile as any)?.logo_url ||
+    "";
   const seatsLimit = Number(
     (agencyProfileQuery.data as any)?.seats_limit ||
       (profile as any)?.seats_limit ||
@@ -19165,7 +19171,8 @@ export default function AgencyDashboard() {
                   try {
                     const fromEmail =
                       (profile as any)?.email || user?.email || "unknown";
-                    const agencyId = (profile as any)?.id || user?.id || "unknown";
+                    const agencyId =
+                      (profile as any)?.id || user?.id || "unknown";
                     const body = `From: ${fromEmail}\nAgency/User ID: ${agencyId}\n\n${message}`;
 
                     await sendEmail({
