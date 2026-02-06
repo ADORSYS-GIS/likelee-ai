@@ -11858,105 +11858,52 @@ const LicensingRequestsView = () => {
 const ActiveLicensesView = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
+  const [selectedLicense, setSelectedLicense] = useState<any>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-  const licenses = [
-    {
-      id: "LIC-001",
-      talent: "Emma",
-      talentImg: TALENT_DATA.find((t) => t.name === "Emma")?.img || "",
-      type: "Cosmetics Campaign",
-      brand: "Glamour Beauty Co.",
-      duration: "2025-01-15 to 2025-07-15",
-      daysLeft: "180 days left",
-      scope: "Social Media, E-commerce, Print",
-      value: "$8,500",
-      status: "Active",
-      statusColor: "bg-green-500",
-      autoRenew: true,
-    },
-    {
-      id: "LIC-002",
-      talent: "Sergine",
-      talentImg: TALENT_DATA.find((t) => t.name === "Sergine")?.img || "",
-      type: "Fashion Editorial",
-      brand: "Vogue Magazine",
-      duration: "2024-12-01 to 2025-06-01",
-      daysLeft: "150 days left",
-      scope: "Print, Digital Editorial",
-      value: "$12,000",
-      status: "Active",
-      statusColor: "bg-green-500",
-      autoRenew: false,
-    },
-    {
-      id: "LIC-003",
-      talent: "Milan",
-      talentImg: TALENT_DATA.find((t) => t.name === "Milan")?.img || "",
-      type: "Athletic Wear Campaign",
-      brand: "Nike Performance",
-      duration: "2025-01-01 to 2025-03-01",
-      daysLeft: "45 days left",
-      scope: "TV, Digital, Out-of-Home",
-      value: "$25,000",
-      status: "Expiring",
-      statusColor: "bg-orange-500",
-      autoRenew: true,
-    },
-    {
-      id: "LIC-004",
-      talent: "Julia",
-      talentImg: TALENT_DATA.find((t) => t.name === "Julia")?.img || "",
-      type: "Tech Product Launch",
-      brand: "Apple Inc.",
-      duration: "2024-11-15 to 2025-02-15",
-      daysLeft: "30 days left",
-      scope: "Global Digital, Social",
-      value: "$45,000",
-      status: "Expiring",
-      statusColor: "bg-orange-600",
-      autoRenew: false,
-    },
-    {
-      id: "LIC-005",
-      talent: "Emma",
-      talentImg: TALENT_DATA.find((t) => t.name === "Emma")?.img || "",
-      type: "Luxury Watch Campaign",
-      brand: "Rolex",
-      duration: "2024-08-01 to 2024-12-31",
-      daysLeft: "Expired 15 days ago",
-      scope: "Print, Digital, Retail",
-      value: "$35,000",
-      status: "Expired",
-      statusColor: "bg-gray-500",
-      autoRenew: false,
-    },
-    {
-      id: "LIC-006",
-      talent: "Sergine",
-      talentImg: TALENT_DATA.find((t) => t.name === "Sergine")?.img || "",
-      type: "Beverage Campaign",
-      brand: "Coca-Cola",
-      duration: "2024-09-01 to 2025-09-01",
-      daysLeft: "270 days left",
-      scope: "TV, Digital, Social, OOH",
-      value: "$60,000",
-      status: "Active",
-      statusColor: "bg-green-500",
-      autoRenew: true,
-    },
-  ];
+  const handleViewDetails = (license: any) => {
+    setSelectedLicense(license);
+    setIsDetailsOpen(true);
+  };
 
-  const filteredLicenses = licenses.filter((lic) => {
-    const matchesSearch =
-      lic.talent.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lic.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lic.brand.toLowerCase().includes(searchTerm.toLowerCase());
+  const handleRenew = (license: any) => {
+    // renewal logic
+  };
 
-    const matchesFilter =
-      filterStatus === "All" || lic.status.includes(filterStatus);
-
-    return matchesSearch && matchesFilter;
+  const { data: licenses = [], isLoading: isLicensesLoading } = useQuery<any[]>({
+    queryKey: ["agency", "active-licenses", filterStatus, searchTerm],
+    queryFn: async () => {
+      const params: any = {};
+      if (filterStatus !== "All") params.status = filterStatus;
+      if (searchTerm) params.search = searchTerm;
+      return await getAgencyActiveLicenses(params);
+    }
   });
+
+  const { data: stats } = useQuery({
+    queryKey: ["agency", "active-licenses", "stats"],
+    queryFn: () => getAgencyActiveLicensesStats()
+  });
+
+  const statusColor = (status: string) => {
+    switch (status) {
+      case "Active": return "bg-green-500";
+      case "Expiring": return "bg-orange-500";
+      case "Expired": return "bg-gray-500";
+      default: return "bg-gray-400";
+    }
+  };
+
+  const formatMoney = (val: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(val);
+  };
+
+  const filteredLicenses = licenses; // Filtering handled by API now
 
   return (
     <div className="space-y-8">
@@ -11977,12 +11924,13 @@ const ActiveLicensesView = () => {
         </Button>
       </div>
 
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {[
           {
             icon: CheckCircle2,
             label: "Active Licenses",
-            value: "3",
+            value: stats?.active || "0",
             color: "text-green-600",
             bg: "bg-green-50",
             border: "border-green-100",
@@ -11990,7 +11938,7 @@ const ActiveLicensesView = () => {
           {
             icon: Clock,
             label: "Expiring Soon",
-            value: "2",
+            value: stats?.expiring || "0",
             color: "text-orange-600",
             bg: "bg-orange-50",
             border: "border-orange-100",
@@ -11998,7 +11946,7 @@ const ActiveLicensesView = () => {
           {
             icon: AlertCircle,
             label: "Expired",
-            value: "1",
+            value: stats?.expired || "0",
             color: "text-red-600",
             bg: "bg-red-50",
             border: "border-red-100",
@@ -12006,7 +11954,7 @@ const ActiveLicensesView = () => {
           {
             icon: DollarSign,
             label: "Total Value",
-            value: "$185,500",
+            value: formatMoney(stats?.total_value || 0),
             color: "text-indigo-600",
             bg: "bg-indigo-50",
             border: "border-indigo-100",
@@ -12018,18 +11966,14 @@ const ActiveLicensesView = () => {
             className={`p-6 bg-white border ${card.border} shadow-sm rounded-2xl`}
           >
             <div className="flex items-center gap-3 mb-4">
-              <div className={`p-2 ${card.bg} rounded-lg`}>
+              <div
+                className={`w-10 h-10 rounded-xl ${card.bg} flex items-center justify-center`}
+              >
                 <card.icon className={`w-5 h-5 ${card.color}`} />
               </div>
-              <span className="text-sm font-bold text-gray-500">
-                {card.label}
-              </span>
+              <p className={`text-sm font-bold ${card.color}`}>{card.label}</p>
             </div>
-            <div
-              className={`font-black tracking-tight text-gray-900 ${card.large ? "text-3xl" : "text-4xl"}`}
-            >
-              {card.value}
-            </div>
+            <p className="text-3xl font-black text-gray-900">{card.value}</p>
           </Card>
         ))}
       </div>
@@ -12090,74 +12034,99 @@ const ActiveLicensesView = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filteredLicenses.map((lic) => (
+              {licenses.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                        <FileText className="w-6 h-6 text-gray-400" />
+                      </div>
+                      <p className="text-gray-900 font-medium">
+                        No active licenses found
+                      </p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Try adjusting your filters or search terms
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+              {licenses.map((lic: any) => (
                 <tr
                   key={lic.id}
                   className="hover:bg-gray-50/50 transition-colors"
                 >
                   <td className="px-6 py-8 whitespace-nowrap">
                     <div className="flex items-center gap-3">
-                      <img
-                        src={lic.talentImg}
-                        alt={lic.talent}
-                        className="w-10 h-10 rounded-lg object-cover bg-gray-100"
-                      />
+                      <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+                        {lic.talent_avatar ? (
+                          <img
+                            src={lic.talent_avatar}
+                            alt={lic.talent_name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-400">
+                            <Users className="w-5 h-5" />
+                          </div>
+                        )}
+                      </div>
                       <div>
                         <p className="font-bold text-gray-900 text-sm leading-none mb-1">
-                          {lic.talent}
+                          {lic.talent_name}
                         </p>
                         <p className="text-[10px] font-bold text-gray-400">
-                          {lic.id}
+                          {lic.public_id || lic.id}
                         </p>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-8">
                     <p className="text-sm font-bold text-gray-900 leading-tight max-w-[150px]">
-                      {lic.type}
+                      {lic.campaign_name || "Unknown Campaign"}
                     </p>
                   </td>
                   <td className="px-6 py-8">
                     <p className="text-sm font-bold text-gray-900">
-                      {lic.brand}
+                      {lic.brand_name || "Unknown Brand"}
                     </p>
                   </td>
                   <td className="px-6 py-8">
                     <p className="text-xs font-bold text-gray-900 mb-1">
-                      {lic.duration.split(" to ")[0]}
+                      {new Date(lic.start_date).toLocaleDateString()}
                     </p>
                     <p className="text-[10px] font-medium text-gray-400 mb-1">
-                      to {lic.duration.split(" to ")[1]}
+                      to {new Date(lic.end_date).toLocaleDateString()}
                     </p>
                     <p className="text-[10px] font-bold text-gray-400 italic">
-                      {lic.daysLeft}
+                      {lic.days_left_label}
                     </p>
                   </td>
                   <td className="px-6 py-8">
                     <p className="text-xs font-medium text-gray-600 max-w-[140px] leading-relaxed">
-                      {lic.scope}
+                      {(lic.usage_scope || []).join(", ")}
                     </p>
                   </td>
                   <td className="px-6 py-8">
                     <p className="text-sm font-bold text-gray-900 mb-2">
-                      {lic.value}
+                      {formatMoney(lic.value)}
                     </p>
-                    {lic.autoRenew && (
+                    {lic.auto_renew && (
                       <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold w-fit border border-blue-100">
-                        <RefreshCw className="w-3-5 h-3-5" /> Auto-renew
+                        <RefreshCw className="w-3.5 h-3.5" /> Auto-renew
                       </div>
                     )}
                   </td>
                   <td className="px-6 py-8 whitespace-nowrap">
                     <span
-                      className={`px-3 py-1.5 rounded-lg text-[10px] font-black text-white uppercase tracking-wider shadow-sm ${lic.statusColor}`}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-black text-white uppercase tracking-wider shadow-sm ${statusColor(lic.status)}`}
                     >
                       {lic.status}
                     </span>
                   </td>
                   <td className="px-6 py-8 whitespace-nowrap text-center">
                     <div className="flex justify-center gap-2">
-                      {lic.status.includes("Expiring") && (
+                      {String(lic.status).includes("Expiring") && (
                         <Button className="h-9 px-4 bg-green-600 hover:bg-green-700 text-white text-[11px] font-extrabold rounded-lg flex items-center gap-2 shadow-md shadow-green-100 transition-all active:scale-95">
                           <RefreshCw className="w-3.5 h-3.5" /> Renew
                         </Button>
@@ -12165,6 +12134,7 @@ const ActiveLicensesView = () => {
                       <Button
                         variant="outline"
                         className="h-9 w-9 p-0 border-gray-200 text-gray-400 hover:text-gray-900 hover:border-gray-300 rounded-lg bg-white shadow-sm transition-all active:scale-95"
+                        onClick={() => handleViewDetails(lic)}
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
@@ -12176,6 +12146,12 @@ const ActiveLicensesView = () => {
           </table>
         </div>
       </div>
+      <ActiveLicenseDetailsSheet
+        license={selectedLicense}
+        open={isDetailsOpen}
+        onClose={() => setIsDetailsOpen(false)}
+        onRenew={handleRenew}
+      />
     </div>
   );
 };
