@@ -7,7 +7,7 @@ use axum::{
     http::StatusCode,
     Json,
 };
-use postgrest::Postgrest;
+// removed unused import
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -98,7 +98,9 @@ pub async fn create_draft(
         let ds_template = docuseal.create_template(template_name, "contract.pdf".to_string(), base64).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
         Some(ds_template.id)
     } else {
-        license_template.docuseal_template_id
+        license_template
+            .docuseal_template_id
+            .or_else(|| state.docuseal_master_template_id.parse::<i32>().ok())
     };
 
     // 3. Create a draft record in Likelee
@@ -143,6 +145,253 @@ pub async fn create_draft(
     let draft = created.into_iter().next().ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Failed to create draft (empty response)".to_string()))?;
 
     Ok(Json(draft))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PreviewSubmissionRequest {
+    pub docuseal_template_id: Option<i32>,
+    pub client_name: Option<String>,
+    pub client_email: Option<String>,
+    pub talent_names: Option<String>,
+    pub license_fee: Option<i64>,
+    pub duration_days: Option<i32>,
+    pub start_date: Option<String>,
+    pub custom_terms: Option<String>,
+}
+
+/// POST /api/license-submissions/:id/preview - Create a DocuSeal submission for preview without emailing the client
+pub async fn preview(
+    State(state): State<AppState>,
+    auth_user: AuthUser,
+    Path(id): Path<String>,
+    Json(req): Json<PreviewSubmissionRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let agency_id = auth_user.id;
+
+    // 1. Fetch the draft submission
+    let sub_resp = state
+        .pg
+        .from("license_submissions")
+        .select("*")
+        .eq("id", &id)
+        .eq("agency_id", &agency_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let sub_text = sub_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let submission_data: serde_json::Value =
+        serde_json::from_str(&sub_text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if submission_data["status"] != "draft" {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "Only draft submissions can be previewed".to_string(),
+        ));
+    }
+
+    // 2. Fetch the License Template metadata for values
+    let template_id = submission_data["template_id"]
+        .as_str()
+        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Invalid template_id".to_string()))?;
+    let template_resp = state
+        .pg
+        .from("license_templates")
+        .select("*")
+        .eq("id", template_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let template_text = template_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let license_template: crate::license_templates::LicenseTemplate =
+        serde_json::from_str(&template_text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    // 3. Merge override values (request > submission record > template)
+    let client_name = req
+        .client_name
+        .clone()
+        .or_else(|| submission_data["client_name"].as_str().map(String::from))
+        .or_else(|| license_template.client_name.clone())
+        .unwrap_or_else(|| "Client".to_string());
+    let client_email = req
+        .client_email
+        .clone()
+        .or_else(|| submission_data["client_email"].as_str().map(String::from))
+        .unwrap_or_default();
+    let talent_names = req
+        .talent_names
+        .clone()
+        .or_else(|| submission_data["talent_names"].as_str().map(String::from))
+        .or_else(|| license_template.talent_name.clone())
+        .unwrap_or_default();
+
+    let license_fee = req
+        .license_fee
+        .or_else(|| submission_data["license_fee"].as_i64())
+        .or(license_template.license_fee);
+    let fee_str = license_fee
+        .map(|c| format!("${:.2}", c as f64 / 100.0))
+        .unwrap_or_default();
+
+    let duration_days = req
+        .duration_days
+        .or_else(|| submission_data["duration_days"].as_i64().map(|d| d as i32))
+        .unwrap_or(license_template.duration_days);
+
+    let start_date = req
+        .start_date
+        .clone()
+        .or_else(|| submission_data["start_date"].as_str().map(String::from))
+        .or_else(|| license_template.start_date.clone())
+        .unwrap_or_else(|| "-".to_string());
+
+    let custom_terms_extra = req
+        .custom_terms
+        .clone()
+        .or_else(|| submission_data["custom_terms"].as_str().map(String::from))
+        .unwrap_or_default();
+
+    let combined_custom_terms = format!(
+        "{}\n{}",
+        license_template.custom_terms.as_deref().unwrap_or_default(),
+        custom_terms_extra
+    );
+
+    // 4. Determine DocuSeal template id
+    let docuseal_template_id = req
+        .docuseal_template_id
+        .or_else(|| submission_data["docuseal_template_id"].as_i64().map(|i| i as i32))
+        .or(license_template.docuseal_template_id)
+        .or_else(|| state.docuseal_master_template_id.parse::<i32>().ok())
+        .ok_or((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Invalid DS template id".to_string(),
+        ))?;
+
+    // Build fields array for pre-filling (DocuSeal API standard format)
+    use crate::services::docuseal::SubmitterField;
+    
+    let mut fields = Vec::new();
+    
+    // Add all contract fields as readonly pre-filled values
+    fields.push(SubmitterField {
+        name: "Client/Brand Name".to_string(),
+        default_value: Some(client_name.clone()),
+        readonly: Some(true),
+    });
+    
+    fields.push(SubmitterField {
+        name: "Talent Name".to_string(),
+        default_value: Some(talent_names.clone()),
+        readonly: Some(true),
+    });
+    
+    fields.push(SubmitterField {
+        name: "License Fee".to_string(),
+        default_value: Some(fee_str.clone()),
+        readonly: Some(true),
+    });
+    
+    fields.push(SubmitterField {
+        name: "Category".to_string(),
+        default_value: Some(license_template.category.clone()),
+        readonly: Some(true),
+    });
+    
+    if let Some(desc) = &license_template.description {
+        fields.push(SubmitterField {
+            name: "Description".to_string(),
+            default_value: Some(desc.clone()),
+            readonly: Some(true),
+        });
+    }
+    
+    if let Some(scope) = &license_template.usage_scope {
+        fields.push(SubmitterField {
+            name: "Usage Scope".to_string(),
+            default_value: Some(scope.clone()),
+            readonly: Some(true),
+        });
+    }
+    
+    fields.push(SubmitterField {
+        name: "Territory".to_string(),
+        default_value: Some(license_template.territory.clone()),
+        readonly: Some(true),
+    });
+    
+    fields.push(SubmitterField {
+        name: "Exclusivity".to_string(),
+        default_value: Some(license_template.exclusivity.clone()),
+        readonly: Some(true),
+    });
+    
+    fields.push(SubmitterField {
+        name: "Duration".to_string(),
+        default_value: Some(duration_days.to_string()),
+        readonly: Some(true),
+    });
+    
+    fields.push(SubmitterField {
+        name: "Start Date".to_string(),
+        default_value: Some(start_date.to_string()),
+        readonly: Some(true),
+    });
+    
+    fields.push(SubmitterField {
+        name: "Custom Terms".to_string(),
+        default_value: Some(combined_custom_terms.clone()),
+        readonly: Some(true),
+    });
+    
+    fields.push(SubmitterField {
+        name: "Template Name".to_string(),
+        default_value: Some(license_template.template_name.clone()),
+        readonly: Some(true),
+    });
+
+    // 5. Create DocuSeal submission without sending email using fields-based pre-fill
+    let docuseal = DocuSealClient::new(state.docuseal_api_key.clone(), state.docuseal_base_url.clone());
+    let docuseal_submission = docuseal
+        .create_submission_with_fields(
+            docuseal_template_id,
+            client_name.clone(),
+            client_email.clone(),
+            "First Party".to_string(),
+            fields,
+            false,
+        )
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("DocuSeal Error: {}", e)))?;
+
+    // 6. Fetch submitter slug to construct preview URL
+    let details = docuseal
+        .get_submission(docuseal_submission.id)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("DocuSeal Error: {}", e)))?;
+
+    let slug = details
+        .submitters
+        .first()
+        .map(|s| s.slug.clone())
+        .unwrap_or_else(|| docuseal_submission.slug);
+
+    let preview_url = format!("{}/s/{}", state.docuseal_app_url, slug);
+
+    Ok(Json(json!({
+        "docuseal_submission_id": docuseal_submission.id,
+        "docuseal_slug": slug,
+        "preview_url": preview_url,
+    })))
 }
 
 #[derive(Debug, Deserialize)]
@@ -196,28 +445,103 @@ pub async fn finalize(
     let template_text = template_resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let license_template: crate::license_templates::LicenseTemplate = serde_json::from_str(&template_text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    // 3. Prepare values
+    // 3. Prepare values for DocuSeal (matching create_builder_token pattern)
     let license_fee = submission_data["license_fee"].as_i64().or(license_template.license_fee);
-    let fee = license_fee.map(|c| format!("${:.2}", c as f64 / 100.0)).unwrap_or_default();
+    let fee_str = license_fee.map(|c| format!("${:.2}", c as f64 / 100.0)).unwrap_or_default();
     
     let duration_days = submission_data["duration_days"].as_i64()
         .map(|d| d as i32)
         .unwrap_or(license_template.duration_days);
-    let duration = format!("{} days", duration_days);
 
-    let start_date = submission_data["start_date"].as_str().unwrap_or("-");
+    let start_date = submission_data["start_date"].as_str()
+        .or(license_template.start_date.as_deref())
+        .unwrap_or("-");
+
     let custom_terms = submission_data["custom_terms"].as_str().unwrap_or("");
     
-    let values = json!({
-        "Client Name": submission_data["client_name"],
-        "License Fee": fee,
-        "Territory": license_template.territory.clone(),
-        "Term": duration,
-        "Start Date": start_date,
-        "Usage": license_template.usage_scope.as_deref().unwrap_or_default(),
-        "Exclusivity": license_template.exclusivity.clone(),
-        "Custom Terms": format!("{}\n{}", license_template.custom_terms.as_deref().unwrap_or_default(), custom_terms),
-        "Project Name": format!("License for {}", submission_data["client_name"]),
+    // Build fields array for pre-filling (DocuSeal API standard format)
+    use crate::services::docuseal::SubmitterField;
+    
+    let mut fields = Vec::new();
+    
+    let client_name_str = submission_data["client_name"].as_str().unwrap_or("Client");
+    let talent_names_str = submission_data["talent_names"].as_str().unwrap_or("");
+    
+    fields.push(SubmitterField {
+        name: "Client/Brand Name".to_string(),
+        default_value: Some(client_name_str.to_string()),
+        readonly: Some(true),
+    });
+    
+    fields.push(SubmitterField {
+        name: "Talent Name".to_string(),
+        default_value: Some(talent_names_str.to_string()),
+        readonly: Some(true),
+    });
+    
+    fields.push(SubmitterField {
+        name: "License Fee".to_string(),
+        default_value: Some(fee_str.clone()),
+        readonly: Some(true),
+    });
+    
+    fields.push(SubmitterField {
+        name: "Category".to_string(),
+        default_value: Some(license_template.category.clone()),
+        readonly: Some(true),
+    });
+    
+    if let Some(desc) = &license_template.description {
+        fields.push(SubmitterField {
+            name: "Description".to_string(),
+            default_value: Some(desc.clone()),
+            readonly: Some(true),
+        });
+    }
+    
+    if let Some(scope) = &license_template.usage_scope {
+        fields.push(SubmitterField {
+            name: "Usage Scope".to_string(),
+            default_value: Some(scope.clone()),
+            readonly: Some(true),
+        });
+    }
+    
+    fields.push(SubmitterField {
+        name: "Territory".to_string(),
+        default_value: Some(license_template.territory.clone()),
+        readonly: Some(true),
+    });
+    
+    fields.push(SubmitterField {
+        name: "Exclusivity".to_string(),
+        default_value: Some(license_template.exclusivity.clone()),
+        readonly: Some(true),
+    });
+    
+    fields.push(SubmitterField {
+        name: "Duration".to_string(),
+        default_value: Some(duration_days.to_string()),
+        readonly: Some(true),
+    });
+    
+    fields.push(SubmitterField {
+        name: "Start Date".to_string(),
+        default_value: Some(start_date.to_string()),
+        readonly: Some(true),
+    });
+    
+    let combined_terms = format!("{}\n{}", license_template.custom_terms.as_deref().unwrap_or_default(), custom_terms);
+    fields.push(SubmitterField {
+        name: "Custom Terms".to_string(),
+        default_value: Some(combined_terms),
+        readonly: Some(true),
+    });
+    
+    fields.push(SubmitterField {
+        name: "Template Name".to_string(),
+        default_value: Some(license_template.template_name.clone()),
+        readonly: Some(true),
     });
 
     let docuseal = DocuSealClient::new(
@@ -226,8 +550,11 @@ pub async fn finalize(
     );
 
     // Use values from request if provided, otherwise fallback to existing record
-    let docuseal_template_id = req.docuseal_template_id
+    let docuseal_template_id = req
+        .docuseal_template_id
         .or_else(|| submission_data["docuseal_template_id"].as_i64().map(|i| i as i32))
+        .or(license_template.docuseal_template_id)
+        .or_else(|| state.docuseal_master_template_id.parse::<i32>().ok())
         .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Invalid DS template id".to_string()))?;
     
     let client_name = req.client_name.clone()
@@ -253,15 +580,15 @@ pub async fn finalize(
             .await;
     }
 
-    let docuseal_submission = docuseal
-        .create_submission_with_values(
-            docuseal_template_id,
-            client_name.to_string(),
-            client_email.to_string(),
-            Some(values),
-        )
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("DocuSeal error: {}", e)))?;
+    // 4. Create DocuSeal Submission with fields-based pre-fill
+    let docuseal_submission = docuseal.create_submission_with_fields(
+        docuseal_template_id,
+        client_name.clone(),
+        client_email.clone(),
+        "First Party".to_string(),
+        fields,
+        true,
+    ).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("DocuSeal Error: {}", e)))?;
 
     // 5. Update Likelee record
     let update_data = json!({
@@ -298,13 +625,15 @@ pub async fn finalize(
         "agency_id": agency_id,
         "brand_id": submission.client_id,
         "client_name": submission_data["client_name"],
-        "talent_id": None::<String>, // Clear UUID if using name
+        "talent_id": None::<String>,
         "talent_name": talent_name,
         "submission_id": submission.id,
         "status": "pending",
         "campaign_title": format!("License Contract - {}", client_name),
         "usage_scope": license_template.usage_scope.clone(),
         "regions": license_template.territory.clone(),
+        "budget_min": license_fee.unwrap_or(0) as f64 / 100.0,
+        "budget_max": license_fee.unwrap_or(0) as f64 / 100.0,
     });
 
     state.pg.from("licensing_requests").insert(lr_data.to_string()).execute().await.ok();
@@ -526,7 +855,7 @@ pub async fn archive(
 #[derive(Debug, Deserialize)]
 pub struct CreateAndSendRequest {
     pub template_id: String,
-    pub docuseal_template_id: i32,
+    pub docuseal_template_id: Option<i32>,
     pub client_name: String,
     pub client_email: String,
     pub talent_names: Option<String>,
@@ -541,17 +870,11 @@ pub struct CreateAndSendRequest {
 /// POST /api/license-submissions/create-and-send
 pub async fn create_and_send(
     State(state): State<AppState>,
-    auth_user: AuthUser,
+    _auth_user: AuthUser,
     Json(req): Json<CreateAndSendRequest>,
 ) -> Result<Json<LicenseSubmission>, (StatusCode, String)> {
-    let _user_id = auth_user.id; // Prefix with underscore or remove if redundant, keeping for safety
-
     // 1. Fetch the License Template (to ensure it exists & get agency_id)
-    let pg = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
-        .insert_header("apikey", &state.supabase_service_key)
-        .insert_header("Authorization", format!("Bearer {}", state.supabase_service_key));
-
-    let template_resp = pg
+    let template_resp = state.pg
         .from("license_templates")
         .select("*")
         .eq("id", &req.template_id)
@@ -567,47 +890,132 @@ pub async fn create_and_send(
     let agency_id = license_template.agency_id;
 
     // 2. Initialize DocuSeal
-    // FIX: Use the correct API URL from config and remove unused variable
     let docuseal_client = DocuSealClient::new(
         state.docuseal_api_key.clone(),
-        state.docuseal_api_url.clone(),
+        state.docuseal_base_url.clone(),
     );
 
-    // 3. Create DocuSeal Submission
+    let docuseal_template_id = req
+        .docuseal_template_id
+        .or(license_template.docuseal_template_id)
+        .or_else(|| state.docuseal_master_template_id.parse::<i32>().ok())
+        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Invalid DS template id".to_string()))?;
+
+    // 3. Build fields array for pre-filling (DocuSeal API standard format)
+    let license_fee_val = req.license_fee.or(license_template.license_fee);
+    let fee_str = license_fee_val.map(|c| format!("${:.2}", c as f64 / 100.0)).unwrap_or_default();
+    
+    let duration_days = req.duration_days.or(Some(license_template.duration_days)).unwrap_or(0);
+
+    let start_date = req.start_date.clone().or(license_template.start_date.clone()).unwrap_or_else(|| "-".to_string());
+    
+    let talent_names_val = req.talent_names.clone().or(license_template.talent_name.clone());
+
+    use crate::services::docuseal::SubmitterField;
+    
+    let mut fields = Vec::new();
+    
+    fields.push(SubmitterField {
+        name: "Client/Brand Name".to_string(),
+        default_value: Some(req.client_name.clone()),
+        readonly: Some(true),
+    });
+    
+    fields.push(SubmitterField {
+        name: "Talent Name".to_string(),
+        default_value: Some(talent_names_val.clone().unwrap_or_default()),
+        readonly: Some(true),
+    });
+    
+    fields.push(SubmitterField {
+        name: "License Fee".to_string(),
+        default_value: Some(fee_str.clone()),
+        readonly: Some(true),
+    });
+    
+    fields.push(SubmitterField {
+        name: "Category".to_string(),
+        default_value: Some(license_template.category.clone()),
+        readonly: Some(true),
+    });
+    
+    if let Some(desc) = &license_template.description {
+        fields.push(SubmitterField {
+            name: "Description".to_string(),
+            default_value: Some(desc.clone()),
+            readonly: Some(true),
+        });
+    }
+    
+    if let Some(scope) = &license_template.usage_scope {
+        fields.push(SubmitterField {
+            name: "Usage Scope".to_string(),
+            default_value: Some(scope.clone()),
+            readonly: Some(true),
+        });
+    }
+    
+    fields.push(SubmitterField {
+        name: "Territory".to_string(),
+        default_value: Some(license_template.territory.clone()),
+        readonly: Some(true),
+    });
+    
+    fields.push(SubmitterField {
+        name: "Exclusivity".to_string(),
+        default_value: Some(license_template.exclusivity.clone()),
+        readonly: Some(true),
+    });
+    
+    fields.push(SubmitterField {
+        name: "Duration".to_string(),
+        default_value: Some(duration_days.to_string()),
+        readonly: Some(true),
+    });
+    
+    fields.push(SubmitterField {
+        name: "Start Date".to_string(),
+        default_value: Some(start_date.clone()),
+        readonly: Some(true),
+    });
+    
+    let combined_terms = format!("{}\n{}", license_template.custom_terms.as_deref().unwrap_or_default(), req.custom_terms.as_deref().unwrap_or_default());
+    fields.push(SubmitterField {
+        name: "Custom Terms".to_string(),
+        default_value: Some(combined_terms),
+        readonly: Some(true),
+    });
+    
+    fields.push(SubmitterField {
+        name: "Template Name".to_string(),
+        default_value: Some(license_template.template_name.clone()),
+        readonly: Some(true),
+    });
+
+    // 4. Create DocuSeal Submission with fields-based pre-fill
     let docuseal_submission = docuseal_client
-        .create_submission_with_values(
-            req.docuseal_template_id,
+        .create_submission_with_fields(
+            docuseal_template_id,
             req.client_name.clone(),
             req.client_email.clone(),
-            Some(json!({
-                "Client Brand Name": req.client_name,
-                "Talent Name": req.talent_names.clone().unwrap_or_default(),
-                "License Fee": format!("${:.2}", req.license_fee.unwrap_or(0) as f64 / 100.0),
-                "Category": license_template.category,
-                "Description": license_template.description.unwrap_or_default(),
-                "Usage Scope": license_template.usage_scope.unwrap_or_default(),
-                "Territory": license_template.territory,
-                "Exclusivity": license_template.exclusivity,
-                "Duration": req.duration_days.or(Some(license_template.duration_days)).unwrap_or(0),
-                "Start Date": req.start_date.clone().or(license_template.start_date.clone()).unwrap_or_default(),
-                "Custom Terms": req.custom_terms.clone().or(license_template.custom_terms.clone()).unwrap_or_default(),
-                "Template Name": license_template.template_name,
-            })),
+            "First Party".to_string(),
+            fields,
+            true,
         )
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("DocuSeal Error: {}", e)))?;
 
-    // 4. Create the License Submission record in DB (Status = 'sent')
+    // 5. Create the License Submission record in DB (Status = 'sent')
     let submission_data = json!({
         "agency_id": agency_id,
         "template_id": req.template_id,
-        "docuseal_template_id": req.docuseal_template_id,
-        "status": "sent", // Directly to SENT
+        "docuseal_template_id": docuseal_template_id,
+        "status": "sent",
         "client_name": req.client_name,
         "client_email": req.client_email,
-        "talent_names": req.talent_names.clone().or(license_template.talent_name),
-        "license_fee": req.license_fee.or(license_template.license_fee),
-        "duration_days": req.duration_days.or(Some(license_template.duration_days)),
+        "talent_names": talent_names_val,
+        "license_fee": license_fee_val,
+        "duration_days": duration_days,
         "start_date": req.start_date.or(license_template.start_date),
         "custom_terms": req.custom_terms.or(license_template.custom_terms),
         "docuseal_submission_id": docuseal_submission.id,
@@ -615,8 +1023,7 @@ pub async fn create_and_send(
         "sent_at": chrono::Utc::now().to_rfc3339(),
     });
 
-    let insert_resp = state
-        .pg
+    let insert_resp = state.pg
         .from("license_submissions")
         .insert(submission_data.to_string())
         .execute()
@@ -629,32 +1036,29 @@ pub async fn create_and_send(
 
     let submission = created.first().ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Failed to create submission".to_string()))?;
 
-    // 5. Create Licensing Request (if linked to licensing flow)
-    // Optional: Logic from 'finalize' to create licensing_requests record if needed.
-    // For now, mirroring finalize logic:
+    // 6. Create Licensing Request record
+    let talent_name = req.talent_names.clone().or(license_template.talent_name);
     
-    // Create new licensing request
     let request_data = json!({
         "agency_id": agency_id,
-           // "client_id": null, // We don't have a linked client user yet
         "submission_id": submission.id,
-        "status": "pending_signature", // Request status
-        "project_name": format!("License for {}", req.client_name),
-        "usage_type": "Digital License", 
-        "details": format!("Sent via template: {}", license_template.template_name),
-        "budget_cents": submission.license_fee.unwrap_or(0) * 100, // db likely expects cents if named budget_cents
-           // Wait, schema check needed for licensing_requests fields
+        "status": "pending",
+        "campaign_title": format!("License Contract - {}", req.client_name),
+        "client_name": req.client_name,
+        "talent_name": talent_name,
+        "usage_scope": license_template.usage_scope.clone(),
+        "regions": license_template.territory.clone(),
+        "budget_min": license_fee_val.unwrap_or(0) as f64 / 100.0,
+        "budget_max": license_fee_val.unwrap_or(0) as f64 / 100.0,
     });
 
-    // NOTE: For simplicity, I will omit licensing_requests creation here unless strictly required by the workflow.
-    // The previous finalize handler created it. Let's include it for consistency.
+    // We don't error out if lr creation fails, but we try it
     let _ = state.pg
         .from("licensing_requests")
         .insert(request_data.to_string())
         .execute()
         .await;
 
-    // 6. Update submission with request ID if created? (Optional, circle back)
-
-    Ok(Json(submission.clone())) // Clone to return
+    Ok(Json(submission.clone()))
 }
+

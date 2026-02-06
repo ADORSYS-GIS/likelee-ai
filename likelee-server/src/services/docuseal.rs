@@ -18,13 +18,23 @@ pub struct Submitter {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub role: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub fields: Option<Vec<SubmitterField>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub values: Option<serde_json::Value>,
 }
 
-// Represents the actual object returned inside the array from DocuSeal's submission API
+#[derive(Debug, Serialize)]
+pub struct SubmitterField {
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default_value: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub readonly: Option<bool>,
+}
+
 #[derive(Debug, Deserialize, Clone)]
 pub struct DocuSealSubmitter {
-    #[serde(alias = "id")]
+    pub id: i32,
     pub submission_id: i32,
     pub slug: String,
 }
@@ -84,8 +94,42 @@ impl DocuSealClient {
         submitter_name: String,
         submitter_email: String,
     ) -> Result<CreateSubmissionResponse, Box<dyn std::error::Error>> {
-        self.create_submission_with_values(template_id, submitter_name, submitter_email, None)
+        self.create_submission_with_values(template_id, submitter_name, submitter_email, None, None)
             .await
+    }
+
+    /// Create a new submission with a specific role
+    pub async fn create_submission_with_role(
+        &self,
+        template_id: i32,
+        submitter_name: String,
+        submitter_email: String,
+        role: String,
+        values: Option<serde_json::Value>,
+    ) -> Result<CreateSubmissionResponse, Box<dyn std::error::Error>> {
+        self.create_submission_with_values(template_id, submitter_name, submitter_email, values, Some(role))
+            .await
+    }
+
+    /// Create a new submission with a specific role and custom email sending behavior.
+    pub async fn create_submission_with_role_and_send_email(
+        &self,
+        template_id: i32,
+        submitter_name: String,
+        submitter_email: String,
+        role: String,
+        values: Option<serde_json::Value>,
+        send_email: bool,
+    ) -> Result<CreateSubmissionResponse, Box<dyn std::error::Error>> {
+        self.create_submission_with_values_and_send_email(
+            template_id,
+            submitter_name,
+            submitter_email,
+            values,
+            Some(role),
+            send_email,
+        )
+        .await
     }
 
     /// Create a new submission with custom values
@@ -95,17 +139,154 @@ impl DocuSealClient {
         submitter_name: String,
         submitter_email: String,
         values: Option<serde_json::Value>,
+        role: Option<String>,
+    ) -> Result<CreateSubmissionResponse, Box<dyn std::error::Error>> {
+        self.create_submission_with_values_and_send_email(
+            template_id,
+            submitter_name,
+            submitter_email,
+            values,
+            role,
+            true,
+        )
+        .await
+    }
+
+    /// Create a new submission with pre-filled fields array (DocuSeal API standard format)
+    pub async fn create_submission_with_fields(
+        &self,
+        template_id: i32,
+        submitter_name: String,
+        submitter_email: String,
+        role: String,
+        fields: Vec<SubmitterField>,
+        send_email: bool,
     ) -> Result<CreateSubmissionResponse, Box<dyn std::error::Error>> {
         let url = format!("{}/submissions", self.base_url);
 
         let request_body = CreateSubmissionRequest {
             template_id,
-            send_email: true,
+            send_email,
             submitters: vec![Submitter {
                 name: submitter_name,
                 email: submitter_email,
-                role: Some("Signer".to_string()),
-                values: None, 
+                role: Some(role),
+                fields: Some(fields),
+                values: None,
+            }],
+            values: None,
+        };
+
+        info!(
+            template_id,
+            url = %url,
+            "Creating DocuSeal submission with fields"
+        );
+
+        let response = self
+            .client
+            .post(&url)
+            .header("X-Auth-Token", &self.api_key)
+            .header("Content-Type", "application/json")
+            .json(&request_body)
+            .send()
+            .await?;
+
+        let status = response.status();
+        let body_text = response.text().await?;
+
+        if !status.is_success() {
+            error!(
+                status = %status,
+                error = %body_text,
+                "DocuSeal API error"
+            );
+            return Err(format!("DocuSeal API error: {} - {}", status, body_text).into());
+        }
+
+        // The API returns an array of submitters. We need to parse it as such.
+        match serde_json::from_str::<Vec<DocuSealSubmitter>>(&body_text) {
+            Ok(submitters) => {
+                if let Some(first_submitter) = submitters.first() {
+                    // Construct our internal response type from the API response.
+                    let submission = CreateSubmissionResponse {
+                        id: first_submitter.submission_id,
+                        slug: first_submitter.slug.clone(),
+                        submitters: vec![], // Not needed for this step
+                    };
+                    info!(submission_id = submission.id, "DocuSeal submission created");
+                    Ok(submission)
+                } else {
+                    let err_msg = "DocuSeal response was an empty array";
+                    error!(body = %body_text, err_msg);
+                    Err(err_msg.into())
+                }
+            }
+            Err(e) => {
+                error!(error = %e, body = %body_text, "Failed to decode DocuSeal response");
+                Err(Box::new(e))
+            }
+        }
+    }
+
+    pub async fn create_submission_with_values_and_send_email(
+        &self,
+        template_id: i32,
+        submitter_name: String,
+        submitter_email: String,
+        values: Option<serde_json::Value>,
+        role: Option<String>,
+        send_email: bool,
+    ) -> Result<CreateSubmissionResponse, Box<dyn std::error::Error>> {
+        let url = format!("{}/submissions", self.base_url);
+
+        let submitter_values = values.clone().and_then(|v| {
+            if let serde_json::Value::Object(map) = v {
+                let mut flat = serde_json::Map::new();
+                for (k, val) in map.into_iter() {
+                    match val {
+                        serde_json::Value::Object(_) => {}
+                        other => {
+                            flat.insert(k, other);
+                        }
+                    }
+                }
+                Some(serde_json::Value::Object(flat))
+            } else {
+                None
+            }
+        });
+
+        let submitter_fields = submitter_values.clone().and_then(|v| {
+            if let serde_json::Value::Object(map) = v {
+                let mut fields = Vec::new();
+                for (k, val) in map.into_iter() {
+                    let s = match val {
+                        serde_json::Value::Null => None,
+                        serde_json::Value::String(x) => Some(x),
+                        other => Some(other.to_string()),
+                    };
+                    fields.push(SubmitterField {
+                        name: k,
+                        default_value: s.clone(),
+                        readonly: Some(true),
+                    });
+                }
+                Some(fields)
+            } else {
+                None
+            }
+        });
+
+        let request_body = CreateSubmissionRequest {
+            template_id,
+            send_email,
+            submitters: vec![Submitter {
+                name: submitter_name,
+                email: submitter_email,
+                role: Some(role.unwrap_or_else(|| "Signer".to_string())),
+                fields: submitter_fields,
+                values: submitter_values,
             }],
             values,
         };
@@ -113,6 +294,7 @@ impl DocuSealClient {
         info!(
             template_id,
             url = %url,
+            body = %serde_json::to_string(&request_body).unwrap_or_else(|_| "<failed to serialize request body>".to_string()),
             "Creating DocuSeal submission"
         );
 
@@ -254,6 +436,7 @@ impl DocuSealClient {
             template_id,
             None,
             values,
+            None,
         )
     }
 
@@ -266,6 +449,7 @@ impl DocuSealClient {
         template_id: Option<i32>,
         external_id: Option<String>,
         values: Option<serde_json::Value>,
+        submitters: Option<serde_json::Value>,
     ) -> Result<String, Box<dyn std::error::Error>> {
         use jsonwebtoken::{encode, EncodingKey, Header};
 
@@ -293,43 +477,6 @@ impl DocuSealClient {
             .checked_add_signed(chrono::Duration::hours(1))
             .expect("valid timestamp")
             .timestamp() as usize;
-
-        // Try to derive submitters array if values is a nested role map
-        let submitters = if let Some(vals) = &values {
-            if let Some(obj) = vals.as_object() {
-                let mut subs = Vec::new();
-                for (role, role_values) in obj {
-                    if let Some(rv_obj) = role_values.as_object() {
-                        let mut fields_list = Vec::new();
-                        for (k, v) in rv_obj {
-                            let default_value = if let Some(s) = v.as_str() {
-                                s.to_string()
-                            } else {
-                                v.to_string()
-                            };
-                            fields_list.push(json!({
-                                "name": k,
-                                "default_value": default_value
-                            }));
-                        }
-                        subs.push(json!({
-                            "email": user_email.clone(),
-                            "role": role,
-                            "fields": fields_list
-                        }));
-                    }
-                }
-                if !subs.is_empty() {
-                    Some(json!(subs))
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-        } else {
-            None
-        };
 
         let claims = BuilderClaims {
             user_email,

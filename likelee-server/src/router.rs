@@ -126,6 +126,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::license_submissions::finalize),
         )
         .route(
+            "/api/license-submissions/:id/preview",
+            post(crate::license_submissions::preview),
+        )
+        .route(
             "/api/license-submissions/:id",
             get(crate::license_submissions::get).delete(crate::license_submissions::archive),
         )

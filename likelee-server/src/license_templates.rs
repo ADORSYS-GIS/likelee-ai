@@ -359,10 +359,7 @@ pub async fn create_builder_token(
     // 1. Determine the template ID to look up in our database
     let template_id = if let Some(ext_id) = &req.external_id {
         if ext_id.starts_with("temp-") {
-             // Form: temp-UUID-timestamp (UUID has hyphens, timestamp is at the end)
-             // Remove "temp-" prefix
              let stripped = ext_id.strip_prefix("temp-").unwrap_or(ext_id);
-             // Find the last hyphen which separates the UUID from the timestamp
              if let Some(last_hyphen_idx) = stripped.rfind('-') {
                  stripped[..last_hyphen_idx].to_string()
              } else {
@@ -377,8 +374,10 @@ pub async fn create_builder_token(
 
     // 2. Fetch template from DB to get pre-fill values
     let mut values = None;
+    let mut submitters = None;
+    let target_email = state.docuseal_user_email.clone();
+
     if !template_id.is_empty() {
-        tracing::info!("Looking up template with ID: {}", template_id);
         let resp = state.pg.from("license_templates")
             .select("*")
             .eq("id", &template_id)
@@ -403,7 +402,6 @@ pub async fn create_builder_token(
                 })
                 .unwrap_or_default();
             
-            // Clean nested role structure (matches "First Party" in your template)
             let mut role_data = serde_json::Map::new();
             role_data.insert("Client/Brand Name".to_string(), json!(license_template.client_name.clone().unwrap_or_default()));
             role_data.insert("Talent Name".to_string(), json!(talent_names));
@@ -418,20 +416,41 @@ pub async fn create_builder_token(
             role_data.insert("Custom Terms".to_string(), json!(license_template.custom_terms.clone().unwrap_or_default()));
             role_data.insert("Template Name".to_string(), json!(license_template.template_name));
 
-            // We only need the nested structure for role-assigned fields
-            values = Some(json!({
-                "First Party": role_data
-            }));
+            // Prepare submitters array for role pre-fill
+            let mut fields_list = Vec::new();
+            let mut values_map = serde_json::Map::new();
+
+            for (k, v) in role_data.iter() {
+                let val_str = if let Some(s) = v.as_str() { s.to_string() } else { v.to_string() };
+                
+                // Add to fields array (standard builder prop)
+                fields_list.push(json!({
+                    "name": k,
+                    "default_value": val_str,
+                    "value": val_str
+                }));
+
+                // Add to values map (standard submission pre-fill)
+                values_map.insert(k.clone(), json!(val_str));
+            }
             
-            tracing::info!("Generated pre-fill values: {:?}", values);
-        } else {
-            tracing::warn!("No template found with ID: {}", template_id);
+            submitters = Some(json!([{
+                "email": target_email.clone(),
+                "role": "First Party",
+                "fields": fields_list,
+                "values": values_map
+            }]));
+
+            let mut final_values = serde_json::Map::new();
+            final_values.insert("First Party".to_string(), json!(role_data));
+            for (k, v) in role_data.iter() {
+                final_values.insert(k.clone(), v.clone());
+            }
+            values = Some(serde_json::Value::Object(final_values));
         }
-    } else {
-        tracing::warn!("Template ID is empty, skipping pre-fill");
     }
 
-    // 3. Determine which DocuSeal template to use
+    // 3. Determine DocuSeal template
     let docuseal_template_id = if !state.docuseal_master_template_id.is_empty() {
         state.docuseal_master_template_id.parse::<i32>().ok()
     } else {
@@ -442,18 +461,15 @@ pub async fn create_builder_token(
         state.docuseal_api_key.clone(),
         state.docuseal_base_url.clone(),
     );
-    
-    
-    let target_email = state.docuseal_user_email.clone();
-
 
     let token = docuseal.create_builder_token_with_external_id(
         target_email.clone(),
         target_email.clone(), 
-        target_email, 
+        target_email.clone(), 
         docuseal_template_id,
         req.external_id,
         values.clone(),
+        submitters,
     ).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     Ok(Json(json!({ 

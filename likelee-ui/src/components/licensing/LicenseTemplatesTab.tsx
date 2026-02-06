@@ -152,17 +152,11 @@ export const LicenseTemplatesTab: React.FC = () => {
     });
 
     // UseTemplate logic:
-    // Direct Builder Open (No backend draft)
     const handleUseTemplate = (template: LicenseTemplate) => {
-        // Set builder target directly from template info
-        setBuilderTarget({
-            ...template,
-            docuseal_template_id: template.docuseal_template_id,
-            template_name: template.template_name,
-            // Generate a stable externalId for this session
-            external_id: `temp-${template.id}-${Date.now()}`
-        } as any);
-        setBuilderMode("submission");
+        setSendTemplateId(template.id);
+        setSendDocusealTemplateId(template.docuseal_template_id ?? null);
+        setSendLicenseFee(template.license_fee);
+        setIsSendModalOpen(true);
     };
 
     const handleUseSuccess = () => {
@@ -435,12 +429,12 @@ export const LicenseTemplatesTab: React.FC = () => {
                 initialData={editingTemplate}
             />
 
-            {sendTemplateId && sendDocusealTemplateId && (
+            {sendTemplateId && (
                 <SendContractModal
                     isOpen={isSendModalOpen}
                     onClose={() => setIsSendModalOpen(false)}
                     templateId={sendTemplateId}
-                    docusealTemplateId={sendDocusealTemplateId}
+                    docusealTemplateId={sendDocusealTemplateId ?? undefined}
                     licenseFee={sendLicenseFee}
                     onSuccess={handleUseSuccess}
                 />

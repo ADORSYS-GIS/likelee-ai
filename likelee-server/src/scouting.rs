@@ -1312,102 +1312,101 @@ pub async fn handle_webhook(
         .eq("docuseal_submission_id", submission_id.to_string())
         .single()
         .execute()
-        .await
-        .map_err(|e| {
-            error!(error = %e, "Failed to find offer for submission");
-            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
-        })?;
+        .await;
 
-    info!(status = ?offer_response.status(), "Offer lookup response status");
+    if let Ok(resp) = offer_response {
+        if resp.status().is_success() {
+            let offer_body = resp.text().await.unwrap_or_default();
+            if let Ok(offer) = serde_json::from_str::<serde_json::Value>(&offer_body) {
+                if let Some(offer_id) = offer["id"].as_str() {
+                    let prospect_id = offer["prospect_id"].as_str().unwrap_or("");
+                    
+                    // Extract signed document URL
+                    let signed_document_url = if new_status == "completed" {
+                        payload.data["documents"]
+                            .as_array()
+                            .and_then(|docs| docs.first())
+                            .and_then(|doc| doc["url"].as_str())
+                            .map(|s| s.to_string())
+                    } else {
+                        None
+                    };
 
-    if !offer_response.status().is_success() {
-        // It's possible we don't have this offer (e.g. created outside of our app or deleted)
-        // Just log and ignore
-        info!("No offer found for submission_id: {}", submission_id);
-        return Ok(StatusCode::OK);
-    }
+                    let mut update_json = json!({ "status": new_status });
+                    if let Some(url) = signed_document_url {
+                        update_json["signed_document_url"] = json!(url);
+                        if new_status == "completed" {
+                            update_json["signed_at"] = json!(chrono::Utc::now().to_rfc3339());
+                        }
+                    }
 
-    let offer_body = offer_response.text().await.unwrap_or_default();
-    info!(body = %offer_body, "Offer lookup response body");
-    let offer: serde_json::Value = serde_json::from_str(&offer_body).map_err(|e| {
-        error!(error = %e, body = %offer_body, "Failed to parse offer");
-        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
-    })?;
+                    let _ = pg.from("scouting_offers")
+                        .update(update_json.to_string())
+                        .eq("id", offer_id)
+                        .execute()
+                        .await;
 
-    let offer_id = offer["id"].as_str().unwrap();
-    let prospect_id = offer["prospect_id"].as_str().unwrap();
-
-    // Extract signed document URL from webhook payload if submission is completed
-    let signed_document_url = if new_status == "completed" {
-        // Try to get the document URL from payload.data.documents[0].url
-        let url = payload.data["documents"]
-            .as_array()
-            .and_then(|docs| docs.first())
-            .and_then(|doc| doc["url"].as_str())
-            .map(|s| s.to_string());
-
-        if url.is_some() {
-            info!(
-                submission_id,
-                url = ?url,
-                "Extracted signed document URL from webhook payload"
-            );
-        } else {
-            warn!(
-                submission_id,
-                payload_data = ?payload.data,
-                "No signed document URL found in webhook payload"
-            );
-        }
-        url
-    } else {
-        None
-    };
-
-    // Update offer status and signed_document_url
-    let mut update_json = json!({ "status": new_status });
-    if let Some(url) = signed_document_url {
-        update_json["signed_document_url"] = json!(url);
-        if new_status == "completed" {
-            update_json["signed_at"] = json!(chrono::Utc::now().to_rfc3339());
+                    // Update prospect status
+                    if !prospect_id.is_empty() {
+                        let p_status = if new_status == "completed" { "signed" } else if new_status == "declined" { "declined" } else { "" };
+                        if !p_status.is_empty() {
+                            let _ = pg.from("scouting_prospects")
+                                .update(json!({ "status": p_status }).to_string())
+                                .eq("id", prospect_id)
+                                .execute()
+                                .await;
+                        }
+                    }
+                    return Ok(StatusCode::OK);
+                }
+            }
         }
     }
 
-    let _ = pg
-        .from("scouting_offers")
-        .update(update_json.to_string())
-        .eq("id", offer_id)
+    // 2. Fallback to license_submissions if not a scouting offer
+    let sub_response = pg
+        .from("license_submissions")
+        .select("id")
+        .eq("docuseal_submission_id", submission_id.to_string())
+        .single()
         .execute()
-        .await
-        .map_err(|e| {
-            error!(error = %e, "Failed to update offer status");
-        });
+        .await;
 
-    // 2. Update prospect status (Pipeline logic)
-    // Only move the prospect card for significant events
-    if new_status == "completed" || new_status == "signed" {
-        let _ = pg
-            .from("scouting_prospects")
-            .update(json!({ "status": "signed" }).to_string())
-            .eq("id", prospect_id)
-            .execute()
-            .await
-            .map_err(|e| {
-                error!(error = %e, "Failed to update prospect status to signed");
-            });
-    } else if new_status == "declined" {
-        let _ = pg
-            .from("scouting_prospects")
-            .update(json!({ "status": "declined" }).to_string())
-            .eq("id", prospect_id)
-            .execute()
-            .await
-            .map_err(|e| {
-                error!(error = %e, "Failed to update prospect status to declined");
-            });
+    if let Ok(resp) = sub_response {
+        if resp.status().is_success() {
+            let sub_body = resp.text().await.unwrap_or_default();
+            if let Ok(sub) = serde_json::from_str::<serde_json::Value>(&sub_body) {
+                if let Some(sub_id) = sub["id"].as_str() {
+                    let mut update_json = json!({ "status": new_status });
+                    if new_status == "completed" {
+                        update_json["signed_at"] = json!(chrono::Utc::now().to_rfc3339());
+                    }
+
+                    let _ = pg.from("license_submissions")
+                        .update(update_json.to_string())
+                        .eq("id", sub_id)
+                        .execute()
+                        .await;
+
+                    // Also update licensing_requests if it exists
+                    let lr_status = match new_status {
+                        "completed" => "approved",
+                        "declined" => "rejected",
+                        _ => new_status,
+                    };
+                    
+                    let _ = pg.from("licensing_requests")
+                        .update(json!({ "status": lr_status }).to_string())
+                        .eq("submission_id", sub_id)
+                        .execute()
+                        .await;
+                    
+                    return Ok(StatusCode::OK);
+                }
+            }
+        }
     }
-    // Note: We do NOT update prospect status for "opened".
-    // It stays as "offer_sent" in the pipeline until signed or declined.
 
+    info!("No offer or submission found for submission_id: {}", submission_id);
     Ok(StatusCode::OK)
 }

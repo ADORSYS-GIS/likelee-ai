@@ -53,7 +53,7 @@ export const createLicenseSubmissionDraft = async (
 export const createAndSendLicenseSubmission = async (
     data: {
         template_id: string;
-        docuseal_template_id: number;
+        docuseal_template_id?: number;
         client_name: string;
         client_email: string;
         talent_names?: string;
@@ -76,6 +76,25 @@ export const finalizeLicenseSubmission = async (
     }
 ): Promise<LicenseSubmission> => {
     return await base44.post<LicenseSubmission>(`/api/license-submissions/${id}/finalize`, data || {});
+};
+
+export const previewLicenseSubmission = async (
+    id: string,
+    data?: {
+        docuseal_template_id?: number;
+        client_name?: string;
+        client_email?: string;
+        talent_names?: string;
+        license_fee?: number;
+        duration_days?: number;
+        start_date?: string;
+        custom_terms?: string;
+    }
+): Promise<{ preview_url: string; docuseal_submission_id: number; docuseal_slug: string }> => {
+    return await base44.post<{ preview_url: string; docuseal_submission_id: number; docuseal_slug: string }>(
+        `/api/license-submissions/${id}/preview`,
+        data || {}
+    );
 };
 
 export const getLicenseSubmissionDetails = async (id: string): Promise<LicenseSubmission> => {

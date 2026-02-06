@@ -29,12 +29,48 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
 
+    const prefillFields = React.useMemo(() => {
+        if (!prefillValues || typeof prefillValues !== "object") return undefined;
+
+        const fields: any[] = [];
+        const roleData = prefillValues["First Party"] || prefillValues;
+
+        const slugify = (text: string) => text.toLowerCase().replace(/[^a-z0-9]/g, "_").replace(/_+/g, "_").replace(/^_+|_+$/g, "");
+
+        const addField = (name: string, val: any) => {
+            const valStr = String(val);
+            // 1. Original format
+            fields.push({ name, role: "First Party", value: valStr, default_value: valStr });
+
+            // 2. Slugified format (Internal DocuSeal standard)
+            const slug = slugify(name);
+            if (slug !== name) {
+                fields.push({ name: slug, role: "First Party", value: valStr, default_value: valStr });
+            }
+        };
+
+        Object.entries(roleData).forEach(([key, value]) => {
+            if (typeof value === "string" || typeof value === "number") {
+                addField(key, value);
+            }
+        });
+
+        return fields.length > 0 ? fields : undefined;
+    }, [prefillValues]);
+
+    console.log("DocuSeal Designer [Render]:", {
+        hasToken: !!token,
+        fieldsCount: prefillFields?.length,
+        prefillFields
+    });
+
     useEffect(() => {
         if (open) {
             setLoading(true);
             const name = templateName || "License Contract";
             createBuilderToken(name, docusealTemplateId, externalId)
                 .then((res) => {
+                    console.log("DocuSeal Token Response:", res);
                     setToken(res.token);
                     setPrefillValues(res.values);
                     setDocusealUserEmail(res.docuseal_user_email);
@@ -79,28 +115,12 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
                         ) : token ? (
                             <DocusealBuilder
                                 token={token}
+                                fields={prefillFields}
+                                roles={["First Party"]}
                                 inputMode={true}
                                 withFieldPlaceholder={true}
-                                // Official way to pre-fill Builder in input-mode
-                                submitters={
-                                    prefillValues && typeof prefillValues === 'object' && docusealUserEmail
-                                        ? Object.entries(prefillValues).map(([role, roleData]: [string, any]) => ({
-                                            role,
-                                            email: docusealUserEmail,
-                                            fields: Object.entries(roleData || {}).map(([name, val]) => ({
-                                                name,
-                                                default_value: String(val)
-                                            }))
-                                        }))
-                                        : undefined
-                                }
                                 onSave={(data: any) => {
-
-
-
-
-
-                                    console.log("Designer Save Data:", data);
+                                    console.log("Designer Save Clicked:", data);
 
                                     // Check if there are any fields defined
                                     const hasFields = data?.documents?.some((doc: any) => doc.fields && doc.fields.length > 0);
