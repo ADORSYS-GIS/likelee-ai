@@ -18014,6 +18014,22 @@ export default function AgencyDashboard() {
     profile?.agency_name ||
     "Agency Name";
 
+  const agencyEmail =
+    (agencyProfileQuery.data as any)?.email ||
+    (profile as any)?.email ||
+    user?.email ||
+    "";
+
+  const agencyWebsite =
+    (agencyProfileQuery.data as any)?.website ||
+    (profile as any)?.website ||
+    "";
+
+  const agencyLogoUrl =
+    (agencyProfileQuery.data as any)?.logo_url ||
+    (profile as any)?.logo_url ||
+    "";
+
   const seatsLimit = useMemo(() => {
     return Number(
       agencyProfileQuery.data?.seats_limit ||
@@ -18057,70 +18073,6 @@ export default function AgencyDashboard() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [bookOuts, setBookOuts] = useState<any[]>([]);
   const [showCreatePackageWizard, setShowCreatePackageWizard] = useState(false);
-
-  const rosterQuery = useQuery({
-    queryKey: ["agency-roster", user?.id],
-    queryFn: async () => {
-      const resp = await getAgencyRoster();
-      return (resp as any) || null;
-    },
-    enabled: !!user?.id,
-    refetchOnWindowFocus: false,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  useEffect(() => {
-    if (!user?.id) return;
-    if (activeTab !== "roster") return;
-    if (activeSubTab !== "All Talent") return;
-    if (!rosterQuery.data) {
-      rosterQuery.refetch();
-    }
-  }, [activeTab, activeSubTab, user?.id]);
-
-  const rosterTalents = ((rosterQuery.data as any)?.talents ??
-    (Array.isArray(rosterQuery.data) ? rosterQuery.data : [])) as any[];
-  const activeCampaigns = Number(
-    (rosterQuery.data as any)?.active_campaigns ?? 0,
-  );
-  const earnings30dTotalCents = Number(
-    (rosterQuery.data as any)?.earnings_30d_total_cents ?? 0,
-  );
-  const earningsPrev30dTotalCents = Number(
-    (rosterQuery.data as any)?.earnings_prev_30d_total_cents ?? 0,
-  );
-
-  const agencyProfileQuery = useQuery({
-    queryKey: ["agency-profile", user?.id],
-    queryFn: async () => {
-      const resp = await getAgencyProfile();
-      return resp as any;
-    },
-    enabled: !!user?.id,
-  });
-
-  const agencyName =
-    (agencyProfileQuery.data as any)?.agency_name ||
-    (profile as any)?.agency_name ||
-    "Agency Name";
-  const agencyEmail =
-    (agencyProfileQuery.data as any)?.email ||
-    (profile as any)?.email ||
-    user?.email ||
-    "";
-  const agencyWebsite =
-    (agencyProfileQuery.data as any)?.website ||
-    (profile as any)?.website ||
-    "";
-  const agencyLogoUrl =
-    (agencyProfileQuery.data as any)?.logo_url ||
-    (profile as any)?.logo_url ||
-    "";
-  const seatsLimit = Number(
-    (agencyProfileQuery.data as any)?.seats_limit ||
-      (profile as any)?.seats_limit ||
-      0,
-  );
 
   const goToEditProfile = () => {
     setActiveTab("settings");
