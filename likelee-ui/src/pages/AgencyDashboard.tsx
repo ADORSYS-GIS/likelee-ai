@@ -11522,7 +11522,9 @@ const LicensingRequestsView = () => {
       const total = (resp as any)?.total_payment_amount;
       const ap = (resp as any)?.agency_percent;
       setTotalPaymentAmount(
-        typeof total === "number" && Number.isFinite(total) ? String(total) : "",
+        typeof total === "number" && Number.isFinite(total)
+          ? String(total)
+          : "",
       );
       setAgencyPercent(
         typeof ap === "number" && Number.isFinite(ap) ? String(ap) : "",
@@ -11781,8 +11783,8 @@ const LicensingRequestsView = () => {
           <DialogHeader>
             <DialogTitle>Pay split</DialogTitle>
             <DialogDescription>
-              Set total campaign pay and agency percent. The system will split total
-              evenly across talents.
+              Set total campaign pay and agency percent. The system will split
+              total evenly across talents.
             </DialogDescription>
           </DialogHeader>
 
