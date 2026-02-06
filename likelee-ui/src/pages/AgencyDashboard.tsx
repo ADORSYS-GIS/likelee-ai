@@ -10234,11 +10234,14 @@ const DashboardView = ({
         </div>
         <div>
           <h3 className="text-lg font-bold text-gray-900">
-            KYC Verification Required
+            {kycStatus === "approved"
+              ? "KYC Completed"
+              : "KYC Verification Required"}
           </h3>
           <p className="text-sm text-gray-500">
-            To enable payouts and licensing for your talent, please complete
-            your agency's ID verification.
+            {kycStatus === "approved"
+              ? "Your agency identity verification is complete."
+              : "To enable payouts and licensing for your talent, please complete\n            your agency's ID verification."}
           </p>
           <div className="mt-2 flex items-center gap-2">
             {kycStatus === "approved" ? (
@@ -10282,16 +10285,16 @@ const DashboardView = ({
           </div>
         </div>
       </div>
-      <Button
-        variant="default"
-        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 h-12 rounded-xl"
-        onClick={onKYC}
-        disabled={
-          !!kycLoading || kycStatus === "approved" || kycStatus === "pending"
-        }
-      >
-        {kycStatus === "pending" ? "KYC Pending" : "Complete KYC"}
-      </Button>
+      {kycStatus !== "approved" && (
+        <Button
+          variant="default"
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 h-12 rounded-xl"
+          onClick={onKYC}
+          disabled={!!kycLoading || kycStatus === "pending"}
+        >
+          {kycStatus === "pending" ? "KYC Pending" : "Complete KYC"}
+        </Button>
+      )}
     </div>
 
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -18011,6 +18014,22 @@ export default function AgencyDashboard() {
     profile?.agency_name ||
     "Agency Name";
 
+  const agencyEmail =
+    (agencyProfileQuery.data as any)?.email ||
+    (profile as any)?.email ||
+    user?.email ||
+    "";
+
+  const agencyWebsite =
+    (agencyProfileQuery.data as any)?.website ||
+    (profile as any)?.website ||
+    "";
+
+  const agencyLogoUrl =
+    (agencyProfileQuery.data as any)?.logo_url ||
+    (profile as any)?.logo_url ||
+    "";
+
   const seatsLimit = useMemo(() => {
     return Number(
       agencyProfileQuery.data?.seats_limit ||
@@ -18054,6 +18073,18 @@ export default function AgencyDashboard() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [bookOuts, setBookOuts] = useState<any[]>([]);
   const [showCreatePackageWizard, setShowCreatePackageWizard] = useState(false);
+
+  const goToEditProfile = () => {
+    setActiveTab("settings");
+    setActiveSubTab("General Settings");
+    setSidebarOpen(false);
+  };
+
+  const goToMarketplace = () => {
+    setActiveTab("scouting");
+    setActiveScoutingTab("Marketplace");
+    setSidebarOpen(false);
+  };
 
   const refreshAgencyKycStatus = async () => {
     if (!authenticated || !user?.id) return;
@@ -18483,6 +18514,25 @@ export default function AgencyDashboard() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showHeaderSearch, setShowHeaderSearch] = useState(false);
+  const [headerSearchValue, setHeaderSearchValue] = useState("");
+  const [showSupportDialog, setShowSupportDialog] = useState(false);
+  const [supportSubject, setSupportSubject] = useState("");
+  const [supportMessage, setSupportMessage] = useState("");
+  const [supportSending, setSupportSending] = useState(false);
+
+  useEffect(() => {
+    if (!showNotifications && !showProfileMenu) return;
+    const onDown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      if (target.closest("[data-header-dropdown]")) return;
+      setShowNotifications(false);
+      setShowProfileMenu(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [showNotifications, showProfileMenu]);
 
   const toggleExpanded = (id: string) => {
     setExpandedItems((prev) =>
@@ -18647,9 +18697,16 @@ export default function AgencyDashboard() {
             <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
           </div>
           <div className="flex flex-col min-w-0">
-            <h2 className="font-bold text-gray-900 text-base leading-tight truncate">
-              {profile?.agency_name || "Agency Name"}
-            </h2>
+            <div className="flex items-center gap-2 min-w-0">
+              <h2 className="font-bold text-gray-900 text-base leading-tight truncate">
+                {profile?.agency_name || "Agency Name"}
+              </h2>
+              {agencyKycStatus === "approved" && (
+                <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0.5 text-[10px] font-bold gap-1 shrink-0">
+                  <ShieldCheck className="w-3 h-3" /> Verified
+                </Badge>
+              )}
+            </div>
             <p className="text-sm text-gray-500 font-medium truncate">
               {profile?.email || user?.email}
             </p>
@@ -18760,12 +18817,13 @@ export default function AgencyDashboard() {
               variant="ghost"
               size="icon"
               className="text-gray-500 hover:text-gray-900"
+              onClick={() => setShowHeaderSearch(true)}
             >
               <Search className="w-5 h-5" />
             </Button>
 
             {/* Notifications Dropdown */}
-            <div className="relative">
+            <div className="relative" data-header-dropdown>
               <Button
                 variant="ghost"
                 size="icon"
@@ -18773,7 +18831,6 @@ export default function AgencyDashboard() {
                 onClick={() => setShowNotifications(!showNotifications)}
               >
                 <Bell className="w-5 h-5" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
               </Button>
 
               {showNotifications && (
@@ -18781,35 +18838,23 @@ export default function AgencyDashboard() {
                   <div className="p-4 border-b border-gray-100">
                     <h3 className="font-bold text-gray-900">Notifications</h3>
                   </div>
-                  <div className="divide-y divide-gray-50 max-h-[400px] overflow-y-auto">
-                    <div className="p-4 bg-blue-50/30 hover:bg-blue-50/50 transition-colors cursor-pointer">
-                      <p className="text-sm font-medium text-gray-900">
-                        Julia's license expires in 15 days
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">2 hours ago</p>
-                    </div>
-                    <div className="p-4 bg-blue-50/30 hover:bg-blue-50/50 transition-colors cursor-pointer">
-                      <p className="text-sm font-medium text-gray-900">
-                        New licensing request from Byredo
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">5 hours ago</p>
-                    </div>
-                    <div className="p-4 hover:bg-gray-50 transition-colors cursor-pointer">
-                      <p className="text-sm font-medium text-gray-900">
-                        Payment received: $5,200 from & Other Stories
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">1 day ago</p>
-                    </div>
-                    <div className="p-4 hover:bg-gray-50 transition-colors cursor-pointer">
-                      <p className="text-sm font-medium text-gray-900">
-                        Aaron added to roster (pending verification)
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">2 days ago</p>
-                    </div>
+                  <div className="p-6">
+                    <p className="text-sm font-bold text-gray-900">
+                      No notifications yet
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      When your agency receives updates, they’ll show up here.
+                    </p>
                   </div>
                   <div className="p-4 border-t border-gray-100 text-center">
-                    <button className="text-sm font-bold text-indigo-600 hover:text-indigo-700">
-                      View all notifications
+                    <button
+                      className="text-sm font-bold text-indigo-600 hover:text-indigo-700"
+                      onClick={() => {
+                        setShowNotifications(false);
+                        setShowSupportDialog(true);
+                      }}
+                    >
+                      Contact support
                     </button>
                   </div>
                 </div>
@@ -18820,12 +18865,15 @@ export default function AgencyDashboard() {
               variant="ghost"
               size="icon"
               className="text-gray-500 hover:text-gray-900"
+              onClick={() => {
+                setShowSupportDialog(true);
+              }}
             >
               <HelpCircle className="w-5 h-5" />
             </Button>
 
             {/* Profile Dropdown */}
-            <div className="relative">
+            <div className="relative" data-header-dropdown>
               <Button
                 variant="ghost"
                 size="icon"
@@ -18861,13 +18909,21 @@ export default function AgencyDashboard() {
                         </p>
                       </div>
                     </div>
-                    <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0.5 text-xs font-bold gap-1">
-                      <ShieldCheck className="w-3 h-3" /> Verified
-                    </Badge>
+                    {agencyKycStatus === "approved" && (
+                      <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0.5 text-xs font-bold gap-1">
+                        <ShieldCheck className="w-3 h-3" /> Verified
+                      </Badge>
+                    )}
                   </div>
 
                   <div className="p-2">
-                    <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group">
+                    <button
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group"
+                      onClick={() => {
+                        setShowProfileMenu(false);
+                        goToEditProfile();
+                      }}
+                    >
                       <Building2 className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
                         <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
@@ -18878,7 +18934,17 @@ export default function AgencyDashboard() {
                         </p>
                       </div>
                     </button>
-                    <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group">
+                    <button
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group"
+                      onClick={() => {
+                        toast({
+                          title: "Team & Permissions",
+                          description: "Coming soon",
+                          duration: 2000,
+                        });
+                        setShowProfileMenu(false);
+                      }}
+                    >
                       <Users className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
                         <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
@@ -18887,7 +18953,17 @@ export default function AgencyDashboard() {
                         <p className="text-xs text-gray-500">10 active users</p>
                       </div>
                     </button>
-                    <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group">
+                    <button
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group"
+                      onClick={() => {
+                        toast({
+                          title: "Billing & Subscription",
+                          description: "Coming soon",
+                          duration: 2000,
+                        });
+                        setShowProfileMenu(false);
+                      }}
+                    >
                       <CreditCard className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
                         <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
@@ -18896,7 +18972,15 @@ export default function AgencyDashboard() {
                         <p className="text-xs text-gray-500">Agency Pro Plan</p>
                       </div>
                     </button>
-                    <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group">
+                    <button
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group"
+                      onClick={() => {
+                        setShowProfileMenu(false);
+                        setActiveTab("protection");
+                        setActiveSubTab("Compliance Hub");
+                        setSidebarOpen(false);
+                      }}
+                    >
                       <FileText className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
                         <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
@@ -18907,7 +18991,15 @@ export default function AgencyDashboard() {
                         </p>
                       </div>
                     </button>
-                    <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group">
+                    <button
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group"
+                      onClick={() => {
+                        setShowProfileMenu(false);
+                        setActiveTab("settings");
+                        setActiveSubTab("General Settings");
+                        setSidebarOpen(false);
+                      }}
+                    >
                       <LinkIcon className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
                         <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
@@ -18934,6 +19026,138 @@ export default function AgencyDashboard() {
             </div>
           </div>
         </header>
+
+        <Dialog open={showHeaderSearch} onOpenChange={setShowHeaderSearch}>
+          <DialogContent className="sm:max-w-[520px] rounded-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold text-gray-900">
+                Search
+              </DialogTitle>
+              <DialogDescription className="text-gray-500 font-medium">
+                Search your roster by name.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <Input
+                autoFocus
+                value={headerSearchValue}
+                onChange={(e) => setHeaderSearchValue(e.target.value)}
+                placeholder="Search talent..."
+              />
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowHeaderSearch(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    const q = headerSearchValue.trim();
+                    setShowHeaderSearch(false);
+                    if (!q) return;
+                    setActiveTab("roster");
+                    setActiveSubTab("All Talent");
+                    setSearchTerm(q);
+                    setSidebarOpen(false);
+                  }}
+                >
+                  Search
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showSupportDialog} onOpenChange={setShowSupportDialog}>
+          <DialogContent className="sm:max-w-[560px] rounded-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold text-gray-900">
+                Contact Likelee Support
+              </DialogTitle>
+              <DialogDescription className="text-gray-500 font-medium">
+                Send a message to our support team.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Subject</Label>
+                <Input
+                  value={supportSubject}
+                  onChange={(e) => setSupportSubject(e.target.value)}
+                  placeholder="e.g. Issue with KYC status"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Message</Label>
+                <Textarea
+                  value={supportMessage}
+                  onChange={(e) => setSupportMessage(e.target.value)}
+                  placeholder="Describe your issue..."
+                  className="min-h-[140px]"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowSupportDialog(false)}
+                disabled={supportSending}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  const subject = supportSubject.trim();
+                  const message = supportMessage.trim();
+                  if (!subject || !message) {
+                    toast({
+                      title: "Missing details",
+                      description: "Please add a subject and message.",
+                      variant: "destructive" as any,
+                    });
+                    return;
+                  }
+
+                  setSupportSending(true);
+                  try {
+                    const fromEmail =
+                      (profile as any)?.email || user?.email || "unknown";
+                    const agencyId =
+                      (profile as any)?.id || user?.id || "unknown";
+                    const body = `From: ${fromEmail}\nAgency/User ID: ${agencyId}\n\n${message}`;
+
+                    await sendEmail({
+                      to: "support@likelee.ai",
+                      subject,
+                      body,
+                    });
+
+                    toast({
+                      title: "Message sent",
+                      description: "Support will get back to you shortly.",
+                    });
+                    setShowSupportDialog(false);
+                    setSupportSubject("");
+                    setSupportMessage("");
+                  } catch (e: any) {
+                    toast({
+                      title: "Failed to send",
+                      description:
+                        e?.message || "Could not send your message to support.",
+                      variant: "destructive" as any,
+                    });
+                  } finally {
+                    setSupportSending(false);
+                  }
+                }}
+                disabled={supportSending}
+              >
+                {supportSending ? "Sending..." : "Send"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Dynamic Dashboard Content */}
         <main className="flex-1 overflow-auto px-12 py-8 bg-gray-50">
@@ -18970,6 +19194,12 @@ export default function AgencyDashboard() {
               earnings30dTotalCents={earnings30dTotalCents}
               earningsPrev30dTotalCents={earningsPrev30dTotalCents}
               agencyName={agencyName}
+              agencyEmail={agencyEmail}
+              agencyWebsite={agencyWebsite}
+              logoUrl={agencyLogoUrl}
+              kycStatus={agencyKycStatus}
+              onEditProfile={goToEditProfile}
+              onViewMarketplace={goToMarketplace}
               seatsLimit={seatsLimit}
               isLoading={rosterQuery.isLoading}
               onRosterChanged={() => rosterQuery.refetch()}
