@@ -922,132 +922,6 @@ export default function CreatorDashboard() {
     }
   };
 
-  useEffect(() => {
-    if (!kycSessionUrl) return;
-
-    const rootElementId = "veriff-kyc-embedded-creator";
-    let cancelled = false;
-
-    const loadIncontextScript = () => {
-      const w = window as any;
-      if (w.veriffSDK?.createVeriffFrame) return Promise.resolve();
-
-      return new Promise<void>((resolve, reject) => {
-        const existing = document.querySelector(
-          'script[data-likelee-veriff-incontext="1"]',
-        ) as HTMLScriptElement | null;
-        if (existing) {
-          existing.addEventListener("load", () => resolve(), { once: true });
-          existing.addEventListener("error", () => reject(), { once: true });
-          return;
-        }
-
-        const s = document.createElement("script");
-        s.src = "https://cdn.veriff.me/incontext/js/v2.5.0/veriff.js";
-        s.async = true;
-        s.setAttribute("data-likelee-veriff-incontext", "1");
-        s.onload = () => resolve();
-        s.onerror = () => reject(new Error("Failed to load Veriff InContext"));
-        document.body.appendChild(s);
-      });
-    };
-
-    (async () => {
-      try {
-        setKycEmbedLoading(true);
-        await loadIncontextScript();
-        if (cancelled) return;
-
-        const container = document.getElementById(rootElementId);
-        if (container) container.innerHTML = "";
-
-        const w = window as any;
-        if (!w.veriffSDK?.createVeriffFrame) {
-          throw new Error("Veriff SDK not available");
-        }
-
-        veriffFrameRef.current = w.veriffSDK.createVeriffFrame({
-          url: kycSessionUrl,
-          embedded: true,
-          embeddedOptions: {
-            rootElementID: rootElementId,
-          },
-          onEvent: (msg: any) => {
-            if (msg === "SUBMITTED") {
-              setCreator((prev: any) => ({ ...prev, kyc_status: "pending" }));
-              setShowKycModal(false);
-              setKycSessionUrl(null);
-              refreshVerificationFromDashboard();
-            }
-          },
-        });
-
-        setKycEmbedLoading(false);
-      } catch (e: any) {
-        toast({
-          variant: "destructive",
-          title: "Verification Failed",
-          description:
-            e?.message || "Failed to load verification. Please try again.",
-        });
-        setKycEmbedLoading(false);
-        setKycSessionUrl(null);
-        setShowKycModal(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      try {
-        veriffFrameRef.current?.close?.();
-      } catch {
-        // ignore
-      }
-      veriffFrameRef.current = null;
-      const container = document.getElementById(rootElementId);
-      if (container) container.innerHTML = "";
-    };
-  }, [kycSessionUrl]);
-
-  useEffect(() => {
-    if (!showKycModal) return;
-    if (!authenticated || !user?.id) return;
-
-    let active = true;
-    const interval = window.setInterval(async () => {
-      try {
-        const rows: any = await base44.get("/api/kyc/status");
-        const row = Array.isArray(rows) && rows.length ? rows[0] : null;
-        const status = row?.kyc_status;
-        if (!active || !status) return;
-
-        if (status === "approved") {
-          toast({
-            title: "Verification Complete",
-            description: "Your verification is approved.",
-          });
-          setShowKycModal(false);
-          setKycSessionUrl(null);
-        } else if (status === "declined") {
-          toast({
-            variant: "destructive",
-            title: "Verification Complete",
-            description: "Your verification was declined.",
-          });
-          setShowKycModal(false);
-          setKycSessionUrl(null);
-        }
-      } catch {
-        // ignore polling errors
-      }
-    }, 2500);
-
-    return () => {
-      active = false;
-      window.clearInterval(interval);
-    };
-  }, [authenticated, showKycModal, user?.id]);
-
   // Creatify: Check avatar status
   const handleRefreshAvatarStatus = async () => {
     if (!user?.id) return;
@@ -1235,6 +1109,132 @@ export default function CreatorDashboard() {
   const [kycSessionUrl, setKycSessionUrl] = useState<string | null>(null);
   const veriffFrameRef = useRef<any>(null);
   const [kycEmbedLoading, setKycEmbedLoading] = useState(false);
+
+  useEffect(() => {
+    if (!kycSessionUrl) return;
+
+    const rootElementId = "veriff-kyc-embedded-creator";
+    let cancelled = false;
+
+    const loadIncontextScript = () => {
+      const w = window as any;
+      if (w.veriffSDK?.createVeriffFrame) return Promise.resolve();
+
+      return new Promise<void>((resolve, reject) => {
+        const existing = document.querySelector(
+          'script[data-likelee-veriff-incontext="1"]',
+        ) as HTMLScriptElement | null;
+        if (existing) {
+          existing.addEventListener("load", () => resolve(), { once: true });
+          existing.addEventListener("error", () => reject(), { once: true });
+          return;
+        }
+
+        const s = document.createElement("script");
+        s.src = "https://cdn.veriff.me/incontext/js/v2.5.0/veriff.js";
+        s.async = true;
+        s.setAttribute("data-likelee-veriff-incontext", "1");
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error("Failed to load Veriff InContext"));
+        document.body.appendChild(s);
+      });
+    };
+
+    (async () => {
+      try {
+        setKycEmbedLoading(true);
+        await loadIncontextScript();
+        if (cancelled) return;
+
+        const container = document.getElementById(rootElementId);
+        if (container) container.innerHTML = "";
+
+        const w = window as any;
+        if (!w.veriffSDK?.createVeriffFrame) {
+          throw new Error("Veriff SDK not available");
+        }
+
+        veriffFrameRef.current = w.veriffSDK.createVeriffFrame({
+          url: kycSessionUrl,
+          embedded: true,
+          embeddedOptions: {
+            rootElementID: rootElementId,
+          },
+          onEvent: (msg: any) => {
+            if (msg === "SUBMITTED") {
+              setCreator((prev: any) => ({ ...prev, kyc_status: "pending" }));
+              setShowKycModal(false);
+              setKycSessionUrl(null);
+              refreshVerificationFromDashboard();
+            }
+          },
+        });
+
+        setKycEmbedLoading(false);
+      } catch (e: any) {
+        toast({
+          variant: "destructive",
+          title: "Verification Failed",
+          description:
+            e?.message || "Failed to load verification. Please try again.",
+        });
+        setKycEmbedLoading(false);
+        setKycSessionUrl(null);
+        setShowKycModal(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      try {
+        veriffFrameRef.current?.close?.();
+      } catch {
+        // ignore
+      }
+      veriffFrameRef.current = null;
+      const container = document.getElementById(rootElementId);
+      if (container) container.innerHTML = "";
+    };
+  }, [kycSessionUrl]);
+
+  useEffect(() => {
+    if (!showKycModal) return;
+    if (!authenticated || !user?.id) return;
+
+    let active = true;
+    const interval = window.setInterval(async () => {
+      try {
+        const rows: any = await base44.get("/api/kyc/status");
+        const row = Array.isArray(rows) && rows.length ? rows[0] : null;
+        const status = row?.kyc_status;
+        if (!active || !status) return;
+
+        if (status === "approved") {
+          toast({
+            title: "Verification Complete",
+            description: "Your verification is approved.",
+          });
+          setShowKycModal(false);
+          setKycSessionUrl(null);
+        } else if (status === "declined") {
+          toast({
+            variant: "destructive",
+            title: "Verification Complete",
+            description: "Your verification was declined.",
+          });
+          setShowKycModal(false);
+          setKycSessionUrl(null);
+        }
+      } catch {
+        // ignore polling errors
+      }
+    }, 2500);
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [authenticated, showKycModal, user?.id]);
   const [activeCampaigns, setActiveCampaigns] =
     useState<any[]>(mockActiveCampaigns);
   const [pendingApprovals, setPendingApprovals] =
