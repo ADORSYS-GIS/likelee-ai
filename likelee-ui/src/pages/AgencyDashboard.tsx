@@ -12102,6 +12102,7 @@ const ActiveLicensesView = () => {
                       {lic.days_left_label}
                     </p>
                   </td>
+                  <td className="px-6 py-8">
                     <p className="text-xs font-medium text-gray-600 max-w-[140px] leading-relaxed">
                       {Array.isArray(lic.usage_scope)
                         ? lic.usage_scope.join(", ")
