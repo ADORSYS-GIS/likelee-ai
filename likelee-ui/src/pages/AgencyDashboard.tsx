@@ -119,12 +119,18 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { BookingsView } from "@/components/Bookings/BookingsView";
 import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
+import AgencyDashboardView from "@/components/agency/DashboardView";
 import FileStorageView from "@/components/dashboard/settings/FileStorageView";
 import AgencyRosterView from "@/components/agency/RosterView";
 import PerformanceTiers from "@/components/dashboard/PerformanceTiers";
 import {
   getAgencyRoster,
   getAgencyProfile,
+  getAgencyDashboardOverview,
+  getAgencyTalentPerformance,
+  getAgencyRevenueBreakdown,
+  getAgencyLicensingPipeline,
+  getAgencyRecentActivity,
   getAgencyLicensingRequests,
   updateAgencyLicensingRequestsStatus,
   getAgencyLicensingRequestsPaySplit,
@@ -17866,9 +17872,11 @@ const PlaceholderView = ({ title }: { title: string }) => (
 );
 
 export default function AgencyDashboard() {
-  const { logout, user, profile, authenticated } = useAuth();
-  const navigate = useNavigate();
+  const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { user, profile, authenticated, logout } = useAuth();
 
   // Initialize state from URL params
   const [agencyMode, setAgencyModeState] = useState<"AI" | "IRL">(
@@ -17880,6 +17888,145 @@ export default function AgencyDashboard() {
   const [activeSubTab, setActiveSubTab] = useState(
     searchParams.get("subTab") || "All Talent",
   );
+
+  const rosterQuery = useQuery({
+    queryKey: ["agency-roster", user?.id],
+    queryFn: async () => {
+      const resp = await getAgencyRoster();
+      return (resp as any) || null;
+    },
+    enabled: !!user?.id,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const dashboardOverviewQuery = useQuery({
+    queryKey: ["agency-dashboard-overview", user?.id],
+    queryFn: async () => {
+      const resp = await getAgencyDashboardOverview();
+      return resp as any;
+    },
+    enabled: !!user?.id,
+    refetchOnWindowFocus: false,
+    staleTime: 60 * 1000,
+  });
+
+  const talentPerformanceQuery = useQuery({
+    queryKey: ["agency-dashboard-talent-performance", user?.id],
+    queryFn: async () => {
+      const resp = await getAgencyTalentPerformance();
+      return resp as any;
+    },
+    enabled: !!user?.id,
+    refetchOnWindowFocus: false,
+    staleTime: 60 * 1000,
+  });
+
+  const revenueBreakdownQuery = useQuery({
+    queryKey: ["agency-dashboard-revenue-breakdown", user?.id],
+    queryFn: async () => {
+      const resp = await getAgencyRevenueBreakdown();
+      return resp as any;
+    },
+    enabled: !!user?.id,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const licensingPipelineQuery = useQuery({
+    queryKey: ["agency-dashboard-licensing-pipeline", user?.id],
+    queryFn: async () => {
+      const resp = await getAgencyLicensingPipeline();
+      return resp as any;
+    },
+    enabled: !!user?.id,
+    refetchOnWindowFocus: false,
+    staleTime: 60 * 1000,
+  });
+
+  const recentActivityQuery = useQuery({
+    queryKey: ["agency-dashboard-recent-activity", user?.id],
+    queryFn: async () => {
+      const resp = await getAgencyRecentActivity();
+      return resp as any;
+    },
+    enabled: !!user?.id,
+    refetchOnWindowFocus: false,
+    staleTime: 60 * 1000,
+  });
+
+  const agencyProfileQuery = useQuery({
+    queryKey: ["agency-profile", user?.id],
+    queryFn: async () => {
+      const resp = await getAgencyProfile();
+      return resp as any;
+    },
+    enabled: !!user?.id,
+  });
+
+  const licensingRequestsCountQuery = useQuery({
+    queryKey: ["agency-licensing-requests", user?.id],
+    queryFn: async () => {
+      const resp = await getAgencyLicensingRequests();
+      return resp as any;
+    },
+    enabled: !!user?.id,
+    refetchOnWindowFocus: false,
+    staleTime: 60 * 1000,
+  });
+
+  const pendingLicensingRequestsCount = useMemo(() => {
+    const d: any = licensingRequestsCountQuery.data;
+    const requests = d?.requests ?? d?.data ?? d;
+    if (!Array.isArray(requests)) return 0;
+    const pending = requests.filter((r: any) => r?.status === "pending");
+    return pending.length;
+  }, [licensingRequestsCountQuery.data]);
+
+  const rosterTalents = useMemo(() => {
+    const d: any = rosterQuery.data;
+    const talents = d?.talents;
+    if (Array.isArray(talents)) return talents;
+    if (Array.isArray(d)) return d;
+    return [];
+  }, [rosterQuery.data]);
+
+  const activeCampaigns = useMemo(() => {
+    const d: any = rosterQuery.data;
+    return Number(d?.active_campaigns ?? 0);
+  }, [rosterQuery.data]);
+
+  const earnings30dTotalCents = useMemo(() => {
+    const d: any = rosterQuery.data;
+    return Number(d?.earnings_30d_total_cents ?? 0);
+  }, [rosterQuery.data]);
+
+  const earningsPrev30dTotalCents = useMemo(() => {
+    const d: any = rosterQuery.data;
+    return Number(d?.earnings_prev_30d_total_cents ?? 0);
+  }, [rosterQuery.data]);
+
+  const agencyName =
+    agencyProfileQuery.data?.agency_name ||
+    profile?.agency_name ||
+    "Agency Name";
+
+  const seatsLimit = useMemo(() => {
+    return Number(
+      agencyProfileQuery.data?.seats_limit ||
+        (profile as any)?.seats_limit ||
+        0,
+    );
+  }, [agencyProfileQuery.data, profile]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    if (activeTab !== "roster") return;
+    if (activeSubTab !== "All Talent") return;
+    if (!rosterQuery.data) {
+      rosterQuery.refetch();
+    }
+  }, [activeTab, activeSubTab, user?.id, rosterQuery.data, rosterQuery]);
   const [activeScoutingTab, setActiveScoutingTabState] = useState(
     searchParams.get("scoutingTab") || "Prospect Pipeline",
   );
@@ -17897,7 +18044,6 @@ export default function AgencyDashboard() {
     direction: "asc" | "desc";
   } | null>(null);
 
-  const { toast } = useToast();
   const [kycLoading, setKycLoading] = useState(false);
   const [showKycModal, setShowKycModal] = useState(false);
   const [kycSessionUrl, setKycSessionUrl] = useState<string | null>(null);
@@ -17908,57 +18054,6 @@ export default function AgencyDashboard() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [bookOuts, setBookOuts] = useState<any[]>([]);
   const [showCreatePackageWizard, setShowCreatePackageWizard] = useState(false);
-
-  const rosterQuery = useQuery({
-    queryKey: ["agency-roster", user?.id],
-    queryFn: async () => {
-      const resp = await getAgencyRoster();
-      return (resp as any) || null;
-    },
-    enabled: !!user?.id,
-    refetchOnWindowFocus: false,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  useEffect(() => {
-    if (!user?.id) return;
-    if (activeTab !== "roster") return;
-    if (activeSubTab !== "All Talent") return;
-    if (!rosterQuery.data) {
-      rosterQuery.refetch();
-    }
-  }, [activeTab, activeSubTab, user?.id]);
-
-  const rosterTalents = ((rosterQuery.data as any)?.talents ??
-    (Array.isArray(rosterQuery.data) ? rosterQuery.data : [])) as any[];
-  const activeCampaigns = Number(
-    (rosterQuery.data as any)?.active_campaigns ?? 0,
-  );
-  const earnings30dTotalCents = Number(
-    (rosterQuery.data as any)?.earnings_30d_total_cents ?? 0,
-  );
-  const earningsPrev30dTotalCents = Number(
-    (rosterQuery.data as any)?.earnings_prev_30d_total_cents ?? 0,
-  );
-
-  const agencyProfileQuery = useQuery({
-    queryKey: ["agency-profile", user?.id],
-    queryFn: async () => {
-      const resp = await getAgencyProfile();
-      return resp as any;
-    },
-    enabled: !!user?.id,
-  });
-
-  const agencyName =
-    (agencyProfileQuery.data as any)?.agency_name ||
-    (profile as any)?.agency_name ||
-    "Agency Name";
-  const seatsLimit = Number(
-    (agencyProfileQuery.data as any)?.seats_limit ||
-      (profile as any)?.seats_limit ||
-      0,
-  );
 
   const refreshAgencyKycStatus = async () => {
     if (!authenticated || !user?.id) return;
@@ -18843,8 +18938,16 @@ export default function AgencyDashboard() {
         {/* Dynamic Dashboard Content */}
         <main className="flex-1 overflow-auto px-12 py-8 bg-gray-50">
           {activeTab === "dashboard" && (
-            <DashboardView
+            <AgencyDashboardView
               onKYC={handleKYC}
+              agencyName={agencyName}
+              rosterData={rosterTalents}
+              licensingRequestsCount={pendingLicensingRequestsCount}
+              overview={dashboardOverviewQuery.data}
+              talentPerformance={talentPerformanceQuery.data}
+              revenueBreakdown={revenueBreakdownQuery.data}
+              licensingPipeline={licensingPipelineQuery.data}
+              recentActivity={recentActivityQuery.data}
               kycStatus={agencyKycStatus}
               kycLoading={kycLoading}
               onRefreshStatus={refreshAgencyKycStatus}
