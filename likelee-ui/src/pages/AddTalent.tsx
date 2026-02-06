@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useToast } from "@/components/ui/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -66,6 +67,7 @@ export default function AddTalent() {
   const location = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -406,6 +408,15 @@ export default function AddTalent() {
 
       await createAgencyTalent(payload);
 
+      if (user?.id) {
+        await queryClient.invalidateQueries({
+          queryKey: ["agency-roster", user.id],
+        });
+        await queryClient.invalidateQueries({
+          queryKey: ["agency-profile", user.id],
+        });
+      }
+
       toast({
         title: "Success",
         description: "Talent added successfully!",
@@ -413,7 +424,10 @@ export default function AddTalent() {
       {
         const base = createPageUrl("AgencyDashboard");
         const hasQuery = base.includes("?");
-        navigate(`${base}${hasQuery ? "&" : "?"}tab=roster`, { replace: true });
+        navigate(
+          `${base}${hasQuery ? "&" : "?"}tab=roster&subTab=${encodeURIComponent("All Talent")}`,
+          { replace: true },
+        );
       }
     } catch (error) {
       console.error(error);

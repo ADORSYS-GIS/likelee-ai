@@ -120,7 +120,11 @@ import { Switch } from "@/components/ui/switch";
 import { BookingsView } from "@/components/Bookings/BookingsView";
 import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
 import FileStorageView from "@/components/dashboard/settings/FileStorageView";
+import AgencyRosterView from "@/components/agency/RosterView";
+import PerformanceTiers from "@/components/dashboard/PerformanceTiers";
 import {
+  getAgencyRoster,
+  getAgencyProfile,
   listBookings,
   createBooking as apiCreateBooking,
   updateBooking as apiUpdateBooking,
@@ -10685,7 +10689,7 @@ const DashboardView = ({
   </div>
 );
 
-const RosterView = ({
+export const RosterView = ({
   searchTerm,
   setSearchTerm,
   statusFilter,
@@ -10695,6 +10699,7 @@ const RosterView = ({
   sortConfig,
   setSortConfig,
   profile,
+  agencyKycStatus,
 }: {
   searchTerm: string;
   setSearchTerm: (s: string) => void;
@@ -10705,6 +10710,7 @@ const RosterView = ({
   sortConfig: { key: string; direction: "asc" | "desc" } | null;
   setSortConfig: (c: { key: string; direction: "asc" | "desc" } | null) => void;
   profile: any;
+  agencyKycStatus: string | null;
 }) => {
   const navigate = useNavigate();
   const [rosterTab, setRosterTab] = useState("roster");
@@ -17614,7 +17620,7 @@ export default function AgencyDashboard() {
   ]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
-  const [consentFilter, setConsentFilter] = useState("All Consent");
+  const [categoryFilter, setCategoryFilter] = useState("All Categories");
   const [sortConfig, setSortConfig] = useState<{
     key: string;
     direction: "asc" | "desc";
@@ -17631,6 +17637,57 @@ export default function AgencyDashboard() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [bookOuts, setBookOuts] = useState<any[]>([]);
   const [showCreatePackageWizard, setShowCreatePackageWizard] = useState(false);
+
+  const rosterQuery = useQuery({
+    queryKey: ["agency-roster", user?.id],
+    queryFn: async () => {
+      const resp = await getAgencyRoster();
+      return (resp as any) || null;
+    },
+    enabled: !!user?.id,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (!user?.id) return;
+    if (activeTab !== "roster") return;
+    if (activeSubTab !== "All Talent") return;
+    if (!rosterQuery.data) {
+      rosterQuery.refetch();
+    }
+  }, [activeTab, activeSubTab, user?.id]);
+
+  const rosterTalents = ((rosterQuery.data as any)?.talents ??
+    (Array.isArray(rosterQuery.data) ? rosterQuery.data : [])) as any[];
+  const activeCampaigns = Number(
+    (rosterQuery.data as any)?.active_campaigns ?? 0,
+  );
+  const earnings30dTotalCents = Number(
+    (rosterQuery.data as any)?.earnings_30d_total_cents ?? 0,
+  );
+  const earningsPrev30dTotalCents = Number(
+    (rosterQuery.data as any)?.earnings_prev_30d_total_cents ?? 0,
+  );
+
+  const agencyProfileQuery = useQuery({
+    queryKey: ["agency-profile", user?.id],
+    queryFn: async () => {
+      const resp = await getAgencyProfile();
+      return resp as any;
+    },
+    enabled: !!user?.id,
+  });
+
+  const agencyName =
+    (agencyProfileQuery.data as any)?.agency_name ||
+    (profile as any)?.agency_name ||
+    "Agency Name";
+  const seatsLimit = Number(
+    (agencyProfileQuery.data as any)?.seats_limit ||
+      (profile as any)?.seats_limit ||
+      0,
+  );
 
   const refreshAgencyKycStatus = async () => {
     if (!authenticated || !user?.id) return;
@@ -18524,22 +18581,28 @@ export default function AgencyDashboard() {
             />
           )}
           {activeTab === "roster" && activeSubTab === "All Talent" && (
-            <RosterView
+            <AgencyRosterView
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
               statusFilter={statusFilter}
               setStatusFilter={setStatusFilter}
-              consentFilter={consentFilter}
-              setConsentFilter={setConsentFilter}
+              categoryFilter={categoryFilter}
+              setCategoryFilter={setCategoryFilter}
               sortConfig={sortConfig}
               setSortConfig={setSortConfig}
-              profile={profile}
+              agencyMode={agencyMode}
+              rosterData={rosterTalents}
+              activeCampaigns={activeCampaigns}
+              earnings30dTotalCents={earnings30dTotalCents}
+              earningsPrev30dTotalCents={earningsPrev30dTotalCents}
+              agencyName={agencyName}
+              seatsLimit={seatsLimit}
+              isLoading={rosterQuery.isLoading}
+              onRosterChanged={() => rosterQuery.refetch()}
             />
           )}
           {activeTab === "roster" && activeSubTab === "Performance Tiers" && (
-            <PerformanceTiersView
-              onBack={() => setActiveSubTab("All Talent")}
-            />
+            <PerformanceTiers />
           )}
           {activeTab === "licensing" &&
             activeSubTab === "Licensing Requests" && <LicensingRequestsView />}
