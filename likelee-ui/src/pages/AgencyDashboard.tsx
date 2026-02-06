@@ -120,7 +120,15 @@ import { Switch } from "@/components/ui/switch";
 import { BookingsView } from "@/components/Bookings/BookingsView";
 import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettingsView";
 import FileStorageView from "@/components/dashboard/settings/FileStorageView";
+import AgencyRosterView from "@/components/agency/RosterView";
+import PerformanceTiers from "@/components/dashboard/PerformanceTiers";
 import {
+  getAgencyRoster,
+  getAgencyProfile,
+  getAgencyLicensingRequests,
+  updateAgencyLicensingRequestsStatus,
+  getAgencyLicensingRequestsPaySplit,
+  setAgencyLicensingRequestsPaySplit,
   listBookings,
   createBooking as apiCreateBooking,
   updateBooking as apiUpdateBooking,
@@ -10685,7 +10693,7 @@ const DashboardView = ({
   </div>
 );
 
-const RosterView = ({
+export const RosterView = ({
   searchTerm,
   setSearchTerm,
   statusFilter,
@@ -10695,6 +10703,7 @@ const RosterView = ({
   sortConfig,
   setSortConfig,
   profile,
+  agencyKycStatus,
 }: {
   searchTerm: string;
   setSearchTerm: (s: string) => void;
@@ -10705,6 +10714,7 @@ const RosterView = ({
   sortConfig: { key: string; direction: "asc" | "desc" } | null;
   setSortConfig: (c: { key: string; direction: "asc" | "desc" } | null) => void;
   profile: any;
+  agencyKycStatus: string | null;
 }) => {
   const navigate = useNavigate();
   const [rosterTab, setRosterTab] = useState("roster");
@@ -11426,44 +11436,187 @@ const RosterView = ({
 };
 
 const LicensingRequestsView = () => {
-  const requests = [
-    {
-      id: 1,
-      brand: "Aime Leon Dore",
-      campaign: "Holiday Gift Guide 2025",
-      talents: ["Emma", "Milan"],
-      budget: "$8,000 - $12,000",
-      scope: "Social Media + E-commerce",
-      regions: "North America",
-      deadline: "11/28/2025",
-      status: "reviewing",
-      statusColor: "bg-blue-100 text-blue-700",
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["agency", "licensing-requests"],
+    queryFn: async () => {
+      const resp = await getAgencyLicensingRequests();
+      return resp as any[];
     },
-    {
-      id: 2,
-      brand: "Byredo",
-      campaign: "Winter Fragrance Campaign",
-      talents: ["Julia"],
-      budget: "$15,000 - $20,000",
-      scope: "Digital Campaign + Print",
-      regions: "North America, Europe",
-      deadline: "12/10/2025",
-      status: "negotiating",
-      statusColor: "bg-yellow-100 text-yellow-700",
-    },
-    {
-      id: 3,
-      brand: "Outdoor Voices",
-      campaign: "Holiday Activewear Collection",
-      talents: ["Carla", "Luisa"],
-      budget: "$10,000 - $15,000",
-      scope: "Social Media + Website",
-      regions: "North America",
-      deadline: "12/5/2025",
-      status: "pending",
-      statusColor: "bg-gray-100 text-gray-700",
-    },
-  ];
+  });
+
+  const [payModalOpen, setPayModalOpen] = useState(false);
+  const [payModalLoading, setPayModalLoading] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<any | null>(null);
+  const [totalPaymentAmount, setTotalPaymentAmount] = useState<string>("");
+  const [agencyPercent, setAgencyPercent] = useState<string>("");
+
+  const talentCount = (selectedGroup?.talents || []).length || 0;
+  const totalNum = Number(totalPaymentAmount);
+  const agencyPercentNum = Number(agencyPercent);
+  const agencyTotal =
+    Number.isFinite(totalNum) && Number.isFinite(agencyPercentNum)
+      ? (totalNum * agencyPercentNum) / 100
+      : 0;
+  const talentTotal =
+    Number.isFinite(totalNum) && Number.isFinite(agencyTotal)
+      ? totalNum - agencyTotal
+      : 0;
+  const perTalentTalent =
+    talentCount > 0 && Number.isFinite(talentTotal)
+      ? talentTotal / talentCount
+      : 0;
+  const hasMissingTalentNames = (selectedGroup?.talents || []).some(
+    (t: any) => !(t?.talent_name || "").trim(),
+  );
+  const formatMoney = (n: number) =>
+    Number.isFinite(n)
+      ? n.toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
+      : "--";
+
+  const statusStyle = (status: string) => {
+    if (status === "approved") return "bg-green-100 text-green-700";
+    if (status === "rejected") return "bg-red-100 text-red-700";
+    return "bg-gray-100 text-gray-700";
+  };
+
+  const formatBudget = (min?: number | null, max?: number | null) => {
+    const minOk = typeof min === "number" && Number.isFinite(min);
+    const maxOk = typeof max === "number" && Number.isFinite(max);
+    const fmt = (n: number) =>
+      n.toLocaleString(undefined, {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      });
+
+    if (minOk && maxOk) return `${fmt(min!)} - ${fmt(max!)}`;
+    if (minOk) return fmt(min!);
+    if (maxOk) return fmt(max!);
+    return "—";
+  };
+
+  const openPayModal = async (group: any) => {
+    setSelectedGroup(group);
+    setPayModalOpen(true);
+    if (!group?.pay_set) {
+      setTotalPaymentAmount("");
+      setAgencyPercent("");
+      setPayModalLoading(false);
+      return;
+    }
+
+    setPayModalLoading(true);
+    try {
+      const ids = (group?.talents || [])
+        .map((t: any) => t.licensing_request_id)
+        .filter(Boolean)
+        .join(",");
+      const resp = await getAgencyLicensingRequestsPaySplit(ids);
+      const total = (resp as any)?.total_payment_amount;
+      const ap = (resp as any)?.agency_percent;
+      setTotalPaymentAmount(
+        typeof total === "number" && Number.isFinite(total)
+          ? String(total)
+          : "",
+      );
+      setAgencyPercent(
+        typeof ap === "number" && Number.isFinite(ap) ? String(ap) : "",
+      );
+    } catch {
+      setTotalPaymentAmount("");
+      setAgencyPercent("");
+    } finally {
+      setPayModalLoading(false);
+    }
+  };
+
+  const updateGroupStatus = async (
+    group: any,
+    status: "pending" | "approved" | "rejected",
+  ) => {
+    const ids = (group?.talents || [])
+      .map((t: any) => t.licensing_request_id)
+      .filter(Boolean);
+    if (!ids.length) return;
+
+    const notes =
+      status === "pending"
+        ? window.prompt("Counter offer message (optional)") || undefined
+        : undefined;
+
+    try {
+      await updateAgencyLicensingRequestsStatus({
+        licensing_request_ids: ids,
+        status,
+        notes,
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["agency", "licensing-requests"],
+      });
+    } catch (e: any) {
+      toast({
+        title: "Update failed",
+        description: e?.message || "Could not update licensing request",
+        variant: "destructive" as any,
+      });
+    }
+  };
+
+  const savePaySplit = async () => {
+    if (!selectedGroup) return;
+    const ids = (selectedGroup?.talents || [])
+      .map((t: any) => t.licensing_request_id)
+      .filter(Boolean);
+    if (!ids.length) return;
+
+    const total = Number(totalPaymentAmount);
+    const ap = Number(agencyPercent);
+    if (!Number.isFinite(total) || total < 0) {
+      toast({ title: "Invalid total amount", variant: "destructive" as any });
+      return;
+    }
+    if (!agencyPercent.trim()) {
+      toast({
+        title: "Agency percent is required",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    if (!Number.isFinite(ap) || ap < 0 || ap > 100) {
+      toast({ title: "Invalid agency percent", variant: "destructive" as any });
+      return;
+    }
+
+    setPayModalLoading(true);
+    try {
+      await setAgencyLicensingRequestsPaySplit({
+        licensing_request_ids: ids,
+        total_payment_amount: total,
+        agency_percent: ap,
+      });
+      toast({ title: "Pay updated" });
+      setPayModalOpen(false);
+      setSelectedGroup(null);
+      await queryClient.invalidateQueries({
+        queryKey: ["agency", "licensing-requests"],
+      });
+    } catch (e: any) {
+      toast({
+        title: "Save failed",
+        description: e?.message || "Could not save pay split",
+        variant: "destructive" as any,
+      });
+    } finally {
+      setPayModalLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -11478,32 +11631,56 @@ const LicensingRequestsView = () => {
       </div>
 
       <div className="space-y-6">
-        {requests.map((req) => (
+        {isLoading && (
+          <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
+            <div className="text-gray-500 font-medium">Loading...</div>
+          </Card>
+        )}
+
+        {!isLoading && error && (
+          <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
+            <div className="text-red-600 font-medium">
+              Failed to load licensing requests
+            </div>
+          </Card>
+        )}
+
+        {!isLoading && !error && (data || []).length === 0 && (
+          <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
+            <div className="text-gray-500 font-medium">
+              No licensing requests yet
+            </div>
+          </Card>
+        )}
+
+        {(data || []).map((group: any) => (
           <Card
-            key={req.id}
+            key={group.group_key}
             className="p-8 bg-white border-2 border-gray-900 rounded-none overflow-hidden relative"
           >
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h3 className="text-xl font-bold text-gray-900 mb-1">
-                  {req.brand}
+                  {group.brand_name || "Unknown brand"}
                 </h3>
-                <p className="text-gray-500 font-medium">{req.campaign}</p>
+                <p className="text-gray-500 font-medium">
+                  {(group.campaign_title || "").trim() || "—"}
+                </p>
               </div>
               <span
-                className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${req.statusColor}`}
+                className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyle(group.status)}`}
               >
-                {req.status}
+                {group.status}
               </span>
             </div>
 
             <div className="flex flex-wrap gap-2 mb-8">
-              {req.talents.map((t) => (
+              {(group.talents || []).map((t: any) => (
                 <span
-                  key={t}
+                  key={t.licensing_request_id}
                   className="px-3 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded uppercase"
                 >
-                  {t}
+                  {(t.talent_name || "").trim() || "Talent"}
                 </span>
               ))}
             </div>
@@ -11515,7 +11692,7 @@ const LicensingRequestsView = () => {
                     Budget Range
                   </p>
                   <p className="text-sm font-bold text-gray-900">
-                    {req.budget}
+                    {formatBudget(group.budget_min, group.budget_max)}
                   </p>
                 </div>
                 <div>
@@ -11523,7 +11700,7 @@ const LicensingRequestsView = () => {
                     Regions
                   </p>
                   <p className="text-sm font-bold text-gray-900">
-                    {req.regions}
+                    {group.regions || "—"}
                   </p>
                 </div>
               </div>
@@ -11532,7 +11709,9 @@ const LicensingRequestsView = () => {
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
                     Usage Scope
                   </p>
-                  <p className="text-sm font-bold text-gray-900">{req.scope}</p>
+                  <p className="text-sm font-bold text-gray-900">
+                    {(group.usage_scope || "").trim() || "—"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
@@ -11540,38 +11719,136 @@ const LicensingRequestsView = () => {
                   </p>
                   <div className="flex items-center gap-1.5 font-bold text-gray-900 text-sm">
                     <Calendar className="w-4 h-4 text-gray-400" />
-                    {req.deadline}
+                    {group.deadline
+                      ? new Date(group.deadline).toLocaleDateString()
+                      : "—"}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Button className="bg-green-600 hover:bg-green-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2">
-                <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
-                  <span className="text-[10px]">✓</span>
-                </div>
-                Approve
-              </Button>
-              <Button
-                variant="outline"
-                className="border-gray-300 text-gray-700 font-bold h-11 rounded-md"
-              >
-                Counter Offer
-              </Button>
-              <Button
-                variant="outline"
-                className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
-              >
-                <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
-                  <span className="text-[10px]">✕</span>
-                </div>
-                Decline
-              </Button>
-            </div>
+            {group.status === "approved" ? (
+              <div>
+                <Button
+                  onClick={() => openPayModal(group)}
+                  className={`w-full font-bold h-11 rounded-md flex items-center justify-center gap-2 ${group.pay_set ? "bg-white text-gray-900 border border-gray-300 hover:bg-gray-50" : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 animate-pulse"}`}
+                >
+                  {group.pay_set ? (
+                    <>
+                      <Eye className="w-4 h-4" /> View Pay
+                    </>
+                  ) : (
+                    <>
+                      <DollarSign className="w-4 h-4" /> Set Pay
+                    </>
+                  )}
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Button
+                  onClick={() => updateGroupStatus(group, "approved")}
+                  className="bg-green-600 hover:bg-green-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                >
+                  <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
+                    <span className="text-[10px]">✓</span>
+                  </div>
+                  Approve
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => updateGroupStatus(group, "pending")}
+                  className="border-gray-300 text-gray-700 font-bold h-11 rounded-md"
+                >
+                  Counter Offer
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => updateGroupStatus(group, "rejected")}
+                  className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                >
+                  <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
+                    <span className="text-[10px]">✕</span>
+                  </div>
+                  Decline
+                </Button>
+              </div>
+            )}
           </Card>
         ))}
       </div>
+
+      <Dialog open={payModalOpen} onOpenChange={setPayModalOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Pay split</DialogTitle>
+            <DialogDescription>
+              Set total campaign pay and agency percent. The system will split
+              total evenly across talents.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Total payment amount</Label>
+              <Input
+                value={totalPaymentAmount}
+                onChange={(e) => setTotalPaymentAmount(e.target.value)}
+                placeholder="e.g. 10000"
+                inputMode="decimal"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Agency percent</Label>
+              <Input
+                value={agencyPercent}
+                onChange={(e) => setAgencyPercent(e.target.value)}
+                placeholder="e.g. 20"
+                inputMode="decimal"
+              />
+            </div>
+
+            <Card className="p-4 bg-gray-50 border border-gray-200">
+              <div className="grid grid-cols-1 gap-2 text-sm font-medium text-gray-700">
+                <div className="flex justify-between">
+                  <span>Agency total</span>
+                  <span>${formatMoney(agencyTotal)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Talent total</span>
+                  <span>${formatMoney(talentTotal)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Per talent</span>
+                  <span>${formatMoney(perTalentTalent)}</span>
+                </div>
+                {hasMissingTalentNames && (
+                  <div className="text-xs text-amber-700 font-bold">
+                    Some talents are missing names in this request.
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPayModalOpen(false);
+                setSelectedGroup(null);
+              }}
+              disabled={payModalLoading}
+            >
+              Cancel
+            </Button>
+            <Button onClick={savePaySplit} disabled={payModalLoading}>
+              {payModalLoading ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -17614,7 +17891,7 @@ export default function AgencyDashboard() {
   ]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
-  const [consentFilter, setConsentFilter] = useState("All Consent");
+  const [categoryFilter, setCategoryFilter] = useState("All Categories");
   const [sortConfig, setSortConfig] = useState<{
     key: string;
     direction: "asc" | "desc";
@@ -17631,6 +17908,57 @@ export default function AgencyDashboard() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [bookOuts, setBookOuts] = useState<any[]>([]);
   const [showCreatePackageWizard, setShowCreatePackageWizard] = useState(false);
+
+  const rosterQuery = useQuery({
+    queryKey: ["agency-roster", user?.id],
+    queryFn: async () => {
+      const resp = await getAgencyRoster();
+      return (resp as any) || null;
+    },
+    enabled: !!user?.id,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (!user?.id) return;
+    if (activeTab !== "roster") return;
+    if (activeSubTab !== "All Talent") return;
+    if (!rosterQuery.data) {
+      rosterQuery.refetch();
+    }
+  }, [activeTab, activeSubTab, user?.id]);
+
+  const rosterTalents = ((rosterQuery.data as any)?.talents ??
+    (Array.isArray(rosterQuery.data) ? rosterQuery.data : [])) as any[];
+  const activeCampaigns = Number(
+    (rosterQuery.data as any)?.active_campaigns ?? 0,
+  );
+  const earnings30dTotalCents = Number(
+    (rosterQuery.data as any)?.earnings_30d_total_cents ?? 0,
+  );
+  const earningsPrev30dTotalCents = Number(
+    (rosterQuery.data as any)?.earnings_prev_30d_total_cents ?? 0,
+  );
+
+  const agencyProfileQuery = useQuery({
+    queryKey: ["agency-profile", user?.id],
+    queryFn: async () => {
+      const resp = await getAgencyProfile();
+      return resp as any;
+    },
+    enabled: !!user?.id,
+  });
+
+  const agencyName =
+    (agencyProfileQuery.data as any)?.agency_name ||
+    (profile as any)?.agency_name ||
+    "Agency Name";
+  const seatsLimit = Number(
+    (agencyProfileQuery.data as any)?.seats_limit ||
+      (profile as any)?.seats_limit ||
+      0,
+  );
 
   const refreshAgencyKycStatus = async () => {
     if (!authenticated || !user?.id) return;
@@ -18524,22 +18852,28 @@ export default function AgencyDashboard() {
             />
           )}
           {activeTab === "roster" && activeSubTab === "All Talent" && (
-            <RosterView
+            <AgencyRosterView
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
               statusFilter={statusFilter}
               setStatusFilter={setStatusFilter}
-              consentFilter={consentFilter}
-              setConsentFilter={setConsentFilter}
+              categoryFilter={categoryFilter}
+              setCategoryFilter={setCategoryFilter}
               sortConfig={sortConfig}
               setSortConfig={setSortConfig}
-              profile={profile}
+              agencyMode={agencyMode}
+              rosterData={rosterTalents}
+              activeCampaigns={activeCampaigns}
+              earnings30dTotalCents={earnings30dTotalCents}
+              earningsPrev30dTotalCents={earningsPrev30dTotalCents}
+              agencyName={agencyName}
+              seatsLimit={seatsLimit}
+              isLoading={rosterQuery.isLoading}
+              onRosterChanged={() => rosterQuery.refetch()}
             />
           )}
           {activeTab === "roster" && activeSubTab === "Performance Tiers" && (
-            <PerformanceTiersView
-              onBack={() => setActiveSubTab("All Talent")}
-            />
+            <PerformanceTiers />
           )}
           {activeTab === "licensing" &&
             activeSubTab === "Licensing Requests" && <LicensingRequestsView />}
