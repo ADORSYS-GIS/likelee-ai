@@ -63,19 +63,6 @@ pub struct ServerConfig {
     #[envconfig(from = "ELEVENLABS_API_KEY", default = "")]
     pub elevenlabs_api_key: String,
 
-    // Creatify API configuration
-    #[envconfig(from = "CREATIFY_BASE_URL", default = "https://creatify.ai")]
-    pub creatify_base_url: String,
-
-    #[envconfig(from = "CREATIFY_API_ID", default = "")]
-    pub creatify_api_id: String,
-
-    #[envconfig(from = "CREATIFY_API_KEY", default = "")]
-    pub creatify_api_key: String,
-
-    // Public callback URL for Creatify to hit our webhook
-    #[envconfig(from = "CREATIFY_CALLBACK_URL", default = "")]
-    pub creatify_callback_url: String,
 
     #[envconfig(from = "SMTP_HOST", default = "")]
     pub smtp_host: String,
@@ -95,18 +82,6 @@ pub struct ServerConfig {
     #[envconfig(from = "EMAIL_CONTACT_TO", default = "")]
     pub email_contact_to: String,
 
-    // Tavus API configuration
-    #[envconfig(from = "TAVUS_API_KEY", default = "")]
-    pub tavus_api_key: String,
-
-    #[envconfig(from = "TAVUS_BASE_URL", default = "https://tavusapi.com")]
-    pub tavus_base_url: String,
-
-    #[envconfig(from = "TAVUS_WEBHOOK_SECRET", default = "")]
-    pub tavus_webhook_secret: String,
-
-    #[envconfig(from = "TAVUS_CALLBACK_URL", default = "")]
-    pub tavus_callback_url: String,
 
     // Stripe
     #[envconfig(from = "STRIPE_SECRET_KEY", default = "")]
@@ -193,14 +168,6 @@ pub struct AppState {
     pub supabase_bucket_public: String,
     pub supabase_bucket_private: String,
     pub elevenlabs_api_key: String,
-    pub creatify_base_url: String,
-    pub creatify_api_id: String,
-    pub creatify_api_key: String,
-    pub creatify_callback_url: String,
-    pub tavus_api_key: String,
-    pub tavus_base_url: String,
-    pub tavus_webhook_secret: String,
-    pub tavus_callback_url: String,
 
     pub stripe_secret_key: String,
     pub stripe_client_id: String,
