@@ -103,4 +103,16 @@ CREATE TRIGGER trigger_license_submissions_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_license_submissions_updated_at();
 
+
+-- 7. Add effective_end_date generated column
+-- Effective end date is license_end_date if present, otherwise deadline
+-- If both are null, it remains null (meaning ongoing/active)
+
+ALTER TABLE public.licensing_requests 
+ADD COLUMN IF NOT EXISTS effective_end_date DATE 
+GENERATED ALWAYS AS (COALESCE(license_end_date, deadline)) STORED;
+
+-- Add index for efficient filtering
+CREATE INDEX IF NOT EXISTS idx_licensing_requests_effective_end_date ON public.licensing_requests(effective_end_date);
+
 COMMIT;

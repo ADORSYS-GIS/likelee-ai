@@ -447,6 +447,7 @@ impl DocuSealClient {
     }
 
     /// Create a JWT token for the embedded builder with external_id support
+    #[allow(clippy::too_many_arguments)]
     pub fn create_builder_token_with_external_id(
         &self,
         user_email: String,

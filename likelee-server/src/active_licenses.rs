@@ -63,6 +63,7 @@ struct LicensingRequestRow {
     client_name: Option<String>,
     license_start_date: Option<String>,
     license_end_date: Option<String>,
+    deadline: Option<String>,
     usage_scope: Option<String>,
 
     // Embedded resources
@@ -80,7 +81,7 @@ pub async fn list(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
 
-    let select = "id,talent_id,campaign_title,client_name,brand_id,license_start_date,license_end_date,usage_scope,brands(company_name),agency_users(full_legal_name,stage_name,profile_photo_url),campaigns(payment_amount)";
+    let select = "id,talent_id,campaign_title,client_name,brand_id,license_start_date,license_end_date,deadline,usage_scope,brands(company_name),agency_users(full_legal_name,stage_name,profile_photo_url),campaigns(payment_amount)";
 
     let mut query = state
         .pg
@@ -91,7 +92,7 @@ pub async fn list(
 
     let today = Utc::now().date_naive();
     let today_str = today.to_string();
-    let expiring_threshold = today + chrono::Duration::days(30);
+    let expiring_threshold = today + chrono::Duration::days(5); // Changed from 30 to 5 days
     let threshold_str = expiring_threshold.to_string();
 
     // Database-level status filtering
@@ -105,7 +106,7 @@ pub async fn list(
                 ));
             }
             "expiring" => {
-                // Expiring: today <= end_date <= threshold
+                // Expiring: today <= end_date <= threshold (5 days)
                 query = query
                     .gte("license_end_date", &today_str)
                     .lte("license_end_date", &threshold_str);
@@ -186,7 +187,9 @@ pub async fn list(
         let mut status = "Active".to_string();
         let mut days_left = None;
 
-        if let Some(end_str) = &r.license_end_date {
+        let effective_end_date_str = r.license_end_date.as_ref().or(r.deadline.as_ref());
+
+        if let Some(end_str) = effective_end_date_str {
             if let Ok(end_date) = chrono::NaiveDate::parse_from_str(end_str, "%Y-%m-%d") {
                 let duration = end_date.signed_duration_since(today).num_days();
                 days_left = Some(duration);
@@ -238,7 +241,7 @@ pub async fn stats(
     }
 
     // Optimization: Fetch only necessary columns for stats calculation
-    let select = "license_end_date,campaigns(payment_amount)";
+    let select = "license_end_date,deadline,campaigns(payment_amount)";
 
     let resp = state
         .pg
@@ -262,13 +265,14 @@ pub async fn stats(
     #[derive(Deserialize)]
     struct StatRow {
         license_end_date: Option<String>,
+        deadline: Option<String>,
         campaigns: Option<Vec<CampaignEmbed>>,
     }
 
     let rows: Vec<StatRow> = serde_json::from_str(&text).unwrap_or_default();
 
     let today = Utc::now().date_naive();
-    let expiring_threshold = today + chrono::Duration::days(30);
+    let expiring_threshold = today + chrono::Duration::days(5); // Changed from 30 to 5 days
 
     let mut active = 0;
     let mut expiring = 0;
@@ -286,8 +290,10 @@ pub async fn stats(
         total_val += val;
 
         let mut row_status = "Active";
-        if let Some(end_str) = r.license_end_date {
-            if let Ok(end_date) = chrono::NaiveDate::parse_from_str(&end_str, "%Y-%m-%d") {
+        let effective_end_date_str = r.license_end_date.as_ref().or(r.deadline.as_ref());
+
+        if let Some(end_str) = effective_end_date_str {
+            if let Ok(end_date) = chrono::NaiveDate::parse_from_str(end_str, "%Y-%m-%d") {
                 if end_date < today {
                     row_status = "Expired";
                 } else if end_date <= expiring_threshold {

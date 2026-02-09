@@ -324,32 +324,28 @@ pub async fn preview(
     // Build fields array for pre-filling (DocuSeal API standard format)
     use crate::services::docuseal::SubmitterField;
 
-    let mut fields = Vec::new();
-
-    // Add all contract fields as readonly pre-filled values
-    fields.push(SubmitterField {
-        name: "Client/Brand Name".to_string(),
-        default_value: Some(client_name.clone()),
-        readonly: Some(true),
-    });
-
-    fields.push(SubmitterField {
-        name: "Talent Name".to_string(),
-        default_value: Some(talent_names.clone()),
-        readonly: Some(true),
-    });
-
-    fields.push(SubmitterField {
-        name: "License Fee".to_string(),
-        default_value: Some(fee_str.clone()),
-        readonly: Some(true),
-    });
-
-    fields.push(SubmitterField {
-        name: "Category".to_string(),
-        default_value: Some(license_template.category.clone()),
-        readonly: Some(true),
-    });
+    let mut fields = vec![
+        SubmitterField {
+            name: "Client/Brand Name".to_string(),
+            default_value: Some(client_name.clone()),
+            readonly: Some(true),
+        },
+        SubmitterField {
+            name: "Talent Name".to_string(),
+            default_value: Some(talent_names.clone()),
+            readonly: Some(true),
+        },
+        SubmitterField {
+            name: "License Fee".to_string(),
+            default_value: Some(fee_str.clone()),
+            readonly: Some(true),
+        },
+        SubmitterField {
+            name: "Category".to_string(),
+            default_value: Some(license_template.category.clone()),
+            readonly: Some(true),
+        },
+    ];
 
     if let Some(desc) = &license_template.description {
         fields.push(SubmitterField {
@@ -1155,31 +1151,28 @@ pub async fn create_and_send(
 
     use crate::services::docuseal::SubmitterField;
 
-    let mut fields = Vec::new();
-
-    fields.push(SubmitterField {
-        name: "Client/Brand Name".to_string(),
-        default_value: Some(req.client_name.clone()),
-        readonly: Some(true),
-    });
-
-    fields.push(SubmitterField {
-        name: "Talent Name".to_string(),
-        default_value: Some(talent_names_val.clone().unwrap_or_default()),
-        readonly: Some(true),
-    });
-
-    fields.push(SubmitterField {
-        name: "License Fee".to_string(),
-        default_value: Some(fee_str.clone()),
-        readonly: Some(true),
-    });
-
-    fields.push(SubmitterField {
-        name: "Category".to_string(),
-        default_value: Some(license_template.category.clone()),
-        readonly: Some(true),
-    });
+    let mut fields = vec![
+        SubmitterField {
+            name: "Client/Brand Name".to_string(),
+            default_value: Some(req.client_name.clone()),
+            readonly: Some(true),
+        },
+        SubmitterField {
+            name: "Talent Name".to_string(),
+            default_value: Some(talent_names_val.clone().unwrap_or_default()),
+            readonly: Some(true),
+        },
+        SubmitterField {
+            name: "License Fee".to_string(),
+            default_value: Some(fee_str.clone()),
+            readonly: Some(true),
+        },
+        SubmitterField {
+            name: "Category".to_string(),
+            default_value: Some(license_template.category.clone()),
+            readonly: Some(true),
+        },
+    ];
 
     if let Some(desc) = &license_template.description {
         fields.push(SubmitterField {

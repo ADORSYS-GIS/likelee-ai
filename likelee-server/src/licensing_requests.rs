@@ -192,9 +192,7 @@ pub async fn list_for_agency(
             .and_then(|v| v.as_str())
             .map(|s| s.to_string());
         let talent_info = r.get("agency_users");
-        let talent_name = talent_info
-            .map(|t| talent_display_name(t))
-            .unwrap_or_default();
+        let talent_name = talent_info.map(talent_display_name).unwrap_or_default();
 
         let campaigns_arr = r.get("campaigns").and_then(|c| c.as_array());
         let campaign = campaigns_arr.and_then(|a| a.first());
