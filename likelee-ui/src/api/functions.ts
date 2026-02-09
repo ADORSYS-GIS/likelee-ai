@@ -10,7 +10,6 @@ export const generateImage = (data: any) =>
 export const checkJobStatus = (jobId: string) =>
   base44Client.get(`/api/job/status/${jobId}`);
 
-
 export const imageToVideo = (data: any) =>
   base44Client.post("/api/image-to-video", data);
 

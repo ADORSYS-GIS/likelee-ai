@@ -34,7 +34,6 @@ import StudioVideo from "./StudioVideo";
 
 import StudioImage from "./StudioImage";
 
-
 import AdminCredits from "./AdminCredits";
 
 import StudioSubscribe from "./StudioSubscribe";
@@ -161,7 +160,6 @@ const PAGES = {
   StudioVideo: StudioVideo,
 
   StudioImage: StudioImage,
-
 
   AdminCredits: AdminCredits,
 
@@ -299,7 +297,6 @@ function AppRoutes() {
       <Route path="/StudioVideo" element={<StudioVideo />} />
 
       <Route path="/StudioImage" element={<StudioImage />} />
-
 
       <Route path="/AdminCredits" element={<AdminCredits />} />
 
