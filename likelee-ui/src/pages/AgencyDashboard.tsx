@@ -12190,9 +12190,6 @@ const ActiveLicensesView = () => {
                         <p className="font-bold text-gray-900 text-sm leading-none mb-1">
                           {lic.talent_name}
                         </p>
-                        <p className="text-[10px] font-bold text-gray-400">
-                          {lic.public_id || lic.id}
-                        </p>
                       </div>
                     </div>
                   </td>

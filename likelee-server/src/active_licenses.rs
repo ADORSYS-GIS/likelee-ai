@@ -50,6 +50,13 @@ struct AgencyUserEmbed {
     profile_photo_url: Option<String>,
 }
 
+fn talent_display_name_row(u: &AgencyUserEmbed) -> String {
+    u.stage_name
+        .clone()
+        .or_else(|| u.full_legal_name.clone())
+        .unwrap_or_default()
+}
+
 #[derive(Deserialize)]
 struct CampaignEmbed {
     payment_amount: Option<f64>,
@@ -59,11 +66,13 @@ struct CampaignEmbed {
 struct LicensingRequestRow {
     id: String,
     talent_id: Option<String>,
+    talent_name: Option<String>,
     campaign_title: Option<String>,
     client_name: Option<String>,
     license_start_date: Option<String>,
     license_end_date: Option<String>,
     deadline: Option<String>,
+    budget_min: Option<f64>,
     usage_scope: Option<String>,
 
     // Embedded resources
@@ -81,7 +90,7 @@ pub async fn list(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
 
-    let select = "id,talent_id,campaign_title,client_name,brand_id,license_start_date,license_end_date,deadline,usage_scope,brands(company_name),agency_users(full_legal_name,stage_name,profile_photo_url),campaigns(payment_amount)";
+    let select = "id,talent_id,talent_name,campaign_title,client_name,brand_id,license_start_date,license_end_date,deadline,usage_scope,budget_min,budget_max,brands(company_name),agency_users(full_legal_name,stage_name,profile_photo_url),campaigns(payment_amount)";
 
     let mut query = state
         .pg
@@ -154,10 +163,12 @@ pub async fn list(
     let mut licenses = Vec::new();
 
     for r in rows {
-        let display_name = r
+        let talent_name = r
             .agency_users
             .as_ref()
-            .and_then(|u| u.stage_name.clone().or(u.full_legal_name.clone()))
+            .map(talent_display_name_row)
+            .or_else(|| r.talent_name.clone())
+            .filter(|s| !s.trim().is_empty())
             .unwrap_or_else(|| "Unknown Talent".to_string());
 
         let talent_avatar = r
@@ -172,6 +183,7 @@ pub async fn list(
         let brand_name = r
             .client_name
             .clone()
+            .filter(|s| !s.trim().is_empty())
             .or_else(|| r.brands.as_ref().and_then(|b| b.company_name.clone()))
             .unwrap_or_else(|| "Unknown Brand".to_string());
 
@@ -182,6 +194,7 @@ pub async fn list(
             .as_ref()
             .and_then(|c| c.first())
             .and_then(|c| c.payment_amount)
+            .or(r.budget_min) // Fallback to template fee / budget_min if no campaign yet
             .unwrap_or(0.0);
 
         let mut status = "Active".to_string();
@@ -205,7 +218,7 @@ pub async fn list(
         // Search filter
         if let Some(search) = &q.search {
             let search_lower = search.to_lowercase();
-            if !display_name.to_lowercase().contains(&search_lower)
+            if !talent_name.to_lowercase().contains(&search_lower)
                 && !brand_name.to_lowercase().contains(&search_lower)
                 && !license_type.to_lowercase().contains(&search_lower)
             {
@@ -216,7 +229,7 @@ pub async fn list(
         licenses.push(ActiveLicense {
             id: r.id,
             talent_id: r.talent_id.unwrap_or_default(),
-            talent_name: display_name,
+            talent_name,
             talent_avatar,
             license_type,
             brand: brand_name,

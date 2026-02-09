@@ -120,7 +120,7 @@ pub async fn list_for_agency(
     let resp = state
         .pg
         .from("licensing_requests")
-        .select("id,brand_id,talent_id,status,created_at,campaign_title,budget_min,budget_max,usage_scope,regions,deadline,negotiation_reason,brands(company_name),agency_users(full_legal_name,stage_name),campaigns(id,payment_amount,agency_percent,talent_percent,agency_earnings_cents,talent_earnings_cents)")
+        .select("id,brand_id,talent_id,status,created_at,campaign_title,client_name,talent_name,budget_min,budget_max,usage_scope,regions,deadline,negotiation_reason,brands(company_name),agency_users(full_legal_name,stage_name),campaigns(id,payment_amount,agency_percent,talent_percent,agency_earnings_cents,talent_earnings_cents)")
         .eq("agency_id", &user.id)
         .order("created_at.desc")
         .limit(250)
@@ -190,9 +190,25 @@ pub async fn list_for_agency(
             .get("brands")
             .and_then(|b| b.get("company_name"))
             .and_then(|v| v.as_str())
-            .map(|s| s.to_string());
+            .map(|s| s.to_string())
+            .or_else(|| {
+                r.get("client_name")
+                    .and_then(|v| v.as_str())
+                    .filter(|s| !s.trim().is_empty())
+                    .map(|s| s.to_string())
+            });
+
         let talent_info = r.get("agency_users");
-        let talent_name = talent_info.map(talent_display_name).unwrap_or_default();
+        let talent_name_field = r
+            .get("talent_name")
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.trim().is_empty())
+            .map(|s| s.to_string());
+        let talent_name = talent_info
+            .map(talent_display_name)
+            .filter(|s| !s.trim().is_empty())
+            .or(talent_name_field)
+            .unwrap_or_else(|| "Assigned Talent".to_string());
 
         let campaigns_arr = r.get("campaigns").and_then(|c| c.as_array());
         let campaign = campaigns_arr.and_then(|a| a.first());
@@ -208,7 +224,9 @@ pub async fn list_for_agency(
                 } else {
                     Some(brand_id.to_string())
                 },
-                brand_name: brand_name.clone(),
+                brand_name: brand_name
+                    .clone()
+                    .or_else(|| Some("Direct Client".to_string())),
                 campaign_title: campaign_title.clone(),
                 budget_min,
                 budget_max,

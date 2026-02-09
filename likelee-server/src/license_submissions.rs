@@ -929,15 +929,15 @@ pub async fn resend(
     State(state): State<AppState>,
     auth_user: AuthUser,
     Path(id): Path<String>,
-    Json(req): Json<CreateSubmissionRequest>,
+    req_payload: Option<Json<CreateSubmissionRequest>>,
 ) -> Result<Json<LicenseSubmission>, (StatusCode, String)> {
     let agency_id = auth_user.id;
 
-    // 1. Archive old submission in DocuSeal
-    let old_submission_resp = state
+    // 0. Fetch existing submission to get data (for archiving AND for resending if payload missing)
+    let existing_sub_resp = state
         .pg
         .from("license_submissions")
-        .select("docuseal_submission_id")
+        .select("*") // Fetch everything to reconstruct types
         .eq("id", &id)
         .eq("agency_id", &agency_id)
         .single()
@@ -945,24 +945,61 @@ pub async fn resend(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    if !old_submission_resp.status().is_success() {
+    if !existing_sub_resp.status().is_success() {
         return Err((StatusCode::NOT_FOUND, "Submission not found".to_string()));
     }
 
-    let old_text = old_submission_resp
+    let existing_text = existing_sub_resp
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let old_data: serde_json::Value = serde_json::from_str(&old_text)
+    let existing_data: serde_json::Value = serde_json::from_str(&existing_text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let old_docuseal_id = old_data["docuseal_submission_id"].as_i64().ok_or_else(|| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Invalid data".to_string(),
-        )
-    })? as i32;
+    // Determine the request payload: use provided one OR reconstruct from existing
+    let req = if let Some(Json(r)) = req_payload {
+        r
+    } else {
+        // Reconstruct from existing data
+        CreateSubmissionRequest {
+            template_id: existing_data["template_id"]
+                .as_str()
+                .unwrap_or_default()
+                .to_string(),
+            client_id: existing_data["client_id"].as_str().map(|s| s.to_string()),
+            client_email: existing_data["client_email"]
+                .as_str()
+                .unwrap_or_default()
+                .to_string(),
+            client_name: existing_data["client_name"]
+                .as_str()
+                .unwrap_or_default()
+                .to_string(),
+            docuseal_template_id: existing_data["docuseal_template_id"]
+                .as_i64()
+                .map(|v| v as i32),
+            talent_names: existing_data["talent_names"]
+                .as_str()
+                .map(|s| s.to_string()),
+            document_base64: None,
+            license_fee: existing_data["license_fee"].as_i64(),
+            duration_days: existing_data["duration_days"].as_i64().map(|v| v as i32),
+            start_date: existing_data["start_date"].as_str().map(|s| s.to_string()),
+            custom_terms: existing_data["custom_terms"]
+                .as_str()
+                .map(|s| s.to_string()),
+        }
+    };
+
+    let old_docuseal_id = existing_data["docuseal_submission_id"]
+        .as_i64()
+        .ok_or_else(|| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Invalid data: missing docuseal_submission_id".to_string(),
+            )
+        })? as i32;
 
     // Archive in DocuSeal
     let docuseal = DocuSealClient::new(
@@ -1255,13 +1292,13 @@ pub async fn create_and_send(
         "template_id": req.template_id,
         "docuseal_template_id": docuseal_template_id,
         "status": "sent",
-        "client_name": req.client_name,
-        "client_email": req.client_email,
-        "talent_names": talent_names_val,
+        "client_name": req.client_name.clone(),
+        "client_email": req.client_email.clone(),
+        "talent_names": talent_names_val.clone(),
         "license_fee": license_fee_val,
         "duration_days": duration_days,
-        "start_date": req.start_date.or(license_template.start_date),
-        "custom_terms": req.custom_terms.or(license_template.custom_terms),
+        "start_date": req.start_date.clone().or(license_template.start_date.clone()),
+        "custom_terms": req.custom_terms.clone().or(license_template.custom_terms.clone()),
         "docuseal_submission_id": docuseal_submission.id,
         "docuseal_slug": docuseal_submission.slug,
         "sent_at": chrono::Utc::now().to_rfc3339(),
@@ -1279,43 +1316,90 @@ pub async fn create_and_send(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let created: Vec<LicenseSubmission> = serde_json::from_str(&insert_text).map_err(|e| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Failed to parse created submission: {}", e),
-        )
-    })?;
+    let new_submission: serde_json::Value = serde_json::from_str(&insert_text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let submission = created.first().ok_or((
-        StatusCode::INTERNAL_SERVER_ERROR,
-        "Failed to create submission".to_string(),
-    ))?;
+    let new_submission_id = new_submission["id"]
+        .as_str()
+        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Missing ID".to_string()))?;
 
-    // 6. Create Licensing Request record
-    let talent_name = req.talent_names.clone().or(license_template.talent_name);
+    // 6. Create corresponding Licensing Request (status=pending, linked to submission)
+    // Using start_date + duration to calculate end_date if possible
+    let license_end_date = if let (Some(start), duration) = (
+        req.start_date
+            .clone()
+            .or(license_template.start_date.clone()),
+        duration_days,
+    ) {
+        if let Ok(sd) = chrono::NaiveDate::parse_from_str(&start, "%Y-%m-%d") {
+            Some((sd + chrono::Duration::days(duration as i64)).to_string())
+        } else {
+            None
+        }
+    } else {
+        None
+    };
 
-    let request_data = json!({
+    let lr_data = json!({
         "agency_id": agency_id,
-        "submission_id": submission.id,
-        "status": "pending",
-        "campaign_title": format!("License Contract - {}", req.client_name),
-        "client_name": req.client_name,
-        "talent_name": talent_name,
+        "submission_id": new_submission_id,
+        "client_name": req.client_name.clone(),
+        "talent_name": talent_names_val.clone().filter(|s| !s.trim().is_empty()).unwrap_or_else(|| "Assigned Talent".to_string()), // Explicit talent name fallback
+        "campaign_title": license_template.template_name.clone(), // "License Contract - X"
         "usage_scope": license_template.usage_scope.clone(),
+        "license_start_date": req.start_date.clone().or(license_template.start_date.clone()),
+        "license_end_date": license_end_date,
+        "status": "pending", // Initially pending until signed
         "regions": license_template.territory.clone(),
+        "payment_amount": license_fee_val.unwrap_or(0),
         "budget_min": license_fee_val.unwrap_or(0) as f64 / 100.0,
         "budget_max": license_fee_val.unwrap_or(0) as f64 / 100.0,
+        "notes": license_template.description.clone(), // Use description for notes
     });
 
-    // We don't error out if lr creation fails, but we try it
+    // We don't have a direct way to insert payment_amount into campaigns table from here easily without more logic.
+    // But `active_licenses` list uses `campaigns(payment_amount)`.
+    // If we want value to show up, we might need a dummy campaign or update `active_licenses` to fetch `license_fee` from submission if joined?
+    // ACTIVE LICENSES TABLE QUERY uses `campaigns(payment_amount)`.
+    // If we want the price to show, we need to fix that query too.
+    // For now, let's create the LR so it appears.
+
     let _ = state
         .pg
         .from("licensing_requests")
-        .insert(request_data.to_string())
+        .insert(lr_data.to_string())
         .execute()
         .await;
 
-    Ok(Json(submission.clone()))
+    // Return the created submission
+    // Reconstruct LicenseSubmission properly
+    Ok(Json(LicenseSubmission {
+        id: new_submission_id.to_string(),
+        agency_id: agency_id.clone(),
+        client_id: None,
+        template_id: req.template_id,
+        licensing_request_id: None, // We just created it, but we can't get ID easily without another fetch.
+        docuseal_submission_id: Some(docuseal_submission.id),
+        docuseal_slug: Some(docuseal_submission.slug),
+        docuseal_template_id: Some(docuseal_template_id),
+        client_name: Some(req.client_name),
+        client_email: Some(req.client_email),
+        talent_names: talent_names_val,
+        license_fee: license_fee_val,
+        duration_days: Some(duration_days),
+        start_date: Some(start_date),
+        custom_terms: req.custom_terms,
+        status: "sent".to_string(),
+        sent_at: Some(chrono::Utc::now().to_rfc3339()),
+        opened_at: None,
+        signed_at: None,
+        declined_at: None,
+        decline_reason: None,
+        signed_document_url: None,
+        template_name: Some(license_template.template_name.clone()),
+        created_at: Some(chrono::Utc::now().to_rfc3339()),
+        updated_at: Some(chrono::Utc::now().to_rfc3339()),
+    }))
 }
 
 #[derive(Debug, Deserialize)]
@@ -1413,17 +1497,19 @@ pub async fn handle_webhook(
 
             // Also update licensing_requests if it exists
             let lr_status = match new_status {
-                "completed" => "approved",
-                "declined" => "rejected",
-                _ => new_status,
+                "completed" => None, // Stay pending after signature as per user request
+                "declined" => Some("rejected"),
+                _ => None, // Keep as pending if opened/sent
             };
 
-            let _ = pg
-                .from("licensing_requests")
-                .update(json!({ "status": lr_status }).to_string())
-                .eq("submission_id", sub_id)
-                .execute()
-                .await;
+            if let Some(status) = lr_status {
+                let _ = pg
+                    .from("licensing_requests")
+                    .update(json!({ "status": status }).to_string())
+                    .eq("submission_id", sub_id)
+                    .execute()
+                    .await;
+            }
         }
     }
 
