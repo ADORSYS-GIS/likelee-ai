@@ -63,7 +63,6 @@ pub struct ServerConfig {
     #[envconfig(from = "ELEVENLABS_API_KEY", default = "")]
     pub elevenlabs_api_key: String,
 
-
     #[envconfig(from = "SMTP_HOST", default = "")]
     pub smtp_host: String,
 
@@ -81,7 +80,6 @@ pub struct ServerConfig {
 
     #[envconfig(from = "EMAIL_CONTACT_TO", default = "")]
     pub email_contact_to: String,
-
 
     // Stripe
     #[envconfig(from = "STRIPE_SECRET_KEY", default = "")]
