@@ -55,6 +55,7 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
   const favorites = interactions.filter((i: any) => i.type === "favorite");
   const callbacks = interactions.filter((i: any) => i.type === "callback");
   const selected = interactions.filter((i: any) => i.type === "selected");
+  const comments = interactions.filter((i: any) => i.type === "comment");
 
   const resolveTalent = (interaction: any) => {
     const item = pkg?.items?.find(
@@ -251,9 +252,13 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                 const isFavorite = interaction.type === "favorite";
                 const isCallback = interaction.type === "callback";
                 const isSelected = interaction.type === "selected";
+                const isComment = interaction.type === "comment";
+
+                const commentText =
+                  interaction?.content || interaction?.interaction_data?.message;
                 // Find talent name from pkg.items
                 // (Logic: interaction has talent_id, pkg.items has talent embedded)
-                const item = pkg.items.find(
+                const item = pkg?.items?.find(
                   (i: any) =>
                     i.talent_id === interaction.talent_id ||
                     i.talent?.id === interaction.talent_id,
@@ -277,6 +282,8 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                             ? "bg-red-100 text-red-600"
                             : isSelected
                               ? "bg-emerald-100 text-emerald-600"
+                              : isComment
+                                ? "bg-amber-100 text-amber-700"
                               : "bg-blue-100 text-blue-600"
                         }`}
                       >
@@ -284,6 +291,8 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                           <Heart className="w-4 h-4 fill-current" />
                         ) : isSelected ? (
                           <Check className="w-4 h-4" />
+                        ) : isComment ? (
+                          <MessageSquare className="w-4 h-4" />
                         ) : (
                           <Phone className="w-4 h-4" />
                         )}
@@ -302,6 +311,8 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                                 ? "Favorited a Talent"
                                 : isSelected
                                   ? "Selected a Talent"
+                                  : isComment
+                                    ? "Commented on a Talent"
                                   : "Requested Callback"}
                             </h4>
                             <p className="text-xs text-gray-400 font-medium">
@@ -311,12 +322,12 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                               )}
                             </p>
                           </div>
-                          {interaction.interaction_data?.message && (
+                          {commentText && (
                             <Badge
                               variant="outline"
                               className="text-[10px] font-bold uppercase tracking-widest text-gray-500"
                             >
-                              Has Message
+                              Has Comment
                             </Badge>
                           )}
                         </div>
@@ -338,12 +349,10 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                           </span>
                         </div>
 
-                        {interaction.interaction_data?.message && (
+                        {commentText && (
                           <div className="text-sm text-gray-600 bg-yellow-50/50 p-3 rounded-lg border border-yellow-100/50 flex gap-3 items-start">
                             <MessageSquare className="w-4 h-4 text-yellow-600 mt-0.5 shrink-0" />
-                            <p className="italic">
-                              "{interaction.interaction_data.message}"
-                            </p>
+                            <p className="italic">"{commentText}"</p>
                           </div>
                         )}
                       </div>
