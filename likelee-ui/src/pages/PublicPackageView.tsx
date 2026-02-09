@@ -105,7 +105,29 @@ export function PublicPackageView() {
     mutationFn: (data: any) => packageApi.createInteraction(token!, data),
   });
 
-  const pkg = packageData as any;
+  const rawPackageData = packageData as any;
+
+  const pkg = useMemo(() => {
+    const d = rawPackageData;
+    if (!d || typeof d !== "object") return d;
+    // Common wrappers
+    return d.package || d.data || d;
+  }, [rawPackageData]);
+
+  const apiPayloadIsError = useMemo(() => {
+    const d = rawPackageData;
+    if (!d || typeof d !== "object") return false;
+    // Supabase/PostgREST style errors often have code/message/details/hint
+    const hasErrorSignature =
+      typeof d.code === "string" && typeof d.message === "string";
+    if (!hasErrorSignature) return false;
+    // If it looks like a real package too, don't treat it as an error.
+    const looksLikePackage =
+      typeof (d as any).title === "string" ||
+      typeof (d as any)?.data?.title === "string" ||
+      typeof (d as any)?.package?.title === "string";
+    return !looksLikePackage;
+  }, [rawPackageData]);
 
   const selectedAssets = useMemo(() => {
     if (!selectedItem?.assets) return [];
@@ -402,7 +424,8 @@ export function PublicPackageView() {
 
   if (
     (error && !isPasswordError) ||
-    (!isLoading && !packageData && !isPasswordError)
+    (!isLoading && !packageData && !isPasswordError) ||
+    apiPayloadIsError
   ) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white p-6 text-center">
@@ -414,6 +437,11 @@ export function PublicPackageView() {
           This package may have expired or the link is invalid. Please contact
           the agency for a new link.
         </p>
+        {apiPayloadIsError && typeof (rawPackageData as any)?.message === "string" && (
+          <p className="text-xs text-gray-400 max-w-2xl mt-4 break-words">
+            {(rawPackageData as any).message}
+          </p>
+        )}
         <Button
           variant="outline"
           className="mt-8 border-2"
@@ -432,8 +460,16 @@ export function PublicPackageView() {
     );
   }
 
-  const primaryColor = pkg.primary_color || "#6366F1";
-  const secondaryColor = pkg.secondary_color || "#06B6D4";
+  const primaryColor =
+    pkg?.primary_color ||
+    pkg?.primaryColor ||
+    pkg?.theme?.primary ||
+    "#6366F1";
+  const secondaryColor =
+    pkg?.secondary_color ||
+    pkg?.secondaryColor ||
+    pkg?.theme?.secondary ||
+    "#06B6D4";
 
   return (
     <div
@@ -498,7 +534,8 @@ export function PublicPackageView() {
 
       {/* Talent Grid */}
       <main className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-        {pkg.items?.map((item: any, idx: number) => {
+        {(pkg.items || pkg.package_items || pkg.talents || [])?.map(
+          (item: any, idx: number) => {
           const talent = item.talent;
           return (
             <motion.div
@@ -567,7 +604,8 @@ export function PublicPackageView() {
               </div>
             </motion.div>
           );
-        })}
+          },
+        )}
       </main>
 
       {/* Footer Branding */}
@@ -664,10 +702,10 @@ export function PublicPackageView() {
                       style={
                         selectedSelections.has(selectedTalent.id)
                           ? {
-                              backgroundColor: "#10B981",
-                              borderColor: "#10B981",
-                              color: "white",
-                            }
+                            backgroundColor: "#10B981",
+                            borderColor: "#10B981",
+                            color: "white",
+                          }
                           : { borderColor: "#10B981", color: "#10B981" }
                       }
                       onClick={() => toggleSelected(selectedTalent.id)}
@@ -807,13 +845,12 @@ export function PublicPackageView() {
                       <Button
                         type="button"
                         size="icon"
-                        className={`absolute bottom-4 right-4 rounded-xl shadow-lg shadow-black/10 ring-1 ring-white/60 transition-transform ${
-                          !comment ||
+                        className={`absolute bottom-4 right-4 rounded-xl shadow-lg shadow-black/10 ring-1 ring-white/60 transition-transform ${!comment ||
                           (selectedItem &&
                             lockedComments[selectedItem.talent.id])
-                            ? "opacity-40 grayscale cursor-not-allowed"
-                            : "hover:-translate-y-0.5"
-                        }`}
+                          ? "opacity-40 grayscale cursor-not-allowed"
+                          : "hover:-translate-y-0.5"
+                          }`}
                         style={{ backgroundColor: primaryColor }}
                         onClick={() => {
                           if (!selectedItem) return;
@@ -852,7 +889,7 @@ export function PublicPackageView() {
                     onClick={() => submitInteractions(selectedTalent.id)}
                   >
                     {interactionMutation.isPending ||
-                    deleteInteractionMutation.isPending
+                      deleteInteractionMutation.isPending
                       ? "Saving..."
                       : "Save Changes"}
                   </Button>
