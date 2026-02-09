@@ -255,7 +255,8 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                 const isComment = interaction.type === "comment";
 
                 const commentText =
-                  interaction?.content || interaction?.interaction_data?.message;
+                  interaction?.content ||
+                  interaction?.interaction_data?.message;
                 // Find talent name from pkg.items
                 // (Logic: interaction has talent_id, pkg.items has talent embedded)
                 const item = pkg?.items?.find(
@@ -284,7 +285,7 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                               ? "bg-emerald-100 text-emerald-600"
                               : isComment
                                 ? "bg-amber-100 text-amber-700"
-                              : "bg-blue-100 text-blue-600"
+                                : "bg-blue-100 text-blue-600"
                         }`}
                       >
                         {isFavorite ? (
@@ -313,7 +314,7 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                                   ? "Selected a Talent"
                                   : isComment
                                     ? "Commented on a Talent"
-                                  : "Requested Callback"}
+                                    : "Requested Callback"}
                             </h4>
                             <p className="text-xs text-gray-400 font-medium">
                               {format(
