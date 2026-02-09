@@ -287,6 +287,22 @@ pub async fn list_for_agency(
         {
             entry.deadline = deadline;
         }
+        if entry
+            .license_start_date
+            .as_ref()
+            .map(|s| s.trim().is_empty())
+            .unwrap_or(true)
+        {
+            entry.license_start_date = license_start_date;
+        }
+        if entry
+            .license_end_date
+            .as_ref()
+            .map(|s| s.trim().is_empty())
+            .unwrap_or(true)
+        {
+            entry.license_end_date = license_end_date;
+        }
 
         let total_agreed_amount = campaign
             .and_then(|c| c.get("payment_amount"))

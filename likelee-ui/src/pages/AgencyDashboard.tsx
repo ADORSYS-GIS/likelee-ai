@@ -11769,14 +11769,16 @@ const LicensingRequestsView = () => {
                   </div>
                   <div>
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                      Duration
+                      {group.license_start_date ? "Duration" : "Deadline"}
                     </p>
                     <p className="text-sm font-bold text-gray-900">
                       {group.license_start_date && group.license_end_date
                         ? `${new Date(group.license_start_date).toLocaleDateString()} - ${new Date(group.license_end_date).toLocaleDateString()}`
                         : group.license_start_date
                           ? `From ${new Date(group.license_start_date).toLocaleDateString()}`
-                          : "—"}
+                          : group.deadline
+                            ? new Date(group.deadline).toLocaleDateString()
+                            : "—"}
                     </p>
                   </div>
                 </div>
@@ -12224,18 +12226,23 @@ const ActiveLicensesView = () => {
                     </p>
                   </td>
                   <td className="px-6 py-8">
-                    {lic.start_date || lic.end_date ? (
+                    {lic.start_date || lic.end_date || lic.deadline ? (
                       <>
                         {lic.start_date && (
                           <p className="text-xs font-bold text-gray-900 mb-1">
                             {new Date(lic.start_date).toLocaleDateString()}
                           </p>
                         )}
-                        {lic.end_date && (
+                        {lic.end_date ? (
                           <p className="text-[10px] font-medium text-gray-400 mb-1">
                             to {new Date(lic.end_date).toLocaleDateString()}
                           </p>
-                        )}
+                        ) : lic.deadline ? (
+                          <p className="text-[10px] font-medium text-gray-400 mb-1">
+                            Deadline:{" "}
+                            {new Date(lic.deadline).toLocaleDateString()}
+                          </p>
+                        ) : null}
                         {lic.days_left !== null &&
                           lic.days_left !== undefined && (
                             <p className="text-[10px] font-bold text-gray-400 italic">
