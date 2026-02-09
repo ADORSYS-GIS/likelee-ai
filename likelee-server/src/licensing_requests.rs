@@ -33,6 +33,9 @@ pub struct LicensingRequestGroup {
     pub usage_scope: Option<String>,
     pub regions: Option<String>,
     pub deadline: Option<String>,
+    pub license_start_date: Option<String>,
+    pub license_end_date: Option<String>,
+    pub notes: Option<String>,
     pub created_at: String,
     pub status: String,
     pub pay_set: bool,
@@ -120,7 +123,7 @@ pub async fn list_for_agency(
     let resp = state
         .pg
         .from("licensing_requests")
-        .select("id,brand_id,talent_id,status,created_at,campaign_title,client_name,talent_name,budget_min,budget_max,usage_scope,regions,deadline,negotiation_reason,brands(company_name),agency_users(full_legal_name,stage_name),campaigns(id,payment_amount,agency_percent,talent_percent,agency_earnings_cents,talent_earnings_cents)")
+        .select("id,brand_id,talent_id,status,created_at,campaign_title,client_name,talent_name,budget_min,budget_max,usage_scope,regions,deadline,license_start_date,license_end_date,notes,negotiation_reason,brands(company_name),agency_users(full_legal_name,stage_name),campaigns(id,payment_amount,agency_percent,talent_percent,agency_earnings_cents,talent_earnings_cents)")
         .eq("agency_id", &user.id)
         .order("created_at.desc")
         .limit(250)
@@ -185,6 +188,9 @@ pub async fn list_for_agency(
         let usage_scope = value_to_non_empty_string(r.get("usage_scope"));
         let regions = value_to_non_empty_string(r.get("regions"));
         let deadline = value_to_non_empty_string(r.get("deadline"));
+        let license_start_date = value_to_non_empty_string(r.get("license_start_date"));
+        let license_end_date = value_to_non_empty_string(r.get("license_end_date"));
+        let notes = value_to_non_empty_string(r.get("notes"));
 
         let brand_name = r
             .get("brands")
@@ -233,6 +239,9 @@ pub async fn list_for_agency(
                 usage_scope: usage_scope.clone(),
                 regions: regions.clone(),
                 deadline: deadline.clone(),
+                license_start_date: license_start_date.clone(),
+                license_end_date: license_end_date.clone(),
+                notes: notes.clone(),
                 created_at: created_at.clone(),
                 status: "pending".to_string(),
                 pay_set: false,

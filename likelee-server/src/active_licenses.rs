@@ -234,7 +234,7 @@ pub async fn list(
             license_type,
             brand: brand_name,
             start_date: r.license_start_date,
-            end_date: r.license_end_date,
+            end_date: r.license_end_date.or(r.deadline),
             days_left,
             usage_scope,
             value,

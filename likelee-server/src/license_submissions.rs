@@ -1340,36 +1340,44 @@ pub async fn create_and_send(
         None
     };
 
-    let lr_data = json!({
-        "agency_id": agency_id,
-        "submission_id": new_submission_id,
-        "client_name": req.client_name.clone(),
-        "talent_name": talent_names_val.clone().filter(|s| !s.trim().is_empty()).unwrap_or_else(|| "Assigned Talent".to_string()), // Explicit talent name fallback
-        "campaign_title": license_template.template_name.clone(), // "License Contract - X"
-        "usage_scope": license_template.usage_scope.clone(),
-        "license_start_date": req.start_date.clone().or(license_template.start_date.clone()),
-        "license_end_date": license_end_date,
-        "status": "pending", // Initially pending until signed
-        "regions": license_template.territory.clone(),
-        "payment_amount": license_fee_val.unwrap_or(0),
-        "budget_min": license_fee_val.unwrap_or(0) as f64 / 100.0,
-        "budget_max": license_fee_val.unwrap_or(0) as f64 / 100.0,
-        "notes": license_template.description.clone(), // Use description for notes
-    });
+    let now = chrono::Utc::now().to_rfc3339();
+    let names_str = talent_names_val.clone().unwrap_or_default();
+    let names: Vec<&str> = if names_str.trim().is_empty() {
+        vec!["Assigned Talent"]
+    } else {
+        names_str
+            .split(',')
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .collect()
+    };
 
-    // We don't have a direct way to insert payment_amount into campaigns table from here easily without more logic.
-    // But `active_licenses` list uses `campaigns(payment_amount)`.
-    // If we want value to show up, we might need a dummy campaign or update `active_licenses` to fetch `license_fee` from submission if joined?
-    // ACTIVE LICENSES TABLE QUERY uses `campaigns(payment_amount)`.
-    // If we want the price to show, we need to fix that query too.
-    // For now, let's create the LR so it appears.
+    for name in names {
+        let lr_data = json!({
+            "agency_id": agency_id,
+            "submission_id": new_submission_id,
+            "client_name": req.client_name.clone(),
+            "talent_name": name,
+            "campaign_title": license_template.template_name.clone(),
+            "usage_scope": license_template.usage_scope.clone(),
+            "license_start_date": req.start_date.clone().or(license_template.start_date.clone()),
+            "license_end_date": license_end_date.clone(),
+            "status": "pending",
+            "regions": license_template.territory.clone(),
+            "payment_amount": license_fee_val.unwrap_or(0),
+            "budget_min": license_fee_val.unwrap_or(0) as f64 / 100.0,
+            "budget_max": license_fee_val.unwrap_or(0) as f64 / 100.0,
+            "notes": license_template.template_name.clone(), // Use template name for description/notes
+            "created_at": now.clone(),
+        });
 
-    let _ = state
-        .pg
-        .from("licensing_requests")
-        .insert(lr_data.to_string())
-        .execute()
-        .await;
+        let _ = state
+            .pg
+            .from("licensing_requests")
+            .insert(lr_data.to_string())
+            .execute()
+            .await;
+    }
 
     // Return the created submission
     // Reconstruct LicenseSubmission properly
