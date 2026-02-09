@@ -58,7 +58,7 @@ struct CampaignEmbed {
 #[derive(Deserialize)]
 struct LicensingRequestRow {
     id: String,
-    talent_id: String,
+    talent_id: Option<String>,
     campaign_title: Option<String>,
     client_name: Option<String>,
     license_start_date: Option<String>,
@@ -215,7 +215,7 @@ pub async fn list(
 
         licenses.push(ActiveLicense {
             id: r.id,
-            talent_id: r.talent_id,
+            talent_id: r.talent_id.unwrap_or_default(),
             talent_name: display_name,
             talent_avatar,
             license_type,
