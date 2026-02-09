@@ -71,7 +71,6 @@ pub struct CreateLicensingRequest {
     pub terms: String, // notes? or ignored for now
 }
 
-
 fn talent_display_name(row: &serde_json::Value) -> String {
     row.get("full_legal_name")
         .or(row.get("stage_name"))
@@ -135,17 +134,17 @@ pub async fn list_for_agency(
         return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
     }
 
-    let text = resp
-        .text()
-        .await
-        .map_err(|e| {
-            tracing::error!(agency_id = %user.id, error = %e, "licensing_requests text fetch error");
-            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
-        })?;
-    
+    let text = resp.text().await.map_err(|e| {
+        tracing::error!(agency_id = %user.id, error = %e, "licensing_requests text fetch error");
+        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+    })?;
+
     let rows: serde_json::Value = serde_json::from_str(&text).map_err(|e| {
         tracing::error!(agency_id = %user.id, error = %e, "licensing_requests JSON parse error");
-        (StatusCode::INTERNAL_SERVER_ERROR, format!("JSON parse error: {}", e))
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("JSON parse error: {}", e),
+        )
     })?;
 
     let mut requests: Vec<serde_json::Value> = vec![];
@@ -187,13 +186,19 @@ pub async fn list_for_agency(
         let regions = value_to_non_empty_string(r.get("regions"));
         let deadline = value_to_non_empty_string(r.get("deadline"));
 
-        let brand_name = r.get("brands").and_then(|b| b.get("company_name")).and_then(|v| v.as_str()).map(|s| s.to_string());
+        let brand_name = r
+            .get("brands")
+            .and_then(|b| b.get("company_name"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
         let talent_info = r.get("agency_users");
-        let talent_name = talent_info.map(|t| talent_display_name(t)).unwrap_or_default();
+        let talent_name = talent_info
+            .map(|t| talent_display_name(t))
+            .unwrap_or_default();
 
         let campaigns_arr = r.get("campaigns").and_then(|c| c.as_array());
         let campaign = campaigns_arr.and_then(|a| a.first());
-        
+
         let key = created_at_group_key(brand_key, &created_at);
 
         let entry = groups
@@ -219,18 +224,60 @@ pub async fn list_for_agency(
             });
 
         // Fill group level fields if empty
-        if entry.campaign_title.as_ref().map(|s| s.trim().is_empty()).unwrap_or(true) { entry.campaign_title = campaign_title; }
-        if entry.budget_min.is_none() { entry.budget_min = budget_min; }
-        if entry.budget_max.is_none() { entry.budget_max = budget_max; }
-        if entry.usage_scope.as_ref().map(|s| s.trim().is_empty()).unwrap_or(true) { entry.usage_scope = usage_scope; }
-        if entry.regions.as_ref().map(|s| s.trim().is_empty()).unwrap_or(true) { entry.regions = regions; }
-        if entry.deadline.as_ref().map(|s| s.trim().is_empty()).unwrap_or(true) { entry.deadline = deadline; }
+        if entry
+            .campaign_title
+            .as_ref()
+            .map(|s| s.trim().is_empty())
+            .unwrap_or(true)
+        {
+            entry.campaign_title = campaign_title;
+        }
+        if entry.budget_min.is_none() {
+            entry.budget_min = budget_min;
+        }
+        if entry.budget_max.is_none() {
+            entry.budget_max = budget_max;
+        }
+        if entry
+            .usage_scope
+            .as_ref()
+            .map(|s| s.trim().is_empty())
+            .unwrap_or(true)
+        {
+            entry.usage_scope = usage_scope;
+        }
+        if entry
+            .regions
+            .as_ref()
+            .map(|s| s.trim().is_empty())
+            .unwrap_or(true)
+        {
+            entry.regions = regions;
+        }
+        if entry
+            .deadline
+            .as_ref()
+            .map(|s| s.trim().is_empty())
+            .unwrap_or(true)
+        {
+            entry.deadline = deadline;
+        }
 
-        let total_agreed_amount = campaign.and_then(|c| c.get("payment_amount")).and_then(value_to_f64);
-        let agency_commission_percent = campaign.and_then(|c| c.get("agency_percent")).and_then(value_to_f64);
-        
-        let agency_amount = campaign.and_then(|c| c.get("agency_earnings_cents")).and_then(|v| v.as_f64()).map(|v| v / 100.0);
-        let talent_amount = campaign.and_then(|c| c.get("talent_earnings_cents")).and_then(|v| v.as_f64()).map(|v| v / 100.0);
+        let total_agreed_amount = campaign
+            .and_then(|c| c.get("payment_amount"))
+            .and_then(value_to_f64);
+        let agency_commission_percent = campaign
+            .and_then(|c| c.get("agency_percent"))
+            .and_then(value_to_f64);
+
+        let agency_amount = campaign
+            .and_then(|c| c.get("agency_earnings_cents"))
+            .and_then(|v| v.as_f64())
+            .map(|v| v / 100.0);
+        let talent_amount = campaign
+            .and_then(|c| c.get("talent_earnings_cents"))
+            .and_then(|v| v.as_f64())
+            .map(|v| v / 100.0);
 
         entry.talents.push(LicensingRequestTalent {
             licensing_request_id: id.to_string(),
@@ -246,10 +293,14 @@ pub async fn list_for_agency(
         let statuses: Vec<String> = entry.talents.iter().map(|t| t.status.clone()).collect();
         entry.status = group_status(&statuses);
     }
-    
+
     // Final pass for groups to set pay_set accurately
     for group in groups.values_mut() {
-        group.pay_set = !group.talents.is_empty() && group.talents.iter().all(|t| t.total_agreed_amount.is_some());
+        group.pay_set = !group.talents.is_empty()
+            && group
+                .talents
+                .iter()
+                .all(|t| t.total_agreed_amount.is_some());
     }
 
     let mut out: Vec<LicensingRequestGroup> = groups.into_values().collect();
@@ -353,12 +404,16 @@ pub async fn update_status_bulk(
                                             .get("company_name")
                                             .and_then(|v| v.as_str())
                                             .unwrap_or("Brand");
-                                        let subject = "Counter Offer for Licensing Request from Agency".to_string();
+                                        let subject =
+                                            "Counter Offer for Licensing Request from Agency"
+                                                .to_string();
                                         let body = format!(
                                             "Hello {},\n\nThe agency has sent a counter offer for your licensing request.\n\nReason/Notes: {}\n\nPlease reply to this email or contact the agency to review and respond.\n\nBest regards,\nLikelee Team",
                                             company_name, reason
                                         );
-                                        let _ = crate::email::send_plain_email(&state, email, &subject, &body);
+                                        let _ = crate::email::send_plain_email(
+                                            &state, email, &subject, &body,
+                                        );
                                         sent_emails.insert(email.to_string());
                                     }
                                 }
@@ -652,42 +707,53 @@ pub async fn set_pay_split(
         }
 
         let cid = if let Some(existing_cid) = campaign_id_by_request_id.get(lrid).cloned() {
-            let _ = state.pg.from("campaigns")
+            let _ = state
+                .pg
+                .from("campaigns")
                 .eq("id", &existing_cid)
                 .update(campaign_row.to_string())
                 .execute()
                 .await;
             existing_cid
         } else {
-            let c_resp = state.pg.from("campaigns")
+            let c_resp = state
+                .pg
+                .from("campaigns")
                 .insert(campaign_row.to_string())
                 .execute()
                 .await
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
             let c_text = c_resp.text().await.unwrap_or_else(|_| "[]".into());
             let c_rows: serde_json::Value = serde_json::from_str(&c_text).unwrap_or(json!([]));
-            c_rows.get(0).and_then(|v| v.get("id")).and_then(|v| v.as_str()).unwrap_or("").to_string()
+            c_rows
+                .get(0)
+                .and_then(|v| v.get("id"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string()
         };
 
         if !cid.is_empty() {
-             // Create or update payment record - Aligning with existing schema (gross_cents)
-             let payment_row = json!({
-                 "agency_id": user.id,
-                 "talent_id": talent_id,
-                 "campaign_id": cid,
-                 "licensing_request_id": lrid,
-                 "brand_id": if brand_id.is_empty() { serde_json::Value::Null } else { json!(brand_id) },
-                 "gross_cents": gross_cents,
-                 "talent_earnings_cents": talent_cents,
-                 "status": "pending",
-                 "currency_code": "USD",
-                 "due_date": if date.is_empty() { serde_json::Value::Null } else { json!(date) },
-             });
+            // Create or update payment record - Aligning with existing schema (gross_cents)
+            let payment_row = json!({
+                "agency_id": user.id,
+                "talent_id": talent_id,
+                "campaign_id": cid,
+                "licensing_request_id": lrid,
+                "brand_id": if brand_id.is_empty() { serde_json::Value::Null } else { json!(brand_id) },
+                "gross_cents": gross_cents,
+                "talent_earnings_cents": talent_cents,
+                "status": "pending",
+                "currency_code": "USD",
+                "due_date": if date.is_empty() { serde_json::Value::Null } else { json!(date) },
+            });
 
-             let _ = state.pg.from("payments")
-                 .upsert(payment_row.to_string())
-                 .execute()
-                 .await;
+            let _ = state
+                .pg
+                .from("payments")
+                .upsert(payment_row.to_string())
+                .execute()
+                .await;
         }
     }
 
@@ -713,8 +779,13 @@ pub async fn create(
     }
 
     // Calculate end date
-    let start_date = chrono::NaiveDate::parse_from_str(&payload.start_date, "%Y-%m-%d")
-        .map_err(|_| (StatusCode::BAD_REQUEST, "Invalid start_date format (YYYY-MM-DD)".to_string()))?;
+    let start_date =
+        chrono::NaiveDate::parse_from_str(&payload.start_date, "%Y-%m-%d").map_err(|_| {
+            (
+                StatusCode::BAD_REQUEST,
+                "Invalid start_date format (YYYY-MM-DD)".to_string(),
+            )
+        })?;
     let end_date = start_date + chrono::Duration::days(payload.duration_days);
 
     // 1. Create Licensing Request
@@ -730,7 +801,8 @@ pub async fn create(
         "notes": payload.terms, // Verify if we want to store custom terms in notes
     });
 
-    let resp = state.pg
+    let resp = state
+        .pg
         .from("licensing_requests")
         .insert(request_json.to_string())
         .select("id")
@@ -740,12 +812,16 @@ pub async fn create(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     if !resp.status().is_success() {
-         return Err((StatusCode::INTERNAL_SERVER_ERROR, resp.text().await.unwrap_or_default()));
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            resp.text().await.unwrap_or_default(),
+        ));
     }
 
-    let created: serde_json::Value = serde_json::from_str(&resp.text().await.unwrap_or_default())
-         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    
+    let created: serde_json::Value =
+        serde_json::from_str(&resp.text().await.unwrap_or_default())
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
     let request_id = created.get("id").and_then(|v| v.as_str()).unwrap_or("");
 
     // 2. Create Campaign (for value)
@@ -757,10 +833,11 @@ pub async fn create(
             "name": payload.license_type,
             "payment_amount": payload.price,
             "status": "Confirmed",
-            "campaign_type": "Licensing", 
+            "campaign_type": "Licensing",
         });
 
-        let _ = state.pg
+        let _ = state
+            .pg
             .from("campaigns")
             .insert(campaign_json.to_string())
             .execute()
@@ -769,34 +846,36 @@ pub async fn create(
 
     // 3. Increment Template Usage
     if let Some(template_id) = payload.template_id {
-         // This requires a stored procedure or raw SQL typically to do atomic increment, 
-         // but via PostgREST we might need a workaround or just read-modify-write if low concurrency.
-         // Or use the `rpc` call if we had a function. 
-         // For now, simpler read-modify-write as we don't have an `rpc` increment function set up.
-         // ACTUALLY: We can just ignore the race condition for now or use SQLX if we had it. 
-         // Let's retrieve current count and update.
-         
-         let t_resp = state.pg
-             .from("license_templates")
-             .select("usage_count")
-             .eq("id", &template_id)
-             .single()
-             .execute()
-             .await;
-             
-         if let Ok(r) = t_resp {
-             if let Ok(body) = r.text().await {
-                 if let Ok(obj) = serde_json::from_str::<serde_json::Value>(&body) {
-                     let count = obj.get("usage_count").and_then(|v| v.as_i64()).unwrap_or(0);
-                     let _ = state.pg
-                         .from("license_templates")
-                         .eq("id", &template_id)
-                         .update(json!({ "usage_count": count + 1 }).to_string())
-                         .execute()
-                         .await;
-                 }
-             }
-         }
+        // This requires a stored procedure or raw SQL typically to do atomic increment,
+        // but via PostgREST we might need a workaround or just read-modify-write if low concurrency.
+        // Or use the `rpc` call if we had a function.
+        // For now, simpler read-modify-write as we don't have an `rpc` increment function set up.
+        // ACTUALLY: We can just ignore the race condition for now or use SQLX if we had it.
+        // Let's retrieve current count and update.
+
+        let t_resp = state
+            .pg
+            .from("license_templates")
+            .select("usage_count")
+            .eq("id", &template_id)
+            .single()
+            .execute()
+            .await;
+
+        if let Ok(r) = t_resp {
+            if let Ok(body) = r.text().await {
+                if let Ok(obj) = serde_json::from_str::<serde_json::Value>(&body) {
+                    let count = obj.get("usage_count").and_then(|v| v.as_i64()).unwrap_or(0);
+                    let _ = state
+                        .pg
+                        .from("license_templates")
+                        .eq("id", &template_id)
+                        .update(json!({ "usage_count": count + 1 }).to_string())
+                        .execute()
+                        .await;
+                }
+            }
+        }
     }
 
     Ok(Json(json!({ "id": request_id, "ok": true })))

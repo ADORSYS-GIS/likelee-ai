@@ -866,7 +866,13 @@ pub async fn create_builder_token(
     );
 
     let token = docuseal_client
-        .create_builder_token(user_email, name, integration_email, payload.template_id, None)
+        .create_builder_token(
+            user_email,
+            name,
+            integration_email,
+            payload.template_id,
+            None,
+        )
         .map_err(|e| {
             error!(error = %e, "Failed to create builder token");
             (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
@@ -1397,7 +1403,7 @@ pub async fn handle_webhook(
             if let Ok(offer) = serde_json::from_str::<serde_json::Value>(&offer_body) {
                 if let Some(offer_id) = offer["id"].as_str() {
                     let prospect_id = offer["prospect_id"].as_str().unwrap_or("");
-                    
+
                     // Extract signed document URL
                     let signed_document_url = if new_status == "completed" {
                         payload.data["documents"]
@@ -1417,7 +1423,8 @@ pub async fn handle_webhook(
                         }
                     }
 
-                    let _ = pg.from("scouting_offers")
+                    let _ = pg
+                        .from("scouting_offers")
                         .update(update_json.to_string())
                         .eq("id", offer_id)
                         .execute()
@@ -1425,9 +1432,16 @@ pub async fn handle_webhook(
 
                     // Update prospect status
                     if !prospect_id.is_empty() {
-                        let p_status = if new_status == "completed" { "signed" } else if new_status == "declined" { "declined" } else { "" };
+                        let p_status = if new_status == "completed" {
+                            "signed"
+                        } else if new_status == "declined" {
+                            "declined"
+                        } else {
+                            ""
+                        };
                         if !p_status.is_empty() {
-                            let _ = pg.from("scouting_prospects")
+                            let _ = pg
+                                .from("scouting_prospects")
                                 .update(json!({ "status": p_status }).to_string())
                                 .eq("id", prospect_id)
                                 .execute()

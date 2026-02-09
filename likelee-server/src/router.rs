@@ -123,7 +123,8 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route(
             "/api/license-templates/:id",
-            post(crate::license_templates::update).delete(crate::license_templates::delete_template),
+            post(crate::license_templates::update)
+                .delete(crate::license_templates::delete_template),
         )
         .route(
             "/api/license-templates/:id/copy",

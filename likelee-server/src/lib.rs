@@ -1,5 +1,6 @@
 #![allow(clippy::uninlined_format_args)]
 
+pub mod active_licenses;
 pub mod agencies;
 pub mod agency_clients;
 pub mod agency_dashboard;
@@ -24,10 +25,11 @@ pub mod expenses;
 pub mod face_profiles;
 pub mod health;
 pub mod invoices;
+pub mod jobs;
 pub mod kyc;
-pub mod licenses;
-pub mod license_templates;
 pub mod license_submissions;
+pub mod license_templates;
+pub mod licenses;
 pub mod licensing_requests;
 pub mod moderation;
 pub mod notifications;
@@ -39,6 +41,4 @@ pub mod router;
 pub mod scouting;
 pub mod services;
 pub mod talent_statements;
-pub mod active_licenses;
 pub mod voice;
-pub mod jobs;

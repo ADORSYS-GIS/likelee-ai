@@ -255,7 +255,7 @@ export const AssetSelector: React.FC<AssetSelectorProps> = ({
                             }
                           >
                             {deleteMutation.isPending &&
-                              deleteMutation.variables?.assetId === asset.id ? (
+                            deleteMutation.variables?.assetId === asset.id ? (
                               <Loader2 className="w-4 h-4 animate-spin" />
                             ) : (
                               <Trash2 className="w-4 h-4" />

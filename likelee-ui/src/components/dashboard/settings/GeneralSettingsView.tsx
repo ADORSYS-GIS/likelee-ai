@@ -585,7 +585,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
             : null;
           const recipientsObj =
             (data as any)?.recipients &&
-              typeof (data as any).recipients === "object"
+            typeof (data as any).recipients === "object"
               ? (data as any).recipients
               : null;
 
@@ -693,7 +693,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                 : prev.currencyDisplayFormat,
             defaultTaxRatePct:
               typeof d.default_tax_rate === "number" ||
-                typeof d.default_tax_rate === "string"
+              typeof d.default_tax_rate === "string"
                 ? String(d.default_tax_rate)
                 : prev.defaultTaxRatePct,
             taxDisplayName:
@@ -710,7 +710,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                 : prev.defaultPaymentTerms,
             latePaymentFeePct:
               typeof d.late_payment_fee === "number" ||
-                typeof d.late_payment_fee === "string"
+              typeof d.late_payment_fee === "string"
                 ? String(d.late_payment_fee)
                 : prev.latePaymentFeePct,
             invoicePrefix:
@@ -993,12 +993,12 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
         return prev.map((t) =>
           t.template_key === editingTemplateKey
             ? {
-              ...t,
-              name,
-              subject,
-              body,
-              is_active: emailTemplateDraft.is_active,
-            }
+                ...t,
+                name,
+                subject,
+                body,
+                is_active: emailTemplateDraft.is_active,
+              }
             : t,
         );
       }
@@ -1269,10 +1269,11 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-lg transition-all whitespace-nowrap ${activeTab === tab
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-lg transition-all whitespace-nowrap ${
+                activeTab === tab
                   ? "bg-white text-gray-900 shadow-sm"
                   : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
-                }`}
+              }`}
             >
               {tab}
             </button>
@@ -1295,13 +1296,13 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                   {(kycStatus === "approved" ||
                     kycStatus === "verified" ||
                     kycStatus === "active") && (
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 rounded-full border border-green-100 shadow-sm animate-in fade-in zoom-in-95 duration-500">
-                        <BadgeCheck className="w-3.5 h-3.5 text-green-600" />
-                        <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider">
-                          Verified
-                        </span>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 rounded-full border border-green-100 shadow-sm animate-in fade-in zoom-in-95 duration-500">
+                      <BadgeCheck className="w-3.5 h-3.5 text-green-600" />
+                      <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider">
+                        Verified
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -2040,12 +2041,12 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                               prev.map((p) =>
                                 p.key === pref.key
                                   ? {
-                                    ...p,
-                                    channels: {
-                                      ...p.channels,
-                                      email: !!checked,
-                                    },
-                                  }
+                                      ...p,
+                                      channels: {
+                                        ...p.channels,
+                                        email: !!checked,
+                                      },
+                                    }
                                   : p,
                               ),
                             )

@@ -107,8 +107,14 @@ impl DocuSealClient {
         role: String,
         values: Option<serde_json::Value>,
     ) -> Result<CreateSubmissionResponse, Box<dyn std::error::Error>> {
-        self.create_submission_with_values(template_id, submitter_name, submitter_email, values, Some(role))
-            .await
+        self.create_submission_with_values(
+            template_id,
+            submitter_name,
+            submitter_email,
+            values,
+            Some(role),
+        )
+        .await
     }
 
     /// Create a new submission with a specific role and custom email sending behavior.
@@ -490,7 +496,6 @@ impl DocuSealClient {
             submitters,
             exp: expiration,
         };
-
 
         tracing::info!("DocuSeal Builder JWT Claims: {:?}", claims);
 

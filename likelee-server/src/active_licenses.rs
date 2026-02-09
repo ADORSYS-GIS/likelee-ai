@@ -25,9 +25,9 @@ pub struct ActiveLicense {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ActiveLicensesStats {
-    pub active_count: i64,
-    pub expiring_count: i64,
-    pub expired_count: i64,
+    pub active: i64,
+    pub expiring: i64,
+    pub expired: i64,
     pub total_value: f64,
 }
 
@@ -64,7 +64,7 @@ struct LicensingRequestRow {
     license_start_date: Option<String>,
     license_end_date: Option<String>,
     usage_scope: Option<String>,
-    
+
     // Embedded resources
     brands: Option<BrandEmbed>,
     agency_users: Option<AgencyUserEmbed>,
@@ -81,7 +81,7 @@ pub async fn list(
     }
 
     let select = "id,talent_id,campaign_title,client_name,brand_id,license_start_date,license_end_date,usage_scope,brands(company_name),agency_users(full_legal_name,stage_name,profile_photo_url),campaigns(payment_amount)";
-    
+
     let mut query = state
         .pg
         .from("licensing_requests")
@@ -99,16 +99,21 @@ pub async fn list(
         match s.to_lowercase().as_str() {
             "active" => {
                 // Active: (end_date is null OR end_date >= today)
-                query = query.or(format!("license_end_date.is.null,license_end_date.gte.{}", today_str));
-            },
+                query = query.or(format!(
+                    "license_end_date.is.null,license_end_date.gte.{}",
+                    today_str
+                ));
+            }
             "expiring" => {
                 // Expiring: today <= end_date <= threshold
-                query = query.gte("license_end_date", &today_str).lte("license_end_date", &threshold_str);
-            },
+                query = query
+                    .gte("license_end_date", &today_str)
+                    .lte("license_end_date", &threshold_str);
+            }
             "expired" => {
                 // Expired: end_date < today
                 query = query.lt("license_end_date", &today_str);
-            },
+            }
             _ => {
                 // "all" or unknown: no additional filter (already eq("status", "approved"))
             }
@@ -117,7 +122,7 @@ pub async fn list(
 
     let resp = query
         .order("created_at.desc")
-        .limit(200) 
+        .limit(200)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -128,38 +133,51 @@ pub async fn list(
         return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
     }
 
-    let text = resp
-        .text()
-        .await
-        .map_err(|e| {
-            tracing::error!(agency_id = %user.id, error = %e, "active_licenses text fetch error");
-            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
-        })?;
-    
+    let text = resp.text().await.map_err(|e| {
+        tracing::error!(agency_id = %user.id, error = %e, "active_licenses text fetch error");
+        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+    })?;
+
     let rows: Vec<LicensingRequestRow> = serde_json::from_str(&text)
         .map_err(|e| {
-            tracing::error!(agency_id = %user.id, error = %e, "active_licenses JSON parse error");
+            tracing::error!(agency_id = %user.id, error = %e, response_body = %text, "active_licenses JSON parse error");
             (StatusCode::INTERNAL_SERVER_ERROR, format!("JSON parse error: {}", e))
         })?;
+
+    tracing::info!(
+        agency_id = %user.id,
+        row_count = rows.len(),
+        "Fetched licensing_requests with status=approved"
+    );
 
     let mut licenses = Vec::new();
 
     for r in rows {
-        let display_name = r.agency_users
+        let display_name = r
+            .agency_users
             .as_ref()
             .and_then(|u| u.stage_name.clone().or(u.full_legal_name.clone()))
             .unwrap_or_else(|| "Unknown Talent".to_string());
-            
-        let talent_avatar = r.agency_users.as_ref().and_then(|u| u.profile_photo_url.clone());
-        let license_type = r.campaign_title.clone().unwrap_or_else(|| "General License".to_string());
-        
-        let brand_name = r.client_name.clone()
+
+        let talent_avatar = r
+            .agency_users
+            .as_ref()
+            .and_then(|u| u.profile_photo_url.clone());
+        let license_type = r
+            .campaign_title
+            .clone()
+            .unwrap_or_else(|| "General License".to_string());
+
+        let brand_name = r
+            .client_name
+            .clone()
             .or_else(|| r.brands.as_ref().and_then(|b| b.company_name.clone()))
             .unwrap_or_else(|| "Unknown Brand".to_string());
 
         let usage_scope = r.usage_scope.clone().unwrap_or_default();
 
-        let value = r.campaigns
+        let value = r
+            .campaigns
             .as_ref()
             .and_then(|c| c.first())
             .and_then(|c| c.payment_amount)
@@ -184,9 +202,10 @@ pub async fn list(
         // Search filter
         if let Some(search) = &q.search {
             let search_lower = search.to_lowercase();
-            if !display_name.to_lowercase().contains(&search_lower) 
-               && !brand_name.to_lowercase().contains(&search_lower)
-               && !license_type.to_lowercase().contains(&search_lower) {
+            if !display_name.to_lowercase().contains(&search_lower)
+                && !brand_name.to_lowercase().contains(&search_lower)
+                && !license_type.to_lowercase().contains(&search_lower)
+            {
                 continue;
             }
         }
@@ -230,19 +249,22 @@ pub async fn stats(
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        
+
     if !resp.status().is_success() {
-         return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to fetch stats".into()));
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to fetch stats".into(),
+        ));
     }
-    
+
     let text = resp.text().await.unwrap_or_default();
-    
+
     #[derive(Deserialize)]
     struct StatRow {
         license_end_date: Option<String>,
         campaigns: Option<Vec<CampaignEmbed>>,
     }
-    
+
     let rows: Vec<StatRow> = serde_json::from_str(&text).unwrap_or_default();
 
     let today = Utc::now().date_naive();
@@ -254,22 +276,24 @@ pub async fn stats(
     let mut total_val = 0.0;
 
     for r in rows {
-        let val = r.campaigns.as_ref()
-             .and_then(|c| c.first())
-             .and_then(|c| c.payment_amount)
-             .unwrap_or(0.0);
-             
+        let val = r
+            .campaigns
+            .as_ref()
+            .and_then(|c| c.first())
+            .and_then(|c| c.payment_amount)
+            .unwrap_or(0.0);
+
         total_val += val;
-        
+
         let mut row_status = "Active";
         if let Some(end_str) = r.license_end_date {
-             if let Ok(end_date) = chrono::NaiveDate::parse_from_str(&end_str, "%Y-%m-%d") {
-                 if end_date < today {
-                     row_status = "Expired";
-                 } else if end_date <= expiring_threshold {
-                     row_status = "Expiring";
-                 }
-             }
+            if let Ok(end_date) = chrono::NaiveDate::parse_from_str(&end_str, "%Y-%m-%d") {
+                if end_date < today {
+                    row_status = "Expired";
+                } else if end_date <= expiring_threshold {
+                    row_status = "Expiring";
+                }
+            }
         }
 
         match row_status {
@@ -280,9 +304,9 @@ pub async fn stats(
     }
 
     Ok(Json(ActiveLicensesStats {
-        active_count: active,
-        expiring_count: expiring,
-        expired_count: expired,
+        active,
+        expiring,
+        expired,
         total_value: total_val,
     }))
 }
