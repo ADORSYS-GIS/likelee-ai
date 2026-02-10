@@ -210,10 +210,8 @@ export default function BrandCompany() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {howItWorksSteps.map((step, index) => (
               <div key={index} className="text-center group">
-                <div className="w-16 h-16 bg-[#26B7B9] border border-gray-900 flex items-center justify-center mx-auto mb-6 rounded-sm shadow-[0px_4px_0px_0px_rgba(0,0,0,1)] transition-all">
-                  <span className="text-white font-bold text-2xl">
-                    {index + 1}
-                  </span>
+                <div className="w-16 h-16 bg-[#26B7B9] border border-gray-900 flex items-center justify-center mx-auto mb-6 rounded-none transition-all">
+                  <span className="text-white font-bold text-2xl">{index + 1}</span>
                 </div>
                 <p className="text-gray-900 text-base md:text-lg leading-snug px-2 max-w-[200px] mx-auto">
                   {step}
@@ -237,7 +235,7 @@ export default function BrandCompany() {
                   createPageUrl("OrganizationSignup") + "?type=brand_company",
                 )
               }
-              className="h-16 px-14 font-bold bg-white text-[#26B7B9] hover:bg-gray-100 rounded-none shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-xl border-none"
+              className="h-16 px-14 font-bold bg-white text-[#26B7B9] hover:bg-gray-100 rounded-none text-xl border-none"
             >
               Get Started
             </Button>
