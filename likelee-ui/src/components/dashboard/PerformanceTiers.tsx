@@ -36,7 +36,7 @@ const TIER_CONFIG: Record<string, any> = {
     icon: Trophy,
     color: "border-amber-400",
     textColor: "text-white",
-    iconBg: "bg-amber-500", // Solid Amber
+    iconBg: "bg-gradient-to-br from-amber-400 to-amber-600",
     brandColor: "text-amber-500",
     brandBorder: "border-amber-500",
     statsBg: "bg-amber-50/30",
@@ -51,7 +51,7 @@ const TIER_CONFIG: Record<string, any> = {
     icon: TrendingUp,
     color: "border-blue-400",
     textColor: "text-white",
-    iconBg: "bg-blue-500", // Solid Blue
+    iconBg: "bg-gradient-to-br from-blue-400 to-blue-600",
     brandColor: "text-blue-500",
     brandBorder: "border-blue-500",
     statsBg: "bg-blue-50/30",
@@ -66,7 +66,7 @@ const TIER_CONFIG: Record<string, any> = {
     icon: Target,
     color: "border-green-400",
     textColor: "text-white",
-    iconBg: "bg-green-500", // Solid Green
+    iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-600",
     brandColor: "text-green-500",
     brandBorder: "border-green-500",
     statsBg: "bg-green-50/30",
@@ -81,7 +81,7 @@ const TIER_CONFIG: Record<string, any> = {
     icon: AlertCircle,
     color: "border-gray-200",
     textColor: "text-white",
-    iconBg: "bg-gray-400", // Solid Grey
+    iconBg: "bg-gradient-to-br from-gray-400 to-gray-600",
     brandColor: "text-gray-400",
     brandBorder: "border-gray-400",
     statsBg: "bg-gray-50/30",
@@ -353,8 +353,8 @@ export const PerformanceTiers: React.FC = () => {
               className="bg-white rounded-none border border-gray-200 shadow-sm overflow-hidden p-8"
             >
               <div className="flex items-center gap-4 mb-8">
-                <div className="p-4">
-                  <cfg.icon className={cn("w-8 h-8", cfg.brandColor)} />
+                <div className={cn("p-4 rounded-none border-2 border-black", cfg.iconBg)}>
+                  <cfg.icon className="w-8 h-8 text-white" />
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-gray-900 leading-tight">
