@@ -1,7 +1,3 @@
-/**
- * Geocoding utility using Nominatim (OpenStreetMap)
- */
-
 import { base44 } from "@/api/base44Client";
 
 export interface Coordinates {

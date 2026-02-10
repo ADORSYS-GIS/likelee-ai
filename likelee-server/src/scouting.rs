@@ -95,10 +95,6 @@ pub struct OfferResponse {
     pub signed_document_url: Option<String>,
 }
 
-// =========================================================================
-// Geocoding (Scouting Map)
-// =========================================================================
-
 #[derive(Debug, Deserialize)]
 pub struct GeocodeQuery {
     pub q: String,
@@ -120,8 +116,6 @@ struct NominatimResult {
 }
 
 /// GET /api/scouting/geocode?q=Berlin&limit=5
-///
-/// Agency-only proxy to Nominatim to avoid CSP blocks and enable server-side control.
 pub async fn geocode(
     State(_state): State<AppState>,
     user: AuthUser,
@@ -143,8 +137,6 @@ pub async fn geocode(
     }
 
     let limit = params.limit.unwrap_or(5).clamp(1, 10);
-
-    // Nominatim usage policy expects a valid User-Agent identifying the application.
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(5))
         .build()
@@ -196,10 +188,6 @@ pub async fn geocode(
 
     Ok(Json(results))
 }
-
-// ============================================================================
-// Template Handlers
-// ============================================================================
 
 /// GET /api/scouting/templates?agency_id=xxx
 pub async fn list_templates(
