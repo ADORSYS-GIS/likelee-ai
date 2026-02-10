@@ -429,6 +429,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::scouting::refresh_offer_status),
         )
         .route(
+            "/api/scouting/geocode",
+            get(crate::scouting::geocode),
+        )
+        .route(
             "/api/scouting/builder-token",
             post(crate::scouting::create_builder_token),
         )

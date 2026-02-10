@@ -7,6 +7,7 @@ use axum::{
 use postgrest::Postgrest;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::time::Duration;
 use tracing::{error, info, warn};
 
 use crate::auth::AuthUser;
@@ -92,6 +93,108 @@ pub struct OfferResponse {
     pub status: String,
     pub signing_url: Option<String>,
     pub signed_document_url: Option<String>,
+}
+
+// =========================================================================
+// Geocoding (Scouting Map)
+// =========================================================================
+
+#[derive(Debug, Deserialize)]
+pub struct GeocodeQuery {
+    pub q: String,
+    pub limit: Option<u8>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct GeocodeResult {
+    pub name: String,
+    pub lat: f64,
+    pub lng: f64,
+}
+
+#[derive(Debug, Deserialize)]
+struct NominatimResult {
+    display_name: String,
+    lat: String,
+    lon: String,
+}
+
+/// GET /api/scouting/geocode?q=Berlin&limit=5
+///
+/// Agency-only proxy to Nominatim to avoid CSP blocks and enable server-side control.
+pub async fn geocode(
+    State(_state): State<AppState>,
+    user: AuthUser,
+    Query(params): Query<GeocodeQuery>,
+) -> Result<Json<Vec<GeocodeResult>>, (StatusCode, String)> {
+    if user.role != "agency" {
+        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
+    }
+
+    let q = params.q.trim();
+    if q.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "q is required".to_string()));
+    }
+    if q.len() < 2 || q.len() > 120 {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "q must be between 2 and 120 characters".to_string(),
+        ));
+    }
+
+    let limit = params.limit.unwrap_or(5).clamp(1, 10);
+
+    // Nominatim usage policy expects a valid User-Agent identifying the application.
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(5))
+        .build()
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let resp = client
+        .get("https://nominatim.openstreetmap.org/search")
+        .query(&[
+            ("format", "json"),
+            ("q", q),
+            ("limit", &limit.to_string()),
+            ("addressdetails", "1"),
+        ])
+        .header(
+            reqwest::header::USER_AGENT,
+            "likelee.ai scouting geocode (support@likelee.ai)",
+        )
+        .header(reqwest::header::ACCEPT, "application/json")
+        .send()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    let status = resp.status();
+    let body = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    if !status.is_success() {
+        warn!(status = %status, body = %body, "nominatim_error");
+        return Err((StatusCode::BAD_GATEWAY, "geocoding_failed".to_string()));
+    }
+
+    let raw: Vec<NominatimResult> = serde_json::from_str(&body)
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    let results = raw
+        .into_iter()
+        .filter_map(|r| {
+            let lat = r.lat.parse::<f64>().ok()?;
+            let lng = r.lon.parse::<f64>().ok()?;
+            Some(GeocodeResult {
+                name: r.display_name,
+                lat,
+                lng,
+            })
+        })
+        .collect();
+
+    Ok(Json(results))
 }
 
 // ============================================================================
