@@ -31,7 +31,7 @@ export async function geocode(address: string): Promise<Coordinates | null> {
   }
 
   try {
-    const data = await base44.get<GeocodeResult[]>("/scouting/geocode", {
+    const data = await base44.get<GeocodeResult[]>("scouting/geocode", {
       params: { q: address, limit: 1 },
     });
 
@@ -56,7 +56,7 @@ export async function searchLocations(
   if (!query || query.length < 3) return [];
 
   try {
-    const data = await base44.get<GeocodeResult[]>("/scouting/geocode", {
+    const data = await base44.get<GeocodeResult[]>("scouting/geocode", {
       params: { q: query, limit: 5 },
     });
     return data;
