@@ -112,6 +112,36 @@ export const registerAgency = (data: any) =>
 // Dashboard data for the authenticated user
 export const getDashboard = () => base44Client.get(`/api/dashboard`);
 
+export const getTalentMe = () => base44Client.get(`/api/talent/me`);
+
+export const listTalentLicensingRequests = () =>
+  base44Client.get(`/api/talent/licensing-requests`);
+
+export const listTalentLicenses = () => base44Client.get(`/api/talent/licenses`);
+
+export const getTalentLicensingRevenue = (params?: { month?: string }) =>
+  base44Client.get(`/api/talent/licensing/revenue`, { params: params || {} });
+
+export const listTalentBookings = () => base44Client.get(`/api/talent/bookings`);
+
+export const listTalentBookOuts = (params?: {
+  date_start?: string;
+  date_end?: string;
+}) => base44Client.get(`/api/talent/book-outs`, { params: params || {} });
+
+export const createTalentBookOut = (data: {
+  start_date: string;
+  end_date: string;
+  reason?: string;
+  notes?: string;
+}) => base44Client.post(`/api/talent/book-outs`, data);
+
+export const deleteTalentBookOut = (id: string) =>
+  base44Client.delete(`/api/talent/book-outs/${id}`);
+
+export const updateTalentProfile = (data: any) =>
+  base44Client.post(`/api/talent/profile`, data);
+
 // Payouts (Stripe Connect)
 export const getPayoutsAccountStatus = async (profileId: string) => {
   const resp = await base44Client.get(`/api/payouts/account_status`, {

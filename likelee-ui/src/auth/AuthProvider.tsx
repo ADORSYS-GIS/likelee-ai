@@ -118,6 +118,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           else if (table === "brands") resolvedRole = "brand";
           else resolvedRole = String((data as any)?.role || "creator");
         }
+
+        // Role override: if this authenticated user is linked via agency_users,
+        // treat them as a talent for routing/dashboard purposes.
+        // This allows talents to log in via the Creator tab.
+        if (!resolvedRole || resolvedRole === "creator") {
+          const { data: agencyUser } = await supabase
+            .from("agency_users")
+            .select("id")
+            .or(`user_id.eq.${userId},creator_id.eq.${userId}`)
+            .limit(1)
+            .maybeSingle();
+
+          if (agencyUser?.id) {
+            resolvedRole = "talent";
+          }
+        }
+
         setProfile({ ...data, role: resolvedRole || (data as any)?.role });
       } else if (userEmail && (table === "creators" || !table)) {
         // Profile missing in profiles table, create it (only for creators)
@@ -195,7 +212,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const currentUser = data.session?.user ?? null;
       setUser(currentUser);
       setSession(data.session);
-      // Avoid double-fetching profile; rely on onAuthStateChange handler above
+
+      // If a session already exists on page load, onAuthStateChange may not fire.
+      // Ensure profile is fetched so ProtectedRoute can render role-gated pages.
+      if (currentUser && (!profile || profile.id !== currentUser.id)) {
+        fetchProfile(
+          currentUser.id,
+          currentUser.email,
+          currentUser.user_metadata?.full_name,
+          currentUser.user_metadata?.role,
+        );
+      }
+
       setInitialized(true);
     });
     return () => {

@@ -3,7 +3,6 @@ import { Plus, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { ToastAction } from "@/components/ui/toast";
 import { AddBookOutModal } from "../Modals/AddBookOutModal";
 import { getAgencyTalents } from "@/api/functions";
 
@@ -11,17 +10,23 @@ export const TalentAvailabilityTab = ({
   bookOuts = [],
   onAddBookOut,
   onRemoveBookOut,
+  fixedTalent,
 }: {
   bookOuts?: any[];
   onAddBookOut: (bookOut: any) => void;
   onRemoveBookOut: (id: string) => void;
+  fixedTalent?: { id: string; name: string };
 }) => {
   const [addBookOutOpen, setAddBookOutOpen] = useState(false);
-  const { toast, dismiss } = useToast();
+  const { toast } = useToast();
 
   // Load real talents and map id -> name
   const [talents, setTalents] = useState<any[]>([]);
   useEffect(() => {
+    if (fixedTalent?.id) {
+      setTalents([{ id: fixedTalent.id, name: fixedTalent.name }]);
+      return;
+    }
     let cancelled = false;
     (async () => {
       try {
@@ -128,22 +133,19 @@ export const TalentAvailabilityTab = ({
                     size="sm"
                     className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600 font-bold px-4"
                     onClick={() => {
-                      toast({
-                        title: "Delete Book-Out?",
-                        description: "This action cannot be undone.",
-                        action: (
-                          <ToastAction
-                            altText="Delete"
-                            onClick={() => {
-                              onRemoveBookOut(bo.id);
-                              dismiss();
-                            }}
-                            className="font-bold bg-red-600 text-white hover:bg-red-700 hover:text-white border-none"
-                          >
-                            Delete
-                          </ToastAction>
-                        ),
-                      });
+                      const ok = window.confirm(
+                        "Delete Book-Out? This action cannot be undone.",
+                      );
+                      if (!ok) return;
+                      try {
+                        onRemoveBookOut(bo.id);
+                      } catch (_e) {
+                        toast({
+                          title: "Remove failed",
+                          description: "Failed to remove book-out.",
+                          variant: "destructive" as any,
+                        });
+                      }
                     }}
                   >
                     Remove

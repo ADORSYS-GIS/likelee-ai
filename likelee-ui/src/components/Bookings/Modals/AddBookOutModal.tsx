@@ -25,10 +25,12 @@ export const AddBookOutModal = ({
   open,
   onOpenChange,
   onAdd,
+  fixedTalent,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAdd: (bookOut: any) => void;
+  fixedTalent?: { id: string; name: string };
 }) => {
   const [reason, setReason] = useState("personal");
   const [talentId, setTalentId] = useState("");
@@ -38,6 +40,11 @@ export const AddBookOutModal = ({
   const [talents, setTalents] = useState<any[]>([]);
 
   useEffect(() => {
+    if (fixedTalent?.id) {
+      setTalents([{ id: fixedTalent.id, name: fixedTalent.name }]);
+      setTalentId(fixedTalent.id);
+      return;
+    }
     let cancelled = false;
     const load = async () => {
       try {
@@ -119,18 +126,24 @@ export const AddBookOutModal = ({
 
           <div className="space-y-2">
             <Label className="font-bold">Talent *</Label>
-            <Select value={talentId} onValueChange={setTalentId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select talent" />
-              </SelectTrigger>
-              <SelectContent>
-                {talents.map((talent) => (
-                  <SelectItem key={talent.id} value={talent.id}>
-                    {talent.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {fixedTalent?.id ? (
+              <div className="text-sm font-semibold text-gray-900">
+                {fixedTalent.name}
+              </div>
+            ) : (
+              <Select value={talentId} onValueChange={setTalentId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select talent" />
+                </SelectTrigger>
+                <SelectContent>
+                  {talents.map((talent) => (
+                    <SelectItem key={talent.id} value={talent.id}>
+                      {talent.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

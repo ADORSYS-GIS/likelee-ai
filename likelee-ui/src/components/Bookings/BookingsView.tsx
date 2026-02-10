@@ -28,6 +28,8 @@ export const BookingsView = ({
   onRemoveBookOut,
   onUpdateBooking,
   onCancelBooking,
+  fixedTalent,
+  disableBookingEdits,
 }: {
   activeSubTab: string;
   bookings: any[];
@@ -37,6 +39,8 @@ export const BookingsView = ({
   bookOuts: any[];
   onAddBookOut: (bookOut: any) => void;
   onRemoveBookOut: (id: string) => void;
+  fixedTalent?: { id: string; name: string };
+  disableBookingEdits?: boolean;
 }) => {
   if (activeSubTab === "Calendar & Schedule")
     return (
@@ -48,6 +52,8 @@ export const BookingsView = ({
         bookOuts={bookOuts}
         onAddBookOut={onAddBookOut}
         onRemoveBookOut={onRemoveBookOut}
+        fixedTalent={fixedTalent}
+        disableBookingEdits={disableBookingEdits}
       />
     );
   if (activeSubTab === "Booking Requests") return <BookingRequestsTab />;
@@ -58,6 +64,7 @@ export const BookingsView = ({
         bookOuts={bookOuts}
         onAddBookOut={onAddBookOut}
         onRemoveBookOut={onRemoveBookOut}
+        fixedTalent={fixedTalent}
       />
     );
   if (activeSubTab === "Notifications")

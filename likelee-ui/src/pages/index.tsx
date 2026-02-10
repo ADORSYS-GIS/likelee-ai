@@ -68,6 +68,8 @@ import AITalentBoard from "./AITalentBoard";
 
 import TalentDashboard from "./TalentDashboard";
 
+import TalentPortal from "./TalentPortal";
+
 import UploadProject from "./UploadProject";
 
 import DemoTalentDashboard from "./DemoTalentDashboard";
@@ -337,11 +339,18 @@ function AppRoutes() {
       <Route path="/AITalentBoard" element={<AITalentBoard />} />
 
       <Route
+        path="/talentportal"
+        element={
+          <ProtectedRoute allowedRoles={['creator', 'talent']}>
+            <TalentPortal />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/TalentDashboard"
         element={
-          <ProtectedRoute allowedRoles={["creator"]}>
-            <TalentDashboard />
-          </ProtectedRoute>
+          <Navigate to="/talentportal" replace />
         }
       />
 

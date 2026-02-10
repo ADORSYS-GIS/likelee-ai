@@ -13,6 +13,26 @@ pub fn build_router(state: AppState) -> Router {
         .allow_headers(Any);
     Router::new()
         .route("/api/health", get(crate::health::health))
+        .route("/api/talent/me", get(crate::talent::talent_me))
+        .route(
+            "/api/talent/licensing-requests",
+            get(crate::talent::list_licensing_requests),
+        )
+        .route("/api/talent/licenses", get(crate::talent::list_licenses_stub))
+        .route(
+            "/api/talent/licensing/revenue",
+            get(crate::talent::get_licensing_revenue),
+        )
+        .route("/api/talent/profile", post(crate::talent::update_profile))
+        .route("/api/talent/bookings", get(crate::talent::list_bookings))
+        .route(
+            "/api/talent/book-outs",
+            get(crate::talent::list_book_outs).post(crate::talent::create_book_out),
+        )
+        .route(
+            "/api/talent/book-outs/:id",
+            delete(crate::talent::delete_book_out),
+        )
         // Invoices (Agency Dashboard)
         .route(
             "/api/invoices",
