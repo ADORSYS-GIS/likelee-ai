@@ -1288,7 +1288,6 @@ pub async fn list_talent_assets(
         .from("agency_users")
         .select("id")
         .eq("agency_id", &user.id)
-        .eq("status", "active")
         .eq("id", &talent_id)
         .execute()
         .await
@@ -1494,7 +1493,6 @@ pub async fn upload_talent_asset(
         .select("id")
         .eq("agency_id", &user.id)
         .eq("id", &talent_id)
-        .eq("status", "active")
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;

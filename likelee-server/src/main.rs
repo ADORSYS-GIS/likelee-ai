@@ -122,15 +122,21 @@ async fn main() {
         email_contact_to: cfg.email_contact_to.clone(),
 
         docuseal_api_key: cfg.docuseal_api_key.clone(),
+        docuseal_base_url: cfg.docuseal_api_url.clone(),
         docuseal_api_url: cfg.docuseal_api_url.clone(),
         docuseal_app_url: cfg.docuseal_app_url.clone(),
         docuseal_webhook_url: cfg.docuseal_webhook_url.clone(),
         docuseal_user_email: cfg.docuseal_user_email.clone(),
+        docuseal_master_template_id: cfg.docuseal_master_template_id.clone(),
+        docuseal_master_template_name: cfg.docuseal_master_template_name.clone(),
 
         kyc_bypass_veriff_limit: cfg.kyc_bypass_veriff_limit,
 
         frontend_url: cfg.frontend_url.clone(),
     };
+
+    // Start background jobs
+    tokio::spawn(likelee_server::jobs::start_payment_reminders(state.clone()));
 
     let app = likelee_server::router::build_router(state);
 

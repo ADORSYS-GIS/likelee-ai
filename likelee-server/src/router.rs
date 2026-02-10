@@ -102,11 +102,74 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route(
             "/api/agency/licensing-requests",
-            get(crate::licensing_requests::list_for_agency),
+            get(crate::licensing_requests::list_for_agency).post(crate::licensing_requests::create),
+        )
+        .route(
+            "/api/agency/active-licenses",
+            get(crate::active_licenses::list),
+        )
+        .route(
+            "/api/agency/active-licenses/stats",
+            get(crate::active_licenses::stats),
+        )
+        // License Templates
+        .route(
+            "/api/license-templates",
+            get(crate::license_templates::list).post(crate::license_templates::create),
+        )
+        .route(
+            "/api/license-templates/stats",
+            get(crate::license_templates::stats),
+        )
+        .route(
+            "/api/license-templates/:id",
+            post(crate::license_templates::update)
+                .delete(crate::license_templates::delete_template),
+        )
+        .route(
+            "/api/license-templates/:id/copy",
+            post(crate::license_templates::copy),
+        )
+        .route(
+            "/api/docuseal/builder-token",
+            post(crate::license_templates::create_builder_token),
+        )
+        // License Submissions
+        .route(
+            "/api/license-submissions",
+            get(crate::license_submissions::list).post(crate::license_submissions::create),
+        )
+        .route(
+            "/api/license-submissions/draft",
+            post(crate::license_submissions::create_draft),
+        )
+        .route(
+            "/api/license-submissions/create-and-send",
+            post(crate::license_submissions::create_and_send),
+        )
+        .route(
+            "/api/license-submissions/:id/finalize",
+            post(crate::license_submissions::finalize),
+        )
+        .route(
+            "/api/license-submissions/:id/preview",
+            post(crate::license_submissions::preview),
+        )
+        .route(
+            "/api/license-submissions/:id",
+            get(crate::license_submissions::get).delete(crate::license_submissions::archive),
+        )
+        .route(
+            "/api/license-submissions/:id/resend",
+            post(crate::license_submissions::resend),
         )
         .route(
             "/api/agency/licensing-requests/status",
             post(crate::licensing_requests::update_status_bulk),
+        )
+        .route(
+            "/api/webhooks/licenseContract",
+            post(crate::license_submissions::handle_webhook),
         )
         .route(
             "/api/agency/licensing-requests/pay-split",
