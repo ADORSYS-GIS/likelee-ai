@@ -55,7 +55,6 @@ const mockCreators = [
     price: 450,
     followers: "245K",
     approval_time: "12h",
-    cameo_video: "https://example.com/alex-cameo.mp4",
   },
   {
     id: 2,
@@ -64,7 +63,6 @@ const mockCreators = [
     price: 380,
     followers: "189K",
     approval_time: "24h",
-    cameo_video: "https://example.com/jordan-cameo.mp4",
   },
   {
     id: 3,
@@ -73,7 +71,6 @@ const mockCreators = [
     price: 520,
     followers: "N/A",
     approval_time: "Instant",
-    cameo_video: null,
   },
 ];
 
@@ -82,7 +79,7 @@ export default function CampaignBuilder({ onClose, onSubmit }) {
   const [generatingObjective, setGeneratingObjective] = useState(false);
   const { toast } = useToast();
   const [campaignSubmitted, setCampaignSubmitted] = useState(false);
-  const [showCameoLibrary, setShowCameoLibrary] = useState(false); // New state for cameo library modal
+
   const [showVoiceToneModal, setShowVoiceToneModal] = useState(false); // New state for voice tone modal
   const [studioTab, setStudioTab] = useState("setup"); // New state for managing studio sub-tabs ("setup", "review", "edit")
   const [formData, setFormData] = useState({
@@ -113,7 +110,7 @@ export default function CampaignBuilder({ onClose, onSubmit }) {
     creation_method: "studio", // or "upload"
     ai_model: "",
     generation_type: "",
-    creator_cameo_url: "",
+
     script: "",
     ai_voice: "",
     voice_tone: "", // New field
@@ -200,12 +197,6 @@ export default function CampaignBuilder({ onClose, onSubmit }) {
       .map((id) => mockCreators.find((c) => c.id === id)?.name)
       .filter(Boolean)
       .join(", ");
-  };
-
-  const getSelectedCreatorCameos = () => {
-    return formData.selected_creators
-      .map((id) => mockCreators.find((c) => c.id === id))
-      .filter((c) => c && c.cameo_video);
   };
 
   // If campaign submitted, show success screen
@@ -301,7 +292,7 @@ export default function CampaignBuilder({ onClose, onSubmit }) {
                       creation_method: "studio",
                       ai_model: "",
                       generation_type: "",
-                      creator_cameo_url: "",
+
                       script: "",
                       ai_voice: "",
                       voice_tone: "", // Re-added to reset
@@ -974,85 +965,6 @@ export default function CampaignBuilder({ onClose, onSubmit }) {
                             </Select>
                           </div>
                         </div>
-
-                        {/* Creator Cameo Auto-Import */}
-                        <Card className="p-4 bg-gray-50 border-2 border-gray-200">
-                          <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-                            <Users className="w-4 h-4 text-cyan-600" />
-                            Creator Cameos
-                          </h4>
-                          {formData.selected_creators.length > 0 ? (
-                            <div className="space-y-3">
-                              <p className="text-sm text-gray-700 mb-3">
-                                Automatically importing cameos for:{" "}
-                                <span className="font-medium">
-                                  {getSelectedCreatorNames()}
-                                </span>
-                              </p>
-                              <div className="grid grid-cols-2 gap-3">
-                                {getSelectedCreatorCameos().map((creator) => (
-                                  <div
-                                    key={creator.id}
-                                    className="p-3 bg-white border-2 border-gray-200 rounded-lg"
-                                  >
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <img
-                                        src={creator.image}
-                                        alt={creator.name}
-                                        className="w-8 h-8 rounded-full object-cover"
-                                      />
-                                      <span className="text-sm font-medium text-gray-900">
-                                        {creator.name}
-                                      </span>
-                                    </div>
-                                    <Badge className="bg-green-100 text-green-800 text-xs">
-                                      <CheckCircle2 className="w-3 h-3 mr-1" />
-                                      Cameo Ready
-                                    </Badge>
-                                  </div>
-                                ))}
-                                {formData.selected_creators.length >
-                                  getSelectedCreatorCameos().length && (
-                                  <div className="p-3 bg-white border-2 border-gray-200 rounded-lg flex items-center gap-2">
-                                    <AlertCircle className="w-5 h-5 text-yellow-600" />
-                                    <span className="text-sm text-gray-700">
-                                      Some creators do not have cameos
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                              <Button
-                                onClick={() => setShowCameoLibrary(true)}
-                                variant="outline"
-                                size="sm"
-                                className="border-2 border-gray-300 w-full mt-3"
-                              >
-                                <Video className="w-3 h-3 mr-1" />
-                                Browse Cameo Library
-                              </Button>
-                              {formData.creator_cameo_url && (
-                                <p className="text-xs text-gray-600 mt-2">
-                                  Selected custom cameo:{" "}
-                                  {formData.creator_cameo_url.split("/").pop()}
-                                </p>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="text-center py-4">
-                              <p className="text-sm text-gray-600 mb-3">
-                                No creators selected yet
-                              </p>
-                              <Button
-                                onClick={() => setCurrentStep(3)}
-                                variant="outline"
-                                size="sm"
-                                className="border-2 border-cyan-600 text-cyan-600"
-                              >
-                                Go Back to Select Creators
-                              </Button>
-                            </div>
-                          )}
-                        </Card>
 
                         {/* Script Creation */}
                         <div>
@@ -1768,82 +1680,6 @@ export default function CampaignBuilder({ onClose, onSubmit }) {
           </div>
         </div>
       </div>
-
-      {/* Cameo Library Modal */}
-      {showCameoLibrary && (
-        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-6">
-          <Card className="w-full max-w-4xl bg-white p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-900">
-                Creator Cameo Library
-              </h3>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowCameoLibrary(false)}
-              >
-                <X className="w-5 h-5" />
-              </Button>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
-              {mockCreators
-                .filter((c) => c.cameo_video)
-                .map((creator) => (
-                  <Card
-                    key={creator.id}
-                    className="p-4 border-2 border-gray-200 hover:border-cyan-500 transition-all cursor-pointer"
-                  >
-                    <div className="aspect-video bg-gray-100 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
-                      <img
-                        src={creator.image}
-                        alt={creator.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <h4 className="font-medium text-gray-900 mb-1">
-                      {creator.name}
-                    </h4>
-                    <p className="text-xs text-gray-600 mb-3">
-                      Followers: {creator.followers}
-                    </p>
-                    <Button
-                      size="sm"
-                      className="w-full bg-cyan-600 hover:bg-cyan-700 text-white"
-                      onClick={() => {
-                        updateFormData(
-                          "creator_cameo_url",
-                          creator.cameo_video,
-                        );
-                        setShowCameoLibrary(false);
-                      }}
-                    >
-                      <CheckCircle2 className="w-3 h-3 mr-1" />
-                      Select Cameo
-                    </Button>
-                  </Card>
-                ))}
-              {/* Option to upload new cameo */}
-              <Card className="p-4 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-center">
-                <Upload className="w-8 h-8 text-gray-400 mb-2" />
-                <p className="text-sm font-medium text-gray-700 mb-1">
-                  Upload New Cameo
-                </p>
-                <p className="text-xs text-gray-500 mb-3">
-                  MP4, MOV, up to 100MB
-                </p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="border-2 border-gray-300"
-                >
-                  Browse Files
-                </Button>
-              </Card>
-            </div>
-          </Card>
-        </div>
-      )}
 
       {/* Voice Tone Selection Modal */}
       {showVoiceToneModal && (

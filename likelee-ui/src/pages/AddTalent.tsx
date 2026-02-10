@@ -1114,14 +1114,14 @@ export default function AddTalent() {
                   Media & Social
                 </h3>
                 <p className="text-gray-600">
-                  Upload cameo and connect social accounts
+                  Upload hero media and connect social accounts
                 </p>
               </div>
 
-              {/* Hero Media / Cameo */}
+              {/* Hero Media */}
               <div>
                 <Label className="text-sm font-medium text-gray-900 mb-3 block">
-                  Hero Cameo (Image or Video)
+                  Hero Media (Image or Video)
                 </Label>
                 {!formData.hero_media ? (
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-indigo-400 transition-colors">

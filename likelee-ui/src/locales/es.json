@@ -345,32 +345,6 @@
       "completeVerification": "Completar verificación",
       "refreshStatus": "Actualizar estado"
     },
-    "cameoVideo": {
-      "title": "VIDEO CAMEO",
-      "description": "La representación en video de ti - las marcas lo usan para cameos de IA y generación de contenido",
-      "uploaded": "Subido:",
-      "duration": "Duración:",
-      "quality": "Calidad:",
-      "status": "Estado:",
-      "verified": "✓ Verificado y aprobado",
-      "aboutCameo": {
-        "title": "Acerca de tu cameo:",
-        "text": "Las marcas lo usan para generar cameos de IA de ti hablando, referenciar tu voz/expresiones y crear contenido fotorrealista que te presenta."
-      },
-      "actions": {
-        "watchFull": "Ver cameo completo",
-        "reupload": "Re-subir nuevo cameo",
-        "download": "Descargar"
-      },
-      "comingSoon": {
-        "title": "Próximamente",
-        "text": "La carga de video cameo estará disponible pronto"
-      },
-      "warning": {
-        "title": "Tu cameo es necesario para comenzar a ganar.",
-        "text": "Las marcas necesitan esta referencia de video para crear contenido que te presente."
-      }
-    },
     "contracts": {
       "title": "Licencias y Contratos",
       "subtitle": "Gestiona tus acuerdos activos y uso de derechos",
@@ -680,7 +654,7 @@
       "quickActions": "Acciones Rápidas",
       "priority": "Prioridad",
       "completeProfile": "Completa Tu Perfil",
-      "completeProfileInfo": "Añade imágenes de referencia y tu video de cameo para que las marcas te descubran",
+      "completeProfileInfo": "Añade imágenes de referencia y tu video de referencia para que las marcas te descubran",
       "uploadVoiceTone": "Sube Tu Primer Tono de Voz",
       "uploadVoiceToneInfo": "Fortalece tu perfil con grabaciones de voz",
       "recentActivity": "Actividad Reciente",
@@ -695,7 +669,6 @@
       "completeToGetDiscovered": "Completa para que te Descubran Durante el Piloto",
       "referenceImages": "Imágenes de Referencia",
       "voiceRecordings": "Grabaciones de Voz",
-      "cameoVideo": "Video de Cameo",
       "missing": "Falta"
     },
     "content": {
@@ -765,7 +738,7 @@
       "openToWork": "Abierto a Trabajar Con",
       "industries": "Industrias",
       "licensingRate": "Tarifa de Licencia",
-      "baseRateDescription": "Tarifa base por uso de cameo",
+      "baseRateDescription": "Tarifa base por uso de imagen",
       "openToNegotiations": "Abierto a negociaciones",
       "perWeek": "por semana",
       "portfolio": "Portafolio",
@@ -774,7 +747,7 @@
       "engagement": "Interacción",
       "turnaround": "Tiempo de Entrega",
       "from": "Desde",
-      "requestCameo": "Solicitar Cameo",
+      "hireCreator": "Contratar Creador",
       "preview": "Vista Previa",
       "profile": "Perfil"
     },
@@ -919,8 +892,6 @@
       "voiceUploadFailed": "Error al cargar la muestra de voz",
       "voiceDeleted": "¡Muestra de voz eliminada con éxito!",
       "voiceDeleteFailed": "Error al eliminar la muestra de voz",
-      "cameoUploaded": "¡Cameo cargado con éxito!",
-      "cameoUploadFailed": "Error al cargar el cameo",
       "avatarGenerating": "Generando avatar...",
       "avatarGenerated": "¡Avatar generado con éxito!",
       "avatarGenerationFailed": "Error al generar el avatar",
@@ -1086,7 +1057,7 @@
   "identityVerification": "Verificación de identidad",
   "identityVerificationMessage": "Grabas un video guiado de 60 segundos. Verificamos tu identidad con tu identificación gubernamental y confirmamos el movimiento facial (verificación de vida). Esto detiene a los impostores antes de que entren en el sistema.",
   "avatarCreation": "Creación de avatar",
-  "avatarCreationMessage": "Tu cameo se convierte en un doble digital seguro y encriptado. Obtienes un activo listo para licenciar. Tus datos biométricos sin procesar permanecen privados.",
+  "avatarCreationMessage": "Tu video de referencia se convierte en un doble digital seguro y encriptado. Obtienes un activo listo para licenciar. Tus datos biométricos brutos permanecen privados.",
   "youSetTheRules": "Tú pones las reglas",
   "youSetTheRulesMessage": "Define el alcance (¿anuncios sociales? ¿comerciales de televisión? ¿películas?), el territorio (¿solo en EE. UU.? ¿global?), el plazo (¿1 mes? ¿1 año?) y el precio. Sin jerga legal. Lenguaje sencillo.",
   "brandsRequestYouApprove": "Las marcas solicitan. Tú apruebas.",
@@ -1380,7 +1351,7 @@
       "identityVerified": "Identidad Verificada",
       "identityVerifiedDescription": "Por favor, suba sus 3 fotos de referencia (Frente, Izquierda, Derecha) para completar su configuración.",
       "verificationPending": "Verificación Pendiente",
-      "verificationPendingDescription": "La verificación aún no está completa. KYC: {{kyc}}, Liveness: {{live}}.",
+      "verificationPendingDescription": "La verificación aún no está completa. Estado: {{kyc}}.",
       "title": "Verificación de Identidad",
       "subtitle": "Verifica tu identidad para ser visible para las marcas y desbloquear oportunidades",
       "description": "Utilizamos verificación de identidad segura para garantizar que todos los creadores en Likelee sean auténticos. Este proceso suele tardar de 2 a 3 minutos.",
@@ -2071,7 +2042,7 @@
   "faces.hero.signUpButton": "Regístrate",
   "faces.hero.forYouButton": "Para Ti",
   "faces.whyChoose.title": "Por Qué los Creadores, Atletas y Talentos Eligen Likelee",
-  "faces.whyChoose.subtitle1": "La forma más rápida de ofrecer cameos de IA seguros para la marca y ganar regalías por cada uso.",
+  "faces.whyChoose.subtitle1": "La forma más rápida de ofrecer campañas de IA seguros para la marca y ganar regalías por cada uso.",
   "faces.whyChoose.subtitle2": "Cada creador en Likelee licencia su imagen bajo derechos claros y de tiempo limitado y mantiene la capacidad de modificar, pausar o retirar permisos en cualquier momento.",
   "faces.whyChoose.cards.0.title": "Ingresos Recurrentes, No Trabajos Únicos",
   "faces.whyChoose.cards.0.description": "Establece tus tarifas. Gana un anticipo mensual por cada campaña activa que use tu imagen. Una sesión de $500 solía ser todo. Ahora paga mes tras mes.",
@@ -2175,7 +2146,7 @@
   "faces.faq.questions.0.title": "¿Qué es un \"Creador\"?",
   "faces.faq.questions.0.description": "Un Creador es cualquier individuo verificado que licencia su imagen (rostro, voz o gemelo digital) para campañas o producciones asistidas por IA. Conservas la propiedad de tu imagen; Likelee solo facilita el uso con licencia bajo los términos que elijas.",
   "faces.faq.questions.1.title": "¿Cómo me verifico?",
-  "faces.faq.questions.1.description": "Después de que se conceda tu cuenta en el ecosistema, recibirás un correo electrónico de bienvenida y un enlace de verificación. Enviarás una identificación y un video corto de selfie para que nuestro sistema pueda confirmar tu autenticidad y producir tu cameo.",
+  "faces.faq.questions.1.description": "Después de que se conceda tu cuenta en el ecosistema, recibirás un correo electrónico de bienvenida y un enlace de verificación. Enviarás una identificación y un video corto de selfie para que nuestro sistema pueda confirmar tu autenticidad y producir tu gemelo digital.",
   "faces.faq.questions.2.title": "¿Se puede usar mi imagen sin mi consentimiento?",
   "faces.faq.questions.2.description": "Nunca. Cada solicitud de uso requiere tu aprobación explícita. Ninguna marca, estudio o socio de IA puede usar tu imagen a menos que hayas otorgado permiso para ese contexto específico.",
   "faces.faq.questions.3.title": "¿Puedo eliminar mi imagen de la plataforma?",
@@ -2189,11 +2160,11 @@
   "faces.faq.questions.7.title": "¿Sigo siendo dueño de mi imagen digital?",
   "faces.faq.questions.7.description": "Sí. Conservas la propiedad total. Estás licenciando el uso, no transfiriendo la propiedad. Todas las réplicas digitales permanecen vinculadas a tu identidad verificada.",
   "faces.faq.questions.8.title": "¿Puedo negociar tarifas para diferentes tipos de uso?",
-  "faces.faq.questions.8.description": "Absolutamente. Puedes establecer precios separados para UGC grabado por humanos, cameos de IA y gemelos digitales de IA completos. Nuestro sistema aplica automáticamente la tarifa elegida según el tipo y la duración de la campaña.",
+  "faces.faq.questions.8.description": "Absolutamente. Puedes establecer precios separados para UGC grabado por humanos, campañas de IA y gemelos digitales de IA completos. Nuestro sistema aplica automáticamente la tarifa elegida según el tipo y la duración de la campaña.",
   "faces.cta.title": "¿Listo para convertirte en propietario de un talento digital?",
   "faces.cta.subtitle": "Únete a creadores, modelos e intérpretes que construyen ingresos sostenibles a través de la licencia mensual de su imagen.",
   "faces.cta.howToGetStarted": "Cómo empezar:",
-  "faces.cta.steps.0": "→ Sube tu cameo — Graba un video corto de ti mismo (referencia de IA)",
+  "faces.cta.steps.0": "→ Sube tu video de referencia — Graba un video corto de ti mismo (referencia de IA)",
   "faces.cta.steps.1": "→ Sube imágenes de referencia — 15 fotos desde diferentes ángulos/estilos",
   "faces.cta.steps.2": "→ Establece tu tarifa mínima — Tú decides tu precio mínimo ($350+/mes)",
   "faces.cta.steps.3": "→ Las marcas te encuentran — Solicitan licencias, tú apruebas o rechazas",

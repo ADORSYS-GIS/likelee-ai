@@ -314,7 +314,7 @@ export default function PublicProfile() {
                               Licensing Rate
                             </h4>
                             <p className="text-sm text-gray-700">
-                              Base rate for cameo usage
+                              Base rate for likeness usage
                             </p>
                             {openToNegotiations && (
                               <div className="mt-2 text-sm text-emerald-700 flex items-center gap-2">
@@ -407,7 +407,7 @@ export default function PublicProfile() {
 
                 {/* CTA buttons */}
                 <button className="w-full bg-gray-900 text-white rounded-full py-3 font-semibold mb-3">
-                  Request Cameo
+                  Hire Creator
                 </button>
                 <div className="flex items-center justify-between">
                   <button className="flex-1 mr-2 border border-gray-300 rounded-full py-2 text-sm">

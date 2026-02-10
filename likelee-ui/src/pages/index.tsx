@@ -34,8 +34,6 @@ import StudioVideo from "./StudioVideo";
 
 import StudioImage from "./StudioImage";
 
-import StudioAvatar from "./StudioAvatar";
-
 import AdminCredits from "./AdminCredits";
 
 import StudioSubscribe from "./StudioSubscribe";
@@ -104,7 +102,6 @@ import SAGAFTRAAlignment from "./SAGAFTRAAlignment";
 import AboutUs from "./AboutUs";
 
 import CommercialRights from "./CommercialRights";
-import CameoUpload from "./CameoUpload";
 import RoyaltyWallet from "./RoyaltyWallet";
 import PublicProfile from "./PublicProfile";
 import BrandDiscoverFaces from "./BrandDiscoverFaces";
@@ -163,8 +160,6 @@ const PAGES = {
 
   StudioImage: StudioImage,
 
-  StudioAvatar: StudioAvatar,
-
   AdminCredits: AdminCredits,
 
   StudioSubscribe: StudioSubscribe,
@@ -198,7 +193,6 @@ const PAGES = {
   TalentDashboard: TalentDashboard,
 
   UploadProject: UploadProject,
-  CameoUpload: CameoUpload,
 
   DemoTalentDashboard: DemoTalentDashboard,
 
@@ -301,8 +295,6 @@ function AppRoutes() {
       <Route path="/StudioVideo" element={<StudioVideo />} />
 
       <Route path="/StudioImage" element={<StudioImage />} />
-
-      <Route path="/StudioAvatar" element={<StudioAvatar />} />
 
       <Route path="/AdminCredits" element={<AdminCredits />} />
 
@@ -482,15 +474,6 @@ function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={["creator"]}>
             <LicensingSettings />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/CameoUpload"
-        element={
-          <ProtectedRoute allowedRoles={["creator"]}>
-            <CameoUpload />
           </ProtectedRoute>
         }
       />
