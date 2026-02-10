@@ -426,7 +426,7 @@ pub async fn update_status_bulk(
             let b_resp = state
                 .pg
                 .from("licensing_requests")
-                .select("brand_id,brands(email,company_name)")
+                .select("brand_id,brands(email,company_name),submission_id,license_submissions(client_email,client_name)")
                 .in_("id", ids)
                 .execute()
                 .await;
@@ -438,25 +438,56 @@ pub async fn update_status_bulk(
                     if let Some(arr) = b_rows.as_array() {
                         let mut sent_emails = std::collections::HashSet::new();
                         for r in arr {
+                            let mut target_email = None;
+                            let mut target_name = "Client".to_string();
+
+                            // Try brand email first
                             if let Some(brand) = r.get("brands") {
-                                if let Some(email) = brand.get("email").and_then(|v| v.as_str()) {
-                                    if !sent_emails.contains(email) {
-                                        let company_name = brand
-                                            .get("company_name")
-                                            .and_then(|v| v.as_str())
-                                            .unwrap_or("Brand");
-                                        let subject =
-                                            "Counter Offer for Licensing Request from Agency"
-                                                .to_string();
-                                        let body = format!(
-                                            "Hello {},\n\nThe agency has sent a counter offer for your licensing request.\n\nReason/Notes: {}\n\nPlease reply to this email or contact the agency to review and respond.\n\nBest regards,\nLikelee Team",
-                                            company_name, reason
-                                        );
-                                        let _ = crate::email::send_plain_email(
-                                            &state, email, &subject, &body,
-                                        );
-                                        sent_emails.insert(email.to_string());
+                                if !brand.is_null() {
+                                    if let Some(email) = brand.get("email").and_then(|v| v.as_str())
+                                    {
+                                        target_email = Some(email.to_string());
+                                        info!("Found brand email: {}", email);
+                                        if let Some(name) =
+                                            brand.get("company_name").and_then(|v| v.as_str())
+                                        {
+                                            target_name = name.to_string();
+                                        }
                                     }
+                                }
+                            }
+
+                            // Fallback to submission email
+                            if target_email.is_none() {
+                                if let Some(sub) = r.get("license_submissions") {
+                                    if !sub.is_null() {
+                                        if let Some(email) =
+                                            sub.get("client_email").and_then(|v| v.as_str())
+                                        {
+                                            target_email = Some(email.to_string());
+                                            info!("Falling back to submission email: {}", email);
+                                            if let Some(name) =
+                                                sub.get("client_name").and_then(|v| v.as_str())
+                                            {
+                                                target_name = name.to_string();
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            if let Some(email) = target_email {
+                                if !sent_emails.contains(&email) {
+                                    let subject = "Counter Offer for Licensing Request from Agency"
+                                        .to_string();
+                                    let body = format!(
+                                        "Hello {},\n\nThe agency has sent a counter offer for your licensing request.\n\nReason/Notes: {}\n\nPlease reply to this email or contact the agency to review and respond.\n\nBest regards,\nLikelee Team",
+                                        target_name, reason
+                                    );
+                                    let _ = crate::email::send_plain_email(
+                                        &state, &email, &subject, &body,
+                                    );
+                                    sent_emails.insert(email);
                                 }
                             }
                         }

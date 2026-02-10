@@ -41,7 +41,7 @@ pub struct LicenseSubmission {
     pub updated_at: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct CreateSubmissionRequest {
     pub template_id: String,
     pub client_id: Option<String>,
@@ -526,11 +526,6 @@ pub async fn finalize(
         .map(|d| d as i32)
         .unwrap_or(license_template.duration_days);
 
-    let start_date = submission_data["start_date"]
-        .as_str()
-        .or(license_template.start_date.as_deref())
-        .unwrap_or("-");
-
     // Build fields array for pre-filling (DocuSeal API standard format)
     use crate::services::docuseal::SubmitterField;
 
@@ -597,11 +592,24 @@ pub async fn finalize(
         readonly: Some(true),
     });
 
+    let start_date_val = submission_data["start_date"]
+        .as_str()
+        .or(license_template.start_date.as_deref());
+    let start_date_str = start_date_val.unwrap_or("-");
+
     fields.push(SubmitterField {
         name: "Start Date".to_string(),
-        default_value: Some(start_date.to_string()),
+        default_value: Some(start_date_str.to_string()),
         readonly: Some(true),
     });
+
+    // Derive deadline from start_date and duration_days
+    let mut deadline = None;
+    if let Some(ds) = start_date_val {
+        if let Ok(d) = chrono::NaiveDate::parse_from_str(ds, "%Y-%m-%d") {
+            deadline = Some(d + chrono::Duration::days(duration_days as i64));
+        }
+    }
 
     let combined_terms = submission_data["custom_terms"]
         .as_str()
@@ -749,11 +757,12 @@ pub async fn finalize(
         "talent_name": talent_name,
         "submission_id": submission.id,
         "status": "pending",
-        "campaign_title": format!("License Contract - {}", client_name),
+        "campaign_title": license_template.template_name.clone(),
         "usage_scope": license_template.usage_scope.clone(),
         "regions": license_template.territory.clone(),
         "budget_min": license_fee.unwrap_or(0) as f64 / 100.0,
         "budget_max": license_fee.unwrap_or(0) as f64 / 100.0,
+        "deadline": deadline.map(|d| d.to_string()),
     });
 
     state
@@ -1028,13 +1037,47 @@ pub async fn resend(
         .await
         .ok();
 
-    // 3. Create new submission (reuse create logic)
+    // 3. Create new submission record in draft status first to reuse finalize logic if needed,
+    // or just perform full submission here.
+    // Given the complexity of finalize, it's better to implement the send logic here.
+
+    // Reuse create_draft logic to get a code-friendly way to create the record
     let new_auth_user = AuthUser {
         id: agency_id.clone(),
         email: auth_user.email,
         role: auth_user.role,
     };
-    create(State(state), new_auth_user, Json(req)).await
+
+    // Instead of calling create (which is a stub), we call create_draft then we can finalize it.
+    let draft_resp = create_draft(
+        State(state.clone()),
+        new_auth_user.clone(),
+        Json(serde_json::to_value(&req).unwrap()),
+    )
+    .await?;
+    let draft_id = draft_resp.0["id"]
+        .as_str()
+        .ok_or((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to get new draft ID".to_string(),
+        ))?
+        .to_string();
+
+    // Now finalize it
+    let finalize_req = FinalizeSubmissionRequest {
+        docuseal_template_id: req.docuseal_template_id,
+        client_name: Some(req.client_name),
+        client_email: Some(req.client_email),
+        talent_names: req.talent_names,
+    };
+
+    finalize(
+        State(state),
+        new_auth_user,
+        Path(draft_id),
+        Json(finalize_req),
+    )
+    .await
 }
 
 /// DELETE /api/license-submissions/:id - Archive submission

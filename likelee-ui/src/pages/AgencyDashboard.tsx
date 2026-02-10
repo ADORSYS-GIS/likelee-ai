@@ -11784,17 +11784,6 @@ const LicensingRequestsView = () => {
                 </div>
               </div>
 
-              {group.notes && (
-                <div className="mb-8 p-4 bg-gray-50 rounded-lg">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">
-                    Description
-                  </p>
-                  <p className="text-xs text-gray-600 leading-relaxed font-medium">
-                    {group.notes}
-                  </p>
-                </div>
-              )}
-
               {group.status === "approved" ? (
                 <div>
                   <Button
@@ -11914,7 +11903,7 @@ const LicensingRequestsView = () => {
               </Card>
             </div>
 
-            <DialogFooter>
+            <DialogFooter className="pt-6 border-t">
               <Button
                 variant="outline"
                 onClick={() => {
@@ -12154,7 +12143,7 @@ const ActiveLicensesView = () => {
                   Brand
                 </th>
                 <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  Duration
+                  Deadline
                 </th>
                 <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                   Usage Scope
@@ -12241,6 +12230,15 @@ const ActiveLicensesView = () => {
                           <p className="text-[10px] font-medium text-gray-400 mb-1">
                             Deadline:{" "}
                             {new Date(lic.deadline).toLocaleDateString()}
+                          </p>
+                        ) : lic.start_date && lic.duration_days ? (
+                          <p className="text-[10px] font-medium text-gray-400 mb-1">
+                            Deadline:{" "}
+                            {(() => {
+                              const d = new Date(lic.start_date);
+                              d.setDate(d.getDate() + lic.duration_days);
+                              return d.toLocaleDateString();
+                            })()}
                           </p>
                         ) : null}
                         {lic.days_left !== null &&
