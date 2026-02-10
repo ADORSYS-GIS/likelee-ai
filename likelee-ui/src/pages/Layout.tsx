@@ -485,7 +485,7 @@ export default function Layout({ children, currentPageName }) {
                   {t("questionsContactUs")}
                 </p>
                 <a
-                  href="mailto:help@likelee.ai"
+                  href="mailto:operations@likelee.ai"
                   style={{
                     color: "#32C8D1",
                     fontSize: "16px",
@@ -493,7 +493,7 @@ export default function Layout({ children, currentPageName }) {
                     textDecoration: "none",
                   }}
                 >
-                  help@likelee.ai
+                  operations@likelee.ai
                 </a>
               </div>
             </div>
@@ -780,12 +780,6 @@ export default function Layout({ children, currentPageName }) {
                     className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
                   >
                     {t("privacyPolicy.title")}
-                  </Link>
-                  <Link
-                    to={createPageUrl("CommercialRights")}
-                    className="block text-gray-600 hover:text-gray-900 text-sm transition-colors"
-                  >
-                    {t("commercialRights")}
                   </Link>
                 </div>
               </div>

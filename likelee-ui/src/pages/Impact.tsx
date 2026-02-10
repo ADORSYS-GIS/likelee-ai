@@ -254,10 +254,10 @@ export default function Impact() {
           <p className="text-lg text-gray-300 leading-relaxed">
             Reach out with ideas, concerns, or partnership opportunities at{" "}
             <a
-              href="mailto:help@likelee.ai"
+              href="mailto:operations@likelee.ai"
               className="text-emerald-400 hover:text-emerald-300 underline"
             >
-              help@likelee.ai
+              operations@likelee.ai
             </a>
           </p>
         </div>
