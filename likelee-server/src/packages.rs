@@ -748,7 +748,16 @@ pub async fn get_public_package(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     if !meta_resp.status().is_success() {
-        return Err((StatusCode::NOT_FOUND, "Package not found".to_string()));
+        let status = meta_resp.status();
+        let err_text = meta_resp.text().await.unwrap_or_default();
+        return Err((
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::NOT_FOUND),
+            if err_text.is_empty() {
+                "Package not found".to_string()
+            } else {
+                err_text
+            },
+        ));
     }
 
     let meta_text = meta_resp
@@ -801,6 +810,15 @@ pub async fn get_public_package(
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let err_text = resp.text().await.unwrap_or_default();
+        return Err((
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            err_text,
+        ));
+    }
 
     let text = resp
         .text()

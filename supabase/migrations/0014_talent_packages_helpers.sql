@@ -20,6 +20,7 @@ END;
 $$;
 
 -- 2. Function to get aggregate stats for an agency (from 0015)
+DROP FUNCTION IF EXISTS public.get_agency_package_stats(uuid);
 CREATE OR REPLACE FUNCTION public.get_agency_package_stats(p_agency_id uuid)
 RETURNS TABLE (
     total_views bigint,

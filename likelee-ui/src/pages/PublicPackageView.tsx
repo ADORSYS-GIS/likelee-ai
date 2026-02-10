@@ -105,7 +105,29 @@ export function PublicPackageView() {
     mutationFn: (data: any) => packageApi.createInteraction(token!, data),
   });
 
-  const pkg = packageData as any;
+  const rawPackageData = packageData as any;
+
+  const pkg = useMemo(() => {
+    const d = rawPackageData;
+    if (!d || typeof d !== "object") return d;
+    // Common wrappers
+    return d.package || d.data || d;
+  }, [rawPackageData]);
+
+  const apiPayloadIsError = useMemo(() => {
+    const d = rawPackageData;
+    if (!d || typeof d !== "object") return false;
+    // Supabase/PostgREST style errors often have code/message/details/hint
+    const hasErrorSignature =
+      typeof d.code === "string" && typeof d.message === "string";
+    if (!hasErrorSignature) return false;
+    // If it looks like a real package too, don't treat it as an error.
+    const looksLikePackage =
+      typeof (d as any).title === "string" ||
+      typeof (d as any)?.data?.title === "string" ||
+      typeof (d as any)?.package?.title === "string";
+    return !looksLikePackage;
+  }, [rawPackageData]);
 
   const selectedAssets = useMemo(() => {
     if (!selectedItem?.assets) return [];
@@ -402,7 +424,8 @@ export function PublicPackageView() {
 
   if (
     (error && !isPasswordError) ||
-    (!isLoading && !packageData && !isPasswordError)
+    (!isLoading && !packageData && !isPasswordError) ||
+    apiPayloadIsError
   ) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white p-6 text-center">
@@ -414,6 +437,12 @@ export function PublicPackageView() {
           This package may have expired or the link is invalid. Please contact
           the agency for a new link.
         </p>
+        {apiPayloadIsError &&
+          typeof (rawPackageData as any)?.message === "string" && (
+            <p className="text-xs text-gray-400 max-w-2xl mt-4 break-words">
+              {(rawPackageData as any).message}
+            </p>
+          )}
         <Button
           variant="outline"
           className="mt-8 border-2"
@@ -432,8 +461,13 @@ export function PublicPackageView() {
     );
   }
 
-  const primaryColor = pkg.primary_color || "#6366F1";
-  const secondaryColor = pkg.secondary_color || "#06B6D4";
+  const primaryColor =
+    pkg?.primary_color || pkg?.primaryColor || pkg?.theme?.primary || "#6366F1";
+  const secondaryColor =
+    pkg?.secondary_color ||
+    pkg?.secondaryColor ||
+    pkg?.theme?.secondary ||
+    "#06B6D4";
 
   return (
     <div
@@ -498,76 +532,80 @@ export function PublicPackageView() {
 
       {/* Talent Grid */}
       <main className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-        {pkg.items?.map((item: any, idx: number) => {
-          const talent = item.talent;
-          return (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              className="group cursor-pointer"
-            >
-              <div
-                className="aspect-[3/4] rounded-3xl overflow-hidden relative mb-6 shadow-2xl transition-transform duration-500 group-hover:scale-[1.02]"
-                onClick={() => setSelectedItem(item)}
+        {(pkg.items || pkg.package_items || pkg.talents || [])?.map(
+          (item: any, idx: number) => {
+            const talent = item.talent;
+            return (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
+                className="group cursor-pointer"
               >
-                {talent.profile_photo_url ? (
-                  <img
-                    src={talent.profile_photo_url}
-                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
-                    alt={talent.full_name}
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-300">
-                    <User className="w-20 h-20" />
-                  </div>
-                )}
-
-                {/* Favorite Toggle */}
-                <button
-                  type="button"
-                  disabled
-                  aria-disabled="true"
-                  className="pointer-events-none absolute top-6 left-6 flex items-center justify-center w-10 h-10 rounded-full bg-white/90 backdrop-blur shadow-sm"
+                <div
+                  className="aspect-[3/4] rounded-3xl overflow-hidden relative mb-6 shadow-2xl transition-transform duration-500 group-hover:scale-[1.02]"
+                  onClick={() => setSelectedItem(item)}
                 >
-                  <Heart
-                    className={`w-5 h-5 ${selectedFavorites.has(talent.id) ? "text-red-500" : "text-gray-500"}`}
-                    fill={
-                      selectedFavorites.has(talent.id) ? "currentColor" : "none"
-                    }
-                  />
-                </button>
+                  {talent.profile_photo_url ? (
+                    <img
+                      src={talent.profile_photo_url}
+                      className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
+                      alt={talent.full_name}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-300">
+                      <User className="w-20 h-20" />
+                    </div>
+                  )}
 
-                {/* Selected Toggle */}
-                <button
-                  type="button"
-                  disabled
-                  aria-disabled="true"
-                  className="pointer-events-none absolute top-6 right-6 flex items-center justify-center w-10 h-10 rounded-full bg-white/90 backdrop-blur shadow-sm"
-                >
-                  <Check
-                    className={`w-5 h-5 ${selectedSelections.has(talent.id) ? "text-emerald-600" : "text-gray-500"}`}
-                  />
-                </button>
+                  {/* Favorite Toggle */}
+                  <button
+                    type="button"
+                    disabled
+                    aria-disabled="true"
+                    className="pointer-events-none absolute top-6 left-6 flex items-center justify-center w-10 h-10 rounded-full bg-white/90 backdrop-blur shadow-sm"
+                  >
+                    <Heart
+                      className={`w-5 h-5 ${selectedFavorites.has(talent.id) ? "text-red-500" : "text-gray-500"}`}
+                      fill={
+                        selectedFavorites.has(talent.id)
+                          ? "currentColor"
+                          : "none"
+                      }
+                    />
+                  </button>
 
-                <div className="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex justify-between items-end translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                  <div className="text-white">
-                    <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">
-                      {talent.categories?.[0] || "Talent"}
-                    </p>
-                    <h3 className="text-3xl font-black uppercase tracking-tighter">
-                      {talent.stage_name ||
-                        talent.full_legal_name ||
-                        talent.full_name}
-                    </h3>
+                  {/* Selected Toggle */}
+                  <button
+                    type="button"
+                    disabled
+                    aria-disabled="true"
+                    className="pointer-events-none absolute top-6 right-6 flex items-center justify-center w-10 h-10 rounded-full bg-white/90 backdrop-blur shadow-sm"
+                  >
+                    <Check
+                      className={`w-5 h-5 ${selectedSelections.has(talent.id) ? "text-emerald-600" : "text-gray-500"}`}
+                    />
+                  </button>
+
+                  <div className="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex justify-between items-end translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                    <div className="text-white">
+                      <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">
+                        {talent.categories?.[0] || "Talent"}
+                      </p>
+                      <h3 className="text-3xl font-black uppercase tracking-tighter">
+                        {talent.stage_name ||
+                          talent.full_legal_name ||
+                          talent.full_name}
+                      </h3>
+                    </div>
+                    <ChevronRight className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
-                  <ChevronRight className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
-              </div>
-            </motion.div>
-          );
-        })}
+              </motion.div>
+            );
+          },
+        )}
       </main>
 
       {/* Footer Branding */}
