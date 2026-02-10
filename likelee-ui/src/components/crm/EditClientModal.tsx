@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import * as crmApi from "@/api/crm";
+import { parseBackendError } from "@/utils/errorParser";
 import { Client } from "@/types/crm";
 
 const INDUSTRY_OPTIONS = [
@@ -92,7 +93,7 @@ const EditClientModal = ({
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to update client",
+        description: parseBackendError(error) || "Failed to update client",
         variant: "destructive",
       });
     },
@@ -101,9 +102,9 @@ const EditClientModal = ({
   const toggleTag = (tag: string) => {
     const currentTags = formData.tags
       ? formData.tags
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean)
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean)
       : [];
     if (currentTags.includes(tag)) {
       setFormData({
@@ -131,9 +132,9 @@ const EditClientModal = ({
       ...formData,
       tags: formData.tags
         ? formData.tags
-            .split(",")
-            .map((t) => t.trim())
-            .filter(Boolean)
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean)
         : [],
       next_follow_up_date: formData.next_follow_up_date || null,
       preferences: { ...client.preferences, notes: formData.notes },
@@ -231,11 +232,10 @@ const EditClientModal = ({
                   <button
                     key={tag}
                     onClick={() => toggleTag(tag)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
-                      isSelected
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${isSelected
                         ? "bg-indigo-100 text-indigo-700 border-indigo-200 shadow-sm"
                         : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
-                    }`}
+                      }`}
                   >
                     {tag}
                   </button>

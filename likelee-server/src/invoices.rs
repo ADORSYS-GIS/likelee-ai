@@ -527,7 +527,7 @@ pub async fn create(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err((code, text));
+        return Err(crate::errors::sanitize_db_error(code, text));
     }
     // Postgrest returns JSON; accept either {"next_invoice_number":"..."} or string
     let v: serde_json::Value = serde_json::from_str(&text)
@@ -606,7 +606,7 @@ pub async fn create(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err((code, text));
+        return Err(crate::errors::sanitize_db_error(code, text));
     }
 
     let created: Vec<serde_json::Value> = serde_json::from_str(&text)
@@ -964,7 +964,7 @@ pub async fn update(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err((code, text));
+        return Err(crate::errors::sanitize_db_error(code, text));
     }
 
     let v: serde_json::Value = serde_json::from_str(&text)
@@ -1013,7 +1013,7 @@ pub async fn mark_sent(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err((code, text));
+        return Err(crate::errors::sanitize_db_error(code, text));
     }
 
     let v: serde_json::Value = serde_json::from_str(&text)
@@ -1166,7 +1166,7 @@ pub async fn mark_paid(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err((code, text));
+        return Err(crate::errors::sanitize_db_error(code, text));
     }
 
     let v: serde_json::Value = serde_json::from_str(&text)
@@ -1204,7 +1204,7 @@ pub async fn void_invoice(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err((code, text));
+        return Err(crate::errors::sanitize_db_error(code, text));
     }
 
     let v: serde_json::Value = serde_json::from_str(&text)

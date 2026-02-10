@@ -35,7 +35,7 @@ async fn get_template_count(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err((code, text));
+        return Err(crate::errors::sanitize_db_error(code, text));
     }
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
     Ok(rows.len())

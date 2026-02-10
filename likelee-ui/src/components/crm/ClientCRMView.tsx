@@ -27,6 +27,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
+import { parseBackendError } from "@/utils/errorParser";
 import * as crmApi from "@/api/crm";
 import { Client } from "@/types/crm";
 import ClientCard from "./ClientCard";
@@ -62,7 +63,7 @@ const ClientCRMView = () => {
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to delete client",
+        description: parseBackendError(error) || "Failed to delete client",
         variant: "destructive",
       });
     },

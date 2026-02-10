@@ -32,7 +32,7 @@ if (!RAW_BASE) {
   // In production behind a reverse proxy, '/api' works out of the box.
   RAW_BASE =
     stored ||
-    ((import.meta as any)?.env?.DEV ? "http://localhost:8787" : "/api");
+    ((import.meta as any)?.env?.DEV ? "http://localhost:8787/api" : "/api");
   // eslint-disable-next-line no-console
   console.warn(
     `[api] VITE_API_BASE_URL not set; using ${RAW_BASE}. Set VITE_API_BASE_URL at build-time for explicit control.`,
@@ -62,8 +62,8 @@ export const base44 = {
     const {
       data: { session },
     } = supabase
-      ? await supabase.auth.getSession()
-      : { data: { session: null } };
+        ? await supabase.auth.getSession()
+        : { data: { session: null } };
     const token = session?.access_token;
 
     const headers = {
@@ -89,8 +89,8 @@ export const base44 = {
     const {
       data: { session },
     } = supabase
-      ? await supabase.auth.getSession()
-      : { data: { session: null } };
+        ? await supabase.auth.getSession()
+        : { data: { session: null } };
     const token = session?.access_token;
 
     const isForm = typeof FormData !== "undefined" && data instanceof FormData;
@@ -123,8 +123,8 @@ export const base44 = {
     const {
       data: { session },
     } = supabase
-      ? await supabase.auth.getSession()
-      : { data: { session: null } };
+        ? await supabase.auth.getSession()
+        : { data: { session: null } };
     const token = session?.access_token;
 
     const isForm = typeof FormData !== "undefined" && data instanceof FormData;
@@ -156,8 +156,8 @@ export const base44 = {
     const {
       data: { session },
     } = supabase
-      ? await supabase.auth.getSession()
-      : { data: { session: null } };
+        ? await supabase.auth.getSession()
+        : { data: { session: null } };
     const token = session?.access_token;
 
     const headers = {

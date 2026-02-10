@@ -459,7 +459,7 @@ export const scoutingService = {
     const formData = new FormData();
     formData.append("file", file);
 
-    return base44.put(`/scouting/templates/${docusealTemplateId}`, formData);
+    return base44.put(`scouting/templates/${docusealTemplateId}`, formData);
   },
 
   async deleteTemplate(id: string) {
@@ -482,19 +482,19 @@ export const scoutingService = {
     console.log(
       `scoutingService: Fetching offers with filter=${filter}`,
     );
-    return base44.get<ScoutingOffer[]>("/scouting/offers", {
+    return base44.get<ScoutingOffer[]>("scouting/offers", {
       params: { agency_id: agencyId, filter },
     });
   },
 
   async getOffer(offerId: string) {
-    return base44.get<ScoutingOffer>(`/scouting/offers/${offerId}`);
+    return base44.get<ScoutingOffer>(`scouting/offers/${offerId}`);
   },
 
   async createOffer(
     offer: Pick<ScoutingOffer, "prospect_id" | "agency_id" | "template_id">,
   ) {
-    return base44.post<ScoutingOffer>("/scouting/offers", {
+    return base44.post<ScoutingOffer>("scouting/offers", {
       prospect_id: offer.prospect_id,
       agency_id: offer.agency_id,
       template_id: offer.template_id,
@@ -516,23 +516,23 @@ export const scoutingService = {
   },
 
   async deleteOffer(offerId: string) {
-    return base44.delete(`/scouting/offers/${offerId}`);
+    return base44.delete(`scouting/offers/${offerId}`);
   },
 
   async permanentlyDeleteOffer(offerId: string) {
-    return base44.delete(`/scouting/offers/${offerId}`, {
+    return base44.delete(`scouting/offers/${offerId}`, {
       params: { permanent: true },
     });
   },
 
   async refreshOfferStatus(offerId: string) {
-    return base44.post("/scouting/offers/refresh-status", {
+    return base44.post("scouting/offers/refresh-status", {
       offer_id: offerId,
     });
   },
 
   async getBuilderToken(agencyId: string, templateId?: number) {
-    const data = await base44.post<{ token: string }>("/scouting/builder-token", {
+    const data = await base44.post<{ token: string }>("scouting/builder-token", {
       agency_id: agencyId,
       template_id: templateId,
     });
@@ -540,7 +540,7 @@ export const scoutingService = {
   },
 
   async syncTemplates(agencyId: string) {
-    return base44.post("/scouting/templates/sync", {
+    return base44.post("scouting/templates/sync", {
       agency_id: agencyId,
     });
   },
@@ -550,6 +550,6 @@ export const scoutingService = {
     formData.append("agency_id", agencyId);
     formData.append("file", file);
 
-    return base44.post("/scouting/templates/upload", formData);
+    return base44.post("scouting/templates/upload", formData);
   },
 };

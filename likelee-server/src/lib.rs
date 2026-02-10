@@ -38,3 +38,4 @@ pub mod scouting;
 pub mod services;
 pub mod talent_statements;
 pub mod voice;
+pub mod errors;

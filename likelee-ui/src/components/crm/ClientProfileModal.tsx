@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/use-toast";
+import { parseBackendError } from "@/utils/errorParser";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -133,7 +134,7 @@ const ClientProfileModal = ({
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: `Failed to save notes: ${error.message}`,
+        description: `Failed to save notes: ${parseBackendError(error)}`,
         variant: "destructive",
       });
     },
@@ -152,7 +153,7 @@ const ClientProfileModal = ({
     onError: (error: any) => {
       toast({
         title: "Upload Failed",
-        description: `Failed to upload document: ${error.message}`,
+        description: `Failed to upload document: ${parseBackendError(error)}`,
         variant: "destructive",
       });
     },
@@ -181,7 +182,7 @@ const ClientProfileModal = ({
     } catch (error: any) {
       toast({
         title: "Error",
-        description: `Failed to get access to file: ${error.message}`,
+        description: `Failed to get access to file: ${parseBackendError(error)}`,
         variant: "destructive",
       });
     } finally {
@@ -210,12 +211,12 @@ const ClientProfileModal = ({
   const lastBooking =
     bookings.length > 0
       ? new Date(
-          Math.max(...bookings.map((b: any) => new Date(b.date).getTime())),
-        ).toLocaleDateString(undefined, {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })
+        Math.max(...bookings.map((b: any) => new Date(b.date).getTime())),
+      ).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
       : "Never";
 
   return (
@@ -602,13 +603,12 @@ const ClientProfileModal = ({
                                 </h5>
                                 <div className="flex items-center gap-2 mt-1">
                                   <Badge
-                                    className={`${
-                                      booking.status === "confirmed"
+                                    className={`${booking.status === "confirmed"
                                         ? "bg-green-100 text-green-700"
                                         : booking.status === "pending"
                                           ? "bg-yellow-100 text-yellow-700"
                                           : "bg-gray-100 text-gray-700"
-                                    } border-none text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter`}
+                                      } border-none text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter`}
                                   >
                                     {booking.status}
                                   </Badge>

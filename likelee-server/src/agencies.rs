@@ -300,7 +300,7 @@ async fn ensure_storage_settings_row(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err((code, text));
+        return Err(crate::errors::sanitize_db_error(code, text));
     }
 
     let v: serde_json::Value = serde_json::from_str(&text)
@@ -334,7 +334,7 @@ async fn ensure_storage_settings_row(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err((code, text));
+        return Err(crate::errors::sanitize_db_error(code, text));
     }
 
     // Fetch again to return limit
@@ -390,7 +390,7 @@ async fn get_agency_used_storage_bytes(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err((code, text));
+        return Err(crate::errors::sanitize_db_error(code, text));
     }
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -446,7 +446,7 @@ pub async fn list_agency_folders(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err((code, text));
+        return Err(crate::errors::sanitize_db_error(code, text));
     }
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -478,7 +478,7 @@ pub async fn create_agency_folder(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err((code, text));
+        return Err(crate::errors::sanitize_db_error(code, text));
     }
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -517,7 +517,7 @@ pub async fn list_agency_files(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err((code, text));
+        return Err(crate::errors::sanitize_db_error(code, text));
     }
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -841,7 +841,7 @@ pub async fn delete_agency_storage_file(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err((code, text));
+        return Err(crate::errors::sanitize_db_error(code, text));
     }
 
     Ok(Json(serde_json::json!({ "ok": true })))
@@ -1839,7 +1839,7 @@ pub async fn create_client(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err((code, text));
+        return Err(crate::errors::sanitize_db_error(code, text));
     }
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;

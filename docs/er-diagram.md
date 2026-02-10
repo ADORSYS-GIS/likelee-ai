@@ -1,4 +1,4 @@
-```mermaid
+ ```mermaid
 erDiagram
   PROFILES {
     uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
@@ -363,6 +363,7 @@ erDiagram
     text email
     text phone
     text terms
+    date next_follow_up_date
     timestamptz created_at
     timestamptz updated_at
   }
@@ -419,6 +420,13 @@ erDiagram
   AGENCY_CLIENTS {
     uuid id PK
     uuid agency_id FK "REFERENCES agencies(id)"
+    text company
+    text status
+    text website
+    text[] tags
+    jsonb preferences
+    text notes
+    date next_follow_up_date
   }
 
   BOOKINGS {
