@@ -479,9 +479,7 @@ export const scoutingService = {
     agencyId: string,
     filter: "active" | "archived" | "all" = "active",
   ) {
-    console.log(
-      `scoutingService: Fetching offers with filter=${filter}`,
-    );
+    console.log(`scoutingService: Fetching offers with filter=${filter}`);
     return base44.get<ScoutingOffer[]>("scouting/offers", {
       params: { agency_id: agencyId, filter },
     });
@@ -532,10 +530,13 @@ export const scoutingService = {
   },
 
   async getBuilderToken(agencyId: string, templateId?: number) {
-    const data = await base44.post<{ token: string }>("scouting/builder-token", {
-      agency_id: agencyId,
-      template_id: templateId,
-    });
+    const data = await base44.post<{ token: string }>(
+      "scouting/builder-token",
+      {
+        agency_id: agencyId,
+        template_id: templateId,
+      },
+    );
     return data.token;
   },
 

@@ -62,8 +62,8 @@ export const base44 = {
     const {
       data: { session },
     } = supabase
-        ? await supabase.auth.getSession()
-        : { data: { session: null } };
+      ? await supabase.auth.getSession()
+      : { data: { session: null } };
     const token = session?.access_token;
 
     const headers = {
@@ -89,8 +89,8 @@ export const base44 = {
     const {
       data: { session },
     } = supabase
-        ? await supabase.auth.getSession()
-        : { data: { session: null } };
+      ? await supabase.auth.getSession()
+      : { data: { session: null } };
     const token = session?.access_token;
 
     const isForm = typeof FormData !== "undefined" && data instanceof FormData;
@@ -123,8 +123,8 @@ export const base44 = {
     const {
       data: { session },
     } = supabase
-        ? await supabase.auth.getSession()
-        : { data: { session: null } };
+      ? await supabase.auth.getSession()
+      : { data: { session: null } };
     const token = session?.access_token;
 
     const isForm = typeof FormData !== "undefined" && data instanceof FormData;
@@ -156,8 +156,8 @@ export const base44 = {
     const {
       data: { session },
     } = supabase
-        ? await supabase.auth.getSession()
-        : { data: { session: null } };
+      ? await supabase.auth.getSession()
+      : { data: { session: null } };
     const token = session?.access_token;
 
     const headers = {

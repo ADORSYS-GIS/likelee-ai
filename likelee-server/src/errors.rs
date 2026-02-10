@@ -8,28 +8,47 @@ pub fn sanitize_db_error(status: StatusCode, text: String) -> (StatusCode, Strin
         if let Ok(v) = serde_json::from_str::<serde_json::Value>(&text) {
             if v.get("code").is_some() && v.get("message").is_some() {
                 let msg = v.get("message").and_then(|m| m.as_str()).unwrap_or("");
-                
+
                 // Check if message contains schema-leaking keywords
-                let sensitive_keywords = ["column", "table", "relation", "schema", "cache", "null constraint"];
+                let sensitive_keywords = [
+                    "column",
+                    "table",
+                    "relation",
+                    "schema",
+                    "cache",
+                    "null constraint",
+                ];
                 if sensitive_keywords.iter().any(|&k| msg.contains(k)) {
-                    return (status, json!({
-                        "error": "Invalid data provided. Please check your input.",
-                        "details": "A validation error occurred on the server."
-                    }).to_string());
-                }
-                
-                // If it's a unique constraint violation, we can be more specific
-                if msg.contains("duplicate key") {
-                    return (status, json!({
-                        "error": "This record already exists.",
-                        "details": msg
-                    }).to_string());
+                    return (
+                        status,
+                        json!({
+                            "error": "Invalid data provided. Please check your input.",
+                            "details": "A validation error occurred on the server."
+                        })
+                        .to_string(),
+                    );
                 }
 
-                return (status, json!({
-                    "error": msg,
-                    "code": v.get("code")
-                }).to_string());
+                // If it's a unique constraint violation, we can be more specific
+                if msg.contains("duplicate key") {
+                    return (
+                        status,
+                        json!({
+                            "error": "This record already exists.",
+                            "details": msg
+                        })
+                        .to_string(),
+                    );
+                }
+
+                return (
+                    status,
+                    json!({
+                        "error": msg,
+                        "code": v.get("code")
+                    })
+                    .to_string(),
+                );
             }
         }
     }
