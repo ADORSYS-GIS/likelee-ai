@@ -8980,11 +8980,11 @@ const ProspectDetailsSheet = ({
   onClose: () => void;
   onEdit: (prospect: ScoutingProspect) => void;
 }) => {
-  if (!prospect) return null;
-
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  if (!prospect) return null;
 
   const handleStatusChange = async (newStatus: string) => {
     try {
