@@ -178,8 +178,8 @@ pub async fn geocode(
         return Err((StatusCode::BAD_GATEWAY, "geocoding_failed".to_string()));
     }
 
-    let raw: Vec<NominatimResult> = serde_json::from_str(&body)
-        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    let raw: Vec<NominatimResult> =
+        serde_json::from_str(&body).map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
 
     let results = raw
         .into_iter()
