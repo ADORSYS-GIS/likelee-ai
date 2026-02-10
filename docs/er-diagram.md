@@ -72,16 +72,6 @@ erDiagram
     text content_other
 
     %% media
-    text avatar_canonical_url
-    text cameo_front_url
-    text cameo_left_url
-    text cameo_right_url
-
-    %% Tavus Digital Avatar
-    text tavus_avatar_id
-    text tavus_avatar_status
-    text tavus_last_error
-
     %% pricing (USD-only)
     integer base_monthly_price_cents "check >= 15000 (i.e., $150)"
     text currency_code "check = 'USD'"
