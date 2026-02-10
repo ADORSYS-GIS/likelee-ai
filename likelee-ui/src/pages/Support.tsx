@@ -43,7 +43,7 @@ export default function Support() {
             Need a hand? We've got you. The fastest way to reach us is{" "}
             <button
               onClick={() => {
-                navigator.clipboard.writeText("help@likelee.ai");
+                navigator.clipboard.writeText("operations@likelee.ai");
                 toast({
                   title: "Copied to Clipboard",
                   description:
@@ -52,7 +52,7 @@ export default function Support() {
               }}
               className="text-[#32C8D1] hover:text-[#2AB8C1] font-semibold underline"
             >
-              help@likelee.ai
+              operations@likelee.ai
             </button>
             .
           </p>
@@ -152,7 +152,7 @@ export default function Support() {
             Or email us directly at{" "}
             <button
               onClick={() => {
-                navigator.clipboard.writeText("help@likelee.ai");
+                navigator.clipboard.writeText("operations@likelee.ai");
                 toast({
                   title: "Copied to Clipboard",
                   description:
@@ -161,7 +161,7 @@ export default function Support() {
               }}
               className="text-[#32C8D1] hover:text-[#2AB8C1] font-semibold underline"
             >
-              help@likelee.ai
+              operations@likelee.ai
             </button>
           </p>
         </div>
