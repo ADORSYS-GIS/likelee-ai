@@ -421,12 +421,14 @@ pub async fn update_status_bulk(
 
     // If counter offer (negotiating), send email to brand
     if status == "negotiating" {
+        tracing::info!("Status is negotiating, checking for notes...");
         if let Some(reason) = payload.notes.as_ref() {
+            tracing::info!("Notes found: {}, sending counter offer emails", reason);
             // Fetch brand emails for these requests
             let b_resp = state
                 .pg
                 .from("licensing_requests")
-                .select("brand_id,brands(email,company_name),submission_id,license_submissions(client_email,client_name)")
+                .select("brand_id,brands(email,company_name),submission_id,license_submissions!licensing_requests_submission_id_fkey(client_email,client_name)")
                 .in_("id", ids)
                 .execute()
                 .await;
@@ -435,7 +437,12 @@ pub async fn update_status_bulk(
                     let b_text = b_resp.text().await.unwrap_or_else(|_| "[]".into());
                     let b_rows: serde_json::Value =
                         serde_json::from_str(&b_text).unwrap_or(json!([]));
+                    tracing::info!("Fetched brand/submission data: {}", b_text);
                     if let Some(arr) = b_rows.as_array() {
+                        tracing::info!(
+                            "Processing {} licensing requests for counter offer emails",
+                            arr.len()
+                        );
                         let mut sent_emails = std::collections::HashSet::new();
                         for r in arr {
                             let mut target_email = None;
@@ -484,15 +491,34 @@ pub async fn update_status_bulk(
                                         "Hello {},\n\nThe agency has sent a counter offer for your licensing request.\n\nReason/Notes: {}\n\nPlease reply to this email or contact the agency to review and respond.\n\nBest regards,\nLikelee Team",
                                         target_name, reason
                                     );
-                                    let _ = crate::email::send_plain_email(
+                                    if let Err(e) = crate::email::send_plain_email(
                                         &state, &email, &subject, &body,
-                                    );
+                                    ) {
+                                        tracing::error!(
+                                            "Failed to send counter offer email to {}: {:?}",
+                                            email,
+                                            e
+                                        );
+                                    }
                                     sent_emails.insert(email);
                                 }
                             }
                         }
                     }
+                } else {
+                    let status = b_resp.status();
+                    let err_body = b_resp.text().await.unwrap_or_default();
+                    tracing::error!(
+                        "Database query for brand emails failed: status={}, body={}",
+                        status,
+                        err_body
+                    );
                 }
+            } else {
+                tracing::error!(
+                    "Failed to execute database query for brand emails: {:?}",
+                    b_resp.err()
+                );
             }
         }
     }
