@@ -210,10 +210,8 @@ export default function BrandCompany() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {howItWorksSteps.map((step, index) => (
               <div key={index} className="text-center group">
-                <div className="w-16 h-16 bg-[#26B7B9] border border-gray-900 flex items-center justify-center mx-auto mb-6 rounded-none transition-all">
-                  <span className="text-white font-bold text-2xl">
-                    {index + 1}
-                  </span>
+                <div className="w-14 h-14 bg-[#26B7B9] border border-gray-900 flex items-center justify-center mx-auto mb-6 rounded-none transition-all">
+                  <span className="text-white font-bold text-xl">{index + 1}</span>
                 </div>
                 <p className="text-gray-900 text-base md:text-lg leading-snug px-2 max-w-[200px] mx-auto">
                   {step}
@@ -227,7 +225,7 @@ export default function BrandCompany() {
       {/* Join Our Pilot Program CTA */}
       <section className="px-6 py-24 bg-gradient-to-r from-[#2BB7B9] via-[#1495a0] to-[#2BB7B9]">
         <div className="max-w-5xl mx-auto text-center">
-          <h2 className="text-5xl md:text-7xl font-bold text-white mb-12 tracking-tight">
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-12">
             Join Our Pilot Program
           </h2>
           <div className="flex flex-col sm:flex-row gap-8 justify-center items-center">
@@ -237,13 +235,13 @@ export default function BrandCompany() {
                   createPageUrl("OrganizationSignup") + "?type=brand_company",
                 )
               }
-              className="h-16 px-14 font-bold bg-white text-[#26B7B9] hover:bg-gray-100 rounded-none text-xl border-none"
+              className="h-14 px-12 font-bold bg-white text-[#26B7B9] hover:bg-gray-100 rounded-none text-lg border-none"
             >
               Get Started
             </Button>
             <Button
               onClick={() => navigate(createPageUrl("SalesInquiry"))}
-              className="h-16 px-14 font-bold border-2 border-white text-white hover:bg-white/10 rounded-none text-xl bg-transparent"
+              className="h-14 px-12 font-bold border-2 border-white text-white hover:bg-white/10 rounded-none text-lg bg-transparent"
             >
               Book a Demo
             </Button>
