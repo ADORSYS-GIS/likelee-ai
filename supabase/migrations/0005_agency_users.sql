@@ -5,7 +5,7 @@ BEGIN;
 CREATE TABLE IF NOT EXISTS public.agency_users (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
-    creator_id uuid REFERENCES public.creators(id)
+    creator_id uuid REFERENCES public.creators(id),
     
     role text NOT NULL DEFAULT 'talent',
     status text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'pending')),

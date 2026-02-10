@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import * as crmApi from "@/api/crm";
+import { parseBackendError } from "@/utils/errorParser";
 import { Client } from "@/types/crm";
 
 const INDUSTRY_OPTIONS = [
@@ -92,7 +93,7 @@ const EditClientModal = ({
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to update client",
+        description: parseBackendError(error) || "Failed to update client",
         variant: "destructive",
       });
     },

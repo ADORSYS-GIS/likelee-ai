@@ -19,6 +19,7 @@ pub mod digitals;
 pub mod email;
 pub mod email_templates;
 pub mod entitlements;
+pub mod errors;
 pub mod expenses;
 pub mod face_profiles;
 pub mod health;

@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS public.agency_clients (
   phone text,
   terms text,
   industry text,
+  next_follow_up_date date,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );

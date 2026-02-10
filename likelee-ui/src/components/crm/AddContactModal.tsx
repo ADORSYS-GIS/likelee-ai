@@ -12,6 +12,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
+import { parseBackendError } from "@/utils/errorParser";
 import * as crmApi from "@/api/crm";
 
 const AddContactModal = ({
@@ -47,6 +48,13 @@ const AddContactModal = ({
         email: "",
         phone: "",
         is_primary: false,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: parseBackendError(error) || "Failed to add contact",
+        variant: "destructive",
       });
     },
   });

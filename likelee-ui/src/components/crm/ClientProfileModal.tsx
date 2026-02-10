@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/use-toast";
+import { parseBackendError } from "@/utils/errorParser";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -133,7 +134,7 @@ const ClientProfileModal = ({
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: `Failed to save notes: ${error.message}`,
+        description: `Failed to save notes: ${parseBackendError(error)}`,
         variant: "destructive",
       });
     },
@@ -152,7 +153,7 @@ const ClientProfileModal = ({
     onError: (error: any) => {
       toast({
         title: "Upload Failed",
-        description: `Failed to upload document: ${error.message}`,
+        description: `Failed to upload document: ${parseBackendError(error)}`,
         variant: "destructive",
       });
     },
@@ -181,7 +182,7 @@ const ClientProfileModal = ({
     } catch (error: any) {
       toast({
         title: "Error",
-        description: `Failed to get access to file: ${error.message}`,
+        description: `Failed to get access to file: ${parseBackendError(error)}`,
         variant: "destructive",
       });
     } finally {
