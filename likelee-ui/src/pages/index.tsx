@@ -102,7 +102,6 @@ import SAGAFTRAAlignment from "./SAGAFTRAAlignment";
 import AboutUs from "./AboutUs";
 
 import CommercialRights from "./CommercialRights";
-import CameoUpload from "./CameoUpload";
 import RoyaltyWallet from "./RoyaltyWallet";
 import PublicProfile from "./PublicProfile";
 import BrandDiscoverFaces from "./BrandDiscoverFaces";
@@ -194,7 +193,7 @@ const PAGES = {
   TalentDashboard: TalentDashboard,
 
   UploadProject: UploadProject,
-  CameoUpload: CameoUpload,
+
 
   DemoTalentDashboard: DemoTalentDashboard,
 
@@ -480,14 +479,7 @@ function AppRoutes() {
         }
       />
 
-      <Route
-        path="/CameoUpload"
-        element={
-          <ProtectedRoute allowedRoles={["creator"]}>
-            <CameoUpload />
-          </ProtectedRoute>
-        }
-      />
+
 
       <Route
         path="/RoyaltyWallet"
