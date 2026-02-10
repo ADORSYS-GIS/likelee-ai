@@ -114,17 +114,15 @@ export default function BrandCompany() {
   return (
     <div className="bg-white min-h-screen">
       {/* Hero Section */}
-      <section className="relative px-6 pt-16 pb-12 bg-gradient-to-br from-cyan-50 via-white to-cyan-50">
+      <section className="relative px-6 pt-24 pb-16 bg-white">
         <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-gray-900 mb-4">
+          <h1 className="text-4xl md:text-7xl font-bold tracking-tight text-gray-900 mb-6">
             License Talent Likenesses for AI Content.
           </h1>
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-6">
-            <span className="bg-gradient-to-r from-[#32C8D1] to-[#2AB8C1] bg-clip-text text-transparent">
-              Legally. Instantly.
-            </span>
+          <h2 className="text-4xl md:text-6xl font-bold tracking-tight mb-8">
+            <span className="text-[#26B7B9]">Legally. Instantly.</span>
           </h2>
-          <p className="text-base md:text-lg text-gray-700 max-w-3xl mx-auto mb-8">
+          <p className="text-lg md:text-xl text-gray-700 max-w-3xl mx-auto mb-12">
             Brand-safe AI creative with verified talent consent in &lt;48 hours.
             Work with independent talent or their agencies.
           </p>
@@ -135,14 +133,13 @@ export default function BrandCompany() {
                   createPageUrl("OrganizationSignup") + "?type=brand_company",
                 )
               }
-              className="h-12 sm:h-14 px-8 sm:px-10 font-medium bg-[#32C8D1] hover:bg-[#2AB8C1] text-white shadow-xl"
+              className="h-14 px-12 font-bold bg-[#26B7B9] hover:bg-[#1e9596] text-white transition-all rounded-none text-lg border-2 border-[#26B7B9]"
             >
               Get Started
             </Button>
             <Button
               onClick={() => navigate(createPageUrl("SalesInquiry"))}
-              variant="outline"
-              className="h-12 sm:h-14 px-8 sm:px-10 font-medium border-2 border-gray-900"
+              className="h-14 px-12 font-bold bg-white text-gray-900 hover:bg-gray-50 border-2 border-gray-900 rounded-none text-lg"
             >
               Book a Demo
             </Button>
@@ -151,9 +148,9 @@ export default function BrandCompany() {
       </section>
 
       {/* Why Likelee Section */}
-      <section className="px-6 py-16 bg-white">
+      <section className="px-6 py-20 bg-[#f0f9fa]">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl md:text-5xl font-bold text-center text-gray-900 mb-12">
+          <h2 className="text-4xl md:text-5xl font-bold text-center text-gray-900 mb-16">
             Why Likelee
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
@@ -162,15 +159,15 @@ export default function BrandCompany() {
               return (
                 <Card
                   key={index}
-                  className="p-8 border-2 border-gray-200 hover:border-[#32C8D1] transition-all"
+                  className="p-10 border-2 border-gray-900 bg-white rounded-none shadow-none"
                 >
-                  <div className="w-14 h-14 bg-[#32C8D1] rounded-lg flex items-center justify-center mb-6">
-                    <Icon className="w-7 h-7 text-white" />
+                  <div className="w-16 h-16 bg-[#26B7B9] flex items-center justify-center mb-8 rounded-none">
+                    <Icon className="w-8 h-8 text-white" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-6">
                     {benefit.title}
                   </h3>
-                  <p className="text-gray-700 leading-relaxed">
+                  <p className="text-gray-700 leading-relaxed text-lg">
                     {benefit.description}
                   </p>
                 </Card>
@@ -181,21 +178,21 @@ export default function BrandCompany() {
       </section>
 
       {/* Use Cases Section */}
-      <section className="px-6 py-16 bg-gray-50">
+      <section className="px-6 py-20 bg-white">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl md:text-5xl font-bold text-center text-gray-900 mb-12">
+          <h2 className="text-4xl md:text-5xl font-bold text-center text-gray-900 mb-16">
             Use Cases
           </h2>
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-2 gap-8">
             {useCases.map((useCase, index) => (
               <Card
                 key={index}
-                className="p-8 border-2 border-gray-900 bg-white"
+                className="p-10 border-2 border-gray-900 bg-[#effafb] rounded-none shadow-none"
               >
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">
                   {useCase.title}
                 </h3>
-                <p className="text-gray-700 leading-relaxed">
+                <p className="text-gray-700 leading-relaxed text-lg">
                   {useCase.description}
                 </p>
               </Card>
@@ -205,20 +202,20 @@ export default function BrandCompany() {
       </section>
 
       {/* How Likelee Works Section */}
-      <section className="px-6 py-16 bg-white">
+      <section className="px-6 py-20 bg-white">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl md:text-5xl font-bold text-center text-gray-900 mb-12">
+          <h2 className="text-4xl md:text-5xl font-bold text-center text-gray-900 mb-16 px-4">
             How Likelee Works
           </h2>
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {howItWorksSteps.map((step, index) => (
-              <div key={index} className="text-center">
-                <div className="w-16 h-16 bg-[#32C8D1] rounded-lg flex items-center justify-center mx-auto mb-4">
+              <div key={index} className="text-center group">
+                <div className="w-16 h-16 bg-[#26B7B9] border border-gray-900 flex items-center justify-center mx-auto mb-6 rounded-sm shadow-[0px_4px_0px_0px_rgba(0,0,0,1)] transition-all">
                   <span className="text-white font-bold text-2xl">
                     {index + 1}
                   </span>
                 </div>
-                <p className="text-gray-900 font-medium leading-relaxed">
+                <p className="text-gray-900 text-base md:text-lg leading-snug px-2 max-w-[200px] mx-auto">
                   {step}
                 </p>
               </div>
@@ -228,26 +225,25 @@ export default function BrandCompany() {
       </section>
 
       {/* Join Our Pilot Program CTA */}
-      <section className="px-6 py-20 bg-[#13b1bb]">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-10">
+      <section className="px-6 py-24 bg-gradient-to-r from-[#2BB7B9] via-[#1495a0] to-[#2BB7B9]">
+        <div className="max-w-5xl mx-auto text-center">
+          <h2 className="text-5xl md:text-7xl font-bold text-white mb-12 tracking-tight">
             Join Our Pilot Program
           </h2>
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+          <div className="flex flex-col sm:flex-row gap-8 justify-center items-center">
             <Button
               onClick={() =>
                 navigate(
                   createPageUrl("OrganizationSignup") + "?type=brand_company",
                 )
               }
-              className="h-14 px-10 font-bold bg-white text-[#13b1bb] hover:bg-gray-100 rounded-lg shadow-lg text-lg border-none"
+              className="h-16 px-14 font-bold bg-white text-[#26B7B9] hover:bg-gray-100 rounded-none shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-xl border-none"
             >
               Get Started
             </Button>
             <Button
               onClick={() => navigate(createPageUrl("SalesInquiry"))}
-              variant="outline"
-              className="h-14 px-10 font-bold border-2 border-white text-white hover:bg-white/10 rounded-lg text-lg bg-transparent"
+              className="h-16 px-14 font-bold border-2 border-white text-white hover:bg-white/10 rounded-none text-xl bg-transparent"
             >
               Book a Demo
             </Button>
