@@ -38,7 +38,8 @@ export default function BrandCompany() {
       "@context": "https://schema.org",
       "@type": "Service",
       name: "Brand Campaign Solutions",
-      description: "License talent likenesses for AI content. Legally. Instantly.",
+      description:
+        "License talent likenesses for AI content. Legally. Instantly.",
       provider: {
         "@type": "Organization",
         name: "Likelee",
@@ -86,7 +87,8 @@ export default function BrandCompany() {
   const useCases = [
     {
       title: "Paid Social & Performance",
-      description: "AI-generated ad creative with licensed talent for campaigns, regions, duration",
+      description:
+        "AI-generated ad creative with licensed talent for campaigns, regions, duration",
     },
     {
       title: "E-Commerce & Product",
@@ -123,8 +125,8 @@ export default function BrandCompany() {
             </span>
           </h2>
           <p className="text-base md:text-lg text-gray-700 max-w-3xl mx-auto mb-8">
-            Brand-safe AI creative with verified talent consent in &lt;48 hours. Work with
-            independent talent or their agencies.
+            Brand-safe AI creative with verified talent consent in &lt;48 hours.
+            Work with independent talent or their agencies.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
@@ -212,7 +214,9 @@ export default function BrandCompany() {
             {howItWorksSteps.map((step, index) => (
               <div key={index} className="text-center">
                 <div className="w-16 h-16 bg-[#32C8D1] rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <span className="text-white font-bold text-2xl">{index + 1}</span>
+                  <span className="text-white font-bold text-2xl">
+                    {index + 1}
+                  </span>
                 </div>
                 <p className="text-gray-900 font-medium leading-relaxed">
                   {step}
@@ -224,175 +228,30 @@ export default function BrandCompany() {
       </section>
 
       {/* Join Our Pilot Program CTA */}
-      <section className="px-6 py-16 bg-gradient-to-r from-[#32C8D1] to-[#2AB8C1]">
+      <section className="px-6 py-20 bg-[#13b1bb]">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-8">
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-10">
             Join Our Pilot Program
           </h2>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
             <Button
               onClick={() =>
                 navigate(
                   createPageUrl("OrganizationSignup") + "?type=brand_company",
                 )
               }
-              className="h-12 sm:h-14 px-8 sm:px-10 font-medium bg-white text-[#32C8D1] hover:bg-gray-100 shadow-xl"
+              className="h-14 px-10 font-bold bg-white text-[#13b1bb] hover:bg-gray-100 rounded-lg shadow-lg text-lg border-none"
             >
               Get Started
             </Button>
             <Button
               onClick={() => navigate(createPageUrl("SalesInquiry"))}
               variant="outline"
-              className="h-12 sm:h-14 px-8 sm:px-10 font-medium border-2 border-white text-white hover:bg-white/10"
+              className="h-14 px-10 font-bold border-2 border-white text-white hover:bg-white/10 rounded-lg text-lg bg-transparent"
             >
               Book a Demo
             </Button>
           </div>
-        </div>
-      </section>
-
-      {/* FAQ Section */}
-      <section className="px-6 py-20 bg-gray-50">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              {t("faq")}
-            </h2>
-          </div>
-          <Accordion type="single" collapsible className="space-y-4">
-            <AccordionItem
-              value="item-1"
-              className="border-2 border-black rounded-none bg-white"
-            >
-              <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                {t("faqVerifiedCreatorVsAiFilmmakerTitle")}
-              </AccordionTrigger>
-              <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                {t("faqVerifiedCreatorVsAiFilmmakerDescription")}
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem
-              value="item-2"
-              className="border-2 border-black rounded-none bg-white"
-            >
-              <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                {t("faqMultipleCampaignsTitle")}
-              </AccordionTrigger>
-              <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                {t("faqMultipleCampaignsDescription")}
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem
-              value="item-3"
-              className="border-2 border-black rounded-none bg-white"
-            >
-              <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                {t("faqRevisionsTitle")}
-              </AccordionTrigger>
-              <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                {t("faqRevisionsDescription")}
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem
-              value="item-4"
-              className="border-2 border-black rounded-none bg-white"
-            >
-              <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                {t("faqApprovalTimeTitle")}
-              </AccordionTrigger>
-              <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                {t("faqApprovalTimeDescription")}
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem
-              value="item-5"
-              className="border-2 border-black rounded-none bg-white"
-            >
-              <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                {t("faqGuaranteedDeliverablesTitle")}
-              </AccordionTrigger>
-              <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                {t("faqGuaranteedDeliverablesDescription")}
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem
-              value="item-6"
-              className="border-2 border-black rounded-none bg-white"
-            >
-              <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                {t("faqFormatsTitle")}
-              </AccordionTrigger>
-              <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                {t("faqFormatsDescription")}
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem
-              value="item-7"
-              className="border-2 border-black rounded-none bg-white"
-            >
-              <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                {t("faqExceedLicensedTimeframeTitle")}
-              </AccordionTrigger>
-              <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                {t("faqExceedLicensedTimeframeDescription")}
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem
-              value="item-8"
-              className="border-2 border-black rounded-none bg-white"
-            >
-              <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                {t("faqVerifiedConsentTitle")}
-              </AccordionTrigger>
-              <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                {t("faqVerifiedConsentDescription")}
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem
-              value="item-9"
-              className="border-2 border-black rounded-none bg-white"
-            >
-              <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                {t("faqUnauthorizedUseTitle")}
-              </AccordionTrigger>
-              <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                {t("faqUnauthorizedUseDescription")}
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem
-              value="item-10"
-              className="border-2 border-black rounded-none bg-white"
-            >
-              <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                {t("faqNegotiatePricingTitle")}
-              </AccordionTrigger>
-              <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                {t("faqNegotiatePricingDescription")}
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem
-              value="item-11"
-              className="border-2 border-black rounded-none bg-white"
-            >
-              <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                {t("faqWorkWithOwnAgencyTitle")}
-              </AccordionTrigger>
-              <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                {t("faqWorkWithOwnAgencyDescription")}
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem
-              value="item-12"
-              className="border-2 border-black rounded-none bg-white"
-            >
-              <AccordionTrigger className="px-6 py-4 text-lg font-semibold text-gray-900 hover:no-underline">
-                {t("faqAgenciesOnLikeleeTitle")}
-              </AccordionTrigger>
-              <AccordionContent className="px-6 pb-4 text-base text-gray-700 leading-relaxed">
-                {t("faqAgenciesOnLikeleeDescription")}
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
         </div>
       </section>
     </div>

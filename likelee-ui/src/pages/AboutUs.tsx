@@ -19,7 +19,8 @@ export default function AboutUs() {
       "@context": "https://schema.org",
       "@type": "AboutPage",
       name: "About Likelee",
-      description: "Building infrastructure for agencies that scales with technology",
+      description:
+        "Building infrastructure for agencies that scales with technology",
       url: "https://likelee.ai/about-us",
       mainEntity: {
         "@type": "Organization",
@@ -169,15 +170,18 @@ export default function AboutUs() {
       {/* Mission Section */}
       <section className="px-6 pt-12 pb-12">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-4xl font-bold text-gray-900 mb-6">
-            Mission
-          </h2>
+          <h2 className="text-4xl font-bold text-gray-900 mb-6">Mission</h2>
           <div className="space-y-6 text-lg text-gray-700 leading-relaxed">
             <p className="text-xl font-semibold text-gray-900">
-              In the age of AI, talent agencies need infrastructure that scales with technology, not against it.
+              In the age of AI, talent agencies need infrastructure that scales
+              with technology, not against it.
             </p>
             <p>
-              Likelee builds the platform for agencies to manage traditional bookings and AI licensing in one place. We're creating a new revenue model where booking gaps become earning opportunities, operations run on automation, and agencies scale without adding headcount.
+              Likelee builds the platform for agencies to manage traditional
+              bookings and AI licensing in one place. We're creating a new
+              revenue model where booking gaps become earning opportunities,
+              operations run on automation, and agencies scale without adding
+              headcount.
             </p>
           </div>
         </div>
@@ -225,13 +229,24 @@ export default function AboutUs() {
           </h2>
           <div className="space-y-6 text-lg text-gray-700 leading-relaxed">
             <p>
-              Traditional talent bookings are feast or famine. One $2K shoot, then weeks of silence. Your talent sits idle between jobs. Your agency absorbs the revenue volatility. Meanwhile, your operational overhead stays constant—calendars, contracts, client coordination, payment processing.
+              Traditional talent bookings are feast or famine. One $2K shoot,
+              then weeks of silence. Your talent sits idle between jobs. Your
+              agency absorbs the revenue volatility. Meanwhile, your operational
+              overhead stays constant—calendars, contracts, client coordination,
+              payment processing.
             </p>
             <p>
-              Traditional agency infrastructure was built for physical bookings. It doesn't account for AI licensing revenue streams. Agencies can't efficiently manage both traditional shoots and digital likeness deals. Talent sees inconsistent income. Agencies leave money on the table during booking gaps.
+              Traditional agency infrastructure was built for physical bookings.
+              It doesn't account for AI licensing revenue streams. Agencies
+              can't efficiently manage both traditional shoots and digital
+              likeness deals. Talent sees inconsistent income. Agencies leave
+              money on the table during booking gaps.
             </p>
             <p>
-              The AI era created new questions: How do you manage traditional and AI bookings simultaneously? How do you scale revenue without scaling headcount? How do you ensure talent stays loyal during dry spells?
+              The AI era created new questions: How do you manage traditional
+              and AI bookings simultaneously? How do you scale revenue without
+              scaling headcount? How do you ensure talent stays loyal during dry
+              spells?
             </p>
             <p className="text-xl font-bold text-gray-900">
               Likelee solves all three.
@@ -248,16 +263,26 @@ export default function AboutUs() {
           </h2>
           <div className="space-y-6 text-lg text-gray-700 leading-relaxed">
             <p>
-              AI didn't create the feast-or-famine nature of talent bookings—but it created a solution. AI licensing lets the same talent work across multiple campaigns simultaneously while waiting for their next traditional booking.
+              AI didn't create the feast-or-famine nature of talent bookings—but
+              it created a solution. AI licensing lets the same talent work
+              across multiple campaigns simultaneously while waiting for their
+              next traditional booking.
             </p>
             <p>
-              Traditional agency tools manage one revenue stream. They break when you add AI licensing. Booking coordination is manual. Revenue tracking is fragmented across platforms. Contract generation takes hours.
+              Traditional agency tools manage one revenue stream. They break
+              when you add AI licensing. Booking coordination is manual. Revenue
+              tracking is fragmented across platforms. Contract generation takes
+              hours.
             </p>
             <p>
-              Likelee is built for dual-revenue agencies—where one roster generates both traditional booking fees and recurring AI licensing income, and managing both requires integrated infrastructure, not scattered tools.
+              Likelee is built for dual-revenue agencies—where one roster
+              generates both traditional booking fees and recurring AI licensing
+              income, and managing both requires integrated infrastructure, not
+              scattered tools.
             </p>
             <p className="text-xl font-bold text-gray-900">
-              We're not replacing traditional bookings. We're adding a second revenue stream that fills the gaps and compounds over time.
+              We're not replacing traditional bookings. We're adding a second
+              revenue stream that fills the gaps and compounds over time.
             </p>
           </div>
         </div>
