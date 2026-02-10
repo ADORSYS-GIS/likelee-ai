@@ -1,278 +1,278 @@
- ```mermaid
+```mermaid
 erDiagram
-  PROFILES {
-    uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
-    text email
-    text full_name
-    text creator_type
+ PROFILES {
+   uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
+   text email
+   text full_name
+   text creator_type
 
-    %% location & bio
-    text city
-    text state
-    date birthdate
-    text bio
-    text gender
+   %% location & bio
+   text city
+   text state
+   date birthdate
+   text bio
+   text gender
 
-    %% arrays
-    text[] content_types
-    text[] industries
-    text[] work_types
-    text[] brand_categories
-    text[] ethnicity
-    text[] vibes
+   %% arrays
+   text[] content_types
+   text[] industries
+   text[] work_types
+   text[] brand_categories
+   text[] ethnicity
+   text[] vibes
 
-    %% platforms & handles
-    text primary_platform
-    text platform_handle
-    text instagram_handle
-    text twitter_handle
+   %% platforms & handles
+   text primary_platform
+   text platform_handle
+   text instagram_handle
+   text twitter_handle
 
-    %% modeling / talent
-    text representation_status
-    text headshot_url
-    text profile_photo_url
+   %% modeling / talent
+   text representation_status
+   text headshot_url
+   text profile_photo_url
 
-    %% athlete
-    text sport
-    text athlete_type
-    text school_name
-    integer age
-    text languages
+   %% athlete
+   text sport
+   text athlete_type
+   text school_name
+   integer age
+   text languages
 
-    %% physical attributes & discovery
-    text race
-    text hair_color
-    text hairstyle
-    text eye_color
-    integer height_cm
-    integer weight_kg
-    text[] facial_features
-    text role "default 'creator'"
-    text tagline
+   %% physical attributes & discovery
+   text race
+   text hair_color
+   text hairstyle
+   text eye_color
+   integer height_cm
+   integer weight_kg
+   text[] facial_features
+   text role "default 'creator'"
+   text tagline
 
-    %% verification
-    text kyc_status "not_started | pending | approved | rejected (default not_started)"
-    text liveness_status "not_started | pending | approved | rejected (default not_started)"
-    text kyc_provider
-    text kyc_session_id
-    timestamptz verified_at
+   %% verification
+   text kyc_status "not_started | pending | approved | rejected (default not_started)"
+   text liveness_status "not_started | pending | approved | rejected (default not_started)"
+   text kyc_provider
+   text kyc_session_id
+   timestamptz verified_at
 
-    %% visibility & status
-    text visibility "default 'private'"
-    text status "default 'waitlist'"
+   %% visibility & status
+   text visibility "default 'private'"
+   text status "default 'waitlist'"
 
-    %% audit
-    timestamptz created_date "default now()"
-    timestamptz updated_date "default now()"
-    text created_by_id
-    text created_by
-    boolean is_sample "default false"
+   %% audit
+   timestamptz created_date "default now()"
+   timestamptz updated_date "default now()"
+   text created_by_id
+   text created_by
+   boolean is_sample "default false"
 
-    %% content extras
-    text content_other
+   %% content extras
+   text content_other
 
-    %% media
-    text avatar_canonical_url
-    text cameo_front_url
-    text cameo_left_url
-    text cameo_right_url
+   %% media
+   text avatar_canonical_url
+   text cameo_front_url
+   text cameo_left_url
+   text cameo_right_url
 
-    %% Tavus Digital Avatar
-    text tavus_avatar_id
-    text tavus_avatar_status
-    text tavus_last_error
+   %% Tavus Digital Avatar
+   text tavus_avatar_id
+   text tavus_avatar_status
+   text tavus_last_error
 
-    %% pricing (USD-only)
-    integer base_monthly_price_cents "check >= 15000 (i.e., $150)"
-    text currency_code "check = 'USD'"
-    timestamptz pricing_updated_at
+   %% pricing (USD-only)
+   integer base_monthly_price_cents "check >= 15000 (i.e., $150)"
+   text currency_code "check = 'USD'"
+   timestamptz pricing_updated_at
 
-    %% negotiations & restrictions
-    boolean accept_negotiations "default false"
-    text[] content_restrictions
-    text[] brand_exclusivity
+   %% negotiations & restrictions
+   boolean accept_negotiations "default false"
+   text[] content_restrictions
+   text[] brand_exclusivity
 
-    %% legacy timestamps (from initial table)
-    timestamptz created_at "default now()"
-    timestamptz updated_at
-  }
+   %% legacy timestamps (from initial table)
+   timestamptz created_at "default now()"
+   timestamptz updated_at
+ }
 
-  REFERENCE_IMAGES {
-    uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
-    uuid user_id FK "REFERENCES profiles(id)"
-    text section_id
-    text storage_bucket
-    text storage_path
-    text public_url
-    integer width
-    integer height
-    bigint size_bytes
-    text mime_type
-    text sha256
-    text moderation_status "enum('pending','approved','flagged')"
-    text moderation_reason
-    timestamptz created_at "default now()"
-    uuid created_by
-  }
+ REFERENCE_IMAGES {
+   uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
+   uuid user_id FK "REFERENCES profiles(id)"
+   text section_id
+   text storage_bucket
+   text storage_path
+   text public_url
+   integer width
+   integer height
+   bigint size_bytes
+   text mime_type
+   text sha256
+   text moderation_status "enum('pending','approved','flagged')"
+   text moderation_reason
+   timestamptz created_at "default now()"
+   uuid created_by
+ }
 
-  ROYALTY_LEDGER {
-    uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
-    uuid face_id FK "REFERENCES profiles(id)"
-    text booking_id
-    text brand_name
-    integer amount_cents "check >= 0"
-    text currency_code "check = 'USD'"
-    text status "enum('pending','paid')"
-    date period_month "first day of month"
-    timestamptz created_at "default now()"
-  }
+ ROYALTY_LEDGER {
+   uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
+   uuid face_id FK "REFERENCES profiles(id)"
+   text booking_id
+   text brand_name
+   integer amount_cents "check >= 0"
+   text currency_code "check = 'USD'"
+   text status "enum('pending','paid')"
+   date period_month "first day of month"
+   timestamptz created_at "default now()"
+ }
 
-  MODERATION_EVENTS {
-    uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
-    text image_url
-    text user_id "logical reference to profiles(id)"
-    text image_role "front | left | right | other"
-    boolean flagged "default false"
-    jsonb labels "array of moderation labels"
-    text review_status "enum('pending','approved','rejected'), default 'pending'"
-    text reviewed_by
-    timestamptz reviewed_at
-    timestamptz created_at "default now()"
-  }
+ MODERATION_EVENTS {
+   uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
+   text image_url
+   text user_id "logical reference to profiles(id)"
+   text image_role "front | left | right | other"
+   boolean flagged "default false"
+   jsonb labels "array of moderation labels"
+   text review_status "enum('pending','approved','rejected'), default 'pending'"
+   text reviewed_by
+   timestamptz reviewed_at
+   timestamptz created_at "default now()"
+ }
 
-  ORGANIZATION_PROFILES {
-    uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
-    uuid owner_user_id "logical FK → profiles(id)"
-    text email
-    text organization_name
-    text contact_name
-    text contact_title
-    text organization_type
-    text website
-    text phone_number
-    text industry
-    text primary_goal
-    text geographic_target
-    text production_type
-    text budget_range
-    text uses_ai
-    text creates_for
-    jsonb roles_needed
-    text client_count
-    text campaign_budget
-    jsonb services_offered
-    text handle_contracts
-    text talent_count
-    text licenses_likeness
-    jsonb open_to_ai
-    jsonb campaign_types
-    text bulk_onboard
-    text status
-    timestamptz created_at
-    timestamptz updated_at
-  }
+ ORGANIZATION_PROFILES {
+   uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
+   uuid owner_user_id "logical FK → profiles(id)"
+   text email
+   text organization_name
+   text contact_name
+   text contact_title
+   text organization_type
+   text website
+   text phone_number
+   text industry
+   text primary_goal
+   text geographic_target
+   text production_type
+   text budget_range
+   text uses_ai
+   text creates_for
+   jsonb roles_needed
+   text client_count
+   text campaign_budget
+   jsonb services_offered
+   text handle_contracts
+   text talent_count
+   text licenses_likeness
+   jsonb open_to_ai
+   jsonb campaign_types
+   text bulk_onboard
+   text status
+   timestamptz created_at
+   timestamptz updated_at
+ }
 
-  AGENCY_USERS {
-    uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
-    uuid agency_id FK "REFERENCES organization_profiles(id)"
-    uuid user_id "logical FK → profiles(id)"
-    text role "enum('owner','admin','manager','viewer')"
-    text status "enum('active','invited','suspended')"
-    timestamptz created_at
-  }
+ AGENCY_USERS {
+   uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
+   uuid agency_id FK "REFERENCES organization_profiles(id)"
+   uuid user_id "logical FK → profiles(id)"
+   text role "enum('owner','admin','manager','viewer')"
+   text status "enum('active','invited','suspended')"
+   timestamptz created_at
+ }
 
-  %% Voice & Brand Delivery (merged from docs/er/voice_assets.mmd)
-  VOICE_RECORDINGS {
-    uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
-    uuid user_id FK "REFERENCES profiles(id) ON DELETE CASCADE"
-    text storage_bucket
-    text storage_path
-    text public_url
-    integer duration_sec
-    text mime_type
-    text emotion_tag
-    boolean accessible "default true"
-    timestamptz created_at "default now()"
-  }
+ %% Voice & Brand Delivery (merged from docs/er/voice_assets.mmd)
+ VOICE_RECORDINGS {
+   uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
+   uuid user_id FK "REFERENCES profiles(id) ON DELETE CASCADE"
+   text storage_bucket
+   text storage_path
+   text public_url
+   integer duration_sec
+   text mime_type
+   text emotion_tag
+   boolean accessible "default true"
+   timestamptz created_at "default now()"
+ }
 
-  VOICE_MODELS {
-    uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
-    uuid user_id FK "REFERENCES profiles(id) ON DELETE CASCADE"
-    text provider
-    text provider_voice_id
-    text status "default 'ready'"
-    uuid source_recording_id FK "REFERENCES voice_recordings(id) ON DELETE SET NULL"
-    jsonb metadata
-    timestamptz created_at "default now()"
-  }
+ VOICE_MODELS {
+   uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
+   uuid user_id FK "REFERENCES profiles(id) ON DELETE CASCADE"
+   text provider
+   text provider_voice_id
+   text status "default 'ready'"
+   uuid source_recording_id FK "REFERENCES voice_recordings(id) ON DELETE SET NULL"
+   jsonb metadata
+   timestamptz created_at "default now()"
+ }
 
-  BRAND_LICENSES {
-    uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
-    uuid brand_org_id FK "REFERENCES organization_profiles(id) ON DELETE CASCADE"
-    uuid face_user_id FK "REFERENCES profiles(id) ON DELETE CASCADE"
-    text type
-    text status "default 'active'"
-    timestamptz start_at
-    timestamptz end_at
-    timestamptz created_at "default now()"
-  }
+ BRAND_LICENSES {
+   uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
+   uuid brand_org_id FK "REFERENCES organization_profiles(id) ON DELETE CASCADE"
+   uuid face_user_id FK "REFERENCES profiles(id) ON DELETE CASCADE"
+   text type
+   text status "default 'active'"
+   timestamptz start_at
+   timestamptz end_at
+   timestamptz created_at "default now()"
+ }
 
-  BRAND_VOICE_FOLDERS {
-    uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
-    uuid brand_org_id FK "REFERENCES organization_profiles(id) ON DELETE CASCADE"
-    uuid face_user_id FK "REFERENCES profiles(id) ON DELETE CASCADE"
-    uuid license_id FK "REFERENCES brand_licenses(id) ON DELETE CASCADE"
-    text name
-    timestamptz created_at "default now()"
-  }
+ BRAND_VOICE_FOLDERS {
+   uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
+   uuid brand_org_id FK "REFERENCES organization_profiles(id) ON DELETE CASCADE"
+   uuid face_user_id FK "REFERENCES profiles(id) ON DELETE CASCADE"
+   uuid license_id FK "REFERENCES brand_licenses(id) ON DELETE CASCADE"
+   text name
+   timestamptz created_at "default now()"
+ }
 
-  BRAND_VOICE_ASSETS {
-    uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
-    uuid folder_id FK "REFERENCES brand_voice_folders(id) ON DELETE CASCADE"
-    text asset_type "'recording' | 'model'"
-    uuid recording_id FK "REFERENCES voice_recordings(id) ON DELETE SET NULL"
-    uuid model_id FK "REFERENCES voice_models(id) ON DELETE SET NULL"
-    text storage_bucket
-    text storage_path
-    text public_url
-    timestamptz created_at "default now()"
-  }
+ BRAND_VOICE_ASSETS {
+   uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
+   uuid folder_id FK "REFERENCES brand_voice_folders(id) ON DELETE CASCADE"
+   text asset_type "'recording' | 'model'"
+   uuid recording_id FK "REFERENCES voice_recordings(id) ON DELETE SET NULL"
+   uuid model_id FK "REFERENCES voice_models(id) ON DELETE SET NULL"
+   text storage_bucket
+   text storage_path
+   text public_url
+   timestamptz created_at "default now()"
+ }
 
-  V_FACE_PAYOUTS {
-    uuid face_id
-    text face_name
-    date period_month
-    integer paid_cents
-    integer pending_cents
-    integer total_cents
-    integer event_count
-  }
+ V_FACE_PAYOUTS {
+   uuid face_id
+   text face_name
+   date period_month
+   integer paid_cents
+   integer pending_cents
+   integer total_cents
+   integer event_count
+ }
 
-  CREATOR_CUSTOM_RATES {
-    uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
-    uuid creator_id FK "REFERENCES profiles(id) ON DELETE CASCADE"
-    text rate_type "'content_type' or 'industry'"
-    text rate_name
-    integer price_per_month_cents
-    timestamptz created_at "default now()"
-    timestamptz updated_at "default now()"
-  }
+ CREATOR_CUSTOM_RATES {
+   uuid id PK "PRIMARY KEY, DEFAULT gen_random_uuid()"
+   uuid creator_id FK "REFERENCES profiles(id) ON DELETE CASCADE"
+   text rate_type "'content_type' or 'industry'"
+   text rate_name
+   integer price_per_month_cents
+   timestamptz created_at "default now()"
+   timestamptz updated_at "default now()"
+ }
 
-  PROFILES ||--o{ ROYALTY_LEDGER : face_id
-  PROFILES ||--o{ MODERATION_EVENTS : user_id
-  PROFILES ||--o{ REFERENCE_IMAGES : user_id
-  PROFILES ||--o{ ORGANIZATION_PROFILES : owner_user_id
-  PROFILES ||--o{ CREATOR_CUSTOM_RATES : creator_id
-  ORGANIZATION_PROFILES ||--o{ AGENCY_USERS : agency_id
-  PROFILES ||--o{ AGENCY_USERS : user_id
-  PROFILES ||--o{ VOICE_RECORDINGS : user_id
-  PROFILES ||--o{ VOICE_MODELS : user_id
-  ORGANIZATION_PROFILES ||--o{ BRAND_LICENSES : brand_org_id
-  PROFILES ||--o{ BRAND_LICENSES : face_user_id
-  BRAND_LICENSES ||--|| BRAND_VOICE_FOLDERS : license_id
-  BRAND_VOICE_FOLDERS ||--o{ BRAND_VOICE_ASSETS : folder_id
-  VOICE_RECORDINGS ||--o{ BRAND_VOICE_ASSETS : recording_id
-  VOICE_MODELS ||--o{ BRAND_VOICE_ASSETS : model_id
+ PROFILES ||--o{ ROYALTY_LEDGER : face_id
+ PROFILES ||--o{ MODERATION_EVENTS : user_id
+ PROFILES ||--o{ REFERENCE_IMAGES : user_id
+ PROFILES ||--o{ ORGANIZATION_PROFILES : owner_user_id
+ PROFILES ||--o{ CREATOR_CUSTOM_RATES : creator_id
+ ORGANIZATION_PROFILES ||--o{ AGENCY_USERS : agency_id
+ PROFILES ||--o{ AGENCY_USERS : user_id
+ PROFILES ||--o{ VOICE_RECORDINGS : user_id
+ PROFILES ||--o{ VOICE_MODELS : user_id
+ ORGANIZATION_PROFILES ||--o{ BRAND_LICENSES : brand_org_id
+ PROFILES ||--o{ BRAND_LICENSES : face_user_id
+ BRAND_LICENSES ||--|| BRAND_VOICE_FOLDERS : license_id
+ BRAND_VOICE_FOLDERS ||--o{ BRAND_VOICE_ASSETS : folder_id
+ VOICE_RECORDINGS ||--o{ BRAND_VOICE_ASSETS : recording_id
+ VOICE_MODELS ||--o{ BRAND_VOICE_ASSETS : model_id
 ```
 
 ## Notes
