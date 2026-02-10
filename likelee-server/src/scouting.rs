@@ -1110,6 +1110,13 @@ pub async fn create_template_from_pdf(
     if user.role != "agency" {
         return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
     }
+
+    if state.docuseal_api_key.trim().is_empty() {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "docuseal_api_key_not_configured".to_string(),
+        ));
+    }
     let agency_id = user.id.clone();
 
     let _ = enforce_template_limit_for_insert(&state, &agency_id, 1).await?;
