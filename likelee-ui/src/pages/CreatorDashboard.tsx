@@ -100,7 +100,7 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
-import CameoUpload from "./CameoUpload";
+
 import { useTranslation } from "react-i18next";
 
 const CONTENT_TYPES = [
@@ -764,7 +764,6 @@ export default function CreatorDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
   const IMAGE_SECTIONS = getImageSections(t);
-  const cameoFileRef = useRef<HTMLInputElement | null>(null);
 
   // Helper functions to get translated arrays
   const getTranslatedContentTypes = () => [
@@ -832,134 +831,6 @@ export default function CreatorDashboard() {
     return getTranslatedRestrictions()[index];
   };
 
-  const startStatusPolling = () => {
-    const uid = user?.id;
-    if (!uid) return;
-    let attempts = 0;
-    const interval = setInterval(async () => {
-      attempts += 1;
-      try {
-        const r = await fetch(
-          api(`/api/creatify/avatar/status?user_id=${encodeURIComponent(uid)}`),
-        );
-        if (r.ok) {
-          const j = await r.json();
-          setAvatarStatus(
-            j?.status || j?.process_status || (j?.is_active ? "active" : null),
-          );
-          if (
-            j?.status === "completed" ||
-            j?.status === "error" ||
-            j?.process_status === "ready to use" ||
-            attempts > 120
-          ) {
-            clearInterval(interval);
-          }
-        }
-      } catch (_) {
-        // ignore transient errors
-      }
-    }, 5000);
-  };
-
-  // (moved below handleRefreshAvatarStatus definition)
-
-  const handleGenerateAvatar = async () => {
-    if (!user?.id) return;
-    if (!creator?.cameo_front_url) {
-      toast({
-        variant: "destructive",
-        title: t("common.error"),
-        description: "Please upload a short training video first.",
-      });
-      return;
-    }
-    try {
-      setAvatarOpLoading(true);
-      const res = await fetch(api(`/api/creatify/avatar-from-video?debug=1`), {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ user_id: user.id }),
-      });
-      if (!res.ok) throw new Error(await res.text());
-      const json = await res.json();
-      if (
-        json?.debug_request ||
-        json?.debug_v2_body ||
-        json?.debug_v1_body ||
-        json?.debug_v1b_body
-      ) {
-        console.group("Creatify Avatar Debug");
-        if (json.debug_request)
-          console.log("payload to Creatify (personas_v2)", json.debug_request);
-        if (json.debug_v2_body)
-          console.log("raw v2 response (/api/personas_v2)", json.debug_v2_body);
-        if (json.debug_v1_body)
-          console.log("raw v1 response (/api/personas)", json.debug_v1_body);
-        if (json.debug_v1b_body)
-          console.log(
-            "raw v1 alt response (/api/personas alt)",
-            json.debug_v1b_body,
-          );
-        console.groupEnd();
-      }
-      setAvatarStatus(json?.status || "pending");
-      // start polling
-      startStatusPolling();
-      toast({
-        title: t("creatorDashboard.toasts.avatarRequestSent"),
-        description: t("creatorDashboard.toasts.avatarRequestSentDesc"),
-      });
-    } catch (e: any) {
-      toast({
-        variant: "destructive",
-        title: t("common.error"),
-        description:
-          e?.message || t("creatorDashboard.toasts.avatarTrainingFailed"),
-      });
-    } finally {
-      setAvatarOpLoading(false);
-    }
-  };
-
-  // Creatify: Check avatar status
-  const handleRefreshAvatarStatus = async () => {
-    if (!user?.id) return;
-    try {
-      const r = await fetch(
-        api(
-          `/api/creatify/avatar/status?user_id=${encodeURIComponent(user.id)}`,
-        ),
-      );
-      if (!r.ok) throw new Error(await r.text());
-      const j = await r.json();
-      const isActive =
-        j?.is_active === true ||
-        j?.status === "active" ||
-        j?.process_status?.toLowerCase().includes("ready");
-      setAvatarStatus(
-        isActive ? "ready" : j?.status || j?.process_status || "pending",
-      );
-      if (isActive) {
-        toast({
-          title: t("creatorDashboard.toasts.avatarReady"),
-          description: t("creatorDashboard.toasts.avatarReadyDesc"),
-        });
-      } else {
-        toast({
-          title: t("creatorDashboard.toasts.statusUpdated"),
-          description: `${t("creatorDashboard.toasts.avatarStatusPrefix")}: ${j?.status || j?.process_status || t("creatorDashboard.voice.statusPending")}`,
-        });
-      }
-    } catch (e: any) {
-      toast({
-        variant: "destructive",
-        title: t("common.error"),
-        description: e?.message || "Failed to fetch avatar status",
-      });
-    }
-  };
-
   // Creator profile state (declare before any hooks that reference `creator`)
   const [creator, setCreator] = useState<any>({
     name: profile?.full_name || user?.user_metadata?.full_name || "",
@@ -979,84 +850,6 @@ export default function CreatorDashboard() {
     royalty_percentage: 0,
     accept_negotiations: true,
   });
-
-  // Auto-show status and fetch latest once when an avatar exists
-  useEffect(() => {
-    const existingId = (creator as any)?.creatify_avatar_id;
-    const existingStatus = (creator as any)?.creatify_avatar_status;
-    if (existingStatus && !avatarStatus) {
-      setAvatarStatus(existingStatus);
-    }
-    if (user?.id && typeof existingId === "string" && existingId.trim()) {
-      handleRefreshAvatarStatus();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    user?.id,
-    (creator as any)?.creatify_avatar_id,
-    (creator as any)?.creatify_avatar_status,
-  ]);
-
-  // Creatify: Check avatar status by explicit avatar_id
-  const handleCheckAvatarStatusById = async () => {
-    try {
-      let id: string | undefined = (creator as any)?.creatify_avatar_id;
-      if (!id || typeof id !== "string" || !id.trim()) {
-        const entered = window.prompt(
-          "Enter your Creatify avatar_id to check status:",
-        );
-        if (!entered) return;
-        id = entered.trim();
-      }
-      const r = await fetch(
-        api(
-          `/api/creatify/avatar/status/by-id?avatar_id=${encodeURIComponent(id)}`,
-        ),
-      );
-      if (!r.ok) throw new Error(await r.text());
-      const j = await r.json();
-      const status =
-        j?.process_status || j?.status || (j?.is_active ? "active" : "unknown");
-      setAvatarStatus(status || "pending");
-      toast({
-        title: "Avatar lookup",
-        description: `id: ${id}\nstatus: ${status}`,
-      });
-    } catch (e: any) {
-      toast({
-        variant: "destructive",
-        title: t("common.error"),
-        description: e?.message || "Failed to check avatar by id",
-      });
-    }
-  };
-
-  // Creatify: Create a lipsync/video job
-  const handleCreateVideo = async () => {
-    if (!user?.id) return;
-    try {
-      const displayName =
-        profile?.full_name || user?.user_metadata?.full_name || "I";
-      const script = `Hi, I'm ${displayName}. I'm excited to join Likelee AI. Likelee.ai helps creators and brands produce on-brand video content quickly using safe, consented likeness and voice. This demo was generated by my Likelee avatar.`;
-      const r = await fetch(api(`/api/creatify/lipsyncs`), {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ user_id: user.id, tts_text: script }),
-      });
-      if (!r.ok) throw new Error(await r.text());
-      const j = await r.json();
-      toast({
-        title: "Video creation started",
-        description: `Job: ${j?.creatify_job_id || "submitted"}`,
-      });
-    } catch (e: any) {
-      toast({
-        variant: "destructive",
-        title: t("common.error"),
-        description: e?.message || "Failed to start video",
-      });
-    }
-  };
 
   useEffect(() => {
     const handleResize = () => {
@@ -1095,10 +888,16 @@ export default function CreatorDashboard() {
   );
 
   const heroMedia = useMemo(() => {
-    return creator.cameo_front_url
-      ? { type: "video" as const, url: creator.cameo_front_url }
-      : null;
-  }, [creator.cameo_front_url]);
+    // Fallback to first portfolio item if available (or null)
+    if (profile?.portfolio && profile.portfolio.length > 0) {
+      // Find a video if possible
+      const video = profile.portfolio.find((p) => p.type === "video");
+      if (video) return { type: "video" as const, url: video.url };
+      // Otherwise first image
+      return { type: "image" as const, url: profile.portfolio[0].url };
+    }
+    return null;
+  }, [profile?.portfolio]);
   const [photos, setPhotos] = useState([]);
 
   const [voiceLibrary, setVoiceLibrary] = useState([]);
@@ -1249,7 +1048,6 @@ export default function CreatorDashboard() {
   const [showRevokeModal, setShowRevokeModal] = useState(false);
   const [showApprovalContract, setShowApprovalContract] = useState(null);
   const [contractsTab, setContractsTab] = useState("active");
-  const [showReuploadCameoModal, setShowReuploadCameoModal] = useState(false);
   const [showImageUploadModal, setShowImageUploadModal] = useState(false);
   const [showRestrictionsModal, setShowRestrictionsModal] = useState(false);
   const [newRestriction, setNewRestriction] = useState("");
@@ -1257,9 +1055,6 @@ export default function CreatorDashboard() {
   const [selectedImageSection, setSelectedImageSection] = useState(null);
   const [uploadingToSection, setUploadingToSection] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
-  const [replicaId, setReplicaId] = useState<string | null>(null);
-  const [avatarStatus, setAvatarStatus] = useState<string | null>(null);
-  const [avatarOpLoading, setAvatarOpLoading] = useState(false);
   const [referenceImages, setReferenceImages] = useState({
     headshot_neutral: null,
     headshot_smiling: null,
@@ -1565,9 +1360,6 @@ export default function CreatorDashboard() {
           brand_exclusivity: profile.brand_exclusivity || [],
           kyc_status: profile.kyc_status,
           verified_at: profile.verified_at,
-          cameo_front_url: profile.cameo_front_url,
-          cameo_left_url: profile.cameo_left_url,
-          cameo_right_url: profile.cameo_right_url,
           avatar_canonical_url: profile.avatar_canonical_url,
         }));
         // If backend provides arrays later, replace mocks
@@ -2453,7 +2245,7 @@ export default function CreatorDashboard() {
                 </div>
 
                 <Button className="w-full bg-black hover:bg-gray-800 text-white mb-3 rounded-full">
-                  {t("creatorDashboard.publicProfile.requestCameo")}
+                  {t("creatorDashboard.publicProfile.hireCreator")}
                 </Button>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -2485,81 +2277,6 @@ export default function CreatorDashboard() {
   };
 
   // ...
-  const handleHeroUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (!user?.id) {
-        toast({
-          variant: "destructive",
-          title: t("creatorDashboard.toasts.authRequiredTitle"),
-          description: t("creatorDashboard.toasts.authRequiredCameoDesc"),
-        });
-        return;
-      }
-
-      if (file.size > 50_000_000) {
-        toast({
-          variant: "destructive",
-          title: t("creatorDashboard.toasts.fileTooLargeTitle"),
-          description: t("creatorDashboard.toasts.fileTooLargeDescVideo"),
-        });
-        return;
-      }
-
-      if (!file.type.startsWith("video/")) {
-        toast({
-          variant: "destructive",
-          title: t("creatorDashboard.toasts.invalidFileTypeTitle"),
-          description: t("creatorDashboard.toasts.invalidFileTypeDescVideo"),
-        });
-        return;
-      }
-
-      setUploadingPhoto(true);
-
-      try {
-        const owner = user.id.replace(/[^a-zA-Z0-9_-]/g, "_");
-        const path = `cameo/${owner}/${Date.now()}_front_${file.name.replace(/[^a-zA-Z0-9_.-]/g, "_")}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("likelee-public")
-          .upload(path, file, { upsert: false });
-
-        if (uploadError) throw uploadError;
-
-        const { data } = supabase.storage
-          .from("likelee-public")
-          .getPublicUrl(path);
-        const publicUrl = data.publicUrl;
-
-        const { error: dbError } = await supabase
-          .from("creators")
-          .update({ cameo_front_url: publicUrl })
-          .eq("id", user.id);
-
-        if (dbError) throw dbError;
-
-        setCreator((prev: any) => ({
-          ...prev,
-          cameo_front_url: publicUrl,
-        }));
-
-        toast({
-          title: t("creatorDashboard.toasts.cameoUploadedTitle"),
-          description: t("creatorDashboard.toasts.cameoUploadedDesc"),
-        });
-      } catch (err: any) {
-        console.error("Cameo upload error:", err);
-        toast({
-          variant: "destructive",
-          title: t("common.error"),
-          description: parseErrorMessage(err, t),
-        });
-      } finally {
-        setUploadingPhoto(false);
-      }
-    }
-  };
 
   const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
@@ -3244,7 +2961,7 @@ export default function CreatorDashboard() {
       (img) => img !== null,
     ).length;
     const imagesTotal = IMAGE_SECTIONS.length;
-    const cameoPresent = !!heroMedia;
+
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -3434,28 +3151,6 @@ export default function CreatorDashboard() {
                 className="h-2 mt-3 bg-gray-200"
               />
             </div>
-
-            {/* Cameo Video */}
-            <div className="p-5 bg-gray-50 border border-gray-200 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-sm text-gray-600 flex items-center gap-2">
-                  <Video className="w-4 h-4 text-orange-600" />
-                  <span>{t("creatorDashboard.dashboard.cameoVideo")}</span>
-                </div>
-                {!cameoPresent && (
-                  <span className="text-xs bg-red-100 text-red-700 border border-red-300 rounded px-2 py-0.5">
-                    {t("creatorDashboard.dashboard.missing")}
-                  </span>
-                )}
-              </div>
-              <div className="text-3xl font-bold text-gray-900">
-                {cameoPresent ? 1 : 0}/1
-              </div>
-              <Progress
-                value={cameoPresent ? 100 : 0}
-                className="h-2 mt-3 bg-gray-200"
-              />
-            </div>
           </div>
         </Card>
       </div>
@@ -3629,251 +3324,6 @@ export default function CreatorDashboard() {
               {t("creatorDashboard.myLikenessSection.banner.text")}
             </p>
           </div>
-        </Card>
-
-        {/* MY CAMEO Section - NOW FIRST */}
-        <Card className="p-6 bg-white border border-gray-200">
-          <div className="mb-6">
-            <h3 className="text-2xl font-bold text-gray-900">
-              {t("creatorDashboard.dashboard.cameoVideo").toUpperCase()}
-            </h3>
-            <p className="text-gray-600">
-              {t("creatorDashboard.cameoVideo.description")}
-            </p>
-          </div>
-
-          {heroMedia ? (
-            <div className="space-y-4">
-              <Card className="p-4 bg-green-50 border border-green-200">
-                <div className="grid md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-600 mb-1">
-                      {t("creatorDashboard.cameoVideo.uploaded")}
-                    </p>
-                    <p className="font-bold text-gray-900">Nov 12, 2024</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-1">
-                      {t("creatorDashboard.cameoVideo.duration")}
-                    </p>
-                    <p className="font-bold text-gray-900">45 seconds</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-1">
-                      {t("creatorDashboard.cameoVideo.quality")}
-                    </p>
-                    <p className="font-bold text-gray-900">4K</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-1">
-                      {t("creatorDashboard.cameoVideo.status")}
-                    </p>
-                    <Badge className="bg-green-500 text-white">
-                      {t("creatorDashboard.cameoVideo.verified")}
-                    </Badge>
-                  </div>
-                </div>
-              </Card>
-
-              <div className="relative">
-                {heroMedia.type === "video" ? (
-                  <video
-                    src={heroMedia.url}
-                    controls
-                    className="w-full max-h-96 object-contain border-2 border-gray-200 rounded-lg bg-black"
-                  />
-                ) : (
-                  <img
-                    src={heroMedia.url}
-                    alt="Hero media"
-                    className="w-full h-96 object-cover border-2 border-gray-200 rounded-lg"
-                  />
-                )}
-              </div>
-
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3">
-                <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                <p className="text-blue-900 text-sm">
-                  <strong>
-                    {t("creatorDashboard.cameoVideo.aboutCameo.title")}
-                  </strong>{" "}
-                  {t("creatorDashboard.cameoVideo.aboutCameo.text")}
-                </p>
-              </div>
-
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  className="flex-1 border-2 border-gray-300"
-                >
-                  <Play className="w-4 h-4 mr-2" />
-                  {t("creatorDashboard.cameoVideo.actions.watchFull")}
-                </Button>
-                <Button
-                  onClick={() => setShowReuploadCameoModal(true)}
-                  variant="outline"
-                  className="flex-1 border-2 border-[#32C8D1] text-[#32C8D1]"
-                  disabled={uploadingPhoto}
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  {t("creatorDashboard.cameoVideo.actions.reupload")}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="border-2 border-gray-300"
-                  disabled={uploadingPhoto}
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  {t("creatorDashboard.cameoVideo.actions.download")}
-                </Button>
-              </div>
-
-              {/* Generate Avatar when a video already exists */}
-              <div className="text-center pt-4">
-                <Button
-                  className="mx-auto"
-                  onClick={handleGenerateAvatar}
-                  disabled={
-                    !creator?.cameo_front_url ||
-                    avatarOpLoading ||
-                    uploadingPhoto ||
-                    Boolean((creator as any)?.creatify_avatar_id)
-                  }
-                >
-                  {avatarOpLoading ? t("common.loading") : "Create Avatar"}
-                </Button>
-                {uploadingPhoto && (
-                  <p className="text-xs text-gray-500 mt-3">
-                    Uploading video… please wait
-                  </p>
-                )}
-                {avatarStatus && (
-                  <p
-                    className={`text-xs mt-3 ${
-                      avatarStatus === "ready" || avatarStatus === "active"
-                        ? "text-green-600"
-                        : ["reviewing", "pending", "queued"].includes(
-                              String(avatarStatus).toLowerCase(),
-                            )
-                          ? "text-amber-600"
-                          : ["failed", "rejected", "error"].includes(
-                                String(avatarStatus).toLowerCase(),
-                              )
-                            ? "text-red-600"
-                            : "text-gray-500"
-                    }`}
-                  >
-                    Status: {avatarStatus} · Typically approved in 1–2 days
-                  </p>
-                )}
-                <div className="flex items-center justify-center gap-3 mt-4">
-                  <Button
-                    variant="outline"
-                    onClick={handleRefreshAvatarStatus}
-                    disabled={!creator?.cameo_front_url}
-                  >
-                    Check Status
-                  </Button>
-                  <Button
-                    onClick={handleCreateVideo}
-                    disabled={
-                      !creator?.cameo_front_url ||
-                      !(avatarStatus === "ready" || avatarStatus === "active")
-                    }
-                  >
-                    Create Video
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {/* Generate Avatar Action */}
-              <div className="border-2 border-dashed border-cyan-400 rounded-lg p-16 text-center bg-white">
-                <Video className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-lg font-medium text-gray-900 mb-2">
-                  Create your Digital Avatar
-                </p>
-                <p className="text-sm text-gray-600 mb-6">
-                  Upload a short training video in the Cameo section, then start
-                  training your avatar. You can keep working while we process
-                  it.
-                </p>
-                {/* Inline uploader for camera roll / files */}
-                <input
-                  type="file"
-                  id="reuploadCameoInline"
-                  accept="video/*"
-                  capture
-                  onChange={handleHeroUpload}
-                  className="hidden"
-                  ref={cameoFileRef}
-                />
-                <Button
-                  variant="outline"
-                  className="mb-4"
-                  onClick={() => cameoFileRef.current?.click()}
-                  disabled={uploadingPhoto}
-                >
-                  {t("creatorDashboard.cameoVideo.actions.reupload")}
-                </Button>
-                <Button
-                  className="mx-auto"
-                  onClick={handleGenerateAvatar}
-                  disabled={
-                    !creator?.cameo_front_url ||
-                    avatarOpLoading ||
-                    uploadingPhoto ||
-                    Boolean((creator as any)?.creatify_avatar_id)
-                  }
-                >
-                  {avatarOpLoading ? t("common.loading") : "Create Avatar"}
-                </Button>
-                {uploadingPhoto && (
-                  <p className="text-xs text-gray-500 mt-3">
-                    Uploading video… please wait
-                  </p>
-                )}
-                {avatarStatus && (
-                  <p
-                    className={`text-xs mt-3 ${
-                      avatarStatus === "ready" || avatarStatus === "active"
-                        ? "text-green-600"
-                        : ["reviewing", "pending", "queued"].includes(
-                              String(avatarStatus).toLowerCase(),
-                            )
-                          ? "text-amber-600"
-                          : ["failed", "rejected", "error"].includes(
-                                String(avatarStatus).toLowerCase(),
-                              )
-                            ? "text-red-600"
-                            : "text-gray-500"
-                    }`}
-                  >
-                    Status: {avatarStatus} · Typically approved in 1–2 days
-                  </p>
-                )}
-                <div className="flex items-center justify-center gap-3 mt-4">
-                  <Button
-                    variant="outline"
-                    onClick={handleRefreshAvatarStatus}
-                    disabled={!creator?.cameo_front_url}
-                  >
-                    Check Status
-                  </Button>
-                  <Button
-                    onClick={handleCreateVideo}
-                    disabled={
-                      !creator?.cameo_front_url ||
-                      !(avatarStatus === "ready" || avatarStatus === "active")
-                    }
-                  >
-                    Create Video
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
         </Card>
 
         {/* REFERENCE IMAGE LIBRARY */}
@@ -7708,129 +7158,6 @@ export default function CreatorDashboard() {
                 </div>
               );
             })()}
-        </DialogContent>
-      </Dialog>
-
-      {/* Re-upload Cameo Modal */}
-      <Dialog
-        open={showReuploadCameoModal}
-        onOpenChange={setShowReuploadCameoModal}
-      >
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-gray-900">
-              Re-Record Your Cameo
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="py-4 space-y-6">
-            <Card className="p-4 bg-gray-50 border border-gray-200">
-              <h4 className="font-bold text-gray-900 mb-3">
-                Your Current Cameo:
-              </h4>
-              <div className="grid grid-cols-3 gap-4 text-sm">
-                <div>
-                  <p className="text-gray-600">Uploaded:</p>
-                  <p className="font-bold text-gray-900">Nov 12, 2024</p>
-                </div>
-                <div>
-                  <p className="text-gray-600">Duration:</p>
-                  <p className="font-bold text-gray-900">45 seconds</p>
-                </div>
-                <div>
-                  <p className="text-gray-600">Quality:</p>
-                  <p className="font-bold text-gray-900">4K</p>
-                </div>
-              </div>
-            </Card>
-
-            <div>
-              <h4 className="font-bold text-gray-900 mb-3">
-                You can re-upload if you've made changes to your appearance:
-              </h4>
-              <div className="space-y-2 text-gray-700">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-[#32C8D1]" />
-                  <p>Changed hairstyle</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-[#32C8D1]" />
-                  <p>Changed hair color</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-[#32C8D1]" />
-                  <p>Significant weight loss/gain</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-[#32C8D1]" />
-                  <p>New tattoos</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-[#32C8D1]" />
-                  <p>Changed style/fashion</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5 text-[#32C8D1]" />
-                  <p>Just want a fresher look</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-blue-50 border-2 border-blue-300">
-              <AlertCircle className="h-5 w-5 text-blue-600" />
-              <p className="text-blue-900">
-                <strong>What Happens After You Upload:</strong>
-                <ul className="list-disc ml-6 mt-2 space-y-1">
-                  <li>New cameo goes through verification (24 hours)</li>
-                  <li>If approved, new cameo becomes your primary</li>
-                  <li>Old cameo is archived but still available</li>
-                  <li>
-                    All active licenses continue using the version they signed
-                    (old cameo)
-                  </li>
-                  <li>New licenses will use the new cameo</li>
-                </ul>
-              </p>
-            </div>
-
-            <div className="bg-amber-50 border-2 border-amber-300">
-              <AlertCircle className="h-5 w-5 text-amber-600" />
-              <p className="text-amber-900">
-                <strong>Important:</strong> Existing contracts will NOT change.
-                Brands who signed with your old cameo will continue using that
-                version. Only new projects will use the updated cameo.
-              </p>
-            </div>
-
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-[#32C8D1] transition-colors">
-              <input
-                type="file"
-                id="reuploadCameo"
-                accept="video/*"
-                onChange={handleHeroUpload}
-                className="hidden"
-              />
-              <label htmlFor="reuploadCameo" className="cursor-pointer">
-                <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-700 font-medium mb-2">
-                  Click to upload new cameo
-                </p>
-                <p className="text-sm text-gray-500">
-                  MP4 or MOV, 30-60 seconds
-                </p>
-              </label>
-            </div>
-
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setShowReuploadCameoModal(false)}
-                className="flex-1 border-2 border-gray-300"
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
         </DialogContent>
       </Dialog>
 

@@ -239,7 +239,6 @@ pub fn build_router(state: AppState) -> Router {
             "/api/agency/dashboard/performance-tiers/configure",
             post(crate::performance_tiers::configure_performance_tiers),
         )
-        // Removed legacy Tavus routes
         .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))
         .route("/api/email/available", get(crate::creators::check_email))
         .route("/api/profile", post(crate::creators::upsert_profile))
@@ -309,35 +308,6 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/brand/voice-assets",
             get(crate::licenses::list_brand_voice_assets),
-        )
-        // Creatify integration
-        .route(
-            "/api/creatify/avatar-from-video",
-            post(crate::creatify::create_avatar_from_video),
-        )
-        .route(
-            "/api/creatify/avatar/status",
-            get(crate::creatify::get_avatar_status),
-        )
-        .route(
-            "/api/creatify/avatar/status/by-id",
-            get(crate::creatify::get_avatar_status_by_id),
-        )
-        .route(
-            "/api/creatify/avatar/set",
-            post(crate::creatify::set_creatify_avatar_id),
-        )
-        .route(
-            "/api/creatify/lipsyncs",
-            post(crate::creatify::start_lipsync),
-        )
-        .route(
-            "/api/creatify/lipsyncs/status",
-            get(crate::creatify::get_lipsync_status),
-        )
-        .route(
-            "/webhooks/creatify",
-            post(crate::creatify::creatify_webhook),
         )
         // Bookings (Agency Dashboard)
         .route(
