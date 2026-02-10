@@ -194,7 +194,6 @@ const PAGES = {
 
   UploadProject: UploadProject,
 
-
   DemoTalentDashboard: DemoTalentDashboard,
 
   CreatorDashboard: CreatorDashboard,
@@ -478,8 +477,6 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-
-
 
       <Route
         path="/RoyaltyWallet"

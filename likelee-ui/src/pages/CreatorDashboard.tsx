@@ -100,7 +100,7 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
-// CameoUpload import removed
+
 import { useTranslation } from "react-i18next";
 
 const CONTENT_TYPES = [
@@ -888,14 +888,13 @@ export default function CreatorDashboard() {
   );
 
   const heroMedia = useMemo(() => {
-    // Cameo logic removed
     // Fallback to first portfolio item if available (or null)
     if (profile?.portfolio && profile.portfolio.length > 0) {
       // Find a video if possible
-      const video = profile.portfolio.find(p => p.type === 'video');
-      if (video) return { type: 'video' as const, url: video.url };
+      const video = profile.portfolio.find((p) => p.type === "video");
+      if (video) return { type: "video" as const, url: video.url };
       // Otherwise first image
-      return { type: 'image' as const, url: profile.portfolio[0].url };
+      return { type: "image" as const, url: profile.portfolio[0].url };
     }
     return null;
   }, [profile?.portfolio]);
@@ -1361,9 +1360,6 @@ export default function CreatorDashboard() {
           brand_exclusivity: profile.brand_exclusivity || [],
           kyc_status: profile.kyc_status,
           verified_at: profile.verified_at,
-          cameo_front_url: profile.cameo_front_url,
-          cameo_left_url: profile.cameo_left_url,
-          cameo_right_url: profile.cameo_right_url,
           avatar_canonical_url: profile.avatar_canonical_url,
         }));
         // If backend provides arrays later, replace mocks
@@ -1595,10 +1591,11 @@ export default function CreatorDashboard() {
           <div className="flex gap-6">
             <button
               onClick={() => setContentTab("brand_content")}
-              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${contentTab === "brand_content"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
+              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${
+                contentTab === "brand_content"
+                  ? "border-[#32C8D1] text-[#32C8D1]"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
             >
               {t("creatorDashboard.content.tabs.brandContent")}
               <Badge className="bg-gray-100 text-gray-900 hover:bg-gray-200 ml-1">
@@ -1607,10 +1604,11 @@ export default function CreatorDashboard() {
             </button>
             <button
               onClick={() => setContentTab("detections")}
-              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${contentTab === "detections"
-                ? "border-[#32C8D1] text-[#32C8D1]"
-                : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
+              className={`pb-3 border-b-2 font-medium flex items-center gap-2 ${
+                contentTab === "detections"
+                  ? "border-[#32C8D1] text-[#32C8D1]"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
             >
               {t("creatorDashboard.content.tabs.detections")}
               <Badge className="bg-red-500 text-white hover:bg-red-600 ml-1">
@@ -1664,8 +1662,8 @@ export default function CreatorDashboard() {
                           <p className="text-sm text-gray-500">
                             {(item as any).titleKey
                               ? t(
-                                `creatorDashboard.content.examples.${(item as any).titleKey}`,
-                              )
+                                  `creatorDashboard.content.examples.${(item as any).titleKey}`,
+                                )
                               : item.title}
                           </p>
                         </div>
@@ -1730,12 +1728,13 @@ export default function CreatorDashboard() {
                 {detectionsToShow.map((item) => (
                   <Card
                     key={item.id}
-                    className={`p-4 border ${item.status === "needs_review"
-                      ? "border-red-200 bg-red-50"
-                      : item.status === "takedown_requested"
-                        ? "border-orange-200 bg-orange-50"
-                        : "border-green-200 bg-green-50"
-                      }`}
+                    className={`p-4 border ${
+                      item.status === "needs_review"
+                        ? "border-red-200 bg-red-50"
+                        : item.status === "takedown_requested"
+                          ? "border-orange-200 bg-orange-50"
+                          : "border-green-200 bg-green-50"
+                    }`}
                   >
                     <div className="flex flex-col sm:flex-row gap-4">
                       <div className="w-full sm:w-32 h-32 shrink-0 rounded-lg overflow-hidden bg-gray-100 relative group cursor-pointer">
@@ -2246,7 +2245,7 @@ export default function CreatorDashboard() {
                 </div>
 
                 <Button className="w-full bg-black hover:bg-gray-800 text-white mb-3 rounded-full">
-                  {t("creatorDashboard.publicProfile.requestCameo")}
+                  {t("creatorDashboard.publicProfile.hireCreator")}
                 </Button>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -2278,7 +2277,6 @@ export default function CreatorDashboard() {
   };
 
   // ...
-
 
   const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
@@ -2712,11 +2710,11 @@ export default function CreatorDashboard() {
         voiceLibrary.map((rec) =>
           rec.id === recording.id
             ? {
-              ...rec,
-              voiceProfileCreated: true,
-              voice_id: cloned.voice_id,
-              server_recording_id: recordingId,
-            }
+                ...rec,
+                voiceProfileCreated: true,
+                voice_id: cloned.voice_id,
+                server_recording_id: recordingId,
+              }
             : rec,
         ),
       );
@@ -2762,12 +2760,13 @@ export default function CreatorDashboard() {
           {words.map((word, index) => (
             <span
               key={index}
-              className={`inline-block mx-1 transition-all duration-300 ${index === currentWord
-                ? "text-[#32C8D1] font-bold scale-110"
-                : index < currentWord
-                  ? "text-gray-400"
-                  : "text-gray-700"
-                }`}
+              className={`inline-block mx-1 transition-all duration-300 ${
+                index === currentWord
+                  ? "text-[#32C8D1] font-bold scale-110"
+                  : index < currentWord
+                    ? "text-gray-400"
+                    : "text-gray-700"
+              }`}
             >
               {word}
             </span>
@@ -2962,7 +2961,7 @@ export default function CreatorDashboard() {
       (img) => img !== null,
     ).length;
     const imagesTotal = IMAGE_SECTIONS.length;
-    const cameoPresent = !!heroMedia;
+
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -3152,28 +3151,6 @@ export default function CreatorDashboard() {
                 className="h-2 mt-3 bg-gray-200"
               />
             </div>
-
-            {/* Cameo Video */}
-            <div className="p-5 bg-gray-50 border border-gray-200 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-sm text-gray-600 flex items-center gap-2">
-                  <Video className="w-4 h-4 text-orange-600" />
-                  <span>{t("creatorDashboard.dashboard.cameoVideo")}</span>
-                </div>
-                {!cameoPresent && (
-                  <span className="text-xs bg-red-100 text-red-700 border border-red-300 rounded px-2 py-0.5">
-                    {t("creatorDashboard.dashboard.missing")}
-                  </span>
-                )}
-              </div>
-              <div className="text-3xl font-bold text-gray-900">
-                {cameoPresent ? 1 : 0}/1
-              </div>
-              <Progress
-                value={cameoPresent ? 100 : 0}
-                className="h-2 mt-3 bg-gray-200"
-              />
-            </div>
           </div>
         </Card>
       </div>
@@ -3349,8 +3326,6 @@ export default function CreatorDashboard() {
           </div>
         </Card>
 
-
-
         {/* REFERENCE IMAGE LIBRARY */}
         <Card className="p-6 bg-white border border-gray-200">
           <div className="mb-6">
@@ -3430,11 +3405,11 @@ export default function CreatorDashboard() {
                           >
                             {hasImage
                               ? t(
-                                "creatorDashboard.myLikenessSection.imageStatus.uploaded",
-                              )
+                                  "creatorDashboard.myLikenessSection.imageStatus.uploaded",
+                                )
                               : t(
-                                "creatorDashboard.myLikenessSection.imageStatus.missing",
-                              )}
+                                  "creatorDashboard.myLikenessSection.imageStatus.missing",
+                                )}
                           </Badge>
                         </div>
                         {hasImage && (
@@ -3623,8 +3598,8 @@ export default function CreatorDashboard() {
                 >
                   {creator?.kyc_status
                     ? t(
-                      `creatorDashboard.verificationStatus.${creator.kyc_status}`,
-                    )
+                        `creatorDashboard.verificationStatus.${creator.kyc_status}`,
+                      )
                     : t("creatorDashboard.verificationStatus.notStarted")}
                 </Badge>
                 {creator?.kyc_status !== "approved" && (
@@ -3771,16 +3746,18 @@ export default function CreatorDashboard() {
             return (
               <Card
                 key={emotion}
-                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${hasRecording
-                  ? "border-green-300 bg-green-50"
-                  : "border-gray-200 hover:border-[#32C8D1]"
-                  }`}
+                className={`p-6 border-2 cursor-pointer transition-all hover:shadow-lg ${
+                  hasRecording
+                    ? "border-green-300 bg-green-50"
+                    : "border-gray-200 hover:border-[#32C8D1]"
+                }`}
                 onClick={() => handleEmotionSelect(emotion)}
               >
                 <div className="flex items-center gap-3 mb-3">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center ${hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
-                      }`}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      hasRecording ? "bg-green-500" : "bg-[#32C8D1]"
+                    }`}
                   >
                     <Mic className="w-6 h-6 text-white" />
                   </div>
@@ -3820,8 +3797,9 @@ export default function CreatorDashboard() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-14 h-14 rounded-full flex items-center justify-center ${recording.accessible ? "bg-green-500" : "bg-gray-400"
-                        }`}
+                      className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                        recording.accessible ? "bg-green-500" : "bg-gray-400"
+                      }`}
                     >
                       <Mic className="w-7 h-7 text-white" />
                     </div>
@@ -3930,10 +3908,11 @@ export default function CreatorDashboard() {
             </p>
           </div>
           <Badge
-            className={`${activeCampaigns.length === 0
-              ? "bg-orange-100 text-orange-700 border border-orange-300"
-              : "bg-green-100 text-green-700 border border-green-300"
-              } px-4 py-2 text-lg`}
+            className={`${
+              activeCampaigns.length === 0
+                ? "bg-orange-100 text-orange-700 border border-orange-300"
+                : "bg-green-100 text-green-700 border border-green-300"
+            } px-4 py-2 text-lg`}
           >
             {t("creatorDashboard.campaigns.activeCount", {
               count: activeCampaigns.length,
@@ -4035,19 +4014,20 @@ export default function CreatorDashboard() {
                     </td>
                     <td className="py-4 px-4">
                       <Badge
-                        className={`${campaign.status === "active"
-                          ? "bg-green-100 text-green-700 border border-green-300"
-                          : campaign.status === "expiring_soon"
-                            ? "bg-orange-100 text-orange-700 border border-orange-300"
-                            : "bg-gray-100 text-gray-700 border border-gray-300"
-                          }`}
+                        className={`${
+                          campaign.status === "active"
+                            ? "bg-green-100 text-green-700 border border-green-300"
+                            : campaign.status === "expiring_soon"
+                              ? "bg-orange-100 text-orange-700 border border-orange-300"
+                              : "bg-gray-100 text-gray-700 border border-gray-300"
+                        }`}
                       >
                         {campaign.status === "active"
                           ? t("creatorDashboard.campaigns.status.active")
                           : campaign.status === "expiring_soon"
                             ? t(
-                              "creatorDashboard.campaigns.status.expiringSoon",
-                            )
+                                "creatorDashboard.campaigns.status.expiringSoon",
+                              )
                             : campaign.status}
                       </Badge>
                     </td>
@@ -4124,8 +4104,9 @@ export default function CreatorDashboard() {
                     </div>
                   </div>
                   <ChevronRight
-                    className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""
-                      }`}
+                    className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform duration-200 ${
+                      isExpanded ? "rotate-90" : ""
+                    }`}
                   />
                 </button>
 
@@ -4167,19 +4148,20 @@ export default function CreatorDashboard() {
                         {t("creatorDashboard.campaigns.statusLabel")}
                       </span>
                       <Badge
-                        className={`${campaign.status === "active"
-                          ? "bg-green-100 text-green-700 border border-green-300"
-                          : campaign.status === "expiring_soon"
-                            ? "bg-orange-100 text-orange-700 border border-orange-300"
-                            : "bg-gray-100 text-gray-700 border border-gray-300"
-                          }`}
+                        className={`${
+                          campaign.status === "active"
+                            ? "bg-green-100 text-green-700 border border-green-300"
+                            : campaign.status === "expiring_soon"
+                              ? "bg-orange-100 text-orange-700 border border-orange-300"
+                              : "bg-gray-100 text-gray-700 border border-gray-300"
+                        }`}
                       >
                         {campaign.status === "active"
                           ? t("creatorDashboard.campaigns.status.active")
                           : campaign.status === "expiring_soon"
                             ? t(
-                              "creatorDashboard.campaigns.status.expiringSoon",
-                            )
+                                "creatorDashboard.campaigns.status.expiringSoon",
+                              )
                             : campaign.status}
                       </Badge>
                     </div>
@@ -5146,10 +5128,11 @@ export default function CreatorDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setContractsTab("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "active"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractsTab === "active"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             {t("creatorDashboard.contracts.activeTab", {
               count: activeContracts.length,
@@ -5157,10 +5140,11 @@ export default function CreatorDashboard() {
           </button>
           <button
             onClick={() => setContractsTab("expired")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractsTab === "expired"
-              ? "border-[#32C8D1] text-[#32C8D1]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractsTab === "expired"
+                ? "border-[#32C8D1] text-[#32C8D1]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             {t("creatorDashboard.contracts.expiredTab", {
               count: expiredContracts.length,
@@ -5174,10 +5158,11 @@ export default function CreatorDashboard() {
             {activeContracts.map((contract) => (
               <Card
                 key={contract.id}
-                className={`p-6 bg-white border-2 ${contract.status === "expiring_soon"
-                  ? "border-orange-300"
-                  : "border-gray-200"
-                  }`}
+                className={`p-6 bg-white border-2 ${
+                  contract.status === "expiring_soon"
+                    ? "border-orange-300"
+                    : "border-gray-200"
+                }`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-4">
@@ -5388,10 +5373,11 @@ export default function CreatorDashboard() {
                   setShowPayoutSettings(true);
                 }
               }}
-              className={`h-11 px-6 font-bold shadow-md transition-all duration-500 scale-100 transform ${showShoutOut
-                ? "bg-emerald-600 hover:bg-emerald-700 text-white animate-twinkle animate-shine scale-110"
-                : "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                }`}
+              className={`h-11 px-6 font-bold shadow-md transition-all duration-500 scale-100 transform ${
+                showShoutOut
+                  ? "bg-emerald-600 hover:bg-emerald-700 text-white animate-twinkle animate-shine scale-110"
+                  : "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+              }`}
               disabled={isLoadingPayout}
             >
               {isLoadingPayout ? (
@@ -5403,7 +5389,7 @@ export default function CreatorDashboard() {
                 <>
                   <WalletIcon className="w-5 h-5 mr-2" />
                   {payoutAccountStatus?.payouts_enabled ||
-                    payoutAccountStatus?.details_submitted
+                  payoutAccountStatus?.details_submitted
                     ? t("creatorDashboard.earnings.actions.cashOut")
                     : "Setup Payouts"}
                 </>
@@ -5758,19 +5744,21 @@ export default function CreatorDashboard() {
       <div className="flex gap-2 border-b border-gray-200">
         <button
           onClick={() => setSettingsTab("profile")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "profile"
-            ? "border-[#32C8D1] text-[#32C8D1]"
-            : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "profile"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
         >
           {t("creatorDashboard.settingsView.tabs.profile")}
         </button>
         <button
           onClick={() => setSettingsTab("rules")}
-          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${settingsTab === "rules"
-            ? "border-[#32C8D1] text-[#32C8D1]"
-            : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+          className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+            settingsTab === "rules"
+              ? "border-[#32C8D1] text-[#32C8D1]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
         >
           {t("creatorDashboard.settingsView.tabs.rules")}
         </button>
@@ -6054,10 +6042,11 @@ export default function CreatorDashboard() {
                     return (
                       <Badge
                         key={type}
-                        className={`px-3 py-1.5 text-sm transition-all border-2 ${isSelected
-                          ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:bg-[#2AB8C1]"
-                          : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
-                          } cursor-default font-normal flex items-center gap-2 rounded-lg`}
+                        className={`px-3 py-1.5 text-sm transition-all border-2 ${
+                          isSelected
+                            ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:bg-[#2AB8C1]"
+                            : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
+                        } cursor-default font-normal flex items-center gap-2 rounded-lg`}
                       >
                         {isSelected && <Check className="w-4 h-4" />}
                         {translateContentType(type)}
@@ -6093,10 +6082,11 @@ export default function CreatorDashboard() {
                     return (
                       <Badge
                         key={industry}
-                        className={`px-3 py-1.5 text-sm transition-all border-2 ${isSelected
-                          ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:bg-[#2AB8C1]"
-                          : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
-                          } cursor-default font-normal flex items-center gap-2 rounded-lg`}
+                        className={`px-3 py-1.5 text-sm transition-all border-2 ${
+                          isSelected
+                            ? "bg-[#32C8D1] text-white border-[#32C8D1] hover:bg-[#2AB8C1]"
+                            : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
+                        } cursor-default font-normal flex items-center gap-2 rounded-lg`}
                       >
                         {isSelected && <Check className="w-4 h-4" />}
                         {translateIndustry(industry)}
@@ -6126,7 +6116,7 @@ export default function CreatorDashboard() {
                 </div>
                 <div className="flex flex-wrap gap-2 mb-6">
                   {creator.content_restrictions &&
-                    creator.content_restrictions.length > 0 ? (
+                  creator.content_restrictions.length > 0 ? (
                     creator.content_restrictions.map((restriction) => (
                       <Badge
                         key={restriction}
@@ -6156,7 +6146,7 @@ export default function CreatorDashboard() {
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {creator.brand_exclusivity &&
-                      creator.brand_exclusivity.length > 0 ? (
+                    creator.brand_exclusivity.length > 0 ? (
                       creator.brand_exclusivity.map((brand) => (
                         <Badge
                           key={brand}
@@ -6233,10 +6223,11 @@ export default function CreatorDashboard() {
                         })
                       }
                       disabled={!editingRules}
-                      className={`w-[480px] h-11 text-base font-normal border-gray-200 focus:ring-[#32C8D1] focus:border-[#32C8D1] rounded-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:opacity-100 [&::-webkit-outer-spin-button]:opacity-100 ${!editingRules
-                        ? "bg-gray-50 text-gray-900 cursor-not-allowed border-gray-200"
-                        : "bg-white"
-                        }`}
+                      className={`w-[480px] h-11 text-base font-normal border-gray-200 focus:ring-[#32C8D1] focus:border-[#32C8D1] rounded-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:opacity-100 [&::-webkit-outer-spin-button]:opacity-100 ${
+                        !editingRules
+                          ? "bg-gray-50 text-gray-900 cursor-not-allowed border-gray-200"
+                          : "bg-white"
+                      }`}
                     />
                   </div>
                   <div className="flex flex-col -space-y-1 text-gray-900 font-medium leading-tight">
@@ -6297,14 +6288,15 @@ export default function CreatorDashboard() {
 
       {/* Sidebar */}
       <aside
-        className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed z-40 ${isSmallScreen
-          ? sidebarOpen
-            ? "w-64 h-screen top-0"
-            : "-translate-x-full w-64 h-screen top-0"
-          : sidebarOpen
-            ? "w-64 h-[calc(100vh-5rem)] top-20"
-            : "w-20 h-[calc(100vh-5rem)] top-20"
-          }`}
+        className={`bg-white border-r border-gray-200 transition-all duration-300 flex flex-col fixed z-40 ${
+          isSmallScreen
+            ? sidebarOpen
+              ? "w-64 h-screen top-0"
+              : "-translate-x-full w-64 h-screen top-0"
+            : sidebarOpen
+              ? "w-64 h-[calc(100vh-5rem)] top-20"
+              : "w-20 h-[calc(100vh-5rem)] top-20"
+        }`}
       >
         {/* Mobile Sidebar Header */}
         {isSmallScreen && (
@@ -6530,7 +6522,7 @@ export default function CreatorDashboard() {
                   onClick={async () => {
                     try {
                       await logout?.();
-                    } catch (_) { }
+                    } catch (_) {}
                     setShowProfileMenu(false);
                     navigate("/Login");
                   }}
@@ -6556,10 +6548,11 @@ export default function CreatorDashboard() {
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${isActive
-                    ? "bg-[#32C8D1] text-white"
-                    : "text-gray-700 hover:bg-gray-100"
-                    }`}
+                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
+                    isActive
+                      ? "bg-[#32C8D1] text-white"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
                   {sidebarOpen && (
@@ -7168,8 +7161,6 @@ export default function CreatorDashboard() {
         </DialogContent>
       </Dialog>
 
-
-
       {/* Image Upload Modal */}
       <Dialog
         open={showImageUploadModal}
@@ -7437,10 +7428,11 @@ export default function CreatorDashboard() {
                             : [...prev, originalType],
                         );
                       }}
-                      className={`px-2.5 py-1 rounded-lg border-2 text-xs font-normal transition-all flex items-center gap-1.5 ${isSelected
-                        ? "bg-[#32C8D1] border-[#32C8D1] text-white"
-                        : "bg-gray-50 border-gray-100 text-gray-600 hover:border-gray-200"
-                        }`}
+                      className={`px-2.5 py-1 rounded-lg border-2 text-xs font-normal transition-all flex items-center gap-1.5 ${
+                        isSelected
+                          ? "bg-[#32C8D1] border-[#32C8D1] text-white"
+                          : "bg-gray-50 border-gray-100 text-gray-600 hover:border-gray-200"
+                      }`}
                     >
                       {isSelected && <Check className="w-3.5 h-3.5" />}
                       <span className="truncate">{type}</span>
@@ -7505,8 +7497,8 @@ export default function CreatorDashboard() {
                               defaultValue={
                                 existing
                                   ? (
-                                    existing.price_per_month_cents / 100
-                                  ).toString()
+                                      existing.price_per_month_cents / 100
+                                    ).toString()
                                   : (creator.price_per_month || 0).toString()
                               }
                               className="w-24 h-9 bg-white border-gray-200 focus:ring-[#32C8D1] focus:border-[#32C8D1] rounded-lg font-normal text-gray-900 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:opacity-100 [&::-webkit-outer-spin-button]:opacity-100"
@@ -7592,10 +7584,11 @@ export default function CreatorDashboard() {
                             : [...prev, originalIndustry],
                         );
                       }}
-                      className={`px-2.5 py-1 rounded-lg border-2 text-xs font-normal transition-all flex items-center gap-1.5 ${isSelected
-                        ? "bg-[#32C8D1] border-[#32C8D1] text-white"
-                        : "bg-gray-50 border-gray-100 text-gray-600 hover:border-gray-200"
-                        }`}
+                      className={`px-2.5 py-1 rounded-lg border-2 text-xs font-normal transition-all flex items-center gap-1.5 ${
+                        isSelected
+                          ? "bg-[#32C8D1] border-[#32C8D1] text-white"
+                          : "bg-gray-50 border-gray-100 text-gray-600 hover:border-gray-200"
+                      }`}
                     >
                       {isSelected && <Check className="w-3.5 h-3.5" />}
                       <span className="truncate">{industry}</span>
@@ -7663,7 +7656,7 @@ export default function CreatorDashboard() {
               </h4>
               <div className="flex flex-wrap gap-2">
                 {creator.content_restrictions &&
-                  creator.content_restrictions.length > 0 ? (
+                creator.content_restrictions.length > 0 ? (
                   creator.content_restrictions.map((restriction) => (
                     <Badge
                       key={restriction}
@@ -7805,7 +7798,7 @@ export default function CreatorDashboard() {
               </p>
               <div className="flex flex-wrap gap-2">
                 {!creator.brand_exclusivity ||
-                  creator.brand_exclusivity.length === 0 ? (
+                creator.brand_exclusivity.length === 0 ? (
                   <p className="text-sm text-gray-400 font-normal italic">
                     {t(
                       "creatorDashboard.settingsView.rules.noBrandExclusivity",
@@ -7925,17 +7918,19 @@ export default function CreatorDashboard() {
               {/* Stripe Connect */}
               <div
                 onClick={() => setPayoutMethod("stripe")}
-                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${payoutMethod === "stripe"
-                  ? "border-emerald-500 bg-emerald-50"
-                  : "border-gray-200 hover:border-gray-300"
-                  }`}
+                className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                  payoutMethod === "stripe"
+                    ? "border-emerald-500 bg-emerald-50"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
               >
                 <div className="flex items-start gap-3">
                   <div
-                    className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center ${payoutMethod === "stripe"
-                      ? "border-emerald-500"
-                      : "border-gray-300"
-                      }`}
+                    className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center ${
+                      payoutMethod === "stripe"
+                        ? "border-emerald-500"
+                        : "border-gray-300"
+                    }`}
                   >
                     {payoutMethod === "stripe" && (
                       <div className="w-3 h-3 rounded-full bg-emerald-500" />
@@ -8274,9 +8269,9 @@ export default function CreatorDashboard() {
                 !requestPayoutAmount ||
                 parseFloat(requestPayoutAmount) <= 0 ||
                 parseFloat(requestPayoutAmount) >
-                (balances.find((b) => b.currency === "USD")
-                  ?.available_cents || 0) /
-                100 ||
+                  (balances.find((b) => b.currency === "USD")
+                    ?.available_cents || 0) /
+                    100 ||
                 isLoadingPayout
               }
               onClick={async () => {

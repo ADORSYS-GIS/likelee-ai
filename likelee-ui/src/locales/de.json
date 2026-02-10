@@ -347,32 +347,6 @@
       "completeVerification": "Verifizierung abschließen",
       "refreshStatus": "Status aktualisieren"
     },
-    "cameoVideo": {
-      "title": "CAMEO-VIDEO",
-      "description": "Die Videodarstellung von Ihnen - Marken verwenden dies für KI-Cameos und Inhaltsgenerierung",
-      "uploaded": "Hochgeladen:",
-      "duration": "Dauer:",
-      "quality": "Qualität:",
-      "status": "Status:",
-      "verified": "✓ Verifiziert & Genehmigt",
-      "aboutCameo": {
-        "title": "Über Ihr Cameo:",
-        "text": "Marken verwenden dies, um KI-Cameos von Ihnen beim Sprechen zu generieren, Ihre Stimme/Ausdrücke zu referenzieren und fotorealistische Inhalte mit Ihnen zu erstellen."
-      },
-      "actions": {
-        "watchFull": "Vollständiges Cameo ansehen",
-        "reupload": "Neues Cameo erneut hochladen",
-        "download": "Herunterladen"
-      },
-      "comingSoon": {
-        "title": "Demnächst verfügbar",
-        "text": "Cameo-Video-Upload wird bald verfügbar sein"
-      },
-      "warning": {
-        "title": "Ihr Cameo ist erforderlich, um zu verdienen.",
-        "text": "Marken benötigen diese Videoreferenz, um Inhalte mit Ihnen zu erstellen."
-      }
-    },
     "contracts": {
       "title": "Lizenzen & Verträge",
       "subtitle": "Verwalten Sie Ihre aktiven Verträge und Rechte",
@@ -682,7 +656,7 @@
       "quickActions": "Schnellaktionen",
       "priority": "Priorität",
       "completeProfile": "Vervollständigen Sie Ihr Profil",
-      "completeProfileInfo": "Fügen Sie Referenzbilder und Ihr Cameo-Video hinzu, um von Marken entdeckt zu werden",
+      "completeProfileInfo": "Fügen Sie Referenzbilder und Ihr Referenzvideo hinzu, um von Marken entdeckt zu werden",
       "uploadVoiceTone": "Laden Sie Ihren ersten Stimmton hoch",
       "uploadVoiceToneInfo": "Stärken Sie Ihr Profil mit Sprachaufnahmen",
       "recentActivity": "Letzte Aktivität",
@@ -697,7 +671,6 @@
       "completeToGetDiscovered": "Vervollständigen, um während des Pilotprojekts entdeckt zu werden",
       "referenceImages": "Referenzbilder",
       "voiceRecordings": "Sprachaufnahmen",
-      "cameoVideo": "Cameo-Video",
       "missing": "Fehlend"
     },
     "content": {
@@ -767,7 +740,7 @@
       "openToWork": "Offen für Zusammenarbeit mit",
       "industries": "Branchen",
       "licensingRate": "Lizenzgebühr",
-      "baseRateDescription": "Grundgebühr für Cameo-Nutzung",
+      "baseRateDescription": "Grundgebühr für Likeness-Nutzung",
       "openToNegotiations": "Verhandlungsbereit",
       "perWeek": "pro Woche",
       "portfolio": "Portfolio",
@@ -776,7 +749,7 @@
       "engagement": "Engagement",
       "turnaround": "Bearbeitungszeit",
       "from": "Ab",
-      "requestCameo": "Cameo anfordern",
+      "hireCreator": "Schöpfer einstellen",
       "preview": "Vorschau",
       "profile": "Profil"
     },
@@ -921,8 +894,6 @@
       "voiceUploadFailed": "Sprachprobe konnte nicht hochgeladen werden",
       "voiceDeleted": "Sprachprobe erfolgreich gelöscht!",
       "voiceDeleteFailed": "Sprachprobe konnte nicht gelöscht werden",
-      "cameoUploaded": "Cameo erfolgreich hochgeladen!",
-      "cameoUploadFailed": "Cameo konnte nicht hochgeladen werden",
       "avatarGenerating": "Avatar wird generiert...",
       "avatarGenerated": "Avatar erfolgreich generiert!",
       "avatarGenerationFailed": "Avatar konnte nicht generiert werden",
@@ -1088,7 +1059,7 @@
   "identityVerification": "Identitätsprüfung",
   "identityVerificationMessage": "Sie nehmen ein 60-sekündiges geführtes Video auf. Wir überprüfen Ihre Identität mit Ihrem amtlichen Ausweis und bestätigen die Gesichtsbewegung (Lebendigkeitsprüfung). Dies stoppt Betrüger, bevor sie ins System gelangen.",
   "avatarCreation": "Avatar-Erstellung",
-  "avatarCreationMessage": "Ihr Cameo wird zu einem sicheren, verschlüsselten digitalen Doppelgänger. Sie erhalten ein lizenzfertiges Asset. Ihre rohen biometrischen Daten bleiben privat.",
+  "avatarCreationMessage": "Ihr Referenzvideo wird in einen sicheren, verschlüsselten digitalen Doppelgänger umgewandelt. Sie erhalten ein lizenzfertiges Asset. Ihre biometrischen Rohdaten bleiben privat.",
   "youSetTheRules": "Sie legen die Regeln fest",
   "youSetTheRulesMessage": "Definieren Sie den Umfang (soziale Anzeigen? TV-Spots? Filme?), das Gebiet (nur USA? weltweit?), die Laufzeit (1 Monat? 1 Jahr?) und den Preis. Kein Juristendeutsch. Einfache Sprache.",
   "brandsRequestYouApprove": "Marken fragen an. Sie genehmigen.",
@@ -1409,7 +1380,7 @@
       "signup": "Registrieren",
       "login": "Anmelden",
       "verificationPending": "Überprüfung ausstehend",
-      "verificationPendingDescription": "Überprüfung noch nicht abgeschlossen. KYC: {{kyc}}, Liveness: {{live}}.",
+      "verificationPendingDescription": "Überprüfung noch nicht abgeschlossen. Status: {{kyc}}.",
       "status": {
         "approved": "Genehmigt",
         "rejected": "Abgelehnt",
@@ -2077,7 +2048,7 @@
   "faces.hero.signUpButton": "Anmelden",
   "faces.hero.forYouButton": "Für Dich",
   "faces.whyChoose.title": "Warum Künstler, Athleten und Talente Likelee wählen",
-  "faces.whyChoose.subtitle1": "Der schnellste Weg, markensichere KI-Cameos anzubieten und bei jeder Nutzung Tantiemen zu verdienen.",
+  "faces.whyChoose.subtitle1": "Der schnellste Weg, markensichere KI-Kampagnen anzubieten und bei jeder Nutzung Tantiemen zu verdienen.",
   "faces.whyChoose.subtitle2": "Jeder Künstler auf Likelee lizenziert sein Abbild unter klaren, zeitlich begrenzten Rechten und behält die Möglichkeit, Berechtigungen jederzeit zu ändern, zu pausieren oder zu widerrufen.",
   "faces.whyChoose.cards.0.title": "Wiederkehrende Einnahmen, keine einmaligen Auftritte",
   "faces.whyChoose.cards.0.description": "Legen Sie Ihre Raten fest. Verdienen Sie eine monatliche Pauschale für jede aktive Kampagne, die Ihr Abbild verwendet. Ein 500-Dollar-Shooting war früher alles. Jetzt zahlt es sich Monat für Monat aus.",
@@ -2181,7 +2152,7 @@
   "faces.faq.questions.0.title": "Was ist ein \"Schöpfer\"?",
   "faces.faq.questions.0.description": "Ein Schöpfer ist jede verifizierte Person, die ihr Abbild (Gesicht, Stimme oder digitaler Zwilling) für Kampagnen oder KI-gestützte Produktionen lizenziert. Sie behalten das Eigentum an Ihrem Bild; Likelee erleichtert nur die lizenzierte Nutzung unter den von Ihnen gewählten Bedingungen.",
   "faces.faq.questions.1.title": "Wie werde ich verifiziert?",
-  "faces.faq.questions.1.description": "Nachdem Ihr Konto in das Ökosystem aufgenommen wurde, erhalten Sie eine Willkommens-E-Mail und einen Verifizierungslink. Sie reichen einen Ausweis und ein kurzes Selfie-Video ein, damit unser System Ihre Echtheit bestätigen und Ihr Cameo erstellen kann.",
+  "faces.faq.questions.1.description": "Nachdem Ihr Konto in das Ökosystem aufgenommen wurde, erhalten Sie eine Willkommens-E-Mail und einen Verifizierungslink. Sie reichen einen Ausweis und ein kurzes Selfie-Video ein, damit unser System Ihre Echtheit bestätigen und Ihr Ebenbild erstellen kann.",
   "faces.faq.questions.2.title": "Kann mein Abbild ohne Zustimmung verwendet werden?",
   "faces.faq.questions.2.description": "Niemals. Jede Nutzungsanfrage erfordert Ihre ausdrückliche Genehmigung. Keine Marke, kein Studio oder KI-Partner kann Ihr Abbild verwenden, es sei denn, Sie haben die Erlaubnis für diesen spezifischen Kontext erteilt.",
   "faces.faq.questions.3.title": "Kann ich mein Abbild von der Plattform entfernen?",
@@ -2195,11 +2166,11 @@
   "faces.faq.questions.7.title": "Besitze ich immer noch mein digitales Abbild?",
   "faces.faq.questions.7.description": "Ja. Sie behalten das volle Eigentum. Sie lizenzieren die Nutzung, nicht die Übertragung des Eigentums. Alle digitalen Repliken bleiben an Ihre verifizierte Identität gebunden.",
   "faces.faq.questions.8.title": "Kann ich die Preise für verschiedene Nutzungsarten aushandeln?",
-  "faces.faq.questions.8.description": "Absolut. Sie können separate Preise für von Menschen aufgezeichnete UGC, KI-Cameos und vollständige KI-digitale Zwillinge festlegen. Unser System wendet automatisch den von Ihnen gewählten Satz basierend auf dem Kampagnentyp und der Dauer an.",
+  "faces.faq.questions.8.description": "Absolut. Sie können separate Preise für von Menschen aufgezeichnete UGC, KI-Kampagnen und vollständige KI-digitale Zwillinge festlegen. Unser System wendet automatisch den von Ihnen gewählten Satz basierend auf dem Kampagnentyp und der Dauer an.",
   "faces.cta.title": "Bereit, ein digitaler Talentbesitzer zu werden?",
   "faces.cta.subtitle": "Schließen Sie sich Schöpfern, Models und Darstellern an, die durch monatliche Abbildlizenzen ein nachhaltiges Einkommen aufbauen.",
   "faces.cta.howToGetStarted": "Wie man anfängt:",
-  "faces.cta.steps.0": "→ Laden Sie Ihr Cameo hoch – Nehmen Sie ein kurzes Video von sich selbst auf (KI-Referenz)",
+  "faces.cta.steps.0": "→ Laden Sie Ihr Referenzvideo hoch – Nehmen Sie ein kurzes Video von sich selbst auf (KI-Referenz)",
   "faces.cta.steps.1": "→ Referenzbilder hochladen – 15 Fotos aus verschiedenen Winkeln/Stilen",
   "faces.cta.steps.2": "→ Legen Sie Ihren Mindestsatz fest – Sie bestimmen Ihren Mindestpreis (350 $+/Monat)",
   "faces.cta.steps.3": "→ Marken finden Sie – Sie fordern Lizenzen an, Sie genehmigen oder lehnen ab",

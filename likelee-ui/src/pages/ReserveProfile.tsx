@@ -251,334 +251,6 @@ function getUserFriendlyError(error: any, t: any): string {
   return t("reserveProfile.errors.unknown");
 }
 
-function ReferencePhotosStep(props: any) {
-  const {
-    kycStatus,
-    onBack,
-    onUploaded,
-    onComplete,
-    uploadFn,
-    userId,
-    apiBase,
-  } = props;
-  const { t } = useTranslation();
-  const [cameraOpen, setCameraOpen] = React.useState(false);
-  const [stream, setStream] = React.useState<any>(null);
-  const [currentPose, setCurrentPose] = React.useState<
-    "front" | "left" | "right"
-  >("front");
-  const [captures, setCaptures] = React.useState<any>({
-    front: null,
-    left: null,
-    right: null,
-  });
-  const [consent, setConsent] = React.useState(false);
-  const [uploading, setUploading] = React.useState(false);
-  const [uploadedUrls, setUploadedUrls] = React.useState<any>({
-    front: null,
-    left: null,
-    right: null,
-  });
-
-  // Load previously uploaded reference photo URLs on mount (for refresh scenarios)
-  React.useEffect(() => {
-    const loadExisting = async () => {
-      if (!userId || !supabase) return;
-      try {
-        const { data, error } = await supabase
-          .from("creators")
-          .select("cameo_front_url, cameo_left_url, cameo_right_url")
-          .eq("id", userId)
-          .maybeSingle();
-        if (error) throw error;
-        if (data) {
-          setUploadedUrls({
-            front: data.cameo_front_url || null,
-            left: data.cameo_left_url || null,
-            right: data.cameo_right_url || null,
-          });
-        }
-      } catch (_e) {
-        // ignore – previews are a best-effort enhancement
-      }
-    };
-    loadExisting();
-  }, [userId]);
-
-  const attachStreamToVideo = () => {
-    const v: any = document.getElementById("reference-video");
-    if (v && stream && v.srcObject !== stream) v.srcObject = stream;
-  };
-
-  React.useEffect(() => {
-    attachStreamToVideo();
-  }, [stream, cameraOpen]);
-
-  const openCamera = async () => {
-    try {
-      const s = await (navigator.mediaDevices as any).getUserMedia({
-        video: { facingMode: "user" },
-        audio: false,
-      });
-      setStream(s);
-      setCameraOpen(true);
-      setTimeout(attachStreamToVideo, 50);
-    } catch (_e) {
-      toast({
-        title: t("reserveProfile.toasts.cameraAccessRequiredTitle"),
-        description: t("reserveProfile.toasts.cameraAccessRequiredDesc"),
-        variant: "destructive",
-      });
-    }
-  };
-
-  const closeCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach((t: any) => t.stop());
-      setStream(null);
-    }
-    setCameraOpen(false);
-  };
-
-  const capture = async () => {
-    const video: any = document.getElementById("reference-video");
-    if (!video) return;
-    const canvas = document.createElement("canvas");
-    const w = video.videoWidth || 720;
-    const h = video.videoHeight || 720;
-    canvas.width = w;
-    canvas.height = h;
-    const ctx: any = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0, w, h);
-    const blob: any = await new Promise((res) =>
-      canvas.toBlob(res as any, "image/jpeg", 0.95),
-    );
-    const file = new File([blob], `${currentPose}.jpg`, { type: "image/jpeg" });
-    const url = URL.createObjectURL(blob);
-    setCaptures((prev: any) => ({ ...prev, [currentPose]: { file, url } }));
-    if (currentPose === "front") setCurrentPose("left");
-    else if (currentPose === "left") setCurrentPose("right");
-  };
-
-  const doUpload = async () => {
-    if (!consent) {
-      toast({
-        title: t("reserveProfile.toasts.consentRequiredTitle"),
-        description: t("reserveProfile.toasts.consentRequiredDesc"),
-        className: "bg-cyan-50 border-2 border-cyan-400",
-      });
-      return;
-    }
-    if (!captures.front || !captures.left || !captures.right) {
-      toast({
-        title: t("reserveProfile.toasts.missingPhotosTitle"),
-        description: t("reserveProfile.toasts.missingPhotosDesc"),
-        className: "bg-cyan-50 border-2 border-cyan-400",
-      });
-      return;
-    }
-    try {
-      setUploading(true);
-      const resFront = await uploadFn(captures.front.file, "front");
-      const resLeft = await uploadFn(captures.left.file, "left");
-      const resRight = await uploadFn(captures.right.file, "right");
-      const frontUrl = resFront?.publicUrl || resFront?.url || null;
-      const leftUrl = resLeft?.publicUrl || resLeft?.url || null;
-      const rightUrl = resRight?.publicUrl || resRight?.url || null;
-      onUploaded(frontUrl, leftUrl, rightUrl);
-      setUploadedUrls({ front: frontUrl, left: leftUrl, right: rightUrl });
-      onComplete && onComplete();
-      closeCamera();
-    } catch (e: any) {
-      toast({
-        title: t("reserveProfile.toasts.uploadFailed"),
-        description: getUserFriendlyError(e, t),
-        variant: "destructive",
-      });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-2xl font-bold text-gray-900 mb-2">
-          {t("reserveProfile.photos.title")}
-        </h3>
-        <p className="text-gray-700">
-          {t("reserveProfile.photos.description")}
-        </p>
-      </div>
-
-      {kycStatus !== "approved" && (
-        <div className="p-4 border-2 border-yellow-300 bg-yellow-50 text-gray-800">
-          {t("reserveProfile.photos.verificationPending")}
-          <div className="mt-4">
-            <Button
-              onClick={onBack}
-              variant="outline"
-              className="h-10 px-6 border-2 border-black rounded-none"
-            >
-              ← {t("common.back")}
-            </Button>
-          </div>
-        </div>
-      )}
-      <div className="space-y-4">
-        <div className="flex gap-4">
-          <Button
-            onClick={openCamera}
-            className="h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 text-white border-2 border-black rounded-none"
-          >
-            {t("reserveProfile.photos.openCamera")}
-          </Button>
-          <Button
-            onClick={onBack}
-            variant="outline"
-            className="h-12 border-2 border-black rounded-none"
-          >
-            {t("common.back")}
-          </Button>
-        </div>
-
-        {cameraOpen && (
-          <div className="border-2 border-black p-4 bg-gray-50">
-            <div className="mb-3">
-              <Label className="text-sm font-medium text-gray-900">
-                {t("reserveProfile.photos.livePreview")}
-              </Label>
-              <div className="mt-2 h-64 bg-black flex items-center justify-center border-2 border-gray-200">
-                <video
-                  id="reference-video"
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              <div className="text-sm text-gray-600 mt-2">
-                {t("reserveProfile.photos.currentPose")}{" "}
-                {currentPose.toUpperCase()}
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <Button
-                onClick={capture}
-                className="h-10 bg-black text-white border-2 border-black rounded-none"
-              >
-                {t("reserveProfile.photos.capture")}
-              </Button>
-              <Button
-                onClick={() =>
-                  setCurrentPose(
-                    currentPose === "front"
-                      ? "left"
-                      : currentPose === "left"
-                        ? "right"
-                        : "front",
-                  )
-                }
-                variant="outline"
-                className="h-10 border-2 border-black rounded-none"
-              >
-                {t("reserveProfile.photos.nextPose")}
-              </Button>
-              <Button
-                onClick={closeCamera}
-                variant="outline"
-                className="h-10 border-2 border-black rounded-none"
-              >
-                {t("reserveProfile.actions.close")}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {(captures.front ||
-          captures.left ||
-          captures.right ||
-          uploadedUrls.front ||
-          uploadedUrls.left ||
-          uploadedUrls.right) && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label className="text-sm font-medium text-gray-900">Front</Label>
-              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.front || uploadedUrls.front ? (
-                  <img
-                    src={
-                      captures.front ? captures.front.url : uploadedUrls.front
-                    }
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-500">Pending</span>
-                )}
-              </div>
-            </div>
-            <div>
-              <Label className="text-sm font-medium text-gray-900">Left</Label>
-              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.left || uploadedUrls.left ? (
-                  <img
-                    src={captures.left ? captures.left.url : uploadedUrls.left}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-500">Pending</span>
-                )}
-              </div>
-            </div>
-            <div>
-              <Label className="text-sm font-medium text-gray-900">Right</Label>
-              <div className="mt-2 h-40 bg-gray-100 flex items-center justify-center border-2 border-gray-200">
-                {captures.right || uploadedUrls.right ? (
-                  <img
-                    src={
-                      captures.right ? captures.right.url : uploadedUrls.right
-                    }
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-500">Pending</span>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="consent"
-            checked={consent}
-            onCheckedChange={(v: any) => setConsent(!!v)}
-          />
-          <Label htmlFor="consent">
-            I consent to store these reference photos as my digital identity.
-          </Label>
-        </div>
-
-        <div className="flex gap-4">
-          <Button
-            onClick={doUpload}
-            disabled={
-              uploading ||
-              !consent ||
-              !captures.front ||
-              !captures.left ||
-              !captures.right
-            }
-            className="flex-1 h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 text-white border-2 border-black rounded-none"
-          >
-            {uploading ? t("common.checking") : "Save & Finish"}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function ReserveProfile() {
   const urlParams = new URLSearchParams(window.location.search);
   const creatorType = urlParams.get("type") || "influencer"; // influencer, model_actor, athlete
@@ -671,129 +343,6 @@ export default function ReserveProfile() {
     localStorage.setItem("reserve_formData", JSON.stringify(safeData));
   }, [formData]);
 
-  // Cameo reference image URLs
-  const [cameoFrontUrl, setCameoFrontUrl] = useState<string | null>(null);
-  const [cameoLeftUrl, setCameoLeftUrl] = useState<string | null>(null);
-  const [cameoRightUrl, setCameoRightUrl] = useState<string | null>(null);
-  const [uploadingCameo, setUploadingCameo] = useState(false);
-
-  const uploadCameoImage = async (
-    file: File,
-    side: "front" | "left" | "right",
-  ) => {
-    if (!supabase) {
-      toast({
-        title: "Configuration Error",
-        description: "Image upload not configured. Please contact support.",
-        variant: "destructive",
-      });
-      return;
-    }
-    try {
-      setUploadingCameo(true);
-      const owner = (user?.id || formData.email || "anonymous").replace(
-        /[^a-zA-Z0-9_-]/g,
-        "_",
-      );
-      // Pre-scan the raw bytes before storing
-      {
-        const apiBase =
-          (import.meta as any).env.VITE_API_BASE_URL ||
-          (import.meta as any).env.VITE_API_BASE ||
-          "http://localhost:8787";
-        const buf = await file.arrayBuffer();
-        const resScan = await fetch(
-          `${apiBase}/api/moderation/image-bytes?user_id=${encodeURIComponent(user?.id || owner)}&image_role=${encodeURIComponent(side)}`,
-          {
-            method: "POST",
-            headers: { "content-type": file.type || "image/jpeg" },
-            body: new Uint8Array(buf),
-          },
-        );
-        if (resScan.ok) {
-          const out = await resScan.json();
-          if (out?.flagged) {
-            toast({
-              title: "Photo Flagged",
-              description: `Your ${side} photo was flagged and cannot be used. Please upload a different photo.`,
-              variant: "destructive",
-            });
-            throw new Error("Image flagged by moderation");
-          }
-        } else {
-          throw new Error(await resScan.text());
-        }
-      }
-      const path = `cameo/${owner}/${Date.now()}_${side}_${file.name}`;
-      const { error } = await supabase.storage
-        .from("likelee-public")
-        .upload(path, file, { upsert: false });
-      if (error) throw error;
-      const { data } = supabase.storage
-        .from("likelee-public")
-        .getPublicUrl(path);
-      const url = data.publicUrl;
-      // Call moderation endpoint
-      try {
-        const apiBase =
-          (import.meta as any).env.VITE_API_BASE_URL ||
-          (import.meta as any).env.VITE_API_BASE ||
-          "http://localhost:8787";
-        const res = await fetch(`${apiBase}/api/moderation/image`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            image_url: url,
-            user_id: user?.id || owner,
-            image_role: side,
-          }),
-        });
-        if (res.ok) {
-          const out = await res.json();
-          if (out?.flagged) {
-            toast({
-              title: "Photo Flagged",
-              description: `Your ${side} photo was flagged and cannot be used. Please upload a different photo.`,
-              variant: "destructive",
-            });
-            throw new Error("Image flagged by moderation");
-          }
-        } else {
-          throw new Error(await res.text());
-        }
-      } catch (e) {
-        throw e;
-      }
-      if (side === "front") setCameoFrontUrl(url);
-      if (side === "left") setCameoLeftUrl(url);
-      if (side === "right") setCameoRightUrl(url);
-      // Persist to profile for cross-page prefill (do not create a new row yet)
-      try {
-        if (user?.id) {
-          const column =
-            side === "front"
-              ? "cameo_front_url"
-              : side === "left"
-                ? "cameo_left_url"
-                : "cameo_right_url";
-          await supabase
-            .from("creators")
-            .update({ [column]: url })
-            .eq("id", user.id);
-        }
-      } catch (_e) {}
-      return { publicUrl: url };
-    } catch (e: any) {
-      toast({
-        title: t("reserveProfile.toasts.uploadFailed"),
-        description: getUserFriendlyError(e, t),
-        variant: "destructive",
-      });
-    } finally {
-      setUploadingCameo(false);
-    }
-  };
-
   const startVerification = async () => {
     const targetId = user?.id || profileId;
     if (!targetId) {
@@ -857,12 +406,7 @@ export default function ReserveProfile() {
       if (row) {
         if (row.kyc_status) setKycStatus(row.kyc_status);
         if (row.kyc_provider) setKycProvider(row.kyc_provider);
-        if (
-          row.kyc_status === "approved" &&
-          !cameoFrontUrl &&
-          !cameoLeftUrl &&
-          !cameoRightUrl
-        ) {
+        if (row.kyc_status === "approved") {
           toast({
             title: t("reserveProfile.toasts.identityVerified"),
             description: t("reserveProfile.toasts.identityVerifiedDesc"),
@@ -876,6 +420,7 @@ export default function ReserveProfile() {
         description: getUserFriendlyError(e, t),
         variant: "destructive",
       });
+      return null;
     } finally {
       setKycLoading(false);
     }
@@ -902,8 +447,6 @@ export default function ReserveProfile() {
           {
             kyc:
               kyc?.replace("_", " ") || t("reserveProfile.status.notStarted"),
-            live:
-              live?.replace("_", " ") || t("reserveProfile.status.notStarted"),
           },
         ),
         className: "bg-cyan-50 border-2 border-cyan-400",
@@ -1078,10 +621,6 @@ export default function ReserveProfile() {
           visibility: data.visibility || "private",
           status: "waitlist",
         };
-
-        if (cameoFrontUrl) (updateData as any).cameo_front_url = cameoFrontUrl;
-        if (cameoLeftUrl) (updateData as any).cameo_left_url = cameoLeftUrl;
-        if (cameoRightUrl) (updateData as any).cameo_right_url = cameoRightUrl;
 
         console.log("Upserting profile with data:", updateData);
         const { data: updated, error } = await supabase
@@ -1369,72 +908,6 @@ export default function ReserveProfile() {
       return;
     }
     try {
-      // Backfill missing cameo URLs from Storage if needed
-      let front = cameoFrontUrl;
-      let left = cameoLeftUrl;
-      let right = cameoRightUrl;
-      if ((!front || !left || !right) && supabase) {
-        const prefix = `faces/${user.id}/reference`;
-        const { data: files } = await supabase.storage
-          .from("likelee-public")
-          .list(prefix, { limit: 100 });
-        if (files && files.length) {
-          files.forEach((f: any) => {
-            const name = f.name.toLowerCase();
-            const pub = supabase.storage
-              .from("likelee-public")
-              .getPublicUrl(`${prefix}/${f.name}`).data.publicUrl;
-            if (!front && name.includes("front")) front = pub;
-            if (!left && name.includes("left")) left = pub;
-            if (!right && name.includes("right")) right = pub;
-          });
-        }
-      }
-
-      const monthlyUsd = Number(formData.base_monthly_price_usd);
-      const payload: any = {
-        id: user.id,
-        email: formData.email,
-        full_name:
-          creatorType === "model_actor"
-            ? formData.stage_name || formData.full_name
-            : formData.full_name,
-        creator_type: creatorType,
-        content_types: formData.content_types || [],
-        content_other: formData.content_other || null,
-        industries: formData.industries || [],
-        primary_platform: formData.primary_platform || null,
-        platform_handle: formData.platform_handle || null,
-        work_types: formData.work_types || [],
-        representation_status: formData.representation_status || "",
-        headshot_url: formData.headshot_url || "",
-        sport: formData.sport || null,
-        athlete_type: formData.athlete_type || null,
-        school_name: formData.school_name || null,
-        age: formData.age || null,
-        languages: formData.languages || null,
-        instagram_handle: formData.instagram_handle || null,
-        twitter_handle: formData.twitter_handle || null,
-        brand_categories: formData.brand_categories || [],
-        bio: formData.bio || null,
-        city: formData.city || null,
-        state: formData.state || null,
-        birthdate: formData.birthdate || null,
-        ethnicity: formData.ethnicity || [],
-        gender: formData.gender || null,
-        vibes: formData.vibes || [],
-        visibility: formData.visibility || "private",
-        status: "waitlist",
-        // Pricing in cents (USD-only)
-        base_monthly_price_cents: isFinite(monthlyUsd)
-          ? Math.round(monthlyUsd * 100)
-          : 15000,
-        currency_code: "USD",
-      };
-      if (front) (payload as any).cameo_front_url = front;
-      if (left) (payload as any).cameo_left_url = left;
-      if (right) (payload as any).cameo_right_url = right;
-
       const { error } = await supabase
         .from("creators")
         .upsert(payload, { onConflict: "id" });
@@ -2948,7 +2421,7 @@ export default function ReserveProfile() {
                     <Button
                       variant="link"
                       className="p-0 h-auto font-semibold text-black hover:underline"
-                      onClick={() => setIsLogin(true)}
+                      onClick={() => setAuthMode("login")}
                     >
                       {t("reserveProfile.actions.login")}
                     </Button>
