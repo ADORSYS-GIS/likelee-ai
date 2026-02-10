@@ -41,6 +41,8 @@ const TIER_CONFIG: Record<string, any> = {
     brandBorder: "border-amber-500",
     statsBg: "bg-amber-50/30",
     statsBorder: "border-amber-100",
+    modalBg: "bg-amber-50",
+    modalInputBg: "bg-amber-100/30",
     recommendation:
       "Prioritize for high-value campaigns. Consider exclusive partnerships.",
     thresholds: "≥ $5,000/mo • ≥ 8 bookings",
@@ -56,6 +58,8 @@ const TIER_CONFIG: Record<string, any> = {
     brandBorder: "border-blue-500",
     statsBg: "bg-blue-50/30",
     statsBorder: "border-blue-100",
+    modalBg: "bg-blue-50",
+    modalInputBg: "bg-blue-100/30",
     recommendation:
       "Stable performers. Focus on increasing campaign frequency and average deal value.",
     thresholds: "≥ $2,500/mo • ≥ 5 bookings",
@@ -71,6 +75,8 @@ const TIER_CONFIG: Record<string, any> = {
     brandBorder: "border-green-500",
     statsBg: "bg-green-50/30",
     statsBorder: "border-green-100",
+    modalBg: "bg-emerald-50",
+    modalInputBg: "bg-emerald-100/30",
     recommendation:
       "Invest in portfolio development. Increase brand exposure and campaign opportunities.",
     thresholds: "≥ $500/mo • ≥ 1 bookings",
@@ -86,6 +92,8 @@ const TIER_CONFIG: Record<string, any> = {
     brandBorder: "border-gray-400",
     statsBg: "bg-gray-50/30",
     statsBorder: "border-gray-100",
+    modalBg: "bg-gray-50",
+    modalInputBg: "bg-gray-100/30",
     recommendation:
       "Requires immediate action. Consider portfolio refresh, marketing push, or roster review.",
     thresholds: "Includes all talent that don't meet Tier 3 requirements",
@@ -353,7 +361,12 @@ export const PerformanceTiers: React.FC = () => {
               className="bg-white rounded-none border border-gray-200 shadow-sm overflow-hidden p-8"
             >
               <div className="flex items-center gap-4 mb-8">
-                <div className={cn("p-4 rounded-none border-2 border-black", cfg.iconBg)}>
+                <div
+                  className={cn(
+                    "p-4 rounded-none border-2 border-black",
+                    cfg.iconBg,
+                  )}
+                >
                   <cfg.icon className="w-8 h-8 text-white" />
                 </div>
                 <div>
@@ -373,7 +386,12 @@ export const PerformanceTiers: React.FC = () => {
                   )}
                 >
                   <div className="flex items-center gap-2 mb-4">
-                    <div className={cn("p-2 rounded-xl shadow-sm border bg-transparent", cfg.brandBorder)}>
+                    <div
+                      className={cn(
+                        "p-2 rounded-xl shadow-sm border bg-transparent",
+                        cfg.brandBorder,
+                      )}
+                    >
                       <DollarSign className={cn("w-4 h-4", cfg.brandColor)} />
                     </div>
                     <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
@@ -391,7 +409,12 @@ export const PerformanceTiers: React.FC = () => {
                   )}
                 >
                   <div className="flex items-center gap-2 mb-4">
-                    <div className={cn("p-2 rounded-xl shadow-sm border bg-transparent", cfg.brandBorder)}>
+                    <div
+                      className={cn(
+                        "p-2 rounded-xl shadow-sm border bg-transparent",
+                        cfg.brandBorder,
+                      )}
+                    >
                       <Calendar className={cn("w-4 h-4", cfg.brandColor)} />
                     </div>
                     <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
@@ -412,7 +435,12 @@ export const PerformanceTiers: React.FC = () => {
                   )}
                 >
                   <div className="flex items-center gap-2 mb-4">
-                    <div className={cn("p-2 rounded-xl shadow-sm border bg-white", cfg.brandBorder)}>
+                    <div
+                      className={cn(
+                        "p-2 rounded-xl shadow-sm border bg-white",
+                        cfg.brandBorder,
+                      )}
+                    >
                       <Users className={cn("w-4 h-4", cfg.brandColor)} />
                     </div>
                     <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
@@ -454,7 +482,10 @@ export const PerformanceTiers: React.FC = () => {
                         className="flex items-center gap-4 p-5 border border-gray-100 rounded-none bg-white shadow-sm hover:shadow-md transition-all group"
                       >
                         <Avatar className="w-14 h-14 rounded-none object-cover bg-gray-50 shadow-sm border border-gray-200">
-                          <AvatarImage src={talent.photo_url || ""} className="rounded-none" />
+                          <AvatarImage
+                            src={talent.photo_url || ""}
+                            className="rounded-none"
+                          />
                           <AvatarFallback className="bg-indigo-50 text-indigo-700 text-xs rounded-none">
                             {talent.name.substring(0, 2).toUpperCase()}
                           </AvatarFallback>
@@ -537,13 +568,13 @@ export const PerformanceTiers: React.FC = () => {
               <div
                 key={tier}
                 className={cn(
-                  "p-8 rounded-2xl border border-gray-100 shadow-sm transition-all",
-                  TIER_CONFIG[tier].iconBg,
+                  "p-8 rounded-2xl border border-gray-100 transition-all",
+                  TIER_CONFIG[tier].modalBg,
                 )}
               >
                 <div className="flex items-center gap-2 mb-6">
                   {React.createElement(TIER_CONFIG[tier].icon, {
-                    className: cn("w-5 h-5", TIER_CONFIG[tier].textColor),
+                    className: cn("w-5 h-5", TIER_CONFIG[tier].brandColor),
                   })}
                   <span className="font-bold text-gray-900">
                     {TIER_CONFIG[tier].label}
@@ -566,7 +597,10 @@ export const PerformanceTiers: React.FC = () => {
                           },
                         })
                       }
-                      className="h-12 bg-white border-gray-200 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-indigo-500 transition-all"
+                      className={cn(
+                        "h-12 border-gray-200 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-indigo-500 transition-all",
+                        TIER_CONFIG[tier].modalInputBg,
+                      )}
                     />
                   </div>
                   <div className="space-y-3">
@@ -585,14 +619,18 @@ export const PerformanceTiers: React.FC = () => {
                           },
                         })
                       }
-                      className="h-12 bg-white border-gray-200 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-indigo-500 transition-all"
+                      className={cn(
+                        "h-12 border-gray-200 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-indigo-500 transition-all",
+                        TIER_CONFIG[tier].modalInputBg,
+                      )}
                     />
                   </div>
                 </div>
               </div>
             ))}
             <p className="text-[13px] text-gray-500 font-medium pl-1 py-2">
-              <span className="font-bold">Note:</span> Tier 4 includes all talent that don't meet Tier 3 requirements.
+              <span className="font-bold">Note:</span> Tier 4 includes all
+              talent that don't meet Tier 3 requirements.
             </p>
           </div>
 
@@ -600,14 +638,14 @@ export const PerformanceTiers: React.FC = () => {
             <Button
               variant="outline"
               onClick={handleResetToDefaults}
-              className="h-11 px-8 rounded-xl border-gray-200 font-bold text-gray-700 hover:bg-gray-50 order-2 sm:order-1"
+              className="h-11 px-8 rounded-xl border-gray-200 font-bold text-gray-700 bg-white hover:bg-gray-50 order-2 sm:order-1"
             >
               Reset to Defaults
             </Button>
             <Button
               variant="outline"
               onClick={() => setIsConfigModalOpen(false)}
-              className="h-11 px-8 rounded-xl border-gray-200 font-bold text-gray-700 hover:bg-gray-50 order-3 sm:order-2"
+              className="h-11 px-8 rounded-xl border-gray-200 font-bold text-gray-700 bg-white hover:bg-gray-50 order-3 sm:order-2"
             >
               Cancel
             </Button>
