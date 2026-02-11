@@ -199,17 +199,8 @@ export default function OrganizationSignup() {
   const { user, login, resendEmailConfirmation } = useAuth();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
-  const [orgType, setOrgType] = useState(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    let type = urlParams.get("type") || "";
-    if (type === "brand") type = "brand_company";
-    if (type === "agency") type = "marketing_agency";
-    return type;
-  });
-  const [isPreSelected, setIsPreSelected] = useState(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    return !!urlParams.get("type");
-  });
+  const [orgType, setOrgType] = useState("");
+  const [isPreSelected, setIsPreSelected] = useState(false);
   const [submitted, setSubmitted] = useState(false); // New state for submission status
   const [profileId, setProfileId] = useState<string | null>(null); // Add profileId state
   const [kycSessionUrl, setKycSessionUrl] = useState<string | null>(null); // State for KYC session URL
@@ -424,35 +415,30 @@ export default function OrganizationSignup() {
         primary: "from-[#F7B750] to-[#FAD54C]",
         button: "bg-[#F7B750] hover:bg-[#E6A640]",
         badge: "bg-amber-100 text-amber-700",
-        linkText: "text-[#F7B750]",
       },
       marketing_agency: {
         gradient: "from-cyan-50 via-teal-50 to-blue-50",
         primary: "from-[#32C8D1] to-teal-500",
         button: "bg-[#32C8D1] hover:bg-[#2AB8C1]",
         badge: "bg-cyan-100 text-cyan-700",
-        linkText: "text-[#32C8D1]",
       },
       talent_agency: {
         gradient: "from-indigo-50 via-violet-50 to-purple-50",
         primary: "from-indigo-600 to-purple-600",
         button: "bg-indigo-600 hover:bg-indigo-700",
         badge: "bg-indigo-100 text-indigo-700",
-        linkText: "text-indigo-600",
       },
       production_studio: {
         gradient: "from-slate-50 via-gray-50 to-zinc-50",
         primary: "from-slate-700 to-gray-800",
         button: "bg-slate-700 hover:bg-slate-800",
         badge: "bg-slate-100 text-slate-700",
-        linkText: "text-slate-700",
       },
       sports_agency: {
         gradient: "from-blue-50 via-indigo-50 to-slate-50",
         primary: "from-[#0D1B3A] to-[#1E3A8A]",
         button: "bg-[#0D1B3A] hover:bg-[#1E3A8A]",
         badge: "bg-blue-100 text-blue-700",
-        linkText: "text-[#0D1B3A]",
       },
     };
     return schemes[orgType] || schemes.brand_company;
@@ -697,7 +683,6 @@ export default function OrganizationSignup() {
             Please verify your email to continue setting up your organization
             profile.
           </p>
-          <div className="h-2" />
           <Button
             onClick={async () => {
               if (!resendEmailConfirmation) return;
@@ -724,13 +709,9 @@ export default function OrganizationSignup() {
                 setResendLoading(false);
               }
             }}
-            variant="ghost"
+            variant="link"
             disabled={!resendEmailConfirmation || resendLoading || resendCooldownSec > 0}
-            className={`h-auto px-0 py-0 text-sm underline underline-offset-4 ${
-              !resendEmailConfirmation || resendLoading || resendCooldownSec > 0
-                ? "text-gray-400"
-                : `${colors.linkText} hover:opacity-80`
-            }`}
+            className="p-0 h-auto underline underline-offset-4 text-gray-600 hover:text-gray-900"
           >
             {resendLoading
               ? "Resending…"
