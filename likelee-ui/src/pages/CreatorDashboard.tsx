@@ -758,7 +758,13 @@ export default function CreatorDashboard() {
       return new URL("/", window.location.origin).toString();
     }
   })();
-  const api = (path: string) => new URL(path, API_BASE_ABS).toString();
+  const api = (path: string) => {
+    const normalizedBase = API_BASE_ABS.endsWith("/")
+      ? API_BASE_ABS
+      : `${API_BASE_ABS}/`;
+    const normalizedPath = path.startsWith("/") ? path.slice(1) : path;
+    return new URL(normalizedPath, normalizedBase).toString();
+  };
   const [activeSection, setActiveSection] = useState("dashboard");
   const [settingsTab, setSettingsTab] = useState("profile"); // 'profile' or 'rules'
   const [sidebarOpen, setSidebarOpen] = useState(true);
