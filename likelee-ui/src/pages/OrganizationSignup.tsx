@@ -242,7 +242,17 @@ export default function OrganizationSignup() {
 
   const [emailVerificationPending, setEmailVerificationPending] =
     useState(false); // New state for email verification
+  const [resendCooldownSec, setResendCooldownSec] = useState(0);
+  const [resendLoading, setResendLoading] = useState(false);
   const { profile } = useAuth();
+
+  useEffect(() => {
+    if (resendCooldownSec <= 0) return;
+    const t = window.setInterval(() => {
+      setResendCooldownSec((s) => (s > 0 ? s - 1 : 0));
+    }, 1000);
+    return () => window.clearInterval(t);
+  }, [resendCooldownSec]);
 
   // Debug logging
   useEffect(() => {
@@ -673,12 +683,43 @@ export default function OrganizationSignup() {
             Please verify your email to continue setting up your organization
             profile.
           </p>
-          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 text-left mb-6">
-            <p className="text-sm text-blue-700">
-              <strong>Note:</strong> After verifying your email, you will be
-              automatically redirected to complete your profile setup.
-            </p>
-          </div>
+          <div className="h-2" />
+          <Button
+            onClick={async () => {
+              if (!resendEmailConfirmation) return;
+              if (resendLoading) return;
+              if (resendCooldownSec > 0) return;
+              try {
+                setResendLoading(true);
+                await resendEmailConfirmation(
+                  formData.email,
+                  `${window.location.origin}/organization-signup`,
+                );
+                toast({
+                  title: "Verification email resent",
+                  description: "Please check your inbox (and spam folder).",
+                });
+                setResendCooldownSec(60);
+              } catch (err: any) {
+                toast({
+                  title: t("common.error"),
+                  description: getTranslatedErrorMessage(err),
+                  variant: "destructive",
+                });
+              } finally {
+                setResendLoading(false);
+              }
+            }}
+            variant="ghost"
+            disabled={!resendEmailConfirmation || resendLoading || resendCooldownSec > 0}
+            className="h-auto px-0 py-0 text-sm text-gray-600 underline underline-offset-4 hover:text-gray-900"
+          >
+            {resendLoading
+              ? "Resending…"
+              : resendCooldownSec > 0
+                ? `Resend available in ${resendCooldownSec}s`
+                : "Resend verification email"}
+          </Button>
         </Card>
       </div>
     );
