@@ -157,6 +157,12 @@ export const getTalentMe = () => base44Client.get(`/api/talent/me`);
 export const listTalentLicensingRequests = () =>
   base44Client.get(`/api/talent/licensing-requests`);
 
+export const approveTalentLicensingRequest = (id: string) =>
+  base44Client.post(`/api/talent/licensing-requests/${id}/approve`, {});
+
+export const declineTalentLicensingRequest = (id: string) =>
+  base44Client.post(`/api/talent/licensing-requests/${id}/decline`, {});
+
 export const listTalentLicenses = () => base44Client.get(`/api/talent/licenses`);
 
 export const getTalentLicensingRevenue = (params?: { month?: string }) =>
@@ -175,6 +181,24 @@ export const requestTalentPayout = (data: {
   currency?: string;
   payout_method?: "standard" | "instant";
 }) => base44Client.post(`/api/talent/payouts/request`, data);
+
+export const getTalentPayoutAccountStatus = () =>
+  base44Client.get(`/api/talent/payouts/account-status`);
+
+export const getTalentPayoutOnboardingLink = () =>
+  base44Client.get(`/api/talent/payouts/onboarding-link`);
+
+export const getTalentPortalSettings = () => base44Client.get(`/api/talent/settings`);
+
+export const updateTalentPortalSettings = (data: {
+  allow_training?: boolean;
+  public_profile_visible?: boolean;
+}) => base44Client.post(`/api/talent/settings`, data);
+
+export const getLatestTalentTaxDocument = (params?: {
+  doc_type?: string;
+  tax_year?: number;
+}) => base44Client.get(`/api/talent/tax-documents/latest`, { params: params || {} });
 
 export const getTalentAnalytics = (params?: { month?: string }) =>
   base44Client.get(`/api/talent/analytics`, { params: params || {} });
@@ -202,13 +226,50 @@ export const createTalentBookOut = (data: {
   end_date: string;
   reason?: string;
   notes?: string;
+  notify_agency?: boolean;
 }) => base44Client.post(`/api/talent/book-outs`, data);
 
 export const deleteTalentBookOut = (id: string) =>
   base44Client.delete(`/api/talent/book-outs/${id}`);
 
+export const getTalentBookingPreferences = () =>
+  base44Client.get(`/api/talent/booking-preferences`);
+
+export const updateTalentBookingPreferences = (data: {
+  willing_to_travel?: boolean;
+  min_day_rate_cents?: number | null;
+  currency?: string;
+}) => base44Client.post(`/api/talent/booking-preferences`, data);
+
+export const getTalentIrlEarningsSummary = () =>
+  base44Client.get(`/api/talent/irl/earnings/summary`);
+
+export const listTalentIrlPayments = (params?: { limit?: number }) =>
+  base44Client.get(`/api/talent/irl/earnings/payments`, { params: params || {} });
+
+export const createTalentIrlPayoutRequest = (data: {
+  amount_cents: number;
+  currency?: string;
+}) => base44Client.post(`/api/talent/irl/earnings/payout-request`, data);
+
+export const uploadTalentPortfolioItem = async (data: {
+  file: File;
+  title?: string;
+}) => {
+  const fd = new FormData();
+  fd.append("file", data.file);
+  if (data.title) fd.append("title", data.title);
+  return base44Client.post(`/api/talent/portfolio-items/upload`, fd);
+};
+
 export const updateTalentProfile = (data: any) =>
   base44Client.post(`/api/talent/profile`, data);
+
+export const listTalentNotifications = (params?: { limit?: number }) =>
+  base44Client.get(`/api/talent/notifications`, { params: params || {} });
+
+export const markTalentNotificationRead = (id: string) =>
+  base44Client.post(`/api/talent/notifications/${id}/read`, {});
 
 // Payouts (Stripe Connect)
 export const getPayoutsAccountStatus = async (profileId: string) => {

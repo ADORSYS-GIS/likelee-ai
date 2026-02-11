@@ -161,6 +161,7 @@ export const TalentAvailabilityTab = ({
         open={addBookOutOpen}
         onOpenChange={setAddBookOutOpen}
         onAdd={onAddBookOut}
+        fixedTalent={fixedTalent}
       />
     </div>
   );

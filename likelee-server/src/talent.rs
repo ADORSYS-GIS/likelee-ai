@@ -1,5 +1,6 @@
 use crate::{auth::AuthUser, auth::RoleGuard, config::AppState};
 use axum::{
+    extract::Multipart,
     extract::{Path, Query, State},
     http::StatusCode,
     Json,
@@ -9,6 +10,608 @@ use serde::Serialize;
 use serde_json::json;
 use std::collections::HashMap;
 use tracing::warn;
+
+#[derive(Debug, serde::Deserialize)]
+pub struct ListTalentNotificationsQuery {
+    pub limit: Option<u32>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct UpdatePortalSettingsPayload {
+    pub allow_training: Option<bool>,
+    pub public_profile_visible: Option<bool>,
+}
+
+pub async fn get_portal_settings(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
+    let resolved = resolve_talent(&state, &user).await?;
+
+    let resp = state
+        .pg
+        .from("talent_portal_settings")
+        .select("talent_id,allow_training,public_profile_visible,updated_at")
+        .eq("talent_id", &resolved.talent_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !resp.status().is_success() {
+        let err = resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+    let txt = resp.text().await.unwrap_or("[]".into());
+    let rows: serde_json::Value = serde_json::from_str(&txt).unwrap_or(json!([]));
+    if let Some(first) = rows.as_array().and_then(|a| a.first()).cloned() {
+        return Ok(Json(first));
+    }
+
+    // Default row if none exists yet
+    Ok(Json(json!({
+        "talent_id": resolved.talent_id,
+        "allow_training": false,
+        "public_profile_visible": true,
+    })))
+}
+
+pub async fn update_portal_settings(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<UpdatePortalSettingsPayload>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
+    let resolved = resolve_talent(&state, &user).await?;
+
+    let row = json!({
+        "talent_id": resolved.talent_id,
+        "allow_training": payload.allow_training,
+        "public_profile_visible": payload.public_profile_visible,
+        "updated_at": chrono::Utc::now().to_rfc3339(),
+    });
+
+    let resp = state
+        .pg
+        .from("talent_portal_settings")
+        .upsert(row.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !resp.status().is_success() {
+        let err = resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+
+    // Mirror public visibility to creators table (marketplace search filter)
+    if let Some(vis) = payload.public_profile_visible {
+        // agency_users has creator_id; best-effort update
+        let au_resp = state
+            .pg
+            .from("agency_users")
+            .select("creator_id,user_id")
+            .eq("id", &resolved.talent_id)
+            .single()
+            .execute()
+            .await
+            .ok();
+        if let Some(au_resp) = au_resp {
+            if au_resp.status().is_success() {
+                if let Ok(txt) = au_resp.text().await {
+                    if let Ok(v) = serde_json::from_str::<serde_json::Value>(&txt) {
+                        let cid = v
+                            .get("creator_id")
+                            .and_then(|x| x.as_str())
+                            .or_else(|| v.get("user_id").and_then(|x| x.as_str()))
+                            .unwrap_or("")
+                            .to_string();
+                        if !cid.is_empty() {
+                            let _ = state
+                                .pg
+                                .from("creators")
+                                .eq("id", &cid)
+                                .update(json!({"public_profile_visible": vis}).to_string())
+                                .execute()
+                                .await;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(Json(json!({"status":"ok"})))
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct BookingPreferencesPayload {
+    pub willing_to_travel: Option<bool>,
+    pub min_day_rate_cents: Option<i32>,
+    pub currency: Option<String>,
+}
+
+pub async fn get_booking_preferences(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
+    let resolved = resolve_talent(&state, &user).await?;
+
+    let resp = state
+        .pg
+        .from("talent_booking_preferences")
+        .select("talent_id,agency_id,willing_to_travel,min_day_rate_cents,currency,created_at,updated_at")
+        .eq("talent_id", &resolved.talent_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !resp.status().is_success() {
+        let err = resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+    let txt = resp.text().await.unwrap_or_else(|_| "[]".into());
+    let rows: serde_json::Value = serde_json::from_str(&txt).unwrap_or(json!([]));
+    if let Some(first) = rows.as_array().and_then(|a| a.first()).cloned() {
+        return Ok(Json(first));
+    }
+
+    Ok(Json(json!({
+        "talent_id": resolved.talent_id,
+        "agency_id": resolved.agency_id,
+        "willing_to_travel": false,
+        "min_day_rate_cents": null,
+        "currency": "USD"
+    })))
+}
+
+pub async fn update_booking_preferences(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<BookingPreferencesPayload>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
+    let resolved = resolve_talent(&state, &user).await?;
+
+    let row = json!({
+        "talent_id": resolved.talent_id,
+        "agency_id": resolved.agency_id,
+        "willing_to_travel": payload.willing_to_travel,
+        "min_day_rate_cents": payload.min_day_rate_cents,
+        "currency": payload.currency,
+        "updated_at": chrono::Utc::now().to_rfc3339(),
+    });
+
+    let resp = state
+        .pg
+        .from("talent_booking_preferences")
+        .upsert(row.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !resp.status().is_success() {
+        let err = resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+
+    Ok(Json(json!({"status":"ok"})))
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct ListIrlPaymentsQuery {
+    pub limit: Option<u32>,
+}
+
+pub async fn list_irl_payments(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Query(q): Query<ListIrlPaymentsQuery>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
+    let resolved = resolve_talent(&state, &user).await?;
+    let limit = q.limit.unwrap_or(50).min(200) as usize;
+
+    let resp = state
+        .pg
+        .from("talent_irl_payments")
+        .select("id,agency_id,talent_id,booking_id,amount_cents,currency,paid_at,status,source,notes,created_at")
+        .eq("talent_id", &resolved.talent_id)
+        .order("paid_at.desc")
+        .order("created_at.desc")
+        .limit(limit)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !resp.status().is_success() {
+        let err = resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+    let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+    let v: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
+    Ok(Json(v))
+}
+
+pub async fn get_irl_earnings_summary(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
+    let resolved = resolve_talent(&state, &user).await?;
+
+    let summary = compute_irl_earnings_summary(&state, &resolved).await?;
+    Ok(Json(summary))
+}
+
+async fn compute_irl_earnings_summary(
+    state: &AppState,
+    resolved: &ResolvedTalent,
+) -> Result<serde_json::Value, (StatusCode, String)> {
+
+    // Pull recent paid ledger rows and compute balances server-side.
+    // Note: PostgREST doesn't support server-side aggregates here in our wrapper; keep it simple.
+    let resp = state
+        .pg
+        .from("talent_irl_payments")
+        .select("amount_cents,currency,status")
+        .eq("talent_id", &resolved.talent_id)
+        .limit(2000)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !resp.status().is_success() {
+        let err = resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+    let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+    let rows: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
+    let arr = rows.as_array().cloned().unwrap_or_default();
+
+    let mut total_paid_cents: i64 = 0;
+    let mut currency: String = "USD".to_string();
+    for r in arr.iter() {
+        let status = r.get("status").and_then(|v| v.as_str()).unwrap_or("pending");
+        if status != "paid" {
+            continue;
+        }
+        if let Some(c) = r.get("currency").and_then(|v| v.as_str()) {
+            if !c.trim().is_empty() {
+                currency = c.to_string();
+            }
+        }
+        let amt = r.get("amount_cents").and_then(|v| v.as_i64()).unwrap_or(0);
+        total_paid_cents += amt;
+    }
+
+    // Compute requested payouts (requested/processing/paid) to determine withdrawable.
+    let pr = state
+        .pg
+        .from("talent_irl_payout_requests")
+        .select("amount_cents,currency,status")
+        .eq("talent_id", &resolved.talent_id)
+        .limit(2000)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !pr.status().is_success() {
+        let err = pr.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+    let pr_text = pr.text().await.unwrap_or_else(|_| "[]".into());
+    let pr_rows: serde_json::Value = serde_json::from_str(&pr_text).unwrap_or(json!([]));
+    let pr_arr = pr_rows.as_array().cloned().unwrap_or_default();
+
+    let mut payouts_reserved_cents: i64 = 0;
+    for r in pr_arr.iter() {
+        let status = r.get("status").and_then(|v| v.as_str()).unwrap_or("requested");
+        if status == "failed" || status == "cancelled" {
+            continue;
+        }
+        let amt = r.get("amount_cents").and_then(|v| v.as_i64()).unwrap_or(0);
+        payouts_reserved_cents += amt;
+    }
+
+    let withdrawable_cents = (total_paid_cents - payouts_reserved_cents).max(0);
+
+    Ok(json!({
+        "talent_id": resolved.talent_id,
+        "currency": currency,
+        "total_paid_cents": total_paid_cents,
+        "payouts_reserved_cents": payouts_reserved_cents,
+        "withdrawable_cents": withdrawable_cents,
+    }))
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct CreateIrlPayoutRequestPayload {
+    pub amount_cents: i64,
+    pub currency: Option<String>,
+}
+
+pub async fn create_irl_payout_request(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<CreateIrlPayoutRequestPayload>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
+    let resolved = resolve_talent(&state, &user).await?;
+    if payload.amount_cents <= 0 {
+        return Err((StatusCode::BAD_REQUEST, "amount_cents must be > 0".into()));
+    }
+
+    let summary = compute_irl_earnings_summary(&state, &resolved).await?;
+    let withdrawable = summary
+        .get("withdrawable_cents")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
+    if payload.amount_cents > withdrawable {
+        return Err((StatusCode::BAD_REQUEST, "amount exceeds withdrawable".into()));
+    }
+
+    let currency = payload
+        .currency
+        .clone()
+        .filter(|s| !s.trim().is_empty())
+        .or_else(|| summary.get("currency").and_then(|v| v.as_str()).map(|s| s.to_string()))
+        .unwrap_or_else(|| "USD".to_string());
+
+    let row = json!({
+        "agency_id": resolved.agency_id,
+        "talent_id": resolved.talent_id,
+        "amount_cents": payload.amount_cents,
+        "currency": currency,
+        "status": "requested",
+    });
+    let resp = state
+        .pg
+        .from("talent_irl_payout_requests")
+        .insert(row.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !resp.status().is_success() {
+        let err = resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+    let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+    let v: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!({"ok": true}));
+    Ok(Json(v))
+}
+
+pub async fn upload_portfolio_item(
+    State(state): State<AppState>,
+    user: AuthUser,
+    mut multipart: Multipart,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
+    let resolved = resolve_talent(&state, &user).await?;
+
+    let mut title: Option<String> = None;
+    let mut file_name: Option<String> = None;
+    let mut mime_type: Option<String> = None;
+    let mut bytes: Vec<u8> = vec![];
+
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?
+    {
+        let name = field.name().unwrap_or("").to_string();
+        match name.as_str() {
+            "title" => {
+                let txt = field
+                    .text()
+                    .await
+                    .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+                if !txt.trim().is_empty() {
+                    title = Some(txt);
+                }
+            }
+            "file" => {
+                file_name = field.file_name().map(|s| s.to_string());
+                mime_type = field.content_type().map(|s| s.to_string());
+                let data = field
+                    .bytes()
+                    .await
+                    .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+                bytes = data.to_vec();
+            }
+            _ => {}
+        }
+    }
+
+    if bytes.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "missing file".into()));
+    }
+
+    let fname = file_name.unwrap_or_else(|| "upload.bin".to_string());
+    let sanitized = fname
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect::<String>();
+
+    // Use PUBLIC bucket so the UI can render without signed URLs.
+    let bucket = state.supabase_bucket_public.clone();
+    let path = format!(
+        "talent/{}/portfolio/{}_{}",
+        resolved.talent_id,
+        chrono::Utc::now().timestamp_millis(),
+        sanitized
+    );
+
+    let storage_url = format!(
+        "{}/storage/v1/object/{}/{}",
+        state.supabase_url, bucket, path
+    );
+    let http = reqwest::Client::new();
+    let mut req = http
+        .post(&storage_url)
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
+        .header("apikey", state.supabase_service_key.clone());
+    if let Some(ct) = mime_type.as_ref().filter(|s| !s.is_empty()) {
+        req = req.header("content-type", ct.clone());
+    }
+    let up = req
+        .body(bytes.clone())
+        .send()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    if !up.status().is_success() {
+        let msg = up.text().await.unwrap_or_default();
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            format!("storage upload failed: {msg}"),
+        ));
+    }
+
+    let public_url = format!(
+        "{}/storage/v1/object/public/{}/{}",
+        state.supabase_url, bucket, path
+    );
+
+    let body = json!({
+        "agency_id": resolved.agency_id,
+        "talent_id": resolved.talent_id,
+        "title": title,
+        "media_url": public_url,
+        "status": "live",
+        "storage_bucket": bucket,
+        "storage_path": path,
+        "public_url": public_url,
+        "size_bytes": bytes.len() as i64,
+        "mime_type": mime_type,
+    });
+
+    let resp = state
+        .pg
+        .from("talent_portfolio_items")
+        .insert(body.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !resp.status().is_success() {
+        let err = resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+    let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+    let v: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!({"ok": true}));
+    Ok(Json(v))
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct LatestTaxDocumentQuery {
+    pub doc_type: Option<String>,
+    pub tax_year: Option<i32>,
+}
+
+pub async fn get_latest_tax_document(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Query(q): Query<LatestTaxDocumentQuery>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
+    let resolved = resolve_talent(&state, &user).await?;
+
+    let mut req = state
+        .pg
+        .from("talent_tax_documents")
+        .select("id,talent_id,doc_type,tax_year,public_url,created_at")
+        .eq("talent_id", &resolved.talent_id);
+    if let Some(dt) = q.doc_type {
+        if !dt.trim().is_empty() {
+            req = req.eq("doc_type", dt);
+        }
+    }
+    if let Some(y) = q.tax_year {
+        req = req.eq("tax_year", y.to_string());
+    }
+
+    let resp = req
+        .order("created_at.desc")
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !resp.status().is_success() {
+        let err = resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+    let txt = resp.text().await.unwrap_or("[]".into());
+    let rows: serde_json::Value = serde_json::from_str(&txt).unwrap_or(json!([]));
+    if let Some(first) = rows.as_array().and_then(|a| a.first()).cloned() {
+        return Ok(Json(first));
+    }
+    Ok(Json(json!({})))
+}
+
+pub async fn list_notifications(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Query(q): Query<ListTalentNotificationsQuery>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
+    let limit = q.limit.unwrap_or(50).min(200);
+
+    let resp = state
+        .pg
+        .from("talent_notifications")
+        .select("id,agency_id,channel,from_label,subject,message,meta_json,read_at,created_at")
+        .eq("talent_user_id", &user.id)
+        .order("created_at.desc")
+        .limit(limit as usize)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        let err = resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let v: serde_json::Value =
+        serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    Ok(Json(v))
+}
+
+pub async fn mark_notification_read(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(id): Path<String>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
+    let v = json!({
+        "read_at": chrono::Utc::now().to_rfc3339(),
+    });
+
+    let resp = state
+        .pg
+        .from("talent_notifications")
+        .eq("id", &id)
+        .eq("talent_user_id", &user.id)
+        .update(v.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        let err = resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+
+    Ok(Json(json!({"status":"ok"})))
+}
 
 #[derive(Serialize)]
 pub struct TalentMeResponse {
@@ -129,6 +732,8 @@ pub struct TalentLicensingRequestItem {
     pub usage_scope: Option<String>,
     pub regions: Option<String>,
     pub deadline: Option<String>,
+    pub license_start_date: Option<String>,
+    pub license_end_date: Option<String>,
     pub created_at: Option<String>,
     pub status: String,
     pub pay_set: bool,
@@ -143,7 +748,7 @@ pub async fn list_licensing_requests(
     let resp = state
         .pg
         .from("licensing_requests")
-        .select("id,brand_id,talent_id,status,created_at,campaign_title,budget_min,budget_max,usage_scope,regions,deadline")
+        .select("id,brand_id,talent_id,status,created_at,campaign_title,budget_min,budget_max,usage_scope,regions,deadline,license_start_date,license_end_date")
         .eq("agency_id", &resolved.agency_id)
         .eq("talent_id", &resolved.talent_id)
         .order("created_at.desc")
@@ -290,6 +895,16 @@ pub async fn list_licensing_requests(
                     .and_then(|v| v.as_str())
                     .map(|s| s.to_string())
                     .filter(|s| !s.is_empty()),
+                license_start_date: r
+                    .get("license_start_date")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+                    .filter(|s| !s.is_empty()),
+                license_end_date: r
+                    .get("license_end_date")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+                    .filter(|s| !s.is_empty()),
                 created_at: r
                     .get("created_at")
                     .and_then(|v| v.as_str())
@@ -302,6 +917,72 @@ pub async fn list_licensing_requests(
         .collect();
 
     Ok(Json(out))
+}
+
+pub async fn approve_licensing_request(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(id): Path<String>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let resolved = resolve_talent(&state, &user).await?;
+
+    let v = json!({
+        "status": "approved",
+        "decided_at": chrono::Utc::now().to_rfc3339(),
+    });
+
+    let mut req = state
+        .pg
+        .from("licensing_requests")
+        .eq("id", &id)
+        .eq("talent_id", &resolved.talent_id);
+    if !resolved.agency_id.is_empty() {
+        req = req.eq("agency_id", &resolved.agency_id);
+    }
+
+    let resp = req
+        .update(v.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !resp.status().is_success() {
+        let err = resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+    Ok(Json(json!({"status":"ok"})))
+}
+
+pub async fn decline_licensing_request(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(id): Path<String>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let resolved = resolve_talent(&state, &user).await?;
+
+    let v = json!({
+        "status": "declined",
+        "decided_at": chrono::Utc::now().to_rfc3339(),
+    });
+
+    let mut req = state
+        .pg
+        .from("licensing_requests")
+        .eq("id", &id)
+        .eq("talent_id", &resolved.talent_id);
+    if !resolved.agency_id.is_empty() {
+        req = req.eq("agency_id", &resolved.agency_id);
+    }
+
+    let resp = req
+        .update(v.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !resp.status().is_success() {
+        let err = resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+    Ok(Json(json!({"status":"ok"})))
 }
 
 pub async fn list_licenses_stub(
@@ -515,8 +1196,13 @@ pub async fn get_licensing_revenue(
         .cloned()
         .unwrap_or_else(|| "".to_string());
 
-    let Some((start_ts, next_ts)) = parse_month_bounds(&month) else {
-        return Err((StatusCode::BAD_REQUEST, "Invalid month".to_string()));
+    let bounds = if month.trim().is_empty() {
+        None
+    } else {
+        Some(parse_month_bounds(&month).ok_or((
+            StatusCode::BAD_REQUEST,
+            "Invalid month".to_string(),
+        ))?)
     };
 
     let mut req = state
@@ -524,12 +1210,14 @@ pub async fn get_licensing_revenue(
         .from("licensing_payouts")
         .select("amount_cents,paid_at")
         .eq("talent_id", &resolved.talent_id)
-        .gte("paid_at", &start_ts)
-        .lt("paid_at", &next_ts)
         .limit(5000)
         ;
     if !resolved.agency_id.is_empty() {
         req = req.eq("agency_id", &resolved.agency_id);
+    }
+
+    if let Some((start_ts, next_ts)) = bounds {
+        req = req.gte("paid_at", &start_ts).lt("paid_at", &next_ts);
     }
 
     let resp = req
@@ -572,8 +1260,13 @@ pub async fn get_earnings_by_campaign(
         .cloned()
         .unwrap_or_else(|| "".to_string());
 
-    let Some((start_ts, next_ts)) = parse_month_bounds(&month) else {
-        return Err((StatusCode::BAD_REQUEST, "Invalid month".to_string()));
+    let bounds = if month.trim().is_empty() {
+        None
+    } else {
+        Some(parse_month_bounds(&month).ok_or((
+            StatusCode::BAD_REQUEST,
+            "Invalid month".to_string(),
+        ))?)
     };
 
     let mut req = state
@@ -581,12 +1274,14 @@ pub async fn get_earnings_by_campaign(
         .from("licensing_payouts")
         .select("amount_cents,licensing_request_id")
         .eq("talent_id", &resolved.talent_id)
-        .gte("paid_at", &start_ts)
-        .lt("paid_at", &next_ts)
         .limit(5000)
         ;
     if !resolved.agency_id.is_empty() {
         req = req.eq("agency_id", &resolved.agency_id);
+    }
+
+    if let Some((start_ts, next_ts)) = bounds {
+        req = req.gte("paid_at", &start_ts).lt("paid_at", &next_ts);
     }
 
     let resp = req
@@ -1080,7 +1775,6 @@ pub struct UpdateTalentProfilePayload {
     pub instagram_handle: Option<String>,
     pub photo_urls: Option<Vec<String>>,
     pub profile_photo_url: Option<String>,
-    pub hero_cameo_url: Option<String>,
     pub gender_identity: Option<String>,
     pub race_ethnicity: Option<Vec<String>>,
     pub hair_color: Option<String>,
@@ -1114,7 +1808,6 @@ pub async fn update_profile(
         "instagram_handle": payload.instagram_handle,
         "photo_urls": payload.photo_urls,
         "profile_photo_url": payload.profile_photo_url,
-        "hero_cameo_url": payload.hero_cameo_url,
         "gender_identity": payload.gender_identity,
         "race_ethnicity": payload.race_ethnicity,
         "hair_color": payload.hair_color,
@@ -1182,7 +1875,7 @@ pub async fn list_portfolio_items(
     let resp = state
         .pg
         .from("talent_portfolio_items")
-        .select("id,agency_id,talent_id,title,media_url,status,created_at")
+        .select("id,agency_id,talent_id,title,media_url,status,created_at,storage_bucket,storage_path,public_url,size_bytes,mime_type")
         .eq("talent_id", &resolved.talent_id)
         .order("created_at.desc")
         .limit(200)
@@ -1335,6 +2028,7 @@ pub struct CreateBookOutPayload {
     pub end_date: String,
     pub reason: Option<String>,
     pub notes: Option<String>,
+    pub notify_agency: Option<bool>,
 }
 
 pub async fn create_book_out(
@@ -1346,12 +2040,17 @@ pub async fn create_book_out(
     if resolved.agency_id.is_empty() {
         return Err((StatusCode::BAD_REQUEST, "Missing agency_id".to_string()));
     }
+
+    let reason_str = payload
+        .reason
+        .clone()
+        .unwrap_or_else(|| "personal".to_string());
     let body = json!({
         "agency_user_id": resolved.agency_id,
         "talent_id": resolved.talent_id,
         "start_date": payload.start_date,
         "end_date": payload.end_date,
-        "reason": payload.reason.unwrap_or_else(|| "personal".to_string()),
+        "reason": reason_str,
         "notes": payload.notes,
     });
     let resp = state
@@ -1367,6 +2066,109 @@ pub async fn create_book_out(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let v: serde_json::Value =
         serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    // Option C: notify agency (email + in-app notification)
+    let should_notify = payload.notify_agency.unwrap_or(false);
+    if should_notify {
+        let start = payload.start_date.clone();
+        let end = payload.end_date.clone();
+        let reason = payload
+            .reason
+            .clone()
+            .unwrap_or_else(|| "personal".to_string());
+        let notes = payload.notes.clone().unwrap_or_default();
+
+        let talent_name = resolved
+            .agency_user_row
+            .get("full_name")
+            .and_then(|v| v.as_str())
+            .or_else(|| resolved.agency_user_row.get("name").and_then(|v| v.as_str()))
+            .or_else(|| resolved.agency_user_row.get("stage_name").and_then(|v| v.as_str()))
+            .unwrap_or("Talent")
+            .to_string();
+
+        // Agency email/name
+        let aresp = state
+            .pg
+            .from("agencies")
+            .select("email,agency_name")
+            .eq("id", &resolved.agency_id)
+            .single()
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let astatus = aresp.status();
+        let atext = aresp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if astatus.is_success() {
+            let av: serde_json::Value = serde_json::from_str(&atext).unwrap_or(json!({}));
+            let agency_email = av.get("email").and_then(|v| v.as_str()).unwrap_or("");
+            let agency_name = av
+                .get("agency_name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("Agency")
+                .to_string();
+
+            if !agency_email.trim().is_empty() {
+                let subject = format!("Talent Book-Out: {} ({} to {})", talent_name, start, end);
+                let mut lines: Vec<String> = vec![];
+                lines.push(format!("Hi {},", agency_name));
+                lines.push(String::new());
+                lines.push(format!("{} has booked out availability.", talent_name));
+                lines.push(String::new());
+                lines.push(format!("Dates: {} – {}", start, end));
+                lines.push(format!("Reason: {}", reason.replace('_', " ")));
+                if !notes.trim().is_empty() {
+                    lines.push(format!("Notes: {}", notes));
+                }
+                let body = lines.join("\n");
+
+                let send_res = crate::email::send_plain_text_email(
+                    &state,
+                    agency_email,
+                    &subject,
+                    &body,
+                    Some(&talent_name),
+                );
+
+                // In-app agency notification log (best-effort)
+                let book_out_id = v
+                    .as_array()
+                    .and_then(|a| a.first())
+                    .and_then(|x| x.get("id"))
+                    .and_then(|x| x.as_str())
+                    .map(|s| s.to_string());
+                let meta = json!({
+                    "smtp_status": if send_res.is_ok() {"ok"} else {"error"},
+                    "talent_id": resolved.talent_id,
+                    "talent_name": talent_name,
+                    "start_date": start,
+                    "end_date": end,
+                    "reason": reason,
+                });
+
+                let insert = json!({
+                    "agency_user_id": resolved.agency_id,
+                    "booking_id": null,
+                    "book_out_id": book_out_id,
+                    "channel": "email",
+                    "recipient_type": "agency",
+                    "to_email": agency_email,
+                    "subject": subject,
+                    "message": body,
+                    "meta_json": meta,
+                });
+                let _ = state
+                    .pg
+                    .from("booking_notifications")
+                    .insert(insert.to_string())
+                    .execute()
+                    .await;
+            }
+        }
+    }
     Ok(Json(v))
 }
 

@@ -18,6 +18,14 @@ pub fn build_router(state: AppState) -> Router {
             "/api/talent/licensing-requests",
             get(crate::talent::list_licensing_requests),
         )
+        .route(
+            "/api/talent/licensing-requests/:id/approve",
+            post(crate::talent::approve_licensing_request),
+        )
+        .route(
+            "/api/talent/licensing-requests/:id/decline",
+            post(crate::talent::decline_licensing_request),
+        )
         .route("/api/talent/licenses", get(crate::talent::list_licenses_stub))
         .route(
             "/api/talent/licensing/revenue",
@@ -47,6 +55,30 @@ pub fn build_router(state: AppState) -> Router {
             "/api/talent/portfolio-items/:id",
             delete(crate::talent::delete_portfolio_item),
         )
+        .route(
+            "/api/talent/notifications",
+            get(crate::talent::list_notifications),
+        )
+        .route(
+            "/api/talent/notifications/:id/read",
+            post(crate::talent::mark_notification_read),
+        )
+        .route(
+            "/api/talent/payouts/account-status",
+            get(crate::payouts::get_my_account_status),
+        )
+        .route(
+            "/api/talent/payouts/onboarding-link",
+            get(crate::payouts::create_my_onboarding_link),
+        )
+        .route(
+            "/api/talent/settings",
+            get(crate::talent::get_portal_settings).post(crate::talent::update_portal_settings),
+        )
+        .route(
+            "/api/talent/tax-documents/latest",
+            get(crate::talent::get_latest_tax_document),
+        )
         .route("/api/talent/profile", post(crate::talent::update_profile))
         .route("/api/talent/bookings", get(crate::talent::list_bookings))
         .route(
@@ -56,6 +88,27 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/talent/book-outs/:id",
             delete(crate::talent::delete_book_out),
+        )
+        .route(
+            "/api/talent/booking-preferences",
+            get(crate::talent::get_booking_preferences)
+                .post(crate::talent::update_booking_preferences),
+        )
+        .route(
+            "/api/talent/irl/earnings/summary",
+            get(crate::talent::get_irl_earnings_summary),
+        )
+        .route(
+            "/api/talent/irl/earnings/payments",
+            get(crate::talent::list_irl_payments),
+        )
+        .route(
+            "/api/talent/irl/earnings/payout-request",
+            post(crate::talent::create_irl_payout_request),
+        )
+        .route(
+            "/api/talent/portfolio-items/upload",
+            post(crate::talent::upload_portfolio_item),
         )
         // Invoices (Agency Dashboard)
         .route(
@@ -360,6 +413,10 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/face-profiles/:id",
             post(crate::face_profiles::update_face_profile),
+        )
+        .route(
+            "/api/faces/search",
+            get(crate::face_profiles::search_faces),
         )
         .route(
             "/api/moderation/image",

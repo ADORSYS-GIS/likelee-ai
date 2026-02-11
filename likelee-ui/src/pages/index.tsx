@@ -488,15 +488,6 @@ function AppRoutes() {
       />
 
       <Route
-        path="/CameoUpload"
-        element={
-          <ProtectedRoute allowedRoles={["creator", "talent"]}>
-            <CameoUpload />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
         path="/RoyaltyWallet"
         element={
           <ProtectedRoute allowedRoles={["creator", "talent"]}>

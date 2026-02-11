@@ -38,6 +38,7 @@ export const AddBookOutModal = ({
   const [endDate, setEndDate] = useState("");
   const [notes, setNotes] = useState("");
   const [talents, setTalents] = useState<any[]>([]);
+  const [notifyAgency, setNotifyAgency] = useState(true);
 
   useEffect(() => {
     if (fixedTalent?.id) {
@@ -65,7 +66,7 @@ export const AddBookOutModal = ({
     return () => {
       cancelled = true;
     };
-  }, [open]);
+  }, [open, fixedTalent?.id, fixedTalent?.name]);
 
   const handleSave = () => {
     if (!talentId || !startDate || !endDate) {
@@ -80,6 +81,7 @@ export const AddBookOutModal = ({
       startDate,
       endDate,
       notes,
+      notifyAgency,
     };
 
     onAdd(newBookOut);
@@ -87,10 +89,11 @@ export const AddBookOutModal = ({
 
     // Reset form
     setReason("personal");
-    setTalentId("");
+    if (!fixedTalent?.id) setTalentId("");
     setStartDate("");
     setEndDate("");
     setNotes("");
+    setNotifyAgency(true);
   };
 
   const isValid = reason && talentId && startDate && endDate;
@@ -127,9 +130,7 @@ export const AddBookOutModal = ({
           <div className="space-y-2">
             <Label className="font-bold">Talent *</Label>
             {fixedTalent?.id ? (
-              <div className="text-sm font-semibold text-gray-900">
-                {fixedTalent.name}
-              </div>
+              <Input value={fixedTalent.name} readOnly className="bg-gray-50" />
             ) : (
               <Select value={talentId} onValueChange={setTalentId}>
                 <SelectTrigger>
@@ -176,9 +177,15 @@ export const AddBookOutModal = ({
           </div>
 
           <div className="flex items-center space-x-2">
-            <input type="checkbox" id="notify" className="rounded" />
+            <input
+              type="checkbox"
+              id="notify"
+              className="rounded"
+              checked={notifyAgency}
+              onChange={(e) => setNotifyAgency(e.target.checked)}
+            />
             <Label htmlFor="notify" className="font-normal cursor-pointer">
-              Notify talent via email
+              {fixedTalent?.id ? "Notify agency via email" : "Notify talent via email"}
             </Label>
           </div>
         </div>
