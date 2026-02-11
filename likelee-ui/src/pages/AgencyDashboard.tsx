@@ -670,8 +670,8 @@ const ProspectModal = ({
                   }
                   onClick={() => toggleCategory(cat)}
                   className={`${selectedCategories.includes(cat)
-                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-900"
                     } font-medium`}
                 >
                   {cat}
@@ -1386,8 +1386,8 @@ const ProspectModalAlt = ({
                   }
                   onClick={() => toggleCategory(cat)}
                   className={`${selectedCategories.includes(cat)
-                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-900"
                     } font-medium`}
                 >
                   {cat}
@@ -5025,8 +5025,8 @@ const FinancialReportsView = () => {
               key={tab.id}
               onClick={() => setActiveReportTab(tab.id)}
               className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${activeReportTab === tab.id
-                  ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                 }`}
             >
               {tab.label}
@@ -6736,8 +6736,8 @@ const GenerateInvoiceView = () => {
               <Button
                 variant={createFrom === "booking" ? "default" : "outline"}
                 className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "booking"
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "border-gray-200 text-gray-700"
+                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                  : "border-gray-200 text-gray-700"
                   }`}
                 onClick={() => setCreateFrom("booking")}
               >
@@ -6747,8 +6747,8 @@ const GenerateInvoiceView = () => {
               <Button
                 variant={createFrom === "manual" ? "default" : "outline"}
                 className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "manual"
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "border-gray-200 text-gray-700"
+                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                  : "border-gray-200 text-gray-700"
                   }`}
                 onClick={() => setCreateFrom("manual")}
               >
@@ -7676,8 +7676,8 @@ const InvoiceManagementView = ({
                 key={tab.id}
                 onClick={() => setActiveSubTab(tab.id)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${isActive
-                    ? "bg-indigo-600 text-white shadow-sm"
-                    : "text-gray-700 hover:bg-gray-50"
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-gray-700 hover:bg-gray-50"
                   }`}
               >
                 <Icon className="w-4 h-4" />
@@ -8901,8 +8901,8 @@ const ScoutingHubView = ({
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
-                : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
+              ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+              : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
               }`}
           >
             {tab}
@@ -10019,16 +10019,16 @@ const OpenCallsTab = ({
                 <div className="flex justify-between items-start mb-3">
                   <Badge
                     className={`rounded-md font-bold px-2 py-0.5 text-[10px] border shadow-sm ${String((event as any).status) === "published"
-                        ? "bg-green-50 text-green-700 border-green-100"
-                        : String((event as any).status) === "draft"
-                          ? "bg-gray-50 text-gray-600 border-gray-100"
-                          : String((event as any).status) === "scheduled"
-                            ? "bg-blue-50 text-blue-700 border-blue-100"
-                            : String((event as any).status) === "completed"
-                              ? "bg-indigo-50 text-indigo-700 border-indigo-100"
-                              : String((event as any).status) === "cancelled"
-                                ? "bg-red-50 text-red-700 border-red-100"
-                                : "bg-gray-50 text-gray-600 border-gray-100"
+                      ? "bg-green-50 text-green-700 border-green-100"
+                      : String((event as any).status) === "draft"
+                        ? "bg-gray-50 text-gray-600 border-gray-100"
+                        : String((event as any).status) === "scheduled"
+                          ? "bg-blue-50 text-blue-700 border-blue-100"
+                          : String((event as any).status) === "completed"
+                            ? "bg-indigo-50 text-indigo-700 border-indigo-100"
+                            : String((event as any).status) === "cancelled"
+                              ? "bg-red-50 text-red-700 border-red-100"
+                              : "bg-gray-50 text-gray-600 border-gray-100"
                       }`}
                   >
                     {String((event as any).status || "").toUpperCase()}
@@ -11247,10 +11247,10 @@ export const RosterView = ({
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
                           className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${talent.consent === "complete"
-                              ? "bg-green-50 text-green-600"
-                              : talent.consent === "missing"
-                                ? "bg-red-50 text-red-600"
-                                : "bg-orange-50 text-orange-600"
+                            ? "bg-green-50 text-green-600"
+                            : talent.consent === "missing"
+                              ? "bg-red-50 text-red-600"
+                              : "bg-orange-50 text-orange-600"
                             }`}
                         >
                           {talent.consent === "complete" ||
@@ -13302,8 +13302,8 @@ const ProtectionUsageView = () => {
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === tab
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:text-gray-900"
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-gray-500 hover:text-gray-900"
                 }`}
             >
               {tab}
@@ -15639,8 +15639,8 @@ const ComplianceHubView = () => {
               disabled={selectedTalentIds.length === 0}
               variant="outline"
               className={`text-xs font-bold h-8 gap-2 ${selectedTalentIds.length === 0
-                  ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
-                  : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
+                ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
+                : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
                 }`}
               onClick={handleSendRenewalRequests}
             >
@@ -16135,8 +16135,8 @@ const RoyaltiesPayoutsView = () => {
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
               }`}
           >
             {tab}
@@ -17020,8 +17020,8 @@ const AnalyticsDashboardView = () => {
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
                   }`}
               >
                 {tab}
@@ -18237,7 +18237,7 @@ export default function AgencyDashboard() {
     const interval = window.setInterval(
       async () => {
         try {
-          const rows: any = await base44.get("/api/kyc/status");
+          const rows: any = await base44.get("/kyc/status");
           const row = Array.isArray(rows) && rows.length ? rows[0] : null;
           const status = row?.kyc_status;
           if (!active || typeof status !== "string") return;
@@ -18349,7 +18349,7 @@ export default function AgencyDashboard() {
     let active = true;
     const interval = window.setInterval(async () => {
       try {
-        const rows: any = await base44.get("/api/kyc/status");
+        const rows: any = await base44.get("/kyc/status");
         const row = Array.isArray(rows) && rows.length ? rows[0] : null;
         const status = row?.kyc_status;
         if (!active || !status) return;
@@ -18508,7 +18508,7 @@ export default function AgencyDashboard() {
   const onRemoveBookOut = async (id: string) => {
     try {
       // Use fetch DELETE against API base
-      const res = await fetch(api(`/api/book-outs/${id}`), {
+      const res = await fetch(api(`/book-outs/${id}`), {
         method: "DELETE",
       });
       if (!res.ok) throw new Error(await res.text());
@@ -18848,8 +18848,8 @@ export default function AgencyDashboard() {
                   }
                 }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  ? "bg-indigo-50 text-indigo-700"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                   }`}
               >
                 <item.icon
@@ -18876,8 +18876,8 @@ export default function AgencyDashboard() {
                         setSidebarOpen(false);
                       }}
                       className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
-                          ? "text-indigo-700 bg-indigo-50 font-bold"
-                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                        ? "text-indigo-700 bg-indigo-50 font-bold"
+                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
                         }`}
                     >
                       <span className="truncate">{subItem}</span>

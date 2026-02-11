@@ -40,17 +40,17 @@ export const activeLicenses = {
     if (status) params.append("status", status);
     if (search) params.append("search", search);
     return base44.get<ActiveLicense[]>(
-      `/api/agency/active-licenses?${params.toString()}`,
+      `/agency/active-licenses?${params.toString()}`,
     );
   },
 
   stats: async () => {
-    return base44.get<ActiveLicensesStats>(`/api/agency/active-licenses/stats`);
+    return base44.get<ActiveLicensesStats>(`/agency/active-licenses/stats`);
   },
 
   create: async (data: CreateLicensingRequestPayload) => {
     return base44.post<{ id: string; ok: boolean }>(
-      `/api/agency/licensing-requests`,
+      `/agency/licensing-requests`,
       data,
     );
   },

@@ -1208,7 +1208,7 @@ const RosterView = ({
                               <img
                                 src={
                                   talent.img ||
-                                  "https://via.placeholder.com/150"
+                                  "https://placehold.co/150"
                                 }
                                 alt={talent.name}
                                 className="w-10 h-10 rounded-lg object-cover"
@@ -1560,7 +1560,7 @@ const RosterView = ({
                     >
                       <div className="flex items-center gap-4">
                         <img
-                          src={talent.img || "https://via.placeholder.com/150"}
+                          src={talent.img || "https://placehold.co/150"}
                           alt={talent.name}
                           className="w-12 h-12 rounded-lg object-cover"
                         />

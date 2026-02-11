@@ -533,7 +533,7 @@ const CompCardModal = ({
                         onCheckedChange={() => toggleTalent(talent.id)}
                       />
                       <img
-                        src={talent.img || "https://via.placeholder.com/150"}
+                        src={talent.img || "https://placehold.co/150"}
                         alt={talent.name}
                         className="w-8 h-8 rounded-md object-cover"
                       />

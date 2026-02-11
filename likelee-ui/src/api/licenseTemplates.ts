@@ -47,17 +47,17 @@ export interface TemplateStats {
 }
 
 export const getLicenseTemplates = async (): Promise<LicenseTemplate[]> => {
-  return await base44.get<LicenseTemplate[]>("/api/license-templates");
+  return await base44.get<LicenseTemplate[]>("/license-templates");
 };
 
 export const getTemplateStats = async (): Promise<TemplateStats> => {
-  return await base44.get<TemplateStats>("/api/license-templates/stats");
+  return await base44.get<TemplateStats>("/license-templates/stats");
 };
 
 export const createLicenseTemplate = async (
   data: CreateTemplateRequest,
 ): Promise<LicenseTemplate> => {
-  return await base44.post<LicenseTemplate>("/api/license-templates", data);
+  return await base44.post<LicenseTemplate>("/license-templates", data);
 };
 
 export const updateLicenseTemplate = async (
@@ -65,20 +65,20 @@ export const updateLicenseTemplate = async (
   data: CreateTemplateRequest,
 ): Promise<LicenseTemplate> => {
   return await base44.post<LicenseTemplate>(
-    `/api/license-templates/${id}`,
+    `/license-templates/${id}`,
     data,
   );
 };
 
 export const deleteLicenseTemplate = async (id: string): Promise<void> => {
-  await base44.delete(`/api/license-templates/${id}`);
+  await base44.delete(`/license-templates/${id}`);
 };
 
 export const copyLicenseTemplate = async (
   id: string,
 ): Promise<LicenseTemplate> => {
   return await base44.post<LicenseTemplate>(
-    `/api/license-templates/${id}/copy`,
+    `/license-templates/${id}/copy`,
   );
 };
 
@@ -91,7 +91,7 @@ export const createBuilderToken = async (
     token: string;
     values: any;
     docuseal_user_email: string;
-  }>("/api/docuseal/builder-token", {
+  }>("/docuseal/builder-token", {
     template_name,
     docuseal_template_id,
     external_id,
