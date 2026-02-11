@@ -42,13 +42,13 @@ export interface CreateSubmissionRequest {
 }
 
 export const getLicenseSubmissions = async (): Promise<LicenseSubmission[]> => {
-  return await base44.get<LicenseSubmission[]>("/api/license-submissions");
+  return await base44.get<LicenseSubmission[]>("/license-submissions");
 };
 
 export const createLicenseSubmissionDraft = async (
   data: CreateSubmissionRequest,
 ): Promise<any> => {
-  return await base44.post<any>("/api/license-submissions/draft", data);
+  return await base44.post<any>("/license-submissions/draft", data);
 };
 
 export const createAndSendLicenseSubmission = async (data: {
@@ -63,7 +63,7 @@ export const createAndSendLicenseSubmission = async (data: {
   custom_terms?: string;
 }): Promise<LicenseSubmission> => {
   return await base44.post<LicenseSubmission>(
-    "/api/license-submissions/create-and-send",
+    "/license-submissions/create-and-send",
     data,
   );
 };
@@ -78,7 +78,7 @@ export const finalizeLicenseSubmission = async (
   },
 ): Promise<LicenseSubmission> => {
   return await base44.post<LicenseSubmission>(
-    `/api/license-submissions/${id}/finalize`,
+    `/license-submissions/${id}/finalize`,
     data || {},
   );
 };
@@ -104,22 +104,22 @@ export const previewLicenseSubmission = async (
     preview_url: string;
     docuseal_submission_id: number;
     docuseal_slug: string;
-  }>(`/api/license-submissions/${id}/preview`, data || {});
+  }>(`/license-submissions/${id}/preview`, data || {});
 };
 
 export const getLicenseSubmissionDetails = async (
   id: string,
 ): Promise<LicenseSubmission> => {
-  return await base44.get<LicenseSubmission>(`/api/license-submissions/${id}`);
+  return await base44.get<LicenseSubmission>(`/license-submissions/${id}`);
 };
 
 export const resendLoginSubmission = async (id: string): Promise<void> => {
-  await base44.post(`/api/license-submissions/${id}/resend`);
+  await base44.post(`/license-submissions/${id}/resend`);
 };
 
 export const archiveLicenseSubmission = async (id: string): Promise<void> => {
-  await base44.delete(`/api/license-submissions/${id}`);
+  await base44.delete(`/license-submissions/${id}`);
 };
 export const recoverLicenseSubmission = async (id: string): Promise<void> => {
-  await base44.post(`/api/license-submissions/${id}/recover`);
+  await base44.post(`/license-submissions/${id}/recover`);
 };

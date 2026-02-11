@@ -3,6 +3,7 @@ use axum::{extract::State, http::StatusCode, Json};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::HashMap;
+use std::time::Instant;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct TierRule {
@@ -95,47 +96,78 @@ pub async fn get_performance_tiers(
     State(state): State<AppState>,
     auth_user: AuthUser,
 ) -> Result<Json<PerformanceTiersResponse>, (StatusCode, String)> {
+    let start_total = Instant::now();
     let agency_id = &auth_user.id;
 
-    // 1. Fetch Tier Definitions
-    let resp = state
-        .pg
-        .from("performance_tiers")
-        .order("tier_level.asc")
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    // Parallelize the 4 main database/RPC calls
+    let (resp_tiers, resp_config, resp_talents, resp_stats) = tokio::try_join!(
+        // 1. Fetch Tier Definitions
+        state
+            .pg
+            .from("performance_tiers")
+            .order("tier_level.asc")
+            .execute(),
+        // 2. Fetch Agency Custom Config
+        state
+            .pg
+            .from("agencies")
+            .select("performance_config")
+            .eq("id", agency_id)
+            .execute(),
+        // 3. Fetch Talents
+        state
+            .pg
+            .from("agency_users")
+            .select("id, full_legal_name, profile_photo_url")
+            .eq("agency_id", agency_id)
+            .eq("role", "talent")
+            .execute(),
+        // 4. Calculate Real-Time Metrics via RPC
+        async {
+            let now = chrono::Utc::now();
+            let month_start = now.format("%Y-%m-01").to_string();
+            let thirty_days_ago = (now - chrono::Duration::days(30))
+                .format("%Y-%m-%d")
+                .to_string();
+            state
+                .pg
+                .rpc(
+                    "get_agency_performance_stats",
+                    json!({
+                        "p_agency_id": agency_id,
+                        "p_earnings_start_date": thirty_days_ago,
+                        "p_bookings_start_date": month_start,
+                    })
+                    .to_string(),
+                )
+                .execute()
+                .await
+        }
+    )
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    if !resp.status().is_success() {
-        let status = resp.status();
-        let text = resp.text().await.unwrap_or_default();
-        let friendly_msg = serde_json::from_str::<serde_json::Value>(&text)
-            .ok()
-            .and_then(|v| {
-                v.get("message")
-                    .and_then(|m| m.as_str())
-                    .map(|s| s.to_string())
-            })
-            .unwrap_or_else(|| text.clone());
+    let db_time = start_total.elapsed();
 
+    // 1. Process Tiers
+    if !resp_tiers.status().is_success() {
         return Err((
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
-            format!("Tiers Error: {}", friendly_msg),
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Tiers Error: {}", resp_tiers.status()),
         ));
     }
-
-    let text = resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let tiers_db: Vec<TierRuleDb> = serde_json::from_str(&text).map_err(|e| {
+    let text_tiers = resp_tiers.text().await.map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Parse error (tiers): {}", e),
+            format!("Read tiers: {}", e),
+        )
+    })?;
+    let tiers_db: Vec<TierRuleDb> = serde_json::from_str(&text_tiers).map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Parse tiers: {}", e),
         )
     })?;
 
-    // Map to TierRule with system defaults
     let mut tiers_json: Vec<TierRule> = tiers_db
         .into_iter()
         .map(|t| {
@@ -155,45 +187,25 @@ pub async fn get_performance_tiers(
         })
         .collect();
 
-    // 1b. Fetch Agency Custom Config
-    let resp = state
-        .pg
-        .from("agencies")
-        .select("performance_config")
-        .eq("id", agency_id)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    if !resp.status().is_success() {
-        let status = resp.status();
-        let text = resp.text().await.unwrap_or_default();
-        let friendly_msg = serde_json::from_str::<serde_json::Value>(&text)
-            .ok()
-            .and_then(|v| {
-                v.get("message")
-                    .and_then(|m| m.as_str())
-                    .map(|s| s.to_string())
-            })
-            .unwrap_or_else(|| text.clone());
-
+    // 2. Process Agency Config
+    if !resp_config.status().is_success() {
         return Err((
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
-            format!("Agency Config Error: {}", friendly_msg),
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Config Error: {}", resp_config.status()),
         ));
     }
-
-    let text = resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let agency_data: Vec<serde_json::Value> = serde_json::from_str(&text).map_err(|e| {
+    let text_config = resp_config.text().await.map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Parse error (agency): {}", e),
+            format!("Read config: {}", e),
         )
     })?;
-
+    let agency_data: Vec<serde_json::Value> = serde_json::from_str(&text_config).map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Parse config: {}", e),
+        )
+    })?;
     let performance_config = agency_data
         .first()
         .and_then(|r| r.get("performance_config"))
@@ -212,108 +224,55 @@ pub async fn get_performance_tiers(
         }
     }
 
-    // 2. Fetch Talents
-    let resp = state
-        .pg
-        .from("agency_users")
-        .select("id, full_legal_name, profile_photo_url")
-        .eq("agency_id", agency_id)
-        .eq("role", "talent")
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    if !resp.status().is_success() {
-        let status = resp.status();
-        let text = resp.text().await.unwrap_or_default();
-        let friendly_msg = serde_json::from_str::<serde_json::Value>(&text)
-            .ok()
-            .and_then(|v| {
-                v.get("message")
-                    .and_then(|m| m.as_str())
-                    .map(|s| s.to_string())
-            })
-            .unwrap_or_else(|| text.clone());
-
+    // 3. Process Talents
+    if !resp_talents.status().is_success() {
         return Err((
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
-            format!("Talents Error: {}", friendly_msg),
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Talents Error: {}", resp_talents.status()),
         ));
     }
-
-    let text = resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let talents_json: Vec<serde_json::Value> = serde_json::from_str(&text).map_err(|e| {
+    let text_talents = resp_talents.text().await.map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Parse error (talents): {}", e),
+            format!("Read talents: {}", e),
         )
     })?;
+    let talents_json: Vec<serde_json::Value> =
+        serde_json::from_str(&text_talents).map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Parse talents: {}", e),
+            )
+        })?;
 
-    // 3. Calculate Real-Time Metrics via RPC
-    let now = chrono::Utc::now();
-    let month_start = now.format("%Y-%m-01").to_string();
-    let thirty_days_ago = (now - chrono::Duration::days(30))
-        .format("%Y-%m-%d")
-        .to_string();
-
-    let resp = state
-        .pg
-        .rpc(
-            "get_agency_performance_stats",
-            json!({
-                "p_agency_id": agency_id,
-                "p_earnings_start_date": thirty_days_ago,
-                "p_bookings_start_date": month_start,
-            })
-            .to_string(),
-        )
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    if !resp.status().is_success() {
-        let status = resp.status();
-        let text = resp.text().await.unwrap_or_default();
-
-        // Try to parse friendly message from Supabase error JSON
-        let friendly_msg = serde_json::from_str::<serde_json::Value>(&text)
-            .ok()
-            .and_then(|v| {
-                v.get("message")
-                    .and_then(|m| m.as_str())
-                    .map(|s| s.to_string())
-            })
-            .unwrap_or_else(|| text.clone());
-
+    // 4. Process Stats
+    if !resp_stats.status().is_success() {
         return Err((
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
-            format!("Dashboard Error: {}", friendly_msg),
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Stats Error: {}", resp_stats.status()),
         ));
     }
-
-    let text = resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let stats: Vec<PerformanceStats> = serde_json::from_str(&text).map_err(|e| {
+    let text_stats = resp_stats.text().await.map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Parse error (stats): {}", e),
+            format!("Read stats: {}", e),
+        )
+    })?;
+    let stats: Vec<PerformanceStats> = serde_json::from_str(&text_stats).map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Parse stats: {}", e),
         )
     })?;
 
     let mut earnings_map: HashMap<String, f64> = HashMap::new();
     let mut bookings_map: HashMap<String, i64> = HashMap::new();
-
     for s in stats {
         earnings_map.insert(s.talent_id.clone(), s.earnings_cents as f64 / 100.0);
         bookings_map.insert(s.talent_id, s.booking_count);
     }
 
-    // 4. Group Tiers
+    // 5. Group Tiers
     let mut groups: HashMap<i32, TierGroup> = HashMap::new();
     for rule in &tiers_json {
         groups.insert(
@@ -327,7 +286,7 @@ pub async fn get_performance_tiers(
         );
     }
 
-    // 5. Assign Tiers in-memory (No database updates here for speed)
+    // Assign Tiers
     for t in talents_json {
         let id = t
             .get("id")
@@ -343,12 +302,10 @@ pub async fn get_performance_tiers(
             .get("profile_photo_url")
             .and_then(|v| v.as_str())
             .map(|s| s.to_string());
-
         let earnings = *earnings_map.get(&id).unwrap_or(&0.0);
         let booking_count = *bookings_map.get(&id).unwrap_or(&0);
 
-        let mut assigned_tier = &tiers_json[tiers_json.len() - 1]; // Fallback to last (Inactive)
-
+        let mut assigned_tier = &tiers_json[tiers_json.len() - 1]; // Fallback
         for rule in &tiers_json {
             if earnings >= rule.min_monthly_earnings
                 && booking_count >= rule.min_monthly_bookings as i64
@@ -371,6 +328,12 @@ pub async fn get_performance_tiers(
 
     let mut result_tiers: Vec<TierGroup> = groups.into_values().collect();
     result_tiers.sort_by_key(|g| g.level);
+
+    let total_time = start_total.elapsed();
+    println!(
+        "Performance Tiers: DB parallel fetch took {:?}, Total took {:?}",
+        db_time, total_time
+    );
 
     Ok(Json(PerformanceTiersResponse {
         tiers: result_tiers,

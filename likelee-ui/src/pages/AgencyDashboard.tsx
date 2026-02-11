@@ -18264,7 +18264,7 @@ export default function AgencyDashboard() {
     if (!authenticated || !user?.id) return;
     setKycStatusRefreshing(true);
     try {
-      const rows: any = await base44.get("/api/kyc/status");
+      const rows: any = await base44.get("/kyc/status");
       const row = Array.isArray(rows) && rows.length ? rows[0] : null;
       const status = row?.kyc_status;
       if (typeof status === "string") setAgencyKycStatus(status);
@@ -18294,7 +18294,7 @@ export default function AgencyDashboard() {
     const interval = window.setInterval(
       async () => {
         try {
-          const rows: any = await base44.get("/api/kyc/status");
+          const rows: any = await base44.get("/kyc/status");
           const row = Array.isArray(rows) && rows.length ? rows[0] : null;
           const status = row?.kyc_status;
           if (!active || typeof status !== "string") return;
@@ -18406,7 +18406,7 @@ export default function AgencyDashboard() {
     let active = true;
     const interval = window.setInterval(async () => {
       try {
-        const rows: any = await base44.get("/api/kyc/status");
+        const rows: any = await base44.get("/kyc/status");
         const row = Array.isArray(rows) && rows.length ? rows[0] : null;
         const status = row?.kyc_status;
         if (!active || !status) return;
@@ -18565,7 +18565,7 @@ export default function AgencyDashboard() {
   const onRemoveBookOut = async (id: string) => {
     try {
       // Use fetch DELETE against API base
-      const res = await fetch(api(`/api/book-outs/${id}`), {
+      const res = await fetch(api(`/book-outs/${id}`), {
         method: "DELETE",
       });
       if (!res.ok) throw new Error(await res.text());
@@ -18659,7 +18659,7 @@ export default function AgencyDashboard() {
         duration: 3000,
       });
 
-      const data: any = await base44.post("/api/kyc/session", {
+      const data: any = await base44.post("/kyc/session", {
         user_id: user.id,
       });
 

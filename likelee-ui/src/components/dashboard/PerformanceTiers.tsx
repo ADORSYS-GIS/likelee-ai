@@ -29,16 +29,21 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { base44 } from "@/api/base44Client";
 
 const TIER_CONFIG: Record<string, any> = {
   Premium: {
     label: "Tier 1 - Premium",
     icon: Trophy,
-    color: "border-yellow-400",
-    textColor: "text-yellow-500",
-    iconBg: "bg-[#FAFAF5]",
-    statsBg: "bg-[#FFFEF0]",
-    statsBorder: "border-yellow-50",
+    color: "border-amber-400",
+    textColor: "text-white",
+    iconBg: "bg-gradient-to-br from-amber-400 to-amber-600",
+    brandColor: "text-amber-500",
+    brandBorder: "border-amber-500",
+    statsBg: "bg-amber-50/30",
+    statsBorder: "border-amber-100",
+    modalBg: "bg-amber-50",
+    modalInputBg: "bg-amber-100/30",
     recommendation:
       "Prioritize for high-value campaigns. Consider exclusive partnerships.",
     thresholds: "≥ $5,000/mo • ≥ 8 bookings",
@@ -48,10 +53,14 @@ const TIER_CONFIG: Record<string, any> = {
     label: "Tier 2 - Core",
     icon: TrendingUp,
     color: "border-blue-400",
-    textColor: "text-blue-500",
-    iconBg: "bg-[#FAFCFF]",
-    statsBg: "bg-[#F5F9FF]",
-    statsBorder: "border-blue-50",
+    textColor: "text-white",
+    iconBg: "bg-gradient-to-br from-blue-400 to-blue-600",
+    brandColor: "text-blue-500",
+    brandBorder: "border-blue-500",
+    statsBg: "bg-blue-50/30",
+    statsBorder: "border-blue-100",
+    modalBg: "bg-blue-50",
+    modalInputBg: "bg-blue-100/30",
     recommendation:
       "Stable performers. Focus on increasing campaign frequency and average deal value.",
     thresholds: "≥ $2,500/mo • ≥ 5 bookings",
@@ -60,11 +69,15 @@ const TIER_CONFIG: Record<string, any> = {
   Growth: {
     label: "Tier 3 - Growth",
     icon: Target,
-    color: "border-emerald-400",
-    textColor: "text-emerald-500",
-    iconBg: "bg-[#FAFFFC]",
-    statsBg: "bg-[#F5FFF8]",
-    statsBorder: "border-emerald-50",
+    color: "border-green-400",
+    textColor: "text-white",
+    iconBg: "bg-gradient-to-br from-emerald-400 to-emerald-600",
+    brandColor: "text-green-500",
+    brandBorder: "border-green-500",
+    statsBg: "bg-green-50/30",
+    statsBorder: "border-green-100",
+    modalBg: "bg-emerald-50",
+    modalInputBg: "bg-emerald-100/30",
     recommendation:
       "Invest in portfolio development. Increase brand exposure and campaign opportunities.",
     thresholds: "≥ $500/mo • ≥ 1 bookings",
@@ -73,11 +86,15 @@ const TIER_CONFIG: Record<string, any> = {
   Inactive: {
     label: "Tier 4 - Needs Attention",
     icon: AlertCircle,
-    color: "border-gray-300",
-    textColor: "text-gray-500",
-    iconBg: "bg-gray-50",
-    statsBg: "bg-gray-50",
+    color: "border-gray-200",
+    textColor: "text-white",
+    iconBg: "bg-gradient-to-br from-gray-400 to-gray-600",
+    brandColor: "text-gray-400",
+    brandBorder: "border-gray-400",
+    statsBg: "bg-gray-50/30",
     statsBorder: "border-gray-100",
+    modalBg: "bg-gray-50",
+    modalInputBg: "bg-gray-100/30",
     recommendation:
       "Requires immediate action. Consider portfolio refresh, marketing push, or roster review.",
     thresholds: "Includes all talent that don't meet Tier 3 requirements",
@@ -134,27 +151,22 @@ export const PerformanceTiers: React.FC = () => {
   const { data, isLoading, error } = useQuery<PerformanceTiersResponse>({
     queryKey: ["performance-tiers"],
     queryFn: async () => {
-      const {
-        data: { session },
-      } = (await supabase?.auth.getSession()) || { data: { session: null } };
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (session?.access_token) {
-        headers["Authorization"] = `Bearer ${session.access_token}`;
-      }
-      const resp = await fetch("/api/agency/dashboard/performance-tiers", {
-        headers,
-      });
-      if (!resp.ok) {
-        const text = await resp.text();
+      try {
+        const resp = await base44.get<PerformanceTiersResponse>(
+          "/agency/dashboard/performance-tiers",
+        );
+        return resp;
+      } catch (err: any) {
         // If the backend sent a "Dashboard Error: ..." message, use it directly
-        if (text.includes("Dashboard Error:")) {
-          throw new Error(text.split("Dashboard Error:")[1].trim());
+        const errorMessage = err?.response?.data || err.message;
+        if (
+          typeof errorMessage === "string" &&
+          errorMessage.includes("Dashboard Error:")
+        ) {
+          throw new Error(errorMessage.split("Dashboard Error:")[1].trim());
         }
-        throw new Error(text || `Error ${resp.status}`);
+        throw new Error(errorMessage || "Failed to load performance tiers");
       }
-      return resp.json();
     },
   });
 
@@ -166,24 +178,9 @@ export const PerformanceTiers: React.FC = () => {
 
   const configMutation = useMutation({
     mutationFn: async (config: any) => {
-      const {
-        data: { session },
-      } = (await supabase?.auth.getSession()) || { data: { session: null } };
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (session?.access_token) {
-        headers["Authorization"] = `Bearer ${session.access_token}`;
-      }
-      const resp = await fetch(
-        "/api/agency/dashboard/performance-tiers/configure",
-        {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ config }),
-        },
-      );
-      if (!resp.ok) throw new Error("Failed to update configuration");
+      await base44.post("/agency/dashboard/performance-tiers/configure", {
+        config,
+      });
       return true;
     },
     onSuccess: () => {
@@ -255,61 +252,60 @@ export const PerformanceTiers: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 max-w-7xl mx-auto pb-12">
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-            Performance Tiers
-          </h1>
-          <p className="text-gray-500 font-medium text-sm mt-1">
-            Talent segmented by earnings and activity levels
-          </p>
+    <div className="p-10 animate-in fade-in duration-500 space-y-12">
+      <div className="mb-12">
+        <div className="flex justify-between items-start mb-10">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+              Performance Tiers
+            </h1>
+            <p className="text-gray-500 font-medium text-sm mt-1">
+              Talent segmented by earnings and activity levels
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => setIsConfigModalOpen(true)}
+            className="flex items-center gap-2 border-gray-200 font-bold text-gray-700 bg-white hover:bg-gray-50 transition-colors rounded-none shadow-sm"
+          >
+            <Settings className="w-4 h-4 text-gray-400" /> Configure Tiers
+          </Button>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => setIsConfigModalOpen(true)}
-          className="flex items-center gap-2 border-gray-300 font-bold text-gray-700 bg-white shadow-sm"
-        >
-          <Settings className="w-4 h-4 text-gray-400" /> Configure Tiers
-        </Button>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {Object.keys(TIER_CONFIG).map((key) => {
+            const cfg = TIER_CONFIG[key];
+            const group = data?.tiers.find((t) => t.name === key) || {
+              talents: [],
+            };
+            return (
+              <Card
+                key={key}
+                className="p-6 bg-white border border-gray-200 shadow-sm rounded-none hover:shadow-md transition-shadow"
+              >
+                <div className="flex flex-col h-full">
+                  <div className="mb-4">
+                    <cfg.icon className={cn("w-7 h-7", cfg.brandColor)} />
+                  </div>
+                  <h3 className="text-sm font-bold text-gray-900 mb-1">
+                    {cfg.label}
+                  </h3>
+                  <div className="flex items-baseline gap-1.5 mt-auto">
+                    <span className="text-3xl font-bold text-gray-900">
+                      {group.talents.length}
+                    </span>
+                    <span className="text-xs text-gray-500 font-medium pb-1">
+                      talent
+                    </span>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {Object.keys(TIER_CONFIG).map((key) => {
-          const cfg = TIER_CONFIG[key];
-          const group = data?.tiers.find((t) => t.name === key) || {
-            talents: [],
-          };
-          return (
-            <Card
-              key={key}
-              className={cn(
-                "p-6 bg-white border-2 shadow-sm rounded-xl hover:shadow-md transition-shadow",
-                cfg.color,
-              )}
-            >
-              <div className="flex flex-col h-full">
-                <div className="mb-4">
-                  <cfg.icon className={cn("w-10 h-10", cfg.textColor)} />
-                </div>
-                <h3 className="text-sm font-bold text-gray-900 mb-1">
-                  {cfg.label}
-                </h3>
-                <div className="flex items-baseline gap-1.5 mt-auto">
-                  <span className="text-3xl font-bold text-gray-900">
-                    {group.talents.length}
-                  </span>
-                  <span className="text-xs text-gray-500 font-medium pb-1">
-                    talent
-                  </span>
-                </div>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
-
-      <div className="space-y-12 mt-12">
+      <div className="space-y-12">
         {data?.tiers.map((group) => {
           const cfg = TIER_CONFIG[group.name] || TIER_CONFIG.Inactive;
           const avgEarnings =
@@ -342,11 +338,16 @@ export const PerformanceTiers: React.FC = () => {
           return (
             <div
               key={group.name}
-              className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden p-8"
+              className="bg-white rounded-none border border-gray-200 shadow-sm overflow-hidden p-8"
             >
               <div className="flex items-center gap-4 mb-8">
-                <div className={cn("p-4 rounded-xl", cfg.iconBg)}>
-                  <cfg.icon className={cn("w-6 h-6", cfg.textColor)} />
+                <div
+                  className={cn(
+                    "p-4 rounded-none border-2 border-black",
+                    cfg.iconBg,
+                  )}
+                >
+                  <cfg.icon className="w-8 h-8 text-white" />
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-gray-900 leading-tight">
@@ -361,14 +362,17 @@ export const PerformanceTiers: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div
                   className={cn(
-                    "p-6 rounded-2xl border",
-                    cfg.statsBg,
-                    cfg.statsBorder,
+                    "p-6 rounded-2xl border border-gray-100 bg-white shadow-sm",
                   )}
                 >
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="p-2 bg-white rounded-lg shadow-sm">
-                      <DollarSign className={cn("w-4 h-4", cfg.textColor)} />
+                    <div
+                      className={cn(
+                        "p-2 rounded-xl shadow-sm border bg-transparent",
+                        cfg.brandBorder,
+                      )}
+                    >
+                      <DollarSign className={cn("w-4 h-4", cfg.brandColor)} />
                     </div>
                     <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                       Avg Monthly Earnings
@@ -381,14 +385,17 @@ export const PerformanceTiers: React.FC = () => {
 
                 <div
                   className={cn(
-                    "p-6 rounded-2xl border",
-                    cfg.statsBg,
-                    cfg.statsBorder,
+                    "p-6 rounded-2xl border border-gray-100 bg-white shadow-sm",
                   )}
                 >
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="p-2 bg-white rounded-lg shadow-sm">
-                      <Calendar className={cn("w-4 h-4", cfg.textColor)} />
+                    <div
+                      className={cn(
+                        "p-2 rounded-xl shadow-sm border bg-transparent",
+                        cfg.brandBorder,
+                      )}
+                    >
+                      <Calendar className={cn("w-4 h-4", cfg.brandColor)} />
                     </div>
                     <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                       Avg Booking Frequency
@@ -404,14 +411,17 @@ export const PerformanceTiers: React.FC = () => {
 
                 <div
                   className={cn(
-                    "p-6 rounded-2xl border",
-                    cfg.statsBg,
-                    cfg.statsBorder,
+                    "p-6 rounded-2xl border border-gray-100 bg-white shadow-sm",
                   )}
                 >
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="p-2 bg-white rounded-lg shadow-sm">
-                      <Users className={cn("w-4 h-4", cfg.textColor)} />
+                    <div
+                      className={cn(
+                        "p-2 rounded-xl shadow-sm border bg-white",
+                        cfg.brandBorder,
+                      )}
+                    >
+                      <Users className={cn("w-4 h-4", cfg.brandColor)} />
                     </div>
                     <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                       Total Talent
@@ -426,15 +436,15 @@ export const PerformanceTiers: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-[#F5F8FF] border border-[#E0E7FF] p-5 rounded-2xl flex items-start gap-4 mb-8">
-                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border-[3px] border-[#C7D2FE] flex-shrink-0 mt-0.5 shadow-sm">
-                  <Check className="w-4 h-4 text-indigo-600" strokeWidth={3} />
+              <div className="bg-blue-50 border border-blue-100 p-5 rounded-2xl flex items-start gap-4 mb-8">
+                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border-[3px] border-blue-200 flex-shrink-0 mt-0.5 shadow-sm">
+                  <Check className="w-4 h-4 text-blue-600" strokeWidth={3} />
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-gray-900 mb-1">
                     Agency Recommendation
                   </h4>
-                  <p className="text-[13px] text-[#4F46E5] font-semibold leading-snug">
+                  <p className="text-[13px] text-blue-600 font-semibold leading-snug">
                     {cfg.recommendation}
                   </p>
                 </div>
@@ -449,11 +459,14 @@ export const PerformanceTiers: React.FC = () => {
                     group.talents.map((talent) => (
                       <div
                         key={talent.id}
-                        className="flex items-center gap-4 p-5 border border-gray-100 rounded-2xl bg-white shadow-sm hover:shadow-md hover:border-indigo-100 transition-all group"
+                        className="flex items-center gap-4 p-5 border border-gray-100 rounded-none bg-white shadow-sm hover:shadow-md transition-all group"
                       >
-                        <Avatar className="w-14 h-14 rounded-2xl object-cover bg-gray-50 shadow-sm border border-gray-50">
-                          <AvatarImage src={talent.photo_url || ""} />
-                          <AvatarFallback className="bg-indigo-50 text-indigo-700 text-xs">
+                        <Avatar className="w-14 h-14 rounded-none object-cover bg-gray-50 shadow-sm border border-gray-200">
+                          <AvatarImage
+                            src={talent.photo_url || ""}
+                            className="rounded-none"
+                          />
+                          <AvatarFallback className="bg-indigo-50 text-indigo-700 text-xs rounded-none">
                             {talent.name.substring(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
@@ -476,9 +489,9 @@ export const PerformanceTiers: React.FC = () => {
                           </div>
                         </div>
                         <div className="hidden md:flex flex-col items-center gap-2 w-48 mr-6">
-                          <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden border border-gray-50">
+                          <div className="w-full h-2 bg-gray-100 rounded-none overflow-hidden border border-gray-50">
                             <div
-                              className="h-full bg-gray-900 rounded-full"
+                              className="h-full bg-gray-900 rounded-none"
                               style={{
                                 width:
                                   talent.tier.tier_name === "Premium"
@@ -493,15 +506,15 @@ export const PerformanceTiers: React.FC = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-10 font-bold text-gray-700 bg-white border-gray-200 px-6 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                          className="h-10 font-bold text-gray-700 bg-white border-gray-200 px-6 rounded-none hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
                         >
                           View
                         </Button>
                       </div>
                     ))
                   ) : (
-                    <div className="flex flex-col items-center justify-center py-16 text-center bg-gray-50/30 rounded-2xl border border-dashed border-gray-200">
-                      <div className="p-6 bg-white rounded-full mb-4 shadow-sm">
+                    <div className="flex flex-col items-center justify-center py-16 text-center bg-gray-50/30 rounded-none border border-dashed border-gray-200">
+                      <div className="p-6 bg-white rounded-none mb-4 shadow-sm border border-gray-200">
                         <Users className="w-12 h-12 text-gray-100" />
                       </div>
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-widest leading-relaxed">
@@ -520,8 +533,8 @@ export const PerformanceTiers: React.FC = () => {
 
       {/* Configure Tiers Modal */}
       <Dialog open={isConfigModalOpen} onOpenChange={setIsConfigModalOpen}>
-        <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden border-none shadow-2xl rounded-3xl max-h-[90vh] flex flex-col">
-          <DialogHeader className="p-8 pb-4 flex-shrink-0">
+        <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden border-none shadow-2xl rounded-3xl max-h-[95vh] flex flex-col">
+          <DialogHeader className="p-10 pb-4 flex-shrink-0">
             <DialogTitle className="text-2xl font-bold text-gray-900">
               Configure Performance Tier Thresholds
             </DialogTitle>
@@ -530,93 +543,96 @@ export const PerformanceTiers: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="px-8 py-2 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
-            <div className="space-y-6 pb-6">
-              {["Premium", "Core", "Growth"].map((tier) => (
-                <div
-                  key={tier}
-                  className={cn(
-                    "p-6 rounded-2xl border-2 transition-all",
-                    TIER_CONFIG[tier].color,
-                    TIER_CONFIG[tier].iconBg,
-                  )}
-                >
-                  <div className="flex items-center gap-2 mb-4">
-                    {React.createElement(TIER_CONFIG[tier].icon, {
-                      className: cn("w-5 h-5", TIER_CONFIG[tier].textColor),
-                    })}
-                    <span className="font-bold text-gray-900">
-                      {TIER_CONFIG[tier].label}
-                    </span>
+          <div className="px-10 py-2 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
+            {["Premium", "Core", "Growth"].map((tier) => (
+              <div
+                key={tier}
+                className={cn(
+                  "p-8 rounded-2xl border border-gray-100 transition-all",
+                  TIER_CONFIG[tier].modalBg,
+                )}
+              >
+                <div className="flex items-center gap-2 mb-6">
+                  {React.createElement(TIER_CONFIG[tier].icon, {
+                    className: cn("w-5 h-5", TIER_CONFIG[tier].brandColor),
+                  })}
+                  <span className="font-bold text-gray-900">
+                    {TIER_CONFIG[tier].label}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-8">
+                  <div className="space-y-3">
+                    <Label className="text-[13px] font-bold text-gray-600 ml-1">
+                      Minimum Monthly Earnings ($)
+                    </Label>
+                    <Input
+                      type="number"
+                      value={configForm[tier]?.min_earnings}
+                      onChange={(e) =>
+                        setConfigForm({
+                          ...configForm,
+                          [tier]: {
+                            ...configForm[tier],
+                            min_earnings: Number(e.target.value),
+                          },
+                        })
+                      }
+                      className={cn(
+                        "h-12 border-gray-200 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-indigo-500 transition-all",
+                        TIER_CONFIG[tier].modalInputBg,
+                      )}
+                    />
                   </div>
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label className="text-[13px] font-bold text-gray-600 ml-1">
-                        Minimum Monthly Earnings ($)
-                      </Label>
-                      <Input
-                        type="number"
-                        value={configForm[tier]?.min_earnings}
-                        onChange={(e) =>
-                          setConfigForm({
-                            ...configForm,
-                            [tier]: {
-                              ...configForm[tier],
-                              min_earnings: Number(e.target.value),
-                            },
-                          })
-                        }
-                        className="h-12 bg-white border-gray-200 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-indigo-500 transition-all"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-[13px] font-bold text-gray-600 ml-1">
-                        Minimum Bookings/Month
-                      </Label>
-                      <Input
-                        type="number"
-                        value={configForm[tier]?.min_bookings}
-                        onChange={(e) =>
-                          setConfigForm({
-                            ...configForm,
-                            [tier]: {
-                              ...configForm[tier],
-                              min_bookings: Number(e.target.value),
-                            },
-                          })
-                        }
-                        className="h-12 bg-white border-gray-200 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-indigo-500 transition-all"
-                      />
-                    </div>
+                  <div className="space-y-3">
+                    <Label className="text-[13px] font-bold text-gray-600 ml-1">
+                      Minimum Bookings/Month
+                    </Label>
+                    <Input
+                      type="number"
+                      value={configForm[tier]?.min_bookings}
+                      onChange={(e) =>
+                        setConfigForm({
+                          ...configForm,
+                          [tier]: {
+                            ...configForm[tier],
+                            min_bookings: Number(e.target.value),
+                          },
+                        })
+                      }
+                      className={cn(
+                        "h-12 border-gray-200 rounded-xl font-bold text-gray-900 focus:ring-2 focus:ring-indigo-500 transition-all",
+                        TIER_CONFIG[tier].modalInputBg,
+                      )}
+                    />
                   </div>
                 </div>
-              ))}
-              <p className="text-[13px] text-gray-400 font-medium italic pl-1 mb-4">
-                Note: Tier 4 includes all talent that don't meet Tier 3
-                requirements.
-              </p>
-            </div>
+              </div>
+            ))}
+            <p className="text-[13px] text-gray-500 font-medium pl-1 py-2">
+              <span className="font-bold">Note:</span> Tier 4 includes all
+              talent that don't meet Tier 3 requirements.
+            </p>
           </div>
 
-          <div className="px-8 pb-10 pt-2 flex flex-col sm:flex-row gap-3 sm:justify-end flex-shrink-0">
+          <div className="px-10 pb-10 pt-4 flex flex-col sm:flex-row gap-4 sm:justify-end flex-shrink-0">
             <Button
               variant="outline"
               onClick={handleResetToDefaults}
-              className="h-11 px-6 rounded-xl border-gray-200 font-bold text-gray-700 hover:bg-gray-50 order-2 sm:order-1"
+              className="h-11 px-8 rounded-xl border-gray-200 font-bold text-gray-700 bg-white hover:bg-gray-50 order-2 sm:order-1"
             >
               Reset to Defaults
             </Button>
             <Button
               variant="outline"
               onClick={() => setIsConfigModalOpen(false)}
-              className="h-11 px-6 rounded-xl border-gray-200 font-bold text-gray-700 hover:bg-gray-50 order-3 sm:order-2"
+              className="h-11 px-8 rounded-xl border-gray-200 font-bold text-gray-700 bg-white hover:bg-gray-50 order-3 sm:order-2"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSaveConfig}
               disabled={configMutation.isPending}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 px-8 rounded-xl shadow-lg shadow-indigo-100 transition-all active:scale-95 disabled:opacity-70 order-1 sm:order-3 min-w-[140px]"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 px-10 rounded-xl shadow-lg shadow-indigo-100 transition-all active:scale-95 disabled:opacity-70 order-1 sm:order-3 min-w-[160px] border-none"
             >
               {configMutation.isPending ? "Saving..." : "Save Changes"}
             </Button>

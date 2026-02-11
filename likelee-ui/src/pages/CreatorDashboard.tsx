@@ -1045,7 +1045,7 @@ export default function CreatorDashboard() {
     let active = true;
     const interval = window.setInterval(async () => {
       try {
-        const rows: any = await base44.get("/api/kyc/status");
+        const rows: any = await base44.get("/kyc/status");
         const row = Array.isArray(rows) && rows.length ? rows[0] : null;
         const status = row?.kyc_status;
         if (!active || !status) return;
@@ -1235,7 +1235,7 @@ export default function CreatorDashboard() {
     (async () => {
       try {
         // Use authenticated client so Authorization header is attached
-        const items = await base44.get<any[]>(`/api/reference-images`);
+        const items = await base44.get<any[]>(`/reference-images`);
         if (Array.isArray(items)) {
           // keep latest per section_id
           const bySection = new Map<string, any>();
@@ -1267,7 +1267,7 @@ export default function CreatorDashboard() {
     (async () => {
       try {
         // 1) List recordings via authenticated client
-        const rows = await base44.get<any[]>(`/api/voice/recordings`, {
+        const rows = await base44.get<any[]>(`/voice/recordings`, {
           params: { user_id: user.id },
         } as any);
         if (!Array.isArray(rows)) return;
@@ -1276,10 +1276,9 @@ export default function CreatorDashboard() {
         const withUrls = await Promise.all(
           rows.map(async (row: any) => {
             try {
-              const j = await base44.get<any>(
-                `/api/voice/recordings/signed-url`,
-                { params: { recording_id: row.id, expires_sec: 600 } } as any,
-              );
+              const j = await base44.get<any>(`/voice/recordings/signed-url`, {
+                params: { recording_id: row.id, expires_sec: 600 },
+              } as any);
               return {
                 id: row.id,
                 emotion: row.emotion_tag || null,
@@ -1369,7 +1368,7 @@ export default function CreatorDashboard() {
     const abort = new AbortController();
     (async () => {
       try {
-        const json = await base44.get("/api/dashboard");
+        const json = await base44.get("/dashboard");
         const profile = json.profile || {};
         setCreator((prev: any) => ({
           ...prev,
@@ -1424,7 +1423,7 @@ export default function CreatorDashboard() {
     if (!initialized || !authenticated || !user?.id) return;
     (async () => {
       try {
-        const data = await base44.get("/api/creator-rates");
+        const data = await base44.get("/creator-rates");
         setCustomRates(
           data.filter(
             (rate: any) =>
@@ -1493,7 +1492,7 @@ export default function CreatorDashboard() {
       setShowKycModal(true);
       setKycEmbedLoading(true);
       setKycLoading(true);
-      const data: any = await base44.post("/api/kyc/session", {
+      const data: any = await base44.post("/kyc/session", {
         user_id: user.id,
       });
       // Optimistic UI: once a session is created, verification is in progress.
@@ -1516,7 +1515,7 @@ export default function CreatorDashboard() {
     if (!authenticated || !user?.id) return;
     try {
       setKycLoading(true);
-      const rows = await base44.get("/api/kyc/status");
+      const rows = await base44.get("/kyc/status");
       const row = Array.isArray(rows) && rows.length ? rows[0] : null;
       if (row && (row.kyc_status || row.liveness_status)) {
         setCreator((prev: any) => ({
@@ -2722,7 +2721,7 @@ export default function CreatorDashboard() {
               const sid = rec?.server_recording_id || rec?.id;
               if (sid) {
                 await fetch(
-                  api(`/api/voice/recordings/${encodeURIComponent(sid)}`),
+                  api(`/voice/recordings/${encodeURIComponent(sid)}`),
                   {
                     method: "DELETE",
                   },
@@ -2748,7 +2747,7 @@ export default function CreatorDashboard() {
       // 1) Upload recording to Likelee server (private bucket)
       const uploadRes = await fetch(
         api(
-          `/api/voice/recordings?user_id=${encodeURIComponent(user.id)}&emotion_tag=${encodeURIComponent(recording.emotion || "")}`,
+          `/voice/recordings?user_id=${encodeURIComponent(user.id)}&emotion_tag=${encodeURIComponent(recording.emotion || "")}`,
         ),
         {
           method: "POST",
@@ -3284,12 +3283,22 @@ export default function CreatorDashboard() {
 
       // Upload via backend (Option B: server-only writes)
       const buf = await file.arrayBuffer();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        throw new Error("Missing auth session. Please sign in again.");
+      }
       const full = api(
-        `/api/reference-images/upload?section_id=${encodeURIComponent(selectedImageSection)}`,
+        `/reference-images/upload?section_id=${encodeURIComponent(selectedImageSection)}`,
       );
       const res = await fetch(full, {
         method: "POST",
-        headers: { "content-type": file.type || "image/jpeg" },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "content-type": file.type || "image/jpeg",
+        },
         body: new Uint8Array(buf),
       });
       if (!res.ok) {

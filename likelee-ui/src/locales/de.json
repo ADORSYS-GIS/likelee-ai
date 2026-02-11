@@ -877,6 +877,7 @@
     "toasts": {
       "profileSaved": "Profil erfolgreich gespeichert!",
       "profileSaveFailed": "Profil konnte nicht gespeichert werden",
+      "profilePhotoUpdated": "Profilfoto aktualisiert!",
       "ratesSaved": "Preise erfolgreich gespeichert!",
       "ratesSaveFailed": "Preise konnten nicht gespeichert werden",
       "contentSaved": "Inhaltspräferenzen gespeichert!",

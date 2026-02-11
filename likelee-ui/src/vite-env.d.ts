@@ -1,5 +1,7 @@
 /// <reference types="vite/client" />
 
+declare const __API_BASE_URL__: string;
+
 declare namespace JSX {
   interface IntrinsicElements {
     "docuseal-builder": React.DetailedHTMLProps<

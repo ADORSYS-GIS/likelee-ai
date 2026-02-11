@@ -1,16 +1,17 @@
-    -- 0020_get_public_package_details_fix.sql
-    -- Fixes property naming to match frontend expectations (asset_url)
-    -- Ensures talent data (Location, Ethnicity, Bio, Availability) is correctly mapped with fallbacks.
-    -- Uses verified column names from packages.rs and internal schema.
+        -- 0020_get_public_package_details_fix.sql
+-- Fixes property naming to match frontend expectations (asset_url)
+-- Ensures talent data (Location, Ethnicity, Bio, Availability) is correctly mapped with fallbacks.
+-- Uses verified column names from packages.rs and internal schema.
 
-    BEGIN;
+BEGIN;
 
-    CREATE OR REPLACE FUNCTION get_public_package_details(p_access_token TEXT)
-    RETURNS JSONB AS $$
-    DECLARE
+CREATE OR REPLACE FUNCTION get_public_package_details(p_access_token TEXT)
+RETURNS JSONB AS $$
+DECLARE
         result JSONB;
-    BEGIN
-        SELECT jsonb_build_object(
+BEGIN
+    SELECT
+        jsonb_build_object(
             'id', p.id,
             'agency_id', p.agency_id,
             'title', p.title,
@@ -26,13 +27,28 @@
             'access_token', p.access_token,
             'created_at', p.created_at,
             'updated_at', p.updated_at,
-            'agency', (SELECT jsonb_build_object('agency_name', a.agency_name, 'logo_url', a.logo_url) FROM public.agencies a WHERE a.id = p.agency_id),
-            'interactions', (SELECT jsonb_agg(jsonb_build_object('talent_id', i.talent_id, 'type', i.type, 'content', i.content, 'client_name', i.client_name)) FROM public.agency_talent_package_interactions i WHERE i.package_id = p.id),
-            'items', (
+            'agency', (
+                SELECT jsonb_build_object('agency_name', a.agency_name, 'logo_url', a.logo_url)
+                FROM public.agencies a
+                WHERE a.id = p.agency_id
+            ),
+            'interactions', COALESCE((
                 SELECT jsonb_agg(
                     jsonb_build_object(
-                        'id', i.id,
-                        'sort_order', i.sort_order,
+                        'talent_id', i.talent_id,
+                        'type', i.type,
+                        'content', i.content,
+                        'client_name', i.client_name
+                    )
+                )
+                FROM public.agency_talent_package_interactions i
+                WHERE i.package_id = p.id
+            ), '[]'::jsonb),
+            'items', COALESCE((
+                SELECT jsonb_agg(
+                    jsonb_build_object(
+                        'id', it.id,
+                        'sort_order', it.sort_order,
                         'talent', (
                             SELECT jsonb_build_object(
                                 'id', u.id,
@@ -42,7 +58,9 @@
                                 'bio_notes', u.bio_notes,
                                 'city', u.city,
                                 'race_ethnicity', u.race_ethnicity
-                            ) FROM public.agency_users u WHERE u.id = i.talent_id
+                            )
+                            FROM public.agency_users u
+                            WHERE u.id = it.talent_id
                         ),
                         'assets', COALESCE((
                             SELECT jsonb_agg(
@@ -53,39 +71,28 @@
                                     'sort_order', pa.sort_order,
                                     'asset', jsonb_build_object(
                                         'id', pa.asset_id,
-                                        'public_url', COALESCE(
+                                        'asset_url', COALESCE(
                                             (SELECT public_url FROM public.agency_files WHERE id = pa.asset_id LIMIT 1),
-                                            (SELECT public_url FROM public.reference_images WHERE id = pa.asset_id LIMIT 1),
-                                            (SELECT public_url FROM public.images WHERE id = pa.asset_id LIMIT 1),
-                                            (SELECT public_url FROM public.videos WHERE id = pa.asset_id LIMIT 1)
-                                        ),
-                                        'storage_bucket', COALESCE(
-                                            (SELECT storage_bucket FROM public.agency_files WHERE id = pa.asset_id LIMIT 1),
-                                            (SELECT storage_bucket FROM public.reference_images WHERE id = pa.asset_id LIMIT 1)
-                                        ),
-                                        'storage_path', COALESCE(
-                                            (SELECT storage_path FROM public.agency_files WHERE id = pa.asset_id LIMIT 1),
-                                            (SELECT storage_path FROM public.reference_images WHERE id = pa.asset_id LIMIT 1)
-                                        ),
-                                        'asset_type', pa.asset_type
+                                            (SELECT public_url FROM public.reference_images WHERE id = pa.asset_id LIMIT 1)
+                                        )
                                     )
                                 )
                             )
                             FROM public.agency_talent_package_item_assets pa
-                            WHERE pa.item_id = i.id
+                            WHERE pa.item_id = it.id
                         ), '[]'::jsonb)
                     )
-                ) 
-                FROM public.agency_talent_package_items i 
-                WHERE i.package_id = p.id
-            )
+                )
+                FROM public.agency_talent_package_items it
+                WHERE it.package_id = p.id
+            ), '[]'::jsonb)
         )
         INTO result
-        FROM public.agency_talent_packages p
-        WHERE p.access_token = p_access_token;
+    FROM public.agency_talent_packages p
+    WHERE p.access_token = p_access_token;
 
-        RETURN result;
-    END;
-    $$ LANGUAGE plpgsql SECURITY DEFINER;
+            RETURN result;
+        END;
+        $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-    COMMIT;
+        COMMIT;
