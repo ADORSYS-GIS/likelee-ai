@@ -2756,51 +2756,52 @@ export default function CreatorDashboard() {
 
       const ct = recording?.mimeType || recording?.blob?.type || "audio/webm";
 
-      // 1) Upload recording to Likelee server (private bucket)
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (!token) {
-        throw new Error("Missing auth session. Please sign in again.");
-      }
-      const uploadRes = await fetch(
-        api(
-          `/voice/recordings?emotion_tag=${encodeURIComponent(recording.emotion || "")}`,
-        ),
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "content-type": ct,
+      // 1) Use existing persisted recording if available, otherwise upload it
+      let recordingId = recording?.server_recording_id;
+      if (!recordingId) {
+        if (!recording?.blob) {
+          throw new Error(
+            "Recording audio is not available. Please re-record and try again.",
+          );
+        }
+
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        if (!token) {
+          throw new Error("Missing auth session. Please sign in again.");
+        }
+
+        const uploadRes = await fetch(
+          api(
+            `/voice/recordings?emotion_tag=${encodeURIComponent(recording.emotion || "")}`,
+          ),
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "content-type": ct,
+            },
+            body: recording.blob,
           },
-          body: recording.blob,
-        },
-      );
-      if (!uploadRes.ok) {
-        const txt = await uploadRes.text();
-        throw new Error(`Upload failed: ${txt}`);
+        );
+        if (!uploadRes.ok) {
+          const txt = await uploadRes.text();
+          throw new Error(`Upload failed: ${txt}`);
+        }
+        const uploaded = await uploadRes.json(); // { id, storage_bucket, storage_path }
+        recordingId = uploaded?.id;
+        if (!recordingId) throw new Error("Missing recording id after upload");
       }
-      const uploaded = await uploadRes.json(); // { id, storage_bucket, storage_path }
-      const recordingId = uploaded?.id;
-      if (!recordingId) throw new Error("Missing recording id after upload");
 
       // 2) Create ElevenLabs clone via Likelee server
-      const cloneRes = await fetch(api(`/api/voice/models/clone`), {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          user_id: user.id,
-          recording_id: recordingId,
-          voice_name: `${creator.name}_${recording.emotion}`,
-          description: `${recording.emotion} voice profile for ${creator.name}`,
-        }),
+      const cloned = await base44.post(`/voice/models/clone`, {
+        user_id: user.id,
+        recording_id: recordingId,
+        voice_name: `${creator.name}_${recording.emotion}`,
+        description: `${recording.emotion} voice profile for ${creator.name}`,
       });
-      if (!cloneRes.ok) {
-        const txt = await cloneRes.text();
-        throw new Error(`Clone failed: ${txt}`);
-      }
-      const cloned = await cloneRes.json(); // { provider, voice_id, model_row_id }
 
       setVoiceLibrary(
         voiceLibrary.map((rec) =>
