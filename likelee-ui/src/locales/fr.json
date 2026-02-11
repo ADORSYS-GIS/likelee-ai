@@ -1248,6 +1248,7 @@
     "toasts": {
       "profileSaved": "Profil enregistré avec succès !",
       "profileSaveFailed": "Échec de l'enregistrement du profil",
+      "profilePhotoUpdated": "Photo de profil mise à jour !",
       "ratesSaved": "Tarifs enregistrés avec succès !",
       "ratesSaveFailed": "Échec de l'enregistrement des tarifs",
       "contentSaved": "Préférences de contenu enregistrées !",

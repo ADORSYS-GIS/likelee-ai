@@ -2422,6 +2422,7 @@
     "toasts": {
       "profileSaved": "Profile saved successfully!",
       "profileSaveFailed": "Failed to save profile",
+      "profilePhotoUpdated": "Profile photo updated!",
       "ratesSaved": "Rates saved successfully!",
       "ratesSaveFailed": "Failed to save rates",
       "contentSaved": "Content preferences saved!",
