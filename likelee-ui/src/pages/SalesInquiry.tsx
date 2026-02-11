@@ -35,7 +35,7 @@ export default function SalesInquiry() {
       // For now we'll simulate a successful submission logging
       console.log("Sales Inquiry Submitted:", data);
 
-      return base44.post("/api/integrations/core/send-email", {
+      return base44.post("/integrations/core/send-email", {
         to: "admin@likelee.ai",
         subject: `Sales Inquiry from ${data.company_name}`,
         body: `

@@ -333,9 +333,7 @@ const DashboardView = ({
                 </span>
                 <img
                   src={
-                    talent.photo_url ||
-                    talent.img ||
-                    "https://via.placeholder.com/150"
+                    talent.photo_url || talent.img || "https://placehold.co/150"
                   }
                   alt={talent.name}
                   className="w-12 h-12 rounded-lg object-cover"
@@ -374,7 +372,7 @@ const DashboardView = ({
                 .map((talent) => (
                   <div key={talent.id} className="flex items-center gap-3">
                     <img
-                      src={talent.img || "https://via.placeholder.com/150"}
+                      src={talent.img || "https://placehold.co/150"}
                       alt={talent.name}
                       className="w-8 h-8 rounded-full object-cover"
                     />

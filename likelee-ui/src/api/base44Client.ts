@@ -1,5 +1,5 @@
 // Axios-free minimal client targeting our backend API base URL.
-// It intentionally matches the subset used in src/api/functions.ts
+// It intentionally matches the subset used in src/functions.ts
 
 type RequestConfig = {
   headers?: Record<string, string>;
@@ -11,7 +11,12 @@ function buildUrl(
   url: string,
   params?: RequestConfig["params"],
 ): string {
-  const u = new URL(url, base);
+  // If base has a path (e.g. /api) and url starts with /, URL() constructor will drop the base path.
+  // We need to treat 'url' as relative to 'base'.
+  const normalizedBase = base.endsWith("/") ? base : `${base}/`;
+  const normalizedUrl = url.startsWith("/") ? url.slice(1) : url;
+
+  const u = new URL(normalizedUrl, normalizedBase);
   if (params) {
     Object.entries(params).forEach(([k, v]) => {
       if (v !== undefined && v !== null) u.searchParams.set(k, String(v));
@@ -20,9 +25,10 @@ function buildUrl(
   return u.toString();
 }
 
-let RAW_BASE = (import.meta as any)?.env?.VITE_API_BASE_URL as
-  | string
-  | undefined;
+let RAW_BASE =
+  (import.meta as any)?.env?.VITE_API_BASE_URL ||
+  (typeof __API_BASE_URL__ !== "undefined" ? __API_BASE_URL__ : undefined);
+
 if (!RAW_BASE) {
   const stored =
     typeof window !== "undefined"
@@ -48,7 +54,7 @@ const API_BASE = (() => {
     if (normalizedBase.startsWith("http")) return normalizedBase;
     return new URL(normalizedBase, window.location.origin).toString();
   } catch {
-    return new URL("/api/", window.location.origin).toString();
+    return new URL("/", window.location.origin).toString();
   }
 })();
 

@@ -277,7 +277,7 @@ export const GenerateInvoiceViewApi = () => {
       ];
 
       try {
-        await base44.post("/api/integrations/core/send-email", {
+        await base44.post("/integrations/core/send-email", {
           to: email,
           subject,
           body: lines.join("\n"),
