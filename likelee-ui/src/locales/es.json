@@ -875,6 +875,7 @@
     "toasts": {
       "profileSaved": "¡Perfil guardado con éxito!",
       "profileSaveFailed": "Error al guardar el perfil",
+      "profilePhotoUpdated": "¡Foto de perfil actualizada!",
       "ratesSaved": "¡Tarifas guardadas con éxito!",
       "ratesSaveFailed": "Error al guardar las tarifas",
       "contentSaved": "¡Preferencias de contenido guardadas!",
