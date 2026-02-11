@@ -8,7 +8,7 @@ export default ({ mode }) => {
   return defineConfig({
     plugins: [react()],
     define: {
-      "__API_BASE_URL__": JSON.stringify(env.VITE_API_BASE_URL),
+      __API_BASE_URL__: JSON.stringify(env.VITE_API_BASE_URL),
     },
     server: {
       allowedHosts: true,

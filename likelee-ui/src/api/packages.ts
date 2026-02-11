@@ -14,8 +14,7 @@ export const packageApi = {
 
   getPackage: (id: string) => base44Client.get(`/agency/packages/${id}`),
 
-  deletePackage: (id: string) =>
-    base44Client.delete(`/agency/packages/${id}`),
+  deletePackage: (id: string) => base44Client.delete(`/agency/packages/${id}`),
 
   listTalents: (q?: string) => {
     const params = q ? `?q=${encodeURIComponent(q)}` : "";
@@ -40,6 +39,5 @@ export const packageApi = {
   deleteInteraction: (
     token: string,
     data: { talent_id: string; type: "favorite" | "callback" | "selected" },
-  ) =>
-    base44Client.delete(`/public/packages/${token}/interactions`, { data }),
+  ) => base44Client.delete(`/public/packages/${token}/interactions`, { data }),
 };

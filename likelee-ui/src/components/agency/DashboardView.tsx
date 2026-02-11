@@ -333,9 +333,7 @@ const DashboardView = ({
                 </span>
                 <img
                   src={
-                    talent.photo_url ||
-                    talent.img ||
-                    "https://placehold.co/150"
+                    talent.photo_url || talent.img || "https://placehold.co/150"
                   }
                   alt={talent.name}
                   className="w-12 h-12 rounded-lg object-cover"

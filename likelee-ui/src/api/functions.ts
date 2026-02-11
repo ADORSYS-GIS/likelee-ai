@@ -55,8 +55,7 @@ export const expandJobDescription = (data: any) =>
 export const createUserAccount = (data: any) =>
   base44Client.post("/auth/register", data);
 
-export const loginUser = (data: any) =>
-  base44Client.post("/auth/login", data);
+export const loginUser = (data: any) => base44Client.post("/auth/login", data);
 
 export const createVoiceProfile = (data: any) =>
   base44Client.post("/voice/create-profile", data);
@@ -75,19 +74,16 @@ export const getKycStatus = () =>
 // Organization (profile) KYC
 export const createOrganizationKycSession = (data: {
   organization_id: string;
-}) =>
-  base44Client.post<KycSessionResponse>("/kyc/organization/session", data);
+}) => base44Client.post<KycSessionResponse>("/kyc/organization/session", data);
 
 export const getOrganizationKycStatus = (organization_id: string) =>
   base44Client.get<KycStatusResponse>(
     `/kyc/organization/status?organization_id=${organization_id}`,
   );
 
-export const getBrandProfile = () =>
-  base44Client.get(`/brand-profile/user`);
+export const getBrandProfile = () => base44Client.get(`/brand-profile/user`);
 
-export const getAgencyProfile = () =>
-  base44Client.get(`/agency-profile/user`);
+export const getAgencyProfile = () => base44Client.get(`/agency-profile/user`);
 
 // Agency billing (Stripe subscriptions)
 export const createAgencySubscriptionCheckout = (data: {
@@ -143,10 +139,7 @@ export const getStripeOAuthUrl = async (profileId: string) => {
 };
 
 export const getAgencyStripeOnboardingLink = async () => {
-  const resp = await base44Client.post(
-    `/agency/payouts/onboarding_link`,
-    {},
-  );
+  const resp = await base44Client.post(`/agency/payouts/onboarding_link`, {});
   return { data: { status: "ok", url: (resp as any)?.url } } as any;
 };
 
@@ -304,8 +297,7 @@ export const listInvoices = (params?: {
   date_end?: string;
 }) => base44Client.get(`/invoices`, { params: params || {} });
 
-export const getInvoice = (id: string) =>
-  base44Client.get(`/invoices/${id}`);
+export const getInvoice = (id: string) => base44Client.get(`/invoices/${id}`);
 
 // Talent Statements (Agency Dashboard)
 export const listTalentStatements = (params?: {

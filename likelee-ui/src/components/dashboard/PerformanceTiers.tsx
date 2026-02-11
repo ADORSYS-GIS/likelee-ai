@@ -153,13 +153,16 @@ export const PerformanceTiers: React.FC = () => {
     queryFn: async () => {
       try {
         const resp = await base44.get<PerformanceTiersResponse>(
-          "/agency/dashboard/performance-tiers"
+          "/agency/dashboard/performance-tiers",
         );
         return resp;
       } catch (err: any) {
         // If the backend sent a "Dashboard Error: ..." message, use it directly
         const errorMessage = err?.response?.data || err.message;
-        if (typeof errorMessage === "string" && errorMessage.includes("Dashboard Error:")) {
+        if (
+          typeof errorMessage === "string" &&
+          errorMessage.includes("Dashboard Error:")
+        ) {
           throw new Error(errorMessage.split("Dashboard Error:")[1].trim());
         }
         throw new Error(errorMessage || "Failed to load performance tiers");
@@ -175,7 +178,9 @@ export const PerformanceTiers: React.FC = () => {
 
   const configMutation = useMutation({
     mutationFn: async (config: any) => {
-      await base44.post("/agency/dashboard/performance-tiers/configure", { config });
+      await base44.post("/agency/dashboard/performance-tiers/configure", {
+        config,
+      });
       return true;
     },
     onSuccess: () => {
@@ -306,14 +311,14 @@ export const PerformanceTiers: React.FC = () => {
           const avgEarnings =
             group.talents.length > 0
               ? group.talents.reduce((acc, t) => acc + t.earnings_30d, 0) /
-              group.talents.length
+                group.talents.length
               : 0;
           const avgBookings =
             group.talents.length > 0
               ? group.talents.reduce(
-                (acc, t) => acc + t.bookings_this_month,
-                0,
-              ) / group.talents.length
+                  (acc, t) => acc + t.bookings_this_month,
+                  0,
+                ) / group.talents.length
               : 0;
           const percentOfRoster =
             totalTalents > 0

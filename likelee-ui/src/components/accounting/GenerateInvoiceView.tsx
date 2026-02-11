@@ -440,24 +440,24 @@ export const GenerateInvoiceViewApi = () => {
         setItems(
           invItems.length
             ? invItems.map((x: any) => ({
-              id: String(x.id || Math.random().toString(36).slice(2)),
-              description: String(x.description || ""),
-              talent_id: x.talent_id ? String(x.talent_id) : undefined,
-              date_of_service: x.date_of_service
-                ? String(x.date_of_service)
-                : undefined,
-              rate_type: x.rate_type ? String(x.rate_type) : undefined,
-              quantity: String(x.quantity ?? "1"),
-              unit_price_cents: String(x.unit_price_cents ?? 0),
-            }))
+                id: String(x.id || Math.random().toString(36).slice(2)),
+                description: String(x.description || ""),
+                talent_id: x.talent_id ? String(x.talent_id) : undefined,
+                date_of_service: x.date_of_service
+                  ? String(x.date_of_service)
+                  : undefined,
+                rate_type: x.rate_type ? String(x.rate_type) : undefined,
+                quantity: String(x.quantity ?? "1"),
+                unit_price_cents: String(x.unit_price_cents ?? 0),
+              }))
             : [
-              {
-                id: Math.random().toString(36).slice(2),
-                description: "",
-                quantity: "1",
-                unit_price_cents: "0",
-              },
-            ],
+                {
+                  id: Math.random().toString(36).slice(2),
+                  description: "",
+                  quantity: "1",
+                  unit_price_cents: "0",
+                },
+              ],
         );
 
         setExpenses(
@@ -597,8 +597,8 @@ export const GenerateInvoiceViewApi = () => {
         const lineTotal = Math.round(qty * unit);
         const talentName = it.talent_id
           ? talents.find((t) => t?.id === it.talent_id)?.full_name ||
-          talents.find((t) => t?.id === it.talent_id)?.name ||
-          ""
+            talents.find((t) => t?.id === it.talent_id)?.name ||
+            ""
           : "";
         const meta = [talentName, it.date_of_service || "", it.rate_type || ""]
           .filter(Boolean)
@@ -1071,10 +1071,11 @@ export const GenerateInvoiceViewApi = () => {
             <div className="flex gap-3">
               <Button
                 variant={createFrom === "booking" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "booking"
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
+                  createFrom === "booking"
                     ? "bg-indigo-600 hover:bg-indigo-700 text-white"
                     : "border-gray-200 text-gray-700"
-                  }`}
+                }`}
                 onClick={() => setCreateFrom("booking")}
               >
                 <Calendar className="w-5 h-5" />
@@ -1082,10 +1083,11 @@ export const GenerateInvoiceViewApi = () => {
               </Button>
               <Button
                 variant={createFrom === "manual" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "manual"
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
+                  createFrom === "manual"
                     ? "bg-indigo-600 hover:bg-indigo-700 text-white"
                     : "border-gray-200 text-gray-700"
-                  }`}
+                }`}
                 onClick={() => setCreateFrom("manual")}
               >
                 Manual Entry
@@ -1808,13 +1810,13 @@ export const GenerateInvoiceViewApi = () => {
                 </div>
                 {clients.find((c) => c?.id === selectedClientId)
                   ?.contact_name && (
-                    <div className="text-sm text-gray-700">
-                      {
-                        clients.find((c) => c?.id === selectedClientId)
-                          ?.contact_name
-                      }
-                    </div>
-                  )}
+                  <div className="text-sm text-gray-700">
+                    {
+                      clients.find((c) => c?.id === selectedClientId)
+                        ?.contact_name
+                    }
+                  </div>
+                )}
                 {clients.find((c) => c?.id === selectedClientId)?.email && (
                   <div className="text-sm text-gray-700">
                     {clients.find((c) => c?.id === selectedClientId)?.email}
@@ -1865,15 +1867,15 @@ export const GenerateInvoiceViewApi = () => {
                           <div className="text-xs text-gray-600">
                             {it.talent_id
                               ? talents.find((t) => t?.id === it.talent_id)
-                                ?.full_name ||
-                              talents.find((t) => t?.id === it.talent_id)
-                                ?.name ||
-                              "Talent"
+                                  ?.full_name ||
+                                talents.find((t) => t?.id === it.talent_id)
+                                  ?.name ||
+                                "Talent"
                               : ""}
                             {it.talent_id && it.date_of_service ? " • " : ""}
                             {it.date_of_service || ""}
                             {(it.talent_id || it.date_of_service) &&
-                              it.rate_type
+                            it.rate_type
                               ? " • "
                               : ""}
                             {it.rate_type || ""}
@@ -1893,10 +1895,10 @@ export const GenerateInvoiceViewApi = () => {
                   })}
                 {items.filter((x) => x.description.trim().length > 0).length ===
                   0 && (
-                    <div className="px-3 py-4 text-sm text-gray-600">
-                      No line items
-                    </div>
-                  )}
+                  <div className="px-3 py-4 text-sm text-gray-600">
+                    No line items
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1930,10 +1932,10 @@ export const GenerateInvoiceViewApi = () => {
                   ))}
                 {expenses.filter((x) => x.description.trim().length > 0)
                   .length === 0 && (
-                    <div className="px-3 py-4 text-sm text-gray-600">
-                      No expenses
-                    </div>
-                  )}
+                  <div className="px-3 py-4 text-sm text-gray-600">
+                    No expenses
+                  </div>
+                )}
               </div>
             </div>
 

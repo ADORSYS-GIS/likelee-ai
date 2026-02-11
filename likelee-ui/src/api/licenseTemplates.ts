@@ -64,10 +64,7 @@ export const updateLicenseTemplate = async (
   id: string,
   data: CreateTemplateRequest,
 ): Promise<LicenseTemplate> => {
-  return await base44.post<LicenseTemplate>(
-    `/license-templates/${id}`,
-    data,
-  );
+  return await base44.post<LicenseTemplate>(`/license-templates/${id}`, data);
 };
 
 export const deleteLicenseTemplate = async (id: string): Promise<void> => {
@@ -77,9 +74,7 @@ export const deleteLicenseTemplate = async (id: string): Promise<void> => {
 export const copyLicenseTemplate = async (
   id: string,
 ): Promise<LicenseTemplate> => {
-  return await base44.post<LicenseTemplate>(
-    `/license-templates/${id}/copy`,
-  );
+  return await base44.post<LicenseTemplate>(`/license-templates/${id}/copy`);
 };
 
 export const createBuilderToken = async (
