@@ -29,6 +29,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { base44 } from "@/api/base44Client";
 
 const TIER_CONFIG: Record<string, any> = {
   Premium: {
@@ -150,27 +151,19 @@ export const PerformanceTiers: React.FC = () => {
   const { data, isLoading, error } = useQuery<PerformanceTiersResponse>({
     queryKey: ["performance-tiers"],
     queryFn: async () => {
-      const {
-        data: { session },
-      } = (await supabase?.auth.getSession()) || { data: { session: null } };
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (session?.access_token) {
-        headers["Authorization"] = `Bearer ${session.access_token}`;
-      }
-      const resp = await fetch("/api/agency/dashboard/performance-tiers", {
-        headers,
-      });
-      if (!resp.ok) {
-        const text = await resp.text();
+      try {
+        const resp = await base44.get<PerformanceTiersResponse>(
+          "/agency/dashboard/performance-tiers"
+        );
+        return resp;
+      } catch (err: any) {
         // If the backend sent a "Dashboard Error: ..." message, use it directly
-        if (text.includes("Dashboard Error:")) {
-          throw new Error(text.split("Dashboard Error:")[1].trim());
+        const errorMessage = err?.response?.data || err.message;
+        if (typeof errorMessage === "string" && errorMessage.includes("Dashboard Error:")) {
+          throw new Error(errorMessage.split("Dashboard Error:")[1].trim());
         }
-        throw new Error(text || `Error ${resp.status}`);
+        throw new Error(errorMessage || "Failed to load performance tiers");
       }
-      return resp.json();
     },
   });
 
@@ -182,24 +175,7 @@ export const PerformanceTiers: React.FC = () => {
 
   const configMutation = useMutation({
     mutationFn: async (config: any) => {
-      const {
-        data: { session },
-      } = (await supabase?.auth.getSession()) || { data: { session: null } };
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (session?.access_token) {
-        headers["Authorization"] = `Bearer ${session.access_token}`;
-      }
-      const resp = await fetch(
-        "/api/agency/dashboard/performance-tiers/configure",
-        {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ config }),
-        },
-      );
-      if (!resp.ok) throw new Error("Failed to update configuration");
+      await base44.post("/agency/dashboard/performance-tiers/configure", { config });
       return true;
     },
     onSuccess: () => {
@@ -271,61 +247,60 @@ export const PerformanceTiers: React.FC = () => {
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-none shadow-sm p-10 animate-in fade-in duration-500 mb-12">
-      <div className="flex justify-between items-start mb-10">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-            Performance Tiers
-          </h1>
-          <p className="text-gray-500 font-medium text-sm mt-1">
-            Talent segmented by earnings and activity levels
-          </p>
+    <div className="p-10 animate-in fade-in duration-500 space-y-12">
+      <div className="mb-12">
+        <div className="flex justify-between items-start mb-10">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+              Performance Tiers
+            </h1>
+            <p className="text-gray-500 font-medium text-sm mt-1">
+              Talent segmented by earnings and activity levels
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => setIsConfigModalOpen(true)}
+            className="flex items-center gap-2 border-gray-200 font-bold text-gray-700 bg-white hover:bg-gray-50 transition-colors rounded-none shadow-sm"
+          >
+            <Settings className="w-4 h-4 text-gray-400" /> Configure Tiers
+          </Button>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => setIsConfigModalOpen(true)}
-          className="flex items-center gap-2 border-gray-200 font-bold text-gray-700 bg-white hover:bg-gray-50 transition-colors rounded-xl"
-        >
-          <Settings className="w-4 h-4 text-gray-400" /> Configure Tiers
-        </Button>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {Object.keys(TIER_CONFIG).map((key) => {
+            const cfg = TIER_CONFIG[key];
+            const group = data?.tiers.find((t) => t.name === key) || {
+              talents: [],
+            };
+            return (
+              <Card
+                key={key}
+                className="p-6 bg-white border border-gray-200 shadow-sm rounded-none hover:shadow-md transition-shadow"
+              >
+                <div className="flex flex-col h-full">
+                  <div className="mb-4">
+                    <cfg.icon className={cn("w-7 h-7", cfg.brandColor)} />
+                  </div>
+                  <h3 className="text-sm font-bold text-gray-900 mb-1">
+                    {cfg.label}
+                  </h3>
+                  <div className="flex items-baseline gap-1.5 mt-auto">
+                    <span className="text-3xl font-bold text-gray-900">
+                      {group.talents.length}
+                    </span>
+                    <span className="text-xs text-gray-500 font-medium pb-1">
+                      talent
+                    </span>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {Object.keys(TIER_CONFIG).map((key) => {
-          const cfg = TIER_CONFIG[key];
-          const group = data?.tiers.find((t) => t.name === key) || {
-            talents: [],
-          };
-          return (
-            <Card
-              key={key}
-              className={cn(
-                "p-6 bg-white border border-gray-900 shadow-sm rounded-none hover:shadow-md transition-shadow",
-                cfg.color,
-              )}
-            >
-              <div className="flex flex-col h-full">
-                <div className="mb-4">
-                  <cfg.icon className={cn("w-7 h-7", cfg.brandColor)} />
-                </div>
-                <h3 className="text-sm font-bold text-gray-900 mb-1">
-                  {cfg.label}
-                </h3>
-                <div className="flex items-baseline gap-1.5 mt-auto">
-                  <span className="text-3xl font-bold text-gray-900">
-                    {group.talents.length}
-                  </span>
-                  <span className="text-xs text-gray-500 font-medium pb-1">
-                    talent
-                  </span>
-                </div>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
-
-      <div className="space-y-12 mt-12">
+      <div className="space-y-12">
         {data?.tiers.map((group) => {
           const cfg = TIER_CONFIG[group.name] || TIER_CONFIG.Inactive;
           const avgEarnings =
@@ -526,7 +501,7 @@ export const PerformanceTiers: React.FC = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-10 font-bold text-gray-700 bg-white border-gray-200 px-6 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                          className="h-10 font-bold text-gray-700 bg-white border-gray-200 px-6 rounded-none hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
                         >
                           View
                         </Button>
