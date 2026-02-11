@@ -341,7 +341,7 @@ function AppRoutes() {
       <Route
         path="/talentportal"
         element={
-          <ProtectedRoute allowedRoles={['creator', 'talent']}>
+          <ProtectedRoute allowedRoles={["creator", "talent"]}>
             <TalentPortal />
           </ProtectedRoute>
         }
@@ -357,7 +357,7 @@ function AppRoutes() {
       <Route
         path="/UploadProject"
         element={
-          <ProtectedRoute allowedRoles={["creator"]}>
+          <ProtectedRoute allowedRoles={["creator", "talent"]}>
             <UploadProject />
           </ProtectedRoute>
         }
@@ -366,7 +366,7 @@ function AppRoutes() {
       <Route
         path="/DemoTalentDashboard"
         element={
-          <ProtectedRoute allowedRoles={["creator"]}>
+          <ProtectedRoute allowedRoles={["creator", "talent"]}>
             <DemoTalentDashboard />
           </ProtectedRoute>
         }
@@ -375,7 +375,7 @@ function AppRoutes() {
       <Route
         path="/CreatorDashboard"
         element={
-          <ProtectedRoute allowedRoles={["creator"]}>
+          <ProtectedRoute allowedRoles={["creator", "talent"]}>
             <CreatorDashboard />
           </ProtectedRoute>
         }
@@ -489,7 +489,7 @@ function AppRoutes() {
       <Route
         path="/LicensingSettings"
         element={
-          <ProtectedRoute allowedRoles={["creator"]}>
+          <ProtectedRoute allowedRoles={["creator", "talent"]}>
             <LicensingSettings />
           </ProtectedRoute>
         }
@@ -498,7 +498,7 @@ function AppRoutes() {
       <Route
         path="/CameoUpload"
         element={
-          <ProtectedRoute allowedRoles={["creator"]}>
+          <ProtectedRoute allowedRoles={["creator", "talent"]}>
             <CameoUpload />
           </ProtectedRoute>
         }
@@ -507,7 +507,7 @@ function AppRoutes() {
       <Route
         path="/RoyaltyWallet"
         element={
-          <ProtectedRoute allowedRoles={["creator"]}>
+          <ProtectedRoute allowedRoles={["creator", "talent"]}>
             <RoyaltyWallet />
           </ProtectedRoute>
         }
@@ -516,7 +516,7 @@ function AppRoutes() {
       <Route
         path="/PublicProfile"
         element={
-          <ProtectedRoute allowedRoles={["creator"]}>
+          <ProtectedRoute allowedRoles={["creator", "talent"]}>
             <PublicProfile />
           </ProtectedRoute>
         }

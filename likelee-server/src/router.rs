@@ -23,6 +23,30 @@ pub fn build_router(state: AppState) -> Router {
             "/api/talent/licensing/revenue",
             get(crate::talent::get_licensing_revenue),
         )
+        .route(
+            "/api/talent/licensing/earnings-by-campaign",
+            get(crate::talent::get_earnings_by_campaign),
+        )
+        .route(
+            "/api/talent/payouts/balance",
+            get(crate::payouts::get_my_balance),
+        )
+        .route(
+            "/api/talent/payouts/request",
+            post(crate::payouts::request_my_payout),
+        )
+        .route(
+            "/api/talent/analytics",
+            get(crate::talent::get_analytics),
+        )
+        .route(
+            "/api/talent/portfolio-items",
+            get(crate::talent::list_portfolio_items).post(crate::talent::create_portfolio_item),
+        )
+        .route(
+            "/api/talent/portfolio-items/:id",
+            delete(crate::talent::delete_portfolio_item),
+        )
         .route("/api/talent/profile", post(crate::talent::update_profile))
         .route("/api/talent/bookings", get(crate::talent::list_bookings))
         .route(
@@ -418,6 +442,23 @@ pub fn build_router(state: AppState) -> Router {
             "/api/creator-rates",
             get(crate::creator_rates::get_creator_rates)
                 .post(crate::creator_rates::upsert_creator_rates),
+        )
+        // Creator: Agency Connection
+        .route(
+            "/api/creator/agency-invites",
+            get(crate::creator_agency_connection::list_invites),
+        )
+        .route(
+            "/api/creator/agency-invites/:id/accept",
+            post(crate::creator_agency_connection::accept_invite),
+        )
+        .route(
+            "/api/creator/agency-invites/:id/decline",
+            post(crate::creator_agency_connection::decline_invite),
+        )
+        .route(
+            "/api/creator/agency-connections",
+            get(crate::creator_agency_connection::list_connections),
         )
         // Scouting (DocuSeal)
         .route(

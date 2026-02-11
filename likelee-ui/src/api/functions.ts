@@ -1,5 +1,6 @@
 import { base44 as base44Client } from "./base44Client";
 import { KycSessionResponse, KycStatusResponse } from "../types/kyc";
+import { supabase } from "@/lib/supabase";
 
 export const generateVideo = (data: any) =>
   base44Client.post("/api/video/generate", data);
@@ -64,6 +65,48 @@ export const loginUser = (data: any) =>
 export const createVoiceProfile = (data: any) =>
   base44Client.post("/api/voice/create-profile", data);
 
+export const listVoiceRecordings = () =>
+  base44Client.get(`/api/voice/recordings`);
+
+export const deleteVoiceRecording = (id: string) =>
+  base44Client.delete(`/api/voice/recordings/${id}`);
+
+export const uploadVoiceRecording = async (input: {
+  file: File;
+  emotion_tag?: string;
+}) => {
+  const {
+    data: { session },
+  } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
+  const token = session?.access_token;
+
+  const base =
+    (import.meta as any)?.env?.VITE_API_BASE_URL ||
+    ((import.meta as any)?.env?.DEV ? "http://localhost:8787" : "/api");
+  const normalizedBase = String(base).endsWith("/") ? String(base) : `${base}/`;
+  const full = new URL(
+    `/api/voice/recordings?emotion_tag=${encodeURIComponent(input.emotion_tag || "")}`,
+    normalizedBase.startsWith("http")
+      ? normalizedBase
+      : new URL(normalizedBase, window.location.origin).toString(),
+  ).toString();
+
+  const body = await input.file.arrayBuffer();
+  const res = await fetch(full, {
+    method: "POST",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      "Content-Type": input.file.type || "audio/webm",
+    },
+    body,
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`POST ${full} failed: ${res.status} ${txt}`);
+  }
+  return (await res.json()) as any;
+};
+
 export const sitemapXml = () => base44Client.get("/sitemap.xml");
 
 export const staticPages = () => base44Client.get("/static-pages");
@@ -121,6 +164,34 @@ export const listTalentLicenses = () => base44Client.get(`/api/talent/licenses`)
 
 export const getTalentLicensingRevenue = (params?: { month?: string }) =>
   base44Client.get(`/api/talent/licensing/revenue`, { params: params || {} });
+
+export const getTalentEarningsByCampaign = (params?: { month?: string }) =>
+  base44Client.get(`/api/talent/licensing/earnings-by-campaign`, {
+    params: params || {},
+  });
+
+export const getTalentPayoutBalance = () =>
+  base44Client.get(`/api/talent/payouts/balance`);
+
+export const requestTalentPayout = (data: {
+  amount_cents: number;
+  currency?: string;
+  payout_method?: "standard" | "instant";
+}) => base44Client.post(`/api/talent/payouts/request`, data);
+
+export const getTalentAnalytics = (params?: { month?: string }) =>
+  base44Client.get(`/api/talent/analytics`, { params: params || {} });
+
+export const listTalentPortfolioItems = () =>
+  base44Client.get(`/api/talent/portfolio-items`);
+
+export const createTalentPortfolioItem = (data: {
+  media_url: string;
+  title?: string;
+}) => base44Client.post(`/api/talent/portfolio-items`, data);
+
+export const deleteTalentPortfolioItem = (id: string) =>
+  base44Client.delete(`/api/talent/portfolio-items/${id}`);
 
 export const listTalentBookings = () => base44Client.get(`/api/talent/bookings`);
 

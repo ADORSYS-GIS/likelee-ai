@@ -109,9 +109,7 @@ export default function Login() {
             ? "/BrandDashboard"
             : profile.role === "agency"
               ? "/AgencyDashboard"
-              : profile.role === "talent"
-                ? "/talentportal"
-                : "/CreatorDashboard";
+              : "/CreatorDashboard";
         navigate(dashboard, { replace: true });
       }
     }

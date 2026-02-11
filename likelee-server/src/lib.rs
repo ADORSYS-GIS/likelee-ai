@@ -13,6 +13,7 @@ pub mod brands;
 pub mod campaigns;
 pub mod config;
 mod creatify;
+pub mod creator_agency_connection;
 pub mod creator_rates;
 pub mod creators;
 pub mod dashboard;

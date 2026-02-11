@@ -9,6 +9,16 @@ import {
   createTalentBookOut,
   deleteTalentBookOut,
   getTalentLicensingRevenue,
+  getTalentEarningsByCampaign,
+  getTalentPayoutBalance,
+  requestTalentPayout,
+  getTalentAnalytics,
+  listVoiceRecordings,
+  uploadVoiceRecording,
+  deleteVoiceRecording,
+  listTalentPortfolioItems,
+  createTalentPortfolioItem,
+  deleteTalentPortfolioItem,
   getTalentMe,
   updateTalentProfile,
   listTalentBookings,
@@ -42,16 +52,26 @@ function useQueryParams() {
   return React.useMemo(() => new URLSearchParams(location.search), [location.search]);
 }
 
-export default function TalentPortal() {
+export default function TalentPortal({ embedded }: { embedded?: boolean }) {
   const navigate = useNavigate();
   const location = useLocation();
   const params = useQueryParams();
   const { initialized, authenticated, profile } = useAuth();
   const queryClient = useQueryClient();
 
-  const mode = (params.get("mode") || "ai").toLowerCase() === "irl" ? "irl" : "ai";
-  const tab = (params.get("tab") || "overview").toLowerCase();
-  const settingsTab = (params.get("settings") || "profile").toLowerCase();
+  const [embeddedMode, setEmbeddedMode] = React.useState<"ai" | "irl">("ai");
+  const [embeddedTab, setEmbeddedTab] = React.useState("overview");
+  const [embeddedSettingsTab, setEmbeddedSettingsTab] = React.useState("profile");
+
+  const mode = embedded
+    ? embeddedMode
+    : (params.get("mode") || "ai").toLowerCase() === "irl"
+      ? "irl"
+      : "ai";
+  const tab = embedded ? embeddedTab : (params.get("tab") || "overview").toLowerCase();
+  const settingsTab = embedded
+    ? embeddedSettingsTab
+    : (params.get("settings") || "profile").toLowerCase();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["talentMe"],
@@ -75,6 +95,13 @@ export default function TalentPortal() {
     return { id: talentId, name: String(talentName || "Talent") };
   }, [talentId, talentName]);
 
+  const currentMonth = React.useMemo(() => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    return `${y}-${m}`;
+  }, []);
+
   const { data: bookings = [] } = useQuery({
     queryKey: ["talentBookings"],
     queryFn: async () => {
@@ -82,6 +109,37 @@ export default function TalentPortal() {
       return Array.isArray(rows) ? rows : [];
     },
     enabled: !!talentId,
+  });
+
+  const { data: analytics } = useQuery({
+    queryKey: ["talentAnalytics", currentMonth],
+    queryFn: async () => await getTalentAnalytics({ month: currentMonth }),
+    enabled: !!talentId,
+  });
+
+  const { data: payoutBalance } = useQuery({
+    queryKey: ["talentPayoutBalance"],
+    queryFn: async () => await getTalentPayoutBalance(),
+    enabled: !!talentId,
+  });
+
+  const withdrawable = React.useMemo(() => {
+    const balances = (payoutBalance as any)?.balances;
+    if (!Array.isArray(balances) || balances.length === 0) return { currency: "USD", available_cents: 0 };
+    const usd = balances.find((b: any) => String(b.currency || "").toUpperCase() === "USD");
+    const row = usd || balances[0];
+    return {
+      currency: String(row.currency || "USD").toUpperCase(),
+      available_cents: typeof row.available_cents === "number" ? row.available_cents : Number(row.available_cents || 0),
+    };
+  }, [payoutBalance]);
+
+  const requestPayoutMutation = useMutation({
+    mutationFn: async (payload: { amount_cents: number; currency?: string }) =>
+      await requestTalentPayout(payload),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["talentPayoutBalance"] });
+    },
   });
 
   const { data: bookOuts = [] } = useQuery({
@@ -130,16 +188,18 @@ export default function TalentPortal() {
     enabled: !!talentId,
   });
 
-  const currentMonth = React.useMemo(() => {
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    return `${y}-${m}`;
-  }, []);
-
   const { data: licensingRevenue } = useQuery({
     queryKey: ["talentLicensingRevenue", currentMonth],
     queryFn: async () => await getTalentLicensingRevenue({ month: currentMonth }),
+    enabled: !!talentId,
+  });
+
+  const { data: earningsByCampaign = [] } = useQuery({
+    queryKey: ["talentEarningsByCampaign", currentMonth],
+    queryFn: async () => {
+      const rows = await getTalentEarningsByCampaign({ month: currentMonth });
+      return Array.isArray(rows) ? rows : [];
+    },
     enabled: !!talentId,
   });
 
@@ -196,19 +256,35 @@ export default function TalentPortal() {
   }, [licensingRequests]);
 
   const setMode = (next: "ai" | "irl") => {
+    if (embedded) {
+      setEmbeddedMode(next);
+      if (!embeddedTab) setEmbeddedTab("overview");
+      return;
+    }
     const nextParams = new URLSearchParams(location.search);
     nextParams.set("mode", next);
     if (!nextParams.get("tab")) nextParams.set("tab", "overview");
-    navigate({ pathname: "/talentportal", search: `?${nextParams.toString()}` }, { replace: true });
+    navigate(
+      { pathname: "/talentportal", search: `?${nextParams.toString()}` },
+      { replace: true },
+    );
   };
 
   const setTab = (nextTab: string) => {
+    if (embedded) {
+      setEmbeddedTab(nextTab);
+      if (nextTab !== "settings") setEmbeddedSettingsTab("profile");
+      return;
+    }
     const nextParams = new URLSearchParams(location.search);
     nextParams.set("tab", nextTab);
     if (nextTab !== "settings") {
       nextParams.delete("settings");
     }
-    navigate({ pathname: "/talentportal", search: `?${nextParams.toString()}` }, { replace: true });
+    navigate(
+      { pathname: "/talentportal", search: `?${nextParams.toString()}` },
+      { replace: true },
+    );
   };
 
   const navItemClass = (active: boolean) =>
@@ -218,13 +294,6 @@ export default function TalentPortal() {
 
   const iconClass = (active: boolean) =>
     `${active ? "text-white" : "text-[#718096]"}`;
-
-  const setSettingsTab = (next: string) => {
-    const nextParams = new URLSearchParams(location.search);
-    nextParams.set("tab", "settings");
-    nextParams.set("settings", next);
-    navigate({ pathname: "/talentportal", search: `?${nextParams.toString()}` }, { replace: true });
-  };
 
   const buildProfileForm = React.useCallback(() => {
     const au = agencyUser || {};
@@ -239,6 +308,7 @@ export default function TalentPortal() {
       bio_notes: au.bio_notes || au.bio || "",
       instagram_handle: au.instagram_handle || "",
       profile_photo_url: au.profile_photo_url || "",
+      hero_cameo_url: au.hero_cameo_url || "",
       photo_urls: Array.isArray(au.photo_urls) ? au.photo_urls : [],
       gender_identity: au.gender_identity || "",
       race_ethnicity: Array.isArray(au.race_ethnicity) ? au.race_ethnicity : [],
@@ -280,6 +350,7 @@ export default function TalentPortal() {
       bio_notes: profileForm.bio_notes || undefined,
       instagram_handle: profileForm.instagram_handle || undefined,
       profile_photo_url: profileForm.profile_photo_url || undefined,
+      hero_cameo_url: profileForm.hero_cameo_url || undefined,
       photo_urls: Array.isArray(profileForm.photo_urls) ? profileForm.photo_urls : undefined,
       gender_identity: profileForm.gender_identity || undefined,
       race_ethnicity: Array.isArray(profileForm.race_ethnicity) ? profileForm.race_ethnicity : undefined,
@@ -315,6 +386,1128 @@ export default function TalentPortal() {
     return null;
   }
 
+  const { data: voiceRecordings = [] } = useQuery({
+    queryKey: ["voiceRecordings"],
+    queryFn: async () => {
+      const rows = await listVoiceRecordings();
+      return Array.isArray(rows) ? rows : [];
+    },
+    enabled: authenticated,
+  });
+
+  const uploadVoiceMutation = useMutation({
+    mutationFn: async (input: { file: File; emotion_tag?: string }) =>
+      await uploadVoiceRecording(input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["voiceRecordings"] });
+    },
+  });
+
+  const deleteVoiceMutation = useMutation({
+    mutationFn: async (id: string) => await deleteVoiceRecording(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["voiceRecordings"] });
+    },
+  });
+
+  const { data: portfolioItems = [] } = useQuery({
+    queryKey: ["talentPortfolioItems"],
+    queryFn: async () => {
+      const rows = await listTalentPortfolioItems();
+      return Array.isArray(rows) ? rows : [];
+    },
+    enabled: !!talentId,
+  });
+
+  const createPortfolioMutation = useMutation({
+    mutationFn: async (payload: { media_url: string; title?: string }) =>
+      await createTalentPortfolioItem(payload),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["talentPortfolioItems"] });
+    },
+  });
+
+  const deletePortfolioMutation = useMutation({
+    mutationFn: async (id: string) => await deleteTalentPortfolioItem(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["talentPortfolioItems"] });
+    },
+  });
+
+  const [newPhotoUrl, setNewPhotoUrl] = React.useState("");
+  const [newPortfolioUrl, setNewPortfolioUrl] = React.useState("");
+
+  const photoUrls = Array.isArray(profileForm.photo_urls) ? profileForm.photo_urls : [];
+  const photoCount = photoUrls.length;
+  const voiceCount = Array.isArray(voiceRecordings) ? voiceRecordings.length : 0;
+  const cameoReady = !!String(profileForm.hero_cameo_url || "").trim();
+
+  const portalContent = (
+    <>
+      <div className="space-y-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="text-2xl font-bold text-gray-900">
+              {mode === "irl" ? "IRL Bookings Portal" : "All Licensing Portal"}
+            </div>
+            <div className="text-sm text-gray-600 mt-1">
+              {mode === "irl"
+                ? "Track your bookings and earnings"
+                : "Complete talent management & licensing platform"}
+            </div>
+          </div>
+          <button
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-gray-200 bg-white text-[14px] font-semibold text-gray-900 shadow-sm hover:shadow-md transition-shadow"
+            onClick={() => setMode(mode === "irl" ? "ai" : "irl")}
+          >
+            {mode === "irl" ? (
+              <>
+                <Briefcase className="h-5 w-5 text-blue-500" />
+                AI Mode
+              </>
+            ) : (
+              <>
+                <Briefcase className="h-5 w-5 text-blue-500" />
+                IRL Mode
+              </>
+            )}
+          </button>
+        </div>
+
+        <div className="border-b border-gray-200 overflow-x-auto">
+          <div className="flex items-center gap-6 min-w-max pb-3">
+            {(mode === "irl"
+              ? [
+                  { id: "overview", label: "Overview", icon: LayoutGrid },
+                  {
+                    id: "calendar",
+                    label: "Booking Calendar",
+                    icon: Calendar,
+                    badge: 0,
+                  },
+                  {
+                    id: "active_projects",
+                    label: "Active Projects",
+                    icon: Briefcase,
+                  },
+                  { id: "history", label: "Job History", icon: FileText },
+                  {
+                    id: "availability",
+                    label: "Availability",
+                    icon: CheckCircle2,
+                  },
+                  { id: "portfolio", label: "Portfolio", icon: Image },
+                  { id: "earnings", label: "Earnings", icon: DollarSign },
+                  { id: "messages", label: "Messages", icon: MessageSquare },
+                  { id: "settings", label: "Settings", icon: Settings },
+                ]
+              : [
+                  { id: "overview", label: "Overview", icon: LayoutGrid },
+                  { id: "likeness", label: "My Likeness", icon: Sparkles },
+                  {
+                    id: "campaigns",
+                    label: "Active Campaigns",
+                    icon: Briefcase,
+                    badge: activeDeals.length,
+                  },
+                  {
+                    id: "approvals",
+                    label: "Approval Queue",
+                    icon: CheckCircle2,
+                    badge: pendingApprovals.length,
+                  },
+                  { id: "archive", label: "Archive", icon: FolderArchive },
+                  {
+                    id: "licenses",
+                    label: "Licenses & Contracts",
+                    icon: ShieldCheck,
+                  },
+                  { id: "earnings", label: "Earnings", icon: DollarSign },
+                  { id: "analytics", label: "Analytics", icon: BarChart3 },
+                  { id: "messages", label: "Messages", icon: MessageSquare },
+                  { id: "settings", label: "Settings", icon: Settings },
+                ]
+            ).map((item) => {
+              const Icon = item.icon as any;
+              const active = tab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  className={`inline-flex items-center gap-2 text-[14px] font-semibold pb-2 border-b-2 transition-colors ${
+                    active
+                      ? "text-[#32C8D1] border-[#32C8D1]"
+                      : "text-gray-600 border-transparent hover:text-gray-900"
+                  }`}
+                  onClick={() => setTab(item.id)}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="whitespace-nowrap">{item.label}</span>
+                  {typeof (item as any).badge === "number" && (
+                    <span
+                      className={`inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 text-[11px] font-bold rounded-full ${
+                        active
+                          ? "bg-[#32C8D1]/15 text-[#32C8D1]"
+                          : "bg-gray-100 text-gray-500"
+                      }`}
+                    >
+                      {(item as any).badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {mode === "irl" ? (
+        <>
+          {tab === "overview" && (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+                <Card className="p-6 rounded-xl shadow-sm">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="text-sm font-medium text-gray-500">Upcoming Bookings</div>
+                      <div className="text-4xl font-bold text-gray-900 mt-3">{upcomingBookings.length}</div>
+                    </div>
+                    <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                      <Calendar className="h-5 w-5 text-blue-500" />
+                    </div>
+                  </div>
+                </Card>
+                <Card className="p-6 rounded-xl shadow-sm">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="text-sm font-medium text-gray-500">Total Earnings</div>
+                      <div className="text-4xl font-bold text-gray-900 mt-3">$0</div>
+                    </div>
+                    <div className="h-10 w-10 rounded-lg bg-green-50 flex items-center justify-center">
+                      <DollarSign className="h-5 w-5 text-green-500" />
+                    </div>
+                  </div>
+                </Card>
+                <Card className="p-6 rounded-xl shadow-sm">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="text-sm font-medium text-gray-500">Completed Jobs</div>
+                      <div className="text-4xl font-bold text-gray-900 mt-3">{completedBookingsCount}</div>
+                    </div>
+                    <div className="h-10 w-10 rounded-lg bg-orange-50 flex items-center justify-center">
+                      <CheckCircle2 className="h-5 w-5 text-orange-500" />
+                    </div>
+                  </div>
+                </Card>
+                <Card className="p-6 rounded-xl shadow-sm">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="text-sm font-medium text-gray-500">This Month</div>
+                      <div className="text-4xl font-bold text-gray-900 mt-3">{thisMonthBookingsCount}</div>
+                    </div>
+                    <div className="h-10 w-10 rounded-lg bg-purple-50 flex items-center justify-center">
+                      <Sparkles className="h-5 w-5 text-purple-500" />
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              <Card className="p-6 rounded-xl shadow-sm">
+                <div className="text-lg font-semibold text-gray-900">Upcoming Bookings</div>
+                <div className="mt-5 border rounded-xl border-dashed border-gray-200 p-12 bg-gray-50/50">
+                  {upcomingBookings.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center text-center">
+                      <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                        <Calendar className="h-8 w-8 text-gray-400" />
+                      </div>
+                      <div className="text-sm text-gray-500">No upcoming bookings</div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {upcomingBookings.map((b: any) => (
+                        <div
+                          key={b.id || `${b.date}-${b.client_name}`}
+                          className="flex items-center justify-between rounded-lg border bg-white px-4 py-3"
+                        >
+                          <div>
+                            <div className="text-sm font-semibold text-gray-900">
+                              {b.client_name || b.clientName || "Booking"}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">{b.date}</div>
+                          </div>
+                          <Badge variant="secondary" className="capitalize">
+                            {safeStr(b.status || "pending").toLowerCase() || "pending"}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </Card>
+
+              <Card className="p-5 rounded-xl shadow-sm border-0 bg-gradient-to-r from-indigo-50 to-blue-50">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className="h-14 w-14 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center overflow-hidden">
+                      {agencyUser?.agency_logo_url ? (
+                        <img
+                          src={agencyUser.agency_logo_url}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <Briefcase className="h-6 w-6 text-gray-400" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-base font-semibold text-gray-900 truncate">
+                        {agencyName || "Your Agency"}
+                      </div>
+                      <div className="text-sm text-gray-500 truncate">
+                        Connected since {new Date().toLocaleDateString()}
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-[#32C8D1] text-white hover:bg-[#2AB8C1] transition-colors">Edit Profile</button>
+                        <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors">Manage Campaigns</button>
+                        <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-amber-400 text-white hover:bg-amber-500 transition-colors">View Earnings</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </>
+          )}
+
+          {tab === "likeness" && (
+            <div className="space-y-6">
+              <Card className="p-6 rounded-xl shadow-sm">
+                <div className="text-lg font-semibold text-gray-900">Likeness Asset Library</div>
+                <div className="text-sm text-gray-600 mt-1">
+                  Manage your photos, videos, and voice samples used for AI content generation
+                </div>
+
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <Card className="p-6 bg-[#F0FDFF] border-[#E0F2F1] rounded-xl">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="text-xs font-semibold text-gray-500">Reference Photos</div>
+                        <div className="text-2xl font-bold text-gray-900 mt-2">{photoCount}/15</div>
+                      </div>
+                      <div className="h-10 w-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                        <Image className="h-5 w-5 text-[#32C8D1]" />
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gray-900 rounded-full"
+                          style={{ width: `${Math.min(100, (photoCount / 15) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-6 bg-[#F5F3FF] border-[#EDE9FE] rounded-xl">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="text-xs font-semibold text-gray-500">Voice Samples</div>
+                        <div className="text-2xl font-bold text-gray-900 mt-2">{voiceCount}/6</div>
+                      </div>
+                      <div className="h-10 w-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                        <MessageSquare className="h-5 w-5 text-purple-500" />
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gray-900 rounded-full"
+                          style={{ width: `${Math.min(100, (voiceCount / 6) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-6 bg-[#FFF7ED] border-[#FFEDD5] rounded-xl">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="text-xs font-semibold text-gray-500">Cameo Video</div>
+                        <div className="text-2xl font-bold text-gray-900 mt-2">
+                          {cameoReady ? "1/1" : "0/1"}
+                        </div>
+                      </div>
+                      <div className="h-10 w-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                        <FolderKanban className="h-5 w-5 text-orange-500" />
+                      </div>
+                    </div>
+                    {!cameoReady && (
+                      <div className="mt-3">
+                        <Badge className="bg-red-100 text-red-700 border-0">Missing</Badge>
+                      </div>
+                    )}
+                  </Card>
+                </div>
+
+                <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="rounded-xl border border-gray-200 bg-white p-4">
+                    <div className="text-sm font-semibold text-gray-900">Manage Photos</div>
+                    <div className="mt-3 flex gap-2">
+                      <Input
+                        value={newPhotoUrl}
+                        onChange={(e) => setNewPhotoUrl(e.target.value)}
+                        placeholder="Paste photo URL"
+                      />
+                      <Button
+                        className="shrink-0"
+                        onClick={() => {
+                          const u = newPhotoUrl.trim();
+                          if (!u) return;
+                          setProfileForm((p: any) => ({
+                            ...p,
+                            photo_urls: Array.from(new Set([...(p.photo_urls || []), u])),
+                          }));
+                          setNewPhotoUrl("");
+                        }}
+                        disabled={!newPhotoUrl.trim()}
+                      >
+                        Add
+                      </Button>
+                    </div>
+                    {photoUrls.length > 0 && (
+                      <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {photoUrls.slice(0, 9).map((u: string) => (
+                          <div key={u} className="group relative rounded-lg overflow-hidden border bg-gray-50">
+                            <img src={u} alt="" className="h-24 w-full object-cover" />
+                            <button
+                              className="absolute top-2 right-2 hidden group-hover:inline-flex text-xs px-2 py-1 rounded bg-white/90 border"
+                              onClick={() =>
+                                setProfileForm((p: any) => ({
+                                  ...p,
+                                  photo_urls: (p.photo_urls || []).filter((x: string) => x !== u),
+                                }))
+                              }
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="mt-4 flex items-center gap-3">
+                      <Button
+                        onClick={saveProfile}
+                        disabled={updateProfileMutation.isPending}
+                        className="h-10"
+                      >
+                        {updateProfileMutation.isPending ? "Saving…" : "Save Photos"}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-gray-200 bg-white p-4">
+                    <div className="text-sm font-semibold text-gray-900">Manage Voice</div>
+                    <div className="mt-3 flex items-center gap-3">
+                      <Input
+                        type="file"
+                        accept="audio/*"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (!f) return;
+                          uploadVoiceMutation.mutate({ file: f });
+                          e.target.value = "";
+                        }}
+                        disabled={uploadVoiceMutation.isPending}
+                      />
+                    </div>
+
+                    <div className="mt-4 space-y-2">
+                      {voiceCount === 0 ? (
+                        <div className="text-sm text-gray-600">No voice samples yet.</div>
+                      ) : (
+                        (voiceRecordings as any[]).slice(0, 6).map((r: any) => (
+                          <div
+                            key={r.id}
+                            className="flex items-center justify-between rounded-lg border bg-white px-3 py-2"
+                          >
+                            <div className="min-w-0">
+                              <div className="text-sm font-semibold text-gray-900 truncate">
+                                {r.emotion_tag || r.mime_type || "Voice sample"}
+                              </div>
+                              <div className="text-xs text-gray-500 truncate">
+                                {r.created_at ? new Date(r.created_at).toLocaleDateString() : ""}
+                              </div>
+                            </div>
+                            <Button
+                              variant="outline"
+                              className="h-9"
+                              onClick={() => deleteVoiceMutation.mutate(String(r.id))}
+                              disabled={deleteVoiceMutation.isPending}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-6 rounded-xl shadow-sm">
+                <div className="text-lg font-semibold text-gray-900">Asset Usage Rights</div>
+                <div className="mt-4 space-y-3">
+                  <div className="rounded-xl border border-green-200 bg-green-50 p-4 flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-semibold text-gray-900">Photos: Approved</div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        Your photos can be used for AI image generation by licensed brands
+                      </div>
+                    </div>
+                    <Badge className="bg-green-600 text-white border-0">All Brands</Badge>
+                  </div>
+                  <div className="rounded-xl border border-purple-200 bg-purple-50 p-4 flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-semibold text-gray-900">Voice: Approved</div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        Voice cloning enabled for approved emotions
+                      </div>
+                    </div>
+                    <Badge className="bg-purple-600 text-white border-0">Limited Use</Badge>
+                  </div>
+                  <div className="rounded-xl border border-orange-200 bg-orange-50 p-4 flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-semibold text-gray-900">Video: Approved</div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        Cameo video available for AI video generation
+                      </div>
+                    </div>
+                    <Badge className="bg-orange-600 text-white border-0">All Campaigns</Badge>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-6 rounded-xl shadow-sm">
+                <div className="text-lg font-semibold text-gray-900">Portfolio Showcase</div>
+                <div className="text-sm text-gray-600 mt-1">Approved AI-generated content featuring your likeness</div>
+
+                <div className="mt-4 flex gap-2">
+                  <Input
+                    value={newPortfolioUrl}
+                    onChange={(e) => setNewPortfolioUrl(e.target.value)}
+                    placeholder="Paste image/video URL"
+                  />
+                  <Button
+                    className="shrink-0"
+                    onClick={() => {
+                      const u = newPortfolioUrl.trim();
+                      if (!u) return;
+                      createPortfolioMutation.mutate({ media_url: u });
+                      setNewPortfolioUrl("");
+                    }}
+                    disabled={!newPortfolioUrl.trim() || createPortfolioMutation.isPending}
+                  >
+                    Add
+                  </Button>
+                </div>
+
+                <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {Array.isArray(portfolioItems) && portfolioItems.length > 0 ? (
+                    (portfolioItems as any[]).slice(0, 9).map((it: any) => (
+                      <div key={it.id} className="group rounded-xl overflow-hidden border bg-white">
+                        <div className="relative aspect-[16/9] bg-gray-100">
+                          <img
+                            src={it.media_url}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                          <div className="absolute top-2 right-2">
+                            <Badge className="bg-green-500 text-white border-0 text-[10px] h-5">Live</Badge>
+                          </div>
+                          <button
+                            className="absolute bottom-2 right-2 hidden group-hover:inline-flex text-xs px-2 py-1 rounded bg-white/90 border"
+                            onClick={() => deletePortfolioMutation.mutate(String(it.id))}
+                            disabled={deletePortfolioMutation.isPending}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                        <div className="p-4">
+                          <div className="text-sm font-semibold text-gray-900 truncate">
+                            {it.title || "Portfolio Item"}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-sm text-gray-600">No portfolio items yet.</div>
+                  )}
+                </div>
+              </Card>
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          {tab === "overview" && (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                <Card className="p-6 rounded-xl shadow-sm">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="text-sm font-medium text-gray-500">Active Campaigns</div>
+                      <div className="text-4xl font-bold text-gray-900 mt-3">{activeDeals.length}</div>
+                    </div>
+                    <div className="h-10 w-10 rounded-lg bg-purple-50 flex items-center justify-center">
+                      <Briefcase className="h-5 w-5 text-purple-500" />
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-6 rounded-xl shadow-sm">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="text-sm font-medium text-gray-500">Monthly Revenue</div>
+                      <div className="text-4xl font-bold text-gray-900 mt-2">
+                        {fmtCents((licensingRevenue as any)?.total_cents)}
+                      </div>
+                    </div>
+                    <div className="h-10 w-10 rounded-lg bg-green-50 flex items-center justify-center">
+                      <DollarSign className="h-5 w-5 text-green-500" />
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-6 rounded-xl shadow-sm">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="text-sm font-medium text-gray-500">Pending Approvals</div>
+                      <div className="text-4xl font-bold text-gray-900 mt-3">{pendingApprovals.length}</div>
+                    </div>
+                    <div className="h-10 w-10 rounded-lg bg-amber-50 flex items-center justify-center">
+                      <CheckCircle2 className="h-5 w-5 text-amber-500" />
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              <Card className="p-6 rounded-xl shadow-sm">
+                <div className="text-lg font-semibold text-gray-900 mb-5">Latest Licensing Requests</div>
+                <div className="space-y-3">
+                  {licensingRequests.length === 0 ? (
+                    <div className="text-sm text-gray-600 py-8 text-center">No licensing requests yet.</div>
+                  ) : (
+                    licensingRequests.slice(0, 8).map((r: any) => (
+                      <div
+                        key={r.id}
+                        className="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-4"
+                      >
+                        <div className="min-w-0">
+                          <div className="text-base font-semibold text-gray-900 truncate">
+                            {r.brand_name || "Brand"}
+                          </div>
+                          <div className="text-sm text-gray-500 truncate">
+                            {r.campaign_title || "Licensing request"}
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="capitalize">
+                          {safeStr(r.status || "pending") || "pending"}
+                        </Badge>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </Card>
+            </>
+          )}
+
+          {tab === "campaigns" && (
+            <Card className="p-6 rounded-xl shadow-sm">
+              <div className="text-xl font-semibold text-gray-900">Active Campaigns</div>
+              <div className="text-sm text-gray-600 mt-1">Your approved/active licensing deals</div>
+              <div className="mt-6 space-y-3">
+                {activeDeals.length === 0 ? (
+                  <div className="text-sm text-gray-600">No active campaigns yet.</div>
+                ) : (
+                  activeDeals.map((r: any) => (
+                    <div
+                      key={r.id}
+                      className="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-4"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-base font-semibold text-gray-900 truncate">
+                          {r.brand_name || "Brand"}
+                        </div>
+                        <div className="text-sm text-gray-500 truncate">
+                          {r.campaign_title || "Licensing request"}
+                        </div>
+                      </div>
+                      <Badge className="bg-green-100 text-green-800 border-0 capitalize">
+                        {safeStr(r.status || "approved") || "approved"}
+                      </Badge>
+                    </div>
+                  ))
+                )}
+              </div>
+            </Card>
+          )}
+
+          {tab === "approvals" && (
+            <Card className="p-6 rounded-xl shadow-sm">
+              <div className="text-xl font-semibold text-gray-900">Approval Queue</div>
+              <div className="text-sm text-gray-600 mt-1">Requests awaiting your decision</div>
+              <div className="mt-6 space-y-3">
+                {pendingApprovals.length === 0 ? (
+                  <div className="text-sm text-gray-600">No pending approvals.</div>
+                ) : (
+                  pendingApprovals.map((r: any) => (
+                    <div
+                      key={r.id}
+                      className="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-4"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-base font-semibold text-gray-900 truncate">
+                          {r.brand_name || "Brand"}
+                        </div>
+                        <div className="text-sm text-gray-500 truncate">
+                          {r.campaign_title || "Licensing request"}
+                        </div>
+                      </div>
+                      <Badge variant="outline" className="capitalize">
+                        pending
+                      </Badge>
+                    </div>
+                  ))
+                )}
+              </div>
+            </Card>
+          )}
+
+          {tab === "archive" && (
+            <Card className="p-6 rounded-xl shadow-sm">
+              <div className="text-xl font-semibold text-gray-900">Archive</div>
+              <div className="text-sm text-gray-600 mt-1">Rejected or past requests</div>
+              <div className="mt-6 space-y-3">
+                {licensingRequests.filter((r: any) => safeStr(r.status).toLowerCase() === "rejected").length === 0 ? (
+                  <div className="text-sm text-gray-600">Nothing in archive yet.</div>
+                ) : (
+                  licensingRequests
+                    .filter((r: any) => safeStr(r.status).toLowerCase() === "rejected")
+                    .map((r: any) => (
+                      <div
+                        key={r.id}
+                        className="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-4"
+                      >
+                        <div className="min-w-0">
+                          <div className="text-base font-semibold text-gray-900 truncate">
+                            {r.brand_name || "Brand"}
+                          </div>
+                          <div className="text-sm text-gray-500 truncate">
+                            {r.campaign_title || "Licensing request"}
+                          </div>
+                        </div>
+                        <Badge variant="secondary" className="capitalize">
+                          rejected
+                        </Badge>
+                      </div>
+                    ))
+                )}
+              </div>
+            </Card>
+          )}
+
+          {tab === "licenses" && (
+            <Card className="p-6 rounded-xl shadow-sm">
+              <div className="text-xl font-semibold text-gray-900">Licenses & Contracts</div>
+              <div className="text-sm text-gray-600 mt-1">Your active and past licenses</div>
+              <div className="mt-6 space-y-3">
+                {licenses.length === 0 ? (
+                  <div className="text-sm text-gray-600">No licenses found yet.</div>
+                ) : (
+                  licenses.map((l: any) => (
+                    <div
+                      key={l.id}
+                      className="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-4"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-base font-semibold text-gray-900 truncate">
+                          {l.brand_name || "Brand"}
+                        </div>
+                        <div className="text-sm text-gray-500 truncate">
+                          {l.type || "License"}
+                        </div>
+                      </div>
+                      <Badge variant="outline" className="capitalize">
+                        {safeStr(l.status || "active").toLowerCase() || "active"}
+                      </Badge>
+                    </div>
+                  ))
+                )}
+              </div>
+            </Card>
+          )}
+
+          {tab === "earnings" && (
+            <div className="space-y-6">
+              <div>
+                <div className="text-2xl font-bold text-gray-900">Earnings</div>
+                <div className="text-sm text-gray-600 mt-1">Track your licensing revenue</div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                <Card className="p-6 rounded-xl shadow-sm">
+                  <div className="text-xs font-medium text-gray-500">Monthly Recurring</div>
+                  <div className="text-3xl font-bold text-gray-900 mt-2">
+                    {fmtCents((licensingRevenue as any)?.total_cents)}
+                  </div>
+                </Card>
+                <Card className="p-6 rounded-xl shadow-sm">
+                  <div className="text-xs font-medium text-gray-500">Annual Run Rate</div>
+                  <div className="text-3xl font-bold text-gray-900 mt-2">
+                    {fmtCents(((licensingRevenue as any)?.total_cents || 0) * 12)}
+                  </div>
+                </Card>
+                <Card className="p-6 rounded-xl shadow-sm">
+                  <div className="text-xs font-medium text-gray-500">Active Campaigns</div>
+                  <div className="text-3xl font-bold text-gray-900 mt-2">{activeDeals.length}</div>
+                </Card>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                <Card className="p-6 rounded-xl shadow-sm">
+                  <div className="text-xs font-medium text-gray-500">Withdrawable balance</div>
+                  <div className="text-3xl font-bold text-gray-900 mt-2">
+                    {fmtCents(withdrawable.available_cents)}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">{withdrawable.currency}</div>
+                </Card>
+              </div>
+
+              <Card className="p-6 rounded-xl shadow-sm">
+                <div className="text-sm font-semibold text-gray-900">Earnings by Campaign</div>
+                <div className="mt-4 space-y-2">
+                  {earningsByCampaign.length === 0 ? (
+                    <div className="text-sm text-gray-600 py-6 text-center">No earnings for this month yet.</div>
+                  ) : (
+                    earningsByCampaign.slice(0, 10).map((it: any) => (
+                      <div
+                        key={it.brand_id}
+                        className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="h-10 w-10 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-sm font-bold text-gray-700">
+                            {(String(it.brand_name || "B").trim()[0] || "B").toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold text-gray-900 truncate">
+                              {it.brand_name || "Brand"}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-sm font-semibold text-green-600">
+                          {fmtCents(it.monthly_cents)}/mo
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </Card>
+
+              <button
+                className="w-full h-11 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition-colors disabled:opacity-60 disabled:hover:bg-green-600"
+                disabled={
+                  requestPayoutMutation.isPending ||
+                  !withdrawable.available_cents ||
+                  withdrawable.available_cents <= 0
+                }
+                onClick={() =>
+                  requestPayoutMutation.mutate({
+                    amount_cents: withdrawable.available_cents,
+                    currency: withdrawable.currency,
+                  })
+                }
+              >
+                {requestPayoutMutation.isPending ? "Requesting…" : "Request payout"}
+              </button>
+
+              <Card className="p-5 rounded-xl shadow-sm border-0 bg-gradient-to-r from-indigo-50 to-blue-50">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className="h-14 w-14 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center overflow-hidden">
+                      {agencyUser?.agency_logo_url ? (
+                        <img
+                          src={agencyUser.agency_logo_url}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <Briefcase className="h-6 w-6 text-gray-400" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-base font-semibold text-gray-900 truncate">
+                        {agencyName || "Your Agency"}
+                      </div>
+                      <div className="text-sm text-gray-500 truncate">
+                        Connected since {new Date().toLocaleDateString()}
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-[#32C8D1] text-white hover:bg-[#2AB8C1] transition-colors">Edit Profile</button>
+                        <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors">Manage Campaigns</button>
+                        <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-amber-400 text-white hover:bg-amber-500 transition-colors">View Earnings</button>
+                      </div>
+                    </div>
+                  </div>
+                  <Button variant="outline" className="h-10 px-4 rounded-lg">Manage</Button>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {tab === "analytics" && (
+            <div className="space-y-6">
+              <div>
+                <div className="text-2xl font-bold text-gray-900">Analytics</div>
+                <div className="text-sm text-gray-600 mt-1">Performance metrics across all campaigns</div>
+              </div>
+
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+                <Card className="p-6 rounded-xl shadow-sm">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="text-xs font-medium text-gray-500">Total Views</div>
+                      <div className="text-3xl font-bold text-gray-900 mt-2">
+                        {(() => {
+                          const v = (analytics as any)?.kpis?.total_views ?? 0;
+                          if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M`;
+                          if (v >= 1_000) return `${Math.round(v / 1_000)}K`;
+                          return String(v);
+                        })()}
+                      </div>
+                      <div className="text-xs text-green-600 mt-1">
+                        {(() => {
+                          const pct = Number((analytics as any)?.kpis?.views_change_pct ?? 0);
+                          const sign = pct >= 0 ? "+" : "";
+                          return `${sign}${pct.toFixed(0)}% this month`;
+                        })()}
+                      </div>
+                    </div>
+                    <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                      <BarChart3 className="h-5 w-5 text-blue-600" />
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-6 rounded-xl shadow-sm">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="text-xs font-medium text-gray-500">Total Revenue</div>
+                      <div className="text-3xl font-bold text-gray-900 mt-2">
+                        {fmtCents((analytics as any)?.kpis?.total_revenue_cents)}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">Monthly recurring</div>
+                    </div>
+                    <div className="h-10 w-10 rounded-lg bg-green-50 flex items-center justify-center">
+                      <DollarSign className="h-5 w-5 text-green-600" />
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              <Card className="p-6 rounded-xl shadow-sm">
+                <div className="text-sm font-semibold text-gray-900">Campaign Performance</div>
+                <div className="mt-4 space-y-3">
+                  {Array.isArray((analytics as any)?.campaigns) && (analytics as any).campaigns.length > 0 ? (
+                    (analytics as any).campaigns.slice(0, 8).map((c: any) => (
+                      <div
+                        key={c.brand_id}
+                        className="rounded-xl border border-gray-100 bg-white p-4"
+                      >
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-700">
+                              {(String(c.brand_name || "B").trim()[0] || "B").toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-sm font-semibold text-gray-900 truncate">
+                                {c.brand_name || "Brand"}
+                              </div>
+                              <div className="text-xs text-gray-500 truncate">AI Licensing</div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-10">
+                            <div>
+                              <div className="text-[11px] text-gray-500">Views/Week</div>
+                              <div className="text-sm font-semibold text-gray-900">
+                                {Number(c.views_week || 0).toLocaleString()}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-[11px] text-gray-500">Revenue</div>
+                              <div className="text-sm font-semibold text-green-600">
+                                {fmtCents(c.revenue_cents)}/mo
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-sm text-gray-600 py-8 text-center">
+                      No analytics metrics yet. Ask your agency to add weekly view metrics.
+                    </div>
+                  )}
+                </div>
+              </Card>
+
+              <Card className="p-6 rounded-xl shadow-sm border border-cyan-200 bg-cyan-50/30">
+                <div className="text-sm font-semibold text-gray-900">ROI: Traditional UGC vs AI Licensing</div>
+                <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <Card className="p-5 rounded-xl shadow-sm">
+                    <div className="text-sm font-semibold text-gray-900">Traditional UGC Model</div>
+                    <div className="mt-4 space-y-2 text-sm">
+                      <div className="flex items-center justify-between">
+                        <div className="text-gray-600">Per Post:</div>
+                        <div className="font-semibold text-gray-900">{fmtCents((analytics as any)?.roi?.traditional?.per_post_cents)}</div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="text-gray-600">Time Investment:</div>
+                        <div className="font-semibold text-gray-900">{(analytics as any)?.roi?.traditional?.time_investment || "4-6 hours"}</div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="text-gray-600">Posts/Month:</div>
+                        <div className="font-semibold text-gray-900">{(analytics as any)?.roi?.traditional?.posts_per_month || "5-8"}</div>
+                      </div>
+                      <div className="pt-3 mt-3 border-t flex items-center justify-between">
+                        <div className="text-gray-600 font-semibold">Monthly Earnings:</div>
+                        <div className="font-semibold text-gray-900">{(analytics as any)?.roi?.traditional?.monthly_earnings_range || "$2,500-$4,000"}</div>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-5 rounded-xl shadow-sm border border-green-200 bg-green-50/40">
+                    <div className="text-sm font-semibold text-gray-900">AI Licensing Model (You)</div>
+                    <div className="mt-4 space-y-2 text-sm">
+                      <div className="flex items-center justify-between">
+                        <div className="text-gray-600">Per Campaign:</div>
+                        <div className="font-semibold text-green-700">{fmtCents((analytics as any)?.roi?.ai?.per_campaign_cents)}/mo</div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="text-gray-600">Time Investment:</div>
+                        <div className="font-semibold text-green-700">{(analytics as any)?.roi?.ai?.time_investment || "0 hours/month"}</div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="text-gray-600">Active Campaigns:</div>
+                        <div className="font-semibold text-green-700">{(analytics as any)?.roi?.ai?.active_campaigns ?? (analytics as any)?.kpis?.active_campaigns ?? 0}</div>
+                      </div>
+                      <div className="pt-3 mt-3 border-t flex items-center justify-between">
+                        <div className="text-gray-600 font-semibold">Monthly Earnings:</div>
+                        <div className="font-semibold text-green-700">{fmtCents((analytics as any)?.roi?.ai?.monthly_earnings_cents)}</div>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+
+                <div className="mt-4 rounded-lg bg-white border border-cyan-200 px-4 py-3 text-sm text-gray-700">
+                  {(analytics as any)?.roi?.message || "Your earnings comparison will appear here."}
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {tab === "messages" && (
+            <Card className="p-6 rounded-xl shadow-sm">
+              <div className="text-xl font-semibold text-gray-900">Messages</div>
+              <div className="text-sm text-gray-600 mt-1">Messaging will appear here.</div>
+            </Card>
+          )}
+
+          {tab === "settings" && (
+            <div className="space-y-4">
+              <div>
+                <div className="text-2xl font-bold text-gray-900">Settings</div>
+                <div className="text-sm text-gray-600 mt-1">Manage your profile and media.</div>
+              </div>
+
+              <Card className="p-6 rounded-xl shadow-sm">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <div className="text-xs font-semibold text-gray-600">Stage name</div>
+                    <Input
+                      value={profileForm.stage_name || ""}
+                      onChange={(e) => setProfileForm((p: any) => ({ ...p, stage_name: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-xs font-semibold text-gray-600">Full legal name</div>
+                    <Input
+                      value={profileForm.full_legal_name || ""}
+                      onChange={(e) =>
+                        setProfileForm((p: any) => ({ ...p, full_legal_name: e.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-xs font-semibold text-gray-600">Email</div>
+                    <Input
+                      value={profileForm.email || ""}
+                      onChange={(e) => setProfileForm((p: any) => ({ ...p, email: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-xs font-semibold text-gray-600">Instagram handle</div>
+                    <Input
+                      value={profileForm.instagram_handle || ""}
+                      onChange={(e) =>
+                        setProfileForm((p: any) => ({ ...p, instagram_handle: e.target.value }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4 space-y-1">
+                  <div className="text-xs font-semibold text-gray-600">Bio</div>
+                  <Textarea
+                    value={profileForm.bio_notes || ""}
+                    onChange={(e) => setProfileForm((p: any) => ({ ...p, bio_notes: e.target.value }))}
+                    className="min-h-[120px]"
+                  />
+                </div>
+
+                <div className="mt-6 flex items-center gap-3">
+                  <Button
+                    onClick={saveProfile}
+                    disabled={updateProfileMutation.isPending}
+                    className="h-10"
+                  >
+                    {updateProfileMutation.isPending ? "Saving…" : "Save"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-10"
+                    onClick={() => setProfileForm(buildProfileForm())}
+                    disabled={updateProfileMutation.isPending}
+                  >
+                    Reset
+                  </Button>
+                </div>
+
+                <div className="mt-6 rounded-xl bg-gray-50 border border-gray-200 p-4">
+                  <div className="text-sm font-semibold text-gray-900">Agency</div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    {agencyName || "Not connected"}
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )}
+        </>
+      )}
+    </>
+  );
+
+  if (embedded) {
+    return <div className="space-y-8">{portalContent}</div>;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="w-full px-4 sm:px-6 lg:px-10 py-6">
@@ -330,7 +1523,12 @@ export default function TalentPortal() {
                 />
                 <span className="text-[17px] font-bold text-[#1A1C1E]">Talent Portal</span>
               </div>
-              <button className="p-1.5 hover:bg-gray-50 rounded-lg transition-colors group">
+              <button
+                className="p-1.5 hover:bg-gray-50 rounded-lg transition-colors group"
+                onClick={() => navigate("/CreatorDashboard")}
+                aria-label="Back to Dashboard"
+                title="Back to Dashboard"
+              >
                 <svg className="h-4 w-4 text-gray-400 group-hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
                 </svg>
@@ -356,1080 +1554,12 @@ export default function TalentPortal() {
               </div>
             </div>
 
-            {/* Navigation */}
-            <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1.5">
-                <button className={navItemClass(tab === "overview")} onClick={() => setTab("overview")}>
-                  <LayoutGrid className={`h-[18px] w-[18px] ${iconClass(tab === "overview")}`} />
-                  <span className="flex-1 text-left font-semibold">Overview</span>
-                </button>
-
-                {mode === "irl" ? (
-                  <>
-                    <button
-                      className={navItemClass(tab === "calendar")}
-                      onClick={() => setTab("calendar")}
-                    >
-                      <Calendar className={`h-[18px] w-[18px] ${iconClass(tab === "calendar")}`} />
-                      <span className="flex-1 text-left font-semibold">Booking Calendar</span>
-                      <span className={`inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 text-[11px] font-bold rounded-full ${tab === 'calendar' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
-                        0
-                      </span>
-                    </button>
-
-                    <button
-                      className={navItemClass(tab === "active_projects")}
-                      onClick={() => setTab("active_projects")}
-                    >
-                      <Briefcase className={`h-[18px] w-[18px] ${iconClass(tab === "active_projects")}`} />
-                      <span className="flex-1 text-left font-semibold">Active Projects</span>
-                    </button>
-
-                    <button className={navItemClass(tab === "history")} onClick={() => setTab("history")}>
-                      <FileText className={`h-[18px] w-[18px] ${iconClass(tab === "history")}`} />
-                      <span className="flex-1 text-left font-semibold">Job History</span>
-                    </button>
-
-                    <button
-                      className={navItemClass(tab === "availability")}
-                      onClick={() => setTab("availability")}
-                    >
-                      <CheckCircle2 className={`h-[18px] w-[18px] ${iconClass(tab === "availability")}`} />
-                      <span className="flex-1 text-left font-semibold">Availability</span>
-                    </button>
-
-                    <button
-                      className={navItemClass(tab === "portfolio")}
-                      onClick={() => setTab("portfolio")}
-                    >
-                      <Image className={`h-[18px] w-[18px] ${iconClass(tab === "portfolio")}`} />
-                      <span className="flex-1 text-left font-semibold">Portfolio</span>
-                    </button>
-
-                    <button
-                      className={navItemClass(tab === "earnings")}
-                      onClick={() => setTab("earnings")}
-                    >
-                      <DollarSign className={`h-[18px] w-[18px] ${iconClass(tab === "earnings")}`} />
-                      <span className="flex-1 text-left font-semibold">Earnings</span>
-                    </button>
-
-                    <button
-                      className={navItemClass(tab === "messages")}
-                      onClick={() => setTab("messages")}
-                    >
-                      <MessageSquare className={`h-[18px] w-[18px] ${iconClass(tab === "messages")}`} />
-                      <span className="flex-1 text-left font-semibold">Messages</span>
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      className={navItemClass(tab === "likeness")}
-                      onClick={() => setTab("likeness")}
-                    >
-                      <Sparkles className={`h-[18px] w-[18px] ${iconClass(tab === "likeness")}`} />
-                      <span className="flex-1 text-left font-semibold">My Likeness</span>
-                    </button>
-
-                    <button
-                      className={navItemClass(tab === "campaigns")}
-                      onClick={() => setTab("campaigns")}
-                    >
-                      <Briefcase className={`h-[18px] w-[18px] ${iconClass(tab === "campaigns")}`} />
-                      <span className="flex-1 text-left font-semibold">Active Campaigns</span>
-                      <span className={`inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 text-[11px] font-bold rounded-full ${tab === 'campaigns' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
-                        {activeDeals.length}
-                      </span>
-                    </button>
-
-                    <button
-                      className={navItemClass(tab === "approvals")}
-                      onClick={() => setTab("approvals")}
-                    >
-                      <CheckCircle2 className={`h-[18px] w-[18px] ${iconClass(tab === "approvals")}`} />
-                      <span className="flex-1 text-left font-semibold">Approval Queue</span>
-                      <span className={`inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 text-[11px] font-bold rounded-full ${tab === 'approvals' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
-                        {pendingApprovals.length}
-                      </span>
-                    </button>
-
-                    <button
-                      className={navItemClass(tab === "archive")}
-                      onClick={() => setTab("archive")}
-                    >
-                      <FolderArchive className={`h-[18px] w-[18px] ${iconClass(tab === "archive")}`} />
-                      <span className="flex-1 text-left font-semibold">Archive</span>
-                    </button>
-
-                    <button
-                      className={navItemClass(tab === "licenses")}
-                      onClick={() => setTab("licenses")}
-                    >
-                      <ShieldCheck className={`h-[18px] w-[18px] ${iconClass(tab === "licenses")}`} />
-                      <span className="flex-1 text-left font-semibold">Licenses & Contracts</span>
-                    </button>
-
-                    <button
-                      className={navItemClass(tab === "earnings")}
-                      onClick={() => setTab("earnings")}
-                    >
-                      <DollarSign className={`h-[18px] w-[18px] ${iconClass(tab === "earnings")}`} />
-                      <span className="flex-1 text-left font-semibold">Earnings</span>
-                    </button>
-
-                    <button
-                      className={navItemClass(tab === "analytics")}
-                      onClick={() => setTab("analytics")}
-                    >
-                      <BarChart3 className={`h-[18px] w-[18px] ${iconClass(tab === "analytics")}`} />
-                      <span className="flex-1 text-left font-semibold">Analytics</span>
-                    </button>
-
-                    <button
-                      className={navItemClass(tab === "messages")}
-                      onClick={() => setTab("messages")}
-                    >
-                      <MessageSquare className={`h-[18px] w-[18px] ${iconClass(tab === "messages")}`} />
-                      <span className="flex-1 text-left font-semibold">Messages</span>
-                    </button>
-                  </>
-                )}
-
-                <button
-                  className={navItemClass(tab === "settings")}
-                  onClick={() => setTab("settings")}
-                >
-                  <Settings className={`h-[18px] w-[18px] ${iconClass(tab === "settings")}`} />
-                  <span className="flex-1 text-left font-semibold">Settings</span>
-                </button>
-              </div>
+            <div className="flex-1" />
           </aside>
 
-          <main className="flex-1 min-w-0 p-8 space-y-8">
-                {mode === "irl" ? (
-                  <>
-                    {tab === "overview" && (
-                      <>
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <div className="text-2xl font-bold text-gray-900">IRL Bookings Overview</div>
-                            <div className="text-sm text-gray-600 mt-1">Track your bookings and earnings</div>
-                          </div>
-                          <button
-                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-gray-200 bg-white text-[14px] font-semibold text-gray-900 shadow-sm hover:shadow-md transition-shadow"
-                            onClick={() => setMode("ai")}
-                          >
-                            <Sparkles className="h-5 w-5 text-purple-500" />
-                            AI Mode
-                          </button>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-                          <Card className="p-6 rounded-xl shadow-sm">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <div className="text-sm font-medium text-gray-500">Upcoming Bookings</div>
-                                <div className="text-4xl font-bold text-gray-900 mt-3">{upcomingBookings.length}</div>
-                              </div>
-                              <div className="h-10 w-10 rounded-lg bg-blue-50 flex items-center justify-center">
-                                <Calendar className="h-5 w-5 text-blue-500" />
-                              </div>
-                            </div>
-                          </Card>
-                          <Card className="p-6 rounded-xl shadow-sm">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <div className="text-sm font-medium text-gray-500">Total Earnings</div>
-                                <div className="text-4xl font-bold text-gray-900 mt-3">$0</div>
-                              </div>
-                              <div className="h-10 w-10 rounded-lg bg-green-50 flex items-center justify-center">
-                                <DollarSign className="h-5 w-5 text-green-500" />
-                              </div>
-                            </div>
-                          </Card>
-                          <Card className="p-6 rounded-xl shadow-sm">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <div className="text-sm font-medium text-gray-500">Completed Jobs</div>
-                                <div className="text-4xl font-bold text-gray-900 mt-3">{completedBookingsCount}</div>
-                              </div>
-                              <div className="h-10 w-10 rounded-lg bg-orange-50 flex items-center justify-center">
-                                <CheckCircle2 className="h-5 w-5 text-orange-500" />
-                              </div>
-                            </div>
-                          </Card>
-                          <Card className="p-6 rounded-xl shadow-sm">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <div className="text-sm font-medium text-gray-500">This Month</div>
-                                <div className="text-4xl font-bold text-gray-900 mt-3">{thisMonthBookingsCount}</div>
-                              </div>
-                              <div className="h-10 w-10 rounded-lg bg-purple-50 flex items-center justify-center">
-                                <Sparkles className="h-5 w-5 text-purple-500" />
-                              </div>
-                            </div>
-                          </Card>
-                        </div>
-
-                        <Card className="p-6 rounded-xl shadow-sm">
-                          <div className="text-lg font-semibold text-gray-900">Upcoming Bookings</div>
-                          <div className="mt-5 border rounded-xl border-dashed border-gray-200 p-12 bg-gray-50/50">
-                            {upcomingBookings.length === 0 ? (
-                              <div className="flex flex-col items-center justify-center text-center">
-                                <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                                  <Calendar className="h-8 w-8 text-gray-400" />
-                                </div>
-                                <div className="text-sm text-gray-500">No upcoming bookings</div>
-                              </div>
-                            ) : (
-                              <div className="space-y-3">
-                                {upcomingBookings.map((b: any) => (
-                                  <div
-                                    key={b.id || `${b.date}-${b.client_name}`}
-                                    className="flex items-center justify-between rounded-lg border bg-white px-4 py-3"
-                                  >
-                                    <div>
-                                      <div className="text-sm font-semibold text-gray-900">
-                                        {b.client_name || b.clientName || "Booking"}
-                                      </div>
-                                      <div className="text-xs text-gray-500 mt-1">{b.date}</div>
-                                    </div>
-                                    <Badge variant="secondary" className="capitalize">
-                                      {safeStr(b.status || "pending").toLowerCase() || "pending"}
-                                    </Badge>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </Card>
-
-                        <Card className="p-5 rounded-xl shadow-sm border-0 bg-gradient-to-r from-indigo-50 to-blue-50">
-                          <div className="flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-4 min-w-0">
-                              <div className="h-14 w-14 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center overflow-hidden">
-                                {agencyUser?.agency_logo_url ? (
-                                  <img
-                                    src={agencyUser.agency_logo_url}
-                                    alt=""
-                                    className="h-full w-full object-cover"
-                                  />
-                                ) : (
-                                  <Briefcase className="h-6 w-6 text-gray-400" />
-                                )}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="text-base font-semibold text-gray-900 truncate">
-                                  {agencyName || "Your Agency"}
-                                </div>
-                                <div className="text-sm text-gray-500 truncate">
-                                  Connected since {new Date().toLocaleDateString()}
-                                </div>
-                                <div className="mt-3 flex flex-wrap gap-2">
-                                  <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-[#32C8D1] text-white hover:bg-[#2AB8C1] transition-colors">Edit Profile</button>
-                                  <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors">Manage Campaigns</button>
-                                  <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-amber-400 text-white hover:bg-amber-500 transition-colors">View Earnings</button>
-                                </div>
-                              </div>
-                            </div>
-                            <Button variant="outline" className="h-10 px-4 rounded-lg">Manage</Button>
-                          </div>
-                        </Card>
-                      </>
-                    )}
-
-                    {tab === "calendar" && (
-                      <BookingsView
-                        activeSubTab="Calendar & Schedule"
-                        bookings={bookings}
-                        bookOuts={bookOuts}
-                        onAddBooking={() => {}}
-                        onUpdateBooking={() => {}}
-                        onCancelBooking={() => {}}
-                        onAddBookOut={(bo: any) => {
-                          const payload = {
-                            start_date: bo.startDate || bo.start_date,
-                            end_date: bo.endDate || bo.end_date,
-                            reason: bo.reason,
-                            notes: bo.notes,
-                          };
-                          addBookOutMutation.mutate(payload);
-                        }}
-                        onRemoveBookOut={(id: string) => deleteBookOutMutation.mutate(id)}
-                        fixedTalent={fixedTalent}
-                        disableBookingEdits
-                      />
-                    )}
-
-                    {tab === "availability" && (
-                      <BookingsView
-                        activeSubTab="Talent Availability"
-                        bookings={bookings}
-                        bookOuts={bookOuts}
-                        onAddBooking={() => {}}
-                        onUpdateBooking={() => {}}
-                        onCancelBooking={() => {}}
-                        onAddBookOut={(bo: any) => {
-                          const payload = {
-                            start_date: bo.startDate || bo.start_date,
-                            end_date: bo.endDate || bo.end_date,
-                            reason: bo.reason,
-                            notes: bo.notes,
-                          };
-                          addBookOutMutation.mutate(payload);
-                        }}
-                        onRemoveBookOut={(id: string) => deleteBookOutMutation.mutate(id)}
-                        fixedTalent={fixedTalent}
-                        disableBookingEdits
-                      />
-                    )}
-
-                    {tab === "active_projects" && (
-                      <Card className="p-6">
-                        <div className="text-xl font-semibold text-gray-900">Active Projects</div>
-                        <div className="text-sm text-gray-600 mt-1">Coming soon.</div>
-                      </Card>
-                    )}
-
-                    {tab === "history" && (
-                      <Card className="p-6">
-                        <div className="text-xl font-semibold text-gray-900">Job History</div>
-                        <div className="text-sm text-gray-600 mt-1">No completed jobs yet.</div>
-                      </Card>
-                    )}
-
-                    {tab === "portfolio" && (
-                      <div className="space-y-8">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <div className="text-2xl font-bold text-gray-900">Portfolio</div>
-                            <div className="text-sm text-gray-600 mt-1">Showcase your work and past projects</div>
-                          </div>
-                          <button
-                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-gray-200 bg-white text-[14px] font-semibold text-gray-900 shadow-sm hover:shadow-md transition-shadow"
-                            onClick={() => setMode("ai")}
-                          >
-                            <Sparkles className="h-5 w-5 text-purple-500" />
-                            AI Mode
-                          </button>
-                        </div>
-
-                        <Card className="p-8 rounded-xl shadow-sm">
-                          <div className="flex items-center justify-between mb-8">
-                            <div className="text-lg font-semibold text-gray-900">Portfolio Images</div>
-                            <button className="flex items-center gap-2 px-4 py-2 bg-[#32C8D1] hover:bg-[#2AB8C1] text-white text-sm font-medium rounded-lg transition-colors">
-                              <Sparkles className="h-4 w-4" />
-                              Add Images
-                            </button>
-                          </div>
-                          
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {[1, 2, 3, 4].map((i) => (
-                              <div key={i} className="aspect-[3/4] rounded-xl border-2 border-dashed border-gray-200 bg-gray-50/50 flex items-center justify-center">
-                                <Sparkles className="h-10 w-10 text-gray-300" />
-                              </div>
-                            ))}
-                          </div>
-                        </Card>
-
-                        <Card className="p-8 rounded-xl shadow-sm">
-                          <div className="text-lg font-semibold text-gray-900 mb-6">Past Work Highlights</div>
-                          <div className="border rounded-xl border-dashed border-gray-200 p-20 bg-gray-50/50">
-                            <div className="flex flex-col items-center justify-center text-center">
-                              <div className="h-20 w-20 rounded-full bg-gray-100 flex items-center justify-center mb-6">
-                                <Briefcase className="h-10 w-10 text-gray-400" />
-                              </div>
-                              <div className="text-sm text-gray-500">Complete bookings will appear here</div>
-                            </div>
-                          </div>
-                        </Card>
-
-                        <Card className="p-5 rounded-xl shadow-sm border-0 bg-gradient-to-r from-indigo-50 to-blue-50">
-                          <div className="flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-4 min-w-0">
-                              <div className="h-14 w-14 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center overflow-hidden">
-                                {agencyUser?.agency_logo_url ? (
-                                  <img src={agencyUser.agency_logo_url} alt="" className="h-full w-full object-cover" />
-                                ) : (
-                                  <Briefcase className="h-6 w-6 text-gray-400" />
-                                )}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="text-base font-semibold text-gray-900 truncate">{agencyName || "Your Agency"}</div>
-                                <div className="text-sm text-gray-500 truncate">Connected since 2/10/2026</div>
-                                <div className="mt-3 flex flex-wrap gap-2">
-                                  <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-[#32C8D1] text-white hover:bg-[#2AB8C1] transition-colors">Edit Profile</button>
-                                  <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors">Manage Campaigns</button>
-                                  <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-amber-400 text-white hover:bg-amber-500 transition-colors">View Earnings</button>
-                                </div>
-                              </div>
-                            </div>
-                            <Button variant="outline" className="h-10 px-4 rounded-lg">Manage</Button>
-                          </div>
-                        </Card>
-                      </div>
-                    )}
-
-                    {tab === "earnings" && (
-                      <Card className="p-6">
-                        <div className="text-xl font-semibold text-gray-900">Earnings</div>
-                        <div className="text-sm text-gray-600 mt-1">Coming soon.</div>
-                      </Card>
-                    )}
-
-                    {tab === "messages" && (
-                      <Card className="p-6">
-                        <div className="text-xl font-semibold text-gray-900">Messages</div>
-                        <div className="text-sm text-gray-600 mt-1">Coming soon.</div>
-                      </Card>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    {tab === "overview" && (
-                      <div className="space-y-8">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <div className="text-2xl font-bold text-gray-900">AI Licensing Overview</div>
-                            <div className="text-sm text-gray-600 mt-1">
-                              Complete talent management & licensing platform
-                            </div>
-                          </div>
-                          <button
-                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-gray-200 bg-white text-[14px] font-semibold text-gray-900 shadow-sm hover:shadow-md transition-shadow"
-                            onClick={() => setMode("irl")}
-                          >
-                            <Briefcase className="h-5 w-5 text-blue-500" />
-                            IRL Mode
-                          </button>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-                          <Card className="p-6 rounded-xl shadow-sm">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <div className="text-sm font-medium text-gray-500">Active Campaigns</div>
-                                <div className="text-4xl font-bold text-gray-900 mt-3">{activeDeals.length}</div>
-                              </div>
-                              <div className="h-10 w-10 rounded-lg bg-purple-50 flex items-center justify-center">
-                                <Sparkles className="h-5 w-5 text-purple-500" />
-                              </div>
-                            </div>
-                          </Card>
-                          <Card className="p-6 rounded-xl shadow-sm">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <div className="text-sm font-medium text-gray-500">Monthly Revenue</div>
-                                <div className="text-4xl font-bold text-gray-900 mt-2">
-                                  {fmtCents((licensingRevenue as any)?.total_cents)}
-                                </div>
-                              </div>
-                              <div className="h-10 w-10 rounded-lg bg-green-50 flex items-center justify-center">
-                                <DollarSign className="h-5 w-5 text-green-500" />
-                              </div>
-                            </div>
-                          </Card>
-                          <Card className="p-6 rounded-xl shadow-sm">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <div className="text-sm font-medium text-gray-500">Pending Approvals</div>
-                                <div className="text-4xl font-bold text-gray-900 mt-3">{pendingApprovals.length}</div>
-                              </div>
-                              <div className="h-10 w-10 rounded-lg bg-amber-50 flex items-center justify-center">
-                                <CheckCircle2 className="h-5 w-5 text-amber-500" />
-                              </div>
-                            </div>
-                          </Card>
-                        </div>
-
-                        <Card className="p-6 rounded-xl shadow-sm">
-                          <div className="text-lg font-semibold text-gray-900 mb-5">Active Licensing Deals</div>
-                          <div className="space-y-4">
-                            {activeDeals.length === 0 ? (
-                              <div className="text-sm text-gray-600 py-8 text-center">No active deals yet.</div>
-                            ) : (
-                              activeDeals.slice(0, 6).map((r: any) => (
-                                <div
-                                  key={r.id}
-                                  className="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-4 shadow-sm hover:shadow-md transition-shadow"
-                                >
-                                  <div className="flex items-center gap-4 min-w-0">
-                                    <div className="h-12 w-12 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden">
-                                      {r.brand_logo_url ? (
-                                        <img src={r.brand_logo_url} alt="" className="h-full w-full object-cover" />
-                                      ) : (
-                                        <Briefcase className="h-6 w-6 text-gray-400" />
-                                      )}
-                                    </div>
-                                    <div className="min-w-0">
-                                      <div className="text-base font-semibold text-gray-900 truncate">
-                                        {r.brand_name || "Brand"}
-                                      </div>
-                                      <div className="text-sm text-gray-500 truncate">
-                                        {r.campaign_title || "Licensing request"}
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <div className="text-sm font-semibold text-green-600">$0/mo</div>
-                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mt-1">
-                                      Active
-                                    </span>
-                                  </div>
-                                </div>
-                              ))
-                            )}
-                          </div>
-                          <button className="w-full mt-5 py-3 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors border border-gray-200" onClick={() => setTab("campaigns")}>
-                            View All {activeDeals.length} Deals
-                          </button>
-                        </Card>
-
-                        <div className="rounded-xl bg-amber-50 border border-amber-200 p-6">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3">
-                                <h3 className="text-lg font-semibold text-gray-900">Pending Approvals</h3>
-                                <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-amber-500 text-white text-xs font-bold">
-                                  {pendingApprovals.length}
-                                </span>
-                              </div>
-                              <p className="text-sm text-gray-600 mt-1">You have licensing requests waiting for review</p>
-                            </div>
-                          </div>
-                          <button 
-                            className="w-full mt-5 py-3 px-4 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-lg transition-colors shadow-sm"
-                            onClick={() => setTab("approvals")}
-                          >
-                            Review Requests
-                          </button>
-                        </div>
-
-                        <Card className="p-5 rounded-xl shadow-sm border-0 bg-gradient-to-r from-indigo-50 to-blue-50">
-                          <div className="flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-4 min-w-0">
-                              <div className="h-14 w-14 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center overflow-hidden">
-                                {agencyUser?.agency_logo_url ? (
-                                  <img
-                                    src={agencyUser.agency_logo_url}
-                                    alt=""
-                                    className="h-full w-full object-cover"
-                                  />
-                                ) : (
-                                  <Briefcase className="h-6 w-6 text-gray-400" />
-                                )}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="text-base font-semibold text-gray-900 truncate">
-                                  {agencyName || "Your Agency"}
-                                </div>
-                                <div className="text-sm text-gray-500 truncate">
-                                  Connected since {new Date().toLocaleDateString()}
-                                </div>
-                                <div className="mt-3 flex flex-wrap gap-2">
-                                  <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-[#32C8D1] text-white hover:bg-[#2AB8C1] transition-colors">Edit Profile</button>
-                                  <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors">Manage Campaigns</button>
-                                  <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-amber-400 text-white hover:bg-amber-500 transition-colors">View Earnings</button>
-                                </div>
-                              </div>
-                            </div>
-                            <Button variant="outline" className="h-10 px-4 rounded-lg">Manage</Button>
-                          </div>
-                        </Card>
-                      </div>
-                    )}
-
-                    {tab === "approvals" && (
-                      <Card className="p-6">
-                        <div className="text-xl font-semibold text-gray-900">Approval Queue</div>
-                        <div className="text-sm text-gray-600 mt-1">Requests awaiting your approval.</div>
-                        <div className="mt-5 space-y-3">
-                          {pendingApprovals.length === 0 ? (
-                            <div className="text-sm text-gray-600">No pending approvals.</div>
-                          ) : (
-                            pendingApprovals.map((r: any) => (
-                              <div
-                                key={r.id}
-                                className="flex items-center justify-between rounded-lg border bg-white px-4 py-3"
-                              >
-                                <div>
-                                  <div className="text-sm font-semibold text-gray-900">
-                                    {r.brand_name || "Brand"}
-                                  </div>
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    {r.campaign_title || "Licensing request"}
-                                  </div>
-                                </div>
-                                <Badge variant="outline" className="capitalize">pending</Badge>
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      </Card>
-                    )}
-
-                    {tab === "licenses" && (
-                      <Card className="p-6">
-                        <div className="text-xl font-semibold text-gray-900">Licenses & Contracts</div>
-                        <div className="text-sm text-gray-600 mt-1">Coming soon.</div>
-                      </Card>
-                    )}
-
-                    {tab === "campaigns" && (
-                      <Card className="p-6">
-                        <div className="text-xl font-semibold text-gray-900">Active Campaigns</div>
-                        <div className="text-sm text-gray-600 mt-1">Coming soon.</div>
-                      </Card>
-                    )}
-
-                    {tab === "archive" && (
-                      <Card className="p-6">
-                        <div className="text-xl font-semibold text-gray-900">Archive</div>
-                        <div className="text-sm text-gray-600 mt-1">Coming soon.</div>
-                      </Card>
-                    )}
-
-                    {tab === "earnings" && (
-                      <Card className="p-6">
-                        <div className="text-xl font-semibold text-gray-900">Earnings</div>
-                        <div className="text-sm text-gray-600 mt-1">Coming soon.</div>
-                      </Card>
-                    )}
-
-                    {tab === "analytics" && (
-                      <Card className="p-6">
-                        <div className="text-xl font-semibold text-gray-900">Analytics</div>
-                        <div className="text-sm text-gray-600 mt-1">Coming soon.</div>
-                      </Card>
-                    )}
-
-                    {tab === "messages" && (
-                      <Card className="p-6">
-                        <div className="text-xl font-semibold text-gray-900">Messages</div>
-                        <div className="text-sm text-gray-600 mt-1">Coming soon.</div>
-                      </Card>
-                    )}
-
-                    {tab === "likeness" && (
-                      <div className="space-y-8">
-                        <div>
-                          <div className="text-2xl font-bold text-gray-900">My Likeness</div>
-                          <div className="text-sm text-gray-600 mt-1">Manage your photos, videos, and voice samples</div>
-                        </div>
-
-                        <Card className="p-8 rounded-xl shadow-sm">
-                          <div className="text-lg font-semibold text-gray-900 mb-6">Likeness Asset Library</div>
-                          <p className="text-sm text-gray-500 mb-8">Manage your photos, videos, and voice samples used for AI content generation</p>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                            <Card className="p-6 bg-[#F0FDFF] border-[#E0F2F1] rounded-xl">
-                              <div className="flex flex-col h-full">
-                                <div className="flex items-center gap-3 mb-4">
-                                  <div className="h-10 w-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                                    <Sparkles className="h-5 w-5 text-[#32C8D1]" />
-                                  </div>
-                                  <div>
-                                    <div className="text-xs font-semibold text-gray-500">Reference Photos</div>
-                                    <div className="text-2xl font-bold text-gray-900">8/15</div>
-                                  </div>
-                                </div>
-                                <div className="mt-auto">
-                                  <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-                                    <div className="h-full bg-gray-900 rounded-full" style={{ width: '53%' }}></div>
-                                  </div>
-                                </div>
-                              </div>
-                            </Card>
-
-                            <Card className="p-6 bg-[#F5F3FF] border-[#EDE9FE] rounded-xl">
-                              <div className="flex flex-col h-full">
-                                <div className="flex items-center gap-3 mb-4">
-                                  <div className="h-10 w-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                                    <MessageSquare className="h-5 w-5 text-purple-500" />
-                                  </div>
-                                  <div>
-                                    <div className="text-xs font-semibold text-gray-500">Voice Samples</div>
-                                    <div className="text-2xl font-bold text-gray-900">3/6</div>
-                                  </div>
-                                </div>
-                                <div className="mt-auto">
-                                  <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
-                                    <div className="h-full bg-gray-900 rounded-full" style={{ width: '50%' }}></div>
-                                  </div>
-                                </div>
-                              </div>
-                            </Card>
-
-                            <Card className="p-6 bg-[#FFF7ED] border-[#FFEDD5] rounded-xl">
-                              <div className="flex flex-col h-full">
-                                <div className="flex items-center gap-3 mb-4">
-                                  <div className="h-10 w-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                                    <FolderKanban className="h-5 w-5 text-orange-500" />
-                                  </div>
-                                  <div>
-                                    <div className="text-xs font-semibold text-gray-500">Cameo Video</div>
-                                    <div className="text-2xl font-bold text-gray-900">1/1</div>
-                                  </div>
-                                </div>
-                                <div className="mt-auto">
-                                  <Badge className="bg-green-500 text-white hover:bg-green-600 border-0">Complete</Badge>
-                                </div>
-                              </div>
-                            </Card>
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <button className="flex items-center justify-center gap-2 py-3.5 px-4 bg-[#32C8D1] hover:bg-[#2AB8C1] text-white font-medium rounded-lg transition-colors shadow-sm">
-                              <Sparkles className="h-4 w-4" />
-                              Manage Photos
-                            </button>
-                            <button className="flex items-center justify-center gap-2 py-3.5 px-4 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors shadow-sm">
-                              <MessageSquare className="h-4 w-4" />
-                              Manage Voice
-                            </button>
-                          </div>
-                        </Card>
-
-                        <div className="space-y-4">
-                          <h3 className="text-xl font-bold text-gray-900">Portfolio Showcase</h3>
-                          <p className="text-sm text-gray-500">Approved AI-generated content featuring your likeness</p>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {[
-                              { brand: "Nike Sportswear", views: "125,000 views", img: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=400" },
-                              { brand: "Glossier Beauty", views: "89,000 views", img: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&q=80&w=400" },
-                              { brand: "Tesla Motors", views: "450,000 views", img: "https://images.unsplash.com/photo-1536700503339-1e4b06520771?auto=format&fit=crop&q=80&w=400" }
-                            ].map((item, i) => (
-                              <Card key={i} className="overflow-hidden rounded-xl border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                                <div className="relative aspect-[16/9]">
-                                  <img src={item.img} alt={item.brand} className="w-full h-full object-cover" />
-                                  <div className="absolute top-2 right-2">
-                                    <Badge className="bg-green-500 text-white border-0 text-[10px] h-5">Live</Badge>
-                                  </div>
-                                </div>
-                                <div className="p-4 bg-white">
-                                  <div className="font-bold text-gray-900">{item.brand}</div>
-                                  <div className="text-xs text-gray-500">{item.views}</div>
-                                </div>
-                              </Card>
-                            ))}
-                          </div>
-                        </div>
-
-                        <Card className="p-5 rounded-xl shadow-sm border-0 bg-gradient-to-r from-indigo-50 to-blue-50">
-                          <div className="flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-4 min-w-0">
-                              <div className="h-14 w-14 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center overflow-hidden">
-                                {agencyUser?.agency_logo_url ? (
-                                  <img src={agencyUser.agency_logo_url} alt="" className="h-full w-full object-cover" />
-                                ) : (
-                                  <Briefcase className="h-6 w-6 text-gray-400" />
-                                )}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="text-base font-semibold text-gray-900 truncate">{agencyName || "Your Agency"}</div>
-                                <div className="text-sm text-gray-500 truncate">Connected since 2/10/2026</div>
-                                <div className="mt-3 flex flex-wrap gap-2">
-                                  <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-[#32C8D1] text-white hover:bg-[#2AB8C1] transition-colors">Edit Profile</button>
-                                  <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors">Manage Campaigns</button>
-                                  <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-amber-400 text-white hover:bg-amber-500 transition-colors">View Earnings</button>
-                                </div>
-                              </div>
-                            </div>
-                            <Button variant="outline" className="h-10 px-4 rounded-lg">Manage</Button>
-                          </div>
-                        </Card>
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {tab === "settings" && (
-                  <div className="space-y-4">
-                    <div>
-                      <div className="text-2xl font-bold text-gray-900">Settings</div>
-                      <div className="text-sm text-gray-600 mt-1">
-                        Manage your profile and likeness.
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      {[
-                        { key: "profile", label: "Profile" },
-                        { key: "attributes", label: "Attributes" },
-                        { key: "media_social", label: "Media & Social" },
-                        { key: "notes", label: "Notes" },
-                        { key: "my_likeness", label: "My Likeness" },
-                      ].map((t) => (
-                        <Button
-                          key={t.key}
-                          variant={settingsTab === t.key ? "default" : "outline"}
-                          className="h-9"
-                          onClick={() => setSettingsTab(t.key)}
-                        >
-                          {t.label}
-                        </Button>
-                      ))}
-                    </div>
-
-                    <Card className="p-6">
-                      {settingsTab === "profile" && (
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                              <div className="text-xs font-semibold text-gray-600">Stage name</div>
-                              <Input
-                                value={profileForm.stage_name || ""}
-                                onChange={(e) =>
-                                  setProfileForm((p: any) => ({ ...p, stage_name: e.target.value }))
-                                }
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <div className="text-xs font-semibold text-gray-600">Full legal name</div>
-                              <Input
-                                value={profileForm.full_legal_name || ""}
-                                onChange={(e) =>
-                                  setProfileForm((p: any) => ({ ...p, full_legal_name: e.target.value }))
-                                }
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <div className="text-xs font-semibold text-gray-600">Email</div>
-                              <Input
-                                value={profileForm.email || ""}
-                                onChange={(e) =>
-                                  setProfileForm((p: any) => ({ ...p, email: e.target.value }))
-                                }
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <div className="text-xs font-semibold text-gray-600">Phone</div>
-                              <Input
-                                value={profileForm.phone_number || ""}
-                                onChange={(e) =>
-                                  setProfileForm((p: any) => ({ ...p, phone_number: e.target.value }))
-                                }
-                              />
-                            </div>
-                          </div>
-                          <div className="space-y-1">
-                            <div className="text-xs font-semibold text-gray-600">Bio</div>
-                            <Textarea
-                              value={profileForm.bio_notes || ""}
-                              onChange={(e) =>
-                                setProfileForm((p: any) => ({ ...p, bio_notes: e.target.value }))
-                              }
-                              className="min-h-[120px]"
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      {settingsTab === "attributes" && (
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                              <div className="text-xs font-semibold text-gray-600">Gender identity</div>
-                              <Input
-                                value={profileForm.gender_identity || ""}
-                                onChange={(e) =>
-                                  setProfileForm((p: any) => ({ ...p, gender_identity: e.target.value }))
-                                }
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <div className="text-xs font-semibold text-gray-600">Race / Ethnicity (comma separated)</div>
-                              <Input
-                                value={(profileForm.race_ethnicity || []).join(", ")}
-                                onChange={(e) =>
-                                  setProfileForm((p: any) => ({
-                                    ...p,
-                                    race_ethnicity: e.target.value
-                                      .split(",")
-                                      .map((s) => s.trim())
-                                      .filter(Boolean),
-                                  }))
-                                }
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <div className="text-xs font-semibold text-gray-600">Hair color</div>
-                              <Input
-                                value={profileForm.hair_color || ""}
-                                onChange={(e) =>
-                                  setProfileForm((p: any) => ({ ...p, hair_color: e.target.value }))
-                                }
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <div className="text-xs font-semibold text-gray-600">Eye color</div>
-                              <Input
-                                value={profileForm.eye_color || ""}
-                                onChange={(e) =>
-                                  setProfileForm((p: any) => ({ ...p, eye_color: e.target.value }))
-                                }
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <div className="text-xs font-semibold text-gray-600">Height (ft)</div>
-                              <Input
-                                type="number"
-                                value={profileForm.height_feet}
-                                onChange={(e) =>
-                                  setProfileForm((p: any) => ({ ...p, height_feet: e.target.value }))
-                                }
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <div className="text-xs font-semibold text-gray-600">Height (in)</div>
-                              <Input
-                                type="number"
-                                value={profileForm.height_inches}
-                                onChange={(e) =>
-                                  setProfileForm((p: any) => ({ ...p, height_inches: e.target.value }))
-                                }
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <div className="text-xs font-semibold text-gray-600">Bust/Chest (in)</div>
-                              <Input
-                                type="number"
-                                value={profileForm.bust_chest_inches}
-                                onChange={(e) =>
-                                  setProfileForm((p: any) => ({ ...p, bust_chest_inches: e.target.value }))
-                                }
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <div className="text-xs font-semibold text-gray-600">Waist (in)</div>
-                              <Input
-                                type="number"
-                                value={profileForm.waist_inches}
-                                onChange={(e) =>
-                                  setProfileForm((p: any) => ({ ...p, waist_inches: e.target.value }))
-                                }
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <div className="text-xs font-semibold text-gray-600">Hips (in)</div>
-                              <Input
-                                type="number"
-                                value={profileForm.hips_inches}
-                                onChange={(e) =>
-                                  setProfileForm((p: any) => ({ ...p, hips_inches: e.target.value }))
-                                }
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <div className="text-xs font-semibold text-gray-600">Special skills (comma separated)</div>
-                              <Input
-                                value={(profileForm.special_skills || []).join(", ")}
-                                onChange={(e) =>
-                                  setProfileForm((p: any) => ({
-                                    ...p,
-                                    special_skills: e.target.value
-                                      .split(",")
-                                      .map((s) => s.trim())
-                                      .filter(Boolean),
-                                  }))
-                                }
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {settingsTab === "media_social" && (
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                              <div className="text-xs font-semibold text-gray-600">Instagram handle</div>
-                              <Input
-                                value={profileForm.instagram_handle || ""}
-                                onChange={(e) =>
-                                  setProfileForm((p: any) => ({ ...p, instagram_handle: e.target.value }))
-                                }
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <div className="text-xs font-semibold text-gray-600">Profile photo URL</div>
-                              <Input
-                                value={profileForm.profile_photo_url || ""}
-                                onChange={(e) =>
-                                  setProfileForm((p: any) => ({ ...p, profile_photo_url: e.target.value }))
-                                }
-                              />
-                            </div>
-                          </div>
-                          <div className="space-y-1">
-                            <div className="text-xs font-semibold text-gray-600">Photo URLs (comma separated)</div>
-                            <Textarea
-                              value={(profileForm.photo_urls || []).join(", ")}
-                              onChange={(e) =>
-                                setProfileForm((p: any) => ({
-                                  ...p,
-                                  photo_urls: e.target.value
-                                    .split(",")
-                                    .map((s) => s.trim())
-                                    .filter(Boolean),
-                                }))
-                              }
-                              className="min-h-[110px]"
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      {settingsTab === "notes" && (
-                        <div className="space-y-3">
-                          <div className="text-sm text-gray-600">
-                            Notes are stored in your profile bio for now.
-                          </div>
-                          <Textarea
-                            value={profileForm.bio_notes || ""}
-                            onChange={(e) =>
-                              setProfileForm((p: any) => ({ ...p, bio_notes: e.target.value }))
-                            }
-                            className="min-h-[160px]"
-                          />
-                        </div>
-                      )}
-
-                      {settingsTab === "my_likeness" && (
-                        <div className="space-y-2">
-                          <div className="text-sm text-gray-600">
-                            This section will be expanded with likeness capture/consent workflows.
-                          </div>
-                          <div className="text-sm text-gray-900">
-                            Consent status: <span className="font-semibold">{agencyUser?.consent_status || "missing"}</span>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="mt-6 flex items-center gap-3">
-                        <Button
-                          onClick={saveProfile}
-                          disabled={updateProfileMutation.isPending}
-                          className="h-10"
-                        >
-                          {updateProfileMutation.isPending ? "Saving…" : "Save"}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="h-10"
-                          onClick={() => setProfileForm(buildProfileForm())}
-                          disabled={updateProfileMutation.isPending}
-                        >
-                          Reset
-                        </Button>
-                      </div>
-                    </Card>
-                  </div>
-                )}
-        </main>
+          <main className="flex-1 min-w-0 p-8 space-y-8">{portalContent}</main>
+        </div>
       </div>
-    </div>
     </div>
   );
 }

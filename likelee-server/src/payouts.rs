@@ -612,6 +612,19 @@ pub struct BalanceQuery {
     pub profile_id: String,
 }
 
+pub async fn get_my_balance(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> (StatusCode, Json<serde_json::Value>) {
+    get_balance(
+        State(state),
+        Query(BalanceQuery {
+            profile_id: user.id,
+        }),
+    )
+    .await
+}
+
 pub async fn get_balance(
     State(state): State<AppState>,
     Query(q): Query<BalanceQuery>,
@@ -675,6 +688,30 @@ pub struct PayoutRequestPayload {
     pub amount_cents: i64,
     pub currency: Option<String>,
     pub payout_method: Option<String>, // "standard" | "instant"
+}
+
+#[derive(Deserialize)]
+pub struct MyPayoutRequestPayload {
+    pub amount_cents: i64,
+    pub currency: Option<String>,
+    pub payout_method: Option<String>, // "standard" | "instant"
+}
+
+pub async fn request_my_payout(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<MyPayoutRequestPayload>,
+) -> (StatusCode, Json<serde_json::Value>) {
+    request_payout(
+        State(state),
+        Json(PayoutRequestPayload {
+            profile_id: user.id,
+            amount_cents: payload.amount_cents,
+            currency: payload.currency,
+            payout_method: payload.payout_method,
+        }),
+    )
+    .await
 }
 
 pub async fn request_payout(

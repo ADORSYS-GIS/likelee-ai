@@ -29,11 +29,17 @@ export default function ProtectedRoute({
   const location = useLocation();
   const navigate = useNavigate();
 
+  const effectiveRoles = React.useMemo(() => {
+    if (!profile?.role) return [];
+    if (profile.role === "talent") return ["talent", "creator"];
+    return [profile.role];
+  }, [profile?.role]);
+
   // Handle role-based redirect with useEffect to prevent content flash
   React.useEffect(() => {
     if (initialized && authenticated && profile) {
       // Check for role-based access
-      if (allowedRoles && !allowedRoles.includes(profile.role)) {
+      if (allowedRoles && !allowedRoles.some((r) => effectiveRoles.includes(r))) {
         navigate("/Unauthorized", { replace: true });
         return;
       }
@@ -70,7 +76,7 @@ export default function ProtectedRoute({
   }
 
   // Show loading spinner during role check and redirect
-  if (allowedRoles && !allowedRoles.includes(profile.role)) {
+  if (allowedRoles && !allowedRoles.some((r) => effectiveRoles.includes(r))) {
     return <LoadingSpinner />;
   }
 
