@@ -79,6 +79,9 @@ CREATE TABLE IF NOT EXISTS public.scouting_trips (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
+ALTER TABLE public.scouting_trips
+  ADD COLUMN IF NOT EXISTS conversion_rate numeric(5,2) DEFAULT 0;
+
 CREATE INDEX IF NOT EXISTS idx_scouting_trips_agency_id ON public.scouting_trips(agency_id);
 
 -- 3. Scouting Events (Open Calls)
