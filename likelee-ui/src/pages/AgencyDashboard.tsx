@@ -1,4 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { LicenseTemplatesTab } from "@/components/licensing/LicenseTemplatesTab";
+import { LicenseSubmissionsTab } from "@/components/licensing/LicenseSubmissionsTab";
+import { ActiveLicenseDetailsSheet } from "@/components/licensing/ActiveLicenseDetailsSheet";
 import { scoutingService } from "@/services/scoutingService";
 import { ScoutingProspect } from "@/types/scouting";
 import { ScoutingMap } from "@/components/scouting/map/ScoutingMap";
@@ -155,6 +158,8 @@ import {
   markInvoicePaid,
   uploadAgencyFile,
   sendEmail,
+  getAgencyActiveLicenses,
+  getAgencyActiveLicensesStats,
 } from "@/api/functions";
 import ClientCRMView from "@/components/crm/ClientCRMView";
 import * as crmApi from "@/api/crm";
@@ -8980,11 +8985,11 @@ const ProspectDetailsSheet = ({
   onClose: () => void;
   onEdit: (prospect: ScoutingProspect) => void;
 }) => {
-  if (!prospect) return null;
-
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  if (!prospect) return null;
 
   const handleStatusChange = async (newStatus: string) => {
     try {
@@ -10234,11 +10239,14 @@ const DashboardView = ({
         </div>
         <div>
           <h3 className="text-lg font-bold text-gray-900">
-            KYC Verification Required
+            {kycStatus === "approved"
+              ? "KYC Completed"
+              : "KYC Verification Required"}
           </h3>
           <p className="text-sm text-gray-500">
-            To enable payouts and licensing for your talent, please complete
-            your agency's ID verification.
+            {kycStatus === "approved"
+              ? "Your agency identity verification is complete."
+              : "To enable payouts and licensing for your talent, please complete\n            your agency's ID verification."}
           </p>
           <div className="mt-2 flex items-center gap-2">
             {kycStatus === "approved" ? (
@@ -10282,16 +10290,16 @@ const DashboardView = ({
           </div>
         </div>
       </div>
-      <Button
-        variant="default"
-        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 h-12 rounded-xl"
-        onClick={onKYC}
-        disabled={
-          !!kycLoading || kycStatus === "approved" || kycStatus === "pending"
-        }
-      >
-        {kycStatus === "pending" ? "KYC Pending" : "Complete KYC"}
-      </Button>
+      {kycStatus !== "approved" && (
+        <Button
+          variant="default"
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 h-12 rounded-xl"
+          onClick={onKYC}
+          disabled={!!kycLoading || kycStatus === "pending"}
+        >
+          {kycStatus === "pending" ? "KYC Pending" : "Complete KYC"}
+        </Button>
+      )}
     </div>
 
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -11503,6 +11511,13 @@ const LicensingRequestsView = () => {
   const [totalPaymentAmount, setTotalPaymentAmount] = useState<string>("");
   const [agencyPercent, setAgencyPercent] = useState<string>("");
 
+  const [counterOfferModalOpen, setCounterOfferModalOpen] = useState(false);
+  const [counterOfferMessage, setCounterOfferMessage] = useState("");
+  const [groupToCounter, setGroupToCounter] = useState<any>(null);
+  const [activeRequestTab, setActiveRequestTab] = useState<
+    "Active" | "Archive"
+  >("Active");
+
   const talentCount = (selectedGroup?.talents || []).length || 0;
   const totalNum = Number(totalPaymentAmount);
   const agencyPercentNum = Number(agencyPercent);
@@ -11589,17 +11604,13 @@ const LicensingRequestsView = () => {
 
   const updateGroupStatus = async (
     group: any,
-    status: "pending" | "approved" | "rejected",
+    status: "pending" | "approved" | "rejected" | "negotiating" | "archived",
+    notes?: string,
   ) => {
     const ids = (group?.talents || [])
       .map((t: any) => t.licensing_request_id)
       .filter(Boolean);
     if (!ids.length) return;
-
-    const notes =
-      status === "pending"
-        ? window.prompt("Counter offer message (optional)") || undefined
-        : undefined;
 
     try {
       await updateAgencyLicensingRequestsStatus({
@@ -11610,6 +11621,15 @@ const LicensingRequestsView = () => {
       await queryClient.invalidateQueries({
         queryKey: ["agency", "licensing-requests"],
       });
+      if (status === "negotiating") {
+        setCounterOfferModalOpen(false);
+        setCounterOfferMessage("");
+        setGroupToCounter(null);
+        toast({
+          title: "Counter offer sent",
+          description: "The client has been notified.",
+        });
+      }
     } catch (e: any) {
       toast({
         title: "Update failed",
@@ -11618,6 +11638,13 @@ const LicensingRequestsView = () => {
       });
     }
   };
+
+  const filteredData = (data || []).filter((group: any) => {
+    const isArchived = ["rejected", "declined", "archived"].includes(
+      group.status,
+    );
+    return activeRequestTab === "Active" ? !isArchived : isArchived;
+  });
 
   const savePaySplit = async () => {
     if (!selectedGroup) return;
@@ -11669,342 +11696,388 @@ const LicensingRequestsView = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Licensing Requests</h2>
-        <Button
-          variant="outline"
-          className="flex items-center gap-2 border-gray-300 font-bold text-gray-700 bg-white"
-        >
-          <Filter className="w-4 h-4" /> Filter
-        </Button>
-      </div>
-
+    <>
       <div className="space-y-6">
-        {isLoading && (
-          <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
-            <div className="text-gray-500 font-medium">Loading...</div>
-          </Card>
-        )}
-
-        {!isLoading && error && (
-          <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
-            <div className="text-red-600 font-medium">
-              Failed to load licensing requests
-            </div>
-          </Card>
-        )}
-
-        {!isLoading && !error && (data || []).length === 0 && (
-          <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
-            <div className="text-gray-500 font-medium">
-              No licensing requests yet
-            </div>
-          </Card>
-        )}
-
-        {(data || []).map((group: any) => (
-          <Card
-            key={group.group_key}
-            className="p-8 bg-white border-2 border-gray-900 rounded-none overflow-hidden relative"
-          >
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                <h3 className="text-xl font-bold text-gray-900 mb-1">
-                  {group.brand_name || "Unknown brand"}
-                </h3>
-                <p className="text-gray-500 font-medium">
-                  {(group.campaign_title || "").trim() || "—"}
-                </p>
-              </div>
-              <span
-                className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyle(group.status)}`}
-              >
-                {group.status}
-              </span>
-            </div>
-
-            <div className="flex flex-wrap gap-2 mb-8">
-              {(group.talents || []).map((t: any) => (
-                <span
-                  key={t.licensing_request_id}
-                  className="px-3 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded uppercase"
+        <div className="flex justify-between items-center">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-2xl font-bold text-gray-900">
+              Licensing Requests
+            </h2>
+            <div className="flex bg-gray-100 p-1 rounded-lg w-fit mt-2">
+              {["Active", "Archive"].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveRequestTab(tab as any)}
+                  className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${activeRequestTab === tab ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
                 >
-                  {(t.talent_name || "").trim() || "Talent"}
-                </span>
+                  {tab}
+                </button>
               ))}
             </div>
+          </div>
+          <Button
+            variant="outline"
+            className="flex items-center gap-2 border-gray-300 font-bold text-gray-700 bg-white"
+          >
+            <Filter className="w-4 h-4" /> Filter
+          </Button>
+        </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12 mb-8">
-              <div className="space-y-4">
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                    Budget Range
-                  </p>
-                  <p className="text-sm font-bold text-gray-900">
-                    {formatBudget(group.budget_min, group.budget_max)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                    Regions
-                  </p>
-                  <p className="text-sm font-bold text-gray-900">
-                    {group.regions || "—"}
-                  </p>
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                    Usage Scope
-                  </p>
-                  <p className="text-sm font-bold text-gray-900">
-                    {(group.usage_scope || "").trim() || "—"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                    Deadline
-                  </p>
-                  <div className="flex items-center gap-1.5 font-bold text-gray-900 text-sm">
-                    <Calendar className="w-4 h-4 text-gray-400" />
-                    {group.deadline
-                      ? new Date(group.deadline).toLocaleDateString()
-                      : "—"}
-                  </div>
-                </div>
-              </div>
-            </div>
+        <div className="space-y-6">
+          {isLoading && (
+            <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
+              <div className="text-gray-500 font-medium">Loading...</div>
+            </Card>
+          )}
 
-            {group.status === "approved" ? (
-              <div>
-                <Button
-                  onClick={() => openPayModal(group)}
-                  className={`w-full font-bold h-11 rounded-md flex items-center justify-center gap-2 ${group.pay_set ? "bg-white text-gray-900 border border-gray-300 hover:bg-gray-50" : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 animate-pulse"}`}
-                >
-                  {group.pay_set ? (
-                    <>
-                      <Eye className="w-4 h-4" /> View Pay
-                    </>
-                  ) : (
-                    <>
-                      <DollarSign className="w-4 h-4" /> Set Pay
-                    </>
-                  )}
-                </Button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Button
-                  onClick={() => updateGroupStatus(group, "approved")}
-                  className="bg-green-600 hover:bg-green-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
-                >
-                  <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
-                    <span className="text-[10px]">✓</span>
-                  </div>
-                  Approve
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => updateGroupStatus(group, "pending")}
-                  className="border-gray-300 text-gray-700 font-bold h-11 rounded-md"
-                >
-                  Counter Offer
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => updateGroupStatus(group, "rejected")}
-                  className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
-                >
-                  <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
-                    <span className="text-[10px]">✕</span>
-                  </div>
-                  Decline
-                </Button>
-              </div>
-            )}
-          </Card>
-        ))}
-      </div>
-
-      <Dialog open={payModalOpen} onOpenChange={setPayModalOpen}>
-        <DialogContent className="max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Pay split</DialogTitle>
-            <DialogDescription>
-              Set total campaign pay and agency percent. The system will split
-              total evenly across talents.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Total payment amount</Label>
-              <Input
-                value={totalPaymentAmount}
-                onChange={(e) => setTotalPaymentAmount(e.target.value)}
-                placeholder="e.g. 10000"
-                inputMode="decimal"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Agency percent</Label>
-              <Input
-                value={agencyPercent}
-                onChange={(e) => setAgencyPercent(e.target.value)}
-                placeholder="e.g. 20"
-                inputMode="decimal"
-              />
-            </div>
-
-            <Card className="p-4 bg-gray-50 border border-gray-200">
-              <div className="grid grid-cols-1 gap-2 text-sm font-medium text-gray-700">
-                <div className="flex justify-between">
-                  <span>Agency total</span>
-                  <span>${formatMoney(agencyTotal)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Talent total</span>
-                  <span>${formatMoney(talentTotal)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Per talent</span>
-                  <span>${formatMoney(perTalentTalent)}</span>
-                </div>
-                {hasMissingTalentNames && (
-                  <div className="text-xs text-amber-700 font-bold">
-                    Some talents are missing names in this request.
-                  </div>
-                )}
+          {!isLoading && error && (
+            <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
+              <div className="text-red-600 font-medium">
+                Failed to load licensing requests
               </div>
             </Card>
-          </div>
+          )}
 
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setPayModalOpen(false);
-                setSelectedGroup(null);
-              }}
-              disabled={payModalLoading}
+          {!isLoading && !error && filteredData.length === 0 && (
+            <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
+              <div className="text-gray-500 font-medium">
+                {activeRequestTab === "Active"
+                  ? "No active licensing requests"
+                  : "No archived licensing requests"}
+              </div>
+            </Card>
+          )}
+
+          {filteredData.map((group: any) => (
+            <Card
+              key={group.group_key}
+              className="p-8 bg-white border-2 border-gray-900 rounded-none overflow-hidden relative"
             >
-              Cancel
-            </Button>
-            <Button onClick={savePaySplit} disabled={payModalLoading}>
-              {payModalLoading ? "Saving..." : "Save"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">
+                    {group.brand_name || "Unknown brand"}
+                  </h3>
+                  <p className="text-gray-500 font-medium">
+                    {(group.campaign_title || "").trim() || "—"}
+                  </p>
+                </div>
+                <span
+                  className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyle(group.status)}`}
+                >
+                  {group.status}
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-2 mb-8">
+                {(group.talents || []).map((t: any) => {
+                  const names = (t.talent_name || "")
+                    .split(",")
+                    .map((s: string) => s.trim())
+                    .filter(Boolean);
+                  return names.map((name: string, i: number) => (
+                    <span
+                      key={`${t.licensing_request_id}-${i}`}
+                      className="px-3 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded uppercase"
+                    >
+                      {name || "Talent"}
+                    </span>
+                  ));
+                })}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12 mb-8">
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                      Budget Range
+                    </p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {formatBudget(group.budget_min, group.budget_max)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                      Regions
+                    </p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {group.regions || "—"}
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                      Usage Scope
+                    </p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {(group.usage_scope || "").trim() || "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                      {group.license_start_date ? "Duration" : "Deadline"}
+                    </p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {group.license_start_date && group.license_end_date
+                        ? `${new Date(group.license_start_date).toLocaleDateString()} - ${new Date(group.license_end_date).toLocaleDateString()}`
+                        : group.license_start_date
+                          ? `From ${new Date(group.license_start_date).toLocaleDateString()}`
+                          : group.deadline
+                            ? new Date(group.deadline).toLocaleDateString()
+                            : "—"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {group.status === "approved" ? (
+                <div>
+                  <Button
+                    onClick={() => openPayModal(group)}
+                    className={`w-full font-bold h-11 rounded-md flex items-center justify-center gap-2 ${group.pay_set ? "bg-white text-gray-900 border border-gray-300 hover:bg-gray-50" : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 animate-pulse"}`}
+                  >
+                    {group.pay_set ? (
+                      <>
+                        <Eye className="w-4 h-4" /> View Pay
+                      </>
+                    ) : (
+                      <>
+                        <DollarSign className="w-4 h-4" /> Set Pay
+                      </>
+                    )}
+                  </Button>
+                </div>
+              ) : activeRequestTab === "Archive" ? (
+                <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => updateGroupStatus(group, "pending")}
+                    className="border-gray-300 text-gray-700 font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Recover to Active
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Button
+                    onClick={() => updateGroupStatus(group, "approved")}
+                    className="bg-green-600 hover:bg-green-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                  >
+                    <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
+                      <span className="text-[10px]">✓</span>
+                    </div>
+                    Approve
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setGroupToCounter(group);
+                      setCounterOfferModalOpen(true);
+                    }}
+                    className="border-gray-300 text-gray-700 font-bold h-11 rounded-md"
+                  >
+                    Counter Offer
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => updateGroupStatus(group, "rejected")}
+                    className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                  >
+                    <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
+                      <span className="text-[10px]">✕</span>
+                    </div>
+                    Decline
+                  </Button>
+                </div>
+              )}
+            </Card>
+          ))}
+        </div>
+
+        <Dialog open={payModalOpen} onOpenChange={setPayModalOpen}>
+          <DialogContent className="max-w-xl">
+            <DialogHeader>
+              <DialogTitle>Pay split</DialogTitle>
+              <DialogDescription>
+                Set total campaign pay and agency percent. The system will split
+                total evenly across talents.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Total payment amount</Label>
+                <Input
+                  value={totalPaymentAmount}
+                  onChange={(e) => setTotalPaymentAmount(e.target.value)}
+                  placeholder="e.g. 10000"
+                  inputMode="decimal"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Agency percent</Label>
+                <Input
+                  value={agencyPercent}
+                  onChange={(e) => setAgencyPercent(e.target.value)}
+                  placeholder="e.g. 20"
+                  inputMode="decimal"
+                />
+              </div>
+
+              <Card className="p-4 bg-gray-50 border border-gray-200">
+                <div className="grid grid-cols-1 gap-2 text-sm font-medium text-gray-700">
+                  <div className="flex justify-between">
+                    <span>Agency total</span>
+                    <span>${formatMoney(agencyTotal)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Talent total</span>
+                    <span>${formatMoney(talentTotal)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Per talent</span>
+                    <span>${formatMoney(perTalentTalent)}</span>
+                  </div>
+                  {hasMissingTalentNames && (
+                    <div className="text-xs text-amber-700 font-bold">
+                      Some talents are missing names in this request.
+                    </div>
+                  )}
+                </div>
+              </Card>
+            </div>
+
+            <DialogFooter className="pt-6 border-t">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setPayModalOpen(false);
+                  setSelectedGroup(null);
+                }}
+                disabled={payModalLoading}
+              >
+                Cancel
+              </Button>
+              <Button onClick={savePaySplit} disabled={payModalLoading}>
+                {payModalLoading ? "Saving..." : "Save"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog
+          open={counterOfferModalOpen}
+          onOpenChange={setCounterOfferModalOpen}
+        >
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Send Counter Offer</DialogTitle>
+              <DialogDescription>
+                Explain your proposed terms to the client. They will be notified
+                by email.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label>Message to Client</Label>
+                <Textarea
+                  value={counterOfferMessage}
+                  onChange={(e) => setCounterOfferMessage(e.target.value)}
+                  placeholder="Describe your counter offer terms..."
+                  rows={5}
+                  className="resize-none"
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setCounterOfferModalOpen(false)}
+                className="font-bold"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() =>
+                  updateGroupStatus(
+                    groupToCounter,
+                    "negotiating",
+                    counterOfferMessage,
+                  )
+                }
+                disabled={!counterOfferMessage.trim()}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+              >
+                Send Counter Offer
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </>
   );
 };
 
 const ActiveLicensesView = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
+  const [selectedLicense, setSelectedLicense] = useState<any>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-  const licenses = [
-    {
-      id: "LIC-001",
-      talent: "Emma",
-      talentImg: TALENT_DATA.find((t) => t.name === "Emma")?.img || "",
-      type: "Cosmetics Campaign",
-      brand: "Glamour Beauty Co.",
-      duration: "2025-01-15 to 2025-07-15",
-      daysLeft: "180 days left",
-      scope: "Social Media, E-commerce, Print",
-      value: "$8,500",
-      status: "Active",
-      statusColor: "bg-green-500",
-      autoRenew: true,
-    },
-    {
-      id: "LIC-002",
-      talent: "Sergine",
-      talentImg: TALENT_DATA.find((t) => t.name === "Sergine")?.img || "",
-      type: "Fashion Editorial",
-      brand: "Vogue Magazine",
-      duration: "2024-12-01 to 2025-06-01",
-      daysLeft: "150 days left",
-      scope: "Print, Digital Editorial",
-      value: "$12,000",
-      status: "Active",
-      statusColor: "bg-green-500",
-      autoRenew: false,
-    },
-    {
-      id: "LIC-003",
-      talent: "Milan",
-      talentImg: TALENT_DATA.find((t) => t.name === "Milan")?.img || "",
-      type: "Athletic Wear Campaign",
-      brand: "Nike Performance",
-      duration: "2025-01-01 to 2025-03-01",
-      daysLeft: "45 days left",
-      scope: "TV, Digital, Out-of-Home",
-      value: "$25,000",
-      status: "Expiring",
-      statusColor: "bg-orange-500",
-      autoRenew: true,
-    },
-    {
-      id: "LIC-004",
-      talent: "Julia",
-      talentImg: TALENT_DATA.find((t) => t.name === "Julia")?.img || "",
-      type: "Tech Product Launch",
-      brand: "Apple Inc.",
-      duration: "2024-11-15 to 2025-02-15",
-      daysLeft: "30 days left",
-      scope: "Global Digital, Social",
-      value: "$45,000",
-      status: "Expiring",
-      statusColor: "bg-orange-600",
-      autoRenew: false,
-    },
-    {
-      id: "LIC-005",
-      talent: "Emma",
-      talentImg: TALENT_DATA.find((t) => t.name === "Emma")?.img || "",
-      type: "Luxury Watch Campaign",
-      brand: "Rolex",
-      duration: "2024-08-01 to 2024-12-31",
-      daysLeft: "Expired 15 days ago",
-      scope: "Print, Digital, Retail",
-      value: "$35,000",
-      status: "Expired",
-      statusColor: "bg-gray-500",
-      autoRenew: false,
-    },
-    {
-      id: "LIC-006",
-      talent: "Sergine",
-      talentImg: TALENT_DATA.find((t) => t.name === "Sergine")?.img || "",
-      type: "Beverage Campaign",
-      brand: "Coca-Cola",
-      duration: "2024-09-01 to 2025-09-01",
-      daysLeft: "270 days left",
-      scope: "TV, Digital, Social, OOH",
-      value: "$60,000",
-      status: "Active",
-      statusColor: "bg-green-500",
-      autoRenew: true,
-    },
-  ];
+  const handleViewDetails = (license: any) => {
+    setSelectedLicense(license);
+    setIsDetailsOpen(true);
+  };
 
-  const filteredLicenses = licenses.filter((lic) => {
-    const matchesSearch =
-      lic.talent.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lic.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lic.brand.toLowerCase().includes(searchTerm.toLowerCase());
+  const handleRenew = (license: any) => {
+    // renewal logic
+  };
 
-    const matchesFilter =
-      filterStatus === "All" || lic.status.includes(filterStatus);
+  const { data: licenses = [], isLoading: isLicensesLoading } = useQuery<any[]>(
+    {
+      queryKey: ["agency", "active-licenses", filterStatus, searchTerm],
+      queryFn: async () => {
+        const params: any = {};
+        if (filterStatus !== "All") params.status = filterStatus;
+        if (searchTerm) params.search = searchTerm;
+        return await getAgencyActiveLicenses(params);
+      },
+    },
+  );
 
-    return matchesSearch && matchesFilter;
+  const { data: stats } = useQuery({
+    queryKey: ["agency", "active-licenses", "stats"],
+    queryFn: () => getAgencyActiveLicensesStats(),
   });
+
+  const statusColor = (status: string) => {
+    switch (status) {
+      case "Active":
+        return "bg-green-500";
+      case "Expiring":
+        return "bg-orange-500";
+      case "Expired":
+        return "bg-gray-500";
+      default:
+        return "bg-gray-400";
+    }
+  };
+
+  const formatMoney = (val: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(val);
+  };
+
+  const filteredLicenses = licenses; // Filtering handled by API now
 
   return (
     <div className="space-y-8">
@@ -12030,7 +12103,7 @@ const ActiveLicensesView = () => {
           {
             icon: CheckCircle2,
             label: "Active Licenses",
-            value: "3",
+            value: stats?.active || "0",
             color: "text-green-600",
             bg: "bg-green-50",
             border: "border-green-100",
@@ -12038,7 +12111,7 @@ const ActiveLicensesView = () => {
           {
             icon: Clock,
             label: "Expiring Soon",
-            value: "2",
+            value: stats?.expiring || "0",
             color: "text-orange-600",
             bg: "bg-orange-50",
             border: "border-orange-100",
@@ -12046,7 +12119,7 @@ const ActiveLicensesView = () => {
           {
             icon: AlertCircle,
             label: "Expired",
-            value: "1",
+            value: stats?.expired || "0",
             color: "text-red-600",
             bg: "bg-red-50",
             border: "border-red-100",
@@ -12054,7 +12127,7 @@ const ActiveLicensesView = () => {
           {
             icon: DollarSign,
             label: "Total Value",
-            value: "$185,500",
+            value: formatMoney(stats?.total_value || 0),
             color: "text-indigo-600",
             bg: "bg-indigo-50",
             border: "border-indigo-100",
@@ -12066,18 +12139,14 @@ const ActiveLicensesView = () => {
             className={`p-6 bg-white border ${card.border} shadow-sm rounded-2xl`}
           >
             <div className="flex items-center gap-3 mb-4">
-              <div className={`p-2 ${card.bg} rounded-lg`}>
+              <div
+                className={`w-10 h-10 rounded-xl ${card.bg} flex items-center justify-center`}
+              >
                 <card.icon className={`w-5 h-5 ${card.color}`} />
               </div>
-              <span className="text-sm font-bold text-gray-500">
-                {card.label}
-              </span>
+              <p className={`text-sm font-bold ${card.color}`}>{card.label}</p>
             </div>
-            <div
-              className={`font-black tracking-tight text-gray-900 ${card.large ? "text-3xl" : "text-4xl"}`}
-            >
-              {card.value}
-            </div>
+            <p className="text-3xl font-black text-gray-900">{card.value}</p>
           </Card>
         ))}
       </div>
@@ -12121,7 +12190,7 @@ const ActiveLicensesView = () => {
                   Brand
                 </th>
                 <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  Duration
+                  Deadline
                 </th>
                 <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                   Usage Scope
@@ -12138,74 +12207,131 @@ const ActiveLicensesView = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filteredLicenses.map((lic) => (
+              {licenses.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-6 py-12 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                        <FileText className="w-6 h-6 text-gray-400" />
+                      </div>
+                      <p className="text-gray-900 font-medium">
+                        No active licenses found
+                      </p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Try adjusting your filters or search terms
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+              {licenses.map((lic: any) => (
                 <tr
                   key={lic.id}
                   className="hover:bg-gray-50/50 transition-colors"
                 >
                   <td className="px-6 py-8 whitespace-nowrap">
                     <div className="flex items-center gap-3">
-                      <img
-                        src={lic.talentImg}
-                        alt={lic.talent}
-                        className="w-10 h-10 rounded-lg object-cover bg-gray-100"
-                      />
+                      <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+                        {lic.talent_avatar ? (
+                          <img
+                            src={lic.talent_avatar}
+                            alt={lic.talent_name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-400">
+                            <Users className="w-5 h-5" />
+                          </div>
+                        )}
+                      </div>
                       <div>
                         <p className="font-bold text-gray-900 text-sm leading-none mb-1">
-                          {lic.talent}
-                        </p>
-                        <p className="text-[10px] font-bold text-gray-400">
-                          {lic.id}
+                          {lic.talent_name}
                         </p>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-8">
                     <p className="text-sm font-bold text-gray-900 leading-tight max-w-[150px]">
-                      {lic.type}
+                      {lic.license_type || "Unknown License"}
                     </p>
                   </td>
                   <td className="px-6 py-8">
                     <p className="text-sm font-bold text-gray-900">
-                      {lic.brand}
+                      {lic.brand || "Unknown Brand"}
                     </p>
                   </td>
                   <td className="px-6 py-8">
-                    <p className="text-xs font-bold text-gray-900 mb-1">
-                      {lic.duration.split(" to ")[0]}
-                    </p>
-                    <p className="text-[10px] font-medium text-gray-400 mb-1">
-                      to {lic.duration.split(" to ")[1]}
-                    </p>
-                    <p className="text-[10px] font-bold text-gray-400 italic">
-                      {lic.daysLeft}
-                    </p>
+                    {lic.start_date || lic.end_date || lic.deadline ? (
+                      <>
+                        {lic.start_date && (
+                          <p className="text-xs font-bold text-gray-900 mb-1">
+                            {new Date(lic.start_date).toLocaleDateString()}
+                          </p>
+                        )}
+                        {lic.end_date ? (
+                          <p className="text-[10px] font-medium text-gray-400 mb-1">
+                            to {new Date(lic.end_date).toLocaleDateString()}
+                          </p>
+                        ) : lic.deadline ? (
+                          <p className="text-[10px] font-medium text-gray-400 mb-1">
+                            Deadline:{" "}
+                            {new Date(lic.deadline).toLocaleDateString()}
+                          </p>
+                        ) : lic.start_date && lic.duration_days ? (
+                          <p className="text-[10px] font-medium text-gray-400 mb-1">
+                            Deadline:{" "}
+                            {(() => {
+                              const d = new Date(lic.start_date);
+                              d.setDate(d.getDate() + lic.duration_days);
+                              return d.toLocaleDateString();
+                            })()}
+                          </p>
+                        ) : null}
+                        {lic.days_left !== null &&
+                          lic.days_left !== undefined && (
+                            <p className="text-[10px] font-bold text-gray-400 italic">
+                              {lic.days_left > 0
+                                ? `${lic.days_left} days left`
+                                : lic.days_left === 0
+                                  ? "Expires today"
+                                  : "Expired"}
+                            </p>
+                          )}
+                      </>
+                    ) : (
+                      <p className="text-xs font-medium text-gray-400">
+                        Ongoing
+                      </p>
+                    )}
                   </td>
                   <td className="px-6 py-8">
                     <p className="text-xs font-medium text-gray-600 max-w-[140px] leading-relaxed">
-                      {lic.scope}
+                      {Array.isArray(lic.usage_scope)
+                        ? lic.usage_scope.join(", ")
+                        : String(lic.usage_scope || "")}
                     </p>
                   </td>
                   <td className="px-6 py-8">
                     <p className="text-sm font-bold text-gray-900 mb-2">
-                      {lic.value}
+                      {formatMoney(lic.value)}
                     </p>
-                    {lic.autoRenew && (
+                    {lic.auto_renew && (
                       <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold w-fit border border-blue-100">
-                        <RefreshCw className="w-3-5 h-3-5" /> Auto-renew
+                        <RefreshCw className="w-3.5 h-3.5" /> Auto-renew
                       </div>
                     )}
                   </td>
                   <td className="px-6 py-8 whitespace-nowrap">
                     <span
-                      className={`px-3 py-1.5 rounded-lg text-[10px] font-black text-white uppercase tracking-wider shadow-sm ${lic.statusColor}`}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-black text-white uppercase tracking-wider shadow-sm ${statusColor(lic.status)}`}
                     >
                       {lic.status}
                     </span>
                   </td>
                   <td className="px-6 py-8 whitespace-nowrap text-center">
                     <div className="flex justify-center gap-2">
-                      {lic.status.includes("Expiring") && (
+                      {String(lic.status).includes("Expiring") && (
                         <Button className="h-9 px-4 bg-green-600 hover:bg-green-700 text-white text-[11px] font-extrabold rounded-lg flex items-center gap-2 shadow-md shadow-green-100 transition-all active:scale-95">
                           <RefreshCw className="w-3.5 h-3.5" /> Renew
                         </Button>
@@ -12213,6 +12339,7 @@ const ActiveLicensesView = () => {
                       <Button
                         variant="outline"
                         className="h-9 w-9 p-0 border-gray-200 text-gray-400 hover:text-gray-900 hover:border-gray-300 rounded-lg bg-white shadow-sm transition-all active:scale-95"
+                        onClick={() => handleViewDetails(lic)}
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
@@ -12224,6 +12351,12 @@ const ActiveLicensesView = () => {
           </table>
         </div>
       </div>
+      <ActiveLicenseDetailsSheet
+        license={selectedLicense}
+        open={isDetailsOpen}
+        onClose={() => setIsDetailsOpen(false)}
+        onRenew={handleRenew}
+      />
     </div>
   );
 };
@@ -18055,6 +18188,22 @@ export default function AgencyDashboard() {
     profile?.agency_name ||
     "Agency Name";
 
+  const agencyEmail =
+    (agencyProfileQuery.data as any)?.email ||
+    (profile as any)?.email ||
+    user?.email ||
+    "";
+
+  const agencyWebsite =
+    (agencyProfileQuery.data as any)?.website ||
+    (profile as any)?.website ||
+    "";
+
+  const agencyLogoUrl =
+    (agencyProfileQuery.data as any)?.logo_url ||
+    (profile as any)?.logo_url ||
+    "";
+
   const seatsLimit = useMemo(() => {
     return Number(
       agencyProfileQuery.data?.seats_limit ||
@@ -18098,6 +18247,18 @@ export default function AgencyDashboard() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [bookOuts, setBookOuts] = useState<any[]>([]);
   const [showCreatePackageWizard, setShowCreatePackageWizard] = useState(false);
+
+  const goToEditProfile = () => {
+    setActiveTab("settings");
+    setActiveSubTab("General Settings");
+    setSidebarOpen(false);
+  };
+
+  const goToMarketplace = () => {
+    setActiveTab("scouting");
+    setActiveScoutingTab("Marketplace");
+    setSidebarOpen(false);
+  };
 
   const refreshAgencyKycStatus = async () => {
     if (!authenticated || !user?.id) return;
@@ -18527,6 +18688,25 @@ export default function AgencyDashboard() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showHeaderSearch, setShowHeaderSearch] = useState(false);
+  const [headerSearchValue, setHeaderSearchValue] = useState("");
+  const [showSupportDialog, setShowSupportDialog] = useState(false);
+  const [supportSubject, setSupportSubject] = useState("");
+  const [supportMessage, setSupportMessage] = useState("");
+  const [supportSending, setSupportSending] = useState(false);
+
+  useEffect(() => {
+    if (!showNotifications && !showProfileMenu) return;
+    const onDown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      if (target.closest("[data-header-dropdown]")) return;
+      setShowNotifications(false);
+      setShowProfileMenu(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [showNotifications, showProfileMenu]);
 
   const toggleExpanded = (id: string) => {
     setExpandedItems((prev) =>
@@ -18575,6 +18755,7 @@ export default function AgencyDashboard() {
             icon: FileText,
             subItems: [
               "Licensing Requests",
+              "License Submissions",
               "Active Licenses",
               "License Templates",
             ],
@@ -18691,9 +18872,16 @@ export default function AgencyDashboard() {
             <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
           </div>
           <div className="flex flex-col min-w-0">
-            <h2 className="font-bold text-gray-900 text-base leading-tight truncate">
-              {profile?.agency_name || "Agency Name"}
-            </h2>
+            <div className="flex items-center gap-2 min-w-0">
+              <h2 className="font-bold text-gray-900 text-base leading-tight truncate">
+                {profile?.agency_name || "Agency Name"}
+              </h2>
+              {agencyKycStatus === "approved" && (
+                <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0.5 text-[10px] font-bold gap-1 shrink-0">
+                  <ShieldCheck className="w-3 h-3" /> Verified
+                </Badge>
+              )}
+            </div>
             <p className="text-sm text-gray-500 font-medium truncate">
               {profile?.email || user?.email}
             </p>
@@ -18804,12 +18992,13 @@ export default function AgencyDashboard() {
               variant="ghost"
               size="icon"
               className="text-gray-500 hover:text-gray-900"
+              onClick={() => setShowHeaderSearch(true)}
             >
               <Search className="w-5 h-5" />
             </Button>
 
             {/* Notifications Dropdown */}
-            <div className="relative">
+            <div className="relative" data-header-dropdown>
               <Button
                 variant="ghost"
                 size="icon"
@@ -18817,7 +19006,6 @@ export default function AgencyDashboard() {
                 onClick={() => setShowNotifications(!showNotifications)}
               >
                 <Bell className="w-5 h-5" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
               </Button>
 
               {showNotifications && (
@@ -18825,35 +19013,23 @@ export default function AgencyDashboard() {
                   <div className="p-4 border-b border-gray-100">
                     <h3 className="font-bold text-gray-900">Notifications</h3>
                   </div>
-                  <div className="divide-y divide-gray-50 max-h-[400px] overflow-y-auto">
-                    <div className="p-4 bg-blue-50/30 hover:bg-blue-50/50 transition-colors cursor-pointer">
-                      <p className="text-sm font-medium text-gray-900">
-                        Julia's license expires in 15 days
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">2 hours ago</p>
-                    </div>
-                    <div className="p-4 bg-blue-50/30 hover:bg-blue-50/50 transition-colors cursor-pointer">
-                      <p className="text-sm font-medium text-gray-900">
-                        New licensing request from Byredo
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">5 hours ago</p>
-                    </div>
-                    <div className="p-4 hover:bg-gray-50 transition-colors cursor-pointer">
-                      <p className="text-sm font-medium text-gray-900">
-                        Payment received: $5,200 from & Other Stories
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">1 day ago</p>
-                    </div>
-                    <div className="p-4 hover:bg-gray-50 transition-colors cursor-pointer">
-                      <p className="text-sm font-medium text-gray-900">
-                        Aaron added to roster (pending verification)
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">2 days ago</p>
-                    </div>
+                  <div className="p-6">
+                    <p className="text-sm font-bold text-gray-900">
+                      No notifications yet
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      When your agency receives updates, they’ll show up here.
+                    </p>
                   </div>
                   <div className="p-4 border-t border-gray-100 text-center">
-                    <button className="text-sm font-bold text-indigo-600 hover:text-indigo-700">
-                      View all notifications
+                    <button
+                      className="text-sm font-bold text-indigo-600 hover:text-indigo-700"
+                      onClick={() => {
+                        setShowNotifications(false);
+                        setShowSupportDialog(true);
+                      }}
+                    >
+                      Contact support
                     </button>
                   </div>
                 </div>
@@ -18864,12 +19040,15 @@ export default function AgencyDashboard() {
               variant="ghost"
               size="icon"
               className="text-gray-500 hover:text-gray-900"
+              onClick={() => {
+                setShowSupportDialog(true);
+              }}
             >
               <HelpCircle className="w-5 h-5" />
             </Button>
 
             {/* Profile Dropdown */}
-            <div className="relative">
+            <div className="relative" data-header-dropdown>
               <Button
                 variant="ghost"
                 size="icon"
@@ -18905,13 +19084,21 @@ export default function AgencyDashboard() {
                         </p>
                       </div>
                     </div>
-                    <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0.5 text-xs font-bold gap-1">
-                      <ShieldCheck className="w-3 h-3" /> Verified
-                    </Badge>
+                    {agencyKycStatus === "approved" && (
+                      <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0.5 text-xs font-bold gap-1">
+                        <ShieldCheck className="w-3 h-3" /> Verified
+                      </Badge>
+                    )}
                   </div>
 
                   <div className="p-2">
-                    <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group">
+                    <button
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group"
+                      onClick={() => {
+                        setShowProfileMenu(false);
+                        goToEditProfile();
+                      }}
+                    >
                       <Building2 className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
                         <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
@@ -18922,7 +19109,17 @@ export default function AgencyDashboard() {
                         </p>
                       </div>
                     </button>
-                    <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group">
+                    <button
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group"
+                      onClick={() => {
+                        toast({
+                          title: "Team & Permissions",
+                          description: "Coming soon",
+                          duration: 2000,
+                        });
+                        setShowProfileMenu(false);
+                      }}
+                    >
                       <Users className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
                         <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
@@ -18931,7 +19128,17 @@ export default function AgencyDashboard() {
                         <p className="text-xs text-gray-500">10 active users</p>
                       </div>
                     </button>
-                    <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group">
+                    <button
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group"
+                      onClick={() => {
+                        toast({
+                          title: "Billing & Subscription",
+                          description: "Coming soon",
+                          duration: 2000,
+                        });
+                        setShowProfileMenu(false);
+                      }}
+                    >
                       <CreditCard className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
                         <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
@@ -18940,7 +19147,15 @@ export default function AgencyDashboard() {
                         <p className="text-xs text-gray-500">Agency Pro Plan</p>
                       </div>
                     </button>
-                    <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group">
+                    <button
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group"
+                      onClick={() => {
+                        setShowProfileMenu(false);
+                        setActiveTab("protection");
+                        setActiveSubTab("Compliance Hub");
+                        setSidebarOpen(false);
+                      }}
+                    >
                       <FileText className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
                         <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
@@ -18951,7 +19166,15 @@ export default function AgencyDashboard() {
                         </p>
                       </div>
                     </button>
-                    <button className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group">
+                    <button
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group"
+                      onClick={() => {
+                        setShowProfileMenu(false);
+                        setActiveTab("settings");
+                        setActiveSubTab("General Settings");
+                        setSidebarOpen(false);
+                      }}
+                    >
                       <LinkIcon className="w-4 h-4 text-gray-500 group-hover:text-gray-900" />
                       <div>
                         <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
@@ -18978,6 +19201,138 @@ export default function AgencyDashboard() {
             </div>
           </div>
         </header>
+
+        <Dialog open={showHeaderSearch} onOpenChange={setShowHeaderSearch}>
+          <DialogContent className="sm:max-w-[520px] rounded-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold text-gray-900">
+                Search
+              </DialogTitle>
+              <DialogDescription className="text-gray-500 font-medium">
+                Search your roster by name.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <Input
+                autoFocus
+                value={headerSearchValue}
+                onChange={(e) => setHeaderSearchValue(e.target.value)}
+                placeholder="Search talent..."
+              />
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowHeaderSearch(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    const q = headerSearchValue.trim();
+                    setShowHeaderSearch(false);
+                    if (!q) return;
+                    setActiveTab("roster");
+                    setActiveSubTab("All Talent");
+                    setSearchTerm(q);
+                    setSidebarOpen(false);
+                  }}
+                >
+                  Search
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showSupportDialog} onOpenChange={setShowSupportDialog}>
+          <DialogContent className="sm:max-w-[560px] rounded-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold text-gray-900">
+                Contact Likelee Support
+              </DialogTitle>
+              <DialogDescription className="text-gray-500 font-medium">
+                Send a message to our support team.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Subject</Label>
+                <Input
+                  value={supportSubject}
+                  onChange={(e) => setSupportSubject(e.target.value)}
+                  placeholder="e.g. Issue with KYC status"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Message</Label>
+                <Textarea
+                  value={supportMessage}
+                  onChange={(e) => setSupportMessage(e.target.value)}
+                  placeholder="Describe your issue..."
+                  className="min-h-[140px]"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowSupportDialog(false)}
+                disabled={supportSending}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  const subject = supportSubject.trim();
+                  const message = supportMessage.trim();
+                  if (!subject || !message) {
+                    toast({
+                      title: "Missing details",
+                      description: "Please add a subject and message.",
+                      variant: "destructive" as any,
+                    });
+                    return;
+                  }
+
+                  setSupportSending(true);
+                  try {
+                    const fromEmail =
+                      (profile as any)?.email || user?.email || "unknown";
+                    const agencyId =
+                      (profile as any)?.id || user?.id || "unknown";
+                    const body = `From: ${fromEmail}\nAgency/User ID: ${agencyId}\n\n${message}`;
+
+                    await sendEmail({
+                      to: "support@likelee.ai",
+                      subject,
+                      body,
+                    });
+
+                    toast({
+                      title: "Message sent",
+                      description: "Support will get back to you shortly.",
+                    });
+                    setShowSupportDialog(false);
+                    setSupportSubject("");
+                    setSupportMessage("");
+                  } catch (e: any) {
+                    toast({
+                      title: "Failed to send",
+                      description:
+                        e?.message || "Could not send your message to support.",
+                      variant: "destructive" as any,
+                    });
+                  } finally {
+                    setSupportSending(false);
+                  }
+                }}
+                disabled={supportSending}
+              >
+                {supportSending ? "Sending..." : "Send"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Dynamic Dashboard Content */}
         <main className="flex-1 overflow-auto px-12 py-8 bg-gray-50">
@@ -19014,6 +19369,12 @@ export default function AgencyDashboard() {
               earnings30dTotalCents={earnings30dTotalCents}
               earningsPrev30dTotalCents={earningsPrev30dTotalCents}
               agencyName={agencyName}
+              agencyEmail={agencyEmail}
+              agencyWebsite={agencyWebsite}
+              logoUrl={agencyLogoUrl}
+              kycStatus={agencyKycStatus}
+              onEditProfile={goToEditProfile}
+              onViewMarketplace={goToMarketplace}
               seatsLimit={seatsLimit}
               isLoading={rosterQuery.isLoading}
               onRosterChanged={() => rosterQuery.refetch()}
@@ -19024,11 +19385,13 @@ export default function AgencyDashboard() {
           )}
           {activeTab === "licensing" &&
             activeSubTab === "Licensing Requests" && <LicensingRequestsView />}
+          {activeTab === "licensing" &&
+            activeSubTab === "License Submissions" && <LicenseSubmissionsTab />}
           {activeTab === "licensing" && activeSubTab === "Active Licenses" && (
             <ActiveLicensesView />
           )}
           {activeTab === "licensing" &&
-            activeSubTab === "License Templates" && <LicenseTemplatesView />}
+            activeSubTab === "License Templates" && <LicenseTemplatesTab />}
           {activeTab === "protection" && activeSubTab === "Protect & Usage" && (
             <ProtectionUsageView />
           )}

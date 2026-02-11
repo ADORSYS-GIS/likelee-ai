@@ -223,7 +223,7 @@ pub async fn create_session(
             if !status.is_success() {
                 let code = StatusCode::from_u16(status.as_u16())
                     .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-                return Err((code, text));
+                return Err(crate::errors::sanitize_db_error(code, text));
             }
             let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
             if rows.len() >= limit {
@@ -505,20 +505,31 @@ pub async fn get_status(
     Ok(Json(rows))
 }
 
+#[allow(dead_code)]
 #[derive(Deserialize)]
 struct VeriffWebhookDecision {
     status: String,
 }
+#[allow(dead_code)]
 #[derive(Deserialize)]
 struct VeriffWebhookSession {
     id: String,
 }
+#[allow(dead_code)]
 #[derive(Deserialize)]
 struct VeriffWebhookBody {
     #[serde(rename = "vendorData")]
     vendor_data: Option<String>,
     session: Option<VeriffWebhookSession>,
     decision: Option<VeriffWebhookDecision>,
+}
+
+fn json_get_str<'a>(v: &'a serde_json::Value, path: &[&str]) -> Option<&'a str> {
+    let mut cur = v;
+    for p in path {
+        cur = cur.get(*p)?;
+    }
+    cur.as_str()
 }
 
 fn constant_time_eq(a: &str, b: &str) -> bool {
@@ -554,12 +565,19 @@ pub async fn veriff_webhook(
         ));
     }
 
-    let parsed: VeriffWebhookBody = serde_json::from_slice(&body_bytes)
+    // Veriff webhook payload can have multiple shapes. We accept:
+    // 1) { vendorData, decision: { status }, session: { id } }
+    // 2) { verification: { vendorData, status, id, ... }, status: "success" }
+    let v: serde_json::Value = serde_json::from_slice(&body_bytes)
         .map_err(|e| (axum::http::StatusCode::BAD_REQUEST, e.to_string()))?;
-    let vendor_data_raw = parsed.vendor_data.ok_or((
-        axum::http::StatusCode::BAD_REQUEST,
-        "missing vendorData".into(),
-    ))?;
+    debug!(body = %v, "Veriff webhook payload");
+
+    let vendor_data_raw = json_get_str(&v, &["vendorData"])
+        .or_else(|| json_get_str(&v, &["verification", "vendorData"]))
+        .ok_or((
+            axum::http::StatusCode::BAD_REQUEST,
+            "missing vendorData".into(),
+        ))?;
 
     // vendor_data format: "role:id"
     let parts: Vec<&str> = vendor_data_raw.splitn(2, ':').collect();
@@ -568,11 +586,12 @@ pub async fn veriff_webhook(
     } else {
         ("creator", parts[0]) // fallback for legacy sessions
     };
-    let status = parsed
-        .decision
-        .as_ref()
-        .map(|d| d.status.to_lowercase())
-        .unwrap_or("pending".into());
+
+    let status = json_get_str(&v, &["decision", "status"])
+        .or_else(|| json_get_str(&v, &["verification", "decision", "status"]))
+        .or_else(|| json_get_str(&v, &["verification", "status"]))
+        .unwrap_or("pending")
+        .to_lowercase();
     let approved = status == "approved";
     let mapped_status = if approved {
         "approved"
@@ -583,11 +602,15 @@ pub async fn veriff_webhook(
     };
     info!(%profile_id, %role, %mapped_status, "Received Veriff decision webhook");
 
+    let session_id = json_get_str(&v, &["session", "id"])
+        .or_else(|| json_get_str(&v, &["verification", "id"]))
+        .map(|s| s.to_string());
+
     let payload = ProfileVerification {
         kyc_status: Some(mapped_status.into()),
         liveness_status: Some(mapped_status.into()),
         kyc_provider: Some("veriff".into()),
-        kyc_session_id: parsed.session.map(|s| s.id),
+        kyc_session_id: session_id,
         verified_at: approved.then(|| Utc::now().to_rfc3339()),
     };
     update_verification_status(&state, profile_id, role, &payload)

@@ -92,14 +92,6 @@ async fn main() {
         supabase_bucket_public: cfg.supabase_bucket_public.clone(),
         supabase_bucket_private: cfg.supabase_bucket_private.clone(),
         elevenlabs_api_key: cfg.elevenlabs_api_key.clone(),
-        creatify_base_url: cfg.creatify_base_url.clone(),
-        creatify_api_id: cfg.creatify_api_id.clone(),
-        creatify_api_key: cfg.creatify_api_key.clone(),
-        creatify_callback_url: cfg.creatify_callback_url.clone(),
-        tavus_api_key: cfg.tavus_api_key.clone(),
-        tavus_base_url: cfg.tavus_base_url.clone(),
-        tavus_webhook_secret: cfg.tavus_webhook_secret.clone(),
-        tavus_callback_url: cfg.tavus_callback_url.clone(),
         stripe_secret_key: cfg.stripe_secret_key.clone(),
         stripe_client_id: cfg.stripe_client_id.clone(),
         stripe_return_url: cfg.stripe_return_url.clone(),
@@ -130,15 +122,21 @@ async fn main() {
         email_contact_to: cfg.email_contact_to.clone(),
 
         docuseal_api_key: cfg.docuseal_api_key.clone(),
+        docuseal_base_url: cfg.docuseal_api_url.clone(),
         docuseal_api_url: cfg.docuseal_api_url.clone(),
         docuseal_app_url: cfg.docuseal_app_url.clone(),
         docuseal_webhook_url: cfg.docuseal_webhook_url.clone(),
         docuseal_user_email: cfg.docuseal_user_email.clone(),
+        docuseal_master_template_id: cfg.docuseal_master_template_id.clone(),
+        docuseal_master_template_name: cfg.docuseal_master_template_name.clone(),
 
         kyc_bypass_veriff_limit: cfg.kyc_bypass_veriff_limit,
 
         frontend_url: cfg.frontend_url.clone(),
     };
+
+    // Start background jobs
+    tokio::spawn(likelee_server::jobs::start_payment_reminders(state.clone()));
 
     let app = likelee_server::router::build_router(state);
 

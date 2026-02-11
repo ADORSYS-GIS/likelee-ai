@@ -7,6 +7,7 @@ use axum::{
 use postgrest::Postgrest;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::time::Duration;
 use tracing::{error, info, warn};
 
 use crate::auth::AuthUser;
@@ -35,7 +36,7 @@ async fn get_template_count(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err((code, text));
+        return Err(crate::errors::sanitize_db_error(code, text));
     }
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
     Ok(rows.len())
@@ -94,9 +95,99 @@ pub struct OfferResponse {
     pub signed_document_url: Option<String>,
 }
 
-// ============================================================================
-// Template Handlers
-// ============================================================================
+#[derive(Debug, Deserialize)]
+pub struct GeocodeQuery {
+    pub q: String,
+    pub limit: Option<u8>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct GeocodeResult {
+    pub name: String,
+    pub lat: f64,
+    pub lng: f64,
+}
+
+#[derive(Debug, Deserialize)]
+struct NominatimResult {
+    display_name: String,
+    lat: String,
+    lon: String,
+}
+
+/// GET /api/scouting/geocode?q=Berlin&limit=5
+pub async fn geocode(
+    State(_state): State<AppState>,
+    user: AuthUser,
+    Query(params): Query<GeocodeQuery>,
+) -> Result<Json<Vec<GeocodeResult>>, (StatusCode, String)> {
+    if user.role != "agency" {
+        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
+    }
+
+    let q = params.q.trim();
+    if q.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "q is required".to_string()));
+    }
+    if q.len() < 2 || q.len() > 120 {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "q must be between 2 and 120 characters".to_string(),
+        ));
+    }
+
+    let limit = params.limit.unwrap_or(5).clamp(1, 10);
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(5))
+        .build()
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let resp = client
+        .get("https://nominatim.openstreetmap.org/search")
+        .query(&[
+            ("format", "json"),
+            ("q", q),
+            ("limit", &limit.to_string()),
+            ("addressdetails", "1"),
+        ])
+        .header(
+            reqwest::header::USER_AGENT,
+            "likelee.ai scouting geocode (support@likelee.ai)",
+        )
+        .header(reqwest::header::ACCEPT, "application/json")
+        .send()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    let status = resp.status();
+    let body = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    if !status.is_success() {
+        warn!(status = %status, body = %body, "nominatim_error");
+        return Err((StatusCode::BAD_GATEWAY, "geocoding_failed".to_string()));
+    }
+
+    let raw: Vec<NominatimResult> =
+        serde_json::from_str(&body).map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    let results = raw
+        .into_iter()
+        .filter_map(|r| {
+            let lat = r.lat.parse::<f64>().ok()?;
+            let lng = r.lon.parse::<f64>().ok()?;
+            Some(GeocodeResult {
+                name: r.display_name,
+                lat,
+                lng,
+            })
+        })
+        .collect();
+
+    Ok(Json(results))
+}
 
 /// GET /api/scouting/templates?agency_id=xxx
 pub async fn list_templates(
@@ -866,7 +957,13 @@ pub async fn create_builder_token(
     );
 
     let token = docuseal_client
-        .create_builder_token(user_email, name, integration_email, payload.template_id)
+        .create_builder_token(
+            user_email,
+            name,
+            integration_email,
+            payload.template_id,
+            None,
+        )
         .map_err(|e| {
             error!(error = %e, "Failed to create builder token");
             (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
@@ -1389,102 +1486,65 @@ pub async fn handle_webhook(
         .eq("docuseal_submission_id", submission_id.to_string())
         .single()
         .execute()
-        .await
-        .map_err(|e| {
-            error!(error = %e, "Failed to find offer for submission");
-            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
-        })?;
+        .await;
 
-    info!(status = ?offer_response.status(), "Offer lookup response status");
+    if let Ok(resp) = offer_response {
+        if resp.status().is_success() {
+            let offer_body = resp.text().await.unwrap_or_default();
+            if let Ok(offer) = serde_json::from_str::<serde_json::Value>(&offer_body) {
+                if let Some(offer_id) = offer["id"].as_str() {
+                    let prospect_id = offer["prospect_id"].as_str().unwrap_or("");
 
-    if !offer_response.status().is_success() {
-        // It's possible we don't have this offer (e.g. created outside of our app or deleted)
-        // Just log and ignore
-        info!("No offer found for submission_id: {}", submission_id);
-        return Ok(StatusCode::OK);
-    }
+                    // Extract signed document URL
+                    let signed_document_url = if new_status == "completed" {
+                        payload.data["documents"]
+                            .as_array()
+                            .and_then(|docs| docs.first())
+                            .and_then(|doc| doc["url"].as_str())
+                            .map(|s| s.to_string())
+                    } else {
+                        None
+                    };
 
-    let offer_body = offer_response.text().await.unwrap_or_default();
-    info!(body = %offer_body, "Offer lookup response body");
-    let offer: serde_json::Value = serde_json::from_str(&offer_body).map_err(|e| {
-        error!(error = %e, body = %offer_body, "Failed to parse offer");
-        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
-    })?;
+                    let mut update_json = json!({ "status": new_status });
+                    if let Some(url) = signed_document_url {
+                        update_json["signed_document_url"] = json!(url);
+                        if new_status == "completed" {
+                            update_json["signed_at"] = json!(chrono::Utc::now().to_rfc3339());
+                        }
+                    }
 
-    let offer_id = offer["id"].as_str().unwrap();
-    let prospect_id = offer["prospect_id"].as_str().unwrap();
+                    let _ = pg
+                        .from("scouting_offers")
+                        .update(update_json.to_string())
+                        .eq("id", offer_id)
+                        .execute()
+                        .await;
 
-    // Extract signed document URL from webhook payload if submission is completed
-    let signed_document_url = if new_status == "completed" {
-        // Try to get the document URL from payload.data.documents[0].url
-        let url = payload.data["documents"]
-            .as_array()
-            .and_then(|docs| docs.first())
-            .and_then(|doc| doc["url"].as_str())
-            .map(|s| s.to_string());
-
-        if url.is_some() {
-            info!(
-                submission_id,
-                url = ?url,
-                "Extracted signed document URL from webhook payload"
-            );
-        } else {
-            warn!(
-                submission_id,
-                payload_data = ?payload.data,
-                "No signed document URL found in webhook payload"
-            );
-        }
-        url
-    } else {
-        None
-    };
-
-    // Update offer status and signed_document_url
-    let mut update_json = json!({ "status": new_status });
-    if let Some(url) = signed_document_url {
-        update_json["signed_document_url"] = json!(url);
-        if new_status == "completed" {
-            update_json["signed_at"] = json!(chrono::Utc::now().to_rfc3339());
+                    // Update prospect status
+                    if !prospect_id.is_empty() {
+                        let p_status = if new_status == "completed" {
+                            "signed"
+                        } else if new_status == "declined" {
+                            "declined"
+                        } else {
+                            ""
+                        };
+                        if !p_status.is_empty() {
+                            let _ = pg
+                                .from("scouting_prospects")
+                                .update(json!({ "status": p_status }).to_string())
+                                .eq("id", prospect_id)
+                                .execute()
+                                .await;
+                        }
+                    }
+                    return Ok(StatusCode::OK);
+                }
+            }
         }
     }
 
-    let _ = pg
-        .from("scouting_offers")
-        .update(update_json.to_string())
-        .eq("id", offer_id)
-        .execute()
-        .await
-        .map_err(|e| {
-            error!(error = %e, "Failed to update offer status");
-        });
-
-    // 2. Update prospect status (Pipeline logic)
-    // Only move the prospect card for significant events
-    if new_status == "completed" || new_status == "signed" {
-        let _ = pg
-            .from("scouting_prospects")
-            .update(json!({ "status": "signed" }).to_string())
-            .eq("id", prospect_id)
-            .execute()
-            .await
-            .map_err(|e| {
-                error!(error = %e, "Failed to update prospect status to signed");
-            });
-    } else if new_status == "declined" {
-        let _ = pg
-            .from("scouting_prospects")
-            .update(json!({ "status": "declined" }).to_string())
-            .eq("id", prospect_id)
-            .execute()
-            .await
-            .map_err(|e| {
-                error!(error = %e, "Failed to update prospect status to declined");
-            });
-    }
-    // Note: We do NOT update prospect status for "opened".
-    // It stays as "offer_sent" in the pipeline until signed or declined.
-
+    info!("No offer found for submission_id: {}", submission_id);
     Ok(StatusCode::OK)
 }

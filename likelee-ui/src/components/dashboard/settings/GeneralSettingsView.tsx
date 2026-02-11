@@ -36,8 +36,10 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { ensureHexColor } from "@/utils/color";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -72,9 +74,9 @@ const InviteTeamMemberModal = ({
           <DialogTitle className="text-xl font-bold text-gray-900">
             Invite Team Member
           </DialogTitle>
-          <p className="text-sm text-gray-500 font-medium">
+          <DialogDescription className="text-sm text-gray-500 font-medium">
             Send an email invitation to join your agency team
-          </p>
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-6 py-4">
           <div className="space-y-2">
@@ -185,9 +187,9 @@ const EditPermissionsModal = ({
           <DialogTitle className="text-xl font-bold text-gray-900">
             Edit Permissions - {member.name}
           </DialogTitle>
-          <p className="text-sm text-gray-500 font-medium">
+          <DialogDescription className="text-sm text-gray-500 font-medium">
             Role: {member.role}
-          </p>
+          </DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto p-6 pt-2 space-y-8">
           {sections.map((section) => (
@@ -284,9 +286,9 @@ const ActivityLogModal = ({
           <DialogTitle className="text-xl font-bold text-gray-900">
             Activity Log - {member.name}
           </DialogTitle>
-          <p className="text-sm text-gray-500 font-medium">
+          <DialogDescription className="text-sm text-gray-500 font-medium">
             Recent actions and system events
-          </p>
+          </DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto p-6 pt-2 space-y-4">
           {activities.map((activity, idx) => (
@@ -1520,7 +1522,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                       <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-gray-200 shadow-sm shrink-0 overflow-hidden">
                         <input
                           type="color"
-                          value={primaryColor}
+                          value={ensureHexColor(primaryColor, "#4F46E5")}
                           onChange={(e) => setPrimaryColor(e.target.value)}
                           className="absolute inset-0 w-full h-full cursor-pointer"
                           style={{
@@ -1552,7 +1554,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                       <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-lg border border-gray-200 shadow-sm shrink-0 overflow-hidden">
                         <input
                           type="color"
-                          value={secondaryColor}
+                          value={ensureHexColor(secondaryColor, "#10B981")}
                           onChange={(e) => setSecondaryColor(e.target.value)}
                           className="absolute inset-0 w-full h-full cursor-pointer"
                           style={{

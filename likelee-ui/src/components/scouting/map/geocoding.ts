@@ -1,8 +1,12 @@
-/**
- * Geocoding utility using Nominatim (OpenStreetMap)
- */
+import { base44 } from "@/api/base44Client";
 
 export interface Coordinates {
+  lat: number;
+  lng: number;
+}
+
+interface GeocodeResult {
+  name: string;
   lat: number;
   lng: number;
 }
@@ -23,25 +27,14 @@ export async function geocode(address: string): Promise<Coordinates | null> {
   }
 
   try {
-    // Adding a delay to respect Nominatim's usage policy (1 request per second)
-    // In a real app, we might want a more robust queuing system or a paid provider
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const data = await base44.get<GeocodeResult[]>("scouting/geocode", {
+      params: { q: address, limit: 1 },
+    });
 
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
-      {
-        headers: {
-          "User-Agent": "Likelee-AI-Scouting-Map/1.0",
-        },
-      },
-    );
-
-    const data = await response.json();
-
-    if (data && data.length > 0) {
+    if (data && Array.isArray(data) && data.length > 0) {
       const coords = {
-        lat: parseFloat(data[0].lat),
-        lng: parseFloat(data[0].lon),
+        lat: data[0].lat,
+        lng: data[0].lng,
       };
       cache.set(address, coords);
       return coords;
@@ -59,27 +52,10 @@ export async function searchLocations(
   if (!query || query.length < 3) return [];
 
   try {
-    // Adding a delay to respect Nominatim's usage policy
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`,
-      {
-        headers: {
-          "User-Agent": "Likelee-AI-Scouting-Map/1.0",
-        },
-      },
-    );
-
-    const data = await response.json();
-
-    if (data && Array.isArray(data)) {
-      return data.map((item: any) => ({
-        name: item.display_name,
-        lat: parseFloat(item.lat),
-        lng: parseFloat(item.lon),
-      }));
-    }
+    const data = await base44.get<GeocodeResult[]>("scouting/geocode", {
+      params: { q: query, limit: 5 },
+    });
+    return data;
   } catch (error) {
     console.error("Location search error:", error);
   }

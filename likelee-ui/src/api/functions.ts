@@ -11,9 +11,6 @@ export const generateImage = (data: any) =>
 export const checkJobStatus = (jobId: string) =>
   base44Client.get(`/api/job/status/${jobId}`);
 
-export const generateAvatar = (data: any) =>
-  base44Client.post("/api/avatar/generate", data);
-
 export const imageToVideo = (data: any) =>
   base44Client.post("/api/image-to-video", data);
 
@@ -307,6 +304,14 @@ export const updateCampaignSplit = (
 // Licensing Requests (Agency Dashboard)
 export const getAgencyLicensingRequests = () =>
   base44Client.get(`/api/agency/licensing-requests`);
+
+export const getAgencyActiveLicenses = (params?: {
+  status?: string;
+  search?: string;
+}) => base44Client.get(`/api/agency/active-licenses`, { params });
+
+export const getAgencyActiveLicensesStats = () =>
+  base44Client.get(`/api/agency/active-licenses/stats`);
 
 export const updateAgencyLicensingRequestsStatus = (data: {
   licensing_request_ids: string[];

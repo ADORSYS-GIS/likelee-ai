@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
+import { parseBackendError } from "@/utils/errorParser";
 import * as crmApi from "@/api/crm";
 
 const LogCommunicationModal = ({
@@ -59,6 +60,13 @@ const LogCommunicationModal = ({
         subject: "",
         content: "",
         occurred_at: new Date().toISOString().split("T")[0],
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: parseBackendError(error) || "Failed to log communication",
+        variant: "destructive",
       });
     },
   });

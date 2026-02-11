@@ -1,18 +1,17 @@
 #![allow(clippy::uninlined_format_args)]
 
+pub mod active_licenses;
 pub mod agencies;
 pub mod agency_clients;
 pub mod agency_dashboard;
 pub mod agency_roster;
 pub mod auth;
-pub mod avatar;
 pub mod billing;
 pub mod book_outs;
 pub mod bookings;
 pub mod brands;
 pub mod campaigns;
 pub mod config;
-mod creatify;
 pub mod creator_agency_connection;
 pub mod creator_rates;
 pub mod creators;
@@ -21,11 +20,15 @@ pub mod digitals;
 pub mod email;
 pub mod email_templates;
 pub mod entitlements;
+pub mod errors;
 pub mod expenses;
 pub mod face_profiles;
 pub mod health;
 pub mod invoices;
+pub mod jobs;
 pub mod kyc;
+pub mod license_submissions;
+pub mod license_templates;
 pub mod licenses;
 pub mod licensing_requests;
 pub mod moderation;

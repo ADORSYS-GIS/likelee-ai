@@ -72,16 +72,6 @@ erDiagram
     text content_other
 
     %% media
-    text avatar_canonical_url
-    text cameo_front_url
-    text cameo_left_url
-    text cameo_right_url
-
-    %% Tavus Digital Avatar
-    text tavus_avatar_id
-    text tavus_avatar_status
-    text tavus_last_error
-
     %% pricing (USD-only)
     integer base_monthly_price_cents "check >= 15000 (i.e., $150)"
     text currency_code "check = 'USD'"
@@ -363,6 +353,7 @@ erDiagram
     text email
     text phone
     text terms
+    date next_follow_up_date
     timestamptz created_at
     timestamptz updated_at
   }
@@ -419,6 +410,13 @@ erDiagram
   AGENCY_CLIENTS {
     uuid id PK
     uuid agency_id FK "REFERENCES agencies(id)"
+    text company
+    text status
+    text website
+    text[] tags
+    jsonb preferences
+    text notes
+    date next_follow_up_date
   }
 
   BOOKINGS {

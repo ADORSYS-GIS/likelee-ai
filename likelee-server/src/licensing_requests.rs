@@ -7,8 +7,8 @@ use axum::{
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::collections::{BTreeMap, HashMap, HashSet};
-use tracing::{info, warn};
+use std::collections::{BTreeMap, HashMap};
+use tracing::info;
 
 #[derive(Serialize, Clone)]
 pub struct LicensingRequestTalent {
@@ -16,6 +16,10 @@ pub struct LicensingRequestTalent {
     pub talent_id: String,
     pub talent_name: String,
     pub status: String,
+    pub total_agreed_amount: Option<f64>,
+    pub agency_commission_percent: Option<f64>,
+    pub agency_amount: Option<f64>,
+    pub talent_amount: Option<f64>,
 }
 
 #[derive(Serialize, Clone)]
@@ -29,6 +33,9 @@ pub struct LicensingRequestGroup {
     pub usage_scope: Option<String>,
     pub regions: Option<String>,
     pub deadline: Option<String>,
+    pub license_start_date: Option<String>,
+    pub license_end_date: Option<String>,
+    pub notes: Option<String>,
     pub created_at: String,
     pub status: String,
     pub pay_set: bool,
@@ -52,6 +59,19 @@ pub struct PaySplitBody {
 #[derive(Deserialize)]
 pub struct PaySplitQuery {
     pub licensing_request_ids: String,
+}
+
+#[derive(Deserialize)]
+pub struct CreateLicensingRequest {
+    pub talent_id: String,
+    pub brand_name: String, // client_name
+    pub start_date: String,
+    pub duration_days: i64,
+    pub price: f64,
+    pub template_id: Option<String>,
+    pub license_type: String, // campaign_title
+    pub usage_scope: String,
+    pub terms: String, // notes? or ignored for now
 }
 
 fn talent_display_name(row: &serde_json::Value) -> String {
@@ -79,8 +99,11 @@ fn created_at_group_key(brand_id: &str, created_at: &str) -> String {
 }
 
 fn group_status(statuses: &[String]) -> String {
-    if statuses.iter().any(|s| s == "rejected") {
-        return "rejected".to_string();
+    if statuses.iter().any(|s| s == "negotiating") {
+        return "negotiating".to_string();
+    }
+    if statuses.iter().any(|s| s == "rejected" || s == "declined") {
+        return "declined".to_string();
     }
     if !statuses.is_empty() && statuses.iter().all(|s| s == "approved" || s == "confirmed") {
         return "approved".to_string();
@@ -96,10 +119,11 @@ pub async fn list_for_agency(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
 
+    // Optimization: Single query with resource embedding to fetch everything at once
     let resp = state
         .pg
         .from("licensing_requests")
-        .select("id,brand_id,talent_id,status,created_at,campaign_title,budget_min,budget_max,usage_scope,regions,deadline")
+        .select("id,brand_id,talent_id,status,created_at,campaign_title,client_name,talent_name,budget_min,budget_max,usage_scope,regions,deadline,license_start_date,license_end_date,notes,negotiation_reason,brands(company_name),agency_users(full_legal_name,stage_name),campaigns(id,payment_amount,agency_percent,talent_percent,agency_earnings_cents,talent_earnings_cents)")
         .eq("agency_id", &user.id)
         .order("created_at.desc")
         .limit(250)
@@ -109,148 +133,29 @@ pub async fn list_for_agency(
 
     if !resp.status().is_success() {
         let err = resp.text().await.unwrap_or_default();
+        tracing::error!(agency_id = %user.id, error = %err, "licensing_requests database error");
         return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
     }
 
-    let text = resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let rows: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
+    let text = resp.text().await.map_err(|e| {
+        tracing::error!(agency_id = %user.id, error = %e, "licensing_requests text fetch error");
+        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+    })?;
+
+    let rows: serde_json::Value = serde_json::from_str(&text).map_err(|e| {
+        tracing::error!(agency_id = %user.id, error = %e, "licensing_requests JSON parse error");
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("JSON parse error: {}", e),
+        )
+    })?;
 
     let mut requests: Vec<serde_json::Value> = vec![];
     if let Some(arr) = rows.as_array() {
         requests = arr.clone();
     }
 
-    info!(agency_id = %user.id, count = requests.len(), "licensing_requests fetched");
-
-    let mut brand_ids: Vec<String> = vec![];
-    let mut talent_ids: Vec<String> = vec![];
-    let mut request_ids: Vec<String> = vec![];
-
-    for r in &requests {
-        if let Some(id) = r.get("id").and_then(|v| v.as_str()) {
-            if !id.is_empty() {
-                request_ids.push(id.to_string());
-            }
-        }
-        if let Some(b) = r.get("brand_id").and_then(|v| v.as_str()) {
-            if !b.is_empty() {
-                brand_ids.push(b.to_string());
-            }
-        }
-        if let Some(t) = r.get("talent_id").and_then(|v| v.as_str()) {
-            if !t.is_empty() {
-                talent_ids.push(t.to_string());
-            }
-        }
-    }
-
-    brand_ids.sort();
-    brand_ids.dedup();
-    talent_ids.sort();
-    talent_ids.dedup();
-
-    let mut brand_name_by_id: HashMap<String, String> = HashMap::new();
-    if !brand_ids.is_empty() {
-        let ids: Vec<&str> = brand_ids.iter().map(|s| s.as_str()).collect();
-        let b_resp = state
-            .pg
-            .from("brands")
-            .select("id,company_name")
-            .in_("id", ids)
-            .execute()
-            .await;
-        if let Ok(b_resp) = b_resp {
-            if b_resp.status().is_success() {
-                let b_text = b_resp.text().await.unwrap_or_else(|_| "[]".into());
-                let b_rows: serde_json::Value = serde_json::from_str(&b_text).unwrap_or(json!([]));
-                if let Some(arr) = b_rows.as_array() {
-                    for r in arr {
-                        let id = r.get("id").and_then(|v| v.as_str()).unwrap_or("");
-                        let name = r.get("company_name").and_then(|v| v.as_str()).unwrap_or("");
-                        if !id.is_empty() {
-                            brand_name_by_id.insert(id.to_string(), name.to_string());
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    let mut talent_name_by_id: HashMap<String, String> = HashMap::new();
-    if !talent_ids.is_empty() {
-        let ids: Vec<&str> = talent_ids.iter().map(|s| s.as_str()).collect();
-        let t_resp = state
-            .pg
-            .from("agency_users")
-            .select("id,full_legal_name,stage_name")
-            .in_("id", ids)
-            .execute()
-            .await;
-        match t_resp {
-            Ok(t_resp) => {
-                if t_resp.status().is_success() {
-                    let t_text = t_resp.text().await.unwrap_or_else(|_| "[]".into());
-                    let t_rows: serde_json::Value =
-                        serde_json::from_str(&t_text).unwrap_or(json!([]));
-                    if let Some(arr) = t_rows.as_array() {
-                        for r in arr {
-                            let id = r.get("id").and_then(|v| v.as_str()).unwrap_or("");
-                            if !id.is_empty() {
-                                talent_name_by_id.insert(id.to_string(), talent_display_name(r));
-                            }
-                        }
-                    }
-                } else {
-                    let status = t_resp.status();
-                    let body = t_resp.text().await.unwrap_or_default();
-                    warn!(agency_id = %user.id, status = %status, body = %body, "agency_users lookup failed");
-                }
-            }
-            Err(e) => {
-                warn!(agency_id = %user.id, error = %e, "agency_users lookup request failed");
-            }
-        }
-    }
-
-    // Determine which requests already have a pay split set (campaign exists with payment_amount)
-    let mut pay_set_request_ids: HashSet<String> = HashSet::new();
-    if !request_ids.is_empty() {
-        let ids: Vec<&str> = request_ids.iter().map(|s| s.as_str()).collect();
-        let c_resp = state
-            .pg
-            .from("campaigns")
-            .select("licensing_request_id,payment_amount")
-            .in_("licensing_request_id", ids)
-            .execute()
-            .await;
-        if let Ok(c_resp) = c_resp {
-            if c_resp.status().is_success() {
-                let c_text = c_resp.text().await.unwrap_or_else(|_| "[]".into());
-                let c_rows: serde_json::Value = serde_json::from_str(&c_text).unwrap_or(json!([]));
-                if let Some(arr) = c_rows.as_array() {
-                    for r in arr {
-                        let lrid = r
-                            .get("licensing_request_id")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("");
-                        if lrid.is_empty() {
-                            continue;
-                        }
-                        let has_payment = r
-                            .get("payment_amount")
-                            .map(|v| !v.is_null())
-                            .unwrap_or(false);
-                        if has_payment {
-                            pay_set_request_ids.insert(lrid.to_string());
-                        }
-                    }
-                }
-            }
-        }
-    }
+    info!(agency_id = %user.id, count = requests.len(), "licensing_requests fetched (optimized)");
 
     let mut groups: BTreeMap<String, LicensingRequestGroup> = BTreeMap::new();
 
@@ -283,6 +188,36 @@ pub async fn list_for_agency(
         let usage_scope = value_to_non_empty_string(r.get("usage_scope"));
         let regions = value_to_non_empty_string(r.get("regions"));
         let deadline = value_to_non_empty_string(r.get("deadline"));
+        let license_start_date = value_to_non_empty_string(r.get("license_start_date"));
+        let license_end_date = value_to_non_empty_string(r.get("license_end_date"));
+        let notes = value_to_non_empty_string(r.get("notes"));
+
+        let brand_name = r
+            .get("brands")
+            .and_then(|b| b.get("company_name"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .or_else(|| {
+                r.get("client_name")
+                    .and_then(|v| v.as_str())
+                    .filter(|s| !s.trim().is_empty())
+                    .map(|s| s.to_string())
+            });
+
+        let talent_info = r.get("agency_users");
+        let talent_name_field = r
+            .get("talent_name")
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.trim().is_empty())
+            .map(|s| s.to_string());
+        let talent_name = talent_info
+            .map(talent_display_name)
+            .filter(|s| !s.trim().is_empty())
+            .or(talent_name_field)
+            .unwrap_or_else(|| "Assigned Talent".to_string());
+
+        let campaigns_arr = r.get("campaigns").and_then(|c| c.as_array());
+        let campaign = campaigns_arr.and_then(|a| a.first());
 
         let key = created_at_group_key(brand_key, &created_at);
 
@@ -295,23 +230,25 @@ pub async fn list_for_agency(
                 } else {
                     Some(brand_id.to_string())
                 },
-                brand_name: if brand_id.is_empty() {
-                    None
-                } else {
-                    brand_name_by_id.get(brand_id).cloned()
-                },
+                brand_name: brand_name
+                    .clone()
+                    .or_else(|| Some("Direct Client".to_string())),
                 campaign_title: campaign_title.clone(),
                 budget_min,
                 budget_max,
                 usage_scope: usage_scope.clone(),
                 regions: regions.clone(),
                 deadline: deadline.clone(),
+                license_start_date: license_start_date.clone(),
+                license_end_date: license_end_date.clone(),
+                notes: notes.clone(),
                 created_at: created_at.clone(),
                 status: "pending".to_string(),
                 pay_set: false,
                 talents: vec![],
             });
 
+        // Fill group level fields if empty
         if entry
             .campaign_title
             .as_ref()
@@ -350,27 +287,61 @@ pub async fn list_for_agency(
         {
             entry.deadline = deadline;
         }
+        if entry
+            .license_start_date
+            .as_ref()
+            .map(|s| s.trim().is_empty())
+            .unwrap_or(true)
+        {
+            entry.license_start_date = license_start_date;
+        }
+        if entry
+            .license_end_date
+            .as_ref()
+            .map(|s| s.trim().is_empty())
+            .unwrap_or(true)
+        {
+            entry.license_end_date = license_end_date;
+        }
 
-        let talent_name = talent_name_by_id
-            .get(talent_id)
-            .cloned()
-            .unwrap_or_else(|| "".to_string());
+        let total_agreed_amount = campaign
+            .and_then(|c| c.get("payment_amount"))
+            .and_then(value_to_f64);
+        let agency_commission_percent = campaign
+            .and_then(|c| c.get("agency_percent"))
+            .and_then(value_to_f64);
+
+        let agency_amount = campaign
+            .and_then(|c| c.get("agency_earnings_cents"))
+            .and_then(|v| v.as_f64())
+            .map(|v| v / 100.0);
+        let talent_amount = campaign
+            .and_then(|c| c.get("talent_earnings_cents"))
+            .and_then(|v| v.as_f64())
+            .map(|v| v / 100.0);
 
         entry.talents.push(LicensingRequestTalent {
             licensing_request_id: id.to_string(),
             talent_id: talent_id.to_string(),
-            talent_name,
+            talent_name: talent_name.clone(),
             status: status.clone(),
+            total_agreed_amount,
+            agency_commission_percent,
+            agency_amount,
+            talent_amount,
         });
-
-        // Pay is considered "set" for the group only if all requests have a campaign row w/ payment.
-        entry.pay_set = entry
-            .talents
-            .iter()
-            .all(|t| pay_set_request_ids.contains(&t.licensing_request_id));
 
         let statuses: Vec<String> = entry.talents.iter().map(|t| t.status.clone()).collect();
         entry.status = group_status(&statuses);
+    }
+
+    // Final pass for groups to set pay_set accurately
+    for group in groups.values_mut() {
+        group.pay_set = !group.talents.is_empty()
+            && group
+                .talents
+                .iter()
+                .all(|t| t.total_agreed_amount.is_some());
     }
 
     let mut out: Vec<LicensingRequestGroup> = groups.into_values().collect();
@@ -395,7 +366,12 @@ pub async fn update_status_bulk(
     }
 
     let status = payload.status.trim().to_lowercase();
-    if status != "approved" && status != "rejected" && status != "pending" {
+    if status != "approved"
+        && status != "rejected"
+        && status != "pending"
+        && status != "negotiating"
+        && status != "declined"
+    {
         return Err((StatusCode::BAD_REQUEST, "Invalid status".to_string()));
     }
 
@@ -409,6 +385,7 @@ pub async fn update_status_bulk(
         "status": status,
         "decided_at": decided_at,
         "notes": payload.notes,
+        "negotiation_reason": payload.notes, // Using notes as the reason for now
     });
 
     if let serde_json::Value::Object(ref mut map) = v {
@@ -431,7 +408,7 @@ pub async fn update_status_bulk(
         .pg
         .from("licensing_requests")
         .eq("agency_id", &user.id)
-        .in_("id", ids)
+        .in_("id", ids.clone())
         .update(v.to_string())
         .execute()
         .await
@@ -440,6 +417,110 @@ pub async fn update_status_bulk(
     if !resp.status().is_success() {
         let err = resp.text().await.unwrap_or_default();
         return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+
+    // If counter offer (negotiating), send email to brand
+    if status == "negotiating" {
+        tracing::info!("Status is negotiating, checking for notes...");
+        if let Some(reason) = payload.notes.as_ref() {
+            tracing::info!("Notes found: {}, sending counter offer emails", reason);
+            // Fetch brand emails for these requests
+            let b_resp = state
+                .pg
+                .from("licensing_requests")
+                .select("brand_id,brands(email,company_name),submission_id,license_submissions!licensing_requests_submission_id_fkey(client_email,client_name)")
+                .in_("id", ids)
+                .execute()
+                .await;
+            if let Ok(b_resp) = b_resp {
+                if b_resp.status().is_success() {
+                    let b_text = b_resp.text().await.unwrap_or_else(|_| "[]".into());
+                    let b_rows: serde_json::Value =
+                        serde_json::from_str(&b_text).unwrap_or(json!([]));
+                    tracing::info!("Fetched brand/submission data: {}", b_text);
+                    if let Some(arr) = b_rows.as_array() {
+                        tracing::info!(
+                            "Processing {} licensing requests for counter offer emails",
+                            arr.len()
+                        );
+                        let mut sent_emails = std::collections::HashSet::new();
+                        for r in arr {
+                            let mut target_email = None;
+                            let mut target_name = "Client".to_string();
+
+                            // Try brand email first
+                            if let Some(brand) = r.get("brands") {
+                                if !brand.is_null() {
+                                    if let Some(email) = brand.get("email").and_then(|v| v.as_str())
+                                    {
+                                        target_email = Some(email.to_string());
+                                        info!("Found brand email: {}", email);
+                                        if let Some(name) =
+                                            brand.get("company_name").and_then(|v| v.as_str())
+                                        {
+                                            target_name = name.to_string();
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Fallback to submission email
+                            if target_email.is_none() {
+                                if let Some(sub) = r.get("license_submissions") {
+                                    if !sub.is_null() {
+                                        if let Some(email) =
+                                            sub.get("client_email").and_then(|v| v.as_str())
+                                        {
+                                            target_email = Some(email.to_string());
+                                            info!("Falling back to submission email: {}", email);
+                                            if let Some(name) =
+                                                sub.get("client_name").and_then(|v| v.as_str())
+                                            {
+                                                target_name = name.to_string();
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            if let Some(email) = target_email {
+                                if !sent_emails.contains(&email) {
+                                    let subject = "Counter Offer for Licensing Request from Agency"
+                                        .to_string();
+                                    let body = format!(
+                                        "Hello {},\n\nThe agency has sent a counter offer for your licensing request.\n\nReason/Notes: {}\n\nPlease reply to this email or contact the agency to review and respond.\n\nBest regards,\nLikelee Team",
+                                        target_name, reason
+                                    );
+                                    if let Err(e) = crate::email::send_plain_email(
+                                        &state, &email, &subject, &body,
+                                    ) {
+                                        tracing::error!(
+                                            "Failed to send counter offer email to {}: {:?}",
+                                            email,
+                                            e
+                                        );
+                                    }
+                                    sent_emails.insert(email);
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    let status = b_resp.status();
+                    let err_body = b_resp.text().await.unwrap_or_default();
+                    tracing::error!(
+                        "Database query for brand emails failed: status={}, body={}",
+                        status,
+                        err_body
+                    );
+                }
+            } else {
+                tracing::error!(
+                    "Failed to execute database query for brand emails: {:?}",
+                    b_resp.err()
+                );
+            }
+        }
     }
 
     Ok(Json(json!({"ok": true})))
@@ -693,7 +774,11 @@ pub async fn set_pay_split(
         let created_at = r.get("created_at").and_then(|v| v.as_str()).unwrap_or("");
         let date = created_at.get(0..10).unwrap_or("");
 
-        let mut row = json!({
+        let gross_cents = (per_talent_payment_amount * 100.0) as i64;
+        let talent_cents = (gross_cents as f64 * (talent_percent / 100.0)) as i64;
+        let agency_cents = gross_cents - talent_cents;
+
+        let mut campaign_row = json!({
             "agency_id": user.id,
             "talent_id": talent_id,
             "brand_id": if brand_id.is_empty() { serde_json::Value::Null } else { json!(brand_id) },
@@ -704,10 +789,12 @@ pub async fn set_pay_split(
             "payment_amount": per_talent_payment_amount,
             "agency_percent": payload.agency_percent,
             "talent_percent": talent_percent,
+            "agency_earnings_cents": agency_cents,
+            "talent_earnings_cents": talent_cents,
             "licensing_request_id": lrid,
         });
 
-        if let serde_json::Value::Object(ref mut map) = row {
+        if let serde_json::Value::Object(ref mut map) = campaign_row {
             let null_keys: Vec<String> = map
                 .iter()
                 .filter_map(|(k, val)| if val.is_null() { Some(k.clone()) } else { None })
@@ -717,31 +804,54 @@ pub async fn set_pay_split(
             }
         }
 
-        if let Some(cid) = campaign_id_by_request_id.get(lrid).cloned() {
-            let resp = state
+        let cid = if let Some(existing_cid) = campaign_id_by_request_id.get(lrid).cloned() {
+            let _ = state
                 .pg
                 .from("campaigns")
-                .eq("id", &cid)
-                .update(row.to_string())
+                .eq("id", &existing_cid)
+                .update(campaign_row.to_string())
                 .execute()
-                .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-            if !resp.status().is_success() {
-                let err = resp.text().await.unwrap_or_default();
-                return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
-            }
+                .await;
+            existing_cid
         } else {
-            let resp = state
+            let c_resp = state
                 .pg
                 .from("campaigns")
-                .insert(row.to_string())
+                .insert(campaign_row.to_string())
                 .execute()
                 .await
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-            if !resp.status().is_success() {
-                let err = resp.text().await.unwrap_or_default();
-                return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
-            }
+            let c_text = c_resp.text().await.unwrap_or_else(|_| "[]".into());
+            let c_rows: serde_json::Value = serde_json::from_str(&c_text).unwrap_or(json!([]));
+            c_rows
+                .get(0)
+                .and_then(|v| v.get("id"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string()
+        };
+
+        if !cid.is_empty() {
+            // Create or update payment record - Aligning with existing schema (gross_cents)
+            let payment_row = json!({
+                "agency_id": user.id,
+                "talent_id": talent_id,
+                "campaign_id": cid,
+                "licensing_request_id": lrid,
+                "brand_id": if brand_id.is_empty() { serde_json::Value::Null } else { json!(brand_id) },
+                "gross_cents": gross_cents,
+                "talent_earnings_cents": talent_cents,
+                "status": "pending",
+                "currency_code": "USD",
+                "due_date": if date.is_empty() { serde_json::Value::Null } else { json!(date) },
+            });
+
+            let _ = state
+                .pg
+                .from("payments")
+                .upsert(payment_row.to_string())
+                .execute()
+                .await;
         }
     }
 
@@ -755,4 +865,116 @@ pub async fn set_pay_split(
         }),
     )
     .await
+}
+
+pub async fn create(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<CreateLicensingRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    if user.role != "agency" {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+
+    // Calculate end date
+    let start_date =
+        chrono::NaiveDate::parse_from_str(&payload.start_date, "%Y-%m-%d").map_err(|_| {
+            (
+                StatusCode::BAD_REQUEST,
+                "Invalid start_date format (YYYY-MM-DD)".to_string(),
+            )
+        })?;
+    let end_date = start_date + chrono::Duration::days(payload.duration_days);
+
+    // 1. Create Licensing Request
+    let request_json = json!({
+        "agency_id": user.id,
+        "talent_id": payload.talent_id,
+        "client_name": payload.brand_name,
+        "status": "approved",
+        "campaign_title": payload.license_type,
+        "usage_scope": payload.usage_scope,
+        "license_start_date": payload.start_date,
+        "license_end_date": end_date.to_string(),
+        "notes": payload.terms, // Verify if we want to store custom terms in notes
+    });
+
+    let resp = state
+        .pg
+        .from("licensing_requests")
+        .insert(request_json.to_string())
+        .select("id")
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            resp.text().await.unwrap_or_default(),
+        ));
+    }
+
+    let created: serde_json::Value =
+        serde_json::from_str(&resp.text().await.unwrap_or_default())
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let request_id = created.get("id").and_then(|v| v.as_str()).unwrap_or("");
+
+    // 2. Create Campaign (for value)
+    if !request_id.is_empty() {
+        let campaign_json = json!({
+            "agency_id": user.id,
+            "talent_id": payload.talent_id,
+            "licensing_request_id": request_id,
+            "name": payload.license_type,
+            "payment_amount": payload.price,
+            "status": "Confirmed",
+            "campaign_type": "Licensing",
+        });
+
+        let _ = state
+            .pg
+            .from("campaigns")
+            .insert(campaign_json.to_string())
+            .execute()
+            .await;
+    }
+
+    // 3. Increment Template Usage
+    if let Some(template_id) = payload.template_id {
+        // This requires a stored procedure or raw SQL typically to do atomic increment,
+        // but via PostgREST we might need a workaround or just read-modify-write if low concurrency.
+        // Or use the `rpc` call if we had a function.
+        // For now, simpler read-modify-write as we don't have an `rpc` increment function set up.
+        // ACTUALLY: We can just ignore the race condition for now or use SQLX if we had it.
+        // Let's retrieve current count and update.
+
+        let t_resp = state
+            .pg
+            .from("license_templates")
+            .select("usage_count")
+            .eq("id", &template_id)
+            .single()
+            .execute()
+            .await;
+
+        if let Ok(r) = t_resp {
+            if let Ok(body) = r.text().await {
+                if let Ok(obj) = serde_json::from_str::<serde_json::Value>(&body) {
+                    let count = obj.get("usage_count").and_then(|v| v.as_i64()).unwrap_or(0);
+                    let _ = state
+                        .pg
+                        .from("license_templates")
+                        .eq("id", &template_id)
+                        .update(json!({ "usage_count": count + 1 }).to_string())
+                        .execute()
+                        .await;
+                }
+            }
+        }
+    }
+
+    Ok(Json(json!({ "id": request_id, "ok": true })))
 }

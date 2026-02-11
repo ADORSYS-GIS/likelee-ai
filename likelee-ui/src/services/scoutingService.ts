@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { base44 } from "@/api/base44Client";
 import {
   ScoutingProspect,
   ScoutingTrip,
@@ -455,34 +456,10 @@ export const scoutingService = {
   },
 
   async updateTemplateFromPdf(docusealTemplateId: number, file: File) {
-    if (!supabase) throw new Error("Supabase client not initialized");
-
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) throw new Error("No active session");
-
     const formData = new FormData();
     formData.append("file", file);
 
-    const baseUrl =
-      import.meta.env.VITE_API_URL ||
-      import.meta.env.VITE_API_BASE_URL ||
-      "http://localhost:8787";
-    const response = await fetch(
-      `${baseUrl}/api/scouting/templates/${docusealTemplateId}`,
-      {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: formData,
-      },
-    );
-
-    if (!response.ok) {
-      throw new Error(`Failed to update template: ${response.statusText}`);
-    }
+    return base44.put(`scouting/templates/${docusealTemplateId}`, formData);
   },
 
   async deleteTemplate(id: string) {
@@ -502,103 +479,24 @@ export const scoutingService = {
     agencyId: string,
     filter: "active" | "archived" | "all" = "active",
   ) {
-    if (!supabase) throw new Error("Supabase client not initialized");
-
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) throw new Error("No active session");
-
-    const params = new URLSearchParams({
-      agency_id: agencyId,
-      filter: filter,
+    console.log(`scoutingService: Fetching offers with filter=${filter}`);
+    return base44.get<ScoutingOffer[]>("scouting/offers", {
+      params: { agency_id: agencyId, filter },
     });
-
-    const baseUrl =
-      import.meta.env.VITE_API_URL ||
-      import.meta.env.VITE_API_BASE_URL ||
-      "http://localhost:8787";
-    console.log(
-      `scoutingService: Fetching offers from ${baseUrl}/api/scouting/offers?${params}`,
-    );
-    const response = await fetch(`${baseUrl}/api/scouting/offers?${params}`, {
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch offers: ${response.statusText}`);
-    }
-
-    return response.json() as Promise<ScoutingOffer[]>;
   },
 
   async getOffer(offerId: string) {
-    if (!supabase) throw new Error("Supabase client not initialized");
-
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) throw new Error("No active session");
-
-    const baseUrl =
-      import.meta.env.VITE_API_URL ||
-      import.meta.env.VITE_API_BASE_URL ||
-      "http://localhost:8787";
-    const response = await fetch(`${baseUrl}/api/scouting/offers/${offerId}`, {
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch offer: ${response.statusText}`);
-    }
-
-    return (await response.json()) as ScoutingOffer;
+    return base44.get<ScoutingOffer>(`scouting/offers/${offerId}`);
   },
 
   async createOffer(
     offer: Pick<ScoutingOffer, "prospect_id" | "agency_id" | "template_id">,
   ) {
-    if (!supabase) throw new Error("Supabase client not initialized");
-
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) throw new Error("No active session");
-
-    const baseUrl =
-      import.meta.env.VITE_API_URL ||
-      import.meta.env.VITE_API_BASE_URL ||
-      "http://localhost:8787";
-    const response = await fetch(`${baseUrl}/api/scouting/offers`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({
-        prospect_id: offer.prospect_id,
-        agency_id: offer.agency_id,
-        template_id: offer.template_id,
-      }),
+    return base44.post<ScoutingOffer>("scouting/offers", {
+      prospect_id: offer.prospect_id,
+      agency_id: offer.agency_id,
+      template_id: offer.template_id,
     });
-
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`Failed to create offer: ${response.statusText} ${text}`);
-    }
-
-    // The backend returns the inserted row(s) as text; best-effort JSON parse
-    const text = await response.text();
-    try {
-      return JSON.parse(text) as ScoutingOffer;
-    } catch (e) {
-      console.error("Failed to parse createOffer response", text);
-      throw new Error(`Failed to parse response from createOffer: ${e}`);
-    }
   },
 
   async updateOffer(id: string, updates: Partial<ScoutingOffer>) {
@@ -616,173 +514,43 @@ export const scoutingService = {
   },
 
   async deleteOffer(offerId: string) {
-    if (!supabase) throw new Error("Supabase client not initialized");
-
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) throw new Error("No active session");
-
-    const baseUrl =
-      import.meta.env.VITE_API_URL ||
-      import.meta.env.VITE_API_BASE_URL ||
-      "http://localhost:8787";
-    const response = await fetch(`${baseUrl}/api/scouting/offers/${offerId}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to delete offer: ${response.statusText}`);
-    }
+    return base44.delete(`scouting/offers/${offerId}`);
   },
 
   async permanentlyDeleteOffer(offerId: string) {
-    if (!supabase) throw new Error("Supabase client not initialized");
-
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) throw new Error("No active session");
-
-    const baseUrl =
-      import.meta.env.VITE_API_URL ||
-      import.meta.env.VITE_API_BASE_URL ||
-      "http://localhost:8787";
-    const response = await fetch(
-      `${baseUrl}/api/scouting/offers/${offerId}?permanent=true`,
-      {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      },
-    );
-
-    if (!response.ok) {
-      throw new Error(
-        `Failed to permanently delete offer: ${response.statusText}`,
-      );
-    }
+    return base44.delete(`scouting/offers/${offerId}`, {
+      params: { permanent: true },
+    });
   },
 
   async refreshOfferStatus(offerId: string) {
-    if (!supabase) throw new Error("Supabase client not initialized");
-
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) throw new Error("No active session");
-
-    const baseUrl =
-      import.meta.env.VITE_API_URL ||
-      import.meta.env.VITE_API_BASE_URL ||
-      "http://localhost:8787";
-    const response = await fetch(
-      `${baseUrl}/api/scouting/offers/refresh-status`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ offer_id: offerId }),
-      },
-    );
-
-    if (!response.ok) {
-      throw new Error(`Failed to refresh offer status: ${response.statusText}`);
-    }
-
-    return await response.json();
+    return base44.post("scouting/offers/refresh-status", {
+      offer_id: offerId,
+    });
   },
 
   async getBuilderToken(agencyId: string, templateId?: number) {
-    if (!supabase) throw new Error("Supabase client not initialized");
-
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) throw new Error("No active session");
-
-    const baseUrl =
-      import.meta.env.VITE_API_URL ||
-      import.meta.env.VITE_API_BASE_URL ||
-      "http://localhost:8787";
-    // Call our backend API endpoint
-    const response = await fetch(`${baseUrl}/api/scouting/builder-token`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
+    const data = await base44.post<{ token: string }>(
+      "scouting/builder-token",
+      {
+        agency_id: agencyId,
+        template_id: templateId,
       },
-      body: JSON.stringify({ agency_id: agencyId, template_id: templateId }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to get builder token: ${response.statusText}`);
-    }
-
-    const data = await response.json();
+    );
     return data.token;
   },
 
   async syncTemplates(agencyId: string) {
-    if (!supabase) throw new Error("Supabase client not initialized");
-
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) throw new Error("No active session");
-
-    const baseUrl =
-      import.meta.env.VITE_API_URL ||
-      import.meta.env.VITE_API_BASE_URL ||
-      "http://localhost:8787";
-    const response = await fetch(`${baseUrl}/api/scouting/templates/sync`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({ agency_id: agencyId }),
+    return base44.post("scouting/templates/sync", {
+      agency_id: agencyId,
     });
-
-    if (!response.ok) {
-      throw new Error(`Failed to sync templates: ${response.statusText}`);
-    }
   },
 
   async createTemplateFromPdf(agencyId: string, file: File) {
-    if (!supabase) throw new Error("Supabase client not initialized");
-
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) throw new Error("No active session");
-
     const formData = new FormData();
     formData.append("agency_id", agencyId);
     formData.append("file", file);
 
-    const baseUrl =
-      import.meta.env.VITE_API_URL ||
-      import.meta.env.VITE_API_BASE_URL ||
-      "http://localhost:8787";
-    const response = await fetch(`${baseUrl}/api/scouting/templates/upload`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to upload template: ${response.statusText}`);
-    }
-
-    return await response.json();
+    return base44.post("scouting/templates/upload", formData);
   },
 };

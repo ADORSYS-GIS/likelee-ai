@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import * as crmApi from "@/api/crm";
+import { parseBackendError } from "@/utils/errorParser";
 
 const INDUSTRY_OPTIONS = [
   "Fashion",
@@ -82,7 +83,7 @@ const AddClientModal = ({
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to add client",
+        description: parseBackendError(error) || "Failed to add client",
         variant: "destructive",
       });
     },
