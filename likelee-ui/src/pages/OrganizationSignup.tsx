@@ -679,13 +679,6 @@ export default function OrganizationSignup() {
               automatically redirected to complete your profile setup.
             </p>
           </div>
-          <Button
-            onClick={() => window.location.reload()}
-            variant="outline"
-            className="border-2 border-black rounded-none"
-          >
-            I've verified my email
-          </Button>
         </Card>
       </div>
     );
