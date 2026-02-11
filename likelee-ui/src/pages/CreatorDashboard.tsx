@@ -2473,7 +2473,7 @@ export default function CreatorDashboard() {
       };
 
       mediaRecorderRef.current.onstop = async () => {
-        const finalize = () => {
+        const finalize = async () => {
           if (!audioChunksRef.current || audioChunksRef.current.length === 0) {
             console.warn(
               "Recording stopped but no audio chunks were captured (after wait).",
@@ -2503,8 +2503,9 @@ export default function CreatorDashboard() {
           });
           const audioUrl = URL.createObjectURL(audioBlob);
 
+          const tempId = Date.now();
           const newRecording = {
-            id: Date.now(),
+            id: tempId,
             emotion: selectedEmotion,
             url: audioUrl,
             blob: audioBlob,
@@ -2516,19 +2517,75 @@ export default function CreatorDashboard() {
             usageCount: 0,
           };
 
-          setVoiceLibrary([...voiceLibrary, newRecording]);
+          setVoiceLibrary((prev) => [...prev, newRecording]);
           setShowRecordingModal(false);
           setRecordingTime(0);
           setCurrentWord(0);
 
           stream.getTracks().forEach((track) => track.stop());
+
+          // Persist to backend so it remains after refresh
+          try {
+            const {
+              data: { session },
+            } = await supabase.auth.getSession();
+            const token = session?.access_token;
+            if (!token) throw new Error("Missing auth session. Please sign in again.");
+
+            const uploadRes = await fetch(
+              api(
+                `/voice/recordings?emotion_tag=${encodeURIComponent(selectedEmotion || "")}`,
+              ),
+              {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "content-type": mimeType || "audio/webm",
+                },
+                body: audioBlob,
+              },
+            );
+            if (!uploadRes.ok) {
+              const txt = await uploadRes.text();
+              throw new Error(txt || `Upload failed (${uploadRes.status})`);
+            }
+            const uploaded = await uploadRes.json();
+            const serverId = uploaded?.id;
+            if (!serverId) throw new Error("Missing recording id after upload");
+
+            const signed = await base44.get<any>(`/voice/recordings/signed-url`, {
+              params: { recording_id: serverId, expires_sec: 600 },
+            } as any);
+
+            setVoiceLibrary((prev) =>
+              prev.map((r) =>
+                r.id === tempId
+                  ? {
+                      ...r,
+                      id: serverId,
+                      server_recording_id: serverId,
+                      url: signed?.url || r.url,
+                      blob: null,
+                    }
+                  : r,
+              ),
+            );
+          } catch (e: any) {
+            toast({
+              variant: "destructive",
+              title: t("creatorDashboard.toasts.voiceErrorTitle"),
+              description: e?.message || "Failed to save recording. It may disappear after refresh.",
+            });
+          }
         };
 
         // If no chunks yet, some browsers emit the final chunk just after stop
         if (!audioChunksRef.current || audioChunksRef.current.length === 0) {
-          setTimeout(finalize, 150);
+          setTimeout(() => {
+            void finalize();
+          }, 150);
         } else {
-          finalize();
+          void finalize();
         }
       };
 
@@ -2646,20 +2703,44 @@ export default function CreatorDashboard() {
           )}
           className="bg-white text-red-600 hover:bg-gray-100 border-none font-bold shadow-sm"
           onClick={async () => {
-            setVoiceLibrary(voiceLibrary.filter((r) => r.id !== id));
-            dismiss();
             try {
               const sid = rec?.server_recording_id || rec?.id;
-              if (sid) {
-                await fetch(
-                  api(`/voice/recordings/${encodeURIComponent(sid)}`),
-                  {
-                    method: "DELETE",
-                  },
-                );
+              if (!sid) {
+                toast({
+                  title: t(
+                    "creatorDashboard.voice.deleteFailedTitle",
+                    "Delete failed",
+                  ),
+                  description: t(
+                    "creatorDashboard.voice.deleteFailedDesc",
+                    "Missing recording id.",
+                  ),
+                  variant: "destructive",
+                });
+                return;
               }
-            } catch (err) {
-              console.error("Error deleting recording:", err);
+
+              await base44.delete(
+                `/voice/recordings/${encodeURIComponent(String(sid))}`,
+              );
+              setVoiceLibrary((prev) => prev.filter((r) => r.id !== id));
+              dismiss();
+            } catch (err: any) {
+              const msg =
+                typeof err?.message === "string"
+                  ? err.message
+                  : t(
+                      "creatorDashboard.voice.deleteFailedDesc",
+                      "Failed to delete recording.",
+                    );
+              toast({
+                title: t(
+                  "creatorDashboard.voice.deleteFailedTitle",
+                  "Delete failed",
+                ),
+                description: msg,
+                variant: "destructive",
+              });
             }
           }}
         >
@@ -2676,13 +2757,23 @@ export default function CreatorDashboard() {
       const ct = recording?.mimeType || recording?.blob?.type || "audio/webm";
 
       // 1) Upload recording to Likelee server (private bucket)
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        throw new Error("Missing auth session. Please sign in again.");
+      }
       const uploadRes = await fetch(
         api(
-          `/voice/recordings?user_id=${encodeURIComponent(user.id)}&emotion_tag=${encodeURIComponent(recording.emotion || "")}`,
+          `/voice/recordings?emotion_tag=${encodeURIComponent(recording.emotion || "")}`,
         ),
         {
           method: "POST",
-          headers: { "content-type": ct },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "content-type": ct,
+          },
           body: recording.blob,
         },
       );
