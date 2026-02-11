@@ -3209,12 +3209,22 @@ export default function CreatorDashboard() {
 
       // Upload via backend (Option B: server-only writes)
       const buf = await file.arrayBuffer();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        throw new Error("Missing auth session. Please sign in again.");
+      }
       const full = api(
         `/api/reference-images/upload?section_id=${encodeURIComponent(selectedImageSection)}`,
       );
       const res = await fetch(full, {
         method: "POST",
-        headers: { "content-type": file.type || "image/jpeg" },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "content-type": file.type || "image/jpeg",
+        },
         body: new Uint8Array(buf),
       });
       if (!res.ok) {
