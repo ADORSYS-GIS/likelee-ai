@@ -46,3 +46,11 @@ export async function listCreatorAgencyConnections(): Promise<
   }>("/api/creator/agency-connections");
   return res.connections || [];
 }
+
+export async function disconnectCreatorAgencyConnection(
+  agencyId: string,
+): Promise<void> {
+  await base44.post<{ status: string }>(
+    `/api/creator/agency-connections/${encodeURIComponent(agencyId)}/disconnect`,
+  );
+}

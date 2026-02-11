@@ -128,20 +128,43 @@ pub struct BookingPreferencesPayload {
     pub willing_to_travel: Option<bool>,
     pub min_day_rate_cents: Option<i32>,
     pub currency: Option<String>,
+    pub agency_id: Option<String>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct BookingPreferencesQuery {
+    pub agency_id: Option<String>,
 }
 
 pub async fn get_booking_preferences(
     State(state): State<AppState>,
     user: AuthUser,
+    Query(q): Query<BookingPreferencesQuery>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
-    let resolved = resolve_talent(&state, &user).await?;
+    let connections = list_active_talent_connections(&state, &user).await?;
+    let ids = connected_agency_ids_from_connections(&connections);
+    let resolved = if let Some(aid) = q.agency_id.as_ref().filter(|s| !s.trim().is_empty()) {
+        if !ids.iter().any(|x| x == aid) {
+            return Err((StatusCode::FORBIDDEN, "not connected to agency".to_string()));
+        }
+        resolve_talent_for_agency(&state, &user, aid).await?
+    } else {
+        if ids.len() > 1 {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "agency_id is required when connected to multiple agencies".to_string(),
+            ));
+        }
+        resolve_talent(&state, &user).await?
+    };
 
     let resp = state
         .pg
         .from("talent_booking_preferences")
         .select("talent_id,agency_id,willing_to_travel,min_day_rate_cents,currency,created_at,updated_at")
         .eq("talent_id", &resolved.talent_id)
+        .eq("agency_id", &resolved.agency_id)
         .limit(1)
         .execute()
         .await
@@ -171,7 +194,22 @@ pub async fn update_booking_preferences(
     Json(payload): Json<BookingPreferencesPayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
-    let resolved = resolve_talent(&state, &user).await?;
+    let connections = list_active_talent_connections(&state, &user).await?;
+    let ids = connected_agency_ids_from_connections(&connections);
+    let resolved = if let Some(aid) = payload.agency_id.as_ref().filter(|s| !s.trim().is_empty()) {
+        if !ids.iter().any(|x| x == aid) {
+            return Err((StatusCode::FORBIDDEN, "not connected to agency".to_string()));
+        }
+        resolve_talent_for_agency(&state, &user, aid).await?
+    } else {
+        if ids.len() > 1 {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "agency_id is required when connected to multiple agencies".to_string(),
+            ));
+        }
+        resolve_talent(&state, &user).await?
+    };
 
     let row = json!({
         "talent_id": resolved.talent_id,
@@ -200,6 +238,7 @@ pub async fn update_booking_preferences(
 #[derive(Debug, serde::Deserialize)]
 pub struct ListIrlPaymentsQuery {
     pub limit: Option<u32>,
+    pub agency_id: Option<String>,
 }
 
 pub async fn list_irl_payments(
@@ -209,16 +248,31 @@ pub async fn list_irl_payments(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
     let resolved = resolve_talent(&state, &user).await?;
+    let connections = list_active_talent_connections(&state, &user).await?;
+    let ids = connected_agency_ids_from_connections(&connections);
+    if ids.is_empty() {
+        return Ok(Json(json!([])));
+    }
+    let ids_refs: Vec<&str> = ids.iter().map(|s| s.as_str()).collect();
     let limit = q.limit.unwrap_or(50).min(200) as usize;
 
-    let resp = state
+    let mut req = state
         .pg
         .from("talent_irl_payments")
         .select("id,agency_id,talent_id,booking_id,amount_cents,currency,paid_at,status,source,notes,created_at")
         .eq("talent_id", &resolved.talent_id)
+        .in_("agency_id", ids_refs)
         .order("paid_at.desc")
         .order("created_at.desc")
-        .limit(limit)
+        .limit(limit);
+    if let Some(aid) = q.agency_id.as_ref().filter(|s| !s.trim().is_empty()) {
+        if !ids.iter().any(|x| x == aid) {
+            return Err((StatusCode::FORBIDDEN, "not connected to agency".to_string()));
+        }
+        req = req.eq("agency_id", aid);
+    }
+
+    let resp = req
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -383,7 +437,10 @@ pub async fn upload_portfolio_item(
     mut multipart: Multipart,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
-    let resolved = resolve_talent(&state, &user).await?;
+    let connections = list_active_talent_connections(&state, &user).await?;
+    let ids = connected_agency_ids_from_connections(&connections);
+
+    let mut agency_id_override: Option<String> = None;
 
     let mut title: Option<String> = None;
     let mut file_name: Option<String> = None;
@@ -397,6 +454,15 @@ pub async fn upload_portfolio_item(
     {
         let name = field.name().unwrap_or("").to_string();
         match name.as_str() {
+            "agency_id" => {
+                let txt = field
+                    .text()
+                    .await
+                    .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+                if !txt.trim().is_empty() {
+                    agency_id_override = Some(txt);
+                }
+            }
             "title" => {
                 let txt = field
                     .text()
@@ -422,6 +488,21 @@ pub async fn upload_portfolio_item(
     if bytes.is_empty() {
         return Err((StatusCode::BAD_REQUEST, "missing file".into()));
     }
+
+    let resolved = if let Some(aid) = agency_id_override.as_ref().filter(|s| !s.trim().is_empty()) {
+        if !ids.iter().any(|x| x == aid) {
+            return Err((StatusCode::FORBIDDEN, "not connected to agency".to_string()));
+        }
+        resolve_talent_for_agency(&state, &user, aid).await?
+    } else {
+        if ids.len() > 1 {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "agency_id is required when connected to multiple agencies".to_string(),
+            ));
+        }
+        resolve_talent(&state, &user).await?
+    };
 
     let fname = file_name.unwrap_or_else(|| "upload.bin".to_string());
     let sanitized = fname
@@ -617,6 +698,8 @@ pub async fn mark_notification_read(
 pub struct TalentMeResponse {
     pub status: String,
     pub agency_user: serde_json::Value,
+    pub connected_agencies: Vec<serde_json::Value>,
+    pub connected_agency_ids: Vec<String>,
 }
 
 #[derive(Clone)]
@@ -624,6 +707,74 @@ struct ResolvedTalent {
     talent_id: String,
     agency_id: String,
     agency_user_row: serde_json::Value,
+}
+
+async fn list_active_talent_connections(
+    state: &AppState,
+    user: &AuthUser,
+) -> Result<Vec<serde_json::Value>, (StatusCode, String)> {
+    RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
+
+    let resp = state
+        .pg
+        .from("agency_users")
+        .select("*,agencies(agency_name,logo_url)")
+        .or(format!("creator_id.eq.{},user_id.eq.{}", user.id, user.id))
+        .eq("status", "active")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        let err = resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let rows: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
+    Ok(rows.as_array().cloned().unwrap_or_default())
+}
+
+fn connected_agency_ids_from_connections(connections: &[serde_json::Value]) -> Vec<String> {
+    let mut out: Vec<String> = connections
+        .iter()
+        .filter_map(|r| r.get("agency_id").and_then(|v| v.as_str()).map(|s| s.to_string()))
+        .filter(|s| !s.is_empty())
+        .collect();
+    out.sort();
+    out.dedup();
+    out
+}
+
+async fn resolve_talent_for_agency(
+    state: &AppState,
+    user: &AuthUser,
+    agency_id: &str,
+) -> Result<ResolvedTalent, (StatusCode, String)> {
+    let connections = list_active_talent_connections(state, user).await?;
+    let row = connections
+        .iter()
+        .find(|r| r.get("agency_id").and_then(|v| v.as_str()) == Some(agency_id))
+        .cloned()
+        .unwrap_or(json!(null));
+
+    let talent_id = row
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    if talent_id.is_empty() {
+        return Err((StatusCode::NOT_FOUND, "Talent profile not found".to_string()));
+    }
+
+    Ok(ResolvedTalent {
+        talent_id,
+        agency_id: agency_id.to_string(),
+        agency_user_row: row,
+    })
 }
 
 async fn resolve_talent(state: &AppState, user: &AuthUser) -> Result<ResolvedTalent, (StatusCode, String)> {
@@ -634,6 +785,7 @@ async fn resolve_talent(state: &AppState, user: &AuthUser) -> Result<ResolvedTal
         .from("agency_users")
         .select("*")
         .or(format!("creator_id.eq.{},user_id.eq.{}", user.id, user.id))
+        .eq("status", "active")
         .limit(1)
         .execute()
         .await
@@ -681,43 +833,20 @@ pub async fn talent_me(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<TalentMeResponse>, (StatusCode, String)> {
+    let connections = list_active_talent_connections(&state, &user).await?;
+    let connected_agency_ids: Vec<String> = connections
+        .iter()
+        .filter_map(|r| r.get("agency_id").and_then(|v| v.as_str()).map(|s| s.to_string()))
+        .filter(|s| !s.is_empty())
+        .collect();
+
     let resolved = resolve_talent(&state, &user).await?;
-    let mut row = resolved.agency_user_row;
-    let agency_id = resolved.agency_id;
-
-    if !agency_id.is_empty() {
-        let aresp = state
-            .pg
-            .from("agencies")
-            .select("agency_name")
-            .eq("id", &agency_id)
-            .limit(1)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-        if aresp.status().is_success() {
-            let atext = aresp
-                .text()
-                .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-            let arows: serde_json::Value = serde_json::from_str(&atext).unwrap_or(json!([]));
-            let agency_name = arows
-                .as_array()
-                .and_then(|a| a.first())
-                .and_then(|r| r.get("agency_name"))
-                .and_then(|v| v.as_str())
-                .map(|s| s.to_string());
-
-            if let (Some(name), Some(obj)) = (agency_name, row.as_object_mut()) {
-                obj.insert("agency_name".to_string(), json!(name));
-            }
-        }
-    }
-
+    let row = resolved.agency_user_row;
     Ok(Json(TalentMeResponse {
         status: "ok".to_string(),
         agency_user: row,
+        connected_agencies: connections,
+        connected_agency_ids,
     }))
 }
 
@@ -1869,14 +1998,29 @@ pub struct CreatePortfolioItemPayload {
 pub async fn list_portfolio_items(
     State(state): State<AppState>,
     user: AuthUser,
+    Query(q): Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<Vec<serde_json::Value>>, (StatusCode, String)> {
     let resolved = resolve_talent(&state, &user).await?;
+    let connections = list_active_talent_connections(&state, &user).await?;
+    let ids = connected_agency_ids_from_connections(&connections);
+    if ids.is_empty() {
+        return Ok(Json(vec![]));
+    }
+    let mut ids_filtered = ids;
+    if let Some(aid) = q.get("agency_id").map(|s| s.as_str()).filter(|s| !s.trim().is_empty()) {
+        if !ids_filtered.iter().any(|x| x == aid) {
+            return Err((StatusCode::FORBIDDEN, "not connected to agency".to_string()));
+        }
+        ids_filtered = vec![aid.to_string()];
+    }
+    let ids_refs: Vec<&str> = ids_filtered.iter().map(|s| s.as_str()).collect();
 
     let resp = state
         .pg
         .from("talent_portfolio_items")
         .select("id,agency_id,talent_id,title,media_url,status,created_at,storage_bucket,storage_path,public_url,size_bytes,mime_type")
         .eq("talent_id", &resolved.talent_id)
+        .in_("agency_id", ids_refs)
         .order("created_at.desc")
         .limit(200)
         .execute()
@@ -1902,6 +2046,14 @@ pub async fn create_portfolio_item(
     user: AuthUser,
     Json(payload): Json<CreatePortfolioItemPayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let connections = list_active_talent_connections(&state, &user).await?;
+    let ids = connected_agency_ids_from_connections(&connections);
+    if ids.len() > 1 {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "agency_id is required when connected to multiple agencies".to_string(),
+        ));
+    }
     let resolved = resolve_talent(&state, &user).await?;
     if payload.media_url.trim().is_empty() {
         return Err((StatusCode::BAD_REQUEST, "missing media_url".to_string()));
@@ -1964,13 +2116,31 @@ pub async fn delete_portfolio_item(
 pub async fn list_bookings(
     State(state): State<AppState>,
     user: AuthUser,
+    Query(q): Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let resolved = resolve_talent(&state, &user).await?;
-    let resp = state
+    let connections = list_active_talent_connections(&state, &user).await?;
+    let ids = connected_agency_ids_from_connections(&connections);
+    if ids.is_empty() {
+        return Ok(Json(json!([])));
+    }
+    let mut ids_filtered = ids;
+    if let Some(aid) = q.get("agency_id").map(|s| s.as_str()).filter(|s| !s.trim().is_empty()) {
+        if !ids_filtered.iter().any(|x| x == aid) {
+            return Err((StatusCode::FORBIDDEN, "not connected to agency".to_string()));
+        }
+        ids_filtered = vec![aid.to_string()];
+    }
+    let ids_refs: Vec<&str> = ids_filtered.iter().map(|s| s.as_str()).collect();
+
+    let mut req = state
         .pg
         .from("bookings")
         .select("*")
         .eq("talent_id", &resolved.talent_id)
+        .in_("agency_user_id", ids_refs);
+
+    let resp = req
         .order("date.desc")
         .limit(250)
         .execute()
@@ -1989,6 +2159,7 @@ pub async fn list_bookings(
 pub struct ListBookOutsParams {
     pub date_start: Option<String>,
     pub date_end: Option<String>,
+    pub agency_id: Option<String>,
 }
 
 pub async fn list_book_outs(
@@ -1997,11 +2168,26 @@ pub async fn list_book_outs(
     Query(params): Query<ListBookOutsParams>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let resolved = resolve_talent(&state, &user).await?;
+    let connections = list_active_talent_connections(&state, &user).await?;
+    let ids = connected_agency_ids_from_connections(&connections);
+    if ids.is_empty() {
+        return Ok(Json(json!([])));
+    }
+    let ids_refs: Vec<&str> = ids.iter().map(|s| s.as_str()).collect();
+
     let mut req = state
         .pg
         .from("book_outs")
         .select("*")
-        .eq("talent_id", &resolved.talent_id);
+        .eq("talent_id", &resolved.talent_id)
+        .in_("agency_user_id", ids_refs);
+
+    if let Some(aid) = params.agency_id.as_ref().filter(|s| !s.trim().is_empty()) {
+        if !ids.iter().any(|x| x == aid) {
+            return Err((StatusCode::FORBIDDEN, "not connected to agency".to_string()));
+        }
+        req = req.eq("agency_user_id", aid);
+    }
     if let Some(ds) = params.date_start.as_ref() {
         req = req.gte("end_date", ds);
     }
@@ -2029,6 +2215,7 @@ pub struct CreateBookOutPayload {
     pub reason: Option<String>,
     pub notes: Option<String>,
     pub notify_agency: Option<bool>,
+    pub agency_id: Option<String>,
 }
 
 pub async fn create_book_out(
@@ -2036,10 +2223,29 @@ pub async fn create_book_out(
     user: AuthUser,
     Json(payload): Json<CreateBookOutPayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let resolved = resolve_talent(&state, &user).await?;
-    if resolved.agency_id.is_empty() {
-        return Err((StatusCode::BAD_REQUEST, "Missing agency_id".to_string()));
-    }
+    let resolved = if let Some(aid) = payload.agency_id.as_ref().filter(|s| !s.trim().is_empty()) {
+        resolve_talent_for_agency(&state, &user, aid).await?
+    } else {
+        let connections = list_active_talent_connections(&state, &user).await?;
+        let mut ids: Vec<String> = connections
+            .iter()
+            .filter_map(|r| r.get("agency_id").and_then(|v| v.as_str()).map(|s| s.to_string()))
+            .filter(|s| !s.is_empty())
+            .collect();
+        ids.sort();
+        ids.dedup();
+        if ids.len() > 1 {
+            return Err((StatusCode::BAD_REQUEST, "agency_id is required when connected to multiple agencies".to_string()));
+        }
+        let aid = ids
+            .first()
+            .cloned()
+            .unwrap_or_default();
+        if aid.is_empty() {
+            return Err((StatusCode::BAD_REQUEST, "Missing agency_id".to_string()));
+        }
+        resolve_talent_for_agency(&state, &user, &aid).await?
+    };
 
     let reason_str = payload
         .reason

@@ -199,8 +199,8 @@ export const getLatestTalentTaxDocument = (params?: {
 export const getTalentAnalytics = (params?: { month?: string }) =>
   base44Client.get(`/api/talent/analytics`, { params: params || {} });
 
-export const listTalentPortfolioItems = () =>
-  base44Client.get(`/api/talent/portfolio-items`);
+export const listTalentPortfolioItems = (params?: { agency_id?: string }) =>
+  base44Client.get(`/api/talent/portfolio-items`, { params: params || {} });
 
 export const createTalentPortfolioItem = (data: {
   media_url: string;
@@ -210,11 +210,13 @@ export const createTalentPortfolioItem = (data: {
 export const deleteTalentPortfolioItem = (id: string) =>
   base44Client.delete(`/api/talent/portfolio-items/${id}`);
 
-export const listTalentBookings = () => base44Client.get(`/api/talent/bookings`);
+export const listTalentBookings = (params?: { agency_id?: string }) =>
+  base44Client.get(`/api/talent/bookings`, { params: params || {} });
 
 export const listTalentBookOuts = (params?: {
   date_start?: string;
   date_end?: string;
+  agency_id?: string;
 }) => base44Client.get(`/api/talent/book-outs`, { params: params || {} });
 
 export const createTalentBookOut = (data: {
@@ -223,24 +225,26 @@ export const createTalentBookOut = (data: {
   reason?: string;
   notes?: string;
   notify_agency?: boolean;
+  agency_id?: string;
 }) => base44Client.post(`/api/talent/book-outs`, data);
 
 export const deleteTalentBookOut = (id: string) =>
   base44Client.delete(`/api/talent/book-outs/${id}`);
 
-export const getTalentBookingPreferences = () =>
-  base44Client.get(`/api/talent/booking-preferences`);
+export const getTalentBookingPreferences = (params?: { agency_id?: string }) =>
+  base44Client.get(`/api/talent/booking-preferences`, { params: params || {} });
 
 export const updateTalentBookingPreferences = (data: {
   willing_to_travel?: boolean;
   min_day_rate_cents?: number | null;
   currency?: string;
+  agency_id?: string;
 }) => base44Client.post(`/api/talent/booking-preferences`, data);
 
 export const getTalentIrlEarningsSummary = () =>
   base44Client.get(`/api/talent/irl/earnings/summary`);
 
-export const listTalentIrlPayments = (params?: { limit?: number }) =>
+export const listTalentIrlPayments = (params?: { limit?: number; agency_id?: string }) =>
   base44Client.get(`/api/talent/irl/earnings/payments`, { params: params || {} });
 
 export const createTalentIrlPayoutRequest = (data: {
@@ -251,10 +255,12 @@ export const createTalentIrlPayoutRequest = (data: {
 export const uploadTalentPortfolioItem = async (data: {
   file: File;
   title?: string;
+  agency_id?: string;
 }) => {
   const fd = new FormData();
   fd.append("file", data.file);
   if (data.title) fd.append("title", data.title);
+  if (data.agency_id) fd.append("agency_id", data.agency_id);
   return base44Client.post(`/api/talent/portfolio-items/upload`, fd);
 };
 
@@ -342,6 +348,37 @@ export const getAgencyDigitals = () => base44Client.get("/agency/digitals");
 
 export const getTalentDigitals = (talentId: string) =>
   base44Client.get(`/agency/talent/${talentId}/digitals`);
+
+export const listAgencyTalentInvites = () =>
+  base44Client.get(`/api/agency/talent-invites`);
+
+export const createAgencyTalentInvite = (data: {
+  email: string;
+  invited_name?: string;
+}) => base44Client.post(`/api/agency/talent-invites`, data);
+
+export const revokeAgencyTalentInvite = (id: string) =>
+  base44Client.post(`/api/agency/talent-invites/${encodeURIComponent(id)}/revoke`, {});
+
+export const getAgencyTalentInviteByToken = (token: string) =>
+  base44Client.get(`/api/invites/agency-talent/${encodeURIComponent(token)}`);
+
+export const getAgencyTalentInviteMagicLinkByToken = (token: string) =>
+  base44Client.get(
+    `/api/invites/agency-talent/${encodeURIComponent(token)}/magic-link`,
+  );
+
+export const acceptAgencyTalentInviteByToken = (token: string) =>
+  base44Client.post(
+    `/api/invites/agency-talent/${encodeURIComponent(token)}/accept`,
+    {},
+  );
+
+export const declineAgencyTalentInviteByToken = (token: string) =>
+  base44Client.post(
+    `/api/invites/agency-talent/${encodeURIComponent(token)}/decline`,
+    {},
+  );
 
 export const getTalentCampaigns = (talentId: string) =>
   base44Client.get(`/agency/talent/${talentId}/campaigns`);

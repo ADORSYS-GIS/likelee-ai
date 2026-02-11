@@ -5,6 +5,14 @@ import { useAuth } from "@/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "@/components/ui/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   createTalentBookOut,
   deleteTalentBookOut,
@@ -60,7 +68,16 @@ import {
   ShieldCheck,
   Image,
   User,
+  Loader2,
+  Building2,
 } from "lucide-react";
+import {
+  acceptCreatorAgencyInvite,
+  declineCreatorAgencyInvite,
+  disconnectCreatorAgencyConnection,
+  listCreatorAgencyConnections,
+  listCreatorAgencyInvites,
+} from "@/api/creatorAgencyConnection";
 
 function useQueryParams() {
   const location = useLocation();
@@ -105,6 +122,36 @@ export default function TalentPortal({ embedded }: { embedded?: boolean }) {
     profile?.full_name ||
     profile?.email;
 
+  const connectedAgencies = Array.isArray((data as any)?.connected_agencies)
+    ? ((data as any)?.connected_agencies as any[])
+    : [];
+  const connectedAgencyIds = Array.isArray((data as any)?.connected_agency_ids)
+    ? ((data as any)?.connected_agency_ids as string[])
+    : connectedAgencies
+        .map((r: any) => String(r?.agency_id || ""))
+        .filter((s: string) => !!s);
+
+  const [selectedAgencyId, setSelectedAgencyId] = React.useState<string>("all");
+  React.useEffect(() => {
+    setSelectedAgencyId("all");
+  }, [connectedAgencyIds.join(",")]);
+
+  const canSelectAgency = connectedAgencyIds.length > 1;
+  const effectiveAgencyId = selectedAgencyId === "all" ? undefined : selectedAgencyId;
+
+  const agencyNameById = React.useMemo(() => {
+    const map = new Map<string, string>();
+    for (const r of connectedAgencies) {
+      const id = String(r?.agency_id || "");
+      const name =
+        (r?.agencies && (r.agencies as any)?.agency_name) ||
+        r?.agency_name ||
+        undefined;
+      if (id) map.set(id, name || id);
+    }
+    return map;
+  }, [connectedAgencies]);
+
   const fixedTalent = React.useMemo(() => {
     if (!talentId) return undefined;
     return { id: talentId, name: String(talentName || "Talent") };
@@ -118,9 +165,11 @@ export default function TalentPortal({ embedded }: { embedded?: boolean }) {
   }, []);
 
   const { data: bookings = [] } = useQuery({
-    queryKey: ["talentBookings"],
+    queryKey: ["talentBookings", effectiveAgencyId || "all"],
     queryFn: async () => {
-      const rows = await listTalentBookings();
+      const rows = await listTalentBookings(
+        effectiveAgencyId ? { agency_id: effectiveAgencyId } : {},
+      );
       return Array.isArray(rows) ? rows : [];
     },
     enabled: !!talentId,
@@ -158,17 +207,22 @@ export default function TalentPortal({ embedded }: { embedded?: boolean }) {
   });
 
   const { data: bookOuts = [] } = useQuery({
-    queryKey: ["talentBookOuts"],
+    queryKey: ["talentBookOuts", effectiveAgencyId || "all"],
     queryFn: async () => {
-      const rows = await listTalentBookOuts();
+      const rows = await listTalentBookOuts(
+        effectiveAgencyId ? { agency_id: effectiveAgencyId } : {},
+      );
       return Array.isArray(rows) ? rows : [];
     },
     enabled: !!talentId,
   });
 
   const { data: bookingPreferences } = useQuery({
-    queryKey: ["talentBookingPreferences"],
-    queryFn: async () => await getTalentBookingPreferences(),
+    queryKey: ["talentBookingPreferences", effectiveAgencyId || "all"],
+    queryFn: async () =>
+      await getTalentBookingPreferences(
+        effectiveAgencyId ? { agency_id: effectiveAgencyId } : {},
+      ),
     enabled: !!talentId,
   });
 
@@ -190,9 +244,12 @@ export default function TalentPortal({ embedded }: { embedded?: boolean }) {
   });
 
   const { data: irlPayments = [] } = useQuery({
-    queryKey: ["talentIrlPayments"],
+    queryKey: ["talentIrlPayments", effectiveAgencyId || "all"],
     queryFn: async () => {
-      const rows = await listTalentIrlPayments({ limit: 50 });
+      const rows = await listTalentIrlPayments({
+        limit: 50,
+        ...(effectiveAgencyId ? { agency_id: effectiveAgencyId } : {}),
+      });
       return Array.isArray(rows) ? rows : [];
     },
     enabled: !!talentId,
@@ -581,12 +638,39 @@ export default function TalentPortal({ embedded }: { embedded?: boolean }) {
   });
 
   const { data: portfolioItems = [] } = useQuery({
-    queryKey: ["talentPortfolioItems"],
+    queryKey: ["talentPortfolioItems", effectiveAgencyId || "all"],
     queryFn: async () => {
-      const rows = await listTalentPortfolioItems();
+      const rows = await listTalentPortfolioItems(
+        effectiveAgencyId ? { agency_id: effectiveAgencyId } : {},
+      );
       return Array.isArray(rows) ? rows : [];
     },
     enabled: !!talentId,
+  });
+
+  const { data: agencyInvites = [], isLoading: agencyInvitesLoading } = useQuery({
+    queryKey: ["creatorAgencyInvites"],
+    queryFn: async () => await listCreatorAgencyInvites(),
+    enabled: authenticated,
+  });
+
+  const { data: agencyConnections = [], isLoading: agencyConnectionsLoading } = useQuery({
+    queryKey: ["creatorAgencyConnections"],
+    queryFn: async () => await listCreatorAgencyConnections(),
+    enabled: authenticated,
+  });
+
+  const disconnectAgencyMutation = useMutation({
+    mutationFn: async (agencyId: string) =>
+      await disconnectCreatorAgencyConnection(agencyId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["creatorAgencyConnections"] });
+      await queryClient.invalidateQueries({ queryKey: ["talentMe"] });
+      await queryClient.invalidateQueries({ queryKey: ["talentBookings"] });
+      await queryClient.invalidateQueries({ queryKey: ["talentBookOuts"] });
+      await queryClient.invalidateQueries({ queryKey: ["talentPortfolioItems"] });
+      await queryClient.invalidateQueries({ queryKey: ["talentIrlPayments"] });
+    },
   });
 
   const createPortfolioMutation = useMutation({
@@ -625,6 +709,10 @@ export default function TalentPortal({ embedded }: { embedded?: boolean }) {
     queryKey: ["talentPayoutAccountStatus"],
     queryFn: async () => await getTalentPayoutAccountStatus(),
     enabled: !!talentId,
+  });
+
+  const onboardingLinkMutation = useMutation({
+    mutationFn: async () => await getTalentPayoutOnboardingLink(),
   });
 
   const { data: portalSettings } = useQuery({
@@ -682,14 +770,31 @@ export default function TalentPortal({ embedded }: { embedded?: boolean }) {
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="text-2xl font-bold text-gray-900">
-              {mode === "irl" ? "IRL Bookings Portal" : "All Licensing Portal"}
+              {mode === "irl" ? "IRL Bookings Portal" : "AI Licensing Portal"}
             </div>
             <div className="text-sm text-gray-600 mt-1">
               {mode === "irl"
                 ? "Track your bookings and earnings"
-                : "Complete talent management & licensing platform"}
+                : "Manage your AI licensing deals and earnings"}
             </div>
           </div>
+          {mode === "irl" && canSelectAgency && (
+            <div className="w-[240px]">
+              <Select value={selectedAgencyId} onValueChange={setSelectedAgencyId}>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="All agencies" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All agencies</SelectItem>
+                  {connectedAgencyIds.map((id) => (
+                    <SelectItem key={id} value={id}>
+                      {agencyNameById.get(id) || id}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <button
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-gray-200 bg-white text-[14px] font-semibold text-gray-900 shadow-sm hover:shadow-md transition-shadow"
             onClick={() => setMode(mode === "irl" ? "ai" : "irl")}
@@ -734,6 +839,7 @@ export default function TalentPortal({ embedded }: { embedded?: boolean }) {
                   { id: "earnings", label: "Earnings", icon: DollarSign },
                   { id: "messages", label: "Messages", icon: MessageSquare },
                   { id: "settings", label: "Settings", icon: Settings },
+                  { id: "agency_connection", label: "Agency Connection", icon: Building2 },
                 ]
               : [
                   { id: "overview", label: "Overview", icon: LayoutGrid },
@@ -1070,12 +1176,22 @@ export default function TalentPortal({ embedded }: { embedded?: boolean }) {
                     onCancelBooking={() => {}}
                     bookOuts={Array.isArray(bookOuts) ? (bookOuts as any[]) : []}
                     onAddBookOut={(bo: any) => {
+                      if (!effectiveAgencyId && connectedAgencyIds.length > 1) {
+                        toast({
+                          variant: "destructive",
+                          title: "Select an agency",
+                          description:
+                            "Please choose the agency for this book-out using the Agency filter dropdown.",
+                        });
+                        return;
+                      }
                       addBookOutMutation.mutate({
                         start_date: bo.startDate || bo.start_date,
                         end_date: bo.endDate || bo.end_date,
                         reason: bo.reason,
                         notes: bo.notes,
                         notify_agency: !!bo.notifyAgency,
+                        ...(effectiveAgencyId ? { agency_id: effectiveAgencyId } : {}),
                       });
                     }}
                     onRemoveBookOut={(id: string) => deleteBookOutMutation.mutate(id)}
@@ -1098,7 +1214,10 @@ export default function TalentPortal({ embedded }: { embedded?: boolean }) {
                     <Switch
                       checked={!!(bookingPreferences as any)?.willing_to_travel}
                       onCheckedChange={(checked: boolean) =>
-                        updateBookingPreferencesMutation.mutate({ willing_to_travel: checked })
+                        updateBookingPreferencesMutation.mutate({
+                          willing_to_travel: checked,
+                          ...(effectiveAgencyId ? { agency_id: effectiveAgencyId } : {}),
+                        } as any)
                       }
                       disabled={updateBookingPreferencesMutation.isPending}
                     />
@@ -1123,12 +1242,18 @@ export default function TalentPortal({ embedded }: { embedded?: boolean }) {
                           onBlur={(e) => {
                             const raw = String(e.target.value || "").trim();
                             if (!raw) {
-                              updateBookingPreferencesMutation.mutate({ min_day_rate_cents: null });
+                              updateBookingPreferencesMutation.mutate({
+                                min_day_rate_cents: null,
+                                ...(effectiveAgencyId ? { agency_id: effectiveAgencyId } : {}),
+                              } as any);
                               return;
                             }
                             const dollars = Number(raw);
                             if (isNaN(dollars) || dollars < 0) return;
-                            updateBookingPreferencesMutation.mutate({ min_day_rate_cents: Math.round(dollars * 100) });
+                            updateBookingPreferencesMutation.mutate({
+                              min_day_rate_cents: Math.round(dollars * 100),
+                              ...(effectiveAgencyId ? { agency_id: effectiveAgencyId } : {}),
+                            } as any);
                           }}
                           disabled={updateBookingPreferencesMutation.isPending}
                         />
@@ -1161,7 +1286,20 @@ export default function TalentPortal({ embedded }: { embedded?: boolean }) {
                       onChange={(e) => {
                         const f = e.target.files?.[0];
                         if (!f) return;
-                        uploadTalentPortfolioItem({ file: f })
+                        if (!effectiveAgencyId && connectedAgencyIds.length > 1) {
+                          toast({
+                            variant: "destructive",
+                            title: "Select an agency",
+                            description:
+                              "Please choose the agency for this upload using the Agency filter dropdown.",
+                          });
+                          e.target.value = "";
+                          return;
+                        }
+                        uploadTalentPortfolioItem({
+                          file: f,
+                          ...(effectiveAgencyId ? { agency_id: effectiveAgencyId } : {}),
+                        })
                           .then(() => queryClient.invalidateQueries({ queryKey: ["talentPortfolioItems"] }))
                           .finally(() => {
                             e.target.value = "";
@@ -1173,24 +1311,58 @@ export default function TalentPortal({ embedded }: { embedded?: boolean }) {
                 </div>
 
                 <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                  {Array.isArray(portfolioItems) && portfolioItems.length > 0 ? (
-                    (portfolioItems as any[]).slice(0, 12).map((it: any) => (
-                      <div key={it.id} className="group rounded-xl overflow-hidden border bg-white">
-                        <div className="relative aspect-[4/3] bg-gray-100">
-                          <img src={it.media_url} alt="" className="h-full w-full object-cover" />
-                          <button
-                            className="absolute bottom-2 right-2 hidden group-hover:inline-flex text-xs px-2 py-1 rounded bg-white/90 border"
-                            onClick={() => deletePortfolioMutation.mutate(String(it.id))}
-                            disabled={deletePortfolioMutation.isPending}
+                  {(() => {
+                    const items = Array.isArray(portfolioItems) ? (portfolioItems as any[]) : [];
+                    const real = items.slice(0, 12);
+                    const placeholders = Math.max(0, 4 - real.length);
+                    return (
+                      <>
+                        {real.map((it: any) => (
+                          <div key={it.id} className="group rounded-xl overflow-hidden border bg-white">
+                            <div className="relative aspect-[4/3] bg-gray-100">
+                              <img src={it.media_url} alt="" className="h-full w-full object-cover" />
+                              <button
+                                className="absolute bottom-2 right-2 hidden group-hover:inline-flex text-xs px-2 py-1 rounded bg-white/90 border"
+                                onClick={() => deletePortfolioMutation.mutate(String(it.id))}
+                                disabled={deletePortfolioMutation.isPending}
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                        {Array.from({ length: placeholders }).map((_, idx) => (
+                          <div
+                            key={`ph-${idx}`}
+                            className="rounded-xl overflow-hidden border border-dashed bg-gray-50"
                           >
-                            Remove
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-sm text-gray-600">No portfolio items yet.</div>
-                  )}
+                            <div className="aspect-[4/3] flex items-center justify-center">
+                              <Image className="h-8 w-8 text-gray-400" />
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    );
+                  })()}
+                </div>
+              </Card>
+
+              <Card className="p-6 rounded-xl shadow-sm">
+                <div className="text-sm font-semibold text-gray-900">Past Work Highlights</div>
+                <div className="text-xs text-gray-600 mt-1">
+                  Add standout projects, collaborations, or press mentions
+                </div>
+
+                <div className="mt-5 border rounded-xl border-dashed border-gray-200 p-12 bg-gray-50/50">
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                      <Briefcase className="h-8 w-8 text-gray-400" />
+                    </div>
+                    <div className="text-sm text-gray-500">Highlights coming soon</div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Your agency can help curate portfolio highlights here
+                    </div>
+                  </div>
                 </div>
               </Card>
             </div>
@@ -1265,6 +1437,361 @@ export default function TalentPortal({ embedded }: { embedded?: boolean }) {
               >
                 {createIrlPayoutRequestMutation.isPending ? "Requesting…" : "Cash Out Earnings"}
               </button>
+            </div>
+          )}
+
+          {tab === "messages" && (
+            <div className="space-y-6">
+              <div>
+                <div className="text-2xl font-bold text-gray-900">Messages</div>
+                <div className="text-sm text-gray-600 mt-1">Your agency notifications inbox</div>
+              </div>
+
+              <Card className="p-6 rounded-xl shadow-sm">
+                <div className="text-sm font-semibold text-gray-900">Communication Hub</div>
+                <div className="text-xs text-gray-600 mt-1">Email notifications sent by your agency</div>
+
+                <div className="mt-5 space-y-3">
+                  {Array.isArray(talentNotifications) && talentNotifications.length > 0 ? (
+                    (talentNotifications as any[]).map((n: any) => {
+                      const id = String(n.id);
+                      const from = n.from_label || agencyName || "Agency";
+                      const subject = n.subject || "Notification";
+                      const msg = typeof n.message === "string" ? n.message : "";
+                      const preview = msg.split("\n").filter(Boolean)[0] || msg.slice(0, 80);
+                      const unread = !n.read_at;
+                      const ts = n.created_at ? new Date(n.created_at).toLocaleString() : "";
+
+                      return (
+                        <button
+                          key={id}
+                          className={`w-full text-left rounded-xl border p-4 transition-colors ${
+                            unread
+                              ? "bg-blue-50/60 border-blue-200 hover:bg-blue-50"
+                              : "bg-white border-gray-100 hover:bg-gray-50"
+                          }`}
+                          onClick={() => {
+                            if (unread && !markReadMutation.isPending) {
+                              markReadMutation.mutate(id);
+                            }
+                          }}
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="min-w-0">
+                              <div className="text-sm font-semibold text-gray-900 truncate">{from}</div>
+                              <div className="text-xs text-gray-600 truncate">{subject}</div>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {unread && <Badge className="bg-blue-600 text-white border-0">New</Badge>}
+                            </div>
+                          </div>
+                          <div className="mt-2 text-xs text-gray-600 truncate">{preview}</div>
+                          <div className="mt-2 text-[11px] text-gray-500">{ts}</div>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className="text-sm text-gray-600">No messages yet.</div>
+                  )}
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {tab === "settings" && (
+            <div className="space-y-6">
+              <div>
+                <div className="text-2xl font-bold text-gray-900">Portal Settings</div>
+                <div className="text-sm text-gray-600 mt-1">Configure your talent portal preferences</div>
+              </div>
+
+              <Card className="p-6 rounded-xl shadow-sm">
+                <div className="text-sm font-semibold text-gray-900">Payment Preferences</div>
+
+                <div className="mt-4 space-y-3">
+                  <div className="rounded-xl border border-gray-200 bg-white p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="text-sm font-semibold text-gray-900">Bank Account</div>
+                        <div className="text-xs text-gray-600 mt-1">
+                          {(payoutAccountStatus as any)?.bank_last4
+                            ? `•••• •••• •••• ${(payoutAccountStatus as any)?.bank_last4}`
+                            : "Not connected"}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {(payoutAccountStatus as any)?.connected &&
+                        (payoutAccountStatus as any)?.transfers_enabled ? (
+                          <Badge className="bg-green-600 text-white border-0">Connected</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-gray-700">
+                            Not Connected
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      className="mt-4 w-full h-10"
+                      disabled={onboardingLinkMutation.isPending}
+                      onClick={async () => {
+                        const res = await onboardingLinkMutation.mutateAsync();
+                        const url = (res as any)?.url;
+                        if (url) window.open(url, "_blank");
+                      }}
+                    >
+                      {onboardingLinkMutation.isPending ? (
+                        <span className="inline-flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Processing...
+                        </span>
+                      ) : (
+                        "Update Bank Details"
+                      )}
+                    </Button>
+                  </div>
+
+                  <div className="rounded-xl border border-gray-200 bg-white p-4">
+                    <div>
+                      <div className="text-sm font-semibold text-gray-900">Tax Documentation</div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        {((w9Doc as any)?.id && (w9Doc as any)?.created_at)
+                          ? `W-9 on file • Updated ${new Date((w9Doc as any).created_at).toLocaleDateString()}`
+                          : "No W-9 on file"}
+                      </div>
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      className="mt-4 w-full h-10"
+                      disabled={!((tax1099Doc as any)?.public_url)}
+                      onClick={() => {
+                        const url = (tax1099Doc as any)?.public_url;
+                        if (url) window.open(url, "_blank");
+                      }}
+                    >
+                      Download 1099 ({taxYear})
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-6 rounded-xl shadow-sm">
+                <div className="text-sm font-semibold text-gray-900">Privacy Controls</div>
+
+                <div className="mt-4 space-y-3">
+                  <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 flex items-center justify-between gap-4">
+                    <div>
+                      <div className="text-sm font-semibold text-gray-900">Data Usage for Training</div>
+                      <div className="text-xs text-gray-600 mt-1">Allow anonymized data for AI model improvement</div>
+                    </div>
+                    <Switch
+                      checked={!!(portalSettings as any)?.allow_training}
+                      onCheckedChange={(checked: boolean) =>
+                        updatePortalSettingsMutation.mutate({ allow_training: checked })
+                      }
+                      disabled={updatePortalSettingsMutation.isPending}
+                    />
+                  </div>
+
+                  <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 flex items-center justify-between gap-4">
+                    <div>
+                      <div className="text-sm font-semibold text-gray-900">Public Profile Visibility</div>
+                      <div className="text-xs text-gray-600 mt-1">Show in marketplace search results</div>
+                    </div>
+                    <Switch
+                      checked={
+                        (portalSettings as any)?.public_profile_visible === undefined
+                          ? true
+                          : !!(portalSettings as any)?.public_profile_visible
+                      }
+                      onCheckedChange={(checked: boolean) =>
+                        updatePortalSettingsMutation.mutate({ public_profile_visible: checked })
+                      }
+                      disabled={updatePortalSettingsMutation.isPending}
+                    />
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {tab === "agency_connection" && (
+            <div className="space-y-6">
+              <div>
+                <div className="text-2xl font-bold text-gray-900">Agency Connection</div>
+                <div className="text-sm text-gray-600 mt-1">
+                  Manage agency invitations and your connected agencies.
+                </div>
+              </div>
+
+              <Card className="p-6 rounded-xl shadow-sm">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900">Connected Agencies</div>
+                    <div className="text-xs text-gray-600 mt-1">
+                      {agencyConnections.length > 0
+                        ? "You can be connected to multiple agencies at once."
+                        : "You are not connected to any agencies yet."}
+                    </div>
+                  </div>
+                  {(agencyConnectionsLoading || disconnectAgencyMutation.isPending) && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Loading
+                    </div>
+                  )}
+                </div>
+
+                {agencyConnections.length > 0 && (
+                  <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {agencyConnections.map((c: any) => (
+                      <div
+                        key={c.agency_id}
+                        className="flex items-center justify-between gap-3 p-4 border border-gray-200 rounded-lg bg-white"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden">
+                            {c.agencies?.logo_url ? (
+                              <img
+                                src={c.agencies.logo_url}
+                                alt={c.agencies.agency_name || "Agency"}
+                                className="w-full h-full object-contain"
+                              />
+                            ) : (
+                              <Building2 className="w-5 h-5 text-gray-500" />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-semibold text-gray-900 truncate">
+                              {c.agencies?.agency_name || c.agency_id}
+                            </div>
+                            <div className="text-xs text-gray-500 truncate">
+                              {c.agency_id}
+                            </div>
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          disabled={disconnectAgencyMutation.isPending}
+                          onClick={async () => {
+                            try {
+                              await disconnectAgencyMutation.mutateAsync(String(c.agency_id));
+                              toast({
+                                title: "Disconnected",
+                                description: "You have disconnected from the agency.",
+                              });
+                            } catch (e: any) {
+                              toast({
+                                variant: "destructive",
+                                title: "Failed to disconnect",
+                                description: e?.message || String(e),
+                              });
+                            }
+                          }}
+                        >
+                          Disconnect
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+
+              <Card className="p-6 rounded-xl shadow-sm">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900">Invitations</div>
+                    <div className="text-xs text-gray-600 mt-1">
+                      Respond to pending invitations from agencies.
+                    </div>
+                  </div>
+                  {agencyInvitesLoading && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Loading
+                    </div>
+                  )}
+                </div>
+
+                {(agencyInvites as any[]).filter((i) => i.status === "pending").length > 0 ? (
+                  <div className="mt-6 space-y-3">
+                    {(agencyInvites as any[])
+                      .filter((i) => i.status === "pending")
+                      .map((inv: any) => (
+                        <div
+                          key={inv.id}
+                          className="p-4 border border-gray-200 rounded-lg flex items-center justify-between gap-4"
+                        >
+                          <div className="min-w-0">
+                            <div className="font-semibold text-gray-900 truncate">
+                              Invitation from agency
+                            </div>
+                            <div className="text-xs text-gray-500 truncate mt-1">
+                              {inv.agency_id}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <Button
+                              variant="outline"
+                              disabled={disconnectAgencyMutation.isPending}
+                              onClick={async () => {
+                                try {
+                                  await declineCreatorAgencyInvite(String(inv.id));
+                                  await queryClient.invalidateQueries({
+                                    queryKey: ["creatorAgencyInvites"],
+                                  });
+                                  toast({ title: "Invitation declined" });
+                                } catch (e: any) {
+                                  toast({
+                                    variant: "destructive",
+                                    title: "Failed to decline",
+                                    description: e?.message || String(e),
+                                  });
+                                }
+                              }}
+                            >
+                              Decline
+                            </Button>
+                            <Button
+                              className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                              disabled={disconnectAgencyMutation.isPending}
+                              onClick={async () => {
+                                try {
+                                  await acceptCreatorAgencyInvite(String(inv.id));
+                                  await Promise.all([
+                                    queryClient.invalidateQueries({
+                                      queryKey: ["creatorAgencyInvites"],
+                                    }),
+                                    queryClient.invalidateQueries({
+                                      queryKey: ["creatorAgencyConnections"],
+                                    }),
+                                    queryClient.invalidateQueries({ queryKey: ["talentMe"] }),
+                                  ]);
+                                  toast({
+                                    title: "Invitation accepted",
+                                    description: "You are now connected to the agency.",
+                                  });
+                                } catch (e: any) {
+                                  toast({
+                                    variant: "destructive",
+                                    title: "Failed to accept",
+                                    description: e?.message || String(e),
+                                  });
+                                }
+                              }}
+                            >
+                              Accept
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                ) : (
+                  <div className="mt-6 text-sm text-gray-500">No pending invitations.</div>
+                )}
+              </Card>
             </div>
           )}
         </>
@@ -2267,13 +2794,21 @@ export default function TalentPortal({ embedded }: { embedded?: boolean }) {
                     <Button
                       variant="outline"
                       className="mt-4 w-full h-10"
+                      disabled={onboardingLinkMutation.isPending}
                       onClick={async () => {
-                        const res = await getTalentPayoutOnboardingLink();
+                        const res = await onboardingLinkMutation.mutateAsync();
                         const url = (res as any)?.url;
                         if (url) window.open(url, "_blank");
                       }}
                     >
-                      Update Bank Details
+                      {onboardingLinkMutation.isPending ? (
+                        <span className="inline-flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Processing...
+                        </span>
+                      ) : (
+                        "Update Bank Details"
+                      )}
                     </Button>
                   </div>
 

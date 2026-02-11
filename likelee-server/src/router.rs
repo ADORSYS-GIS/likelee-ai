@@ -72,12 +72,12 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::payouts::create_my_onboarding_link),
         )
         .route(
-            "/api/talent/settings",
-            get(crate::talent::get_portal_settings).post(crate::talent::update_portal_settings),
+            "/api/creator/agency-connections",
+            get(crate::creator_agency_connection::list_connections),
         )
         .route(
-            "/api/talent/tax-documents/latest",
-            get(crate::talent::get_latest_tax_document),
+            "/api/creator/agency-connections/:agency_id/disconnect",
+            post(crate::creator_agency_connection::disconnect_agency),
         )
         .route("/api/talent/profile", post(crate::talent::update_profile))
         .route("/api/talent/bookings", get(crate::talent::list_bookings))
@@ -181,6 +181,15 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::agency_dashboard::get_recent_activity),
         )
         .route("/api/agency/roster", get(crate::agency_roster::get_roster))
+        .route(
+            "/api/agency/talent-invites",
+            get(crate::agency_talent_invites::list_for_agency)
+                .post(crate::agency_talent_invites::create_for_agency),
+        )
+        .route(
+            "/api/agency/talent-invites/:id/revoke",
+            post(crate::agency_talent_invites::revoke_for_agency),
+        )
         .route(
             "/api/agency/talent",
             post(crate::agency_roster::create_talent),
@@ -529,6 +538,22 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::email::send_email),
         )
         .route(
+            "/api/invites/agency-talent/:token",
+            get(crate::agency_talent_invites::get_by_token),
+        )
+        .route(
+            "/api/invites/agency-talent/:token/accept",
+            post(crate::agency_talent_invites::accept_by_token),
+        )
+        .route(
+            "/api/invites/agency-talent/:token/decline",
+            post(crate::agency_talent_invites::decline_by_token),
+        )
+        .route(
+            "/api/invites/agency-talent/:token/magic-link",
+            get(crate::agency_talent_invites::get_magic_link_by_token),
+        )
+        .route(
             "/api/creator-rates",
             get(crate::creator_rates::get_creator_rates)
                 .post(crate::creator_rates::upsert_creator_rates),
@@ -545,10 +570,6 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/creator/agency-invites/:id/decline",
             post(crate::creator_agency_connection::decline_invite),
-        )
-        .route(
-            "/api/creator/agency-connections",
-            get(crate::creator_agency_connection::list_connections),
         )
         // Scouting (DocuSeal)
         .route(

@@ -32,6 +32,7 @@ import {
   Calendar,
   Image as ImageIcon,
   Loader2,
+  Mail,
 } from "lucide-react";
 import { format } from "date-fns";
 import CompCardBanner from "./CompCardBanner";
@@ -40,12 +41,16 @@ import TalentSideModal from "./TalentSideModal";
 import CompCardModal from "./CompCardModal";
 import {
   createTalentDigitals,
+  createAgencyTalentInvite,
   getAgencyDigitals,
   getAgencyPayoutsAccountStatus,
+  listAgencyTalentInvites,
+  revokeAgencyTalentInvite,
   getTalentDigitals,
   sendCoreEmail,
 } from "@/api/functions";
 import { supabase } from "@/lib/supabase";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -114,6 +119,32 @@ const RosterView = ({
   const [digitalsFilter, setDigitalsFilter] = useState("All Talent");
   const [showInsufficientSeatsModal, setShowInsufficientSeatsModal] =
     useState(false);
+
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteSearch, setInviteSearch] = useState("");
+  const [inviteSending, setInviteSending] = useState(false);
+  const [inviteSendingEmail, setInviteSendingEmail] = useState<string | null>(null);
+  const [talentInvites, setTalentInvites] = useState<any[]>([]);
+  const [talentInvitesLoading, setTalentInvitesLoading] = useState(false);
+
+  const refreshTalentInvites = async () => {
+    setTalentInvitesLoading(true);
+    try {
+      const res: any = await listAgencyTalentInvites();
+      const rows = res?.invites;
+      setTalentInvites(Array.isArray(rows) ? rows : []);
+    } catch {
+      setTalentInvites([]);
+    } finally {
+      setTalentInvitesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!inviteOpen) return;
+    refreshTalentInvites();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inviteOpen]);
 
   const [agencyDigitals, setAgencyDigitals] = useState<any[]>([]);
   const [agencyDigitalsLoading, setAgencyDigitalsLoading] = useState(false);
@@ -539,6 +570,12 @@ const RosterView = ({
     } else {
       navigate("/addtalent");
     }
+  };
+
+  const handleInviteTalentClick = () => {
+    setInviteSearch("");
+    setInviteSendingEmail(null);
+    setInviteOpen(true);
   };
 
   const handleSort = (key: string) => {
@@ -1036,6 +1073,13 @@ const RosterView = ({
               className="gap-2 font-bold h-10 rounded-lg"
             >
               <Download className="w-4 h-4" /> Export CSV
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleInviteTalentClick}
+              className="border-gray-200 gap-2 font-bold h-10 rounded-lg"
+            >
+              <Mail className="w-4 h-4" /> Send Portal Invite
             </Button>
             <Button
               onClick={handleAddTalentClick}
@@ -1664,6 +1708,223 @@ const RosterView = ({
         talents={filteredTalent}
         agencyName={agencyName}
       />
+
+      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">Send Portal Invite</DialogTitle>
+            <DialogDescription>
+              Select an existing talent in your roster to send them a portal invite.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Search talent</Label>
+              <Input
+                value={inviteSearch}
+                onChange={(e) => setInviteSearch(e.target.value)}
+                placeholder="Search by name or email"
+              />
+            </div>
+
+            <div className="space-y-2">
+              {(() => {
+                const q = inviteSearch.trim().toLowerCase();
+                const rows = Array.isArray(rosterData) ? rosterData : [];
+                const filtered = !q
+                  ? rows
+                  : rows.filter((t: any) => {
+                      const name = String(t?.name || t?.full_legal_name || "").toLowerCase();
+                      const email = String(t?.email || "").toLowerCase();
+                      return name.includes(q) || email.includes(q);
+                    });
+
+                if (filtered.length === 0) {
+                  return (
+                    <div className="text-sm text-gray-600">No matching talent.</div>
+                  );
+                }
+
+                return (
+                  <div className="max-h-56 overflow-y-auto space-y-2">
+                    {filtered.slice(0, 30).map((t: any) => {
+                      const email = String(t?.email || "").trim();
+                      const name = String(t?.name || t?.full_legal_name || "Talent").trim();
+                      const rowSending = !!inviteSendingEmail && inviteSendingEmail === email;
+                      return (
+                        <div
+                          key={t?.id || `${name}:${email}`}
+                          className="flex items-center justify-between gap-3 rounded-lg border bg-white px-3 py-2"
+                        >
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold text-gray-900 truncate">
+                              {name}
+                            </div>
+                            <div className="text-xs text-gray-500 truncate">
+                              {email || "No email on file"}
+                            </div>
+                          </div>
+                          <Button
+                            className="h-9 bg-indigo-600 hover:bg-indigo-700 text-white"
+                            disabled={inviteSending || rowSending || !email}
+                            onClick={async () => {
+                              if (!email) return;
+                              setInviteSending(true);
+                              setInviteSendingEmail(email);
+                              try {
+                                const res: any = await createAgencyTalentInvite({ email });
+                                toast({
+                                  title: "Portal invite sent",
+                                  description: `Invitation sent to ${email}`,
+                                });
+                                await refreshTalentInvites();
+
+                                const url = res?.invite_url;
+                                if (typeof url === "string" && url.startsWith("http")) {
+                                  try {
+                                    await navigator.clipboard.writeText(url);
+                                    toast({
+                                      title: "Invite link copied",
+                                      description: "Copied invite URL to clipboard.",
+                                    });
+                                  } catch {
+                                    // ignore
+                                  }
+                                }
+                              } catch (e: any) {
+                                toast({
+                                  title: "Failed to send",
+                                  description: e?.message || "Could not send invite",
+                                  variant: "destructive",
+                                });
+                              } finally {
+                                setInviteSending(false);
+                                setInviteSendingEmail(null);
+                              }
+                            }}
+                          >
+                            {rowSending ? (
+                              <span className="inline-flex items-center gap-2">
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                Sending…
+                              </span>
+                            ) : (
+                              "Send"
+                            )}
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+
+            <div className="flex items-center justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setInviteOpen(false)}
+                disabled={inviteSending}
+              >
+                Close
+              </Button>
+            </div>
+
+            <div className="pt-2 border-t">
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-semibold text-gray-900">Pending invites</div>
+                <Button
+                  variant="ghost"
+                  className="h-8"
+                  onClick={refreshTalentInvites}
+                  disabled={talentInvitesLoading}
+                >
+                  {talentInvitesLoading ? (
+                    <span className="inline-flex items-center gap-2 text-sm text-gray-600">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Refreshing
+                    </span>
+                  ) : (
+                    "Refresh"
+                  )}
+                </Button>
+              </div>
+
+              <div className="mt-3 space-y-2">
+                {(() => {
+                  const pending = (Array.isArray(talentInvites) ? talentInvites : []).filter(
+                    (i: any) => String(i?.status || "").toLowerCase() === "pending",
+                  );
+                  if (pending.length === 0) {
+                    return (
+                      <div className="text-sm text-gray-600">
+                        No pending invites.
+                      </div>
+                    );
+                  }
+                  return pending.slice(0, 20).map((inv: any) => (
+                    <div
+                      key={inv.id}
+                      className="flex items-center justify-between gap-3 rounded-lg border bg-white px-3 py-2"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-gray-900 truncate">
+                          {inv.email}
+                        </div>
+                        <div className="text-xs text-gray-500 truncate">
+                          Expires {inv.expires_at ? new Date(inv.expires_at).toLocaleString() : "—"}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          className="h-9"
+                          disabled={inviteSending}
+                          onClick={async () => {
+                            try {
+                              await revokeAgencyTalentInvite(String(inv.id));
+                              toast({ title: "Invite revoked" });
+                              await refreshTalentInvites();
+                            } catch (e: any) {
+                              toast({
+                                title: "Failed to revoke",
+                                description: e?.message || String(e),
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                        >
+                          Revoke
+                        </Button>
+                        <Button
+                          className="h-9 bg-indigo-600 hover:bg-indigo-700 text-white"
+                          disabled={inviteSending}
+                          onClick={async () => {
+                            try {
+                              await createAgencyTalentInvite({ email: String(inv.email || "") });
+                              toast({ title: "Re-invited" });
+                              await refreshTalentInvites();
+                            } catch (e: any) {
+                              toast({
+                                title: "Failed to re-invite",
+                                description: e?.message || String(e),
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                        >
+                          Re-invite
+                        </Button>
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={reminderOpen} onOpenChange={setReminderOpen}>
         <DialogContent className="max-w-xl">

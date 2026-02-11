@@ -272,6 +272,7 @@ pub async fn list_connections(
         .from("agency_users")
         .select("agency_id,agencies(agency_name,logo_url)")
         .eq("creator_id", &user.id)
+        .eq("status", "active")
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -287,5 +288,32 @@ pub async fn list_connections(
     Ok(Json(ListConnectionsResponse {
         status: "ok".to_string(),
         connections,
+    }))
+}
+
+pub async fn disconnect_agency(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(agency_id): Path<String>,
+) -> Result<Json<ActionResponse>, (StatusCode, String)> {
+    RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
+
+    let payload = json!({
+        "status": "inactive",
+        "updated_at": chrono::Utc::now().to_rfc3339(),
+    });
+
+    state
+        .pg
+        .from("agency_users")
+        .eq("creator_id", &user.id)
+        .eq("agency_id", &agency_id)
+        .update(payload.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(Json(ActionResponse {
+        status: "ok".to_string(),
     }))
 }

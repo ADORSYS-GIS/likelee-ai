@@ -123,6 +123,7 @@ import Login from "./Login";
 import Register from "./Register";
 import ForgotPassword from "./ForgotPassword";
 import UpdatePassword from "./UpdatePassword";
+import AgencyInviteLanding from "./AgencyInviteLanding";
 import TwoFactorSetup from "./TwoFactorSetup";
 import LicensingSettings from "./LicensingSettings";
 import Unauthorized from "./Unauthorized";
@@ -513,6 +514,8 @@ function AppRoutes() {
       <Route path="/Register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/update-password" element={<UpdatePassword />} />
+
+      <Route path="/invite/agency/:token" element={<AgencyInviteLanding />} />
       <Route
         path="/TwoFactorSetup"
         element={
