@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { CONTACT_EMAIL, CONTACT_EMAIL_MAILTO } from "@/config/public";
 
 export function PrivacyPolicyContent() {
   const { t } = useTranslation();
@@ -287,10 +288,10 @@ export function PrivacyPolicyContent() {
         <p>
           <strong>{t("privacyPolicy.sections.8.requests", "Requests:")}</strong>{" "}
           <a
-            href="mailto:operations@likelee.ai"
+            href={CONTACT_EMAIL_MAILTO}
             className="text-[#32C8D1] hover:text-[#2AB8C1] font-semibold underline"
           >
-            operations@likelee.ai
+            {CONTACT_EMAIL}
           </a>
         </p>
       </section>
@@ -351,10 +352,10 @@ export function PrivacyPolicyContent() {
           {t("privacyPolicy.sections.13.company", "Likelee, Inc.")}
           <br />
           <a
-            href="mailto:operations@likelee.ai"
+            href={CONTACT_EMAIL_MAILTO}
             className="text-[#32C8D1] hover:text-[#2AB8C1] font-semibold underline"
           >
-            operations@likelee.ai
+            {CONTACT_EMAIL}
           </a>
         </p>
       </section>

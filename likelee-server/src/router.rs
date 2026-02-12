@@ -452,6 +452,10 @@ pub fn build_router(state: AppState) -> Router {
             "/api/reference-images",
             get(crate::reference_images::list_reference_images),
         )
+        .route(
+            "/api/reference-images/:section_id",
+            delete(crate::reference_images::delete_reference_image),
+        )
         // Voice
         .route(
             "/api/voice/recordings",

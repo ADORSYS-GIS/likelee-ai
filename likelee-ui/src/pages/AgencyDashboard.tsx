@@ -3,7 +3,7 @@ import { LicenseTemplatesTab } from "@/components/licensing/LicenseTemplatesTab"
 import { LicenseSubmissionsTab } from "@/components/licensing/LicenseSubmissionsTab";
 import { ActiveLicenseDetailsSheet } from "@/components/licensing/ActiveLicenseDetailsSheet";
 import { scoutingService } from "@/services/scoutingService";
-import { ScoutingProspect } from "@/types/scouting";
+import { ScoutingEvent, ScoutingProspect } from "@/types/scouting";
 import { ScoutingMap } from "@/components/scouting/map/ScoutingMap";
 import { ScoutingTrips } from "@/components/scouting/ScoutingTrips";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -8848,6 +8848,54 @@ const ScoutingHubView = ({
   const [prospectToEdit, setProspectToEdit] = useState<ScoutingProspect | null>(
     null,
   );
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+  const [eventToEdit, setEventToEdit] = useState<ScoutingEvent | null>(null);
+  const [eventForm, setEventForm] = useState<{
+    name: string;
+    event_date: string;
+    location: string;
+    description: string;
+    status: ScoutingEvent["status"];
+    start_time: string;
+    end_time: string;
+  }>({
+    name: "",
+    event_date: "",
+    location: "",
+    description: "",
+    status: "scheduled",
+    start_time: "",
+    end_time: "",
+  });
+
+  useEffect(() => {
+    if (!isEventModalOpen) return;
+    if (eventToEdit) {
+      setEventForm({
+        name: eventToEdit.name || "",
+        event_date: eventToEdit.event_date
+          ? new Date(eventToEdit.event_date).toISOString().slice(0, 10)
+          : "",
+        location: eventToEdit.location || "",
+        description: eventToEdit.description || "",
+        status: eventToEdit.status || "scheduled",
+        start_time: eventToEdit.start_time || "",
+        end_time: eventToEdit.end_time || "",
+      });
+    } else {
+      setEventForm({
+        name: "",
+        event_date: "",
+        location: "",
+        description: "",
+        status: "scheduled",
+        start_time: "",
+        end_time: "",
+      });
+    }
+  }, [eventToEdit, isEventModalOpen]);
 
   const tabs = [
     "Prospect Pipeline",
@@ -8893,7 +8941,7 @@ const ScoutingHubView = ({
             <Calendar className="w-4 h-4" /> Create Event
           </Button>
           <Button
-            onClick={() => setIsPlanTripModalOpen(true)}
+            onClick={() => setActiveTab("Plan Trip")}
             className="h-10 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2"
           >
             <MapPin className="w-4 h-4" /> Plan Scouting Trip
@@ -8972,6 +9020,188 @@ const ScoutingHubView = ({
         onOpenChange={setIsProspectModalOpen}
         prospect={prospectToEdit}
       />
+
+      <Dialog
+        open={isEventModalOpen}
+        onOpenChange={(open) => {
+          setIsEventModalOpen(open);
+          if (!open) setEventToEdit(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-[600px] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900">
+              {eventToEdit ? "Edit Event" : "Create Event"}
+            </DialogTitle>
+            <DialogDescription className="text-gray-500 font-medium">
+              Manage open calls and casting events for your scouting pipeline.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-gray-700">Name</Label>
+              <Input
+                value={eventForm.name}
+                onChange={(e) =>
+                  setEventForm((p) => ({ ...p, name: e.target.value }))
+                }
+                placeholder="Event name"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-700">Date</Label>
+                <Input
+                  type="date"
+                  value={eventForm.event_date}
+                  onChange={(e) =>
+                    setEventForm((p) => ({ ...p, event_date: e.target.value }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-700">
+                  Status
+                </Label>
+                <Input
+                  value={eventForm.status}
+                  onChange={(e) =>
+                    setEventForm((p) => ({
+                      ...p,
+                      status: e.target.value as ScoutingEvent["status"],
+                    }))
+                  }
+                  placeholder="scheduled"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-700">
+                  Start time
+                </Label>
+                <Input
+                  value={eventForm.start_time}
+                  onChange={(e) =>
+                    setEventForm((p) => ({ ...p, start_time: e.target.value }))
+                  }
+                  placeholder="09:00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-700">
+                  End time
+                </Label>
+                <Input
+                  value={eventForm.end_time}
+                  onChange={(e) =>
+                    setEventForm((p) => ({ ...p, end_time: e.target.value }))
+                  }
+                  placeholder="18:00"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-gray-700">
+                Location
+              </Label>
+              <Input
+                value={eventForm.location}
+                onChange={(e) =>
+                  setEventForm((p) => ({ ...p, location: e.target.value }))
+                }
+                placeholder="Location"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-gray-700">
+                Description
+              </Label>
+              <Textarea
+                value={eventForm.description}
+                onChange={(e) =>
+                  setEventForm((p) => ({ ...p, description: e.target.value }))
+                }
+                placeholder="Optional details"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsEventModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+              onClick={async () => {
+                try {
+                  const agencyId = await scoutingService.getUserAgencyId();
+                  if (!agencyId) {
+                    toast({
+                      title: "Error",
+                      description: "Could not determine agency.",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  if (
+                    !eventForm.name ||
+                    !eventForm.event_date ||
+                    !eventForm.location
+                  ) {
+                    toast({
+                      title: "Missing fields",
+                      description: "Name, date, and location are required.",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+
+                  const payload = {
+                    agency_id: agencyId,
+                    name: eventForm.name,
+                    event_date: new Date(eventForm.event_date).toISOString(),
+                    location: eventForm.location,
+                    description: eventForm.description || null,
+                    status: eventForm.status,
+                    start_time: eventForm.start_time || null,
+                    end_time: eventForm.end_time || null,
+                  } as any;
+
+                  if (eventToEdit?.id) {
+                    await scoutingService.updateEvent(eventToEdit.id, payload);
+                    toast({ title: "Event updated" });
+                  } else {
+                    await scoutingService.createEvent(payload);
+                    toast({ title: "Event created" });
+                  }
+
+                  await queryClient.invalidateQueries({
+                    queryKey: ["scouting-events"],
+                  });
+                  setIsEventModalOpen(false);
+                } catch (e: any) {
+                  toast({
+                    title: "Error",
+                    description: e?.message || "Failed to save event.",
+                    variant: "destructive",
+                  });
+                }
+              }}
+            >
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

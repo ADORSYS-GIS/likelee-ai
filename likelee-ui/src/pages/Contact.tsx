@@ -4,23 +4,46 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { CheckCircle2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { CONTACT_EMAIL } from "@/config/public";
+import { base44 } from "@/api/base44Client";
+import { toast } from "@/components/ui/use-toast";
 
 export default function Contact() {
   const { t } = useTranslation();
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     contact_name: "",
     phone: "",
   });
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (sending) return;
+
     const subject = `Contact Form Submission from ${formData.contact_name}`;
     const body = `New Contact Form Submission:\n\nName: ${formData.contact_name}\nEmail: ${formData.email}\nPhone: ${formData.phone}`;
-    const mailto = `mailto:admin@likelee.ai?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.location.href = mailto;
-    setSubmitted(true);
+
+    try {
+      setSending(true);
+      await base44.post("/integrations/core/send-email", {
+        to: CONTACT_EMAIL,
+        subject,
+        body,
+      });
+      setSubmitted(true);
+    } catch (e) {
+      toast({
+        title: "Failed to send",
+        description:
+          e instanceof Error
+            ? e.message
+            : "Something went wrong sending your message.",
+      });
+    } finally {
+      setSending(false);
+    }
   };
 
   if (submitted) {
@@ -94,9 +117,10 @@ export default function Contact() {
 
           <Button
             type="submit"
+            disabled={sending}
             className="w-full h-12 text-lg font-medium bg-[#32C8D1] hover:bg-[#2AB5BE] text-white rounded-md transition-all"
           >
-            {t("continue")}
+            {sending ? "Sending..." : t("continue")}
           </Button>
         </form>
       </div>
