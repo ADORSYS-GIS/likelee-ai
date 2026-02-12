@@ -710,7 +710,9 @@ export default function OrganizationSignup() {
               }
             }}
             variant="link"
-            disabled={!resendEmailConfirmation || resendLoading || resendCooldownSec > 0}
+            disabled={
+              !resendEmailConfirmation || resendLoading || resendCooldownSec > 0
+            }
             className="p-0 h-auto underline underline-offset-4 text-gray-600 hover:text-gray-900"
           >
             {resendLoading

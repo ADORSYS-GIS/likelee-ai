@@ -9062,7 +9062,9 @@ const ScoutingHubView = ({
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">Status</Label>
+                <Label className="text-sm font-bold text-gray-700">
+                  Status
+                </Label>
                 <Input
                   value={eventForm.status}
                   onChange={(e) =>
@@ -9078,7 +9080,9 @@ const ScoutingHubView = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">Start time</Label>
+                <Label className="text-sm font-bold text-gray-700">
+                  Start time
+                </Label>
                 <Input
                   value={eventForm.start_time}
                   onChange={(e) =>
@@ -9088,7 +9092,9 @@ const ScoutingHubView = ({
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">End time</Label>
+                <Label className="text-sm font-bold text-gray-700">
+                  End time
+                </Label>
                 <Input
                   value={eventForm.end_time}
                   onChange={(e) =>
@@ -9100,7 +9106,9 @@ const ScoutingHubView = ({
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-bold text-gray-700">Location</Label>
+              <Label className="text-sm font-bold text-gray-700">
+                Location
+              </Label>
               <Input
                 value={eventForm.location}
                 onChange={(e) =>
@@ -9111,7 +9119,9 @@ const ScoutingHubView = ({
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-bold text-gray-700">Description</Label>
+              <Label className="text-sm font-bold text-gray-700">
+                Description
+              </Label>
               <Textarea
                 value={eventForm.description}
                 onChange={(e) =>
@@ -9142,7 +9152,11 @@ const ScoutingHubView = ({
                     });
                     return;
                   }
-                  if (!eventForm.name || !eventForm.event_date || !eventForm.location) {
+                  if (
+                    !eventForm.name ||
+                    !eventForm.event_date ||
+                    !eventForm.location
+                  ) {
                     toast({
                       title: "Missing fields",
                       description: "Name, date, and location are required.",

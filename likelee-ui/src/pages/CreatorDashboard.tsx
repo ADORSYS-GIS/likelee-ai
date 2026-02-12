@@ -2020,12 +2020,19 @@ export default function CreatorDashboard() {
           ? creator.instagram_followers.toLocaleString()
           : "0",
       bio: creator.bio || profile?.bio || "",
-      active_campaigns: Array.isArray(activeCampaigns) ? activeCampaigns.length : 0,
+      active_campaigns: Array.isArray(activeCampaigns)
+        ? activeCampaigns.length
+        : 0,
       completed_projects: 0,
       voice_profiles: Array.isArray(voiceLibrary) ? voiceLibrary.length : 0,
-      open_to_work: Array.isArray(creator.content_types) ? creator.content_types : [],
+      open_to_work: Array.isArray(creator.content_types)
+        ? creator.content_types
+        : [],
       industries: Array.isArray(creator.industries) ? creator.industries : [],
-      base_rate: typeof creator.price_per_month === "number" ? creator.price_per_month : 0,
+      base_rate:
+        typeof creator.price_per_month === "number"
+          ? creator.price_per_month
+          : 0,
       portfolio_link:
         typeof creator.portfolio_url === "string" ? creator.portfolio_url : "",
     };
@@ -2036,199 +2043,201 @@ export default function CreatorDashboard() {
           {/* Banner */}
           <div className="h-48 bg-[#32C8D1]"></div>
           <div className="px-6">
-          {/* Header Section with Avatar */}
-          <div className="relative flex justify-between items-start mb-6">
-            <div className="flex items-end -mt-16 mb-4">
-              <div className="relative">
-                <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
-                  <AvatarImage
-                    src={
-                      profile?.profile_photo_url ||
-                      creator.profile_photo ||
-                      user?.user_metadata?.avatar_url
-                    }
-                  />
-                  <AvatarFallback className="bg-[#32C8D1] text-white text-4xl">
-                    {data.first_name && data.first_name[0] !== "["
-                      ? data.first_name[0].toUpperCase()
-                      : user?.email?.[0].toUpperCase() || "U"}
-                  </AvatarFallback>
-                </Avatar>
-              </div>
-              <div className="ml-6 mb-2">
-                <div className="flex items-center gap-3 mb-1">
-                  <h1 className="text-3xl font-bold text-gray-900">
-                    {data.first_name}
-                  </h1>
-                  <Badge
-                    variant="secondary"
-                    className="bg-green-100 text-green-700 hover:bg-green-200 border-green-200 gap-1"
-                  >
-                    <CheckCircle2 className="h-3 w-3" />
-                    {t("creatorDashboard.publicProfile.verifiedUser")}
-                  </Badge>
+            {/* Header Section with Avatar */}
+            <div className="relative flex justify-between items-start mb-6">
+              <div className="flex items-end -mt-16 mb-4">
+                <div className="relative">
+                  <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
+                    <AvatarImage
+                      src={
+                        profile?.profile_photo_url ||
+                        creator.profile_photo ||
+                        user?.user_metadata?.avatar_url
+                      }
+                    />
+                    <AvatarFallback className="bg-[#32C8D1] text-white text-4xl">
+                      {data.first_name && data.first_name[0] !== "["
+                        ? data.first_name[0].toUpperCase()
+                        : user?.email?.[0].toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
                 </div>
-                <div className="flex items-center gap-4 text-gray-600 text-sm">
-                  <span>{data.location}</span>
-                  <span className="flex items-center gap-1">
+                <div className="ml-6 mb-2">
+                  <div className="flex items-center gap-3 mb-1">
+                    <h1 className="text-3xl font-bold text-gray-900">
+                      {data.first_name}
+                    </h1>
                     <Badge
                       variant="secondary"
-                      className="bg-pink-50 text-pink-700 hover:bg-pink-100 border-pink-200 text-xs"
+                      className="bg-green-100 text-green-700 hover:bg-green-200 border-green-200 gap-1"
                     >
-                      {data.handles || "-"}
+                      <CheckCircle2 className="h-3 w-3" />
+                      {t("creatorDashboard.publicProfile.verifiedUser")}
                     </Badge>
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Users className="h-3 w-3" />
-                    {data.followers}{" "}
-                    {t("creatorDashboard.publicProfile.followers")}
-                  </span>
+                  </div>
+                  <div className="flex items-center gap-4 text-gray-600 text-sm">
+                    <span>{data.location}</span>
+                    <span className="flex items-center gap-1">
+                      <Badge
+                        variant="secondary"
+                        className="bg-pink-50 text-pink-700 hover:bg-pink-100 border-pink-200 text-xs"
+                      >
+                        {data.handles || "-"}
+                      </Badge>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      {data.followers}{" "}
+                      {t("creatorDashboard.publicProfile.followers")}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Bio */}
-          <p className="text-gray-700 mb-8 max-w-3xl">{data.bio || "-"}</p>
+            {/* Bio */}
+            <p className="text-gray-700 mb-8 max-w-3xl">{data.bio || "-"}</p>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-3 gap-4 mb-8">
-            <div className="bg-gray-50 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-gray-900">
-                {data.active_campaigns}
+            {/* Stats Grid */}
+            <div className="grid grid-cols-3 gap-4 mb-8">
+              <div className="bg-gray-50 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-gray-900">
+                  {data.active_campaigns}
+                </div>
+                <div className="text-sm text-gray-500">
+                  {t("creatorDashboard.publicProfile.activeCampaigns")}
+                </div>
               </div>
-              <div className="text-sm text-gray-500">
-                {t("creatorDashboard.publicProfile.activeCampaigns")}
+              <div className="bg-gray-50 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-gray-900">
+                  {data.completed_projects}
+                </div>
+                <div className="text-sm text-gray-500">
+                  {t("creatorDashboard.publicProfile.completedProjects")}
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-gray-900">
+                  {data.voice_profiles}
+                </div>
+                <div className="text-sm text-gray-500">
+                  {t("creatorDashboard.publicProfile.voiceProfiles")}
+                </div>
               </div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-gray-900">
-                {data.completed_projects}
-              </div>
-              <div className="text-sm text-gray-500">
-                {t("creatorDashboard.publicProfile.completedProjects")}
-              </div>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-gray-900">
-                {data.voice_profiles}
-              </div>
-              <div className="text-sm text-gray-500">
-                {t("creatorDashboard.publicProfile.voiceProfiles")}
-              </div>
-            </div>
-          </div>
 
-          {/* Tags */}
-          <div className="space-y-8 mb-8 border-t border-gray-100 pt-6">
-            <div>
+            {/* Tags */}
+            <div className="space-y-8 mb-8 border-t border-gray-100 pt-6">
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 mb-3">
+                  {t("creatorDashboard.publicProfile.openToWork")}
+                </h3>
+                {data.open_to_work.length ? (
+                  <div className="flex flex-wrap gap-2">
+                    {data.open_to_work.map((tag: string) => (
+                      <Badge
+                        key={tag}
+                        variant="default"
+                        className="bg-[#32C8D1] hover:bg-[#2bb0b8] text-white border-0 text-sm px-3 py-1"
+                      >
+                        {t(`common.contentTypes.${tag}`, { defaultValue: tag })}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">
+                    No content types selected yet.
+                  </p>
+                )}
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 mb-3">
+                  {t("creatorDashboard.publicProfile.industries")}
+                </h3>
+                {data.industries.length ? (
+                  <div className="flex flex-wrap gap-2">
+                    {data.industries.map((tag: string) => (
+                      <Badge
+                        key={tag}
+                        variant="secondary"
+                        className="bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200 text-sm px-3 py-1"
+                      >
+                        {t(`common.industries.${tag}`, { defaultValue: tag })}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">
+                    No industries selected yet.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Licensing Rate */}
+            <div className="bg-cyan-50 border border-cyan-100 rounded-lg p-6 mb-8 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-gray-900 mb-1">
+                  {t("creatorDashboard.publicProfile.licensingRate")}
+                </h3>
+                <p className="text-gray-600 text-sm mb-2">
+                  {t("creatorDashboard.publicProfile.baseRateDescription")}
+                </p>
+                <div className="flex items-center gap-2 text-green-700 text-sm">
+                  <CheckCircle2 className="h-4 w-4" />
+                  {t("creatorDashboard.publicProfile.openToNegotiations")}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-bold text-[#32C8D1]">
+                  ${data.base_rate}
+                </div>
+                <div className="text-sm text-gray-500">
+                  {t("creatorDashboard.publicProfile.perWeek")}
+                </div>
+              </div>
+            </div>
+
+            {/* Portfolio */}
+            <div className="border-t border-gray-100 pt-6">
               <h3 className="text-base font-semibold text-gray-900 mb-3">
-                {t("creatorDashboard.publicProfile.openToWork")}
+                {t("creatorDashboard.publicProfile.portfolio")}
               </h3>
-              {data.open_to_work.length ? (
-                <div className="flex flex-wrap gap-2">
-                  {data.open_to_work.map((tag: string) => (
-                    <Badge
-                      key={tag}
-                      variant="default"
-                      className="bg-[#32C8D1] hover:bg-[#2bb0b8] text-white border-0 text-sm px-3 py-1"
-                    >
-                      {t(`common.contentTypes.${tag}`, { defaultValue: tag })}
-                    </Badge>
-                  ))}
-                </div>
+              {data.portfolio_link ? (
+                <a
+                  href={data.portfolio_link}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 text-[#32C8D1] hover:underline"
+                >
+                  <LinkIcon className="h-4 w-4" />
+                  {data.portfolio_link}
+                </a>
               ) : (
                 <p className="text-sm text-gray-500">
-                  No content types selected yet.
+                  Add your portfolio link in Settings → Profile.
                 </p>
               )}
             </div>
-            <div>
-              <h3 className="text-base font-semibold text-gray-900 mb-3">
-                {t("creatorDashboard.publicProfile.industries")}
-              </h3>
-              {data.industries.length ? (
-                <div className="flex flex-wrap gap-2">
-                  {data.industries.map((tag: string) => (
-                    <Badge
-                      key={tag}
-                      variant="secondary"
-                      className="bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200 text-sm px-3 py-1"
-                    >
-                      {t(`common.industries.${tag}`, { defaultValue: tag })}
-                    </Badge>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500">No industries selected yet.</p>
-              )}
-            </div>
-          </div>
 
-          {/* Licensing Rate */}
-          <div className="bg-cyan-50 border border-cyan-100 rounded-lg p-6 mb-8 flex items-center justify-between">
-            <div>
-              <h3 className="font-bold text-gray-900 mb-1">
-                {t("creatorDashboard.publicProfile.licensingRate")}
-              </h3>
-              <p className="text-gray-600 text-sm mb-2">
-                {t("creatorDashboard.publicProfile.baseRateDescription")}
+            {/* Social Links */}
+            <div className="flex gap-3 mt-8">
+              <Button variant="outline" className="gap-2">
+                <Instagram className="h-4 w-4" />
+                Instagram
+              </Button>
+              <Button variant="outline" className="gap-2">
+                <Video className="h-4 w-4" />
+                TikTok
+              </Button>
+            </div>
+
+            <div className="mt-8 -mx-6 border-t border-blue-100 bg-blue-50 px-6 py-4 flex gap-3 items-start">
+              <AlertCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+              <p className="text-blue-900 text-sm">
+                {t("creatorDashboard.publicProfile.previewNote")}
               </p>
-              <div className="flex items-center gap-2 text-green-700 text-sm">
-                <CheckCircle2 className="h-4 w-4" />
-                {t("creatorDashboard.publicProfile.openToNegotiations")}
-              </div>
             </div>
-            <div className="text-right">
-              <div className="text-3xl font-bold text-[#32C8D1]">
-                ${data.base_rate}
-              </div>
-              <div className="text-sm text-gray-500">
-                {t("creatorDashboard.publicProfile.perWeek")}
-              </div>
-            </div>
-          </div>
-
-          {/* Portfolio */}
-          <div className="border-t border-gray-100 pt-6">
-            <h3 className="text-base font-semibold text-gray-900 mb-3">
-              {t("creatorDashboard.publicProfile.portfolio")}
-            </h3>
-            {data.portfolio_link ? (
-              <a
-                href={data.portfolio_link}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 text-[#32C8D1] hover:underline"
-              >
-                <LinkIcon className="h-4 w-4" />
-                {data.portfolio_link}
-              </a>
-            ) : (
-              <p className="text-sm text-gray-500">
-                Add your portfolio link in Settings → Profile.
-              </p>
-            )}
-          </div>
-
-          {/* Social Links */}
-          <div className="flex gap-3 mt-8">
-            <Button variant="outline" className="gap-2">
-              <Instagram className="h-4 w-4" />
-              Instagram
-            </Button>
-            <Button variant="outline" className="gap-2">
-              <Video className="h-4 w-4" />
-              TikTok
-            </Button>
-          </div>
-
-          <div className="mt-8 -mx-6 border-t border-blue-100 bg-blue-50 px-6 py-4 flex gap-3 items-start">
-            <AlertCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
-            <p className="text-blue-900 text-sm">
-              {t("creatorDashboard.publicProfile.previewNote")}
-            </p>
-          </div>
           </div>
         </Card>
 
@@ -2607,7 +2616,8 @@ export default function CreatorDashboard() {
               data: { session },
             } = await supabase.auth.getSession();
             const token = session?.access_token;
-            if (!token) throw new Error("Missing auth session. Please sign in again.");
+            if (!token)
+              throw new Error("Missing auth session. Please sign in again.");
 
             const uploadRes = await fetch(
               api(
@@ -2630,9 +2640,12 @@ export default function CreatorDashboard() {
             const serverId = uploaded?.id;
             if (!serverId) throw new Error("Missing recording id after upload");
 
-            const signed = await base44.get<any>(`/voice/recordings/signed-url`, {
-              params: { recording_id: serverId, expires_sec: 600 },
-            } as any);
+            const signed = await base44.get<any>(
+              `/voice/recordings/signed-url`,
+              {
+                params: { recording_id: serverId, expires_sec: 600 },
+              } as any,
+            );
 
             setVoiceLibrary((prev) =>
               prev.map((r) =>
@@ -2651,7 +2664,9 @@ export default function CreatorDashboard() {
             toast({
               variant: "destructive",
               title: t("creatorDashboard.toasts.voiceErrorTitle"),
-              description: e?.message || "Failed to save recording. It may disappear after refresh.",
+              description:
+                e?.message ||
+                "Failed to save recording. It may disappear after refresh.",
             });
           }
         };
@@ -3051,13 +3066,17 @@ export default function CreatorDashboard() {
         : t("creatorDashboard.toasts.profileSaved");
 
     const rawTiktok =
-      typeof creator.tiktok_handle === "string" ? creator.tiktok_handle.trim() : "";
+      typeof creator.tiktok_handle === "string"
+        ? creator.tiktok_handle.trim()
+        : "";
     const normalizedTiktok =
       rawTiktok.length > 0 && !rawTiktok.startsWith("@")
         ? `@${rawTiktok}`
         : rawTiktok;
     const normalizedPortfolio =
-      typeof creator.portfolio_url === "string" ? creator.portfolio_url.trim() : "";
+      typeof creator.portfolio_url === "string"
+        ? creator.portfolio_url.trim()
+        : "";
 
     // Only send fields that exist in the profiles table
     // Apply overrides if provided (e.g. for immediate toggle updates)
