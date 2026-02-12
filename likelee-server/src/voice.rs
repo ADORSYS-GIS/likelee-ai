@@ -321,10 +321,7 @@ pub async fn signed_url_for_recording(
             return Err((StatusCode::NOT_FOUND, "recording not found".into()));
         }
 
-        return Err((
-            StatusCode::BAD_GATEWAY,
-            format!("sign url failed: {msg}"),
-        ));
+        return Err((StatusCode::BAD_GATEWAY, format!("sign url failed: {msg}")));
     }
     let signed_json: serde_json::Value = sign
         .json()
