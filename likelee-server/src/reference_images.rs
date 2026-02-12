@@ -34,7 +34,13 @@ pub async fn list_reference_images(
         (StatusCode::BAD_GATEWAY, m)
     })?;
 
+    let status = resp.status();
     let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+
+    if !status.is_success() {
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
     let json: serde_json::Value = serde_json::from_str(&text).unwrap_or(serde_json::json!([]));
     Ok(Json(json))
 }

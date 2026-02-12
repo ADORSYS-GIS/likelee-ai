@@ -93,7 +93,7 @@ out
 # Nuxt.js build output
 .nuxt
 dist
-
+likelee-server/.env.prod
 # Docusaurus build output
 .docusaurus
 

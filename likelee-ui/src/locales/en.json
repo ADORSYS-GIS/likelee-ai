@@ -1722,6 +1722,47 @@
       "myRules": "My Rules",
       "profileSettings": "Profile Settings"
     },
+    "publicProfile": {
+      "title": "Public Profile Preview",
+      "subtitle": "This is how brands see your profile",
+      "viewCard": "View Card",
+      "hideCard": "Hide Card",
+      "editProfile": "Edit Profile",
+      "verifiedUser": "Verified User",
+      "kycVerified": "KYC Verified",
+      "hireCreator": "Hire Creator",
+      "followers": "Followers",
+      "activeCampaigns": "Active Campaigns",
+      "completedProjects": "Completed Projects",
+      "voiceProfiles": "Voice Profiles",
+      "openToWork": "Open to Work",
+      "industries": "Industries",
+      "licensingRate": "Licensing Rate",
+      "baseRateDescription": "Base rate for image usage",
+      "openToNegotiations": "Open to Negotiations",
+      "perWeek": "per week",
+      "portfolio": "Portfolio",
+      "previewNote": "This is a preview of your public profile.",
+      "verifiedCreator": "Verified Creator",
+      "engagement": "Engagement",
+      "turnaround": "Turnaround",
+      "from": "from",
+      "preview": "Preview",
+      "profile": "Profile",
+      "exampleBio": "UGC creator & influencer specializing in beauty, lifestyle, and product reviews. Passionate about authentic storytelling.",
+      "namePlaceholder": "[Insert user first and last name]",
+      "locationPlaceholder": "Scottsdale, Arizona",
+      "handlesPlaceholder": "@lilycreates",
+      "portfolioItems": {
+        "targetRetail": "Target Retail",
+        "holidayCampaign": "Holiday Campaign",
+        "spotifyPremium": "Spotify Premium",
+        "audioCampaign": "Audio Campaign",
+        "lululemon": "Lululemon",
+        "fitnessSeries": "Fitness Series",
+        "months": "{{count}} months"
+      }
+    },
     "profileSettings": "Profile Settings",
     "myRules": "My Rules",
     "completeness": {
@@ -2278,16 +2319,6 @@
         "tvCommercial": "TV Commercial"
       }
     },
-    "publicProfile": {
-      "title": "Public Profile Preview",
-      "subtitle": "This is how brands see your profile",
-      "viewCard": "View Card",
-      "hideCard": "Hide Card",
-      "editProfile": "Edit Profile",
-      "verifiedUser": "Verified User",
-      "kycVerified": "KYC Verified",
-      "hireCreator": "Hire Creator"
-    },
     "voiceScripts": {
       "happy": "I'm absolutely thrilled to be here today! Life is full of wonderful surprises and exciting opportunities. Every morning brings a fresh start and new possibilities. I love connecting with people and sharing positive energy. The world is an amazing place when you look at it with optimism. Let's celebrate the little victories and cherish every moment of joy. Happiness is contagious, so let's spread it around!",
       "emotional": "There are moments in life that touch our hearts deeply. Sometimes we feel overwhelmed by the beauty of human connection. These experiences shape who we are and remind us of what truly matters. I've learned that vulnerability is not weakness, but courage. Every person we meet carries their own story, their own struggles and triumphs. Let's honor those moments and hold space for authentic emotion.",
@@ -2377,21 +2408,76 @@
       "dashboard": "Dashboard",
       "content": "Content",
       "likeness": "My Likeness",
-      "voice": "Voice & Recordings",
+      "voice": "Voice",
       "campaigns": "Active Campaigns",
       "approvals": "Approval Queue",
       "archive": "Campaign Archives",
       "contracts": "Licenses & Contracts",
       "earnings": "Earnings",
-      "settings": "Settings",
-      "profile": {
-        "edit": "Edit Profile",
-        "viewPublic": "View Public Profile",
-        "help": "Help / Support",
-        "logout": "Logout"
-      }
+      "payouts": "Payouts",
+      "settings": "Settings"
+    }
+  },
+  "dashboard": {
+    "totalMonthlyRevenue": "Total Monthly Revenue",
+    "revenueInfo": "Current recurring monthly income",
+    "activeCampaigns": "Active Campaigns",
+    "activeCampaignsInfo": "Generating revenue right now",
+    "pendingApprovals": "Pending Approvals",
+    "pendingApprovalsInfo": "Campaigns waiting for your review",
+    "annualRunRate": "Annual Run Rate",
+    "annualRunRateInfo": "Projected yearly earnings",
+    "quickActions": "Quick Actions",
+    "priority": "PRIORITY",
+    "completeProfile": "Complete Your Profile",
+    "completeProfileInfo": "You're missing X sections. Complete them to get verified.",
+    "uploadVoiceTone": "Upload Voice Tone",
+    "uploadVoiceToneInfo": "Add voice samples to enable audio campaigns",
+    "recentActivity": "Recent Activity",
+    "previewExamples": {
+      "title": "Preview Examples:",
+      "message": "These are example campaigns to show you what your dashboard will look like."
     },
-    "likeness": {
+    "active": "ACTIVE",
+    "noCampaigns": "No Active Campaigns",
+    "noCampaignsInfo": "Complete your profile to start getting offers!",
+    "profileStatus": "Profile Status",
+    "completeToGetDiscovered": "Complete to get discovered",
+    "referenceImages": "Reference Images",
+    "voiceRecordings": "Voice Recordings",
+    "missing": "MISSING"
+  },
+  "content": {
+    "title": "Content",
+    "subtitle": "Track content created with your likeness",
+    "welcome": {
+      "title": "Welcome to your Content page!",
+      "message": "This is an example of what brand content and detections will look like. You don't have any content yet — but when brands create content with your likeness, it will appear here!"
+    },
+    "tabs": {
+      "brandContent": "Brand Content",
+      "detections": "Detections"
+    },
+    "brandContent": {
+      "info": "This feed shows all authorized content that brands have published using your likeness.",
+      "views": "Views",
+      "engagement": "Engagement",
+      "published": "Published {{date}}",
+      "noContent": "No brand content found."
+    },
+    "detections": {
+      "info": "Likeness Protection Active. We continuously scan the web for unauthorized use of your likeness. Review detected content below.",
+      "needsReview": "Needs Review",
+      "takedownRequested": "Takedown Requested",
+      "resolved": "Resolved",
+      "detected": "Detected",
+      "matchConfidence": "Match Confidence",
+      "viewOriginal": "View Original Content",
+      "requestTakedown": "Request Takedown",
+      "dismiss": "Dismiss (It's Authorized)",
+      "takedownSent": "Takedown request sent. Platforms typically respond within 24-72 hours.",
+      "contentRemoved": "Content has been removed or verified as authorized.",
+      "noDetections": "No detections found.",
       "howItWorks": {
         "title": "How This Works:",
         "text": "Upload photos in 15 different categories. Brands use these to generate images of you that look consistent and photorealistic. More variety = better quality content = higher rates."

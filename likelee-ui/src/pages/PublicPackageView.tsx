@@ -45,6 +45,7 @@ export function PublicPackageView() {
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const selectedTalent = selectedItem ? selectedItem.talent : null;
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [initialFavorites, setInitialFavorites] = useState<Set<string>>(
     new Set(),
   );
@@ -76,34 +77,79 @@ export function PublicPackageView() {
   const [password, setPassword] = useState("");
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
-  const {
-    data: packageData,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
+  const [fullAssetsRequestOpen, setFullAssetsRequestOpen] = useState(false);
+  const [requestClientName, setRequestClientName] = useState("");
+  const [requestEmail, setRequestEmail] = useState("");
+  const [requestMessage, setRequestMessage] = useState("");
+
+  const { data: packageData, isLoading, error, refetch } = useQuery<any>({
     queryKey: ["public-package", token],
     queryFn: () => packageApi.getPublicPackage(token!, password),
     enabled: !!token,
     retry: false, // We will handle retries manually for password prompt
-    onError: (err: any) => {
-      const message = err?.message || "";
-      if (message.includes(" 401 ")) {
-        setShowPasswordPrompt(true);
-        if (password) {
-          setPasswordError("Invalid password. Please try again.");
-        }
-      }
-    },
-    onSuccess: () => {
-      setShowPasswordPrompt(false);
-      setPasswordError(null);
-    },
   });
 
   const interactionMutation = useMutation({
     mutationFn: (data: any) => packageApi.createInteraction(token!, data),
   });
+
+  useEffect(() => {
+    const message = (error as any)?.message || "";
+    if (message.includes(" 401 ")) {
+      setShowPasswordPrompt(true);
+      if (password) {
+        setPasswordError("Invalid password. Please try again.");
+      }
+    } else {
+      setPasswordError(null);
+    }
+  }, [error, password]);
+
+  const fullAssetsRequestMutation = useMutation({
+    mutationFn: (data: {
+      client_name?: string;
+      client_email?: string;
+      message?: string;
+    }) => packageApi.createPublicPackageFullAssetsRequest(token!, data),
+    onSuccess: () => {
+      setFullAssetsRequestOpen(false);
+      setRequestClientName("");
+      setRequestEmail("");
+      setRequestMessage("");
+      toast({
+        title: "Request sent",
+        description: "Your request has been sent to the agency.",
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Request failed",
+        description: String(err?.message || "Please try again."),
+        variant: "destructive",
+      });
+    },
+  });
+
+  const submitFullAssetsRequest = () => {
+    if (!token) {
+      toast({
+        title: "Request failed",
+        description: "Missing package token.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (fullAssetsRequestMutation.isPending) return;
+
+    const name = requestClientName.trim();
+    const email = requestEmail.trim();
+    const message = requestMessage.trim();
+    fullAssetsRequestMutation.mutate({
+      client_name: name ? name : undefined,
+      client_email: email ? email : undefined,
+      message: message ? message : undefined,
+    });
+  };
 
   const rawPackageData = packageData as any;
 
@@ -530,6 +576,34 @@ export function PublicPackageView() {
         </div>
       </header>
 
+      <div className="max-w-7xl mx-auto px-6 -mt-10 mb-10">
+        <Card className="border-2 border-gray-200 rounded-3xl p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div
+              className="w-12 h-12 rounded-2xl flex items-center justify-center"
+              style={{ backgroundColor: `${primaryColor}15` }}
+            >
+              <Lock className="w-6 h-6" style={{ color: primaryColor }} />
+            </div>
+            <div>
+              <div className="font-black text-gray-900 text-lg">
+                Need full assets?
+              </div>
+              <div className="text-gray-500 text-sm">
+                Send a request to the agency for the full asset package.
+              </div>
+            </div>
+          </div>
+          <Button
+            className="rounded-2xl font-black uppercase tracking-widest text-[10px]"
+            style={{ backgroundColor: primaryColor }}
+            onClick={() => setFullAssetsRequestOpen(true)}
+          >
+            Request Full Assets
+          </Button>
+        </Card>
+      </div>
+
       {/* Talent Grid */}
       <main className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
         {(pkg.items || pkg.package_items || pkg.talents || [])?.map(
@@ -900,6 +974,77 @@ export function PublicPackageView() {
           </div>
         )}
       </AnimatePresence>
+
+      <Dialog open={fullAssetsRequestOpen} onOpenChange={setFullAssetsRequestOpen}>
+        <DialogContent className="sm:max-w-[460px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="w-5 h-5" /> Request Full Assets
+            </DialogTitle>
+            <DialogDescription>
+              Send a request to the agency for full assets.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="request-client-name">Name (optional)</Label>
+              <Input
+                id="request-client-name"
+                placeholder="Your name"
+                value={requestClientName}
+                onChange={(e) => setRequestClientName(e.target.value)}
+                disabled={fullAssetsRequestMutation.isPending}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="request-email">Email (optional)</Label>
+              <Input
+                id="request-email"
+                type="email"
+                placeholder="client@company.com"
+                value={requestEmail}
+                onChange={(e) => setRequestEmail(e.target.value)}
+                disabled={fullAssetsRequestMutation.isPending}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="request-message">Message (optional)</Label>
+              <Textarea
+                id="request-message"
+                placeholder="Tell the agency what you need..."
+                value={requestMessage}
+                onChange={(e) => setRequestMessage(e.target.value)}
+                disabled={fullAssetsRequestMutation.isPending}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setFullAssetsRequestOpen(false)}
+              disabled={fullAssetsRequestMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={submitFullAssetsRequest}
+              disabled={fullAssetsRequestMutation.isPending}
+            >
+              {fullAssetsRequestMutation.isPending ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Sending...
+                </span>
+              ) : (
+                "Send Request"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <style
         dangerouslySetInnerHTML={{

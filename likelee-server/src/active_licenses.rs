@@ -1,4 +1,4 @@
-use crate::{auth::AuthUser, config::AppState};
+use crate::{auth::AuthUser, config::AppState, errors::sanitize_db_error};
 use axum::{
     extract::{Query, State},
     http::StatusCode,
@@ -81,6 +81,13 @@ struct LicensingRequestRow {
     campaigns: Option<Vec<CampaignEmbed>>, // Reverse relation might be array
 }
 
+#[derive(Deserialize)]
+struct StatRow {
+    license_end_date: Option<String>,
+    deadline: Option<String>,
+    campaigns: Option<Vec<CampaignEmbed>>,
+}
+
 pub async fn list(
     State(state): State<AppState>,
     user: AuthUser,
@@ -137,16 +144,15 @@ pub async fn list(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    if !resp.status().is_success() {
-        let err = resp.text().await.unwrap_or_default();
-        tracing::error!(agency_id = %user.id, error = %err, "active_licenses database error");
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
-    }
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let text = resp.text().await.map_err(|e| {
-        tracing::error!(agency_id = %user.id, error = %e, "active_licenses text fetch error");
-        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
-    })?;
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
 
     let rows: Vec<LicensingRequestRow> = serde_json::from_str(&text)
         .map_err(|e| {
@@ -266,20 +272,14 @@ pub async fn stats(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    if !resp.status().is_success() {
-        return Err((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "Failed to fetch stats".into(),
-        ));
-    }
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let text = resp.text().await.unwrap_or_default();
-
-    #[derive(Deserialize)]
-    struct StatRow {
-        license_end_date: Option<String>,
-        deadline: Option<String>,
-        campaigns: Option<Vec<CampaignEmbed>>,
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
     }
 
     let rows: Vec<StatRow> = serde_json::from_str(&text).unwrap_or_default();

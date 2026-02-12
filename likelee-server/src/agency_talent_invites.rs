@@ -1,4 +1,4 @@
-use crate::{auth::AuthUser, auth::RoleGuard, config::AppState};
+use crate::{auth::AuthUser, auth::RoleGuard, config::AppState, errors::sanitize_db_error};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -80,15 +80,15 @@ pub async fn list_for_agency(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    if !resp.status().is_success() {
-        let err = resp.text().await.unwrap_or_default();
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
-    }
-
+    let status = resp.status();
     let text = resp
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
 
     let invites: Vec<AgencyTalentInvite> = serde_json::from_str(&text).unwrap_or_else(|_| vec![]);
 
@@ -122,15 +122,15 @@ pub async fn list_for_talent(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    if !resp.status().is_success() {
-        let err = resp.text().await.unwrap_or_default();
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
-    }
-
+    let status = resp.status();
     let text = resp
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
 
     let invites: Vec<AgencyTalentInvite> = serde_json::from_str(&text).unwrap_or_default();
 
@@ -189,8 +189,9 @@ pub async fn create_for_agency(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     if !resp.status().is_success() {
-        let err = resp.text().await.unwrap_or_default();
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+        let status = resp.status();
+        let text = resp.text().await.unwrap_or_default();
+        return Err(sanitize_db_error(status.as_u16(), text));
     }
 
     // Fetch agency name/logo for email
@@ -308,15 +309,16 @@ pub async fn get_by_token(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    if !resp.status().is_success() {
-        let err = resp.text().await.unwrap_or_default();
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
-    }
-
+    let status = resp.status();
     let text = resp
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
+
     let mut rows: Vec<AgencyTalentInvite> = serde_json::from_str(&text).unwrap_or_default();
     let mut inv = rows
         .pop()
@@ -361,15 +363,16 @@ pub async fn get_magic_link_by_token(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    if !resp.status().is_success() {
-        let err = resp.text().await.unwrap_or_default();
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
-    }
-
+    let status = resp.status();
     let text = resp
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
+
     let mut rows: Vec<AgencyTalentInvite> = serde_json::from_str(&text).unwrap_or_default();
     let inv = rows
         .pop()

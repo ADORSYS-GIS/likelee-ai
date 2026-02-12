@@ -1611,8 +1611,8 @@ export default function CreatorDashboard() {
     },
     {
       id: "earnings",
-      label: t("creatorDashboard.nav.earnings"),
-      icon: DollarSign,
+      label: t("creatorDashboard.nav.payouts"),
+      icon: WalletIcon,
     },
     {
       id: "settings",
@@ -2051,20 +2051,69 @@ export default function CreatorDashboard() {
         profile?.full_name ||
         user?.user_metadata?.full_name ||
         user?.email?.split("@")[0] ||
-        exampleProfilePreviewData.first_name,
+        t("creatorDashboard.publicProfile.namePlaceholder"),
       location:
-        user?.user_metadata?.location || exampleProfilePreviewData.location,
-      // Add other real fields mapping here
+        user?.user_metadata?.location ||
+        t("creatorDashboard.publicProfile.locationPlaceholder"),
+      handles: t("creatorDashboard.publicProfile.handlesPlaceholder"),
+      bio: t("creatorDashboard.publicProfile.exampleBio"),
+      portfolio: exampleProfilePreviewData.portfolio.map((item, idx) => {
+        const itemKeys = [
+          { brand: "targetRetail", campaign: "holidayCampaign" },
+          { brand: "spotifyPremium", campaign: "audioCampaign" },
+          { brand: "lululemon", campaign: "fitnessSeries" },
+        ];
+        return {
+          ...item,
+          brand: t(
+            `creatorDashboard.publicProfile.portfolioItems.${itemKeys[idx].brand}`,
+          ),
+          campaign: t(
+            `creatorDashboard.publicProfile.portfolioItems.${itemKeys[idx].campaign}`,
+          ),
+          duration: t("creatorDashboard.publicProfile.portfolioItems.months", {
+            count: parseInt(item.duration),
+          }),
+        };
+      }),
     };
 
     return (
-      <div>
-        <Card className="overflow-hidden border-gray-200 bg-white">
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900">
+              {t("creatorDashboard.publicProfile.title")}
+            </h2>
+            <p className="text-gray-600 mt-1">
+              {t("creatorDashboard.publicProfile.subtitle")}
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <Button
+              onClick={() => setShowCardModal(true)}
+              variant="outline"
+              className="border-2 border-gray-300"
+            >
+              <CreditCard className="w-4 h-4 mr-2" />
+              {t("creatorDashboard.publicProfile.viewCard")}
+            </Button>
+            <Button
+              onClick={() => setActiveSection("settings")}
+              className="bg-[#32C8D1] hover:bg-[#2bb0b8] text-white"
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              {t("creatorDashboard.publicProfile.editProfile")}
+            </Button>
+          </div>
+        </div>
+
+        <Card className="overflow-hidden border-gray-200 bg-white shadow-sm w-full max-w-10xl">
           {/* Banner */}
           <div className="h-48 bg-[#32C8D1]"></div>
           {/* Header Section with Avatar */}
           <div className="relative flex justify-between items-start mb-6">
-            <div className="flex items-end -mt-16 mb-4">
+            <div className="flex items-end -mt-16 mb-4 px-6">
               <div className="relative">
                 <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
                   <AvatarImage
@@ -2114,141 +2163,148 @@ export default function CreatorDashboard() {
             </div>
           </div>
 
-          {/* Bio */}
-          <p className="text-gray-700 mb-8 max-w-3xl">{data.bio}</p>
+          <div className="px-6 pb-6">
+            {/* Bio */}
+            <p className="text-gray-700 mb-8 max-w-3xl">{data.bio}</p>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-3 gap-4 mb-8">
-            <div className="bg-gray-50 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-gray-900">
-                {data.active_campaigns}
-              </div>
-              <div className="text-sm text-gray-500">
-                {t("creatorDashboard.publicProfile.activeCampaigns")}
-              </div>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-gray-900">
-                {data.completed_projects}
-              </div>
-              <div className="text-sm text-gray-500">
-                {t("creatorDashboard.publicProfile.completedProjects")}
-              </div>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-gray-900">
-                {data.voice_profiles}
-              </div>
-              <div className="text-sm text-gray-500">
-                {t("creatorDashboard.publicProfile.voiceProfiles")}
-              </div>
-            </div>
-          </div>
-
-          {/* Tags */}
-          <div className="space-y-6 mb-8">
-            <div>
-              <h3 className="text-sm font-bold text-gray-900 mb-3">
-                {t("creatorDashboard.publicProfile.openToWork")}
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {data.open_to_work.map((tag: string) => (
-                  <Badge
-                    key={tag}
-                    variant="default"
-                    className="bg-[#32C8D1] hover:bg-[#2bb0b8] text-white border-0"
-                  >
-                    {t(`common.contentTypes.${tag}`, { defaultValue: tag })}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-gray-900 mb-3">
-                {t("creatorDashboard.publicProfile.industries")}
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {data.industries.map((tag: string) => (
-                  <Badge
-                    key={tag}
-                    variant="secondary"
-                    className="bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200"
-                  >
-                    {t(`common.industries.${tag}`, { defaultValue: tag })}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Licensing Rate */}
-          <div className="bg-cyan-50 border border-cyan-100 rounded-lg p-6 mb-8 flex items-center justify-between">
-            <div>
-              <h3 className="font-bold text-gray-900 mb-1">
-                {t("creatorDashboard.publicProfile.licensingRate")}
-              </h3>
-              <p className="text-gray-600 text-sm mb-2">
-                {t("creatorDashboard.publicProfile.baseRateDescription")}
-              </p>
-              <div className="flex items-center gap-2 text-green-700 text-sm">
-                <CheckCircle2 className="h-4 w-4" />
-                {t("creatorDashboard.publicProfile.openToNegotiations")}
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-3xl font-bold text-[#32C8D1]">
-                ${data.base_rate}
-              </div>
-              <div className="text-sm text-gray-500">
-                {t("creatorDashboard.publicProfile.perWeek")}
-              </div>
-            </div>
-          </div>
-
-          {/* Portfolio */}
-          <div>
-            <h3 className="font-bold text-gray-900 mb-4">
-              {t("creatorDashboard.publicProfile.portfolio")}
-            </h3>
-            <div className="grid md:grid-cols-3 gap-4">
-              {data.portfolio.map((item: any) => (
-                <div
-                  key={item.id}
-                  className="border border-gray-200 rounded-lg p-4 flex items-center gap-4"
-                >
-                  <img
-                    src={item.logo}
-                    alt={item.brand}
-                    className="w-10 h-10 object-contain"
-                  />
-                  <div>
-                    <div className="font-bold text-gray-900 text-sm">
-                      {item.brand}
-                    </div>
-                    <div className="text-xs text-gray-500">{item.campaign}</div>
-                    <Badge variant="secondary" className="mt-1 text-[10px] h-5">
-                      {item.duration}
-                    </Badge>
-                  </div>
+            {/* Stats Grid */}
+            <div className="grid grid-cols-3 gap-4 mb-8">
+              <div className="bg-gray-50 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-gray-900">
+                  {data.active_campaigns}
                 </div>
-              ))}
+                <div className="text-sm text-gray-500">
+                  {t("creatorDashboard.publicProfile.activeCampaigns")}
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-gray-900">
+                  {data.completed_projects}
+                </div>
+                <div className="text-sm text-gray-500">
+                  {t("creatorDashboard.publicProfile.completedProjects")}
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-gray-900">
+                  {data.voice_profiles}
+                </div>
+                <div className="text-sm text-gray-500">
+                  {t("creatorDashboard.publicProfile.voiceProfiles")}
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* Social Links */}
-          <div className="flex gap-3 mt-8">
-            <Button variant="outline" className="gap-2">
-              <Instagram className="h-4 w-4" />
-              Instagram
-            </Button>
-            <Button variant="outline" className="gap-2">
-              <Video className="h-4 w-4" />
-              TikTok
-            </Button>
+            {/* Tags */}
+            <div className="space-y-6 mb-8">
+              <div>
+                <h3 className="text-sm font-bold text-gray-900 mb-3">
+                  {t("creatorDashboard.publicProfile.openToWork")}
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {data.open_to_work.map((tag: string) => (
+                    <Badge
+                      key={tag}
+                      variant="default"
+                      className="bg-[#32C8D1] hover:bg-[#2bb0b8] text-white border-0"
+                    >
+                      {t(`common.contentTypes.${tag}`, { defaultValue: tag })}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-gray-900 mb-3">
+                  {t("creatorDashboard.publicProfile.industries")}
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {data.industries.map((tag: string) => (
+                    <Badge
+                      key={tag}
+                      variant="secondary"
+                      className="bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200"
+                    >
+                      {t(`common.industries.${tag}`, { defaultValue: tag })}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Licensing Rate */}
+            <div className="bg-cyan-50 border border-cyan-100 rounded-lg p-6 mb-8 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-gray-900 mb-1">
+                  {t("creatorDashboard.publicProfile.licensingRate")}
+                </h3>
+                <p className="text-gray-600 text-sm mb-2">
+                  {t("creatorDashboard.publicProfile.baseRateDescription")}
+                </p>
+                <div className="flex items-center gap-2 text-green-700 text-sm">
+                  <CheckCircle2 className="h-4 w-4" />
+                  {t("creatorDashboard.publicProfile.openToNegotiations")}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-bold text-[#32C8D1]">
+                  ${data.base_rate}
+                </div>
+                <div className="text-sm text-gray-500">
+                  {t("creatorDashboard.publicProfile.perWeek")}
+                </div>
+              </div>
+            </div>
+
+            {/* Portfolio */}
+            <div>
+              <h3 className="font-bold text-gray-900 mb-4">
+                {t("creatorDashboard.publicProfile.portfolio")}
+              </h3>
+              <div className="grid md:grid-cols-3 gap-4">
+                {data.portfolio.map((item: any) => (
+                  <div
+                    key={item.id}
+                    className="border border-gray-200 rounded-lg p-4 flex items-center gap-4"
+                  >
+                    <img
+                      src={item.logo}
+                      alt={item.brand}
+                      className="w-10 h-10 object-contain"
+                    />
+                    <div>
+                      <div className="font-bold text-gray-900 text-sm">
+                        {item.brand}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {item.campaign}
+                      </div>
+                      <Badge
+                        variant="secondary"
+                        className="mt-1 text-[10px] h-5"
+                      >
+                        {item.duration}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Social Links */}
+            <div className="flex gap-3 mt-8">
+              <Button variant="outline" className="gap-2">
+                <Instagram className="h-4 w-4" />
+                Instagram
+              </Button>
+              <Button variant="outline" className="gap-2">
+                <Video className="h-4 w-4" />
+                TikTok
+              </Button>
+            </div>
           </div>
         </Card>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3 items-start">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3 items-start max-w-10xl">
           <AlertCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
           <p className="text-blue-900 text-sm">
             {t("creatorDashboard.publicProfile.previewNote")}
@@ -2262,7 +2318,7 @@ export default function CreatorDashboard() {
             onClick={() => setShowCardModal(false)}
           >
             <div
-              className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+              className="bg-white rounded-xl shadow-2xl w-full max-w-[90vw] sm:max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Card Header */}
@@ -2292,12 +2348,6 @@ export default function CreatorDashboard() {
                     className="bg-green-100 text-green-700 border-green-200 text-[10px]"
                   >
                     {t("creatorDashboard.publicProfile.verifiedCreator")}
-                  </Badge>
-                  <Badge
-                    variant="secondary"
-                    className="bg-green-100 text-green-700 border-green-200 text-[10px]"
-                  >
-                    Verified Creator
                   </Badge>
                 </div>
 

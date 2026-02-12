@@ -34,7 +34,7 @@ async fn enforce_voice_clone_limit_for_agency(
     let text = resp.text().await.unwrap_or_else(|_| "[]".into());
     if !status.is_success() {
         let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
-        return Err(crate::errors::sanitize_db_error(code, text));
+        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
     }
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
     if rows.len() >= limit {

@@ -99,8 +99,41 @@ async fn main() {
         stripe_webhook_secret: cfg.stripe_webhook_secret.clone(),
         stripe_agency_price_id: cfg.stripe_agency_price_id.clone(),
         stripe_scale_price_id: cfg.stripe_scale_price_id.clone(),
+        stripe_licensing_basic_price_id: cfg.stripe_licensing_basic_price_id.clone(),
+        stripe_licensing_pro_price_id: cfg.stripe_licensing_pro_price_id.clone(),
+        stripe_licensing_enterprise_price_id: cfg.stripe_licensing_enterprise_price_id.clone(),
+        stripe_agency_basic_base_price_id: cfg.stripe_agency_basic_base_price_id.clone(),
+        stripe_agency_pro_base_price_id: cfg.stripe_agency_pro_base_price_id.clone(),
+        stripe_agency_basic_package_price_id: cfg.stripe_agency_basic_package_price_id.clone(),
+        stripe_agency_pro_package_price_id: cfg.stripe_agency_pro_package_price_id.clone(),
+        stripe_agency_roster_5_10_price_id: cfg.stripe_agency_roster_5_10_price_id.clone(),
+        stripe_agency_roster_11_50_price_id: cfg.stripe_agency_roster_11_50_price_id.clone(),
+        stripe_agency_roster_51_100_price_id: cfg.stripe_agency_roster_51_100_price_id.clone(),
+        stripe_agency_roster_100_plus_price_id: cfg.stripe_agency_roster_100_plus_price_id.clone(),
+        stripe_agency_addon_irl_booking_price_id: cfg
+            .stripe_agency_addon_irl_booking_price_id
+            .clone(),
+        stripe_agency_addon_deepfake_5_10_price_id: cfg
+            .stripe_agency_addon_deepfake_5_10_price_id
+            .clone(),
+        stripe_agency_addon_deepfake_11_50_price_id: cfg
+            .stripe_agency_addon_deepfake_11_50_price_id
+            .clone(),
+        stripe_agency_addon_deepfake_51_100_price_id: cfg
+            .stripe_agency_addon_deepfake_51_100_price_id
+            .clone(),
+        stripe_agency_addon_deepfake_100_plus_price_id: cfg
+            .stripe_agency_addon_deepfake_100_plus_price_id
+            .clone(),
+        stripe_agency_addon_team_1_5_price_id: cfg.stripe_agency_addon_team_1_5_price_id.clone(),
+        stripe_agency_addon_team_6_10_price_id: cfg.stripe_agency_addon_team_6_10_price_id.clone(),
+        stripe_agency_addon_team_11_30_price_id: cfg
+            .stripe_agency_addon_team_11_30_price_id
+            .clone(),
         stripe_checkout_success_url: cfg.stripe_checkout_success_url.clone(),
         stripe_checkout_cancel_url: cfg.stripe_checkout_cancel_url.clone(),
+        stripe_licensing_success_url: cfg.stripe_licensing_success_url.clone(),
+        stripe_licensing_cancel_url: cfg.stripe_licensing_cancel_url.clone(),
         payouts_enabled: cfg.payouts_enabled,
         payout_auto_approve_threshold_cents: cfg.payout_auto_approve_threshold_cents,
         min_payout_amount_cents: cfg.min_payout_amount_cents,

@@ -1,4 +1,4 @@
-use crate::{auth::AuthUser, config::AppState};
+use crate::{auth::AuthUser, config::AppState, errors::sanitize_db_error};
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -16,44 +16,36 @@ pub struct CustomRate {
 }
 
 pub async fn get_creator_rates(State(ctx): State<AppState>, user: AuthUser) -> impl IntoResponse {
-    let response = ctx
+    let response = match ctx
         .pg
         .from("creator_custom_rates")
         .select("rate_type, rate_name, price_per_month_cents")
         .eq("creator_id", &user.id)
         .execute()
-        .await;
+        .await
+    {
+        Ok(res) => res,
+        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
+    };
 
-    match response {
-        Ok(res) => {
-            if res.status().is_success() {
-                let body_text = match res.text().await {
-                    Ok(text) => text,
-                    Err(_) => {
-                        return (
-                            StatusCode::INTERNAL_SERVER_ERROR,
-                            "Failed to read response body",
-                        )
-                            .into_response()
-                    }
-                };
-                match serde_json::from_str::<Vec<CustomRate>>(&body_text) {
-                    Ok(rates) => (StatusCode::OK, Json(rates)).into_response(),
-                    Err(_) => (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        "Failed to parse rates from response",
-                    )
-                        .into_response(),
-                }
-            } else {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "Failed to fetch rates from db",
-                )
-                    .into_response()
-            }
-        }
-        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Database request failed").into_response(),
+    let status = response.status();
+    let text = match response.text().await {
+        Ok(t) => t,
+        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
+    };
+
+    if !status.is_success() {
+        let (code, sanitized) = sanitize_db_error(status.as_u16(), text);
+        return (code, sanitized).into_response();
+    }
+
+    match serde_json::from_str::<Vec<CustomRate>>(&text) {
+        Ok(rates) => (StatusCode::OK, Json(rates)).into_response(),
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to parse rates from response",
+        )
+            .into_response(),
     }
 }
 
@@ -76,19 +68,15 @@ pub async fn upsert_creator_rates(
 
     match response {
         Ok(res) => {
-            if res.status().is_success() {
+            let status = res.status();
+            let text = res.text().await.unwrap_or_default();
+            if status.is_success() {
                 (StatusCode::OK, "Rates updated successfully").into_response()
             } else {
-                (
-                    StatusCode::BAD_REQUEST,
-                    format!(
-                        "Failed to upsert rates: {}",
-                        res.text().await.unwrap_or_default()
-                    ),
-                )
-                    .into_response()
+                let (code, sanitized) = sanitize_db_error(status.as_u16(), text);
+                (code, sanitized).into_response()
             }
         }
-        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, "RPC request failed").into_response(),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response(),
     }
 }

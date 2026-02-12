@@ -152,6 +152,9 @@ import {
   createExpense,
   getAgencyPayoutsAccountStatus,
   getAgencyStripeOnboardingLink,
+  getAgencyPayoutBalance,
+  requestAgencyPayout,
+  getAgencyPayoutHistory,
   notifyBookingCreatedEmail,
   createInvoice,
   markInvoiceSent,
@@ -218,23 +221,41 @@ const ConnectBankView = () => {
     transfers_enabled: boolean;
     last_error: string;
     bank_last4?: string;
+    available_balance?: { amount_cents: number; currency: string };
   } | null>(null);
+  const [payoutHistory, setPayoutHistory] = useState<any[]>([]);
+  const [showPayoutDialog, setShowPayoutDialog] = useState(false);
+  const [payoutAmount, setPayoutAmount] = useState("");
+  const [payoutMethod, setPayoutMethod] = useState<"standard" | "instant">("standard");
+  const [requestingPayout, setRequestingPayout] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
       setLoading(true);
       try {
-        const resp = await getAgencyPayoutsAccountStatus();
-        const data = (resp as any)?.data ?? resp;
+        const [statusResp, balanceResp, historyResp] = await Promise.all([
+          getAgencyPayoutsAccountStatus(),
+          getAgencyPayoutBalance(),
+          getAgencyPayoutHistory(),
+        ]);
+        
+        const statusData = (statusResp as any)?.data ?? statusResp;
+        const balanceData = (balanceResp as any)?.data ?? balanceResp;
+        const historyData = (historyResp as any)?.data ?? historyResp;
+        
         if (!mounted) return;
+        
         setStatus({
-          connected: Boolean((data as any)?.connected),
-          payouts_enabled: Boolean((data as any)?.payouts_enabled),
-          transfers_enabled: Boolean((data as any)?.transfers_enabled),
-          last_error: String((data as any)?.last_error || ""),
-          bank_last4: String((data as any)?.bank_last4 || "") || undefined,
+          connected: Boolean((statusData as any)?.connected),
+          payouts_enabled: Boolean((statusData as any)?.payouts_enabled),
+          transfers_enabled: Boolean((statusData as any)?.transfers_enabled),
+          last_error: String((statusData as any)?.last_error || ""),
+          bank_last4: String((statusData as any)?.bank_last4 || "") || undefined,
+          available_balance: (balanceData as any)?.available_balance,
         });
+        
+        setPayoutHistory((historyData as any)?.items || []);
       } catch (e: any) {
         toast({
           title: "Failed to load bank connection status",
@@ -270,8 +291,82 @@ const ConnectBankView = () => {
     }
   };
 
+  const handleRequestPayout = async () => {
+    const amountDollars = parseFloat(payoutAmount);
+    if (!isFinite(amountDollars) || amountDollars <= 0) {
+      toast({
+        title: "Invalid amount",
+        description: "Please enter a valid payout amount",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    const amountCents = Math.round(amountDollars * 100);
+    const availableCents = status?.available_balance?.amount_cents || 0;
+    if (amountCents > availableCents) {
+      toast({
+        title: "Insufficient funds",
+        description: `Available balance: $${(availableCents / 100).toFixed(2)}`,
+        variant: "destructive" as any,
+      });
+      return;
+    }
+
+    setRequestingPayout(true);
+    try {
+      await requestAgencyPayout({
+        amount_cents: amountCents,
+        currency: status?.available_balance?.currency || "USD",
+        payout_method: payoutMethod,
+      });
+
+      const [balanceResp, historyResp] = await Promise.all([
+        getAgencyPayoutBalance(),
+        getAgencyPayoutHistory(),
+      ]);
+      const balanceData = (balanceResp as any)?.data ?? balanceResp;
+      const historyData = (historyResp as any)?.data ?? historyResp;
+
+      setStatus((prev) =>
+        prev
+          ? {
+              ...prev,
+              available_balance: (balanceData as any)?.available_balance,
+            }
+          : prev,
+      );
+      setPayoutHistory((historyData as any)?.items || []);
+      setShowPayoutDialog(false);
+      setPayoutAmount("");
+
+      toast({
+        title: "Payout requested",
+        description: "Your payout request was submitted.",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Failed to request payout",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+    } finally {
+      setRequestingPayout(false);
+    }
+  };
+
   const connected = Boolean(status?.connected);
   const accountLast4 = String(status?.bank_last4 || "").trim();
+
+  const payoutStatusClass = (s: string) => {
+    const key = String(s || "pending").toLowerCase();
+    if (key === "paid") return "bg-green-50 text-green-700 border border-green-200";
+    if (key === "failed") return "bg-red-50 text-red-700 border border-red-200";
+    if (key === "processing")
+      return "bg-blue-50 text-blue-700 border border-blue-200";
+    if (key === "approved")
+      return "bg-purple-50 text-purple-700 border border-purple-200";
+    return "bg-yellow-50 text-yellow-700 border border-yellow-200";
+  };
 
   return (
     <div className="space-y-6">
@@ -310,6 +405,121 @@ const ConnectBankView = () => {
               manage payouts to talent
             </p>
           </div>
+
+          {connected && (
+            <div className="mb-6">
+              <Card className="p-4 bg-indigo-50 border-indigo-100 rounded-xl text-center">
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <DollarSign className="w-4 h-4 text-indigo-600" />
+                  <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">
+                    Available Balance
+                  </p>
+                </div>
+                <p className="text-2xl font-black text-gray-900">
+                  {status?.available_balance 
+                    ? new Intl.NumberFormat('en-US', { style: 'currency', currency: status.available_balance.currency.toUpperCase() }).format((status.available_balance.amount_cents || 0) / 100)
+                    : "$0.00"
+                  }
+                </p>
+                <p className="text-[10px] text-gray-500 font-medium mt-1">
+                  Ready for payout to your bank
+                </p>
+              </Card>
+            </div>
+          )}
+
+          {connected && (
+            <div className="flex items-center justify-between mb-6">
+              <div className="text-sm text-gray-600 font-medium">
+                Request a payout from your available balance.
+              </div>
+              <Button
+                className="h-10 px-5 rounded-xl font-bold"
+                onClick={() => setShowPayoutDialog(true)}
+                disabled={loading}
+              >
+                Request Payout
+              </Button>
+            </div>
+          )}
+
+          <Dialog open={showPayoutDialog} onOpenChange={setShowPayoutDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Request Payout</DialogTitle>
+                <DialogDescription>
+                  Enter an amount (in USD) and choose a payout method.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                <div>
+                  <Label>Amount</Label>
+                  <Input
+                    value={payoutAmount}
+                    onChange={(e) => setPayoutAmount(e.target.value)}
+                    placeholder="e.g. 250.00"
+                  />
+                </div>
+
+                <div>
+                  <Label>Method</Label>
+                  <div className="flex gap-2 mt-2">
+                    <Button
+                      type="button"
+                      variant={payoutMethod === "standard" ? "default" : "outline"}
+                      onClick={() => setPayoutMethod("standard")}
+                    >
+                      Standard
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={payoutMethod === "instant" ? "default" : "outline"}
+                      onClick={() => setPayoutMethod("instant")}
+                    >
+                      Instant
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowPayoutDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleRequestPayout} disabled={requestingPayout}>
+                  {requestingPayout ? "Requesting..." : "Request"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {connected && payoutHistory.length > 0 && (
+            <div className="mt-6">
+              <div className="text-sm font-bold text-gray-900 mb-2">Payout History</div>
+              <div className="space-y-2">
+                {payoutHistory.slice(0, 5).map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex items-center justify-between p-3 rounded-xl border border-gray-100"
+                  >
+                    <div className="text-sm font-medium text-gray-900">
+                      {(p.amount_cents || 0) / 100} {String(p.currency || "USD").toUpperCase()}
+                      <span className="text-xs text-gray-500 font-normal ml-2">
+                        ({p.payout_method || "standard"})
+                      </span>
+                    </div>
+                    <Badge
+                      variant="secondary"
+                      className={`${payoutStatusClass(p.status)} capitalize`}
+                    >
+                      {String(p.status || "pending")}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {connected && (
             <div className="mb-6 p-4 bg-green-50 border border-green-100 rounded-xl flex items-start gap-3">
@@ -998,6 +1208,46 @@ const ConnectBankViewAlt = () => {
               manage payouts to talent
             </p>
           </div>
+
+          {connected && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <Card className="p-4 bg-indigo-50 border-indigo-100 rounded-xl">
+                <div className="flex items-center gap-2 mb-1">
+                  <DollarSign className="w-4 h-4 text-indigo-600" />
+                  <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">
+                    Available Balance
+                  </p>
+                </div>
+                <p className="text-2xl font-black text-gray-900">
+                  {status?.available_balance 
+                    ? new Intl.NumberFormat('en-US', { style: 'currency', currency: status.available_balance.currency.toUpperCase() }).format(status.available_balance.amount / 100)
+                    : "$0.00"
+                  }
+                </p>
+                <p className="text-[10px] text-gray-500 font-medium mt-1">
+                  Ready for payout to your bank
+                </p>
+              </Card>
+
+              <Card className="p-4 bg-gray-50 border-gray-100 rounded-xl">
+                <div className="flex items-center gap-2 mb-1">
+                  <Clock className="w-4 h-4 text-gray-400" />
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                    Pending Balance
+                  </p>
+                </div>
+                <p className="text-2xl font-black text-gray-400">
+                  {status?.pending_balance 
+                    ? new Intl.NumberFormat('en-US', { style: 'currency', currency: status.pending_balance.currency.toUpperCase() }).format(status.pending_balance.amount / 100)
+                    : "$0.00"
+                  }
+                </p>
+                <p className="text-[10px] text-gray-400 font-medium mt-1">
+                  Funds processing from recent payments
+                </p>
+              </Card>
+            </div>
+          )}
 
           {connected && (
             <div className="mb-6 p-4 bg-green-50 border border-green-100 rounded-xl flex items-start gap-3">
@@ -1907,7 +2157,7 @@ const MOCK_INVOICES = [
   },
 ];
 
-const StorageUsageCard = () => (
+const StorageUsageCard = ({ onUpgrade }: { onUpgrade: () => void }) => (
   <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
     <div className="flex justify-between items-center mb-4">
       <div className="flex items-center gap-2">
@@ -1928,7 +2178,11 @@ const StorageUsageCard = () => (
       <p className="text-sm text-gray-500 font-medium">
         37.6 GB remaining • Professional Plan
       </p>
-      <Button variant="link" className="text-indigo-600 font-bold p-0 h-auto">
+      <Button
+        variant="link"
+        className="text-indigo-600 font-bold p-0 h-auto"
+        onClick={onUpgrade}
+      >
         Upgrade Plan
       </Button>
     </div>
@@ -11484,6 +11738,7 @@ export const RosterView = ({
             <Button
               variant="default"
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8"
+              onClick={() => navigate("/agencysubscribe")}
             >
               Upgrade to Pro
             </Button>
@@ -18213,6 +18468,21 @@ export default function AgencyDashboard() {
     );
   }, [agencyProfileQuery.data, profile]);
 
+  const agencyPlanTier = useMemo(() => {
+    const t =
+      (agencyProfileQuery.data as any)?.plan_tier || (profile as any)?.plan_tier;
+    return typeof t === "string" && t.trim() ? t.trim().toLowerCase() : "free";
+  }, [agencyProfileQuery.data, profile]);
+
+  const agencyPlanLabel = useMemo(() => {
+    if (agencyPlanTier === "pro") return "Pro";
+    if (agencyPlanTier === "basic") return "Basic";
+    if (agencyPlanTier === "enterprise") return "Enterprise";
+    return "Free";
+  }, [agencyPlanTier]);
+
+  const hasProAccess = agencyPlanTier === "pro" || agencyPlanTier === "enterprise";
+
   useEffect(() => {
     if (!user?.id) return;
     if (activeTab !== "roster") return;
@@ -18738,6 +19008,9 @@ export default function AgencyDashboard() {
     icon: React.ElementType;
     subItems?: string[];
     badges?: Record<string, string | number>;
+    disabled?: boolean;
+    disabledReason?: string;
+    disabledSubItems?: Record<string, boolean>;
   }
 
   const sidebarItems: SidebarItem[] =
@@ -18767,12 +19040,16 @@ export default function AgencyDashboard() {
             icon: Shield,
             subItems: ["Protect & Usage", "Compliance Hub"],
             badges: { "Compliance Hub": "NEW" },
+            disabled: !hasProAccess,
+            disabledReason: "Requires Pro",
           },
           {
             id: "analytics",
             label: "Analytics",
             icon: BarChart2,
             subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+            disabled: !hasProAccess,
+            disabledReason: "Requires Pro",
           },
           { id: "packages", label: "Talent Packages", icon: Package },
           {
@@ -18818,12 +19095,18 @@ export default function AgencyDashboard() {
               "Expense Tracking",
               "Connect Bank",
             ],
+            disabledSubItems: {
+              "Financial Reports": !hasProAccess,
+              "Expense Tracking": !hasProAccess,
+            },
           },
           {
             id: "analytics",
             label: "Analytics",
             icon: BarChart2,
             subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+            disabled: !hasProAccess,
+            disabledReason: "Requires Pro",
           },
           { id: "packages", label: "Talent Packages", icon: Package },
           {
@@ -18894,6 +19177,11 @@ export default function AgencyDashboard() {
             <div key={item.id} className="mb-2">
               <button
                 onClick={() => {
+                  if (item.disabled) {
+                    navigate("/AgencySubscribe");
+                    setSidebarOpen(false);
+                    return;
+                  }
                   if (item.subItems) {
                     toggleExpanded(item.id);
                     if (item.id === "settings") {
@@ -18905,11 +19193,12 @@ export default function AgencyDashboard() {
                     setSidebarOpen(false);
                   }
                 }}
+                title={item.disabled ? item.disabledReason || "Requires Pro" : undefined}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                   activeTab === item.id && !item.subItems
                     ? "bg-indigo-50 text-indigo-700"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
+                } ${item.disabled ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 <item.icon
                   className={`w-5 h-5 ${
@@ -18917,6 +19206,11 @@ export default function AgencyDashboard() {
                   }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
+                {item.disabled && (
+                  <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold">
+                    Pro
+                  </span>
+                )}
                 {item.subItems && (
                   <ChevronDown
                     className={`w-4 h-4 transition-transform ${expandedItems.includes(item.id) ? "text-gray-600 rotate-180" : "text-gray-400"}`}
@@ -18931,22 +19225,39 @@ export default function AgencyDashboard() {
                     <button
                       key={subItem}
                       onClick={() => {
+                        if (item.disabledSubItems && item.disabledSubItems[subItem]) {
+                          navigate("/AgencySubscribe");
+                          setSidebarOpen(false);
+                          return;
+                        }
                         setActiveTab(item.id);
                         setActiveSubTab(subItem);
                         setSidebarOpen(false);
                       }}
+                      title={
+                        item.disabledSubItems && item.disabledSubItems[subItem]
+                          ? "Requires Pro"
+                          : undefined
+                      }
                       className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
                         activeTab === item.id && activeSubTab === subItem
                           ? "text-indigo-700 bg-indigo-50 font-bold"
                           : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                      }`}
+                      } ${item.disabledSubItems && item.disabledSubItems[subItem] ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                       <span className="truncate">{subItem}</span>
-                      {item.badges && item.badges[subItem] && (
-                        <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
-                          {item.badges[subItem]}
-                        </span>
-                      )}
+                      <span className="flex items-center gap-2">
+                        {item.disabledSubItems && item.disabledSubItems[subItem] && (
+                          <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold">
+                            Pro
+                          </span>
+                        )}
+                        {item.badges && item.badges[subItem] && (
+                          <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
+                            {item.badges[subItem]}
+                          </span>
+                        )}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -19132,11 +19443,7 @@ export default function AgencyDashboard() {
                     <button
                       className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group"
                       onClick={() => {
-                        toast({
-                          title: "Billing & Subscription",
-                          description: "Coming soon",
-                          duration: 2000,
-                        });
+                        navigate("/agencysubscribe");
                         setShowProfileMenu(false);
                       }}
                     >
@@ -19145,7 +19452,7 @@ export default function AgencyDashboard() {
                         <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
                           Billing & Subscription
                         </p>
-                        <p className="text-xs text-gray-500">Agency Pro Plan</p>
+                        <p className="text-xs text-gray-500">Agency {agencyPlanLabel} Plan</p>
                       </div>
                     </button>
                     <button
@@ -19394,17 +19701,74 @@ export default function AgencyDashboard() {
           {activeTab === "licensing" &&
             activeSubTab === "License Templates" && <LicenseTemplatesTab />}
           {activeTab === "protection" && activeSubTab === "Protect & Usage" && (
-            <ProtectionUsageView />
+            hasProAccess ? (
+              <ProtectionUsageView />
+            ) : (
+              <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                <div className="text-lg font-black text-gray-900">Upgrade required</div>
+                <div className="text-gray-500 font-medium mt-1">
+                  Protection & Usage is available on the Pro plan.
+                </div>
+                <div className="mt-4">
+                  <Button className="rounded-xl font-bold" onClick={() => navigate("/agencysubscribe")}>
+                    View plans
+                  </Button>
+                </div>
+              </Card>
+            )
           )}
           {activeTab === "protection" && activeSubTab === "Compliance Hub" && (
-            <ComplianceHubView />
+            hasProAccess ? (
+              <ComplianceHubView />
+            ) : (
+              <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                <div className="text-lg font-black text-gray-900">Upgrade required</div>
+                <div className="text-gray-500 font-medium mt-1">
+                  Compliance Hub is available on the Pro plan.
+                </div>
+                <div className="mt-4">
+                  <Button className="rounded-xl font-bold" onClick={() => navigate("/agencysubscribe")}>
+                    View plans
+                  </Button>
+                </div>
+              </Card>
+            )
           )}
           {activeTab === "analytics" &&
             activeSubTab === "Analytics Dashboard" && (
-              <AnalyticsDashboardView />
+              hasProAccess ? (
+                <AnalyticsDashboardView />
+              ) : (
+                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                  <div className="text-lg font-black text-gray-900">Upgrade required</div>
+                  <div className="text-gray-500 font-medium mt-1">
+                    Advanced Analytics is available on the Pro plan.
+                  </div>
+                  <div className="mt-4">
+                    <Button className="rounded-xl font-bold" onClick={() => navigate("/agencysubscribe")}>
+                      View plans
+                    </Button>
+                  </div>
+                </Card>
+              )
             )}
           {activeTab === "analytics" &&
-            activeSubTab === "Royalties & Payouts" && <RoyaltiesPayoutsView />}
+            activeSubTab === "Royalties & Payouts" &&
+            (hasProAccess ? (
+              <RoyaltiesPayoutsView />
+            ) : (
+              <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                <div className="text-lg font-black text-gray-900">Upgrade required</div>
+                <div className="text-gray-500 font-medium mt-1">
+                  Royalties & Payouts is available on the Pro plan.
+                </div>
+                <div className="mt-4">
+                  <Button className="rounded-xl font-bold" onClick={() => navigate("/agencysubscribe")}>
+                    View plans
+                  </Button>
+                </div>
+              </Card>
+            ))}
           {activeTab === "packages" && <PackagesView />}
           {activeTab === "settings" && activeSubTab === "General Settings" && (
             <GeneralSettingsView />
@@ -19444,8 +19808,38 @@ export default function AgencyDashboard() {
               )}
               {activeSubTab === "Payment Tracking" && <PaymentTrackingView />}
               {activeSubTab === "Talent Statements" && <TalentStatementsView />}
-              {activeSubTab === "Financial Reports" && <FinancialReportsView />}
-              {activeSubTab === "Expense Tracking" && <ExpenseTrackingView />}
+              {activeSubTab === "Financial Reports" &&
+                (hasProAccess ? (
+                  <FinancialReportsView />
+                ) : (
+                  <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                    <div className="text-lg font-black text-gray-900">Upgrade required</div>
+                    <div className="text-gray-500 font-medium mt-1">
+                      Financial Reports are available on the Pro plan.
+                    </div>
+                    <div className="mt-4">
+                      <Button className="rounded-xl font-bold" onClick={() => navigate("/agencysubscribe")}>
+                        View plans
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              {activeSubTab === "Expense Tracking" &&
+                (hasProAccess ? (
+                  <ExpenseTrackingView />
+                ) : (
+                  <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                    <div className="text-lg font-black text-gray-900">Upgrade required</div>
+                    <div className="text-gray-500 font-medium mt-1">
+                      Expense Tracking is available on the Pro plan.
+                    </div>
+                    <div className="mt-4">
+                      <Button className="rounded-xl font-bold" onClick={() => navigate("/agencysubscribe")}>
+                        View plans
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
             </div>
           )}
         </main>
