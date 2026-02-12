@@ -1239,8 +1239,15 @@ export default function CreatorDashboard() {
     const abort = new AbortController();
     (async () => {
       try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        if (!token) return;
+
         // 1) List recordings via authenticated client
         const rows = await base44.get<any[]>(`/voice/recordings`, {
+          headers: { Authorization: `Bearer ${token}` },
           params: { user_id: user.id },
         } as any);
         if (!Array.isArray(rows)) return;
@@ -1250,6 +1257,7 @@ export default function CreatorDashboard() {
           rows.map(async (row: any) => {
             try {
               const j = await base44.get<any>(`/voice/recordings/signed-url`, {
+                headers: { Authorization: `Bearer ${token}` },
                 params: { recording_id: row.id, expires_sec: 600 },
               } as any);
               return {
