@@ -2198,7 +2198,7 @@ export default function CreatorDashboard() {
           </div>
         </Card>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3 items-start max-w-5xl">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3 items-start max-w-10xl">
           <AlertCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
           <p className="text-blue-900 text-sm">
             {t("creatorDashboard.publicProfile.previewNote")}
