@@ -762,7 +762,10 @@ export default function CreatorDashboard() {
     const normalizedBase = API_BASE_ABS.endsWith("/")
       ? API_BASE_ABS
       : `${API_BASE_ABS}/`;
-    const normalizedPath = path.startsWith("/") ? path.slice(1) : path;
+    let normalizedPath = path.startsWith("/") ? path.slice(1) : path;
+    if (normalizedBase.endsWith("/api/") && normalizedPath.startsWith("api/")) {
+      normalizedPath = normalizedPath.slice("api/".length);
+    }
     return new URL(normalizedPath, normalizedBase).toString();
   };
   const [activeSection, setActiveSection] = useState("dashboard");
