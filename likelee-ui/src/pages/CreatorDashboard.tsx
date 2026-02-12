@@ -2204,13 +2204,15 @@ export default function CreatorDashboard() {
                     <h1 className="text-3xl font-bold text-gray-900">
                       {data.first_name}
                     </h1>
-                    <Badge
-                      variant="secondary"
-                      className="bg-green-100 text-green-700 hover:bg-green-200 border-green-200 gap-1"
-                    >
-                      <CheckCircle2 className="h-3 w-3" />
-                      {t("creatorDashboard.publicProfile.verifiedUser")}
-                    </Badge>
+                    {profile?.kyc_status === "approved" && (
+                      <Badge
+                        variant="secondary"
+                        className="bg-green-100 text-green-700 hover:bg-green-200 border-green-200 gap-1"
+                      >
+                        <CheckCircle2 className="h-3 w-3" />
+                        {t("creatorDashboard.publicProfile.verifiedUser")}
+                      </Badge>
+                    )}
                   </div>
                   <div className="flex items-center gap-4 text-gray-600 text-sm">
                     <span>{data.location}</span>
@@ -2410,12 +2412,14 @@ export default function CreatorDashboard() {
                   <h3 className="text-xl font-bold text-gray-900">
                     {data.first_name}
                   </h3>
-                  <Badge
-                    variant="secondary"
-                    className="bg-green-100 text-green-700 border-green-200 text-[10px]"
-                  >
-                    {t("creatorDashboard.publicProfile.verifiedCreator")}
-                  </Badge>
+                  {profile?.kyc_status === "approved" && (
+                    <Badge
+                      variant="secondary"
+                      className="bg-green-100 text-green-700 border-green-200 text-[10px]"
+                    >
+                      {t("creatorDashboard.publicProfile.verifiedCreator")}
+                    </Badge>
+                  )}
                 </div>
 
                 <p className="text-xs text-gray-500 mb-4">{data.location}</p>
