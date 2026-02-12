@@ -3369,6 +3369,44 @@ export default function CreatorDashboard() {
 
     return (
       <div className="space-y-6">
+        {profile?.kyc_status !== "approved" && (
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-blue-700 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-blue-900">
+                  {t(
+                    "creatorDashboard.publicProfile.verifyBannerTitle",
+                    "Verify your account",
+                  )}
+                </p>
+                <p className="text-sm text-blue-900/80">
+                  {t(
+                    "creatorDashboard.publicProfile.verifyBannerDesc",
+                    "Complete identity verification to become visible to brands.",
+                  )}
+                </p>
+              </div>
+            </div>
+
+            <Button
+              onClick={startVerificationFromDashboard}
+              disabled={kycLoading || creator?.kyc_status === "pending"}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {creator?.kyc_status === "pending"
+                ? t(
+                    "creatorDashboard.publicProfile.verifyBannerPending",
+                    "Verification pending",
+                  )
+                : t(
+                    "creatorDashboard.publicProfile.verifyBannerCta",
+                    "Verify now",
+                  )}
+            </Button>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-2">

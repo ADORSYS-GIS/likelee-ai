@@ -669,8 +669,7 @@ pub async fn delete_voice_recording(
         .await
         .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
     if !del_status.is_success() {
-        let code =
-            StatusCode::from_u16(del_status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
+        let code = StatusCode::from_u16(del_status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
         return Err(crate::errors::sanitize_db_error(code, del_text));
     }
 
@@ -692,8 +691,7 @@ pub async fn delete_voice_recording(
         .await
         .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
     if !check_status.is_success() {
-        let code =
-            StatusCode::from_u16(check_status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
+        let code = StatusCode::from_u16(check_status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
         return Err(crate::errors::sanitize_db_error(code, check_text));
     }
     let remaining: serde_json::Value =

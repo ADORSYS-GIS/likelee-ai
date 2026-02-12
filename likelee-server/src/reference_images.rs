@@ -66,12 +66,10 @@ pub async fn delete_reference_image(
         .await
         .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
     if !rows_status.is_success() {
-        let code =
-            StatusCode::from_u16(rows_status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
+        let code = StatusCode::from_u16(rows_status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
         return Err(crate::errors::sanitize_db_error(code, rows_text));
     }
-    let rows: Vec<serde_json::Value> =
-        serde_json::from_str(&rows_text).unwrap_or_else(|_| vec![]);
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&rows_text).unwrap_or_else(|_| vec![]);
     if rows.is_empty() {
         return Err((StatusCode::NOT_FOUND, "reference image not found".into()));
     }
@@ -84,20 +82,14 @@ pub async fn delete_reference_image(
             .get("storage_bucket")
             .and_then(|v| v.as_str())
             .unwrap_or("");
-        let path = r
-            .get("storage_path")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
+        let path = r.get("storage_path").and_then(|v| v.as_str()).unwrap_or("");
         if bucket.is_empty() || path.is_empty() {
             return Err((
                 StatusCode::BAD_GATEWAY,
                 "missing storage metadata for reference image".into(),
             ));
         }
-        let del_url = format!(
-            "{}/storage/v1/object/{}/{path}",
-            state.supabase_url, bucket
-        );
+        let del_url = format!("{}/storage/v1/object/{}/{path}", state.supabase_url, bucket);
         let del = http
             .delete(&del_url)
             .header(
@@ -135,8 +127,7 @@ pub async fn delete_reference_image(
         .await
         .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
     if !del_status.is_success() {
-        let code =
-            StatusCode::from_u16(del_status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
+        let code = StatusCode::from_u16(del_status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
         return Err(crate::errors::sanitize_db_error(code, del_text));
     }
 
