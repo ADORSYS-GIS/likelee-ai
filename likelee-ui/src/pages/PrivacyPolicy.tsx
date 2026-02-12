@@ -1,5 +1,6 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
+import { CONTACT_EMAIL, CONTACT_EMAIL_MAILTO } from "@/config/public";
 
 export default function PrivacyPolicy() {
   return (
@@ -196,10 +197,10 @@ export default function PrivacyPolicy() {
               <p className="text-gray-700 leading-relaxed">
                 <strong>Requests:</strong>{" "}
                 <a
-                  href="mailto:operations@likelee.ai"
+                  href={CONTACT_EMAIL_MAILTO}
                   className="text-[#32C8D1] hover:text-[#2AB8C1] font-semibold underline"
                 >
-                  operations@likelee.ai
+                  {CONTACT_EMAIL}
                 </a>
               </p>
             </section>
@@ -255,10 +256,10 @@ export default function PrivacyPolicy() {
                 Likelee, Inc.
                 <br />
                 <a
-                  href="mailto:operations@likelee.ai"
+                  href={CONTACT_EMAIL_MAILTO}
                   className="text-[#32C8D1] hover:text-[#2AB8C1] font-semibold underline"
                 >
-                  operations@likelee.ai
+                  {CONTACT_EMAIL}
                 </a>
               </p>
             </section>
