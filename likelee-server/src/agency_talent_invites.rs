@@ -70,7 +70,9 @@ pub async fn list_for_agency(
     let resp = state
         .pg
         .from("agency_talent_invites")
-        .select("id,agency_id,email,invited_name,status,expires_at,created_at,responded_at,updated_at")
+        .select(
+            "id,agency_id,email,invited_name,status,expires_at,created_at,responded_at,updated_at",
+        )
         .eq("agency_id", &user.id)
         .order("created_at.desc")
         .limit(500)
@@ -88,8 +90,49 @@ pub async fn list_for_agency(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let invites: Vec<AgencyTalentInvite> = serde_json::from_str(&text)
-        .unwrap_or_else(|_| vec![]);
+    let invites: Vec<AgencyTalentInvite> = serde_json::from_str(&text).unwrap_or_else(|_| vec![]);
+
+    Ok(Json(ListAgencyTalentInvitesResponse {
+        status: "ok".to_string(),
+        invites,
+    }))
+}
+
+pub async fn list_for_talent(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<ListAgencyTalentInvitesResponse>, (StatusCode, String)> {
+    RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
+
+    let email = user.email.clone().unwrap_or_default().trim().to_lowercase();
+    if email.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "missing email".to_string()));
+    }
+
+    let resp = state
+        .pg
+        .from("agency_talent_invites")
+        .select(
+            "id,agency_id,email,invited_name,token,status,expires_at,created_at,responded_at,updated_at,agencies(agency_name,logo_url)",
+        )
+        .eq("email", &email)
+        .order("created_at.desc")
+        .limit(200)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        let err = resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let invites: Vec<AgencyTalentInvite> = serde_json::from_str(&text).unwrap_or_default();
 
     Ok(Json(ListAgencyTalentInvitesResponse {
         status: "ok".to_string(),
@@ -211,7 +254,8 @@ pub async fn create_for_agency(
     let body = lines.join("\n");
 
     // Best-effort email send
-    let _ = crate::email::send_plain_text_email(&state, &email, &subject, &body, Some(&agency_name));
+    let _ =
+        crate::email::send_plain_text_email(&state, &email, &subject, &body, Some(&agency_name));
 
     Ok(Json(json!({
         "status": "ok",
@@ -274,7 +318,9 @@ pub async fn get_by_token(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let mut rows: Vec<AgencyTalentInvite> = serde_json::from_str(&text).unwrap_or_default();
-    let mut inv = rows.pop().ok_or((StatusCode::NOT_FOUND, "invite not found".to_string()))?;
+    let mut inv = rows
+        .pop()
+        .ok_or((StatusCode::NOT_FOUND, "invite not found".to_string()))?;
 
     let expired = is_expired(&inv.expires_at);
     if expired && inv.status == "pending" {
@@ -356,7 +402,7 @@ pub async fn get_magic_link_by_token(
         }
     });
 
-    let link_resp = client
+    let mut link_resp = client
         .post(&gen_link_url)
         .header("apikey", state.supabase_service_key.clone())
         .header(
@@ -370,7 +416,59 @@ pub async fn get_magic_link_by_token(
 
     if !link_resp.status().is_success() {
         let txt = link_resp.text().await.unwrap_or_default();
-        return Err((StatusCode::BAD_REQUEST, txt));
+        let v: serde_json::Value = serde_json::from_str(&txt).unwrap_or(json!({}));
+        let error_code = v.get("error_code").and_then(|x| x.as_str()).unwrap_or("");
+
+        // If the invited email doesn't exist yet in Supabase Auth, create it (temp password)
+        // then retry generate_link.
+        if error_code == "user_not_found" {
+            let create_user_url = format!("{}/auth/v1/admin/users", state.supabase_url);
+            let temp_password = format!("{}Aa1!", uuid::Uuid::new_v4());
+            let create_body = json!({
+                "email": email,
+                "password": temp_password,
+                "email_confirm": true,
+                "user_metadata": {
+                    "role": "creator"
+                }
+            });
+
+            let create_resp = client
+                .post(&create_user_url)
+                .header("apikey", state.supabase_service_key.clone())
+                .header(
+                    "Authorization",
+                    format!("Bearer {}", state.supabase_service_key),
+                )
+                .json(&create_body)
+                .send()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+            if !create_resp.status().is_success() {
+                let create_txt = create_resp.text().await.unwrap_or_default();
+                return Err((StatusCode::BAD_REQUEST, create_txt));
+            }
+
+            link_resp = client
+                .post(&gen_link_url)
+                .header("apikey", state.supabase_service_key.clone())
+                .header(
+                    "Authorization",
+                    format!("Bearer {}", state.supabase_service_key),
+                )
+                .json(&body)
+                .send()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+            if !link_resp.status().is_success() {
+                let retry_txt = link_resp.text().await.unwrap_or_default();
+                return Err((StatusCode::BAD_REQUEST, retry_txt));
+            }
+        } else {
+            return Err((StatusCode::BAD_REQUEST, txt));
+        }
     }
 
     let link_json: serde_json::Value = link_resp.json().await.unwrap_or(json!({}));
@@ -452,7 +550,9 @@ pub async fn accept_by_token(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let mut rows: Vec<AgencyTalentInvite> = serde_json::from_str(&text).unwrap_or_default();
-    let inv = rows.pop().ok_or((StatusCode::NOT_FOUND, "invite not found".to_string()))?;
+    let inv = rows
+        .pop()
+        .ok_or((StatusCode::NOT_FOUND, "invite not found".to_string()))?;
 
     if inv.status != "pending" {
         return Err((StatusCode::BAD_REQUEST, "invite is not pending".to_string()));
@@ -463,7 +563,10 @@ pub async fn accept_by_token(
 
     let user_email = user.email.clone().unwrap_or_default().trim().to_lowercase();
     if user_email.is_empty() || user_email != inv.email.trim().to_lowercase() {
-        return Err((StatusCode::FORBIDDEN, "email does not match invite".to_string()));
+        return Err((
+            StatusCode::FORBIDDEN,
+            "email does not match invite".to_string(),
+        ));
     }
 
     ensure_creator_row_exists(&state, &user).await;
@@ -514,10 +617,7 @@ pub async fn accept_by_token(
             .execute()
             .await
             .ok();
-        let mut full_legal_name = user
-            .email
-            .clone()
-            .unwrap_or_else(|| "Unknown".to_string());
+        let mut full_legal_name = user.email.clone().unwrap_or_else(|| "Unknown".to_string());
         if let Some(cresp) = creator_resp {
             if cresp.status().is_success() {
                 if let Ok(ctxt) = cresp.text().await {
@@ -528,7 +628,11 @@ pub async fn accept_by_token(
                         .filter(|s| !s.trim().is_empty())
                         .map(|s| s.to_string())
                         .or_else(|| user.email.clone())
-                        .or_else(|| v.get("email").and_then(|x| x.as_str()).map(|s| s.to_string()))
+                        .or_else(|| {
+                            v.get("email")
+                                .and_then(|x| x.as_str())
+                                .map(|s| s.to_string())
+                        })
                         .unwrap_or_else(|| "Unknown".to_string());
                 }
             }
@@ -596,7 +700,9 @@ pub async fn decline_by_token(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let mut rows: Vec<AgencyTalentInvite> = serde_json::from_str(&text).unwrap_or_default();
-    let inv = rows.pop().ok_or((StatusCode::NOT_FOUND, "invite not found".to_string()))?;
+    let inv = rows
+        .pop()
+        .ok_or((StatusCode::NOT_FOUND, "invite not found".to_string()))?;
 
     if inv.status != "pending" {
         return Err((StatusCode::BAD_REQUEST, "invite is not pending".to_string()));
@@ -607,7 +713,10 @@ pub async fn decline_by_token(
 
     let user_email = user.email.clone().unwrap_or_default().trim().to_lowercase();
     if user_email.is_empty() || user_email != inv.email.trim().to_lowercase() {
-        return Err((StatusCode::FORBIDDEN, "email does not match invite".to_string()));
+        return Err((
+            StatusCode::FORBIDDEN,
+            "email does not match invite".to_string(),
+        ));
     }
 
     let _ = state

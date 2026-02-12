@@ -41,7 +41,10 @@ async fn resolve_talent_creator_id(
         .unwrap_or("")
         .to_string();
     if cid.is_empty() {
-        return Err((StatusCode::BAD_REQUEST, "talent_creator_id_not_found".to_string()));
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "talent_creator_id_not_found".to_string(),
+        ));
     }
     Ok(cid)
 }

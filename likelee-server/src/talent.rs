@@ -1,7 +1,6 @@
 use crate::{auth::AuthUser, auth::RoleGuard, config::AppState};
 use axum::{
-    extract::Multipart,
-    extract::{Path, Query, State},
+    extract::{Multipart, Path, Query, State},
     http::StatusCode,
     Json,
 };
@@ -300,7 +299,6 @@ async fn compute_irl_earnings_summary(
     state: &AppState,
     resolved: &ResolvedTalent,
 ) -> Result<serde_json::Value, (StatusCode, String)> {
-
     // Pull recent paid ledger rows and compute balances server-side.
     // Note: PostgREST doesn't support server-side aggregates here in our wrapper; keep it simple.
     let resp = state
@@ -323,7 +321,10 @@ async fn compute_irl_earnings_summary(
     let mut total_paid_cents: i64 = 0;
     let mut currency: String = "USD".to_string();
     for r in arr.iter() {
-        let status = r.get("status").and_then(|v| v.as_str()).unwrap_or("pending");
+        let status = r
+            .get("status")
+            .and_then(|v| v.as_str())
+            .unwrap_or("pending");
         if status != "paid" {
             continue;
         }
@@ -356,7 +357,10 @@ async fn compute_irl_earnings_summary(
 
     let mut payouts_reserved_cents: i64 = 0;
     for r in pr_arr.iter() {
-        let status = r.get("status").and_then(|v| v.as_str()).unwrap_or("requested");
+        let status = r
+            .get("status")
+            .and_then(|v| v.as_str())
+            .unwrap_or("requested");
         if status == "failed" || status == "cancelled" {
             continue;
         }
@@ -398,14 +402,22 @@ pub async fn create_irl_payout_request(
         .and_then(|v| v.as_i64())
         .unwrap_or(0);
     if payload.amount_cents > withdrawable {
-        return Err((StatusCode::BAD_REQUEST, "amount exceeds withdrawable".into()));
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "amount exceeds withdrawable".into(),
+        ));
     }
 
     let currency = payload
         .currency
         .clone()
         .filter(|s| !s.trim().is_empty())
-        .or_else(|| summary.get("currency").and_then(|v| v.as_str()).map(|s| s.to_string()))
+        .or_else(|| {
+            summary
+                .get("currency")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        })
         .unwrap_or_else(|| "USD".to_string());
 
     let row = json!({
@@ -661,8 +673,8 @@ pub async fn list_notifications(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let v: serde_json::Value =
-        serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(v))
 }
 
@@ -741,7 +753,11 @@ async fn list_active_talent_connections(
 fn connected_agency_ids_from_connections(connections: &[serde_json::Value]) -> Vec<String> {
     let mut out: Vec<String> = connections
         .iter()
-        .filter_map(|r| r.get("agency_id").and_then(|v| v.as_str()).map(|s| s.to_string()))
+        .filter_map(|r| {
+            r.get("agency_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        })
         .filter(|s| !s.is_empty())
         .collect();
     out.sort();
@@ -767,7 +783,10 @@ async fn resolve_talent_for_agency(
         .unwrap_or("")
         .to_string();
     if talent_id.is_empty() {
-        return Err((StatusCode::NOT_FOUND, "Talent profile not found".to_string()));
+        return Err((
+            StatusCode::NOT_FOUND,
+            "Talent profile not found".to_string(),
+        ));
     }
 
     Ok(ResolvedTalent {
@@ -777,7 +796,10 @@ async fn resolve_talent_for_agency(
     })
 }
 
-async fn resolve_talent(state: &AppState, user: &AuthUser) -> Result<ResolvedTalent, (StatusCode, String)> {
+async fn resolve_talent(
+    state: &AppState,
+    user: &AuthUser,
+) -> Result<ResolvedTalent, (StatusCode, String)> {
     RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
 
     let resp = state
@@ -813,7 +835,10 @@ async fn resolve_talent(state: &AppState, user: &AuthUser) -> Result<ResolvedTal
         .unwrap_or("")
         .to_string();
     if talent_id.is_empty() {
-        return Err((StatusCode::NOT_FOUND, "Talent profile not found".to_string()));
+        return Err((
+            StatusCode::NOT_FOUND,
+            "Talent profile not found".to_string(),
+        ));
     }
 
     let agency_id = row
@@ -832,15 +857,29 @@ async fn resolve_talent(state: &AppState, user: &AuthUser) -> Result<ResolvedTal
 pub async fn talent_me(
     State(state): State<AppState>,
     user: AuthUser,
+    Query(q): Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<TalentMeResponse>, (StatusCode, String)> {
     let connections = list_active_talent_connections(&state, &user).await?;
     let connected_agency_ids: Vec<String> = connections
         .iter()
-        .filter_map(|r| r.get("agency_id").and_then(|v| v.as_str()).map(|s| s.to_string()))
+        .filter_map(|r| {
+            r.get("agency_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        })
         .filter(|s| !s.is_empty())
         .collect();
 
-    let resolved = resolve_talent(&state, &user).await?;
+    let requested_agency_id = q
+        .get("agency_id")
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string());
+    let resolved = if let Some(ref aid) = requested_agency_id {
+        resolve_talent_for_agency(&state, &user, aid).await?
+    } else {
+        resolve_talent(&state, &user).await?
+    };
     let row = resolved.agency_user_row;
     Ok(Json(TalentMeResponse {
         status: "ok".to_string(),
@@ -900,7 +939,11 @@ pub async fn list_licensing_requests(
 
     let mut brand_ids: Vec<String> = reqs
         .iter()
-        .filter_map(|r| r.get("brand_id").and_then(|v| v.as_str()).map(|s| s.to_string()))
+        .filter_map(|r| {
+            r.get("brand_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        })
         .filter(|s| !s.is_empty())
         .collect();
     brand_ids.sort();
@@ -941,7 +984,8 @@ pub async fn list_licensing_requests(
     request_ids.sort();
     request_ids.dedup();
 
-    let mut pay_set_request_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut pay_set_request_ids: std::collections::HashSet<String> =
+        std::collections::HashSet::new();
     if !request_ids.is_empty() {
         let ids: Vec<&str> = request_ids.iter().map(|s| s.as_str()).collect();
         let c_resp = state
@@ -980,7 +1024,11 @@ pub async fn list_licensing_requests(
     let out: Vec<TalentLicensingRequestItem> = reqs
         .iter()
         .filter_map(|r| {
-            let id = r.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            let id = r
+                .get("id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
             if id.is_empty() {
                 return None;
             }
@@ -1150,7 +1198,11 @@ pub async fn list_licenses_stub(
 
     let mut brand_ids: Vec<String> = licenses
         .iter()
-        .filter_map(|r| r.get("brand_org_id").and_then(|v| v.as_str()).map(|s| s.to_string()))
+        .filter_map(|r| {
+            r.get("brand_org_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        })
         .filter(|s| !s.is_empty())
         .collect();
     brand_ids.sort();
@@ -1173,10 +1225,7 @@ pub async fn list_licenses_stub(
                 if let Some(arr) = b_rows.as_array() {
                     for r in arr {
                         let id = r.get("id").and_then(|v| v.as_str()).unwrap_or("");
-                        let name = r
-                            .get("company_name")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("");
+                        let name = r.get("company_name").and_then(|v| v.as_str()).unwrap_or("");
                         if !id.is_empty() {
                             brand_name_by_id.insert(id.to_string(), name.to_string());
                         }
@@ -1275,7 +1324,7 @@ fn parse_month_bounds_date(month: &str) -> Option<(chrono::NaiveDate, chrono::Na
         return None;
     }
     let mm: u32 = m[1..].parse().ok()?;
-    if mm < 1 || mm > 12 {
+    if !(1..=12).contains(&mm) {
         return None;
     }
     let start = chrono::NaiveDate::from_ymd_opt(y, mm, 1)?;
@@ -1298,7 +1347,7 @@ fn parse_month_bounds(month: &str) -> Option<(String, String)> {
         return None;
     }
     let mm: u32 = m[1..].parse().ok()?;
-    if mm < 1 || mm > 12 {
+    if !(1..=12).contains(&mm) {
         return None;
     }
 
@@ -1328,10 +1377,10 @@ pub async fn get_licensing_revenue(
     let bounds = if month.trim().is_empty() {
         None
     } else {
-        Some(parse_month_bounds(&month).ok_or((
-            StatusCode::BAD_REQUEST,
-            "Invalid month".to_string(),
-        ))?)
+        Some(
+            parse_month_bounds(&month)
+                .ok_or((StatusCode::BAD_REQUEST, "Invalid month".to_string()))?,
+        )
     };
 
     let mut req = state
@@ -1339,8 +1388,7 @@ pub async fn get_licensing_revenue(
         .from("licensing_payouts")
         .select("amount_cents,paid_at")
         .eq("talent_id", &resolved.talent_id)
-        .limit(5000)
-        ;
+        .limit(5000);
     if !resolved.agency_id.is_empty() {
         req = req.eq("agency_id", &resolved.agency_id);
     }
@@ -1369,13 +1417,19 @@ pub async fn get_licensing_revenue(
         for r in arr {
             let cents = r
                 .get("amount_cents")
-                .and_then(|v| v.as_i64().or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok())))
+                .and_then(|v| {
+                    v.as_i64()
+                        .or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok()))
+                })
                 .unwrap_or(0);
             total += cents;
         }
     }
 
-    Ok(Json(TalentLicensingRevenueResponse { month, total_cents: total }))
+    Ok(Json(TalentLicensingRevenueResponse {
+        month,
+        total_cents: total,
+    }))
 }
 
 pub async fn get_earnings_by_campaign(
@@ -1392,10 +1446,10 @@ pub async fn get_earnings_by_campaign(
     let bounds = if month.trim().is_empty() {
         None
     } else {
-        Some(parse_month_bounds(&month).ok_or((
-            StatusCode::BAD_REQUEST,
-            "Invalid month".to_string(),
-        ))?)
+        Some(
+            parse_month_bounds(&month)
+                .ok_or((StatusCode::BAD_REQUEST, "Invalid month".to_string()))?,
+        )
     };
 
     let mut req = state
@@ -1403,8 +1457,7 @@ pub async fn get_earnings_by_campaign(
         .from("licensing_payouts")
         .select("amount_cents,licensing_request_id")
         .eq("talent_id", &resolved.talent_id)
-        .limit(5000)
-        ;
+        .limit(5000);
     if !resolved.agency_id.is_empty() {
         req = req.eq("agency_id", &resolved.agency_id);
     }
@@ -1478,7 +1531,10 @@ pub async fn get_earnings_by_campaign(
         for r in arr {
             let cents = r
                 .get("amount_cents")
-                .and_then(|v| v.as_i64().or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok())))
+                .and_then(|v| {
+                    v.as_i64()
+                        .or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok()))
+                })
                 .unwrap_or(0);
             let rid = r
                 .get("licensing_request_id")
@@ -1515,10 +1571,7 @@ pub async fn get_earnings_by_campaign(
                 if let Some(arr) = b_rows.as_array() {
                     for r in arr {
                         let id = r.get("id").and_then(|v| v.as_str()).unwrap_or("");
-                        let name = r
-                            .get("company_name")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("");
+                        let name = r.get("company_name").and_then(|v| v.as_str()).unwrap_or("");
                         if !id.is_empty() {
                             brand_name_by_id.insert(id.to_string(), name.to_string());
                         }
@@ -1547,13 +1600,10 @@ pub async fn get_analytics(
 ) -> Result<Json<TalentAnalyticsResponse>, (StatusCode, String)> {
     let resolved = resolve_talent(&state, &user).await?;
 
-    let month = params
-        .get("month")
-        .cloned()
-        .unwrap_or_else(|| {
-            let now = chrono::Utc::now().date_naive();
-            format!("{:04}-{:02}", now.year(), now.month())
-        });
+    let month = params.get("month").cloned().unwrap_or_else(|| {
+        let now = chrono::Utc::now().date_naive();
+        format!("{:04}-{:02}", now.year(), now.month())
+    });
 
     let Some((month_start, month_next)) = parse_month_bounds_date(&month) else {
         return Err((StatusCode::BAD_REQUEST, "Invalid month".to_string()));
@@ -1571,8 +1621,7 @@ pub async fn get_analytics(
         .eq("talent_id", &resolved.talent_id)
         .gte("paid_at", &start_ts)
         .lt("paid_at", &next_ts)
-        .limit(5000)
-        ;
+        .limit(5000);
     if !resolved.agency_id.is_empty() {
         req = req.eq("agency_id", &resolved.agency_id);
     }
@@ -1597,7 +1646,10 @@ pub async fn get_analytics(
         for r in arr {
             let cents = r
                 .get("amount_cents")
-                .and_then(|v| v.as_i64().or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok())))
+                .and_then(|v| {
+                    v.as_i64()
+                        .or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok()))
+                })
                 .unwrap_or(0);
             total_revenue_cents += cents;
             if let Some(id) = r
@@ -1648,7 +1700,10 @@ pub async fn get_analytics(
         for r in arr {
             let cents = r
                 .get("amount_cents")
-                .and_then(|v| v.as_i64().or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok())))
+                .and_then(|v| {
+                    v.as_i64()
+                        .or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok()))
+                })
                 .unwrap_or(0);
             let rid = r
                 .get("licensing_request_id")
@@ -1667,7 +1722,9 @@ pub async fn get_analytics(
     // ---------------------------------------------------------------------
     // Views KPI (current month vs previous month) + per brand views for latest week
     // ---------------------------------------------------------------------
-    let prev_month_start = (month_start - chrono::Months::new(1)).with_day(1).unwrap_or(month_start);
+    let prev_month_start = (month_start - chrono::Months::new(1))
+        .with_day(1)
+        .unwrap_or(month_start);
     let prev_month_next = month_start;
 
     let metrics_resp = state
@@ -1675,8 +1732,11 @@ pub async fn get_analytics(
         .from("talent_campaign_metrics_weekly")
         .select("brand_id,views_week,week_start")
         .eq("talent_id", &resolved.talent_id)
-        .gte("week_start", &prev_month_start.format("%Y-%m-%d").to_string())
-        .lt("week_start", &month_next.format("%Y-%m-%d").to_string())
+        .gte(
+            "week_start",
+            prev_month_start.format("%Y-%m-%d").to_string(),
+        )
+        .lt("week_start", month_next.format("%Y-%m-%d").to_string())
         .limit(2000)
         .execute()
         .await
@@ -1701,7 +1761,10 @@ pub async fn get_analytics(
             let week_start = r.get("week_start").and_then(|v| v.as_str()).unwrap_or("");
             let views = r
                 .get("views_week")
-                .and_then(|v| v.as_i64().or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok())))
+                .and_then(|v| {
+                    v.as_i64()
+                        .or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok()))
+                })
                 .unwrap_or(0);
             if week_start.is_empty() {
                 continue;
@@ -1742,7 +1805,10 @@ pub async fn get_analytics(
                 }
                 let views = r
                     .get("views_week")
-                    .and_then(|v| v.as_i64().or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok())))
+                    .and_then(|v| {
+                        v.as_i64()
+                            .or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok()))
+                    })
                     .unwrap_or(0);
                 *views_by_brand_latest_week
                     .entry(brand_id.to_string())
@@ -1758,7 +1824,8 @@ pub async fn get_analytics(
             0.0
         }
     } else {
-        ((total_views_this_month - total_views_prev_month) as f64) / (total_views_prev_month as f64) * 100.0
+        ((total_views_this_month - total_views_prev_month) as f64) / (total_views_prev_month as f64)
+            * 100.0
     };
 
     // Active campaigns derived from licensing_requests
@@ -1780,7 +1847,11 @@ pub async fn get_analytics(
     let mut active_campaigns: i64 = 0;
     if let Some(arr) = lr_rows.as_array() {
         for r in arr {
-            let s = r.get("status").and_then(|v| v.as_str()).unwrap_or("").to_lowercase();
+            let s = r
+                .get("status")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_lowercase();
             if s == "approved" || s == "confirmed" {
                 active_campaigns += 1;
             }
@@ -1788,10 +1859,7 @@ pub async fn get_analytics(
     }
 
     // Brand names for campaign list
-    let mut brand_ids: Vec<String> = views_by_brand_latest_week
-        .keys()
-        .cloned()
-        .collect();
+    let mut brand_ids: Vec<String> = views_by_brand_latest_week.keys().cloned().collect();
     for k in revenue_by_brand.keys() {
         if !brand_ids.iter().any(|x| x == k) {
             brand_ids.push(k.clone());
@@ -1893,21 +1961,28 @@ pub async fn get_analytics(
 
 #[derive(Debug, serde::Deserialize)]
 pub struct UpdateTalentProfilePayload {
+    pub agency_id: Option<String>,
     pub stage_name: Option<String>,
     pub full_legal_name: Option<String>,
     pub email: Option<String>,
     pub phone_number: Option<String>,
+    pub date_of_birth: Option<String>,
+    pub role_type: Option<String>,
+    pub status: Option<String>,
     pub city: Option<String>,
     pub state_province: Option<String>,
     pub country: Option<String>,
     pub bio_notes: Option<String>,
     pub instagram_handle: Option<String>,
+    pub instagram_followers: Option<i64>,
+    pub engagement_rate: Option<f64>,
     pub photo_urls: Option<Vec<String>>,
     pub profile_photo_url: Option<String>,
     pub gender_identity: Option<String>,
     pub race_ethnicity: Option<Vec<String>>,
     pub hair_color: Option<String>,
     pub eye_color: Option<String>,
+    pub skin_tone: Option<String>,
     pub height_feet: Option<i32>,
     pub height_inches: Option<i32>,
     pub bust_chest_inches: Option<i32>,
@@ -1923,24 +1998,47 @@ pub async fn update_profile(
     user: AuthUser,
     Json(payload): Json<UpdateTalentProfilePayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let resolved = resolve_talent(&state, &user).await?;
+    let connections = list_active_talent_connections(&state, &user).await?;
+    let agency_ids = connected_agency_ids_from_connections(&connections);
+
+    let requested_agency_id = payload
+        .agency_id
+        .clone()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
+    let resolved = if let Some(ref aid) = requested_agency_id {
+        resolve_talent_for_agency(&state, &user, aid).await?
+    } else if agency_ids.len() == 1 {
+        resolve_talent_for_agency(&state, &user, &agency_ids[0]).await?
+    } else {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "agency_id is required when connected to multiple agencies".to_string(),
+        ));
+    };
 
     let mut body = json!({
         "stage_name": payload.stage_name,
         "full_legal_name": payload.full_legal_name,
         "email": payload.email,
         "phone_number": payload.phone_number,
+        "date_of_birth": payload.date_of_birth,
+        "role_type": payload.role_type,
+        "status": payload.status,
         "city": payload.city,
         "state_province": payload.state_province,
         "country": payload.country,
         "bio_notes": payload.bio_notes,
         "instagram_handle": payload.instagram_handle,
+        "instagram_followers": payload.instagram_followers,
+        "engagement_rate": payload.engagement_rate,
         "photo_urls": payload.photo_urls,
         "profile_photo_url": payload.profile_photo_url,
         "gender_identity": payload.gender_identity,
         "race_ethnicity": payload.race_ethnicity,
         "hair_color": payload.hair_color,
         "eye_color": payload.eye_color,
+        "skin_tone": payload.skin_tone,
         "height_feet": payload.height_feet,
         "height_inches": payload.height_inches,
         "bust_chest_inches": payload.bust_chest_inches,
@@ -1962,10 +2060,7 @@ pub async fn update_profile(
         }
     }
 
-    let mut req = state
-        .pg
-        .from("agency_users")
-        .eq("id", &resolved.talent_id);
+    let mut req = state.pg.from("agency_users").eq("id", &resolved.talent_id);
     if !resolved.agency_id.is_empty() {
         req = req.eq("agency_id", &resolved.agency_id);
     }
@@ -2007,7 +2102,11 @@ pub async fn list_portfolio_items(
         return Ok(Json(vec![]));
     }
     let mut ids_filtered = ids;
-    if let Some(aid) = q.get("agency_id").map(|s| s.as_str()).filter(|s| !s.trim().is_empty()) {
+    if let Some(aid) = q
+        .get("agency_id")
+        .map(|s| s.as_str())
+        .filter(|s| !s.trim().is_empty())
+    {
         if !ids_filtered.iter().any(|x| x == aid) {
             return Err((StatusCode::FORBIDDEN, "not connected to agency".to_string()));
         }
@@ -2125,7 +2224,11 @@ pub async fn list_bookings(
         return Ok(Json(json!([])));
     }
     let mut ids_filtered = ids;
-    if let Some(aid) = q.get("agency_id").map(|s| s.as_str()).filter(|s| !s.trim().is_empty()) {
+    if let Some(aid) = q
+        .get("agency_id")
+        .map(|s| s.as_str())
+        .filter(|s| !s.trim().is_empty())
+    {
         if !ids_filtered.iter().any(|x| x == aid) {
             return Err((StatusCode::FORBIDDEN, "not connected to agency".to_string()));
         }
@@ -2133,7 +2236,7 @@ pub async fn list_bookings(
     }
     let ids_refs: Vec<&str> = ids_filtered.iter().map(|s| s.as_str()).collect();
 
-    let mut req = state
+    let req = state
         .pg
         .from("bookings")
         .select("*")
@@ -2150,8 +2253,8 @@ pub async fn list_bookings(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let v: serde_json::Value =
-        serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(v))
 }
 
@@ -2203,8 +2306,8 @@ pub async fn list_book_outs(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let v: serde_json::Value =
-        serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(v))
 }
 
@@ -2229,18 +2332,22 @@ pub async fn create_book_out(
         let connections = list_active_talent_connections(&state, &user).await?;
         let mut ids: Vec<String> = connections
             .iter()
-            .filter_map(|r| r.get("agency_id").and_then(|v| v.as_str()).map(|s| s.to_string()))
+            .filter_map(|r| {
+                r.get("agency_id")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+            })
             .filter(|s| !s.is_empty())
             .collect();
         ids.sort();
         ids.dedup();
         if ids.len() > 1 {
-            return Err((StatusCode::BAD_REQUEST, "agency_id is required when connected to multiple agencies".to_string()));
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "agency_id is required when connected to multiple agencies".to_string(),
+            ));
         }
-        let aid = ids
-            .first()
-            .cloned()
-            .unwrap_or_default();
+        let aid = ids.first().cloned().unwrap_or_default();
         if aid.is_empty() {
             return Err((StatusCode::BAD_REQUEST, "Missing agency_id".to_string()));
         }
@@ -2270,8 +2377,8 @@ pub async fn create_book_out(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let v: serde_json::Value =
-        serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     // Option C: notify agency (email + in-app notification)
     let should_notify = payload.notify_agency.unwrap_or(false);
@@ -2288,8 +2395,18 @@ pub async fn create_book_out(
             .agency_user_row
             .get("full_name")
             .and_then(|v| v.as_str())
-            .or_else(|| resolved.agency_user_row.get("name").and_then(|v| v.as_str()))
-            .or_else(|| resolved.agency_user_row.get("stage_name").and_then(|v| v.as_str()))
+            .or_else(|| {
+                resolved
+                    .agency_user_row
+                    .get("name")
+                    .and_then(|v| v.as_str())
+            })
+            .or_else(|| {
+                resolved
+                    .agency_user_row
+                    .get("stage_name")
+                    .and_then(|v| v.as_str())
+            })
             .unwrap_or("Talent")
             .to_string();
 
@@ -2397,7 +2514,7 @@ pub async fn delete_book_out(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let v: serde_json::Value =
-        serde_json::from_str(&text).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let v: serde_json::Value = serde_json::from_str(&text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(v))
 }

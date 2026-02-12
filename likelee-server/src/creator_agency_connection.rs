@@ -217,7 +217,7 @@ pub async fn accept_invite(
             .full_name
             .filter(|s| !s.trim().is_empty())
             .or_else(|| user.email.clone())
-            .or_else(|| creator.email)
+            .or(creator.email)
             .unwrap_or_else(|| "Unknown".to_string());
 
         let insert_payload = json!({

@@ -148,7 +148,8 @@ export const registerAgency = (data: any) =>
 // Dashboard data for the authenticated user
 export const getDashboard = () => base44Client.get(`/dashboard`);
 
-export const getTalentMe = () => base44Client.get(`/api/talent/me`);
+export const getTalentMe = (params?: { agency_id?: string }) =>
+  base44Client.get(`/api/talent/me`, { params });
 
 export const listTalentLicensingRequests = () =>
   base44Client.get(`/api/talent/licensing-requests`);
@@ -190,6 +191,9 @@ export const updateTalentPortalSettings = (data: {
   allow_training?: boolean;
   public_profile_visible?: boolean;
 }) => base44Client.post(`/api/talent/settings`, data);
+
+export const listTalentAgencyInvites = () =>
+  base44Client.get(`/api/talent/agency-invites`);
 
 export const getLatestTalentTaxDocument = (params?: {
   doc_type?: string;

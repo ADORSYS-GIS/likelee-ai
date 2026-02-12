@@ -6,15 +6,28 @@ import TalentPortal from "@/pages/TalentPortal";
 import {
   acceptCreatorAgencyInvite,
   declineCreatorAgencyInvite,
+  disconnectCreatorAgencyConnection,
   listCreatorAgencyConnections,
   listCreatorAgencyInvites,
   type CreatorAgencyConnection,
   type CreatorAgencyInvite,
 } from "@/api/creatorAgencyConnection";
+import { listTalentAgencyInvites } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ToastAction } from "@/components/ui/toast";
 import { getUserFriendlyError } from "@/utils";
 import { Label } from "@/components/ui/label";
@@ -80,6 +93,7 @@ import {
   Gift,
   CreditCard,
   Link as LinkIcon,
+  Link2Off,
   HelpCircle,
   LogOut,
   Archive,
@@ -771,11 +785,17 @@ export default function CreatorDashboard() {
   const [settingsTab, setSettingsTab] = useState("profile"); // 'profile' or 'rules'
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
-  const [agencyInvites, setAgencyInvites] = useState<CreatorAgencyInvite[]>([]);
+  const [agencyInvites, setAgencyInvites] = useState<any[]>([]);
   const [agencyConnections, setAgencyConnections] = useState<
     CreatorAgencyConnection[]
   >([]);
   const [agencyConnectionLoading, setAgencyConnectionLoading] = useState(false);
+  const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
+  const [disconnectConfirmChecked, setDisconnectConfirmChecked] = useState(false);
+  const [disconnectTarget, setDisconnectTarget] = useState<{
+    agency_id: string;
+    agency_name?: string;
+  } | null>(null);
   const IMAGE_SECTIONS = getImageSections(t);
 
   const talentPortalEnabled =
@@ -787,10 +807,11 @@ export default function CreatorDashboard() {
     (async () => {
       try {
         setAgencyConnectionLoading(true);
-        const [connections, invites] = await Promise.all([
-          listCreatorAgencyConnections(),
-          listCreatorAgencyInvites(),
-        ]);
+        const connections = await listCreatorAgencyConnections();
+        const isTalent = (profile as any)?.role === "talent" || connections.length > 0;
+        const invites = isTalent
+          ? await listTalentAgencyInvites().then((r: any) => (r?.invites as any[]) || [])
+          : await listCreatorAgencyInvites();
         if (!active) return;
         setAgencyConnections(connections);
         setAgencyInvites(invites);
@@ -2008,7 +2029,7 @@ export default function CreatorDashboard() {
   };
 
   const renderTalentPortal = () => {
-    return <TalentPortal embedded />;
+    return <TalentPortal embedded initialTab="settings" initialSettingsTab="profile" />;
   };
 
   const renderPublicProfilePreview = () => {
@@ -3976,9 +3997,86 @@ export default function CreatorDashboard() {
 
   const renderAgencyConnection = () => {
     const pending = agencyInvites.filter((i) => i.status === "pending");
+    const isTalent = (profile as any)?.role === "talent" || agencyConnections.length > 0;
+
+    const disconnectLabel =
+      disconnectTarget?.agency_name || disconnectTarget?.agency_id || "this agency";
+
+    const doDisconnect = async () => {
+      if (!disconnectTarget?.agency_id) return;
+      try {
+        setAgencyConnectionLoading(true);
+        await disconnectCreatorAgencyConnection(String(disconnectTarget.agency_id));
+
+        const connections = await listCreatorAgencyConnections();
+        const talentMode = (profile as any)?.role === "talent" || connections.length > 0;
+        const invites = talentMode
+          ? await listTalentAgencyInvites().then((r: any) => (r?.invites as any[]) || [])
+          : await listCreatorAgencyInvites();
+
+        setAgencyConnections(connections);
+        setAgencyInvites(invites);
+        toast({
+          title: "Disconnected",
+          description: "You have disconnected from the agency.",
+        });
+      } catch (e: any) {
+        toast({
+          variant: "destructive",
+          title: "Failed to disconnect",
+          description: e?.message || String(e),
+        });
+      } finally {
+        setAgencyConnectionLoading(false);
+      }
+    };
 
     return (
       <div className="space-y-8">
+        <AlertDialog
+          open={disconnectDialogOpen}
+          onOpenChange={(open) => {
+            setDisconnectDialogOpen(open);
+            if (!open) {
+              setDisconnectConfirmChecked(false);
+              setDisconnectTarget(null);
+            }
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Disconnect from {disconnectLabel}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This may remove access to bookings, earnings, and portal data for that agency.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            <div className="flex items-start gap-3">
+              <Checkbox
+                checked={disconnectConfirmChecked}
+                onCheckedChange={(v) => setDisconnectConfirmChecked(Boolean(v))}
+                id="confirm-disconnect"
+              />
+              <Label htmlFor="confirm-disconnect" className="text-sm leading-5">
+                I understand this action is hard to undo.
+              </Label>
+            </div>
+
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={!disconnectConfirmChecked || agencyConnectionLoading}
+                onClick={async () => {
+                  await doDisconnect();
+                }}
+              >
+                Disconnect
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         <div>
           <h2 className="text-3xl font-bold text-gray-900">Agency Connection</h2>
           <p className="text-gray-600 mt-1">
@@ -4011,27 +4109,46 @@ export default function CreatorDashboard() {
               {agencyConnections.map((c) => (
                 <div
                   key={c.agency_id}
-                  className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg bg-white"
+                  className="flex items-center justify-between gap-3 p-4 border border-gray-200 rounded-lg bg-white"
                 >
-                  <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden">
-                    {c.agencies?.logo_url ? (
-                      <img
-                        src={c.agencies.logo_url}
-                        alt={c.agencies.agency_name || "Agency"}
-                        className="w-full h-full object-contain"
-                      />
-                    ) : (
-                      <Building2 className="w-5 h-5 text-gray-500" />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="font-semibold text-gray-900 truncate">
-                      {c.agencies?.agency_name || c.agency_id}
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {c.agencies?.logo_url ? (
+                        <img
+                          src={c.agencies.logo_url}
+                          alt={c.agencies.agency_name || "Agency"}
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <Building2 className="w-5 h-5 text-gray-500" />
+                      )}
                     </div>
-                    <div className="text-xs text-gray-500 truncate">
-                      {c.agency_id}
+                    <div className="min-w-0">
+                      <div className="font-semibold text-gray-900 truncate">
+                        {c.agencies?.agency_name || c.agency_id}
+                      </div>
+                      <div className="text-xs text-gray-500 truncate">{c.agency_id}</div>
                     </div>
                   </div>
+
+                  {((profile as any)?.role === "talent" || agencyConnections.length > 0) && (
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      disabled={agencyConnectionLoading}
+                      onClick={() => {
+                        setDisconnectTarget({
+                          agency_id: String(c.agency_id),
+                          agency_name: c.agencies?.agency_name || undefined,
+                        });
+                        setDisconnectConfirmChecked(false);
+                        setDisconnectDialogOpen(true);
+                      }}
+                      aria-label="Disconnect from agency"
+                    >
+                      <Link2Off className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               ))}
             </div>
@@ -4062,12 +4179,25 @@ export default function CreatorDashboard() {
                   key={inv.id}
                   className="p-4 border border-gray-200 rounded-lg flex items-center justify-between gap-4"
                 >
-                  <div className="min-w-0">
-                    <div className="font-semibold text-gray-900 truncate">
-                      Invitation from agency
+                  <div className="min-w-0 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {inv?.agencies?.logo_url ? (
+                        <img
+                          src={inv.agencies.logo_url}
+                          alt={inv.agencies.agency_name || "Agency"}
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <Users className="w-5 h-5 text-gray-500" />
+                      )}
                     </div>
-                    <div className="text-xs text-gray-500 truncate mt-1">
-                      {inv.agency_id}
+                    <div className="min-w-0">
+                      <div className="font-semibold text-gray-900 truncate">
+                        {inv?.agencies?.agency_name || "Invitation from agency"}
+                      </div>
+                      <div className="text-xs text-gray-500 truncate mt-1">
+                        {inv.agency_id}
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
@@ -4076,15 +4206,22 @@ export default function CreatorDashboard() {
                       className="border-gray-200"
                       onClick={async () => {
                         try {
+                          if (isTalent) {
+                            const token = String(inv?.token || "");
+                            if (token) {
+                              navigate(`/invite/agency/${encodeURIComponent(token)}`);
+                              return;
+                            }
+                            throw new Error("Missing invite token");
+                          }
+
                           await declineCreatorAgencyInvite(inv.id);
                           setAgencyInvites((prev) =>
                             prev.map((p) =>
                               p.id === inv.id ? { ...p, status: "declined" } : p,
                             ),
                           );
-                          toast({
-                            title: "Invitation declined",
-                          });
+                          toast({ title: "Invitation declined" });
                         } catch (e: any) {
                           toast({
                             variant: "destructive",
@@ -4100,6 +4237,15 @@ export default function CreatorDashboard() {
                       className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
                       onClick={async () => {
                         try {
+                          if (isTalent) {
+                            const token = String(inv?.token || "");
+                            if (token) {
+                              navigate(`/invite/agency/${encodeURIComponent(token)}`);
+                              return;
+                            }
+                            throw new Error("Missing invite token");
+                          }
+
                           await acceptCreatorAgencyInvite(inv.id);
                           const [connections] = await Promise.all([
                             listCreatorAgencyConnections(),
@@ -4113,7 +4259,7 @@ export default function CreatorDashboard() {
                           toast({
                             title: "Invitation accepted",
                             description:
-                              "You are now connected to the agency and can access Talent Portal.",
+                              "You are now connected to this agency. You can edit your profile per agency in Talent Portal settings.",
                           });
                         } catch (e: any) {
                           toast({

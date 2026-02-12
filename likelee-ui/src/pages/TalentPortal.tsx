@@ -38,6 +38,7 @@ import {
   updateTalentPortalSettings,
   getLatestTalentTaxDocument,
   getTalentMe,
+  listTalentAgencyInvites,
   updateTalentProfile,
   listTalentBookings,
   listTalentBookOuts,
@@ -76,7 +77,6 @@ import {
   declineCreatorAgencyInvite,
   disconnectCreatorAgencyConnection,
   listCreatorAgencyConnections,
-  listCreatorAgencyInvites,
 } from "@/api/creatorAgencyConnection";
 
 function useQueryParams() {
@@ -84,16 +84,32 @@ function useQueryParams() {
   return React.useMemo(() => new URLSearchParams(location.search), [location.search]);
 }
 
-export default function TalentPortal({ embedded }: { embedded?: boolean }) {
+export default function TalentPortal({
+  embedded,
+  initialTab,
+  initialSettingsTab,
+  initialMode,
+}: {
+  embedded?: boolean;
+  initialTab?: string;
+  initialSettingsTab?: string;
+  initialMode?: "ai" | "irl";
+}) {
   const navigate = useNavigate();
   const location = useLocation();
   const params = useQueryParams();
   const { initialized, authenticated, profile } = useAuth();
   const queryClient = useQueryClient();
 
-  const [embeddedMode, setEmbeddedMode] = React.useState<"ai" | "irl">("ai");
-  const [embeddedTab, setEmbeddedTab] = React.useState("overview");
-  const [embeddedSettingsTab, setEmbeddedSettingsTab] = React.useState("profile");
+  const [embeddedMode, setEmbeddedMode] = React.useState<"ai" | "irl">(
+    initialMode || "ai",
+  );
+  const [embeddedTab, setEmbeddedTab] = React.useState(
+    (initialTab || "overview").toLowerCase(),
+  );
+  const [embeddedSettingsTab, setEmbeddedSettingsTab] = React.useState(
+    (initialSettingsTab || "profile").toLowerCase(),
+  );
 
   const mode = embedded
     ? embeddedMode
@@ -105,13 +121,44 @@ export default function TalentPortal({ embedded }: { embedded?: boolean }) {
     ? embeddedSettingsTab
     : (params.get("settings") || "profile").toLowerCase();
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["talentMe"],
+  const {
+    data: baseMe,
+    isLoading: isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["talentMe", "base"],
     queryFn: async () => await getTalentMe(),
     enabled: initialized && authenticated,
   });
 
-  const agencyUser = (data as any)?.agency_user;
+  const baseConnectedAgencies = Array.isArray((baseMe as any)?.connected_agencies)
+    ? ((baseMe as any)?.connected_agencies as any[])
+    : [];
+  const baseConnectedAgencyIds = Array.isArray((baseMe as any)?.connected_agency_ids)
+    ? ((baseMe as any)?.connected_agency_ids as string[])
+    : baseConnectedAgencies
+        .map((r: any) => String(r?.agency_id || ""))
+        .filter((s: string) => !!s);
+
+  const defaultAgencyId = baseConnectedAgencyIds[0];
+
+  const [selectedAgencyId, setSelectedAgencyId] = React.useState<string>("all");
+  React.useEffect(() => {
+    setSelectedAgencyId("all");
+  }, [baseConnectedAgencyIds.join(",")]);
+
+  const canSelectAgency = baseConnectedAgencyIds.length > 1;
+  const effectiveAgencyId = selectedAgencyId === "all" ? undefined : selectedAgencyId;
+  const profileAgencyId = effectiveAgencyId || defaultAgencyId;
+
+  const { data: agencyMe } = useQuery({
+    queryKey: ["talentMe", profileAgencyId || "default"],
+    queryFn: async () =>
+      await getTalentMe(profileAgencyId ? { agency_id: profileAgencyId } : undefined),
+    enabled: initialized && authenticated && !!profileAgencyId,
+  });
+
+  const agencyUser = (agencyMe as any)?.agency_user || (baseMe as any)?.agency_user;
   const talentId = agencyUser?.id as string | undefined;
   const agencyName = agencyUser?.agency_name as string | undefined;
   const profilePhotoUrl = agencyUser?.profile_photo_url as string | undefined;
@@ -122,22 +169,8 @@ export default function TalentPortal({ embedded }: { embedded?: boolean }) {
     profile?.full_name ||
     profile?.email;
 
-  const connectedAgencies = Array.isArray((data as any)?.connected_agencies)
-    ? ((data as any)?.connected_agencies as any[])
-    : [];
-  const connectedAgencyIds = Array.isArray((data as any)?.connected_agency_ids)
-    ? ((data as any)?.connected_agency_ids as string[])
-    : connectedAgencies
-        .map((r: any) => String(r?.agency_id || ""))
-        .filter((s: string) => !!s);
-
-  const [selectedAgencyId, setSelectedAgencyId] = React.useState<string>("all");
-  React.useEffect(() => {
-    setSelectedAgencyId("all");
-  }, [connectedAgencyIds.join(",")]);
-
-  const canSelectAgency = connectedAgencyIds.length > 1;
-  const effectiveAgencyId = selectedAgencyId === "all" ? undefined : selectedAgencyId;
+  const connectedAgencies = baseConnectedAgencies;
+  const connectedAgencyIds = baseConnectedAgencyIds;
 
   const agencyNameById = React.useMemo(() => {
     const map = new Map<string, string>();
@@ -499,6 +532,20 @@ export default function TalentPortal({ embedded }: { embedded?: boolean }) {
     );
   };
 
+  const setSettingsTab = (nextSettingsTab: string) => {
+    if (embedded) {
+      setEmbeddedSettingsTab(nextSettingsTab);
+      return;
+    }
+    const nextParams = new URLSearchParams(location.search);
+    nextParams.set("tab", "settings");
+    nextParams.set("settings", nextSettingsTab);
+    navigate(
+      { pathname: "/talentportal", search: `?${nextParams.toString()}` },
+      { replace: true },
+    );
+  };
+
   const setTab = (nextTab: string) => {
     if (embedded) {
       setEmbeddedTab(nextTab);
@@ -531,17 +578,23 @@ export default function TalentPortal({ embedded }: { embedded?: boolean }) {
       full_legal_name: au.full_legal_name || "",
       email: au.email || "",
       phone_number: au.phone_number || "",
+      date_of_birth: au.date_of_birth || au.birthdate || "",
+      role_type: au.role_type || "",
+      status: au.status || "",
       city: au.city || "",
       state_province: au.state_province || "",
       country: au.country || "",
       bio_notes: au.bio_notes || au.bio || "",
       instagram_handle: au.instagram_handle || "",
+      instagram_followers: au.instagram_followers ?? "",
+      engagement_rate: au.engagement_rate ?? "",
       profile_photo_url: au.profile_photo_url || "",
       photo_urls: Array.isArray(au.photo_urls) ? au.photo_urls : [],
       gender_identity: au.gender_identity || "",
       race_ethnicity: Array.isArray(au.race_ethnicity) ? au.race_ethnicity : [],
       hair_color: au.hair_color || "",
       eye_color: au.eye_color || "",
+      skin_tone: au.skin_tone || "",
       height_feet: au.height_feet ?? "",
       height_inches: au.height_inches ?? "",
       bust_chest_inches: au.bust_chest_inches ?? "",
@@ -562,27 +615,43 @@ export default function TalentPortal({ embedded }: { embedded?: boolean }) {
   const updateProfileMutation = useMutation({
     mutationFn: async (payload: any) => await updateTalentProfile(payload),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["talentMe"] });
+      await queryClient.invalidateQueries({ queryKey: ["talentMe", "base"] });
+      if (profileAgencyId) {
+        await queryClient.invalidateQueries({ queryKey: ["talentMe", profileAgencyId] });
+      }
     },
   });
 
   const saveProfile = () => {
     const payload: any = {
+      agency_id: profileAgencyId || undefined,
       stage_name: profileForm.stage_name || undefined,
       full_legal_name: profileForm.full_legal_name || undefined,
       email: profileForm.email || undefined,
       phone_number: profileForm.phone_number || undefined,
+      date_of_birth: profileForm.date_of_birth || undefined,
+      role_type: profileForm.role_type || undefined,
+      status: profileForm.status || undefined,
       city: profileForm.city || undefined,
       state_province: profileForm.state_province || undefined,
       country: profileForm.country || undefined,
       bio_notes: profileForm.bio_notes || undefined,
       instagram_handle: profileForm.instagram_handle || undefined,
+      instagram_followers:
+        profileForm.instagram_followers === ""
+          ? undefined
+          : Number(profileForm.instagram_followers),
+      engagement_rate:
+        profileForm.engagement_rate === ""
+          ? undefined
+          : Number(profileForm.engagement_rate),
       profile_photo_url: profileForm.profile_photo_url || undefined,
       photo_urls: Array.isArray(profileForm.photo_urls) ? profileForm.photo_urls : undefined,
       gender_identity: profileForm.gender_identity || undefined,
       race_ethnicity: Array.isArray(profileForm.race_ethnicity) ? profileForm.race_ethnicity : undefined,
       hair_color: profileForm.hair_color || undefined,
       eye_color: profileForm.eye_color || undefined,
+      skin_tone: profileForm.skin_tone || undefined,
       height_feet: profileForm.height_feet === "" ? undefined : Number(profileForm.height_feet),
       height_inches: profileForm.height_inches === "" ? undefined : Number(profileForm.height_inches),
       bust_chest_inches: profileForm.bust_chest_inches === "" ? undefined : Number(profileForm.bust_chest_inches),
@@ -648,11 +717,13 @@ export default function TalentPortal({ embedded }: { embedded?: boolean }) {
     enabled: !!talentId,
   });
 
-  const { data: agencyInvites = [], isLoading: agencyInvitesLoading } = useQuery({
-    queryKey: ["creatorAgencyInvites"],
-    queryFn: async () => await listCreatorAgencyInvites(),
+  const { data: agencyInvitesResp, isLoading: agencyInvitesLoading } = useQuery({
+    queryKey: ["talentAgencyInvites"],
+    queryFn: async () => await listTalentAgencyInvites(),
     enabled: authenticated,
   });
+
+  const agencyInvites = ((agencyInvitesResp as any)?.invites as any[]) || [];
 
   const { data: agencyConnections = [], isLoading: agencyConnectionsLoading } = useQuery({
     queryKey: ["creatorAgencyConnections"],
@@ -1505,6 +1576,219 @@ export default function TalentPortal({ embedded }: { embedded?: boolean }) {
                 <div className="text-sm text-gray-600 mt-1">Configure your talent portal preferences</div>
               </div>
 
+              <div className="flex items-center gap-2 overflow-x-auto">
+                {[
+                  { id: "profile", label: "Profile" },
+                  { id: "payments", label: "Payments" },
+                  { id: "privacy", label: "Privacy" },
+                ].map((it) => {
+                  const active = settingsTab === it.id;
+                  return (
+                    <button
+                      key={it.id}
+                      className={`px-3 py-2 rounded-lg text-sm font-semibold border transition-colors whitespace-nowrap ${
+                        active
+                          ? "bg-[#32C8D1] text-white border-[#32C8D1]"
+                          : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+                      }`}
+                      onClick={() => setSettingsTab(it.id)}
+                    >
+                      {it.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {settingsTab === "profile" && (
+                <Card className="p-6 rounded-xl shadow-sm">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <div className="text-sm font-semibold text-gray-900">Profile</div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        This profile is specific to the selected agency.
+                      </div>
+                    </div>
+                    {canSelectAgency && (
+                      <div className="w-[240px]">
+                        <Select value={selectedAgencyId} onValueChange={setSelectedAgencyId}>
+                          <SelectTrigger className="h-10">
+                            <SelectValue placeholder="All agencies" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Default agency</SelectItem>
+                            {connectedAgencyIds.map((id) => (
+                              <SelectItem key={id} value={id}>
+                                {agencyNameById.get(id) || id}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-xs text-gray-600 mb-1">Stage Name</div>
+                      <Input
+                        value={profileForm.stage_name || ""}
+                        onChange={(e) =>
+                          setProfileForm((p: any) => ({ ...p, stage_name: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-600 mb-1">Full Legal Name</div>
+                      <Input
+                        value={profileForm.full_legal_name || ""}
+                        onChange={(e) =>
+                          setProfileForm((p: any) => ({ ...p, full_legal_name: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-600 mb-1">Email</div>
+                      <Input
+                        value={profileForm.email || ""}
+                        onChange={(e) =>
+                          setProfileForm((p: any) => ({ ...p, email: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-600 mb-1">Phone</div>
+                      <Input
+                        value={profileForm.phone_number || ""}
+                        onChange={(e) =>
+                          setProfileForm((p: any) => ({ ...p, phone_number: e.target.value }))
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <div className="text-xs text-gray-600 mb-1">Date of Birth</div>
+                      <Input
+                        type="date"
+                        value={profileForm.date_of_birth || ""}
+                        onChange={(e) =>
+                          setProfileForm((p: any) => ({ ...p, date_of_birth: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-600 mb-1">Role Type</div>
+                      <Input
+                        value={profileForm.role_type || ""}
+                        onChange={(e) =>
+                          setProfileForm((p: any) => ({ ...p, role_type: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-600 mb-1">Status</div>
+                      <Input
+                        value={profileForm.status || ""}
+                        onChange={(e) =>
+                          setProfileForm((p: any) => ({ ...p, status: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-600 mb-1">Skin Tone</div>
+                      <Input
+                        value={profileForm.skin_tone || ""}
+                        onChange={(e) =>
+                          setProfileForm((p: any) => ({ ...p, skin_tone: e.target.value }))
+                        }
+                      />
+                    </div>
+
+                    <div>
+                      <div className="text-xs text-gray-600 mb-1">Instagram</div>
+                      <Input
+                        value={profileForm.instagram_handle || ""}
+                        onChange={(e) =>
+                          setProfileForm((p: any) => ({ ...p, instagram_handle: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-600 mb-1">Instagram Followers</div>
+                      <Input
+                        value={String(profileForm.instagram_followers ?? "")}
+                        onChange={(e) =>
+                          setProfileForm((p: any) => ({
+                            ...p,
+                            instagram_followers: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-600 mb-1">Engagement Rate</div>
+                      <Input
+                        value={String(profileForm.engagement_rate ?? "")}
+                        onChange={(e) =>
+                          setProfileForm((p: any) => ({
+                            ...p,
+                            engagement_rate: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-600 mb-1">City</div>
+                      <Input
+                        value={profileForm.city || ""}
+                        onChange={(e) =>
+                          setProfileForm((p: any) => ({ ...p, city: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-600 mb-1">State / Province</div>
+                      <Input
+                        value={profileForm.state_province || ""}
+                        onChange={(e) =>
+                          setProfileForm((p: any) => ({ ...p, state_province: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-600 mb-1">Country</div>
+                      <Input
+                        value={profileForm.country || ""}
+                        onChange={(e) =>
+                          setProfileForm((p: any) => ({ ...p, country: e.target.value }))
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <div className="text-xs text-gray-600 mb-1">Bio</div>
+                    <Textarea
+                      value={profileForm.bio_notes || ""}
+                      onChange={(e) =>
+                        setProfileForm((p: any) => ({ ...p, bio_notes: e.target.value }))
+                      }
+                      className="min-h-[120px]"
+                    />
+                  </div>
+
+                  <Button
+                    className="mt-6 h-11 w-full bg-[#32C8D1] hover:bg-[#2AB8C1]"
+                    disabled={updateProfileMutation.isPending}
+                    onClick={saveProfile}
+                  >
+                    {updateProfileMutation.isPending ? "Saving..." : "Save profile"}
+                  </Button>
+                </Card>
+              )}
+
+              {settingsTab !== "profile" && (
+                <>
+
               <Card className="p-6 rounded-xl shadow-sm">
                 <div className="text-sm font-semibold text-gray-900">Payment Preferences</div>
 
@@ -1614,6 +1898,9 @@ export default function TalentPortal({ embedded }: { embedded?: boolean }) {
                   </div>
                 </div>
               </Card>
+
+                </>
+              )}
             </div>
           )}
 
@@ -1677,6 +1964,12 @@ export default function TalentPortal({ embedded }: { embedded?: boolean }) {
                           disabled={disconnectAgencyMutation.isPending}
                           onClick={async () => {
                             try {
+                              const agencyLabel =
+                                c.agencies?.agency_name || String(c.agency_id || "");
+                              const ok = window.confirm(
+                                `Disconnect from ${agencyLabel}? This may remove access to bookings, earnings, and portal data for that agency.`,
+                              );
+                              if (!ok) return;
                               await disconnectAgencyMutation.mutateAsync(String(c.agency_id));
                               toast({
                                 title: "Disconnected",
@@ -1738,11 +2031,16 @@ export default function TalentPortal({ embedded }: { embedded?: boolean }) {
                               disabled={disconnectAgencyMutation.isPending}
                               onClick={async () => {
                                 try {
-                                  await declineCreatorAgencyInvite(String(inv.id));
-                                  await queryClient.invalidateQueries({
-                                    queryKey: ["creatorAgencyInvites"],
+                                  const token = String(inv?.token || "");
+                                  if (token) {
+                                    navigate(`/invite/agency/${encodeURIComponent(token)}`);
+                                    return;
+                                  }
+                                  toast({
+                                    title: "Missing invite token",
+                                    description: "Open the invite link to respond.",
+                                    variant: "destructive" as any,
                                   });
-                                  toast({ title: "Invitation declined" });
                                 } catch (e: any) {
                                   toast({
                                     variant: "destructive",

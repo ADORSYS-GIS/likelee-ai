@@ -15,6 +15,14 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/health", get(crate::health::health))
         .route("/api/talent/me", get(crate::talent::talent_me))
         .route(
+            "/api/talent/settings",
+            get(crate::talent::get_portal_settings).post(crate::talent::update_portal_settings),
+        )
+        .route(
+            "/api/talent/agency-invites",
+            get(crate::agency_talent_invites::list_for_talent),
+        )
+        .route(
             "/api/talent/licensing-requests",
             get(crate::talent::list_licensing_requests),
         )
@@ -26,7 +34,14 @@ pub fn build_router(state: AppState) -> Router {
             "/api/talent/licensing-requests/:id/decline",
             post(crate::talent::decline_licensing_request),
         )
-        .route("/api/talent/licenses", get(crate::talent::list_licenses_stub))
+        .route(
+            "/api/talent/licenses",
+            get(crate::talent::list_licenses_stub),
+        )
+        .route(
+            "/api/talent/tax-documents/latest",
+            get(crate::talent::get_latest_tax_document),
+        )
         .route(
             "/api/talent/licensing/revenue",
             get(crate::talent::get_licensing_revenue),
@@ -43,10 +58,7 @@ pub fn build_router(state: AppState) -> Router {
             "/api/talent/payouts/request",
             post(crate::payouts::request_my_payout),
         )
-        .route(
-            "/api/talent/analytics",
-            get(crate::talent::get_analytics),
-        )
+        .route("/api/talent/analytics", get(crate::talent::get_analytics))
         .route(
             "/api/talent/portfolio-items",
             get(crate::talent::list_portfolio_items).post(crate::talent::create_portfolio_item),
@@ -423,10 +435,7 @@ pub fn build_router(state: AppState) -> Router {
             "/api/face-profiles/:id",
             post(crate::face_profiles::update_face_profile),
         )
-        .route(
-            "/api/faces/search",
-            get(crate::face_profiles::search_faces),
-        )
+        .route("/api/faces/search", get(crate::face_profiles::search_faces))
         .route(
             "/api/moderation/image",
             post(crate::moderation::moderate_image),

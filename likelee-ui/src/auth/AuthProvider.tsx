@@ -51,6 +51,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<any | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
 
+  const redirectToPasswordUpdateIfNeeded = (event?: string) => {
+    try {
+      const href = window.location.href;
+      const hash = window.location.hash || "";
+      const isRecoveryEvent = event === "PASSWORD_RECOVERY";
+      const isRecoveryHash = /\btype=recovery\b/i.test(hash) || /\brecovery\b/i.test(hash);
+
+      if (!isRecoveryEvent && !isRecoveryHash) return;
+      if (href.includes("/update-password")) return;
+
+      const next = localStorage.getItem("likelee_invite_next") || "";
+      const tsRaw = localStorage.getItem("likelee_invite_next_ts") || "0";
+      const ts = Number(tsRaw);
+      const fresh = ts && Date.now() - ts < 1000 * 60 * 30;
+      const nextPath = fresh && next.startsWith("/") ? next : "/login";
+
+      window.location.replace(
+        `/update-password?next=${encodeURIComponent(nextPath)}${hash}`,
+      );
+    } catch {
+      // ignore
+    }
+  };
+
   const fetchProfile = async (
     userId: string,
     userEmail?: string,
@@ -141,14 +165,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log("Profile missing, creating new profile for:", userId);
         const { data: newProfile, error: insertError } = await supabase
           .from("creators")
-          .insert([
+          .upsert(
             {
               id: userId,
               email: userEmail,
               full_name: userFullName,
               role: roleHint || "creator",
             },
-          ])
+            { onConflict: "id" },
+          )
           .select()
           .single();
 
@@ -191,6 +216,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(currentUser);
         setSession(session);
 
+        redirectToPasswordUpdateIfNeeded(event);
+
         if (currentUser && (currentUser.email_confirmed_at || session)) {
           // Prevent infinite loop: only fetch if profile is not already loaded or if user changed
           if (!profile || profile.id !== currentUser.id) {
@@ -212,6 +239,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const currentUser = data.session?.user ?? null;
       setUser(currentUser);
       setSession(data.session);
+
+      redirectToPasswordUpdateIfNeeded();
 
       // If a session already exists on page load, onAuthStateChange may not fire.
       // Ensure profile is fetched so ProtectedRoute can render role-gated pages.

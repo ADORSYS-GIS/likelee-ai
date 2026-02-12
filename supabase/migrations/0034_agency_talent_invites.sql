@@ -35,4 +35,15 @@ FOR UPDATE
 USING (agency_id = auth.uid())
 WITH CHECK (agency_id = auth.uid());
 
+DROP POLICY IF EXISTS "Talents can view their agency invites" ON public.agency_talent_invites;
+CREATE POLICY "Talents can view their agency invites" ON public.agency_talent_invites
+FOR SELECT
+USING (lower(email) = lower((auth.jwt() ->> 'email')));
+
+DROP POLICY IF EXISTS "Talents can respond to their agency invites" ON public.agency_talent_invites;
+CREATE POLICY "Talents can respond to their agency invites" ON public.agency_talent_invites
+FOR UPDATE
+USING (lower(email) = lower((auth.jwt() ->> 'email')))
+WITH CHECK (lower(email) = lower((auth.jwt() ->> 'email')));
+
 COMMIT;

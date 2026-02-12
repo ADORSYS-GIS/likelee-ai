@@ -893,7 +893,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 // duplicate imports removed below (already imported earlier in file)
-import { useAuth } from "../auth/AuthProvider";
+import { useAuth } from "@/auth/AuthProvider";
 
 // STATUS_MAP is defined earlier in this file; removing duplicate declaration here.
 

@@ -58,10 +58,25 @@ export default function AgencyInviteLanding() {
   const effectiveRole = String(profile?.role || "").toLowerCase();
   const hasInviteRole = effectiveRole === "creator" || effectiveRole === "talent";
 
+  const startedMagicLinkRef = React.useRef(false);
+
   const startMagicLinkFlow = async () => {
     if (!effectiveToken) return;
     setActionLoading(true);
     try {
+      try {
+        localStorage.setItem(
+          "likelee_invite_next",
+          `/invite/agency/${encodeURIComponent(effectiveToken)}`,
+        );
+        localStorage.setItem(
+          "likelee_invite_next_ts",
+          String(Date.now()),
+        );
+      } catch {
+        // ignore
+      }
+
       const res: any = await getAgencyTalentInviteMagicLinkByToken(effectiveToken);
       const link = String(res?.action_link || "");
       if (!link.startsWith("http")) {
@@ -78,6 +93,16 @@ export default function AgencyInviteLanding() {
       setActionLoading(false);
     }
   };
+
+  React.useEffect(() => {
+    if (startedMagicLinkRef.current) return;
+    if (!effectiveToken) return;
+    if (!invite) return;
+    if (authenticated) return;
+    if (String(invite?.status || "") !== "pending") return;
+    startedMagicLinkRef.current = true;
+    void startMagicLinkFlow();
+  }, [authenticated, effectiveToken, invite]);
 
   const acceptInvite = async () => {
     if (!effectiveToken) return;
@@ -105,6 +130,7 @@ export default function AgencyInviteLanding() {
     setActionLoading(true);
     try {
       await declineAgencyTalentInviteByToken(effectiveToken);
+      await supabase?.auth.signOut();
       toast({
         title: "Invitation declined",
         description: "You declined the invitation.",
@@ -196,7 +222,7 @@ export default function AgencyInviteLanding() {
                   Redirecting…
                 </span>
               ) : (
-                "Set password"
+                "Continue"
               )}
             </Button>
 
