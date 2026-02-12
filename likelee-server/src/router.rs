@@ -192,6 +192,10 @@ pub fn build_router(state: AppState) -> Router {
             "/api/agency/dashboard/recent-activity",
             get(crate::agency_dashboard::get_recent_activity),
         )
+        .route(
+            "/api/agency/analytics/dashboard",
+            get(crate::analytics::get_analytics_dashboard),
+        )
         .route("/api/agency/roster", get(crate::agency_roster::get_roster))
         .route(
             "/api/agency/talent-invites",

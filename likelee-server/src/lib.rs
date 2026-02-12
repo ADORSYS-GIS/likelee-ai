@@ -6,6 +6,7 @@ pub mod agency_clients;
 pub mod agency_dashboard;
 pub mod agency_roster;
 pub mod agency_talent_invites;
+pub mod analytics;
 pub mod auth;
 pub mod billing;
 pub mod book_outs;
