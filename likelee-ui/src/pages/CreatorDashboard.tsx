@@ -1951,18 +1951,38 @@ export default function CreatorDashboard() {
   };
 
   const renderPublicProfilePreview = () => {
-    // Use real user data if available, otherwise example data
+    const fullName =
+      creator.name ||
+      profile?.full_name ||
+      user?.user_metadata?.full_name ||
+      user?.email?.split("@")[0] ||
+      "";
+    const location =
+      creator.location ||
+      [profile?.city, profile?.state].filter(Boolean).join(", ") ||
+      "";
+    const handles = [creator.instagram_handle, creator.tiktok_handle]
+      .map((h: any) => (typeof h === "string" ? h.trim() : ""))
+      .filter(Boolean)
+      .join(" ");
+
     const data = {
-      ...exampleProfilePreviewData,
-      first_name:
-        creator.name ||
-        profile?.full_name ||
-        user?.user_metadata?.full_name ||
-        user?.email?.split("@")[0] ||
-        exampleProfilePreviewData.first_name,
-      location:
-        user?.user_metadata?.location || exampleProfilePreviewData.location,
-      // Add other real fields mapping here
+      first_name: fullName,
+      location,
+      handles,
+      followers:
+        typeof creator.instagram_followers === "number"
+          ? creator.instagram_followers.toLocaleString()
+          : "0",
+      bio: creator.bio || profile?.bio || "",
+      active_campaigns: Array.isArray(activeCampaigns) ? activeCampaigns.length : 0,
+      completed_projects: 0,
+      voice_profiles: Array.isArray(voiceLibrary) ? voiceLibrary.length : 0,
+      open_to_work: Array.isArray(creator.content_types) ? creator.content_types : [],
+      industries: Array.isArray(creator.industries) ? creator.industries : [],
+      base_rate: typeof creator.price_per_month === "number" ? creator.price_per_month : 0,
+      portfolio_link:
+        typeof creator.portfolio_url === "string" ? creator.portfolio_url : "",
     };
 
     return (
@@ -2009,7 +2029,7 @@ export default function CreatorDashboard() {
                       variant="secondary"
                       className="bg-pink-50 text-pink-700 hover:bg-pink-100 border-pink-200 text-xs"
                     >
-                      {data.handles}
+                      {data.handles || "-"}
                     </Badge>
                   </span>
                   <span className="flex items-center gap-1">
@@ -2118,29 +2138,19 @@ export default function CreatorDashboard() {
             <h3 className="font-bold text-gray-900 mb-4">
               {t("creatorDashboard.publicProfile.portfolio")}
             </h3>
-            <div className="grid md:grid-cols-3 gap-4">
-              {data.portfolio.map((item: any) => (
-                <div
-                  key={item.id}
-                  className="border border-gray-200 rounded-lg p-4 flex items-center gap-4"
-                >
-                  <img
-                    src={item.logo}
-                    alt={item.brand}
-                    className="w-10 h-10 object-contain"
-                  />
-                  <div>
-                    <div className="font-bold text-gray-900 text-sm">
-                      {item.brand}
-                    </div>
-                    <div className="text-xs text-gray-500">{item.campaign}</div>
-                    <Badge variant="secondary" className="mt-1 text-[10px] h-5">
-                      {item.duration}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {data.portfolio_link ? (
+              <a
+                href={data.portfolio_link}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 text-[#32C8D1] hover:underline"
+              >
+                <LinkIcon className="h-4 w-4" />
+                {data.portfolio_link}
+              </a>
+            ) : (
+              <p className="text-sm text-gray-500">-</p>
+            )}
           </div>
 
           {/* Social Links */}
