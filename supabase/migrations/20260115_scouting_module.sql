@@ -59,6 +59,42 @@ CREATE TABLE IF NOT EXISTS public.scouting_trips (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
+ALTER TABLE public.scouting_trips
+  ADD COLUMN IF NOT EXISTS trip_type text;
+
+ALTER TABLE public.scouting_trips
+  ADD COLUMN IF NOT EXISTS start_time text;
+
+ALTER TABLE public.scouting_trips
+  ADD COLUMN IF NOT EXISTS end_time text;
+
+ALTER TABLE public.scouting_trips
+  ADD COLUMN IF NOT EXISTS scout_names text[];
+
+ALTER TABLE public.scouting_trips
+  ADD COLUMN IF NOT EXISTS photos text[];
+
+ALTER TABLE public.scouting_trips
+  ADD COLUMN IF NOT EXISTS latitude numeric(10,7);
+
+ALTER TABLE public.scouting_trips
+  ADD COLUMN IF NOT EXISTS longitude numeric(10,7);
+
+ALTER TABLE public.scouting_trips
+  ADD COLUMN IF NOT EXISTS prospects_approached integer DEFAULT 0;
+
+ALTER TABLE public.scouting_trips
+  ADD COLUMN IF NOT EXISTS prospects_added integer DEFAULT 0;
+
+ALTER TABLE public.scouting_trips
+  ADD COLUMN IF NOT EXISTS prospects_agreed integer DEFAULT 0;
+
+ALTER TABLE public.scouting_trips
+  ADD COLUMN IF NOT EXISTS conversion_rate numeric(5,2) DEFAULT 0;
+
+ALTER TABLE public.scouting_trips
+  ADD COLUMN IF NOT EXISTS total_cost numeric(12,2) DEFAULT 0;
+
 CREATE INDEX IF NOT EXISTS idx_scouting_trips_agency_id ON public.scouting_trips(agency_id);
 
 -- 3. Scouting Events (Open Calls)
