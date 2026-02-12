@@ -237,7 +237,7 @@ pub async fn signed_url_for_recording(
     let resp = state
         .pg
         .from("voice_recordings")
-        .select("storage_bucket,storage_path,user_id")
+        .select("storage_bucket,storage_path,user_id,accessible")
         .eq("id", &q.recording_id)
         .limit(1)
         .execute()
@@ -272,6 +272,15 @@ pub async fn signed_url_for_recording(
         .and_then(|v| v.as_str())
         .ok_or((StatusCode::NOT_FOUND, "recording not found".into()))?;
 
+    if row
+        .get("accessible")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true)
+        == false
+    {
+        return Err((StatusCode::NOT_FOUND, "recording not found".into()));
+    }
+
     // Request signed URL via Storage API
     let url = format!(
         "{}/storage/v1/object/sign/{}/{}",
@@ -292,7 +301,30 @@ pub async fn signed_url_for_recording(
         .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
     if !sign.status().is_success() {
         let msg = sign.text().await.unwrap_or_default();
-        return Err((StatusCode::BAD_GATEWAY, format!("sign url failed: {msg}")));
+
+        let is_object_not_found = msg.contains("Object not found")
+            || msg.contains("\"error\":\"not_found\"")
+            || msg.contains("\"error\": \"not_found\"")
+            || msg.contains("\"statusCode\":404")
+            || msg.contains("\"statusCode\": 404");
+
+        if is_object_not_found {
+            let _ = state
+                .pg
+                .from("voice_recordings")
+                .update("{\"accessible\": false}")
+                .eq("id", &q.recording_id)
+                .eq("user_id", &user.id)
+                .execute()
+                .await;
+
+            return Err((StatusCode::NOT_FOUND, "recording not found".into()));
+        }
+
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            format!("sign url failed: {msg}"),
+        ));
     }
     let signed_json: serde_json::Value = sign
         .json()

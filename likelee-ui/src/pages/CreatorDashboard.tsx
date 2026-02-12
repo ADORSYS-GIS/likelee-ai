@@ -1256,6 +1256,22 @@ export default function CreatorDashboard() {
         const withUrls = await Promise.all(
           rows.map(async (row: any) => {
             try {
+              if (row?.accessible === false) {
+                return {
+                  id: row.id,
+                  emotion: row.emotion_tag || null,
+                  url: null,
+                  blob: null,
+                  mimeType: row.mime_type || "audio/webm",
+                  duration: row.duration_sec || 0,
+                  date: row.created_at,
+                  accessible: false,
+                  voiceProfileCreated: !!row.voice_profile_created,
+                  usageCount: 0,
+                  server_recording_id: row.id,
+                };
+              }
+
               const j = await base44.get<any>(`/voice/recordings/signed-url`, {
                 headers: { Authorization: `Bearer ${token}` },
                 params: { recording_id: row.id, expires_sec: 600 },
@@ -1273,7 +1289,26 @@ export default function CreatorDashboard() {
                 usageCount: 0,
                 server_recording_id: row.id,
               };
-            } catch (_) {
+            } catch (e: any) {
+              const msg = typeof e?.message === "string" ? e.message : "";
+              const isNotFound = msg.includes(" failed: 404 ");
+
+              if (isNotFound) {
+                return {
+                  id: row.id,
+                  emotion: row.emotion_tag || null,
+                  url: null,
+                  blob: null,
+                  mimeType: row.mime_type || "audio/webm",
+                  duration: row.duration_sec || 0,
+                  date: row.created_at,
+                  accessible: false,
+                  voiceProfileCreated: !!row.voice_profile_created,
+                  usageCount: 0,
+                  server_recording_id: row.id,
+                };
+              }
+
               return null;
             }
           }),
