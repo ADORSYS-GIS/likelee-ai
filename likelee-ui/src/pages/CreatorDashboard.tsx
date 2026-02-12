@@ -1417,7 +1417,9 @@ export default function CreatorDashboard() {
   const [countdown, setCountdown] = useState(3);
   const [recordingTime, setRecordingTime] = useState(0);
   const [currentWord, setCurrentWord] = useState(0);
-  const [generatingVoiceId, setGeneratingVoiceId] = useState<string | number | null>(null);
+  const [generatingVoiceId, setGeneratingVoiceId] = useState<
+    string | number | null
+  >(null);
   const [tempContentTypes, setTempContentTypes] = useState<string[]>([]);
   const [tempIndustries, setTempIndustries] = useState<string[]>([]);
 
@@ -2916,7 +2918,10 @@ export default function CreatorDashboard() {
 
     return (
       <ToastAction
-        altText={t("creatorDashboard.voice.deleteConfirmation.action", "Delete")}
+        altText={t(
+          "creatorDashboard.voice.deleteConfirmation.action",
+          "Delete",
+        )}
         disabled={isDeleting}
         className={
           "border-white/40 bg-white/10 text-white font-semibold shadow-sm " +
