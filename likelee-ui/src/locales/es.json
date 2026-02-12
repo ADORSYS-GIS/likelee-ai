@@ -731,6 +731,7 @@
       "viewCard": "Ver Tarjeta",
       "editProfile": "Editar Perfil",
       "verifiedUser": "Creador verificado",
+      "kycVerified": "KYC Verificado",
       "followers": "seguidores",
       "activeCampaigns": "Campañas Activas",
       "completedProjects": "Proyectos Completados",
@@ -749,7 +750,20 @@
       "from": "Desde",
       "hireCreator": "Contratar Creador",
       "preview": "Vista Previa",
-      "profile": "Perfil"
+      "profile": "Perfil",
+      "namePlaceholder": "[Insertar nombre de usuario]",
+      "locationPlaceholder": "Scottsdale, Arizona",
+      "handlesPlaceholder": "@lilycreates",
+      "exampleBio": "Creador de UGC e influencer especializado en belleza, estilo de vida y reseñas de productos. Apasionado por la narración auténtica.",
+      "portfolioItems": {
+        "targetRetail": "Target Retail",
+        "holidayCampaign": "Campaña Navideña",
+        "spotifyPremium": "Spotify Premium",
+        "audioCampaign": "Campaña de Audio",
+        "lululemon": "Lululemon",
+        "fitnessSeries": "Serie de Fitness",
+        "months": "{{count}} meses"
+      }
     },
     "nav": {
       "dashboard": "Tablero",
