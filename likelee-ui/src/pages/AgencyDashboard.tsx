@@ -10759,7 +10759,8 @@ export const RosterView = ({
       }
       toast({
         title: "Portal link copied",
-        description: "Share it with your talent to join and access their portal.",
+        description:
+          "Share it with your talent to join and access their portal.",
       });
     } catch (e: any) {
       toast({

@@ -791,7 +791,8 @@ export default function CreatorDashboard() {
   >([]);
   const [agencyConnectionLoading, setAgencyConnectionLoading] = useState(false);
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
-  const [disconnectConfirmChecked, setDisconnectConfirmChecked] = useState(false);
+  const [disconnectConfirmChecked, setDisconnectConfirmChecked] =
+    useState(false);
   const [disconnectTarget, setDisconnectTarget] = useState<{
     agency_id: string;
     agency_name?: string;
@@ -808,9 +809,12 @@ export default function CreatorDashboard() {
       try {
         setAgencyConnectionLoading(true);
         const connections = await listCreatorAgencyConnections();
-        const isTalent = (profile as any)?.role === "talent" || connections.length > 0;
+        const isTalent =
+          (profile as any)?.role === "talent" || connections.length > 0;
         const invites = isTalent
-          ? await listTalentAgencyInvites().then((r: any) => (r?.invites as any[]) || [])
+          ? await listTalentAgencyInvites().then(
+              (r: any) => (r?.invites as any[]) || [],
+            )
           : await listCreatorAgencyInvites();
         if (!active) return;
         setAgencyConnections(connections);
@@ -2029,7 +2033,13 @@ export default function CreatorDashboard() {
   };
 
   const renderTalentPortal = () => {
-    return <TalentPortal embedded initialTab="settings" initialSettingsTab="profile" />;
+    return (
+      <TalentPortal
+        embedded
+        initialTab="settings"
+        initialSettingsTab="profile"
+      />
+    );
   };
 
   const renderPublicProfilePreview = () => {
@@ -3997,21 +4007,29 @@ export default function CreatorDashboard() {
 
   const renderAgencyConnection = () => {
     const pending = agencyInvites.filter((i) => i.status === "pending");
-    const isTalent = (profile as any)?.role === "talent" || agencyConnections.length > 0;
+    const isTalent =
+      (profile as any)?.role === "talent" || agencyConnections.length > 0;
 
     const disconnectLabel =
-      disconnectTarget?.agency_name || disconnectTarget?.agency_id || "this agency";
+      disconnectTarget?.agency_name ||
+      disconnectTarget?.agency_id ||
+      "this agency";
 
     const doDisconnect = async () => {
       if (!disconnectTarget?.agency_id) return;
       try {
         setAgencyConnectionLoading(true);
-        await disconnectCreatorAgencyConnection(String(disconnectTarget.agency_id));
+        await disconnectCreatorAgencyConnection(
+          String(disconnectTarget.agency_id),
+        );
 
         const connections = await listCreatorAgencyConnections();
-        const talentMode = (profile as any)?.role === "talent" || connections.length > 0;
+        const talentMode =
+          (profile as any)?.role === "talent" || connections.length > 0;
         const invites = talentMode
-          ? await listTalentAgencyInvites().then((r: any) => (r?.invites as any[]) || [])
+          ? await listTalentAgencyInvites().then(
+              (r: any) => (r?.invites as any[]) || [],
+            )
           : await listCreatorAgencyInvites();
 
         setAgencyConnections(connections);
@@ -4045,9 +4063,12 @@ export default function CreatorDashboard() {
         >
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Disconnect from {disconnectLabel}?</AlertDialogTitle>
+              <AlertDialogTitle>
+                Disconnect from {disconnectLabel}?
+              </AlertDialogTitle>
               <AlertDialogDescription>
-                This may remove access to bookings, earnings, and portal data for that agency.
+                This may remove access to bookings, earnings, and portal data
+                for that agency.
               </AlertDialogDescription>
             </AlertDialogHeader>
 
@@ -4078,7 +4099,9 @@ export default function CreatorDashboard() {
         </AlertDialog>
 
         <div>
-          <h2 className="text-3xl font-bold text-gray-900">Agency Connection</h2>
+          <h2 className="text-3xl font-bold text-gray-900">
+            Agency Connection
+          </h2>
           <p className="text-gray-600 mt-1">
             Manage agency invitations and your connected agencies.
           </p>
@@ -4127,11 +4150,14 @@ export default function CreatorDashboard() {
                       <div className="font-semibold text-gray-900 truncate">
                         {c.agencies?.agency_name || c.agency_id}
                       </div>
-                      <div className="text-xs text-gray-500 truncate">{c.agency_id}</div>
+                      <div className="text-xs text-gray-500 truncate">
+                        {c.agency_id}
+                      </div>
                     </div>
                   </div>
 
-                  {((profile as any)?.role === "talent" || agencyConnections.length > 0) && (
+                  {((profile as any)?.role === "talent" ||
+                    agencyConnections.length > 0) && (
                     <Button
                       variant="destructive"
                       size="icon"
@@ -4168,7 +4194,9 @@ export default function CreatorDashboard() {
               </div>
             </div>
             {pending.length > 0 && (
-              <Badge className="bg-[#32C8D1] text-white">{pending.length}</Badge>
+              <Badge className="bg-[#32C8D1] text-white">
+                {pending.length}
+              </Badge>
             )}
           </div>
 
@@ -4209,7 +4237,9 @@ export default function CreatorDashboard() {
                           if (isTalent) {
                             const token = String(inv?.token || "");
                             if (token) {
-                              navigate(`/invite/agency/${encodeURIComponent(token)}`);
+                              navigate(
+                                `/invite/agency/${encodeURIComponent(token)}`,
+                              );
                               return;
                             }
                             throw new Error("Missing invite token");
@@ -4218,7 +4248,9 @@ export default function CreatorDashboard() {
                           await declineCreatorAgencyInvite(inv.id);
                           setAgencyInvites((prev) =>
                             prev.map((p) =>
-                              p.id === inv.id ? { ...p, status: "declined" } : p,
+                              p.id === inv.id
+                                ? { ...p, status: "declined" }
+                                : p,
                             ),
                           );
                           toast({ title: "Invitation declined" });
@@ -4240,7 +4272,9 @@ export default function CreatorDashboard() {
                           if (isTalent) {
                             const token = String(inv?.token || "");
                             if (token) {
-                              navigate(`/invite/agency/${encodeURIComponent(token)}`);
+                              navigate(
+                                `/invite/agency/${encodeURIComponent(token)}`,
+                              );
                               return;
                             }
                             throw new Error("Missing invite token");
@@ -4253,7 +4287,9 @@ export default function CreatorDashboard() {
                           setAgencyConnections(connections);
                           setAgencyInvites((prev) =>
                             prev.map((p) =>
-                              p.id === inv.id ? { ...p, status: "accepted" } : p,
+                              p.id === inv.id
+                                ? { ...p, status: "accepted" }
+                                : p,
                             ),
                           );
                           toast({

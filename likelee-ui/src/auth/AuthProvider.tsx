@@ -56,7 +56,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const href = window.location.href;
       const hash = window.location.hash || "";
       const isRecoveryEvent = event === "PASSWORD_RECOVERY";
-      const isRecoveryHash = /\btype=recovery\b/i.test(hash) || /\brecovery\b/i.test(hash);
+      const isRecoveryHash =
+        /\btype=recovery\b/i.test(hash) || /\brecovery\b/i.test(hash);
 
       if (!isRecoveryEvent && !isRecoveryHash) return;
       if (href.includes("/update-password")) return;

@@ -39,7 +39,10 @@ export default function ProtectedRoute({
   React.useEffect(() => {
     if (initialized && authenticated && profile) {
       // Check for role-based access
-      if (allowedRoles && !allowedRoles.some((r) => effectiveRoles.includes(r))) {
+      if (
+        allowedRoles &&
+        !allowedRoles.some((r) => effectiveRoles.includes(r))
+      ) {
         navigate("/Unauthorized", { replace: true });
         return;
       }

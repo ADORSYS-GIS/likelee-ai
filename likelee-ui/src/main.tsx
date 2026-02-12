@@ -13,7 +13,8 @@ import { Amplify } from "aws-amplify";
     const href = window.location.href;
     const hash = window.location.hash || "";
     const isRecoveryHash = /\btype=recovery\b/i.test(hash);
-    const hasAuthTokens = /\baccess_token=\b/i.test(hash) && /\brefresh_token=\b/i.test(hash);
+    const hasAuthTokens =
+      /\baccess_token=\b/i.test(hash) && /\brefresh_token=\b/i.test(hash);
     const isOnUpdatePassword = href.includes("/update-password");
 
     if ((isRecoveryHash || hasAuthTokens) && !isOnUpdatePassword) {

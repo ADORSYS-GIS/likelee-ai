@@ -123,7 +123,9 @@ const RosterView = ({
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteSearch, setInviteSearch] = useState("");
   const [inviteSending, setInviteSending] = useState(false);
-  const [inviteSendingEmail, setInviteSendingEmail] = useState<string | null>(null);
+  const [inviteSendingEmail, setInviteSendingEmail] = useState<string | null>(
+    null,
+  );
   const [talentInvites, setTalentInvites] = useState<any[]>([]);
   const [talentInvitesLoading, setTalentInvitesLoading] = useState(false);
 
@@ -1712,9 +1714,12 @@ const RosterView = ({
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold">Send Portal Invite</DialogTitle>
+            <DialogTitle className="text-xl font-bold">
+              Send Portal Invite
+            </DialogTitle>
             <DialogDescription>
-              Select an existing talent in your roster to send them a portal invite.
+              Select an existing talent in your roster to send them a portal
+              invite.
             </DialogDescription>
           </DialogHeader>
 
@@ -1735,14 +1740,18 @@ const RosterView = ({
                 const filtered = !q
                   ? rows
                   : rows.filter((t: any) => {
-                      const name = String(t?.name || t?.full_legal_name || "").toLowerCase();
+                      const name = String(
+                        t?.name || t?.full_legal_name || "",
+                      ).toLowerCase();
                       const email = String(t?.email || "").toLowerCase();
                       return name.includes(q) || email.includes(q);
                     });
 
                 if (filtered.length === 0) {
                   return (
-                    <div className="text-sm text-gray-600">No matching talent.</div>
+                    <div className="text-sm text-gray-600">
+                      No matching talent.
+                    </div>
                   );
                 }
 
@@ -1750,8 +1759,11 @@ const RosterView = ({
                   <div className="max-h-56 overflow-y-auto space-y-2">
                     {filtered.slice(0, 30).map((t: any) => {
                       const email = String(t?.email || "").trim();
-                      const name = String(t?.name || t?.full_legal_name || "Talent").trim();
-                      const rowSending = !!inviteSendingEmail && inviteSendingEmail === email;
+                      const name = String(
+                        t?.name || t?.full_legal_name || "Talent",
+                      ).trim();
+                      const rowSending =
+                        !!inviteSendingEmail && inviteSendingEmail === email;
                       return (
                         <div
                           key={t?.id || `${name}:${email}`}
@@ -1773,7 +1785,9 @@ const RosterView = ({
                               setInviteSending(true);
                               setInviteSendingEmail(email);
                               try {
-                                const res: any = await createAgencyTalentInvite({ email });
+                                const res: any = await createAgencyTalentInvite(
+                                  { email },
+                                );
                                 toast({
                                   title: "Portal invite sent",
                                   description: `Invitation sent to ${email}`,
@@ -1781,12 +1795,16 @@ const RosterView = ({
                                 await refreshTalentInvites();
 
                                 const url = res?.invite_url;
-                                if (typeof url === "string" && url.startsWith("http")) {
+                                if (
+                                  typeof url === "string" &&
+                                  url.startsWith("http")
+                                ) {
                                   try {
                                     await navigator.clipboard.writeText(url);
                                     toast({
                                       title: "Invite link copied",
-                                      description: "Copied invite URL to clipboard.",
+                                      description:
+                                        "Copied invite URL to clipboard.",
                                     });
                                   } catch {
                                     // ignore
@@ -1795,7 +1813,8 @@ const RosterView = ({
                               } catch (e: any) {
                                 toast({
                                   title: "Failed to send",
-                                  description: e?.message || "Could not send invite",
+                                  description:
+                                    e?.message || "Could not send invite",
                                   variant: "destructive",
                                 });
                               } finally {
@@ -1833,7 +1852,9 @@ const RosterView = ({
 
             <div className="pt-2 border-t">
               <div className="flex items-center justify-between">
-                <div className="text-sm font-semibold text-gray-900">Pending invites</div>
+                <div className="text-sm font-semibold text-gray-900">
+                  Pending invites
+                </div>
                 <Button
                   variant="ghost"
                   className="h-8"
@@ -1853,8 +1874,11 @@ const RosterView = ({
 
               <div className="mt-3 space-y-2">
                 {(() => {
-                  const pending = (Array.isArray(talentInvites) ? talentInvites : []).filter(
-                    (i: any) => String(i?.status || "").toLowerCase() === "pending",
+                  const pending = (
+                    Array.isArray(talentInvites) ? talentInvites : []
+                  ).filter(
+                    (i: any) =>
+                      String(i?.status || "").toLowerCase() === "pending",
                   );
                   if (pending.length === 0) {
                     return (
@@ -1873,7 +1897,10 @@ const RosterView = ({
                           {inv.email}
                         </div>
                         <div className="text-xs text-gray-500 truncate">
-                          Expires {inv.expires_at ? new Date(inv.expires_at).toLocaleString() : "—"}
+                          Expires{" "}
+                          {inv.expires_at
+                            ? new Date(inv.expires_at).toLocaleString()
+                            : "—"}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -1902,7 +1929,9 @@ const RosterView = ({
                           disabled={inviteSending}
                           onClick={async () => {
                             try {
-                              await createAgencyTalentInvite({ email: String(inv.email || "") });
+                              await createAgencyTalentInvite({
+                                email: String(inv.email || ""),
+                              });
                               toast({ title: "Re-invited" });
                               await refreshTalentInvites();
                             } catch (e: any) {

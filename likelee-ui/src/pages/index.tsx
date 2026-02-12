@@ -342,9 +342,7 @@ function AppRoutes() {
 
       <Route
         path="/TalentDashboard"
-        element={
-          <Navigate to="/talentportal" replace />
-        }
+        element={<Navigate to="/talentportal" replace />}
       />
 
       <Route

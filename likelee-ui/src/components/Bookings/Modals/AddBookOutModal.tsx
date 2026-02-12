@@ -185,7 +185,9 @@ export const AddBookOutModal = ({
               onChange={(e) => setNotifyAgency(e.target.checked)}
             />
             <Label htmlFor="notify" className="font-normal cursor-pointer">
-              {fixedTalent?.id ? "Notify agency via email" : "Notify talent via email"}
+              {fixedTalent?.id
+                ? "Notify agency via email"
+                : "Notify talent via email"}
             </Label>
           </div>
         </div>

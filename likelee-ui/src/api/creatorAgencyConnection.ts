@@ -10,10 +10,13 @@ export type CreatorAgencyInvite = {
   updated_at?: string;
 };
 
-export async function listCreatorAgencyInvites(): Promise<CreatorAgencyInvite[]> {
-  const res = await base44.get<{ status: string; invites: CreatorAgencyInvite[] }>(
-    "/api/creator/agency-invites",
-  );
+export async function listCreatorAgencyInvites(): Promise<
+  CreatorAgencyInvite[]
+> {
+  const res = await base44.get<{
+    status: string;
+    invites: CreatorAgencyInvite[];
+  }>("/api/creator/agency-invites");
   return res.invites || [];
 }
 

@@ -160,7 +160,8 @@ export const approveTalentLicensingRequest = (id: string) =>
 export const declineTalentLicensingRequest = (id: string) =>
   base44Client.post(`/api/talent/licensing-requests/${id}/decline`, {});
 
-export const listTalentLicenses = () => base44Client.get(`/api/talent/licenses`);
+export const listTalentLicenses = () =>
+  base44Client.get(`/api/talent/licenses`);
 
 export const getTalentLicensingRevenue = (params?: { month?: string }) =>
   base44Client.get(`/api/talent/licensing/revenue`, { params: params || {} });
@@ -185,7 +186,8 @@ export const getTalentPayoutAccountStatus = () =>
 export const getTalentPayoutOnboardingLink = () =>
   base44Client.get(`/api/talent/payouts/onboarding-link`);
 
-export const getTalentPortalSettings = () => base44Client.get(`/api/talent/settings`);
+export const getTalentPortalSettings = () =>
+  base44Client.get(`/api/talent/settings`);
 
 export const updateTalentPortalSettings = (data: {
   allow_training?: boolean;
@@ -198,7 +200,10 @@ export const listTalentAgencyInvites = () =>
 export const getLatestTalentTaxDocument = (params?: {
   doc_type?: string;
   tax_year?: number;
-}) => base44Client.get(`/api/talent/tax-documents/latest`, { params: params || {} });
+}) =>
+  base44Client.get(`/api/talent/tax-documents/latest`, {
+    params: params || {},
+  });
 
 export const getTalentAnalytics = (params?: { month?: string }) =>
   base44Client.get(`/api/talent/analytics`, { params: params || {} });
@@ -248,8 +253,13 @@ export const updateTalentBookingPreferences = (data: {
 export const getTalentIrlEarningsSummary = () =>
   base44Client.get(`/api/talent/irl/earnings/summary`);
 
-export const listTalentIrlPayments = (params?: { limit?: number; agency_id?: string }) =>
-  base44Client.get(`/api/talent/irl/earnings/payments`, { params: params || {} });
+export const listTalentIrlPayments = (params?: {
+  limit?: number;
+  agency_id?: string;
+}) =>
+  base44Client.get(`/api/talent/irl/earnings/payments`, {
+    params: params || {},
+  });
 
 export const createTalentIrlPayoutRequest = (data: {
   amount_cents: number;
@@ -362,7 +372,10 @@ export const createAgencyTalentInvite = (data: {
 }) => base44Client.post(`/api/agency/talent-invites`, data);
 
 export const revokeAgencyTalentInvite = (id: string) =>
-  base44Client.post(`/api/agency/talent-invites/${encodeURIComponent(id)}/revoke`, {});
+  base44Client.post(
+    `/api/agency/talent-invites/${encodeURIComponent(id)}/revoke`,
+    {},
+  );
 
 export const getAgencyTalentInviteByToken = (token: string) =>
   base44Client.get(`/api/invites/agency-talent/${encodeURIComponent(token)}`);

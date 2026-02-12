@@ -56,7 +56,8 @@ export default function AgencyInviteLanding() {
   const agencyLogoUrl = invite?.agencies?.logo_url || invite?.agency_logo_url;
   const status = String(invite?.status || "");
   const effectiveRole = String(profile?.role || "").toLowerCase();
-  const hasInviteRole = effectiveRole === "creator" || effectiveRole === "talent";
+  const hasInviteRole =
+    effectiveRole === "creator" || effectiveRole === "talent";
 
   const startedMagicLinkRef = React.useRef(false);
 
@@ -69,15 +70,13 @@ export default function AgencyInviteLanding() {
           "likelee_invite_next",
           `/invite/agency/${encodeURIComponent(effectiveToken)}`,
         );
-        localStorage.setItem(
-          "likelee_invite_next_ts",
-          String(Date.now()),
-        );
+        localStorage.setItem("likelee_invite_next_ts", String(Date.now()));
       } catch {
         // ignore
       }
 
-      const res: any = await getAgencyTalentInviteMagicLinkByToken(effectiveToken);
+      const res: any =
+        await getAgencyTalentInviteMagicLinkByToken(effectiveToken);
       const link = String(res?.action_link || "");
       if (!link.startsWith("http")) {
         throw new Error("Missing action link");
@@ -162,12 +161,15 @@ export default function AgencyInviteLanding() {
     return (
       <div className="max-w-xl mx-auto px-6 py-16">
         <Card className="p-6">
-          <div className="text-lg font-semibold text-gray-900">Invalid invite</div>
+          <div className="text-lg font-semibold text-gray-900">
+            Invalid invite
+          </div>
           <div className="text-sm text-gray-600 mt-1">
             This invitation link is invalid or no longer available.
           </div>
-          <Button className="mt-5" onClick={() => navigate("/")}
-            >Go to homepage</Button>
+          <Button className="mt-5" onClick={() => navigate("/")}>
+            Go to homepage
+          </Button>
         </Card>
       </div>
     );
@@ -227,16 +229,20 @@ export default function AgencyInviteLanding() {
             </Button>
 
             <div className="mt-3 text-xs text-gray-500">
-              You’ll be redirected to set your password. After that, you’ll
-              come back here to accept or decline.
+              You’ll be redirected to set your password. After that, you’ll come
+              back here to accept or decline.
             </div>
           </div>
         ) : (
           <div className="mt-6 space-y-3">
             {!hasInviteRole && (
               <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-                You’re signed in as <span className="font-semibold">{effectiveRole || "unknown"}</span>.
-                To accept this portal invite, please sign in as a <span className="font-semibold">Creator (Face/Talent)</span>
+                You’re signed in as{" "}
+                <span className="font-semibold">
+                  {effectiveRole || "unknown"}
+                </span>
+                . To accept this portal invite, please sign in as a{" "}
+                <span className="font-semibold">Creator (Face/Talent)</span>
                 with <span className="font-semibold">{email}</span>.
                 <div className="mt-3">
                   <Button
@@ -248,7 +254,8 @@ export default function AgencyInviteLanding() {
                         await supabase?.auth.signOut();
                         toast({
                           title: "Signed out",
-                          description: "Now set your password / log in with the invited email.",
+                          description:
+                            "Now set your password / log in with the invited email.",
                         });
                       } catch (e: any) {
                         toast({
