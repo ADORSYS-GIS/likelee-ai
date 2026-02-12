@@ -8487,17 +8487,7 @@ const ANALYTICS_CONSENT_STATUS = [
   { name: "Expiring", value: 10, color: "#facc15" },
 ];
 
-const ROSTER_INSIGHTS_DATA = [
-  { name: "Carla", earnings: 6800, projected: 8200 },
-  { name: "Clemence", earnings: 5400, projected: 6200 },
-  { name: "Julia", earnings: 5200, projected: 6500 },
-  { name: "Luisa", earnings: 4100, projected: 5100 },
-  { name: "Milan", earnings: 4100, projected: 5200 },
-  { name: "Matt", earnings: 3600, projected: 4300 },
-  { name: "Emma", earnings: 3200, projected: 4100 },
-  { name: "Sergine", earnings: 2800, projected: 3500 },
-  { name: "Lina", earnings: 2400, projected: 3000 },
-];
+
 
 const CLIENTS_PERFORMANCE_DATA = [
   { name: "L'Oreal", budget: 45000, color: "#6366f1", roi: "3.2x" }, // Indigo
@@ -17047,6 +17037,7 @@ const RoyaltiesPayoutsView = () => {
 const AnalyticsDashboardView = () => {
   const [activeTab, setActiveTab] = useState("Overview");
   const [analytics, setAnalytics] = useState<any>(null);
+  const [rosterInsights, setRosterInsights] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const subTabs = [
@@ -17062,7 +17053,7 @@ const AnalyticsDashboardView = () => {
         const session = (await supabase?.auth.getSession())?.data?.session;
         const token = session?.access_token;
         if (!token) throw new Error("Not authenticated");
-        
+
         const response = await fetch("/api/agency/analytics/dashboard", {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -17079,6 +17070,35 @@ const AnalyticsDashboardView = () => {
     }
     fetchAnalytics();
   }, []);
+
+  useEffect(() => {
+    async function fetchRosterInsights() {
+      if (activeTab !== "Roster Insights") return;
+      if (rosterInsights) return; // Already loaded
+
+      try {
+        const session = (await supabase?.auth.getSession())?.data?.session;
+        const token = session?.access_token;
+        if (!token) return;
+
+        setLoading(true);
+        const response = await fetch("/api/agency/analytics/roster", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!response.ok) throw new Error("Failed to fetch roster insights");
+        const data = await response.json();
+        setRosterInsights(data);
+      } catch (err: any) {
+        console.error(err);
+        // Don't block UI with error, just log maybe? Or show toast.
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchRosterInsights();
+  }, [activeTab]);
 
   if (loading) {
     return (
@@ -17504,227 +17524,270 @@ const AnalyticsDashboardView = () => {
           </div>
         </div>
       ) : activeTab === "Roster Insights" ? (
-        <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-          <h3 className="text-xl font-black text-gray-900 uppercase tracking-[0.15em] mb-10">
-            Earnings by Talent (Last 30 Days)
-          </h3>
-          <Card className="p-10 bg-white border border-gray-900 shadow-sm mb-8">
-            <div className="h-[500px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={ROSTER_INSIGHTS_DATA}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    stroke="#f1f5f9"
-                  />
-                  <XAxis
-                    dataKey="name"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 13, fontWeight: "bold", fill: "#64748b" }}
-                    dy={15}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 13, fontWeight: "bold", fill: "#94a3b8" }}
-                  />
-                  <RechartsTooltip
-                    contentStyle={{
-                      borderRadius: "12px",
-                      border: "1px solid #e2e8f0",
-                      fontWeight: "bold",
-                    }}
-                  />
-                  <Legend
-                    verticalAlign="bottom"
-                    align="center"
-                    iconType="rect"
-                    wrapperStyle={{
-                      paddingTop: "40px",
-                      fontWeight: "bold",
-                      fontSize: "13px",
-                    }}
-                    formatter={(value) => (
-                      <span className="text-gray-700 uppercase tracking-widest px-2">
-                        {value === "earnings"
-                          ? "30D Earnings ($)"
-                          : "Projected ($)"}
-                      </span>
-                    )}
-                  />
-                  <Bar
-                    dataKey="earnings"
-                    fill="#10b981"
-                    radius={[4, 4, 0, 0]}
-                    barSize={32}
-                    name="earnings"
-                  />
-                  <Bar
-                    dataKey="projected"
-                    fill="#3b82f6"
-                    radius={[4, 4, 0, 0]}
-                    barSize={32}
-                    name="projected"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+        rosterInsights ? (
+          <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+            <h3 className="text-xl font-black text-gray-900 uppercase tracking-[0.15em] mb-10">
+              Earnings by Talent (Last 30 Days)
+            </h3>
+            <Card className="p-10 bg-white border border-gray-900 shadow-sm mb-8">
+              <div className="h-[500px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={rosterInsights.talent_metrics.map((m: any) => ({
+                      name: m.talent_name,
+                      earnings: m.earnings_30d_cents / 100,
+                      projected: m.projected_earnings_cents / 100,
+                    }))}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="#f1f5f9"
+                    />
+                    <XAxis
+                      dataKey="name"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 13, fontWeight: "bold", fill: "#64748b" }}
+                      dy={15}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 13, fontWeight: "bold", fill: "#94a3b8" }}
+                      tickFormatter={(val) => `$${val}`}
+                    />
+                    <RechartsTooltip
+                      contentStyle={{
+                        borderRadius: "12px",
+                        border: "1px solid #e2e8f0",
+                        fontWeight: "bold",
+                      }}
+                      formatter={(val: number) => `$${val.toLocaleString()}`}
+                    />
+                    <Legend
+                      verticalAlign="bottom"
+                      align="center"
+                      iconType="rect"
+                      wrapperStyle={{
+                        paddingTop: "40px",
+                        fontWeight: "bold",
+                        fontSize: "13px",
+                      }}
+                      formatter={(value) => (
+                        <span className="text-gray-700 uppercase tracking-widest px-2">
+                          {value === "earnings"
+                            ? "30D Earnings ($)"
+                            : "Projected ($)"}
+                        </span>
+                      )}
+                    />
+                    <Bar
+                      dataKey="earnings"
+                      fill="#10b981"
+                      radius={[4, 4, 0, 0]}
+                      barSize={32}
+                      name="earnings"
+                    />
+                    <Bar
+                      dataKey="projected"
+                      fill="#3b82f6"
+                      radius={[4, 4, 0, 0]}
+                      barSize={32}
+                      name="projected"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
+
+            {/* Top Talent Summary Cards */}
+            <div className="grid grid-cols-3 gap-6 mb-8">
+              {/* Top Performer */}
+              <Card className="p-6 bg-white border border-gray-900 shadow-sm relative overflow-hidden">
+                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-6">
+                  Top Performer (Earnings)
+                </p>
+                {rosterInsights.top_performer ? (
+                  <div className="flex items-center gap-5">
+                    <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-green-500 p-0.5">
+                      {rosterInsights.top_performer.image_url ? (
+                        <img
+                          src={rosterInsights.top_performer.image_url}
+                          alt={rosterInsights.top_performer.talent_name}
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-200 flex items-center justify-center rounded-lg">
+                          <User className="w-8 h-8 text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-black text-gray-900 tracking-tight">
+                        {rosterInsights.top_performer.talent_name}
+                      </h4>
+                      <p className="text-2xl font-black text-green-600">{rosterInsights.top_performer.value}</p>
+                      <p className="text-[11px] font-bold text-gray-500 mt-1">
+                        {rosterInsights.top_performer.sub_text}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-gray-400 text-sm">No data available</div>
+                )}
+              </Card>
+
+              {/* Most Active */}
+              <Card className="p-6 bg-white border border-gray-900 shadow-sm relative overflow-hidden">
+                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-6">
+                  Most Active (Campaigns)
+                </p>
+                {rosterInsights.most_active ? (
+                  <div className="flex items-center gap-5">
+                    <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-indigo-500 p-0.5">
+                      {rosterInsights.most_active.image_url ? (
+                        <img
+                          src={rosterInsights.most_active.image_url}
+                          alt={rosterInsights.most_active.talent_name}
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-200 flex items-center justify-center rounded-lg">
+                          <User className="w-8 h-8 text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-black text-gray-900 tracking-tight">
+                        {rosterInsights.most_active.talent_name}
+                      </h4>
+                      <p className="text-2xl font-black text-indigo-600">{rosterInsights.most_active.value}</p>
+                      <p className="text-[11px] font-bold text-gray-500 mt-1">
+                        {rosterInsights.most_active.sub_text}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-gray-400 text-sm">No data available</div>
+                )}
+              </Card>
+
+              {/* Highest Engagement */}
+              <Card className="p-6 bg-white border border-gray-900 shadow-sm relative overflow-hidden">
+                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-6">
+                  Highest Engagement (Earnings + Campaigns)
+                </p>
+                {rosterInsights.highest_engagement ? (
+                  <div className="flex items-center gap-5">
+                    <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-purple-500 p-0.5">
+                      {rosterInsights.highest_engagement.image_url ? (
+                        <img
+                          src={rosterInsights.highest_engagement.image_url}
+                          alt={rosterInsights.highest_engagement.talent_name}
+                          className="w-full h-full object-cover rounded-lg"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-200 flex items-center justify-center rounded-lg">
+                          <User className="w-8 h-8 text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-black text-gray-900 tracking-tight">
+                        {rosterInsights.highest_engagement.talent_name}
+                      </h4>
+                      <p className="text-2xl font-black text-purple-600">{rosterInsights.highest_engagement.value}</p>
+                      <p className="text-[11px] font-bold text-gray-500 mt-1">
+                        {rosterInsights.highest_engagement.sub_text}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-gray-400 text-sm">No data available</div>
+                )}
+              </Card>
             </div>
-          </Card>
 
-          {/* Top Talent Summary Cards */}
-          <div className="grid grid-cols-3 gap-6 mb-8">
-            <Card className="p-6 bg-white border border-gray-900 shadow-sm relative overflow-hidden">
-              <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-6">
-                Top Performer (Earnings)
-              </p>
-              <div className="flex items-center gap-5">
-                <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-green-500 p-0.5">
-                  <img
-                    src={TALENT_DATA.find((t) => t.id === "carla")?.img}
-                    alt="Carla"
-                    className="w-full h-full object-cover rounded-lg"
-                  />
-                </div>
-                <div>
-                  <h4 className="text-xl font-black text-gray-900 tracking-tight">
-                    Carla
-                  </h4>
-                  <p className="text-2xl font-black text-green-600">$6,800</p>
-                  <p className="text-[11px] font-bold text-gray-500 mt-1">
-                    13 campaigns • 7.1% engagement
-                  </p>
-                </div>
+            {/* Talent Performance Metrics Table */}
+            <Card className="bg-white border border-gray-900 shadow-sm overflow-hidden mb-8">
+              <div className="p-8 border-b border-gray-100 flex justify-between items-center">
+                <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest">
+                  Talent Performance Metrics
+                </h3>
               </div>
-            </Card>
-
-            <Card className="p-6 bg-white border border-gray-900 shadow-sm relative overflow-hidden">
-              <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-6">
-                Most Active (Campaigns)
-              </p>
-              <div className="flex items-center gap-5">
-                <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-indigo-500 p-0.5">
-                  <img
-                    src={TALENT_DATA.find((t) => t.id === "julia")?.img}
-                    alt="Julia"
-                    className="w-full h-full object-cover rounded-lg"
-                  />
-                </div>
-                <div>
-                  <h4 className="text-xl font-black text-gray-900 tracking-tight">
-                    Julia
-                  </h4>
-                  <p className="text-2xl font-black text-indigo-600">11 uses</p>
-                  <p className="text-[11px] font-bold text-gray-500 mt-1">
-                    $5,200 earnings • 6.2% engagement
-                  </p>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-6 bg-white border border-gray-900 shadow-sm relative overflow-hidden">
-              <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-6">
-                Highest Engagement
-              </p>
-              <div className="flex items-center gap-5">
-                <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-purple-500 p-0.5">
-                  <img
-                    src={TALENT_DATA.find((t) => t.id === "carla")?.img}
-                    alt="Carla"
-                    className="w-full h-full object-cover rounded-lg"
-                  />
-                </div>
-                <div>
-                  <h4 className="text-xl font-black text-gray-900 tracking-tight">
-                    Carla
-                  </h4>
-                  <p className="text-2xl font-black text-purple-600">7.1%</p>
-                  <p className="text-[11px] font-bold text-gray-500 mt-1">
-                    53,400 followers • 13 campaigns
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          {/* Talent Performance Metrics Table */}
-          <Card className="bg-white border border-gray-900 shadow-sm overflow-hidden mb-8">
-            <div className="p-8 border-b border-gray-100 flex justify-between items-center">
-              <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest">
-                Talent Performance Metrics
-              </h3>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="bg-gray-50/80">
-                    <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">
-                      Talent
-                    </th>
-                    <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">
-                      30D Earnings
-                    </th>
-                    <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">
-                      Campaigns
-                    </th>
-                    <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">
-                      Avg Value
-                    </th>
-                    <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">
-                      Engagement
-                    </th>
-                    <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {TALENT_DATA.filter((t) => t.status === "active")
-                    .slice(0, 10)
-                    .map((talent) => (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-gray-50/80">
+                      <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">
+                        Talent
+                      </th>
+                      <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">
+                        30D Earnings
+                      </th>
+                      <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">
+                        Campaigns
+                      </th>
+                      <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">
+                        Avg Value
+                      </th>
+                      <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">
+                        Status
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {rosterInsights.talent_metrics.map((talent: any) => (
                       <tr
-                        key={talent.id}
+                        key={talent.talent_id}
                         className="hover:bg-gray-50/50 transition-colors"
                       >
                         <td className="px-8 py-5">
                           <div className="flex items-center gap-3">
-                            <img
-                              src={talent.img}
-                              alt={talent.name}
-                              className="w-8 h-8 rounded-full object-cover border border-gray-200"
-                            />
+                            {talent.image_url ? (
+                              <img
+                                src={talent.image_url}
+                                alt={talent.talent_name}
+                                className="w-8 h-8 rounded-full object-cover border border-gray-200"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center border border-gray-200">
+                                <User className="w-4 h-4 text-gray-400" />
+                              </div>
+                            )}
                             <span className="text-sm font-bold text-gray-900">
-                              {talent.name}
+                              {talent.talent_name}
                             </span>
                           </div>
                         </td>
                         <td className="px-8 py-5 text-sm font-black text-gray-900">
-                          {talent.earnings}
+                          {talent.earnings_30d_formatted}
                         </td>
                         <td className="px-8 py-5 text-sm font-bold text-gray-600">
-                          {Math.floor(Math.random() * 10) + 4}
+                          {talent.campaigns_count_30d}
                         </td>
                         <td className="px-8 py-5 text-sm font-bold text-gray-600">
-                          ${Math.floor(Math.random() * 200) + 400}
-                        </td>
-                        <td className="px-8 py-5 text-sm font-bold text-gray-600">
-                          {(Math.random() * 4 + 3).toFixed(1)}%
+                          {talent.avg_value_formatted}
                         </td>
                         <td className="px-8 py-5">
-                          <Badge className="bg-green-50 text-green-600 border-green-100 font-bold text-[10px] py-0.5">
-                            Active
+                          <Badge className={`font-bold text-[10px] py-0.5 ${talent.status === "Active" ? "bg-green-50 text-green-600 border-green-100" : "bg-gray-100 text-gray-500 border-gray-200"}`}>
+                            {talent.status}
                           </Badge>
                         </td>
                       </tr>
                     ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        </div>
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center h-96">
+            <div className="text-gray-500">Loading roster insights...</div>
+          </div>
+        )
       ) : activeTab === "Clients & Campaigns" ? (
         <div className="space-y-8 animate-in fade-in duration-500 pb-20">
           <div className="grid grid-cols-2 gap-6">
