@@ -1,5 +1,6 @@
 import { base44 as base44Client } from "./base44Client";
 import { KycSessionResponse, KycStatusResponse } from "../types/kyc";
+import { supabase } from "@/lib/supabase";
 
 export const generateVideo = (data: any) =>
   base44Client.post("/video/generate", data);
@@ -60,6 +61,48 @@ export const loginUser = (data: any) => base44Client.post("/auth/login", data);
 export const createVoiceProfile = (data: any) =>
   base44Client.post("/voice/create-profile", data);
 
+export const listVoiceRecordings = () =>
+  base44Client.get(`/api/voice/recordings`);
+
+export const deleteVoiceRecording = (id: string) =>
+  base44Client.delete(`/api/voice/recordings/${id}`);
+
+export const uploadVoiceRecording = async (input: {
+  file: File;
+  emotion_tag?: string;
+}) => {
+  const {
+    data: { session },
+  } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
+  const token = session?.access_token;
+
+  const base =
+    (import.meta as any)?.env?.VITE_API_BASE_URL ||
+    ((import.meta as any)?.env?.DEV ? "http://localhost:8787" : "/api");
+  const normalizedBase = String(base).endsWith("/") ? String(base) : `${base}/`;
+  const full = new URL(
+    `/api/voice/recordings?emotion_tag=${encodeURIComponent(input.emotion_tag || "")}`,
+    normalizedBase.startsWith("http")
+      ? normalizedBase
+      : new URL(normalizedBase, window.location.origin).toString(),
+  ).toString();
+
+  const body = await input.file.arrayBuffer();
+  const res = await fetch(full, {
+    method: "POST",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      "Content-Type": input.file.type || "audio/webm",
+    },
+    body,
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`POST ${full} failed: ${res.status} ${txt}`);
+  }
+  return (await res.json()) as any;
+};
+
 export const sitemapXml = () => base44Client.get("/sitemap.xml");
 
 export const staticPages = () => base44Client.get("/static-pages");
@@ -104,6 +147,145 @@ export const registerAgency = (data: any) =>
 
 // Dashboard data for the authenticated user
 export const getDashboard = () => base44Client.get(`/dashboard`);
+
+export const getTalentMe = (params?: { agency_id?: string }) =>
+  base44Client.get(`/api/talent/me`, { params });
+
+export const listTalentLicensingRequests = () =>
+  base44Client.get(`/api/talent/licensing-requests`);
+
+export const approveTalentLicensingRequest = (id: string) =>
+  base44Client.post(`/api/talent/licensing-requests/${id}/approve`, {});
+
+export const declineTalentLicensingRequest = (id: string) =>
+  base44Client.post(`/api/talent/licensing-requests/${id}/decline`, {});
+
+export const listTalentLicenses = () =>
+  base44Client.get(`/api/talent/licenses`);
+
+export const getTalentLicensingRevenue = (params?: { month?: string }) =>
+  base44Client.get(`/api/talent/licensing/revenue`, { params: params || {} });
+
+export const getTalentEarningsByCampaign = (params?: { month?: string }) =>
+  base44Client.get(`/api/talent/licensing/earnings-by-campaign`, {
+    params: params || {},
+  });
+
+export const getTalentPayoutBalance = () =>
+  base44Client.get(`/api/talent/payouts/balance`);
+
+export const requestTalentPayout = (data: {
+  amount_cents: number;
+  currency?: string;
+  payout_method?: "standard" | "instant";
+}) => base44Client.post(`/api/talent/payouts/request`, data);
+
+export const getTalentPayoutAccountStatus = () =>
+  base44Client.get(`/api/talent/payouts/account-status`);
+
+export const getTalentPayoutOnboardingLink = () =>
+  base44Client.get(`/api/talent/payouts/onboarding-link`);
+
+export const getTalentPortalSettings = () =>
+  base44Client.get(`/api/talent/settings`);
+
+export const updateTalentPortalSettings = (data: {
+  allow_training?: boolean;
+  public_profile_visible?: boolean;
+}) => base44Client.post(`/api/talent/settings`, data);
+
+export const listTalentAgencyInvites = () =>
+  base44Client.get(`/api/talent/agency-invites`);
+
+export const getLatestTalentTaxDocument = (params?: {
+  doc_type?: string;
+  tax_year?: number;
+}) =>
+  base44Client.get(`/api/talent/tax-documents/latest`, {
+    params: params || {},
+  });
+
+export const getTalentAnalytics = (params?: { month?: string }) =>
+  base44Client.get(`/api/talent/analytics`, { params: params || {} });
+
+export const listTalentPortfolioItems = (params?: { agency_id?: string }) =>
+  base44Client.get(`/api/talent/portfolio-items`, { params: params || {} });
+
+export const createTalentPortfolioItem = (data: {
+  media_url: string;
+  title?: string;
+}) => base44Client.post(`/api/talent/portfolio-items`, data);
+
+export const deleteTalentPortfolioItem = (id: string) =>
+  base44Client.delete(`/api/talent/portfolio-items/${id}`);
+
+export const listTalentBookings = (params?: { agency_id?: string }) =>
+  base44Client.get(`/api/talent/bookings`, { params: params || {} });
+
+export const listTalentBookOuts = (params?: {
+  date_start?: string;
+  date_end?: string;
+  agency_id?: string;
+}) => base44Client.get(`/api/talent/book-outs`, { params: params || {} });
+
+export const createTalentBookOut = (data: {
+  start_date: string;
+  end_date: string;
+  reason?: string;
+  notes?: string;
+  notify_agency?: boolean;
+  agency_id?: string;
+}) => base44Client.post(`/api/talent/book-outs`, data);
+
+export const deleteTalentBookOut = (id: string) =>
+  base44Client.delete(`/api/talent/book-outs/${id}`);
+
+export const getTalentBookingPreferences = (params?: { agency_id?: string }) =>
+  base44Client.get(`/api/talent/booking-preferences`, { params: params || {} });
+
+export const updateTalentBookingPreferences = (data: {
+  willing_to_travel?: boolean;
+  min_day_rate_cents?: number | null;
+  currency?: string;
+  agency_id?: string;
+}) => base44Client.post(`/api/talent/booking-preferences`, data);
+
+export const getTalentIrlEarningsSummary = () =>
+  base44Client.get(`/api/talent/irl/earnings/summary`);
+
+export const listTalentIrlPayments = (params?: {
+  limit?: number;
+  agency_id?: string;
+}) =>
+  base44Client.get(`/api/talent/irl/earnings/payments`, {
+    params: params || {},
+  });
+
+export const createTalentIrlPayoutRequest = (data: {
+  amount_cents: number;
+  currency?: string;
+}) => base44Client.post(`/api/talent/irl/earnings/payout-request`, data);
+
+export const uploadTalentPortfolioItem = async (data: {
+  file: File;
+  title?: string;
+  agency_id?: string;
+}) => {
+  const fd = new FormData();
+  fd.append("file", data.file);
+  if (data.title) fd.append("title", data.title);
+  if (data.agency_id) fd.append("agency_id", data.agency_id);
+  return base44Client.post(`/api/talent/portfolio-items/upload`, fd);
+};
+
+export const updateTalentProfile = (data: any) =>
+  base44Client.post(`/api/talent/profile`, data);
+
+export const listTalentNotifications = (params?: { limit?: number }) =>
+  base44Client.get(`/api/talent/notifications`, { params: params || {} });
+
+export const markTalentNotificationRead = (id: string) =>
+  base44Client.post(`/api/talent/notifications/${id}/read`, {});
 
 // Payouts (Stripe Connect)
 export const getPayoutsAccountStatus = async (profileId: string) => {
@@ -180,6 +362,40 @@ export const getAgencyDigitals = () => base44Client.get("/agency/digitals");
 
 export const getTalentDigitals = (talentId: string) =>
   base44Client.get(`/agency/talent/${talentId}/digitals`);
+
+export const listAgencyTalentInvites = () =>
+  base44Client.get(`/api/agency/talent-invites`);
+
+export const createAgencyTalentInvite = (data: {
+  email: string;
+  invited_name?: string;
+}) => base44Client.post(`/api/agency/talent-invites`, data);
+
+export const revokeAgencyTalentInvite = (id: string) =>
+  base44Client.post(
+    `/api/agency/talent-invites/${encodeURIComponent(id)}/revoke`,
+    {},
+  );
+
+export const getAgencyTalentInviteByToken = (token: string) =>
+  base44Client.get(`/api/invites/agency-talent/${encodeURIComponent(token)}`);
+
+export const getAgencyTalentInviteMagicLinkByToken = (token: string) =>
+  base44Client.get(
+    `/api/invites/agency-talent/${encodeURIComponent(token)}/magic-link`,
+  );
+
+export const acceptAgencyTalentInviteByToken = (token: string) =>
+  base44Client.post(
+    `/api/invites/agency-talent/${encodeURIComponent(token)}/accept`,
+    {},
+  );
+
+export const declineAgencyTalentInviteByToken = (token: string) =>
+  base44Client.post(
+    `/api/invites/agency-talent/${encodeURIComponent(token)}/decline`,
+    {},
+  );
 
 export const getTalentCampaigns = (talentId: string) =>
   base44Client.get(`/agency/talent/${talentId}/campaigns`);

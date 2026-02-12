@@ -25,10 +25,12 @@ export const AddBookOutModal = ({
   open,
   onOpenChange,
   onAdd,
+  fixedTalent,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAdd: (bookOut: any) => void;
+  fixedTalent?: { id: string; name: string };
 }) => {
   const [reason, setReason] = useState("personal");
   const [talentId, setTalentId] = useState("");
@@ -36,8 +38,14 @@ export const AddBookOutModal = ({
   const [endDate, setEndDate] = useState("");
   const [notes, setNotes] = useState("");
   const [talents, setTalents] = useState<any[]>([]);
+  const [notifyAgency, setNotifyAgency] = useState(true);
 
   useEffect(() => {
+    if (fixedTalent?.id) {
+      setTalents([{ id: fixedTalent.id, name: fixedTalent.name }]);
+      setTalentId(fixedTalent.id);
+      return;
+    }
     let cancelled = false;
     const load = async () => {
       try {
@@ -58,7 +66,7 @@ export const AddBookOutModal = ({
     return () => {
       cancelled = true;
     };
-  }, [open]);
+  }, [open, fixedTalent?.id, fixedTalent?.name]);
 
   const handleSave = () => {
     if (!talentId || !startDate || !endDate) {
@@ -73,6 +81,7 @@ export const AddBookOutModal = ({
       startDate,
       endDate,
       notes,
+      notifyAgency,
     };
 
     onAdd(newBookOut);
@@ -80,10 +89,11 @@ export const AddBookOutModal = ({
 
     // Reset form
     setReason("personal");
-    setTalentId("");
+    if (!fixedTalent?.id) setTalentId("");
     setStartDate("");
     setEndDate("");
     setNotes("");
+    setNotifyAgency(true);
   };
 
   const isValid = reason && talentId && startDate && endDate;
@@ -119,18 +129,22 @@ export const AddBookOutModal = ({
 
           <div className="space-y-2">
             <Label className="font-bold">Talent *</Label>
-            <Select value={talentId} onValueChange={setTalentId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select talent" />
-              </SelectTrigger>
-              <SelectContent>
-                {talents.map((talent) => (
-                  <SelectItem key={talent.id} value={talent.id}>
-                    {talent.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {fixedTalent?.id ? (
+              <Input value={fixedTalent.name} readOnly className="bg-gray-50" />
+            ) : (
+              <Select value={talentId} onValueChange={setTalentId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select talent" />
+                </SelectTrigger>
+                <SelectContent>
+                  {talents.map((talent) => (
+                    <SelectItem key={talent.id} value={talent.id}>
+                      {talent.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -163,9 +177,17 @@ export const AddBookOutModal = ({
           </div>
 
           <div className="flex items-center space-x-2">
-            <input type="checkbox" id="notify" className="rounded" />
+            <input
+              type="checkbox"
+              id="notify"
+              className="rounded"
+              checked={notifyAgency}
+              onChange={(e) => setNotifyAgency(e.target.checked)}
+            />
             <Label htmlFor="notify" className="font-normal cursor-pointer">
-              Notify talent via email
+              {fixedTalent?.id
+                ? "Notify agency via email"
+                : "Notify talent via email"}
             </Label>
           </div>
         </div>

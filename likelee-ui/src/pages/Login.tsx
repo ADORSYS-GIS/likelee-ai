@@ -84,7 +84,11 @@ export default function Login() {
         return;
       }
 
-      if (normalizedRole !== normalizedUserType) {
+      const roleMatchesTab =
+        normalizedRole === normalizedUserType ||
+        (normalizedUserType === "creator" && normalizedRole === "talent");
+
+      if (!roleMatchesTab) {
         setError("Account does not exist under this tab, try another");
         setAccessDenied(true);
         logout();

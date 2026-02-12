@@ -8,9 +8,68 @@ use serde_json::json;
 use tracing::{info, warn};
 
 use crate::auth::AuthUser;
+use crate::auth::RoleGuard;
 use crate::config::AppState;
 use std::str::FromStr;
 // use stripe_sdk; // Implicitly available
+
+async fn resolve_talent_creator_id(
+    state: &AppState,
+    user: &AuthUser,
+) -> Result<String, (StatusCode, String)> {
+    RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
+    let resp = state
+        .pg
+        .from("agency_users")
+        .select("creator_id,user_id")
+        .or(format!("creator_id.eq.{},user_id.eq.{}", user.id, user.id))
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !resp.status().is_success() {
+        let txt = resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, txt));
+    }
+    let txt = resp.text().await.unwrap_or("[]".into());
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+    let first = rows.first().cloned().unwrap_or(json!({}));
+    let cid = first
+        .get("creator_id")
+        .and_then(|v| v.as_str())
+        .or_else(|| first.get("user_id").and_then(|v| v.as_str()))
+        .unwrap_or("")
+        .to_string();
+    if cid.is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "talent_creator_id_not_found".to_string(),
+        ));
+    }
+    Ok(cid)
+}
+
+pub async fn get_my_account_status(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> (StatusCode, Json<serde_json::Value>) {
+    let profile_id = match resolve_talent_creator_id(&state, &user).await {
+        Ok(v) => v,
+        Err((code, msg)) => return (code, Json(json!({"status":"error","error":msg}))),
+    };
+    get_account_status(State(state), Query(ProfileQuery { profile_id })).await
+}
+
+pub async fn create_my_onboarding_link(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> (StatusCode, Json<serde_json::Value>) {
+    let profile_id = match resolve_talent_creator_id(&state, &user).await {
+        Ok(v) => v,
+        Err((code, msg)) => return (code, Json(json!({"status":"error","error":msg}))),
+    };
+    create_onboarding_link(State(state), Query(ProfileQuery { profile_id })).await
+}
 
 fn extract_bank_last4(acct: &stripe_sdk::Account) -> Option<String> {
     for ea in acct.external_accounts.data.iter() {
@@ -612,6 +671,19 @@ pub struct BalanceQuery {
     pub profile_id: String,
 }
 
+pub async fn get_my_balance(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> (StatusCode, Json<serde_json::Value>) {
+    get_balance(
+        State(state),
+        Query(BalanceQuery {
+            profile_id: user.id,
+        }),
+    )
+    .await
+}
+
 pub async fn get_balance(
     State(state): State<AppState>,
     Query(q): Query<BalanceQuery>,
@@ -675,6 +747,30 @@ pub struct PayoutRequestPayload {
     pub amount_cents: i64,
     pub currency: Option<String>,
     pub payout_method: Option<String>, // "standard" | "instant"
+}
+
+#[derive(Deserialize)]
+pub struct MyPayoutRequestPayload {
+    pub amount_cents: i64,
+    pub currency: Option<String>,
+    pub payout_method: Option<String>, // "standard" | "instant"
+}
+
+pub async fn request_my_payout(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<MyPayoutRequestPayload>,
+) -> (StatusCode, Json<serde_json::Value>) {
+    request_payout(
+        State(state),
+        Json(PayoutRequestPayload {
+            profile_id: user.id,
+            amount_cents: payload.amount_cents,
+            currency: payload.currency,
+            payout_method: payload.payout_method,
+        }),
+    )
+    .await
 }
 
 pub async fn request_payout(

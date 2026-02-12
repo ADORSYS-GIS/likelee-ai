@@ -3,7 +3,7 @@ import Layout from "./Layout";
 
 import { useAuth } from "@/auth/AuthProvider";
 import { toast } from "@/components/ui/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Eye, EyeOff } from "lucide-react";
 //import Layout from "./Layout";
@@ -11,6 +11,7 @@ import { Eye, EyeOff } from "lucide-react";
 export default function UpdatePassword() {
   const { t } = useTranslation();
   const { supabase } = useAuth();
+  const location = useLocation();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -44,7 +45,11 @@ export default function UpdatePassword() {
               title: t("common.success"),
               description: t("updatePassword.toasts.passwordUpdated"),
             });
-            setTimeout(() => navigate("/login"), 2000);
+
+            const params = new URLSearchParams(location.search);
+            const next = params.get("next") || "";
+            const nextPath = next.startsWith("/") ? next : "/login";
+            setTimeout(() => navigate(nextPath), 700);
           } catch (err: any) {
             const msg = err?.message ?? "Failed to update password";
             setError(msg);

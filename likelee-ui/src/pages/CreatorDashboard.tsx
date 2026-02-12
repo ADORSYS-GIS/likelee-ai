@@ -2,10 +2,32 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
+import TalentPortal from "@/pages/TalentPortal";
+import {
+  acceptCreatorAgencyInvite,
+  declineCreatorAgencyInvite,
+  disconnectCreatorAgencyConnection,
+  listCreatorAgencyConnections,
+  listCreatorAgencyInvites,
+  type CreatorAgencyConnection,
+  type CreatorAgencyInvite,
+} from "@/api/creatorAgencyConnection";
+import { listTalentAgencyInvites } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ToastAction } from "@/components/ui/toast";
 import { getUserFriendlyError } from "@/utils";
 import { Label } from "@/components/ui/label";
@@ -71,6 +93,7 @@ import {
   Gift,
   CreditCard,
   Link as LinkIcon,
+  Link2Off,
   HelpCircle,
   LogOut,
   Archive,
@@ -758,12 +781,56 @@ export default function CreatorDashboard() {
       return new URL("/", window.location.origin).toString();
     }
   })();
-  const api = (path: string) => new URL(path, API_BASE_ABS).toString();
   const [activeSection, setActiveSection] = useState("dashboard");
   const [settingsTab, setSettingsTab] = useState("profile"); // 'profile' or 'rules'
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
+  const [agencyInvites, setAgencyInvites] = useState<any[]>([]);
+  const [agencyConnections, setAgencyConnections] = useState<
+    CreatorAgencyConnection[]
+  >([]);
+  const [agencyConnectionLoading, setAgencyConnectionLoading] = useState(false);
+  const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
+  const [disconnectConfirmChecked, setDisconnectConfirmChecked] =
+    useState(false);
+  const [disconnectTarget, setDisconnectTarget] = useState<{
+    agency_id: string;
+    agency_name?: string;
+  } | null>(null);
   const IMAGE_SECTIONS = getImageSections(t);
+
+  const talentPortalEnabled =
+    (profile as any)?.role === "talent" || agencyConnections.length > 0;
+
+  useEffect(() => {
+    if (!initialized || !authenticated) return;
+    let active = true;
+    (async () => {
+      try {
+        setAgencyConnectionLoading(true);
+        const connections = await listCreatorAgencyConnections();
+        const isTalent =
+          (profile as any)?.role === "talent" || connections.length > 0;
+        const invites = isTalent
+          ? await listTalentAgencyInvites().then(
+              (r: any) => (r?.invites as any[]) || [],
+            )
+          : await listCreatorAgencyInvites();
+        if (!active) return;
+        setAgencyConnections(connections);
+        setAgencyInvites(invites);
+      } catch (e: any) {
+        if (!active) return;
+        console.error("Failed to load agency connection data", e);
+      } finally {
+        if (!active) return;
+        setAgencyConnectionLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [initialized, authenticated]);
 
   // Helper functions to get translated arrays
   const getTranslatedContentTypes = () => [
@@ -1489,7 +1556,15 @@ export default function CreatorDashboard() {
     }
   };
 
-  const navigationItems = [
+  const navigationItems: Array<{
+    id: string;
+    label: string;
+    icon: any;
+    badge?: number;
+    urgent?: boolean;
+    disabled?: boolean;
+    onClick?: () => void;
+  }> = [
     {
       id: "dashboard",
       label: t("creatorDashboard.nav.dashboard"),
@@ -1543,6 +1618,27 @@ export default function CreatorDashboard() {
       id: "settings",
       label: t("creatorDashboard.nav.settings"),
       icon: Settings,
+    },
+    {
+      id: "talent-portal",
+      label: "Talent Portal",
+      icon: Briefcase,
+      disabled: !talentPortalEnabled,
+      onClick: () => {
+        if (!talentPortalEnabled) {
+          toast({
+            title: "Talent Portal",
+            description: "Connect to an agency to access Talent Portal.",
+          });
+          return;
+        }
+        setActiveSection("talent-portal");
+      },
+    },
+    {
+      id: "agency-connection",
+      label: "Agency Connection",
+      icon: LinkIcon,
     },
   ];
 
@@ -1933,6 +2029,16 @@ export default function CreatorDashboard() {
           </>
         )}
       </div>
+    );
+  };
+
+  const renderTalentPortal = () => {
+    return (
+      <TalentPortal
+        embedded
+        initialTab="settings"
+        initialSettingsTab="profile"
+      />
     );
   };
 
@@ -3898,6 +4004,319 @@ export default function CreatorDashboard() {
       </div>
     </div>
   );
+
+  const renderAgencyConnection = () => {
+    const pending = agencyInvites.filter((i) => i.status === "pending");
+    const isTalent =
+      (profile as any)?.role === "talent" || agencyConnections.length > 0;
+
+    const disconnectLabel =
+      disconnectTarget?.agency_name ||
+      disconnectTarget?.agency_id ||
+      "this agency";
+
+    const doDisconnect = async () => {
+      if (!disconnectTarget?.agency_id) return;
+      try {
+        setAgencyConnectionLoading(true);
+        await disconnectCreatorAgencyConnection(
+          String(disconnectTarget.agency_id),
+        );
+
+        const connections = await listCreatorAgencyConnections();
+        const talentMode =
+          (profile as any)?.role === "talent" || connections.length > 0;
+        const invites = talentMode
+          ? await listTalentAgencyInvites().then(
+              (r: any) => (r?.invites as any[]) || [],
+            )
+          : await listCreatorAgencyInvites();
+
+        setAgencyConnections(connections);
+        setAgencyInvites(invites);
+        toast({
+          title: "Disconnected",
+          description: "You have disconnected from the agency.",
+        });
+      } catch (e: any) {
+        toast({
+          variant: "destructive",
+          title: "Failed to disconnect",
+          description: e?.message || String(e),
+        });
+      } finally {
+        setAgencyConnectionLoading(false);
+      }
+    };
+
+    return (
+      <div className="space-y-8">
+        <AlertDialog
+          open={disconnectDialogOpen}
+          onOpenChange={(open) => {
+            setDisconnectDialogOpen(open);
+            if (!open) {
+              setDisconnectConfirmChecked(false);
+              setDisconnectTarget(null);
+            }
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Disconnect from {disconnectLabel}?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                This may remove access to bookings, earnings, and portal data
+                for that agency.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            <div className="flex items-start gap-3">
+              <Checkbox
+                checked={disconnectConfirmChecked}
+                onCheckedChange={(v) => setDisconnectConfirmChecked(Boolean(v))}
+                id="confirm-disconnect"
+              />
+              <Label htmlFor="confirm-disconnect" className="text-sm leading-5">
+                I understand this action is hard to undo.
+              </Label>
+            </div>
+
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={!disconnectConfirmChecked || agencyConnectionLoading}
+                onClick={async () => {
+                  await doDisconnect();
+                }}
+              >
+                Disconnect
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900">
+            Agency Connection
+          </h2>
+          <p className="text-gray-600 mt-1">
+            Manage agency invitations and your connected agencies.
+          </p>
+        </div>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="text-lg font-semibold text-gray-900">
+                Connected Agencies
+              </div>
+              <div className="text-sm text-gray-600 mt-1">
+                {agencyConnections.length > 0
+                  ? "You can be connected to multiple agencies at once."
+                  : "You are not connected to any agencies yet."}
+              </div>
+            </div>
+            {agencyConnectionLoading && (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Loading
+              </div>
+            )}
+          </div>
+
+          {agencyConnections.length > 0 && (
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+              {agencyConnections.map((c) => (
+                <div
+                  key={c.agency_id}
+                  className="flex items-center justify-between gap-3 p-4 border border-gray-200 rounded-lg bg-white"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {c.agencies?.logo_url ? (
+                        <img
+                          src={c.agencies.logo_url}
+                          alt={c.agencies.agency_name || "Agency"}
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <Building2 className="w-5 h-5 text-gray-500" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-semibold text-gray-900 truncate">
+                        {c.agencies?.agency_name || c.agency_id}
+                      </div>
+                      <div className="text-xs text-gray-500 truncate">
+                        {c.agency_id}
+                      </div>
+                    </div>
+                  </div>
+
+                  {((profile as any)?.role === "talent" ||
+                    agencyConnections.length > 0) && (
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      disabled={agencyConnectionLoading}
+                      onClick={() => {
+                        setDisconnectTarget({
+                          agency_id: String(c.agency_id),
+                          agency_name: c.agencies?.agency_name || undefined,
+                        });
+                        setDisconnectConfirmChecked(false);
+                        setDisconnectDialogOpen(true);
+                      }}
+                      aria-label="Disconnect from agency"
+                    >
+                      <Link2Off className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="text-lg font-semibold text-gray-900">
+                Invitations
+              </div>
+              <div className="text-sm text-gray-600 mt-1">
+                {pending.length > 0
+                  ? "Respond to pending invitations from agencies."
+                  : "No pending invitations right now."}
+              </div>
+            </div>
+            {pending.length > 0 && (
+              <Badge className="bg-[#32C8D1] text-white">
+                {pending.length}
+              </Badge>
+            )}
+          </div>
+
+          {pending.length > 0 && (
+            <div className="mt-6 space-y-3">
+              {pending.map((inv) => (
+                <div
+                  key={inv.id}
+                  className="p-4 border border-gray-200 rounded-lg flex items-center justify-between gap-4"
+                >
+                  <div className="min-w-0 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {inv?.agencies?.logo_url ? (
+                        <img
+                          src={inv.agencies.logo_url}
+                          alt={inv.agencies.agency_name || "Agency"}
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <Users className="w-5 h-5 text-gray-500" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-semibold text-gray-900 truncate">
+                        {inv?.agencies?.agency_name || "Invitation from agency"}
+                      </div>
+                      <div className="text-xs text-gray-500 truncate mt-1">
+                        {inv.agency_id}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Button
+                      variant="outline"
+                      className="border-gray-200"
+                      onClick={async () => {
+                        try {
+                          if (isTalent) {
+                            const token = String(inv?.token || "");
+                            if (token) {
+                              navigate(
+                                `/invite/agency/${encodeURIComponent(token)}`,
+                              );
+                              return;
+                            }
+                            throw new Error("Missing invite token");
+                          }
+
+                          await declineCreatorAgencyInvite(inv.id);
+                          setAgencyInvites((prev) =>
+                            prev.map((p) =>
+                              p.id === inv.id
+                                ? { ...p, status: "declined" }
+                                : p,
+                            ),
+                          );
+                          toast({ title: "Invitation declined" });
+                        } catch (e: any) {
+                          toast({
+                            variant: "destructive",
+                            title: "Failed to decline",
+                            description: e?.message || String(e),
+                          });
+                        }
+                      }}
+                    >
+                      Decline
+                    </Button>
+                    <Button
+                      className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                      onClick={async () => {
+                        try {
+                          if (isTalent) {
+                            const token = String(inv?.token || "");
+                            if (token) {
+                              navigate(
+                                `/invite/agency/${encodeURIComponent(token)}`,
+                              );
+                              return;
+                            }
+                            throw new Error("Missing invite token");
+                          }
+
+                          await acceptCreatorAgencyInvite(inv.id);
+                          const [connections] = await Promise.all([
+                            listCreatorAgencyConnections(),
+                          ]);
+                          setAgencyConnections(connections);
+                          setAgencyInvites((prev) =>
+                            prev.map((p) =>
+                              p.id === inv.id
+                                ? { ...p, status: "accepted" }
+                                : p,
+                            ),
+                          );
+                          toast({
+                            title: "Invitation accepted",
+                            description:
+                              "You are now connected to this agency. You can edit your profile per agency in Talent Portal settings.",
+                          });
+                        } catch (e: any) {
+                          toast({
+                            variant: "destructive",
+                            title: "Failed to accept",
+                            description: e?.message || String(e),
+                          });
+                        }
+                      }}
+                    >
+                      Accept
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
+    );
+  };
 
   const renderCampaigns = () => {
     // Use example campaigns if activeCampaigns is empty, otherwise use real data
@@ -6556,12 +6975,22 @@ export default function CreatorDashboard() {
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveSection(item.id)}
+                  onClick={() => {
+                    if (item.disabled) return;
+                    if (item.onClick) {
+                      item.onClick();
+                      return;
+                    }
+                    setActiveSection(item.id);
+                  }}
                   className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
-                    isActive
-                      ? "bg-[#32C8D1] text-white"
-                      : "text-gray-700 hover:bg-gray-100"
+                    item.disabled
+                      ? "text-gray-400 cursor-not-allowed opacity-60"
+                      : isActive
+                        ? "bg-[#32C8D1] text-white"
+                        : "text-gray-700 hover:bg-gray-100"
                   }`}
+                  aria-disabled={item.disabled ? "true" : undefined}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
                   {sidebarOpen && (
@@ -6705,6 +7134,8 @@ export default function CreatorDashboard() {
           {activeSection === "contracts" && renderContracts()}
           {activeSection === "earnings" && renderEarnings()}
           {activeSection === "settings" && renderSettings()}
+          {activeSection === "agency-connection" && renderAgencyConnection()}
+          {activeSection === "talent-portal" && renderTalentPortal()}
         </div>
 
         {/* Mobile Footer */}

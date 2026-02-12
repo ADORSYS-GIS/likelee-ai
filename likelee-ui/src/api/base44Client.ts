@@ -14,7 +14,13 @@ function buildUrl(
   // If base has a path (e.g. /api) and url starts with /, URL() constructor will drop the base path.
   // We need to treat 'url' as relative to 'base'.
   const normalizedBase = base.endsWith("/") ? base : `${base}/`;
-  const normalizedUrl = url.startsWith("/") ? url.slice(1) : url;
+  let normalizedUrl = url.startsWith("/") ? url.slice(1) : url;
+
+  // Avoid accidental double-prefix like `${API_BASE}/api/...` when API_BASE already includes `/api/`.
+  // Example: base = http://localhost:5173/api/ and url = /api/talent/me
+  if (normalizedBase.endsWith("/api/") && normalizedUrl.startsWith("api/")) {
+    normalizedUrl = normalizedUrl.slice("api/".length);
+  }
 
   const u = new URL(normalizedUrl, normalizedBase);
   if (params) {

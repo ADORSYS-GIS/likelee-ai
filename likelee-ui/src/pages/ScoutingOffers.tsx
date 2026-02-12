@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { scoutingService } from "@/services/scoutingService";
-import { useAuth } from "../auth/AuthProvider";
+import { useAuth } from "@/auth/AuthProvider";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

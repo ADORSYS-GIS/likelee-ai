@@ -37,6 +37,8 @@ export const CalendarScheduleTab = ({
   bookOuts = [],
   onAddBookOut,
   onRemoveBookOut,
+  fixedTalent,
+  disableBookingEdits,
 }: {
   bookings: any[];
   onAddBooking: (booking: any) => void;
@@ -45,6 +47,8 @@ export const CalendarScheduleTab = ({
   bookOuts?: any[];
   onAddBookOut: (bookOut: any) => void;
   onRemoveBookOut: (id: string) => void;
+  fixedTalent?: { id: string; name: string };
+  disableBookingEdits?: boolean;
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [newBookingOpen, setNewBookingOpen] = useState(false);
@@ -63,6 +67,13 @@ export const CalendarScheduleTab = ({
   const [talents, setTalents] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
+    if (fixedTalent?.id) {
+      setTalents([{ id: fixedTalent.id, name: fixedTalent.name }]);
+      setSelectedTalentId(fixedTalent.id);
+      setTalentViewMode("single");
+      return;
+    }
+
     let cancelled = false;
     (async () => {
       try {
@@ -98,6 +109,12 @@ export const CalendarScheduleTab = ({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (disableBookingEdits) {
+        if (e.key.toLowerCase() === "t") {
+          handleToday();
+        }
+        return;
+      }
       if (
         document.activeElement?.tagName === "INPUT" ||
         document.activeElement?.tagName === "TEXTAREA"
@@ -221,16 +238,18 @@ export const CalendarScheduleTab = ({
           >
             <Calendar className="w-4 h-4 mr-2" /> Manage Availability
           </Button>
-          <Button
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
-            onClick={() => {
-              setBookingMode("new");
-              setSelectedBooking(null);
-              setNewBookingOpen(true);
-            }}
-          >
-            <Plus className="w-4 h-4 mr-2" /> New Booking
-          </Button>
+          {!disableBookingEdits && (
+            <Button
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+              onClick={() => {
+                setBookingMode("new");
+                setSelectedBooking(null);
+                setNewBookingOpen(true);
+              }}
+            >
+              <Plus className="w-4 h-4 mr-2" /> New Booking
+            </Button>
+          )}
         </div>
       </div>
 
@@ -371,47 +390,54 @@ export const CalendarScheduleTab = ({
                 <SelectItem value="agenda">Agenda</SelectItem>
               </SelectContent>
             </Select>
-            <Select
-              value={talentViewMode}
-              onValueChange={(v) => setTalentViewMode(v as any)}
-            >
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="single">Single View</SelectItem>
-                <SelectItem value="all">All Talent</SelectItem>
-                <SelectItem value="selected">Selected Talent</SelectItem>
-              </SelectContent>
-            </Select>
+            {!fixedTalent?.id && (
+              <>
+                <Select
+                  value={talentViewMode}
+                  onValueChange={(v) => setTalentViewMode(v as any)}
+                >
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="single">Single View</SelectItem>
+                    <SelectItem value="all">All Talent</SelectItem>
+                    <SelectItem value="selected">Selected Talent</SelectItem>
+                  </SelectContent>
+                </Select>
 
-            {talentViewMode !== "all" && (
-              <Select
-                value={selectedTalentId}
-                onValueChange={setSelectedTalentId}
-              >
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Select talent" />
-                </SelectTrigger>
-                <SelectContent>
-                  {talents.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                {talentViewMode !== "all" && (
+                  <Select
+                    value={selectedTalentId}
+                    onValueChange={setSelectedTalentId}
+                  >
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Select talent" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {talents.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          {t.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </>
             )}
-            <Button
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
-              onClick={() => {
-                setBookingMode("new");
-                setSelectedBooking(null);
-                setNewBookingOpen(true);
-              }}
-            >
-              <Plus className="w-4 h-4 mr-2" /> New Booking
-            </Button>
+
+            {!disableBookingEdits && (
+              <Button
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+                onClick={() => {
+                  setBookingMode("new");
+                  setSelectedBooking(null);
+                  setNewBookingOpen(true);
+                }}
+              >
+                <Plus className="w-4 h-4 mr-2" /> New Booking
+              </Button>
+            )}
           </div>
         </div>
 
@@ -634,32 +660,37 @@ export const CalendarScheduleTab = ({
         bookOuts={visibleBookOuts}
         onAddBookOut={onAddBookOut}
         onRemoveBookOut={onRemoveBookOut}
+        fixedTalent={fixedTalent}
       />
-      <NewBookingModal
-        open={newBookingOpen}
-        onOpenChange={setNewBookingOpen}
-        onSave={(b) => {
-          if (bookingMode === "edit") {
-            onUpdateBooking(b);
-          } else {
-            onAddBooking(b);
-          }
-        }}
-        initialData={selectedBooking}
-        mode={bookingMode}
-      />
+      {!disableBookingEdits && (
+        <NewBookingModal
+          open={newBookingOpen}
+          onOpenChange={setNewBookingOpen}
+          onSave={(b) => {
+            if (bookingMode === "edit") {
+              onUpdateBooking(b);
+            } else {
+              onAddBooking(b);
+            }
+          }}
+          initialData={selectedBooking}
+          mode={bookingMode}
+        />
+      )}
 
       <BookingDetailsModal
         open={detailsModalOpen}
         onOpenChange={setDetailsModalOpen}
         booking={selectedBooking}
         onEdit={(b) => {
+          if (disableBookingEdits) return;
           setSelectedBooking(b);
           setBookingMode("edit");
           setDetailsModalOpen(false);
           setNewBookingOpen(true);
         }}
         onDuplicate={(b) => {
+          if (disableBookingEdits) return;
           setSelectedBooking(b);
           setBookingMode("duplicate");
           setDetailsModalOpen(false);

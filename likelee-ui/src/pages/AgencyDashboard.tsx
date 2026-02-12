@@ -893,7 +893,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 // duplicate imports removed below (already imported earlier in file)
-import { useAuth } from "../auth/AuthProvider";
+import { useAuth } from "@/auth/AuthProvider";
 
 // STATUS_MAP is defined earlier in this file; removing duplicate declaration here.
 
@@ -10730,8 +10730,46 @@ export const RosterView = ({
   profile: any;
   agencyKycStatus: string | null;
 }) => {
+  const { toast } = useToast();
   const navigate = useNavigate();
   const [rosterTab, setRosterTab] = useState("roster");
+
+  const portalLink = useMemo(() => {
+    try {
+      return `${window.location.origin}/talentportal`;
+    } catch {
+      return "/talentportal";
+    }
+  }, []);
+
+  const copyPortalLink = async () => {
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(portalLink);
+      } else {
+        const el = document.createElement("textarea");
+        el.value = portalLink;
+        el.setAttribute("readonly", "");
+        el.style.position = "absolute";
+        el.style.left = "-9999px";
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand("copy");
+        document.body.removeChild(el);
+      }
+      toast({
+        title: "Portal link copied",
+        description:
+          "Share it with your talent to join and access their portal.",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Failed to copy portal link",
+        description: String(e?.message || e),
+        variant: "destructive" as any,
+      });
+    }
+  };
 
   const handleSort = (key: string) => {
     let direction: "asc" | "desc" = "asc";
@@ -11060,6 +11098,13 @@ export const RosterView = ({
             </button>
           </div>
           <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={copyPortalLink}
+              className="flex items-center gap-2 text-gray-700"
+            >
+              <Copy className="w-4 h-4" /> Send portal link
+            </Button>
             <Button
               variant="outline"
               className="flex items-center gap-2 text-gray-700"

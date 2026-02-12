@@ -17,17 +17,23 @@ export const ManageAvailabilityModal = ({
   bookOuts = [],
   onAddBookOut,
   onRemoveBookOut,
+  fixedTalent,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   bookOuts?: any[];
   onAddBookOut: (bookOut: any) => void;
   onRemoveBookOut: (id: string) => void;
+  fixedTalent?: { id: string; name: string };
 }) => {
   const [addOpen, setAddOpen] = useState(false);
   const [talents, setTalents] = useState<any[]>([]);
 
   useEffect(() => {
+    if (fixedTalent?.id) {
+      setTalents([{ id: fixedTalent.id, name: fixedTalent.name }]);
+      return;
+    }
     let cancelled = false;
     const load = async () => {
       try {
@@ -135,6 +141,7 @@ export const ManageAvailabilityModal = ({
           open={addOpen}
           onOpenChange={setAddOpen}
           onAdd={onAddBookOut}
+          fixedTalent={fixedTalent}
         />
       </DialogContent>
     </Dialog>
