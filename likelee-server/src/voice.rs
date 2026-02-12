@@ -272,11 +272,10 @@ pub async fn signed_url_for_recording(
         .and_then(|v| v.as_str())
         .ok_or((StatusCode::NOT_FOUND, "recording not found".into()))?;
 
-    if row
+    if !row
         .get("accessible")
         .and_then(|v| v.as_bool())
         .unwrap_or(true)
-        == false
     {
         return Err((StatusCode::NOT_FOUND, "recording not found".into()));
     }
