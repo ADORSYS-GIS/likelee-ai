@@ -1990,6 +1990,7 @@ export default function CreatorDashboard() {
         <Card className="overflow-hidden border-gray-200 bg-white">
           {/* Banner */}
           <div className="h-48 bg-[#32C8D1]"></div>
+          <div className="px-6">
           {/* Header Section with Avatar */}
           <div className="relative flex justify-between items-start mb-6">
             <div className="flex items-end -mt-16 mb-4">
@@ -2043,7 +2044,7 @@ export default function CreatorDashboard() {
           </div>
 
           {/* Bio */}
-          <p className="text-gray-700 mb-8 max-w-3xl">{data.bio}</p>
+          <p className="text-gray-700 mb-8 max-w-3xl">{data.bio || "-"}</p>
 
           {/* Stats Grid */}
           <div className="grid grid-cols-3 gap-4 mb-8">
@@ -2074,38 +2075,48 @@ export default function CreatorDashboard() {
           </div>
 
           {/* Tags */}
-          <div className="space-y-6 mb-8">
+          <div className="space-y-8 mb-8 border-t border-gray-100 pt-6">
             <div>
-              <h3 className="text-sm font-bold text-gray-900 mb-3">
+              <h3 className="text-base font-semibold text-gray-900 mb-3">
                 {t("creatorDashboard.publicProfile.openToWork")}
               </h3>
-              <div className="flex flex-wrap gap-2">
-                {data.open_to_work.map((tag: string) => (
-                  <Badge
-                    key={tag}
-                    variant="default"
-                    className="bg-[#32C8D1] hover:bg-[#2bb0b8] text-white border-0"
-                  >
-                    {t(`common.contentTypes.${tag}`, { defaultValue: tag })}
-                  </Badge>
-                ))}
-              </div>
+              {data.open_to_work.length ? (
+                <div className="flex flex-wrap gap-2">
+                  {data.open_to_work.map((tag: string) => (
+                    <Badge
+                      key={tag}
+                      variant="default"
+                      className="bg-[#32C8D1] hover:bg-[#2bb0b8] text-white border-0 text-sm px-3 py-1"
+                    >
+                      {t(`common.contentTypes.${tag}`, { defaultValue: tag })}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">
+                  No content types selected yet.
+                </p>
+              )}
             </div>
             <div>
-              <h3 className="text-sm font-bold text-gray-900 mb-3">
+              <h3 className="text-base font-semibold text-gray-900 mb-3">
                 {t("creatorDashboard.publicProfile.industries")}
               </h3>
-              <div className="flex flex-wrap gap-2">
-                {data.industries.map((tag: string) => (
-                  <Badge
-                    key={tag}
-                    variant="secondary"
-                    className="bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200"
-                  >
-                    {t(`common.industries.${tag}`, { defaultValue: tag })}
-                  </Badge>
-                ))}
-              </div>
+              {data.industries.length ? (
+                <div className="flex flex-wrap gap-2">
+                  {data.industries.map((tag: string) => (
+                    <Badge
+                      key={tag}
+                      variant="secondary"
+                      className="bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200 text-sm px-3 py-1"
+                    >
+                      {t(`common.industries.${tag}`, { defaultValue: tag })}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No industries selected yet.</p>
+              )}
             </div>
           </div>
 
@@ -2134,8 +2145,8 @@ export default function CreatorDashboard() {
           </div>
 
           {/* Portfolio */}
-          <div>
-            <h3 className="font-bold text-gray-900 mb-4">
+          <div className="border-t border-gray-100 pt-6">
+            <h3 className="text-base font-semibold text-gray-900 mb-3">
               {t("creatorDashboard.publicProfile.portfolio")}
             </h3>
             {data.portfolio_link ? (
@@ -2149,7 +2160,9 @@ export default function CreatorDashboard() {
                 {data.portfolio_link}
               </a>
             ) : (
-              <p className="text-sm text-gray-500">-</p>
+              <p className="text-sm text-gray-500">
+                Add your portfolio link in Settings → Profile.
+              </p>
             )}
           </div>
 
@@ -2164,14 +2177,15 @@ export default function CreatorDashboard() {
               TikTok
             </Button>
           </div>
-        </Card>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3 items-start">
-          <AlertCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
-          <p className="text-blue-900 text-sm">
-            {t("creatorDashboard.publicProfile.previewNote")}
-          </p>
-        </div>
+          <div className="mt-8 -mx-6 border-t border-blue-100 bg-blue-50 px-6 py-4 flex gap-3 items-start">
+            <AlertCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+            <p className="text-blue-900 text-sm">
+              {t("creatorDashboard.publicProfile.previewNote")}
+            </p>
+          </div>
+          </div>
+        </Card>
 
         {/* Card Modal Overlay */}
         {showCardModal && (
@@ -5790,11 +5804,22 @@ export default function CreatorDashboard() {
       );
       const finalRates = [...newRates, ...preservedRates];
 
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        throw new Error("Missing auth session. Please sign in again.");
+      }
+
       const res = await fetch(
         api(`/api/creator-rates?user_id=${encodeURIComponent(user.id)}`),
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify(finalRates),
         },
       );
@@ -5829,6 +5854,11 @@ export default function CreatorDashboard() {
       // Reload rates from database to confirm persistence
       const reloadRes = await fetch(
         api(`/api/creator-rates?user_id=${encodeURIComponent(user.id)}`),
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
       );
       if (reloadRes.ok) {
         const reloadedRates = await reloadRes.json();
