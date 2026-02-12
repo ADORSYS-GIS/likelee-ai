@@ -2376,13 +2376,6 @@ export default function CreatorDashboard() {
           </div>
         </Card>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3 items-start max-w-10xl">
-          <AlertCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
-          <p className="text-blue-900 text-sm">
-            {t("creatorDashboard.publicProfile.previewNote")}
-          </p>
-        </div>
-
         {/* Card Modal Overlay */}
         {showCardModal && (
           <div
@@ -2910,10 +2903,96 @@ export default function CreatorDashboard() {
     );
   };
 
+  const DeleteVoiceRecordingToastAction = ({
+    uiId,
+    serverId,
+    dismiss,
+  }: {
+    uiId: any;
+    serverId: any;
+    dismiss: () => void;
+  }) => {
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    return (
+      <ToastAction
+        altText={t("creatorDashboard.voice.deleteConfirmation.action", "Delete")}
+        disabled={isDeleting}
+        className={
+          "border-white/40 bg-white/10 text-white font-semibold shadow-sm " +
+          "hover:bg-white/15 active:bg-white/20 focus-visible:ring-white/70"
+        }
+        onClick={async () => {
+          try {
+            if (!serverId) {
+              toast({
+                title: t(
+                  "creatorDashboard.voice.deleteFailedTitle",
+                  "Delete failed",
+                ),
+                description: t(
+                  "creatorDashboard.voice.deleteFailedDesc",
+                  "Missing recording id.",
+                ),
+                variant: "destructive",
+              });
+              return;
+            }
+
+            if (isDeleting) return;
+            setIsDeleting(true);
+
+            await base44.delete(
+              `/voice/recordings/${encodeURIComponent(String(serverId))}`,
+            );
+            setVoiceLibrary((prev) =>
+              prev.filter(
+                (r) =>
+                  r.id !== uiId &&
+                  String(r?.server_recording_id || r?.id) !== String(serverId),
+              ),
+            );
+            dismiss();
+          } catch (err: any) {
+            const msg =
+              typeof err?.message === "string"
+                ? err.message
+                : t(
+                    "creatorDashboard.voice.deleteFailedDesc",
+                    "Failed to delete recording.",
+                  );
+            toast({
+              title: t(
+                "creatorDashboard.voice.deleteFailedTitle",
+                "Delete failed",
+              ),
+              description: msg,
+              variant: "destructive",
+            });
+          } finally {
+            setIsDeleting(false);
+          }
+        }}
+      >
+        {isDeleting ? (
+          <>
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            Deleting…
+          </>
+        ) : (
+          t("creatorDashboard.voice.deleteConfirmation.action", "Delete")
+        )}
+      </ToastAction>
+    );
+  };
+
   const deleteRecording = async (id) => {
     const rec = voiceLibrary.find((r) => r.id === id);
+    const sid = rec?.server_recording_id || rec?.id;
 
-    const { dismiss } = toast({
+    // Create the toast first, then attach an action using `update`.
+    // This avoids a TDZ crash when passing `dismiss` into the JSX before it's initialized.
+    const tinst = toast({
       title: t(
         "creatorDashboard.voice.deleteConfirmation.title",
         "Delete Recording?",
@@ -2923,63 +3002,15 @@ export default function CreatorDashboard() {
         "This action cannot be undone.",
       ),
       variant: "destructive",
-      action: (
-        <ToastAction
-          altText={t(
-            "creatorDashboard.voice.deleteConfirmation.action",
-            "Delete",
-          )}
-          className="bg-white text-red-600 hover:bg-gray-100 border-none font-bold shadow-sm"
-          onClick={async () => {
-            try {
-              const sid = rec?.server_recording_id || rec?.id;
-              if (!sid) {
-                toast({
-                  title: t(
-                    "creatorDashboard.voice.deleteFailedTitle",
-                    "Delete failed",
-                  ),
-                  description: t(
-                    "creatorDashboard.voice.deleteFailedDesc",
-                    "Missing recording id.",
-                  ),
-                  variant: "destructive",
-                });
-                return;
-              }
+    });
 
-              await base44.delete(
-                `/voice/recordings/${encodeURIComponent(String(sid))}`,
-              );
-              setVoiceLibrary((prev) =>
-                prev.filter(
-                  (r) =>
-                    r.id !== id &&
-                    String(r?.server_recording_id || r?.id) !== String(sid),
-                ),
-              );
-              dismiss();
-            } catch (err: any) {
-              const msg =
-                typeof err?.message === "string"
-                  ? err.message
-                  : t(
-                      "creatorDashboard.voice.deleteFailedDesc",
-                      "Failed to delete recording.",
-                    );
-              toast({
-                title: t(
-                  "creatorDashboard.voice.deleteFailedTitle",
-                  "Delete failed",
-                ),
-                description: msg,
-                variant: "destructive",
-              });
-            }
-          }}
-        >
-          {t("creatorDashboard.voice.deleteConfirmation.action", "Delete")}
-        </ToastAction>
+    tinst.update({
+      action: (
+        <DeleteVoiceRecordingToastAction
+          uiId={id}
+          serverId={sid}
+          dismiss={tinst.dismiss}
+        />
       ),
     });
   };
@@ -3627,23 +3658,73 @@ export default function CreatorDashboard() {
   };
 
   const deleteReferenceImage = (sectionId) => {
-    toast({
+    const DeleteReferenceImageToastAction = ({
+      sectionId,
+      dismiss,
+    }: {
+      sectionId: string;
+      dismiss: () => void;
+    }) => {
+      const [isDeleting, setIsDeleting] = useState(false);
+
+      return (
+        <ToastAction
+          altText="Delete"
+          disabled={isDeleting}
+          className={
+            "border-white/40 bg-white/10 text-white font-semibold shadow-sm " +
+            "hover:bg-white/15 active:bg-white/20 focus-visible:ring-white/70"
+          }
+          onClick={async () => {
+            try {
+              if (isDeleting) return;
+              setIsDeleting(true);
+
+              await base44.delete(
+                `/reference-images/${encodeURIComponent(String(sectionId))}`,
+              );
+
+              setReferenceImages((prev) => ({
+                ...prev,
+                [sectionId]: null,
+              }));
+
+              dismiss();
+            } catch (e: any) {
+              toast({
+                variant: "destructive",
+                title: "Delete failed",
+                description: getUserFriendlyError(e),
+              });
+            } finally {
+              setIsDeleting(false);
+            }
+          }}
+        >
+          {isDeleting ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Deleting…
+            </>
+          ) : (
+            "Delete"
+          )}
+        </ToastAction>
+      );
+    };
+
+    const tinst = toast({
       title: "Delete Reference Image?",
       description: "This action cannot be undone.",
       variant: "destructive",
+    });
+
+    tinst.update({
       action: (
-        <ToastAction
-          altText="Delete"
-          className="bg-white text-red-600 hover:bg-gray-100 border-none font-bold shadow-sm"
-          onClick={() => {
-            setReferenceImages({
-              ...referenceImages,
-              [sectionId]: null,
-            });
-          }}
-        >
-          Delete
-        </ToastAction>
+        <DeleteReferenceImageToastAction
+          sectionId={sectionId}
+          dismiss={tinst.dismiss}
+        />
       ),
     });
   };
