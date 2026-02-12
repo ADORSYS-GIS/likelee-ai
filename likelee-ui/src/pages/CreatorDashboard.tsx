@@ -849,6 +849,7 @@ export default function CreatorDashboard() {
     bio: "",
     instagram_handle: "",
     tiktok_handle: "",
+    portfolio_url: "",
     instagram_connected: false,
     instagram_followers: 0,
     content_types: [] as string[],
@@ -886,6 +887,9 @@ export default function CreatorDashboard() {
         email: profile.email || prev.email,
         profile_photo: profile.profile_photo_url || prev.profile_photo,
         kyc_status: profile.kyc_status || prev.kyc_status,
+        bio: profile.bio ?? prev.bio,
+        tiktok_handle: profile.tiktok_handle ?? prev.tiktok_handle,
+        portfolio_url: profile.portfolio_link ?? prev.portfolio_url,
       }));
     }
   }, [profile]);
@@ -1351,7 +1355,8 @@ export default function CreatorDashboard() {
           instagram_handle: profile.platform_handle
             ? `@${profile.platform_handle}`
             : prev.instagram_handle,
-          tiktok_handle: prev.tiktok_handle,
+          tiktok_handle: profile.tiktok_handle ?? prev.tiktok_handle,
+          portfolio_url: profile.portfolio_link ?? prev.portfolio_url,
           instagram_connected: prev.instagram_connected ?? false,
           instagram_followers: prev.instagram_followers ?? 0,
           content_types: profile.content_types || [],
@@ -2976,6 +2981,15 @@ export default function CreatorDashboard() {
         ? customToast
         : t("creatorDashboard.toasts.profileSaved");
 
+    const rawTiktok =
+      typeof creator.tiktok_handle === "string" ? creator.tiktok_handle.trim() : "";
+    const normalizedTiktok =
+      rawTiktok.length > 0 && !rawTiktok.startsWith("@")
+        ? `@${rawTiktok}`
+        : rawTiktok;
+    const normalizedPortfolio =
+      typeof creator.portfolio_url === "string" ? creator.portfolio_url.trim() : "";
+
     // Only send fields that exist in the profiles table
     // Apply overrides if provided (e.g. for immediate toggle updates)
     const profileData = {
@@ -2987,6 +3001,8 @@ export default function CreatorDashboard() {
       state: creator.location?.split(",")[1]?.trim(),
       base_monthly_price_cents: (creator.price_per_month || 0) * 100,
       platform_handle: creator.instagram_handle?.replace("@", ""),
+      tiktok_handle: normalizedTiktok,
+      portfolio_link: normalizedPortfolio,
       accept_negotiations:
         overrides?.accept_negotiations ?? creator.accept_negotiations,
       content_restrictions:
@@ -3022,6 +3038,9 @@ export default function CreatorDashboard() {
         setCreator((prev) => ({
           ...prev,
           name: savedProfile.full_name || prev.name,
+          bio: savedProfile.bio ?? prev.bio,
+          tiktok_handle: savedProfile.tiktok_handle ?? prev.tiktok_handle,
+          portfolio_url: savedProfile.portfolio_link ?? prev.portfolio_url,
           content_types: savedProfile.content_types ?? prev.content_types,
           industries: savedProfile.industries ?? prev.industries,
           content_restrictions:
@@ -3050,10 +3069,8 @@ export default function CreatorDashboard() {
     }
   };
 
-  const handleSaveProfile = () => {
-    toast({
-      title: t("creatorDashboard.toasts.profileUpdatedDemo"),
-    });
+  const handleSaveProfile = async () => {
+    await handleSaveRules(t("creatorDashboard.toasts.profileSaved"));
   };
 
   const renderDashboard = () => {
