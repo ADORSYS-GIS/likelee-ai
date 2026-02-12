@@ -1417,7 +1417,7 @@ export default function CreatorDashboard() {
   const [countdown, setCountdown] = useState(3);
   const [recordingTime, setRecordingTime] = useState(0);
   const [currentWord, setCurrentWord] = useState(0);
-  const [generatingVoice, setGeneratingVoice] = useState(false);
+  const [generatingVoiceId, setGeneratingVoiceId] = useState<string | number | null>(null);
   const [tempContentTypes, setTempContentTypes] = useState<string[]>([]);
   const [tempIndustries, setTempIndustries] = useState<string[]>([]);
 
@@ -2980,7 +2980,9 @@ export default function CreatorDashboard() {
 
   const createVoiceProfile = async (recording) => {
     try {
-      setGeneratingVoice(true);
+      const genId = recording?.server_recording_id ?? recording?.id;
+      if (generatingVoiceId && generatingVoiceId !== genId) return;
+      setGeneratingVoiceId(genId);
 
       const ct = recording?.mimeType || recording?.blob?.type || "audio/webm";
 
@@ -3069,7 +3071,7 @@ export default function CreatorDashboard() {
         }),
       });
     } finally {
-      setGeneratingVoice(false);
+      setGeneratingVoiceId(null);
     }
   };
 
@@ -4224,10 +4226,15 @@ export default function CreatorDashboard() {
                 {!recording.voiceProfileCreated && recording.accessible && (
                   <Button
                     onClick={() => createVoiceProfile(recording)}
-                    disabled={generatingVoice}
+                    disabled={
+                      generatingVoiceId !== null &&
+                      generatingVoiceId !==
+                        (recording?.server_recording_id ?? recording?.id)
+                    }
                     className="w-full bg-purple-600 hover:bg-purple-700 text-white"
                   >
-                    {generatingVoice ? (
+                    {generatingVoiceId ===
+                    (recording?.server_recording_id ?? recording?.id) ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                         {t("creatorDashboard.voice.library.creatingProfile")}
