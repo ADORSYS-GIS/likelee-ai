@@ -631,8 +631,30 @@ pub async fn delete_voice_recording(
         .execute()
         .await;
 
+    // If a voice model references this recording, clear it first.
+    // Some PostgREST deployments surface this as a 409/validation error on delete,
+    // even though the FK is configured as ON DELETE SET NULL.
+    let vm_upd = state
+        .pg
+        .from("voice_models")
+        .update("{\"source_recording_id\": null}")
+        .eq("source_recording_id", &id)
+        .eq("user_id", &user.id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    let vm_status = vm_upd.status();
+    let vm_text = vm_upd
+        .text()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    if !vm_status.is_success() {
+        let code = StatusCode::from_u16(vm_status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
+        return Err(crate::errors::sanitize_db_error(code, vm_text));
+    }
+
     // Delete DB row
-    state
+    let del_resp = state
         .pg
         .from("voice_recordings")
         .delete()
@@ -640,6 +662,48 @@ pub async fn delete_voice_recording(
         .execute()
         .await
         .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    let del_status = del_resp.status();
+    let del_text = del_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    if !del_status.is_success() {
+        let code =
+            StatusCode::from_u16(del_status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
+        return Err(crate::errors::sanitize_db_error(code, del_text));
+    }
+
+    // Confirm the row is actually gone (PostgREST may return 2xx even if nothing was deleted,
+    // and some deployments don't support returning deleted rows from DELETE)
+    let check = state
+        .pg
+        .from("voice_recordings")
+        .select("id")
+        .eq("id", &id)
+        .eq("user_id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    let check_status = check.status();
+    let check_text = check
+        .text()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    if !check_status.is_success() {
+        let code =
+            StatusCode::from_u16(check_status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
+        return Err(crate::errors::sanitize_db_error(code, check_text));
+    }
+    let remaining: serde_json::Value =
+        serde_json::from_str(&check_text).unwrap_or(serde_json::json!([]));
+    if remaining.as_array().map(|a| !a.is_empty()).unwrap_or(false) {
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            format!("delete did not remove row: {del_text}"),
+        ));
+    }
 
     Ok(Json(DeleteVoiceOut { deleted: true }))
 }

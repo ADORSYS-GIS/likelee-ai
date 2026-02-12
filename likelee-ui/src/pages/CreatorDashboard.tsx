@@ -2951,7 +2951,13 @@ export default function CreatorDashboard() {
               await base44.delete(
                 `/voice/recordings/${encodeURIComponent(String(sid))}`,
               );
-              setVoiceLibrary((prev) => prev.filter((r) => r.id !== id));
+              setVoiceLibrary((prev) =>
+                prev.filter(
+                  (r) =>
+                    r.id !== id &&
+                    String(r?.server_recording_id || r?.id) !== String(sid),
+                ),
+              );
               dismiss();
             } catch (err: any) {
               const msg =
