@@ -1091,6 +1091,8 @@ export default function CreatorDashboard() {
   const [showRatesModal, setShowRatesModal] = useState<
     "content" | "industry" | null
   >(null);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [savingSocialLinks, setSavingSocialLinks] = useState(false);
   const [savingRates, setSavingRates] = useState(false);
   const [showCardModal, setShowCardModal] = useState(false);
   const [showConnectBankAccount, setShowConnectBankAccount] = useState(false);
@@ -3094,7 +3096,23 @@ export default function CreatorDashboard() {
   };
 
   const handleSaveProfile = async () => {
-    await handleSaveRules(t("creatorDashboard.toasts.profileSaved"));
+    if (savingProfile) return;
+    setSavingProfile(true);
+    try {
+      await handleSaveRules(t("creatorDashboard.toasts.profileSaved"));
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleSaveSocialLinks = async () => {
+    if (savingSocialLinks) return;
+    setSavingSocialLinks(true);
+    try {
+      await handleSaveRules(t("creatorDashboard.toasts.profileSaved"));
+    } finally {
+      setSavingSocialLinks(false);
+    }
   };
 
   const renderDashboard = () => {
@@ -5741,6 +5759,7 @@ export default function CreatorDashboard() {
   };
   const handleSaveRates = async (e: any) => {
     e.preventDefault();
+    if (savingRates) return;
     setSavingRates(true);
     try {
       const formData = new FormData(e.target);
@@ -6032,9 +6051,17 @@ export default function CreatorDashboard() {
 
               <Button
                 onClick={handleSaveProfile}
+                disabled={savingProfile}
                 className="w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
               >
-                {t("creatorDashboard.settingsView.profile.saveProfile")}
+                {savingProfile ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {t("creatorDashboard.settingsView.profile.saveProfile")}
+                  </>
+                ) : (
+                  t("creatorDashboard.settingsView.profile.saveProfile")
+                )}
               </Button>
             </div>
           </Card>
@@ -6097,10 +6124,18 @@ export default function CreatorDashboard() {
               </div>
 
               <Button
-                onClick={handleSaveProfile}
+                onClick={handleSaveSocialLinks}
+                disabled={savingSocialLinks}
                 className="w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
               >
-                {t("creatorDashboard.settingsView.profile.saveSocial")}
+                {savingSocialLinks ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {t("creatorDashboard.settingsView.profile.saveSocial")}
+                  </>
+                ) : (
+                  t("creatorDashboard.settingsView.profile.saveSocial")
+                )}
               </Button>
             </div>
           </Card>
