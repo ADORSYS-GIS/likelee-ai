@@ -1364,6 +1364,47 @@
         "cancel": "Annuler",
         "saveChanges": "Enregistrer les modifications"
       }
+    },
+    "publicProfile": {
+      "title": "Aperçu du Profil Public",
+      "subtitle": "Voici comment les marques voient votre profil",
+      "viewCard": "Voir la Carte",
+      "hideCard": "Masquer la Carte",
+      "editProfile": "Modifier le Profil",
+      "verifiedUser": "Utilisateur Vérifié",
+      "kycVerified": "Vérification KYC",
+      "hireCreator": "Embaucher le Créateur",
+      "followers": "Abonnés",
+      "activeCampaigns": "Campagnes Actives",
+      "completedProjects": "Projets Terminés",
+      "voiceProfiles": "Profils Vocaux",
+      "openToWork": "Ouvert au Travail",
+      "industries": "Secteurs d'activité",
+      "licensingRate": "Tarif de Licence",
+      "baseRateDescription": "Tarif de base pour l'utilisation de l'image",
+      "openToNegotiations": "Ouvert aux Négociations",
+      "perWeek": "par semaine",
+      "portfolio": "Portfolio",
+      "previewNote": "Ceci est un aperçu de votre profil public.",
+      "verifiedCreator": "Créateur Vérifié",
+      "engagement": "Engagement",
+      "turnaround": "Délai",
+      "from": "à partir de",
+      "preview": "Aperçu",
+      "profile": "Profil",
+      "exampleBio": "Créateur UGC et influenceur spécialisé dans la beauté, le lifestyle et les revues de produits. Passionné par le storytelling authentique.",
+      "namePlaceholder": "[Insérer le nom et le prénom de l'utilisateur]",
+      "locationPlaceholder": "Paris, France",
+      "handlesPlaceholder": "@lilycreations",
+      "portfolioItems": {
+        "targetRetail": "Target Retail",
+        "holidayCampaign": "Campagne de Vacances",
+        "spotifyPremium": "Spotify Premium",
+        "audioCampaign": "Campagne Audio",
+        "lululemon": "Lululemon",
+        "fitnessSeries": "Série Fitness",
+        "months": "{{count}} mois"
+      }
     }
   },
   "reserveProfile": {
@@ -2232,11 +2273,6 @@
       "title": "Variation saisonnière/Tenue",
       "description": "Différents styles saisonniers ou variations de tenues.",
       "bestFor": "Campagnes saisonnières, différents looks"
-    },
-    "signature": {
-      "title": "Votre choix - Moment signature",
-      "description": "Une photo qui vous représente vraiment et comment les gens vous reconnaissent.",
-      "bestFor": "Une photo qui vous représente vraiment"
     }
   },
   "marketingDashboard": {

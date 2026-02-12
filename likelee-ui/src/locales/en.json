@@ -1722,6 +1722,47 @@
       "myRules": "My Rules",
       "profileSettings": "Profile Settings"
     },
+    "publicProfile": {
+      "title": "Public Profile Preview",
+      "subtitle": "This is how brands see your profile",
+      "viewCard": "View Card",
+      "hideCard": "Hide Card",
+      "editProfile": "Edit Profile",
+      "verifiedUser": "Verified User",
+      "kycVerified": "KYC Verified",
+      "hireCreator": "Hire Creator",
+      "followers": "Followers",
+      "activeCampaigns": "Active Campaigns",
+      "completedProjects": "Completed Projects",
+      "voiceProfiles": "Voice Profiles",
+      "openToWork": "Open to Work",
+      "industries": "Industries",
+      "licensingRate": "Licensing Rate",
+      "baseRateDescription": "Base rate for image usage",
+      "openToNegotiations": "Open to Negotiations",
+      "perWeek": "per week",
+      "portfolio": "Portfolio",
+      "previewNote": "This is a preview of your public profile.",
+      "verifiedCreator": "Verified Creator",
+      "engagement": "Engagement",
+      "turnaround": "Turnaround",
+      "from": "from",
+      "preview": "Preview",
+      "profile": "Profile",
+      "exampleBio": "UGC creator & influencer specializing in beauty, lifestyle, and product reviews. Passionate about authentic storytelling.",
+      "namePlaceholder": "[Insert user first and last name]",
+      "locationPlaceholder": "Scottsdale, Arizona",
+      "handlesPlaceholder": "@lilycreates",
+      "portfolioItems": {
+        "targetRetail": "Target Retail",
+        "holidayCampaign": "Holiday Campaign",
+        "spotifyPremium": "Spotify Premium",
+        "audioCampaign": "Audio Campaign",
+        "lululemon": "Lululemon",
+        "fitnessSeries": "Fitness Series",
+        "months": "{{count}} months"
+      }
+    },
     "profileSettings": "Profile Settings",
     "myRules": "My Rules",
     "completeness": {
@@ -2277,16 +2318,6 @@
         "webBanner": "Web Banner",
         "tvCommercial": "TV Commercial"
       }
-    },
-    "publicProfile": {
-      "title": "Public Profile Preview",
-      "subtitle": "This is how brands see your profile",
-      "viewCard": "View Card",
-      "hideCard": "Hide Card",
-      "editProfile": "Edit Profile",
-      "verifiedUser": "Verified User",
-      "kycVerified": "KYC Verified",
-      "hireCreator": "Hire Creator"
     },
     "voiceScripts": {
       "happy": "I'm absolutely thrilled to be here today! Life is full of wonderful surprises and exciting opportunities. Every morning brings a fresh start and new possibilities. I love connecting with people and sharing positive energy. The world is an amazing place when you look at it with optimism. Let's celebrate the little victories and cherish every moment of joy. Happiness is contagious, so let's spread it around!",
