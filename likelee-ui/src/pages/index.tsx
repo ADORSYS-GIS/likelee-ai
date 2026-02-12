@@ -66,6 +66,8 @@ import AITalentBoard from "./AITalentBoard";
 
 import TalentDashboard from "./TalentDashboard";
 
+import TalentPortal from "./TalentPortal";
+
 import UploadProject from "./UploadProject";
 
 import DemoTalentDashboard from "./DemoTalentDashboard";
@@ -121,6 +123,7 @@ import Login from "./Login";
 import Register from "./Register";
 import ForgotPassword from "./ForgotPassword";
 import UpdatePassword from "./UpdatePassword";
+import AgencyInviteLanding from "./AgencyInviteLanding";
 import TwoFactorSetup from "./TwoFactorSetup";
 import LicensingSettings from "./LicensingSettings";
 import Unauthorized from "./Unauthorized";
@@ -329,18 +332,23 @@ function AppRoutes() {
       <Route path="/AITalentBoard" element={<AITalentBoard />} />
 
       <Route
-        path="/TalentDashboard"
+        path="/talentportal"
         element={
-          <ProtectedRoute allowedRoles={["creator"]}>
-            <TalentDashboard />
+          <ProtectedRoute allowedRoles={["creator", "talent"]}>
+            <TalentPortal />
           </ProtectedRoute>
         }
       />
 
       <Route
+        path="/TalentDashboard"
+        element={<Navigate to="/talentportal" replace />}
+      />
+
+      <Route
         path="/UploadProject"
         element={
-          <ProtectedRoute allowedRoles={["creator"]}>
+          <ProtectedRoute allowedRoles={["creator", "talent"]}>
             <UploadProject />
           </ProtectedRoute>
         }
@@ -349,7 +357,7 @@ function AppRoutes() {
       <Route
         path="/DemoTalentDashboard"
         element={
-          <ProtectedRoute allowedRoles={["creator"]}>
+          <ProtectedRoute allowedRoles={["creator", "talent"]}>
             <DemoTalentDashboard />
           </ProtectedRoute>
         }
@@ -358,7 +366,7 @@ function AppRoutes() {
       <Route
         path="/CreatorDashboard"
         element={
-          <ProtectedRoute allowedRoles={["creator"]}>
+          <ProtectedRoute allowedRoles={["creator", "talent"]}>
             <CreatorDashboard />
           </ProtectedRoute>
         }
@@ -472,7 +480,7 @@ function AppRoutes() {
       <Route
         path="/LicensingSettings"
         element={
-          <ProtectedRoute allowedRoles={["creator"]}>
+          <ProtectedRoute allowedRoles={["creator", "talent"]}>
             <LicensingSettings />
           </ProtectedRoute>
         }
@@ -481,7 +489,7 @@ function AppRoutes() {
       <Route
         path="/RoyaltyWallet"
         element={
-          <ProtectedRoute allowedRoles={["creator"]}>
+          <ProtectedRoute allowedRoles={["creator", "talent"]}>
             <RoyaltyWallet />
           </ProtectedRoute>
         }
@@ -490,7 +498,7 @@ function AppRoutes() {
       <Route
         path="/PublicProfile"
         element={
-          <ProtectedRoute allowedRoles={["creator"]}>
+          <ProtectedRoute allowedRoles={["creator", "talent"]}>
             <PublicProfile />
           </ProtectedRoute>
         }
@@ -504,6 +512,8 @@ function AppRoutes() {
       <Route path="/Register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/update-password" element={<UpdatePassword />} />
+
+      <Route path="/invite/agency/:token" element={<AgencyInviteLanding />} />
       <Route
         path="/TwoFactorSetup"
         element={

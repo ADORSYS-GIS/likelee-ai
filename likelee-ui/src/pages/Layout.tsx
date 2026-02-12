@@ -17,7 +17,9 @@ export default function Layout({ children, currentPageName }) {
       ? "/BrandDashboard"
       : profile?.role === "agency"
         ? "/AgencyDashboard"
-        : "/CreatorDashboard";
+        : profile?.role === "talent"
+          ? "/talentportal"
+          : "/CreatorDashboard";
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -32,7 +34,8 @@ export default function Layout({ children, currentPageName }) {
     location.pathname.includes("/CreatorDashboard") ||
     location.pathname.includes("/BrandDashboard") ||
     location.pathname.includes("/AgencyDashboard") ||
-    location.pathname.includes("/TalentDashboard");
+    location.pathname.includes("/TalentDashboard") ||
+    location.pathname.includes("/talentportal");
 
   const isLandingPage =
     currentPageName === "Landing" ||
@@ -520,7 +523,13 @@ export default function Layout({ children, currentPageName }) {
 
       {/* Navigation */}
       <nav className="fixed top-0 w-full bg-white/95 backdrop-blur-xl border-b border-gray-200 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+        <div
+          className={
+            isDashboardPage
+              ? "w-full px-6 lg:px-8"
+              : "max-w-7xl mx-auto px-6 lg:px-8"
+          }
+        >
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link

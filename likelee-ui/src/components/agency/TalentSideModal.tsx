@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/components/ui/use-toast";
 import {
   Instagram,
   TrendingUp,
@@ -18,12 +19,17 @@ import {
   ShieldCheck,
   FileText,
   Mail,
+  Loader2,
   RefreshCw,
   Pencil,
   X,
 } from "lucide-react";
 
-import { getTalentCampaigns, updateAgencyTalent } from "@/api/functions";
+import {
+  createAgencyTalentInvite,
+  getTalentCampaigns,
+  updateAgencyTalent,
+} from "@/api/functions";
 
 interface TalentSideModalProps {
   talent: any;
@@ -38,6 +44,7 @@ const TalentSideModal = ({
   onOpenChange,
   onSaved,
 }: TalentSideModalProps) => {
+  const { toast } = useToast();
   const safeTextFromMaybeJsonArray = (v: any): string => {
     if (v === null || v === undefined) return "";
     if (Array.isArray(v)) return v.filter(Boolean).join(", ");
@@ -54,6 +61,7 @@ const TalentSideModal = ({
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [inviteSending, setInviteSending] = useState(false);
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [campaignsLoading, setCampaignsLoading] = useState(false);
   const roleCategories = ["Model", "Actor", "Creator", "Voice", "Athlete"];
@@ -164,6 +172,35 @@ const TalentSideModal = ({
       );
     } else {
       setField("role_types", [...current, category]);
+    }
+  };
+
+  const sendPortalInvite = async () => {
+    const email = String((talent as any)?.email || "").trim();
+    if (!email) {
+      toast({
+        title: "Missing email",
+        description: "This talent does not have an email on file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setInviteSending(true);
+    try {
+      await createAgencyTalentInvite({ email });
+      toast({
+        title: "Portal invite sent",
+        description: `Invitation sent to ${email}`,
+      });
+    } catch (e: any) {
+      toast({
+        title: "Failed to send portal invite",
+        description: e?.message || String(e),
+        variant: "destructive",
+      });
+    } finally {
+      setInviteSending(false);
     }
   };
 
@@ -653,14 +690,32 @@ const TalentSideModal = ({
                   </Button>
                 </>
               ) : (
-                <Button
-                  variant="outline"
-                  className="w-full border-gray-200 text-gray-700 font-bold h-10 gap-2"
-                  onClick={() => setIsEditing(true)}
-                  disabled={isSaving}
-                >
-                  <Pencil className="w-4 h-4" /> Edit Profile
-                </Button>
+                <>
+                  <Button
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 gap-2"
+                    onClick={sendPortalInvite}
+                    disabled={isSaving || inviteSending}
+                  >
+                    {inviteSending ? (
+                      <span className="inline-flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Sending…
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-2">
+                        <Mail className="w-4 h-4" /> Send Portal Invite
+                      </span>
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full border-gray-200 text-gray-700 font-bold h-10 gap-2"
+                    onClick={() => setIsEditing(true)}
+                    disabled={isSaving || inviteSending}
+                  >
+                    <Pencil className="w-4 h-4" /> Edit Profile
+                  </Button>
+                </>
               )}
             </div>
           </div>

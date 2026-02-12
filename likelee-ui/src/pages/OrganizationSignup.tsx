@@ -24,7 +24,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useAuth } from "../auth/AuthProvider";
+import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
 import { getFriendlyErrorMessage } from "@/utils/errorMapping";

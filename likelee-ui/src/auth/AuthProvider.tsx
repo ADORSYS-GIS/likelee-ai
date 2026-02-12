@@ -51,6 +51,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<any | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
 
+  const redirectToPasswordUpdateIfNeeded = (event?: string) => {
+    try {
+      const href = window.location.href;
+      const hash = window.location.hash || "";
+      const isRecoveryEvent = event === "PASSWORD_RECOVERY";
+      const isRecoveryHash =
+        /\btype=recovery\b/i.test(hash) || /\brecovery\b/i.test(hash);
+
+      if (!isRecoveryEvent && !isRecoveryHash) return;
+      if (href.includes("/update-password")) return;
+
+      const next = localStorage.getItem("likelee_invite_next") || "";
+      const tsRaw = localStorage.getItem("likelee_invite_next_ts") || "0";
+      const ts = Number(tsRaw);
+      const fresh = ts && Date.now() - ts < 1000 * 60 * 30;
+      const nextPath = fresh && next.startsWith("/") ? next : "/login";
+
+      window.location.replace(
+        `/update-password?next=${encodeURIComponent(nextPath)}${hash}`,
+      );
+    } catch {
+      // ignore
+    }
+  };
+
   const fetchProfile = async (
     userId: string,
     userEmail?: string,
@@ -118,20 +143,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           else if (table === "brands") resolvedRole = "brand";
           else resolvedRole = String((data as any)?.role || "creator");
         }
+
+        // Role override: if this authenticated user is linked via agency_users,
+        // treat them as a talent for routing/dashboard purposes.
+        // This allows talents to log in via the Creator tab.
+        if (!resolvedRole || resolvedRole === "creator") {
+          const { data: agencyUser } = await supabase
+            .from("agency_users")
+            .select("id")
+            .or(`user_id.eq.${userId},creator_id.eq.${userId}`)
+            .limit(1)
+            .maybeSingle();
+
+          if (agencyUser?.id) {
+            resolvedRole = "talent";
+          }
+        }
+
         setProfile({ ...data, role: resolvedRole || (data as any)?.role });
       } else if (userEmail && (table === "creators" || !table)) {
         // Profile missing in profiles table, create it (only for creators)
         console.log("Profile missing, creating new profile for:", userId);
         const { data: newProfile, error: insertError } = await supabase
           .from("creators")
-          .insert([
+          .upsert(
             {
               id: userId,
               email: userEmail,
               full_name: userFullName,
               role: roleHint || "creator",
             },
-          ])
+            { onConflict: "id" },
+          )
           .select()
           .single();
 
@@ -174,6 +217,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(currentUser);
         setSession(session);
 
+        redirectToPasswordUpdateIfNeeded(event);
+
         if (currentUser && (currentUser.email_confirmed_at || session)) {
           // Prevent infinite loop: only fetch if profile is not already loaded or if user changed
           if (!profile || profile.id !== currentUser.id) {
@@ -195,7 +240,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const currentUser = data.session?.user ?? null;
       setUser(currentUser);
       setSession(data.session);
-      // Avoid double-fetching profile; rely on onAuthStateChange handler above
+
+      redirectToPasswordUpdateIfNeeded();
+
+      // If a session already exists on page load, onAuthStateChange may not fire.
+      // Ensure profile is fetched so ProtectedRoute can render role-gated pages.
+      if (currentUser && (!profile || profile.id !== currentUser.id)) {
+        fetchProfile(
+          currentUser.id,
+          currentUser.email,
+          currentUser.user_metadata?.full_name,
+          currentUser.user_metadata?.role,
+        );
+      }
+
       setInitialized(true);
     });
     return () => {

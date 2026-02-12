@@ -34,7 +34,7 @@ pub async fn list_booking_notifications(
         .pg
         .from("booking_notifications")
         .select(
-            "id,booking_id,channel,recipient_type,to_email,subject,message,meta_json,created_at",
+            "id,booking_id,book_out_id,channel,recipient_type,to_email,subject,message,meta_json,created_at",
         )
         .eq("agency_user_id", &user.id)
         .order("created_at.desc")
@@ -256,6 +256,66 @@ pub async fn booking_created_email(
         "talent_email_not_found".to_string(),
     ))?;
 
+    // Best-effort: resolve talent auth user id for in-app inbox
+    let mut talent_user_id: Option<String> = None;
+    if let Some(talent_id) = talent_id_opt {
+        if !talent_id.is_empty() {
+            // If the booking.talent_id is an agency_users.id, resolve to agency_users.user_id or creator_id
+            if let Ok(resp) = state
+                .pg
+                .from("agency_users")
+                .select("user_id,creator_id")
+                .eq("id", talent_id)
+                .single()
+                .execute()
+                .await
+            {
+                if resp.status().is_success() {
+                    if let Ok(txt) = resp.text().await {
+                        if let Ok(v) = serde_json::from_str::<serde_json::Value>(&txt) {
+                            talent_user_id = v
+                                .get("user_id")
+                                .and_then(|x| x.as_str())
+                                .map(|s| s.to_string())
+                                .or_else(|| {
+                                    v.get("creator_id")
+                                        .and_then(|x| x.as_str())
+                                        .map(|s| s.to_string())
+                                });
+                        }
+                    }
+                }
+            }
+            // Fallback: assume talent_id itself is an auth user id
+            if talent_user_id.is_none() {
+                talent_user_id = Some(talent_id.to_string());
+            }
+        }
+    }
+
+    // Best-effort: agency label for inbox
+    let mut from_label: Option<String> = None;
+    if let Ok(resp) = state
+        .pg
+        .from("agencies")
+        .select("agency_name")
+        .eq("id", &user.id)
+        .single()
+        .execute()
+        .await
+    {
+        if resp.status().is_success() {
+            if let Ok(txt) = resp.text().await {
+                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&txt) {
+                    from_label = v
+                        .get("agency_name")
+                        .and_then(|x| x.as_str())
+                        .map(|s| s.to_string());
+                }
+            }
+        }
+    }
+
     // Resolve agency email to use as Reply-To if available
     let mut agency_email: Option<String> = None;
     let mut agency_name: Option<String> = None;
@@ -302,6 +362,25 @@ pub async fn booking_created_email(
             ),
             _ => (fallback_subject, fallback_body),
         };
+
+    // Persist to in-app inbox (best-effort)
+    if let Some(tuid) = talent_user_id.clone() {
+        let insert = json!({
+            "talent_user_id": tuid,
+            "agency_id": user.id,
+            "channel": "email",
+            "from_label": from_label,
+            "subject": subject,
+            "message": body,
+            "meta_json": json!({"booking_id": payload.booking_id}),
+        });
+        let _ = state
+            .pg
+            .from("talent_notifications")
+            .insert(insert.to_string())
+            .execute()
+            .await;
+    }
 
     let send_res =
         email::send_plain_text_email(&state, &dest, &subject, &body, agency_email.as_deref());

@@ -733,6 +733,7 @@
       "viewCard": "Karte anzeigen",
       "editProfile": "Profil bearbeiten",
       "verifiedUser": "Verifizierter Ersteller",
+      "kycVerified": "KYC Verifiziert",
       "followers": "Follower",
       "activeCampaigns": "Aktive Kampagnen",
       "completedProjects": "Abgeschlossene Projekte",
@@ -751,7 +752,20 @@
       "from": "Ab",
       "hireCreator": "Schöpfer einstellen",
       "preview": "Vorschau",
-      "profile": "Profil"
+      "profile": "Profil",
+      "namePlaceholder": "[Benutzername einfügen]",
+      "locationPlaceholder": "Scottsdale, Arizona",
+      "handlesPlaceholder": "@lilycreates",
+      "exampleBio": "UGC-Ersteller & Influencer spezialisiert auf Schönheit, Lifestyle und Produktbewertungen. Leidenschaftlich für authentisches Storytelling.",
+      "portfolioItems": {
+        "targetRetail": "Target Retail",
+        "holidayCampaign": "Feiertagskampagne",
+        "spotifyPremium": "Spotify Premium",
+        "audioCampaign": "Audio-Kampagne",
+        "lululemon": "Lululemon",
+        "fitnessSeries": "Fitness-Serie",
+        "months": "{{count}} Monate"
+      }
     },
     "nav": {
       "dashboard": "Übersicht",
