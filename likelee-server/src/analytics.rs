@@ -860,7 +860,7 @@ pub async fn get_roster_insights(
         .pg
         .from("bookings")
         .select("talent_id")
-        .eq("agency_user_id", &auth_user.id) // Assuming agency user matches
+        .eq("agency_id", &auth_user.id)
         .in_("status", vec!["confirmed", "completed"])
         //.gte("date", &thirty_days_ago) // Filter by date? Or just all time active? User said "Most active... gotten from bookings table". Usually implies recent. I'll stick to 30d for "Most Active" card consistency.
         // Actually, let's fetch ALL confirmed/completed to be safe for "Most Active" if user implies general activity level.
@@ -914,16 +914,8 @@ pub async fn get_roster_insights(
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
 
-        let kyc_status = if let Some(cid) = creator_id {
-            creator_kyc_map
-                .get(cid)
-                .map(|s| s.as_str())
-                .unwrap_or("not_started")
-        } else {
-            "not_started"
-        };
 
-        let is_verified = is_verified_talent || (creator_id.is_some() && kyc_status == "approved");
+        let is_verified = is_verified_talent || creator_id.is_some();
 
         // Fetch name and image
         let name = talent
