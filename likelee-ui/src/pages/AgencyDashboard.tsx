@@ -17762,7 +17762,7 @@ const AnalyticsDashboardView = () => {
                       <h4 className="text-xl font-black text-gray-900 tracking-tight">
                         {rosterInsights.most_active.talent_name}
                       </h4>
-                      <p className="text-2xl font-black text-indigo-600">
+                      <p className="text-2xl font-black text-blue-600">
                         {rosterInsights.most_active.value}
                       </p>
                       <p className="text-[11px] font-bold text-gray-500 mt-1">
@@ -17778,7 +17778,7 @@ const AnalyticsDashboardView = () => {
               {/* Highest Engagement */}
               <Card className="p-6 bg-white border border-gray-900 shadow-sm relative overflow-hidden">
                 <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-6">
-                  Highest Engagement (Earnings + Campaigns)
+                  Highest Engagement
                 </p>
                 {rosterInsights.highest_engagement ? (
                   <div className="flex items-center gap-5">

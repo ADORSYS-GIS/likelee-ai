@@ -247,28 +247,12 @@ pub async fn get_analytics_dashboard(
     // Total AI usages (mock for now - needs ai_usage tracking implementation)
     let total_usages_30d = 73;
 
-    // Avg Campaign Value (total earnings / all campaigns)
-    let all_campaigns_resp = state
-        .pg
-        .from("campaigns")
-        .select("id")
-        .eq("agency_id", agency_id)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    let all_campaigns_text = all_campaigns_resp
-        .text()
-        .await
-        .unwrap_or_else(|_| "[]".to_string());
-    let all_campaigns_data: serde_json::Value =
-        serde_json::from_str(&all_campaigns_text).unwrap_or(json!([]));
-    let total_campaigns = all_campaigns_data
-        .as_array()
-        .map(|a| a.len() as i64)
-        .unwrap_or(1);
-
-    let avg_campaign_value_cents = total_earnings_cents / total_campaigns.max(1);
+    // Avg Campaign Value (Total earnings / Active campaigns if any, else 0)
+    let avg_campaign_value_cents = if active_campaigns > 0 {
+        total_earnings_cents / active_campaigns
+    } else {
+        0
+    };
 
     // AI Usage by Type (mock for now - needs implementation)
     let usage_by_type = AIUsageByType {
@@ -489,6 +473,8 @@ pub struct TalentPerformanceMetric {
     pub avg_value_formatted: String,
     pub status: String,
     pub image_url: Option<String>,
+    pub followers_count: i64,
+    pub engagement_rate: f64,
 }
 
 /// GET /api/agency/analytics/roster
@@ -496,27 +482,26 @@ pub async fn get_roster_insights(
     State(state): State<AppState>,
     auth_user: AuthUser,
 ) -> Result<Json<RosterInsightsResponse>, (StatusCode, String)> {
-
     let now = Utc::now();
     let thirty_days_ago = (now - chrono::Duration::days(30)).to_rfc3339();
-    
+
     // 1. Fetch all agency talents
     // 1. Fetch all talents associated with this agency
     // We can reuse the query from get_roster roughly, but we need the IDs and photos.
     // Query: associated_users joined with agency_users?
     // Actually associated_users table has user_id and agency_id.
     // We need to fetch the user details.
-    
+
     // Simpler: Fetch from agency_users where agency_id = ...
     // But wait, the schema says agency_users links agency and user.
     // Let's use the 'active_licenses' view logic or similar?
     // Let's check how 'get_roster' does it. It uses 'agency_users' joined with 'digitals'.
     // Here we just need basic info + calculate metrics.
-    
+
     let query = state
         .pg
         .from("agency_users")
-        .select("id, full_legal_name, stage_name, profile_photo_url") // id is the big int ID, we might need user_id (uuid) for joining?
+        .select("id, full_legal_name, stage_name, profile_photo_url, instagram_followers, engagement_rate") // Fetch added fields
         .eq("agency_id", &auth_user.id) // Use auth_user.id for agency_id
         .eq("role", "talent") // Ensure we only get talents
         .order("created_at.desc");
@@ -528,45 +513,53 @@ pub async fn get_roster_insights(
         )
     })?;
 
-    let talents: Vec<serde_json::Value> = serde_json::from_str(&response.text().await.map_err(|e| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Failed to read response: {}", e),
-        )
-    })?)
-    .map_err(|e| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Failed to parse talents: {}", e),
-        )
-    })?;
-
-
+    let talents: Vec<serde_json::Value> =
+        serde_json::from_str(&response.text().await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to read response: {}", e),
+            )
+        })?)
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to parse talents: {}", e),
+            )
+        })?;
 
     let mut talent_metrics = Vec::new();
 
     for talent in talents.iter() {
-        let _talent_id = talent.get("id").and_then(|v| v.as_str()).unwrap_or_default();
-        let _talent_name = talent.get("full_legal_name").and_then(|v| v.as_str())
+        let _talent_id = talent
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default();
+        let _talent_name = talent
+            .get("full_legal_name")
+            .and_then(|v| v.as_str())
             .or_else(|| talent.get("stage_name").and_then(|v| v.as_str()))
-            .unwrap_or("Unknown").to_string();
-        let _image_url = talent.get("profile_photo_url").and_then(|v| v.as_str()).map(|s| s.to_string());
+            .unwrap_or("Unknown")
+            .to_string();
+        let _image_url = talent
+            .get("profile_photo_url")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
 
         // 2. Earnings (30d) - from payments table linked to campaigns for this talent
         // Query: payments combined with campaigns is hard in PostgREST simple client without views/RPC.
-        // Instead, we'll query payments directly if they have talent_id or we filter in memory? 
+        // Instead, we'll query payments directly if they have talent_id or we filter in memory?
         // The payments table usually links to a campaign. A campaign links to a talent.
-        // Let's assume payments has a `campaign_id`. 
+        // Let's assume payments has a `campaign_id`.
         // To do this efficiently, we should probably fetch ALL payments for the agency in the last 30d and aggregate in memory.
         // Fetching per talent in a loop is N+1 queries.
         // Optimization: Fetch all agency payments and campaigns for last 30d, then map to talents.
-        
-        // This initial implementation inside the loop is fine for small rosters but inefficient. 
+
+        // This initial implementation inside the loop is fine for small rosters but inefficient.
         // Let's optimize by fetching everything first.
     }
-    
+
     // Optimized Fetching strategy:
-    
+
     // A. Fetch all payments for agency in last 30d
     let payments_resp = state
         .pg
@@ -578,30 +571,37 @@ pub async fn get_roster_insights(
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        
-    let payments_text = payments_resp.text().await.unwrap_or_else(|_| "[]".to_string());
-    let payments_list: Vec<serde_json::Value> = serde_json::from_str(&payments_text).unwrap_or(vec![]);
-    
 
+    let payments_text = payments_resp
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
+    let payments_list: Vec<serde_json::Value> =
+        serde_json::from_str(&payments_text).unwrap_or(vec![]);
 
     // Map campaign_id -> total_earnings (for agency stats if needed, but here mostly for talent)
     // Map talent_id -> realized_earnings_30d
     let mut talent_realized_earnings: HashMap<String, i64> = HashMap::new();
-    
+
     for payment in payments_list {
-        let amt = payment.get("talent_earnings_cents").and_then(|v| v.as_i64()).unwrap_or(0);
-        let tid = payment.get("talent_id").and_then(|v| v.as_str()).unwrap_or_default();
+        let amt = payment
+            .get("talent_earnings_cents")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+        let tid = payment
+            .get("talent_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default();
         if !tid.is_empty() {
-             *talent_realized_earnings.entry(tid.to_string()).or_insert(0) += amt;
+            *talent_realized_earnings.entry(tid.to_string()).or_insert(0) += amt;
         }
     }
 
-
-    // B. Fetch all campaigns for agency in last 30d (or active) 
+    // B. Fetch all campaigns for agency in last 30d (or active)
     // We need campaigns to link earnings to talent, count campaigns, and calculate projected earnings.
     // For "Active" status, we need currently active campaigns.
     // For "Projected", we need pending campaigns.
-    
+
     let campaigns_resp = state
         .pg
         .from("campaigns")
@@ -611,11 +611,12 @@ pub async fn get_roster_insights(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let campaigns_text = campaigns_resp.text().await.unwrap_or_else(|_| "[]".to_string());
-    let campaigns_list: Vec<serde_json::Value> = serde_json::from_str(&campaigns_text).unwrap_or(vec![]);
-
-
-
+    let campaigns_text = campaigns_resp
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
+    let campaigns_list: Vec<serde_json::Value> =
+        serde_json::from_str(&campaigns_text).unwrap_or(vec![]);
 
     // Aggregate metrics per talent
     // Map talent_id -> (projected_earnings, campaign_count, is_active)
@@ -626,51 +627,85 @@ pub async fn get_roster_insights(
             Some(id) => id.to_string(),
             None => continue,
         };
-        
-        let status = campaign.get("status").and_then(|v| v.as_str()).unwrap_or("");
-        let start_at = campaign.get("start_at").and_then(|v| v.as_str()).unwrap_or("");
-        let end_at = campaign.get("end_at").and_then(|v| v.as_str()).unwrap_or("");
-        
+
+        let status = campaign
+            .get("status")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let start_at = campaign
+            .get("start_at")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let end_at = campaign
+            .get("end_at")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+
         let stat_entry = talent_campaign_stats.entry(tid).or_insert((0, 0, false));
 
         // Projected Earnings (Pending)
         if status == "Pending" {
-            let projected = campaign.get("talent_earnings_cents").and_then(|v| v.as_i64()).unwrap_or(0);
-             stat_entry.0 += projected;
+            let projected = campaign
+                .get("talent_earnings_cents")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(0);
+            stat_entry.0 += projected;
         }
 
         // Campaign Count (Active in last 30d)
         if !end_at.is_empty() && end_at >= thirty_days_ago.as_str() {
-             stat_entry.1 += 1;
+            stat_entry.1 += 1;
         }
 
         // Status (Active)
         let now_str = now.to_rfc3339();
-        if (status == "Confirmed" || status == "active") && 
-           (start_at.is_empty() || start_at <= now_str.as_str()) && 
-           (end_at.is_empty() || end_at >= now_str.as_str()) {
-             stat_entry.2 = true;
+        if (status == "Confirmed" || status == "active")
+            && (start_at.is_empty() || start_at <= now_str.as_str())
+            && (end_at.is_empty() || end_at >= now_str.as_str())
+        {
+            stat_entry.2 = true;
         }
     }
 
     for talent in talents.iter() {
-        let tid = talent.get("id").and_then(|v| v.as_str()).unwrap_or_default();
-        if tid.is_empty() { continue; }
-        
+        let tid = talent
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default();
+        if tid.is_empty() {
+            continue;
+        }
+
         // 1. Realized Earnings (from payments)
         let realized = *talent_realized_earnings.get(tid).unwrap_or(&0);
 
         // 2. Stats from campaigns
-        let (projected, count, is_active) = *talent_campaign_stats.get(tid).unwrap_or(&(0, 0, false));
+        let (projected, count, is_active) =
+            *talent_campaign_stats.get(tid).unwrap_or(&(0, 0, false));
         // Fetch name and image
-        let name = talent.get("full_legal_name").and_then(|v| v.as_str())
+        let name = talent
+            .get("full_legal_name")
+            .and_then(|v| v.as_str())
             .or_else(|| talent.get("stage_name").and_then(|v| v.as_str()))
-            .unwrap_or("Unknown").to_string();
-        let image_url = talent.get("profile_photo_url").and_then(|v| v.as_str()).map(|s| s.to_string());
-        
+            .unwrap_or("Unknown")
+            .to_string();
+        let image_url = talent
+            .get("profile_photo_url")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+
         let avg_value = if count > 0 { realized / count } else { 0 };
-        
+
         let format_currency = |cents: i64| format!("${:.0}", cents as f64 / 100.0);
+
+        let followers_count = talent
+            .get("instagram_followers")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+        let engagement_rate = talent
+            .get("engagement_rate")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0);
 
         talent_metrics.push(TalentPerformanceMetric {
             talent_id: uuid::Uuid::parse_str(tid).unwrap_or_default(),
@@ -682,61 +717,89 @@ pub async fn get_roster_insights(
             campaigns_count_30d: count,
             avg_value_cents: avg_value,
             avg_value_formatted: format_currency(avg_value),
-            status: if is_active { "Active".to_string() } else { "Inactive".to_string() },
+            status: if is_active {
+                "Active".to_string()
+            } else {
+                "Inactive".to_string()
+            },
             image_url: image_url.clone(),
+            followers_count,
+            engagement_rate,
         });
-
     }
 
+    // Helper to format large numbers (e.g. 53400 -> 53,400)
+    let format_large_num = |n: i64| {
+        let s = n.to_string();
+        let mut out = String::new();
+        for (i, c) in s.chars().rev().enumerate() {
+            if i > 0 && i % 3 == 0 {
+                out.push(',');
+            }
+            out.push(c);
+        }
+        out.chars().rev().collect::<String>()
+    };
+
     // Sort to determine Top Cards
-    
+
     // Top Performer: Max Earnings
     let top_performer_metric = talent_metrics.iter().max_by_key(|m| m.earnings_30d_cents);
     let top_performer = top_performer_metric.map(|m| TalentMetric {
         talent_id: m.talent_id,
         talent_name: m.talent_name.clone(),
         value: m.earnings_30d_formatted.clone(),
-        sub_text: "Total Earnings (30d)".to_string(),
+        sub_text: format!(
+            "{} campaigns • {:.1}% engagement",
+            m.campaigns_count_30d, m.engagement_rate
+        ),
         image_url: m.image_url.clone(),
     });
 
-    // Most Active: Max Campaigns
-    let most_active_metric = talent_metrics.iter().max_by_key(|m| m.campaigns_count_30d);
+    // Most Active: Max Campaigns (Tie-break with earnings)
+    let most_active_metric = talent_metrics.iter().max_by(|a, b| {
+        let cmp = a.campaigns_count_30d.cmp(&b.campaigns_count_30d);
+        if cmp == std::cmp::Ordering::Equal {
+            a.earnings_30d_cents.cmp(&b.earnings_30d_cents)
+        } else {
+            cmp
+        }
+    });
     let most_active = most_active_metric.map(|m| TalentMetric {
         talent_id: m.talent_id,
         talent_name: m.talent_name.clone(),
-        value: format!("{} Uses", m.campaigns_count_30d),
-        sub_text: "In the last 30 days".to_string(),
+        value: format!("{} uses", m.campaigns_count_30d),
+        sub_text: format!(
+            "{} earnings • {:.1}% engagement",
+            m.earnings_30d_formatted, m.engagement_rate
+        ),
         image_url: m.image_url.clone(),
     });
 
-    // Highest Engagement: Max (Earnings + Campaigns * Weight?) 
-    // User: "talent with the most earnings and campaigns"
-    // Let's just sum them as an arbitrary score for sorting: earnings + (campaigns * average_val) 
-    // or just normalize. 
-    // Simple approach: Talent with highest earnings who ALSO has high campaigns?
-    // Let's use a score: earnings_cents + (campaigns * 100_000). (Assuming 1 campaign ~= $1000 contribution to 'score')
-    let highest_engagement_metric = talent_metrics.iter().max_by_key(|m| {
-        m.earnings_30d_cents + (m.campaigns_count_30d * 100_000) 
-    });
-    let highest_engagement = highest_engagement_metric.map(|m| {
-        let score = m.earnings_30d_cents + (m.campaigns_count_30d * 100_000);
-        let percentage = if score > 0 {
-            let p = ((score as f64 / (score as f64 + 200_000.0)) * 100.0).round();
-            format!("{}%", p.min(99.0))
+    // Highest Engagement: Max by engagement rate (Tie-break with earnings)
+    let highest_engagement_metric = talent_metrics.iter().max_by(|a, b| {
+        let cmp = a
+            .engagement_rate
+            .partial_cmp(&b.engagement_rate)
+            .unwrap_or(std::cmp::Ordering::Equal);
+        if cmp == std::cmp::Ordering::Equal {
+            a.earnings_30d_cents.cmp(&b.earnings_30d_cents)
         } else {
-            "0%".to_string()
-        };
-        
-        TalentMetric {
-            talent_id: m.talent_id,
-            talent_name: m.talent_name.clone(),
-            value: percentage,
-            sub_text: format!("${} • {} Uses", m.earnings_30d_cents / 100, m.campaigns_count_30d),
-            image_url: m.image_url.clone(),
+            cmp
         }
     });
 
+    let highest_engagement = highest_engagement_metric.map(|m| TalentMetric {
+        talent_id: m.talent_id,
+        talent_name: m.talent_name.clone(),
+        value: format!("{:.1}%", m.engagement_rate),
+        sub_text: format!(
+            "{} followers • {} campaigns",
+            format_large_num(m.followers_count),
+            m.campaigns_count_30d
+        ),
+        image_url: m.image_url.clone(),
+    });
 
     Ok(Json(RosterInsightsResponse {
         highest_engagement,
