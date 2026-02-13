@@ -45,7 +45,7 @@ export const AddProspectModal = ({
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<Partial<ScoutingProspect>>({
-    status: "new",
+    status: "new_lead",
     source: "instagram",
     categories: [],
     rating: 0,
@@ -110,7 +110,7 @@ export const AddProspectModal = ({
         ...formData,
         agency_id: agencyId,
         full_name: formData.full_name!,
-        status: formData.status || "new",
+        status: formData.status || "new_lead",
       } as any);
 
       toast({
@@ -292,11 +292,15 @@ export const AddProspectModal = ({
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="new">New Lead</SelectItem>
-                    <SelectItem value="contacted">Contacted</SelectItem>
-                    <SelectItem value="meeting">Meeting Scheduled</SelectItem>
+                    <SelectItem value="new_lead">New Lead</SelectItem>
+                    <SelectItem value="in_contact">In Contact</SelectItem>
+                    <SelectItem value="test_shoot_pending">Test Shoot (Pending)</SelectItem>
+                    <SelectItem value="test_shoot_success">Test Shoot (Success)</SelectItem>
+                    <SelectItem value="test_shoot_failed">Test Shoot (Failed)</SelectItem>
+                    <SelectItem value="offer_sent">Offer Sent (Awaiting)</SelectItem>
+                    <SelectItem value="opened">Offer Opened (Awaiting)</SelectItem>
                     <SelectItem value="signed">Signed</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
+                    <SelectItem value="declined">Declined</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -448,22 +452,24 @@ export const ProspectPipelineTab = ({
   const stats = [
     {
       label: "New Leads",
-      count: prospects.filter((p) => p.status === "new").length,
+      count: prospects.filter((p) => p.status === "new_lead").length,
       color: "border-blue-200 bg-blue-50/30",
     },
     {
       label: "In Contact",
-      count: prospects.filter((p) => p.status === "contacted").length,
+      count: prospects.filter((p) => p.status === "in_contact").length,
       color: "border-yellow-200 bg-yellow-50/30",
     },
     {
       label: "Test Shoots",
-      count: prospects.filter((p) => p.status === "meeting").length,
+      count: prospects.filter((p) => p.status.startsWith("test_shoot_")).length,
       color: "border-purple-200 bg-purple-50/30",
     },
     {
       label: "Offers Sent",
-      count: prospects.filter((p) => p.status === "signed").length,
+      count: prospects.filter((p) =>
+        ["offer_sent", "opened", "signed", "declined"].includes(p.status),
+      ).length,
       color: "border-green-200 bg-green-50/30",
     },
   ];
@@ -489,11 +495,15 @@ export const ProspectPipelineTab = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="new">New Lead</SelectItem>
-                <SelectItem value="contacted">Contacted</SelectItem>
-                <SelectItem value="meeting">Meeting</SelectItem>
+                <SelectItem value="new_lead">New Lead</SelectItem>
+                <SelectItem value="in_contact">In Contact</SelectItem>
+                <SelectItem value="test_shoot_pending">Test Shoot (Pending)</SelectItem>
+                <SelectItem value="test_shoot_success">Test Shoot (Success)</SelectItem>
+                <SelectItem value="test_shoot_failed">Test Shoot (Failed)</SelectItem>
+                <SelectItem value="offer_sent">Offer Sent</SelectItem>
+                <SelectItem value="opened">Offer Opened</SelectItem>
                 <SelectItem value="signed">Signed</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="declined">Declined</SelectItem>
               </SelectContent>
             </Select>
             <Button
