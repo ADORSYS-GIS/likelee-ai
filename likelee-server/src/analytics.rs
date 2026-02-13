@@ -52,9 +52,9 @@ pub struct AIUsageByType {
 #[derive(Debug, Serialize)]
 pub struct MonthlyTrend {
     pub month: String,
-    pub earnings_cents: i64,
+    pub earnings: f64,
     pub campaigns: i64,
-    pub ai_usages: i64,
+    pub usages: i64,
 }
 
 #[derive(Debug, Serialize)]
@@ -341,9 +341,9 @@ pub async fn get_analytics_dashboard(
 
         monthly_trends.push(MonthlyTrend {
             month: month_start_date.format("%b").to_string(),
-            earnings_cents: month_earnings,
+            earnings: month_earnings as f64 / 100.0,
             campaigns: month_campaigns,
-            ai_usages: 60 + (i * 3), // Mock for now
+            usages: 60 + (i * 3), // Mock for now
         });
     }
 
@@ -670,7 +670,7 @@ pub async fn get_roster_insights(
         
         let avg_value = if count > 0 { realized / count } else { 0 };
         
-        let format_currency = |cents: i64| format!("${:.2}", cents as f64 / 100.0);
+        let format_currency = |cents: i64| format!("${:.0}", cents as f64 / 100.0);
 
         talent_metrics.push(TalentPerformanceMetric {
             talent_id: uuid::Uuid::parse_str(tid).unwrap_or_default(),
@@ -705,7 +705,7 @@ pub async fn get_roster_insights(
     let most_active = most_active_metric.map(|m| TalentMetric {
         talent_id: m.talent_id,
         talent_name: m.talent_name.clone(),
-        value: format!("{} Campaigns", m.campaigns_count_30d),
+        value: format!("{} Uses", m.campaigns_count_30d),
         sub_text: "In the last 30 days".to_string(),
         image_url: m.image_url.clone(),
     });
@@ -719,12 +719,22 @@ pub async fn get_roster_insights(
     let highest_engagement_metric = talent_metrics.iter().max_by_key(|m| {
         m.earnings_30d_cents + (m.campaigns_count_30d * 100_000) 
     });
-    let highest_engagement = highest_engagement_metric.map(|m| TalentMetric {
-        talent_id: m.talent_id,
-        talent_name: m.talent_name.clone(),
-        value: "High Engagement".to_string(), // Or some score?
-        sub_text: format!("${} • {} Campaigns", m.earnings_30d_cents / 100, m.campaigns_count_30d),
-        image_url: m.image_url.clone(),
+    let highest_engagement = highest_engagement_metric.map(|m| {
+        let score = m.earnings_30d_cents + (m.campaigns_count_30d * 100_000);
+        let percentage = if score > 0 {
+            let p = ((score as f64 / (score as f64 + 200_000.0)) * 100.0).round();
+            format!("{}%", p.min(99.0))
+        } else {
+            "0%".to_string()
+        };
+        
+        TalentMetric {
+            talent_id: m.talent_id,
+            talent_name: m.talent_name.clone(),
+            value: percentage,
+            sub_text: format!("${} • {} Uses", m.earnings_30d_cents / 100, m.campaigns_count_30d),
+            image_url: m.image_url.clone(),
+        }
     });
 
 
