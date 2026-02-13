@@ -84,7 +84,7 @@ pub async fn get_analytics_dashboard(
     let earnings_resp = state
         .pg
         .from("payments")
-        .select("gross_cents")
+        .select("gross_cents, campaign_id")
         .eq("agency_id", agency_id)
         .eq("status", "succeeded")
         .gte("paid_at", &thirty_days_ago)
@@ -247,9 +247,24 @@ pub async fn get_analytics_dashboard(
     // Total AI usages (mock for now - needs ai_usage tracking implementation)
     let total_usages_30d = 73;
 
-    // Avg Campaign Value (Total earnings / Active campaigns if any, else 0)
-    let avg_campaign_value_cents = if active_campaigns > 0 {
-        total_earnings_cents / active_campaigns
+    // Avg Campaign Value: Total earnings / Total unique campaigns paid in last 30d
+    let campaign_count_30d = earnings_data
+        .as_array()
+        .map(|arr| {
+            let mut ids = std::collections::HashSet::new();
+            for p in arr {
+                if let Some(cid) = p.get("campaign_id").and_then(|v| v.as_str()) {
+                    ids.insert(cid.to_string());
+                } else if let Some(cid) = p.get("campaign_id").and_then(|v| v.as_i64()) {
+                    ids.insert(cid.to_string());
+                }
+            }
+            ids.len() as i64
+        })
+        .unwrap_or(0);
+
+    let avg_campaign_value_cents = if campaign_count_30d > 0 {
+        total_earnings_cents / campaign_count_30d
     } else {
         0
     };
@@ -743,7 +758,7 @@ pub async fn get_roster_insights(
 
     // Sort to determine Top Cards
 
-    // Top Performer: Max Earnings
+    // Top Performer: Highest Earnings
     let top_performer_metric = talent_metrics.iter().max_by_key(|m| m.earnings_30d_cents);
     let top_performer = top_performer_metric.map(|m| TalentMetric {
         talent_id: m.talent_id,
@@ -756,15 +771,10 @@ pub async fn get_roster_insights(
         image_url: m.image_url.clone(),
     });
 
-    // Most Active: Max Campaigns (Tie-break with earnings)
-    let most_active_metric = talent_metrics.iter().max_by(|a, b| {
-        let cmp = a.campaigns_count_30d.cmp(&b.campaigns_count_30d);
-        if cmp == std::cmp::Ordering::Equal {
-            a.earnings_30d_cents.cmp(&b.earnings_30d_cents)
-        } else {
-            cmp
-        }
-    });
+    // Most Active: Highest Uses/Campaigns
+    let most_active_metric = talent_metrics
+        .iter()
+        .max_by_key(|m| (m.campaigns_count_30d, m.earnings_30d_cents));
     let most_active = most_active_metric.map(|m| TalentMetric {
         talent_id: m.talent_id,
         talent_name: m.talent_name.clone(),
@@ -776,19 +786,13 @@ pub async fn get_roster_insights(
         image_url: m.image_url.clone(),
     });
 
-    // Highest Engagement: Max by engagement rate (Tie-break with earnings)
+    // Highest Engagement: Highest Rate
     let highest_engagement_metric = talent_metrics.iter().max_by(|a, b| {
-        let cmp = a
-            .engagement_rate
+        a.engagement_rate
             .partial_cmp(&b.engagement_rate)
-            .unwrap_or(std::cmp::Ordering::Equal);
-        if cmp == std::cmp::Ordering::Equal {
-            a.earnings_30d_cents.cmp(&b.earnings_30d_cents)
-        } else {
-            cmp
-        }
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| a.earnings_30d_cents.cmp(&b.earnings_30d_cents))
     });
-
     let highest_engagement = highest_engagement_metric.map(|m| TalentMetric {
         talent_id: m.talent_id,
         talent_name: m.talent_name.clone(),
@@ -800,6 +804,67 @@ pub async fn get_roster_insights(
         ),
         image_url: m.image_url.clone(),
     });
+
+    // ROBUST FALLBACK DIVERSITY:
+    // If the metrics are all 0, ensure we show DIFFERENT talents if available.
+    // This overrides the simple max() above if the results would be repetitive and roster allows diversity.
+    let mut highest_engagement = highest_engagement;
+    let mut most_active = most_active;
+
+    if talent_metrics.len() >= 2 {
+        // If Most Active and Top Performer are same and have 0 activity record, pick another for variety
+        if let (Some(tp), Some(ma)) = (&top_performer, &most_active) {
+            if tp.talent_id == ma.talent_id {
+                let current_lead_metric = talent_metrics.iter().find(|m| m.talent_id == ma.talent_id);
+                if current_lead_metric
+                    .map(|m| m.campaigns_count_30d)
+                    .unwrap_or(0)
+                    == 0
+                {
+                    // Try to find a DIFFERENT talent for variety
+                    if let Some(alt) = talent_metrics.iter().find(|m| m.talent_id != tp.talent_id) {
+                        most_active = Some(TalentMetric {
+                            talent_id: alt.talent_id,
+                            talent_name: alt.talent_name.clone(),
+                            value: format!("{} uses", alt.campaigns_count_30d),
+                            sub_text: format!(
+                                "{} earnings • {:.1}% engagement",
+                                alt.earnings_30d_formatted, alt.engagement_rate
+                            ),
+                            image_url: alt.image_url.clone(),
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    if talent_metrics.len() >= 3 {
+        // Variety for Highest Engagement if Leader and Others are same and have 0 record
+        if let (Some(tp), Some(ma), Some(he)) = (&top_performer, &most_active, &highest_engagement) {
+            if he.talent_id == tp.talent_id || he.talent_id == ma.talent_id {
+                let current_lead = talent_metrics.iter().find(|m| m.talent_id == he.talent_id);
+                if current_lead.map(|m| m.engagement_rate).unwrap_or(0.0) == 0.0 {
+                    if let Some(alt) = talent_metrics
+                        .iter()
+                        .find(|m| m.talent_id != tp.talent_id && m.talent_id != ma.talent_id)
+                    {
+                        highest_engagement = Some(TalentMetric {
+                            talent_id: alt.talent_id,
+                            talent_name: alt.talent_name.clone(),
+                            value: format!("{:.1}%", alt.engagement_rate),
+                            sub_text: format!(
+                                "{} followers • {} campaigns",
+                                format_large_num(alt.followers_count),
+                                alt.campaigns_count_30d
+                            ),
+                            image_url: alt.image_url.clone(),
+                        });
+                    }
+                }
+            }
+        }
+    }
 
     Ok(Json(RosterInsightsResponse {
         highest_engagement,
