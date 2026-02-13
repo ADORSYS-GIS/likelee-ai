@@ -55,6 +55,11 @@ END $$;
 CREATE INDEX IF NOT EXISTS idx_license_templates_agency ON public.license_templates(agency_id);
 CREATE INDEX IF NOT EXISTS idx_license_templates_category ON public.license_templates(category);
 
+-- Contract template source (HTML/Markdown) for DocuSeal template generation
+ALTER TABLE public.license_templates ADD COLUMN IF NOT EXISTS contract_body TEXT;
+ALTER TABLE public.license_templates ADD COLUMN IF NOT EXISTS contract_body_format TEXT NOT NULL DEFAULT 'markdown' CHECK (contract_body_format IN ('markdown','html'));
+ALTER TABLE public.license_templates ADD COLUMN IF NOT EXISTS contract_updated_at TIMESTAMPTZ;
+
 -- RLS Policies
 ALTER TABLE public.license_templates ENABLE ROW LEVEL SECURITY;
 

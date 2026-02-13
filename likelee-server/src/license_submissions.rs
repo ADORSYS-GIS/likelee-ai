@@ -49,7 +49,6 @@ pub struct CreateSubmissionRequest {
     pub client_name: String,
     pub docuseal_template_id: Option<i32>,
     pub talent_names: Option<String>,
-    pub document_base64: Option<String>,
     pub license_fee: Option<i64>,
     pub duration_days: Option<i32>,
     pub start_date: Option<String>,
@@ -97,27 +96,11 @@ pub async fn create_draft(
         serde_json::from_str(&template_text)
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    // 2. Setup DocuSeal client
-    let docuseal = DocuSealClient::new(
-        state.docuseal_api_key.clone(),
-        state.docuseal_base_url.clone(),
-    );
-
-    let docuseal_template_id = if let Some(base64) = req.document_base64 {
-        let template_name = format!(
-            "Contract - {} - {}",
-            req.client_name, license_template.template_name
-        );
-        let ds_template = docuseal
-            .create_template(template_name, "contract.pdf".to_string(), base64)
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        Some(ds_template.id)
-    } else {
-        license_template
-            .docuseal_template_id
-            .or_else(|| state.docuseal_master_template_id.parse::<i32>().ok())
-    };
+    // Licensing only: do not allow PDF upload and do not use master-template fallback.
+    let docuseal_template_id = req
+        .docuseal_template_id
+        .or(license_template.docuseal_template_id)
+        .ok_or((StatusCode::BAD_REQUEST, "docuseal_template_id_missing".to_string()))?;
 
     // 3. Create a draft record in Likelee
     let client_name = if !req.client_name.is_empty() {
@@ -315,7 +298,6 @@ pub async fn preview(
                 .map(|i| i as i32)
         })
         .or(license_template.docuseal_template_id)
-        .or_else(|| state.docuseal_master_template_id.parse::<i32>().ok())
         .ok_or((
             StatusCode::INTERNAL_SERVER_ERROR,
             "Invalid DS template id".to_string(),
@@ -643,7 +625,6 @@ pub async fn finalize(
                 .map(|i| i as i32)
         })
         .or(license_template.docuseal_template_id)
-        .or_else(|| state.docuseal_master_template_id.parse::<i32>().ok())
         .ok_or((
             StatusCode::INTERNAL_SERVER_ERROR,
             "Invalid DS template id".to_string(),
@@ -991,7 +972,6 @@ pub async fn resend(
             talent_names: existing_data["talent_names"]
                 .as_str()
                 .map(|s| s.to_string()),
-            document_base64: None,
             license_fee: existing_data["license_fee"].as_i64(),
             duration_days: existing_data["duration_days"].as_i64().map(|v| v as i32),
             start_date: existing_data["start_date"].as_str().map(|s| s.to_string()),
@@ -1201,7 +1181,6 @@ pub async fn create_and_send(
     let docuseal_template_id = req
         .docuseal_template_id
         .or(license_template.docuseal_template_id)
-        .or_else(|| state.docuseal_master_template_id.parse::<i32>().ok())
         .ok_or((
             StatusCode::INTERNAL_SERVER_ERROR,
             "Invalid DS template id".to_string(),

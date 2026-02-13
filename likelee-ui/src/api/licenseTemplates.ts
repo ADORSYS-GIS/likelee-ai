@@ -19,6 +19,8 @@ export interface LicenseTemplate {
   client_name?: string;
   talent_name?: string;
   start_date?: string;
+  contract_body?: string;
+  contract_body_format?: "markdown" | "html";
 }
 
 export interface CreateTemplateRequest {
@@ -33,10 +35,11 @@ export interface CreateTemplateRequest {
   license_fee?: number;
   custom_terms?: string;
   docuseal_template_id?: number;
-  document_base64?: string;
   client_name?: string;
   talent_name?: string;
   start_date?: string;
+  contract_body?: string;
+  contract_body_format?: "markdown" | "html";
 }
 
 export interface TemplateStats {

@@ -5,6 +5,7 @@ use axum::{
     http::StatusCode,
     Json,
 };
+use base64::{engine::general_purpose, Engine as _};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -28,6 +29,8 @@ pub struct LicenseTemplate {
     pub client_name: Option<String>,
     pub talent_name: Option<String>,
     pub start_date: Option<String>,
+    pub contract_body: Option<String>,
+    pub contract_body_format: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -43,10 +46,87 @@ pub struct CreateTemplateRequest {
     pub license_fee: Option<i64>,
     pub custom_terms: Option<String>,
     pub docuseal_template_id: Option<i32>,
-    pub document_base64: Option<String>,
     pub client_name: Option<String>,
     pub talent_name: Option<String>,
     pub start_date: Option<String>,
+    pub contract_body: Option<String>,
+    pub contract_body_format: Option<String>,
+}
+
+fn extract_text_from_markdown(input: &str) -> String {
+    use pulldown_cmark::{Event, Parser};
+    let mut out = String::new();
+    for ev in Parser::new(input) {
+        match ev {
+            Event::Text(t) | Event::Code(t) => {
+                out.push_str(&t);
+            }
+            Event::SoftBreak | Event::HardBreak => {
+                out.push('\n');
+            }
+            _ => {}
+        }
+    }
+    out
+}
+
+fn extract_text_from_html(input: &str) -> String {
+    let mut out = String::new();
+    let mut in_tag = false;
+    for ch in input.chars() {
+        match ch {
+            '<' => in_tag = true,
+            '>' => in_tag = false,
+            _ => {
+                if !in_tag {
+                    out.push(ch);
+                }
+            }
+        }
+    }
+    out
+}
+
+fn render_template_to_pdf_data_uri(
+    template_name: &str,
+    contract_body: &str,
+    contract_body_format: &str,
+) -> Result<String, (StatusCode, String)> {
+    use printpdf::{BuiltinFont, Mm, PdfDocument};
+
+    let text = match contract_body_format {
+        "html" => extract_text_from_html(contract_body),
+        _ => extract_text_from_markdown(contract_body),
+    };
+
+    let (doc, page1, layer1) = PdfDocument::new(template_name, Mm(210.0), Mm(297.0), "Layer 1");
+    let current_layer = doc.get_page(page1).get_layer(layer1);
+    let font = doc
+        .add_builtin_font(BuiltinFont::Helvetica)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    // Very simple text layout: single page, fixed-width lines.
+    // This is enough to bootstrap DocuSeal template generation and builder workflow.
+    let font_size = 11.0;
+    let mut y = 280.0;
+    for line in text.lines() {
+        if y < 15.0 {
+            break;
+        }
+        current_layer.use_text(line, font_size, Mm(15.0), Mm(y), &font);
+        y -= 6.0;
+    }
+
+    let cursor = std::io::Cursor::new(Vec::<u8>::new());
+    let mut writer = std::io::BufWriter::new(cursor);
+    doc.save(&mut writer)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let bytes = writer
+        .into_inner()
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        .into_inner();
+    let base64_content = general_purpose::STANDARD.encode(bytes);
+    Ok(format!("data:application/pdf;base64,{}", base64_content))
 }
 
 #[derive(Debug, Serialize)]
@@ -192,6 +272,8 @@ pub async fn create(
         "client_name": payload.client_name,
         "talent_name": payload.talent_name,
         "start_date": payload.start_date,
+        "contract_body": payload.contract_body,
+        "contract_body_format": payload.contract_body_format,
     });
 
     let resp = state
@@ -259,6 +341,8 @@ pub async fn update(
         "client_name": payload.client_name,
         "talent_name": payload.talent_name,
         "start_date": payload.start_date,
+        "contract_body": payload.contract_body,
+        "contract_body_format": payload.contract_body_format,
         "updated_at": chrono::Utc::now().to_rfc3339(),
     });
 
@@ -451,6 +535,8 @@ pub async fn create_builder_token(
     let mut submitters = None;
     let target_email = state.docuseal_user_email.clone();
 
+    let mut template_docuseal_id: Option<i32> = None;
+
     if !template_id.is_empty() {
         let resp = state
             .pg
@@ -468,6 +554,69 @@ pub async fn create_builder_token(
         let templates: Vec<LicenseTemplate> = serde_json::from_str(&text).unwrap_or_default();
 
         if let Some(license_template) = templates.first() {
+            template_docuseal_id = license_template.docuseal_template_id;
+
+            // Ensure DocuSeal template exists and is based on the latest contract body.
+            // Licensing only: no master-template fallback, no PDF upload paths.
+            let contract_body = license_template
+                .contract_body
+                .clone()
+                .unwrap_or_default();
+            let contract_body_format = license_template
+                .contract_body_format
+                .clone()
+                .unwrap_or_else(|| "markdown".to_string());
+
+            if !contract_body.trim().is_empty() {
+                let document_base64 = render_template_to_pdf_data_uri(
+                    &license_template.template_name,
+                    &contract_body,
+                    &contract_body_format,
+                )?;
+
+                let docuseal = DocuSealClient::new(
+                    state.docuseal_api_key.clone(),
+                    state.docuseal_base_url.clone(),
+                );
+
+                let ensured_id = if let Some(existing_id) = license_template.docuseal_template_id {
+                    docuseal
+                        .update_template_documents(
+                            existing_id,
+                            "contract.pdf".to_string(),
+                            document_base64,
+                        )
+                        .await
+                        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                    existing_id
+                } else {
+                    let created = docuseal
+                        .create_template(
+                            license_template.template_name.clone(),
+                            "contract.pdf".to_string(),
+                            document_base64,
+                        )
+                        .await
+                        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+                    // Persist DS template id back to license_templates
+                    let update_json = json!({
+                        "docuseal_template_id": created.id,
+                        "updated_at": chrono::Utc::now().to_rfc3339(),
+                    });
+                    let _ = state
+                        .pg
+                        .from("license_templates")
+                        .update(update_json.to_string())
+                        .eq("id", &license_template.id)
+                        .execute()
+                        .await;
+
+                    created.id
+                };
+                template_docuseal_id = Some(ensured_id);
+            }
+
             let talent_names = license_template.talent_name.clone().unwrap_or_default();
             let fee_str = format!(
                 "${:.2}",
@@ -558,11 +707,11 @@ pub async fn create_builder_token(
     }
 
     // 3. Determine DocuSeal template
-    let docuseal_template_id = if !state.docuseal_master_template_id.is_empty() {
-        state.docuseal_master_template_id.parse::<i32>().ok()
-    } else {
-        req.docuseal_template_id
-    };
+    // Licensing only: do not use master template fallback.
+    let docuseal_template_id = template_docuseal_id.or(req.docuseal_template_id).ok_or((
+        StatusCode::BAD_REQUEST,
+        "docuseal_template_id_missing".to_string(),
+    ))?;
 
     let docuseal = DocuSealClient::new(
         state.docuseal_api_key.clone(),
@@ -574,7 +723,7 @@ pub async fn create_builder_token(
             target_email.clone(),
             target_email.clone(),
             target_email.clone(),
-            docuseal_template_id,
+            Some(docuseal_template_id),
             req.external_id,
             values.clone(),
             submitters,
