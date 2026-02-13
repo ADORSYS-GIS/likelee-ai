@@ -621,7 +621,11 @@ pub async fn get_clients_campaigns_analytics(
             color: "".to_string(), // Will assign below
         })
         .collect();
-    earnings_vec.sort_by(|a, b| b.budget.partial_cmp(&a.budget).unwrap_or(std::cmp::Ordering::Equal));
+    earnings_vec.sort_by(|a, b| {
+        b.budget
+            .partial_cmp(&a.budget)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     earnings_vec.truncate(4);
     for (i, item) in earnings_vec.iter_mut().enumerate() {
         item.color = colors[i % colors.len()].to_string();
@@ -636,7 +640,11 @@ pub async fn get_clients_campaigns_analytics(
             color: "".to_string(),
         })
         .collect();
-    geo_vec.sort_by(|a, b| b.value.partial_cmp(&a.value).unwrap_or(std::cmp::Ordering::Equal));
+    geo_vec.sort_by(|a, b| {
+        b.value
+            .partial_cmp(&a.value)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     geo_vec.truncate(4);
     for (i, item) in geo_vec.iter_mut().enumerate() {
         item.color = colors[i % colors.len()].to_string();
@@ -663,9 +671,11 @@ pub async fn get_clients_campaigns_analytics(
         })
         .collect();
     perf_vec.sort_by(|a, b| {
-        b.campaigns
-            .cmp(&a.campaigns)
-            .then_with(|| b.budget.partial_cmp(&a.budget).unwrap_or(std::cmp::Ordering::Equal))
+        b.campaigns.cmp(&a.campaigns).then_with(|| {
+            b.budget
+                .partial_cmp(&a.budget)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        })
     });
     perf_vec.truncate(4);
 
