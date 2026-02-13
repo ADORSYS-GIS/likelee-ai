@@ -62,6 +62,8 @@ pub struct ConsentStatusBreakdown {
     pub complete: i64,
     pub missing: i64,
     pub expiring: i64,
+    pub total: i64,
+    pub verified: i64,
 }
 
 /// GET /api/agency/analytics/dashboard
@@ -75,7 +77,7 @@ pub async fn get_analytics_dashboard(
     let sixty_days_ago = (now - chrono::Duration::days(60)).to_rfc3339();
     let five_months_ago = (now - chrono::Duration::days(150)).to_rfc3339(); // Approx 5 months
     let today = now.format("%Y-%m-%d").to_string();
-    let thirty_days_hence = (now + chrono::Duration::days(30))
+    let ten_days_hence = (now + chrono::Duration::days(10))
         .format("%Y-%m-%d")
         .to_string();
 
@@ -121,7 +123,7 @@ pub async fn get_analytics_dashboard(
     let talents_resp = state
         .pg
         .from("agency_users")
-        .select("id, status, consent_status")
+        .select("id, status, consent_status, is_verified_talent")
         .eq("agency_id", agency_id)
         .eq("role", "talent")
         .execute()
@@ -284,18 +286,25 @@ pub async fn get_analytics_dashboard(
     // F. CONSENT STATUS
     let mut consent_complete = 0i64;
     let mut consent_missing = 0i64;
+    let mut verified_count = 0i64;
+    let total_talents = talents_data.len() as i64;
+
     for t in talents_data.iter() {
+        let is_verified = t
+            .get("is_verified_talent")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
+        if is_verified {
+            verified_count += 1;
+        }
+
         let consent = t
             .get("consent_status")
             .and_then(|v| v.as_str())
             .unwrap_or("missing");
-        // Assume 'missing' or 'pending' or 'revoked' = missing. 'granted' or 'complete' = complete.
-        // Or simpler: if it's NOT missing/pending -> complete.
-        // Check migration default is 'missing'.
         if consent == "missing" || consent == "pending" || consent == "not_started" {
             consent_missing += 1;
         } else {
-            // granted, signed, active, etc.
             consent_complete += 1;
         }
     }
@@ -307,7 +316,7 @@ pub async fn get_analytics_dashboard(
         .select("talent_id")
         .eq("agency_id", agency_id)
         .gte("effective_end_date", &today)
-        .lte("effective_end_date", &thirty_days_hence)
+        .lte("effective_end_date", &ten_days_hence)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -360,6 +369,8 @@ pub async fn get_analytics_dashboard(
             complete: consent_complete,
             missing: consent_missing,
             expiring,
+            total: total_talents,
+            verified: verified_count,
         },
     }))
 }

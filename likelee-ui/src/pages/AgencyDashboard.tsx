@@ -16096,8 +16096,6 @@ const RoyaltiesPayoutsView = () => {
 
   const [selectedTier, setSelectedTier] = useState("All Tiers");
   const [showHistory, setShowHistory] = useState(false);
-  const [isEditingDefaultRate, setIsEditingDefaultRate] = useState(false);
-  const [defaultCommissionRate, setDefaultCommissionRate] = useState(15);
 
   const filteredTalent =
     selectedTier === "All Tiers"
@@ -16219,101 +16217,6 @@ const RoyaltiesPayoutsView = () => {
 
       {activeTab === "Commission Structure" && (
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
-          <Card className="p-10 bg-white border border-gray-900 shadow-sm rounded-xl">
-            <div className="flex justify-between items-center mb-10">
-              <h3 className="text-lg font-bold text-gray-900">
-                Default Commission Rate
-              </h3>
-              {isEditingDefaultRate ? (
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setIsEditingDefaultRate(false);
-                      setDefaultCommissionRate(15);
-                    }}
-                    className="font-bold border-gray-200"
-                  >
-                    <X className="w-4 h-4 mr-2" /> Cancel
-                  </Button>
-                  <Button
-                    onClick={() => setIsEditingDefaultRate(false)}
-                    className="bg-indigo-600 hover:bg-indigo-700 font-bold"
-                  >
-                    <Save className="w-4 h-4 mr-2" /> Save Changes
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  variant="outline"
-                  onClick={() => setIsEditingDefaultRate(true)}
-                  className="font-bold gap-2"
-                >
-                  <Settings className="w-4 h-4" /> Edit Settings
-                </Button>
-              )}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-              <div className="space-y-6">
-                <Label className="text-sm font-bold text-gray-900">
-                  Agency Commission Rate
-                </Label>
-                <div className="flex items-center gap-4">
-                  <div className="relative w-32">
-                    <Input
-                      type="number"
-                      value={defaultCommissionRate}
-                      onChange={(e) =>
-                        isEditingDefaultRate &&
-                        setDefaultCommissionRate(Number(e.target.value))
-                      }
-                      readOnly={!isEditingDefaultRate}
-                      className={`h-14 bg-gray-50 border-gray-200 text-2xl font-bold text-gray-900 pl-4 pr-10 ${isEditingDefaultRate ? "bg-white border-indigo-500 ring-2 ring-indigo-100" : ""}`}
-                    />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-400">
-                      %
-                    </span>
-                  </div>
-                </div>
-                <p className="text-sm font-medium text-gray-500 italic">
-                  Talent sees:{" "}
-                  <span className="text-gray-900 font-bold">
-                    "Agency takes {defaultCommissionRate}% commission"
-                  </span>
-                </p>
-              </div>
-              <div className="bg-indigo-50/50 p-8 rounded-2xl border border-indigo-100 flex flex-col justify-center">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
-                  Example Breakdown:
-                </p>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 border-b border-indigo-50">
-                    <span className="text-sm font-bold text-gray-600">
-                      License Deal:
-                    </span>
-                    <span className="text-sm font-black text-gray-900">
-                      $1,000
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b border-indigo-50">
-                    <span className="text-sm font-bold text-green-600">
-                      Talent Receives:
-                    </span>
-                    <span className="text-sm font-black text-green-600">
-                      ${(1000 * (1 - defaultCommissionRate / 100)).toFixed(0)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 font-black text-indigo-600">
-                    <span className="text-sm">Agency Commission:</span>
-                    <span className="text-sm">
-                      ${(1000 * (defaultCommissionRate / 100)).toFixed(0)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Card>
-
           <Card className="p-10 bg-white border border-gray-900 shadow-sm rounded-xl">
             <h3 className="text-lg font-bold text-gray-900 mb-4">
               Commission by Performance Tier
@@ -18133,21 +18036,27 @@ const AnalyticsDashboardView = () => {
         )
       ) : activeTab === "Compliance" ? (
         (() => {
-          const totalTalents = TALENT_DATA.length;
-          const activeTalents = TALENT_DATA.filter(
-            (t: any) => t.status === "active",
-          );
-          const activeCount = activeTalents.length;
+          const totalTalents = analytics.consent_status.total;
+          const activeCount = analytics.consent_status.complete;
           const activePct = totalTalents
             ? Math.round((activeCount / totalTalents) * 100)
             : 0;
 
-          const verifiedCount = TALENT_DATA.filter((t: any) =>
-            Boolean(t.isVerified),
-          ).length;
+          const verifiedCount = analytics.consent_status.verified;
           const verificationPct = totalTalents
             ? Math.round((verifiedCount / totalTalents) * 100)
             : 0;
+
+          const expiringSoonLicensesCount = analytics.consent_status.expiring;
+
+          const consentExpiringCount = analytics.consent_status.expiring; // Reusing for distribution chart
+          const missingCount = analytics.consent_status.missing;
+
+          const completePct = activePct;
+          const expiringPct = totalTalents
+            ? Math.round((consentExpiringCount / totalTalents) * 100)
+            : 0;
+          const missingPct = Math.max(100 - completePct - expiringPct, 0);
 
           const parseUsDate = (v: string) => {
             if (!v || v === "—" || v === "N/A") return null;
@@ -18170,29 +18079,6 @@ const AnalyticsDashboardView = () => {
             const ms = dt.getTime() - base.getTime();
             return Math.floor(ms / (1000 * 60 * 60 * 24));
           };
-
-          const expiringSoonLicensesCount = LICENSE_COMPLIANCE_DATA.filter(
-            (l: any) => {
-              const dt = parseUsDate(String(l.expiry));
-              if (!dt) return false;
-              const d = daysUntil(dt);
-              return d >= 0 && d <= 30;
-            },
-          ).length;
-
-          const consentExpiringCount = TALENT_DATA.filter(
-            (t: any) => t.status === "active" && t.consent === "expiring",
-          ).length;
-          const missingCount = Math.max(
-            totalTalents - activeCount - consentExpiringCount,
-            0,
-          );
-
-          const completePct = activePct;
-          const expiringPct = totalTalents
-            ? Math.round((consentExpiringCount / totalTalents) * 100)
-            : 0;
-          const missingPct = Math.max(100 - completePct - expiringPct, 0);
 
           const upcomingLicenses = LICENSE_COMPLIANCE_DATA.map((l: any) => {
             const dt = parseUsDate(String(l.expiry));
@@ -18294,7 +18180,7 @@ const AnalyticsDashboardView = () => {
                   </div>
                   <div className="space-y-3">
                     <p className="text-[10px] font-bold text-orange-600 uppercase tracking-widest">
-                      Next 30 days
+                      Next 10 days
                     </p>
                   </div>
                 </Card>
