@@ -500,9 +500,9 @@ pub async fn get_clients_campaigns_analytics(
     let payments_resp = state
         .pg
         .from("payments")
-        .select("id, status, gross_cents, brand_id, campaign_id")
+        .select("gross_cents, brand_id, campaign_id")
         .eq("agency_id", agency_id)
-        //.eq("status", "succeeded") // Commented out for debugging
+        .eq("status", "succeeded")
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -527,44 +527,17 @@ pub async fn get_clients_campaigns_analytics(
     let mut brand_campaigns_interactions: HashMap<String, HashSet<String>> = HashMap::new();
 
     if let Some(payments) = payments_data.as_array() {
-        for (idx, p) in payments.iter().enumerate() {
-            let pid = p.get("id").and_then(|v| v.as_str()).unwrap_or("unknown");
-            let status = p
-                .get("status")
-                .and_then(|v| v.as_str())
-                .unwrap_or("unknown");
-            let brand_id_opt = p.get("brand_id").and_then(|v| v.as_str());
-            let cents = p.get("gross_cents").and_then(|v| v.as_i64()).unwrap_or(0);
+        for p in payments {
+            if let Some(brand_id) = p.get("brand_id").and_then(|v| v.as_str()) {
+                let cents = p.get("gross_cents").and_then(|v| v.as_i64()).unwrap_or(0);
+                *brand_earnings.entry(brand_id.to_string()).or_insert(0) += cents;
 
-            if let Some(brand_id) = brand_id_opt {
-                tracing::info!(
-                    "  Payment [{}]: id={} status={} brand={} cents={}",
-                    idx,
-                    pid,
-                    status,
-                    brand_id,
-                    cents
-                );
-
-                // Only aggregate if succeeded
-                if status == "succeeded" {
-                    *brand_earnings.entry(brand_id.to_string()).or_insert(0) += cents;
-
-                    if let Some(cid) = p.get("campaign_id").and_then(|v| v.as_str()) {
-                        brand_campaigns_interactions
-                            .entry(brand_id.to_string())
-                            .or_default()
-                            .insert(cid.to_string());
-                    }
+                if let Some(cid) = p.get("campaign_id").and_then(|v| v.as_str()) {
+                    brand_campaigns_interactions
+                        .entry(brand_id.to_string())
+                        .or_default()
+                        .insert(cid.to_string());
                 }
-            } else {
-                tracing::warn!(
-                    "  Payment [{}]: id={} status={} SKIPPED (no brand_id) cents={}",
-                    idx,
-                    pid,
-                    status,
-                    cents
-                );
             }
         }
     }
