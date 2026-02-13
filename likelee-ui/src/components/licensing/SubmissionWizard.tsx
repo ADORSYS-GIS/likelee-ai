@@ -20,7 +20,8 @@ import {
 import { LicenseTemplate, updateLicenseTemplate } from "@/api/licenseTemplates";
 import {
     getLicenseSubmissions,
-    createAndSendLicenseSubmission
+    createLicenseSubmissionDraft,
+    finalizeLicenseSubmission,
 } from "@/api/licenseSubmissions";
 import { ContractEditor } from "./ContractEditor";
 import { DocuSealBuilderModal } from "./DocuSealBuilderModal";
@@ -78,6 +79,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
 }) => {
     const [step, setStep] = useState(1);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [draftId, setDraftId] = useState<string | null>(null);
     const [currentTemplate, setCurrentTemplate] = useState<LicenseTemplate>(template);
     const { toast } = useToast();
 
@@ -87,6 +89,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         watch,
         setValue,
         reset,
+        getValues,
         formState: { errors },
     } = useForm<FormData>({
         defaultValues: {
@@ -134,38 +137,51 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
     };
 
     const handleNext = async () => {
+        const currentData = getValues();
         if (step === 1) {
-            // Transition to Step 2: Rendered Contract
+            // Validate step 1
+            if (!currentData.client_name || !currentData.talent_name || !currentData.client_email) {
+                toast({
+                    title: "Missing Information",
+                    description: "Please fill in all required fields marked with *",
+                    variant: "destructive",
+                });
+                return;
+            }
+
             setIsSyncing(true);
             try {
-                // Save metadata to DB first as requested
-                const updated = await updateLicenseTemplate(currentTemplate.id, {
-                    ...currentTemplate,
-                    client_name: formData.client_name,
-                    talent_name: formData.talent_name,
-                    start_date: formData.start_date,
-                    duration_days: formData.duration_days,
-                    territory: formData.territory,
-                    exclusivity: formData.exclusivity,
-                    modifications_allowed: formData.modifications_allowed,
-                    license_fee: Math.round(formData.license_fee * 100),
-                    custom_terms: formData.custom_terms,
-                } as any);
-                setCurrentTemplate(updated);
+                // 1. Create/Update draft in Likelee DB to persist client info early
+                const draft = await createLicenseSubmissionDraft({
+                    template_id: currentTemplate.id,
+                    client_name: currentData.client_name,
+                    client_email: currentData.client_email,
+                    talent_names: currentData.talent_name,
+                    license_fee: Math.round(currentData.license_fee * 100),
+                    duration_days: currentData.duration_days,
+                    start_date: currentData.start_date,
+                    custom_terms: currentData.custom_terms,
+                    docuseal_template_id: currentTemplate.docuseal_template_id,
+                });
 
-                const rendered = replacePlaceholders(updated.contract_body || "", {
-                    ...formData,
-                    template_name: updated.template_name,
-                    category: updated.category,
-                    description: updated.description,
-                    usage_scope: updated.usage_scope,
+                if (draft?.id) {
+                    setDraftId(draft.id);
+                }
+
+                // 2. Prepare the rendered contract for Step 2
+                const rendered = replacePlaceholders(currentTemplate.contract_body || "", {
+                    ...currentData,
+                    template_name: currentTemplate.template_name,
+                    category: currentTemplate.category,
+                    description: currentTemplate.description,
+                    usage_scope: currentTemplate.usage_scope,
                 });
                 setValue("contract_body", rendered);
                 setStep(2);
             } catch (err: any) {
                 toast({
-                    title: "Save Failed",
-                    description: err.message || "Failed to save deal specifies.",
+                    title: "Preparation Failed",
+                    description: err.message || "Failed to initialize submission draft.",
                     variant: "destructive",
                 });
             } finally {
@@ -179,11 +195,12 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
 
     const handleSyncToDocuSeal = async () => {
         setIsSyncing(true);
+        const currentData = getValues();
         try {
-            // Finally update with the possibly edited contract_body
+            // Finally update the template with the possibly edited contract_body from Step 2
             const updated = await updateLicenseTemplate(currentTemplate.id, {
                 ...currentTemplate,
-                contract_body: formData.contract_body,
+                contract_body: currentData.contract_body,
             } as any);
             setCurrentTemplate(updated);
 
@@ -201,17 +218,35 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
 
     const handleFinalSend = async () => {
         setIsSyncing(true);
+        const currentData = getValues();
         try {
-            await createAndSendLicenseSubmission({
-                template_id: currentTemplate.id,
+            // Step 1: Create draft if not already created
+            let submissionId = draftId;
+            if (!submissionId) {
+                const draft = await createLicenseSubmissionDraft({
+                    template_id: currentTemplate.id,
+                    client_name: currentData.client_name,
+                    client_email: currentData.client_email,
+                    talent_names: currentData.talent_name,
+                    license_fee: Math.round(currentData.license_fee * 100),
+                    duration_days: currentData.duration_days,
+                    start_date: currentData.start_date,
+                    custom_terms: currentData.custom_terms,
+                    docuseal_template_id: currentTemplate.docuseal_template_id,
+                });
+                submissionId = draft?.id;
+                if (!submissionId) {
+                    throw new Error("Draft creation returned no ID");
+                }
+                setDraftId(submissionId);
+            }
+
+            // Step 2: Finalize the submission (this creates the licensing_request)
+            await finalizeLicenseSubmission(submissionId, {
                 docuseal_template_id: currentTemplate.docuseal_template_id,
-                client_name: formData.client_name,
-                client_email: formData.client_email,
-                talent_names: formData.talent_name,
-                license_fee: Math.round(formData.license_fee * 100),
-                duration_days: formData.duration_days,
-                start_date: formData.start_date,
-                custom_terms: formData.custom_terms,
+                client_name: currentData.client_name,
+                client_email: currentData.client_email,
+                talent_names: currentData.talent_name,
             });
 
             toast({

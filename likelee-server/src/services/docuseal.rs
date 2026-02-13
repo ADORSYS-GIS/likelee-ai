@@ -13,8 +13,10 @@ pub struct CreateSubmissionRequest {
 
 #[derive(Debug, Serialize)]
 pub struct Submitter {
-    pub name: String,
-    pub email: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub role: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -174,14 +176,16 @@ impl DocuSealClient {
             template_id,
             send_email,
             submitters: vec![Submitter {
-                name: submitter_name,
-                email: submitter_email,
+                name: Some(submitter_name).filter(|s| !s.is_empty()),
+                email: Some(submitter_email).filter(|s| !s.is_empty()),
                 role: Some(role),
                 fields: Some(fields),
                 values: None,
             }],
             values: None,
         };
+
+        tracing::info!("DocuSeal request body: {:?}", request_body);
 
         info!(
             template_id,
@@ -288,8 +292,8 @@ impl DocuSealClient {
             template_id,
             send_email,
             submitters: vec![Submitter {
-                name: submitter_name,
-                email: submitter_email,
+                name: Some(submitter_name).filter(|s| !s.is_empty()),
+                email: Some(submitter_email).filter(|s| !s.is_empty()),
                 role: Some(role.unwrap_or_else(|| "Signer".to_string())),
                 fields: submitter_fields,
                 values: submitter_values,

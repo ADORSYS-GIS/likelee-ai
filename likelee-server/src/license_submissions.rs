@@ -633,14 +633,18 @@ pub async fn finalize(
     let client_name = req
         .client_name
         .clone()
+        .filter(|s| !s.trim().is_empty())
         .or_else(|| submission_data["client_name"].as_str().map(String::from))
         .unwrap_or_else(|| "Client".to_string());
 
     let client_email = req
         .client_email
         .clone()
+        .filter(|s| !s.trim().is_empty())
         .or_else(|| submission_data["client_email"].as_str().map(String::from))
         .unwrap_or_default();
+
+    tracing::info!("Finalize: client_name={}, client_email={}", client_name, client_email);
 
     // If client info was provided in this request, update the record first
     if req.client_name.is_some() || req.client_email.is_some() || req.talent_names.is_some() {
@@ -664,14 +668,54 @@ pub async fn finalize(
             .await;
     }
 
-    // 4. Create DocuSeal Submission with fields-based pre-fill
+    // 4. Fetch Template details for field filtering
+    let template_details = docuseal
+        .get_template(docuseal_template_id)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("DocuSeal Template Fetch Error: {}", e),
+            )
+        })?;
+
+    // Extract all field names present in the template's schema
+    let mut allowed_field_names = std::collections::HashSet::new();
+    if let Some(documents) = template_details.documents {
+        for doc in documents {
+            for field in doc.schema {
+                if let Some(name) = field.get("name").and_then(|n| n.as_str()) {
+                    allowed_field_names.insert(name.to_string());
+                }
+            }
+        }
+    }
+    for field in template_details.schema {
+        if let Some(name) = field.get("name").and_then(|n| n.as_str()) {
+            allowed_field_names.insert(name.to_string());
+        }
+    }
+
+    // Filter fields to only include those that exist in the template
+    let filtered_fields: Vec<_> = fields
+        .into_iter()
+        .filter(|f| allowed_field_names.contains(&f.name))
+        .collect();
+
+    tracing::info!(
+        allowed_count = allowed_field_names.len(),
+        filtered_count = filtered_fields.len(),
+        "Filtered DocuSeal submission fields for finalize"
+    );
+
+    // 5. Create DocuSeal Submission with fields-based pre-fill
     let docuseal_submission = docuseal
         .create_submission_with_fields(
             docuseal_template_id,
             client_name.clone(),
             client_email.clone(),
             "First Party".to_string(),
-            fields,
+            filtered_fields,
             true,
         )
         .await
@@ -731,10 +775,22 @@ pub async fn finalize(
     let talent_name = submission_data["talent_names"].as_str()
         .or(req.talent_names.as_deref());
 
+    let client_name_str = submission_data["client_name"]
+        .as_str()
+        .unwrap_or(&client_name);
+
+    tracing::info!(
+        "Creating licensing_request for submission {}: agency_id={}, client_name={}, talent_name={:?}",
+        submission.id,
+        agency_id,
+        client_name_str,
+        talent_name
+    );
+
     let lr_data = json!({
         "agency_id": agency_id,
         "brand_id": submission.client_id,
-        "client_name": submission_data["client_name"],
+        "client_name": client_name_str,
         "talent_id": None::<String>,
         "talent_name": talent_name,
         "submission_id": submission.id,
@@ -747,6 +803,8 @@ pub async fn finalize(
         "deadline": deadline.map(|d| d.to_string()),
     });
 
+    tracing::debug!("Licensing request payload: {}", lr_data);
+
     let lr_resp = state
         .pg
         .from("licensing_requests")
@@ -754,11 +812,22 @@ pub async fn finalize(
         .execute()
         .await;
 
-    if let Err(e) = lr_resp {
-        tracing::error!("Failed to create linked licensing_request: {}", e);
-    } else if let Ok(resp) = lr_resp {
-        if !resp.status().is_success() {
-             tracing::error!("Failed to create linked licensing_request (status {}): {}", resp.status(), resp.text().await.unwrap_or_default());
+    match lr_resp {
+        Ok(resp) => {
+            let status = resp.status();
+            if status.is_success() {
+                tracing::info!("Successfully created licensing_request for submission {}", submission.id);
+            } else {
+                let body = resp.text().await.unwrap_or_default();
+                tracing::error!(
+                    "Failed to create licensing_request (HTTP {}): {}",
+                    status,
+                    body
+                );
+            }
+        }
+        Err(e) => {
+            tracing::error!("Failed to create licensing_request (network error): {}", e);
         }
     }
 
