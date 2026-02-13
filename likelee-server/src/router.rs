@@ -200,6 +200,10 @@ pub fn build_router(state: AppState) -> Router {
             "/api/agency/analytics/roster",
             get(crate::analytics::get_roster_insights),
         )
+        .route(
+            "/api/agency/analytics/clients-campaigns",
+            get(crate::analytics::get_clients_campaigns_analytics),
+        )
         .route("/api/agency/roster", get(crate::agency_roster::get_roster))
         .route(
             "/api/agency/talent-invites",

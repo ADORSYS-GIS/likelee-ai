@@ -670,11 +670,10 @@ const ProspectModal = ({
                     selectedCategories.includes(cat) ? "default" : "secondary"
                   }
                   onClick={() => toggleCategory(cat)}
-                  className={`${
-                    selectedCategories.includes(cat)
-                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
-                  } font-medium`}
+                  className={`${selectedCategories.includes(cat)
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                    } font-medium`}
                 >
                   {cat}
                 </Button>
@@ -1387,11 +1386,10 @@ const ProspectModalAlt = ({
                     selectedCategories.includes(cat) ? "default" : "secondary"
                   }
                   onClick={() => toggleCategory(cat)}
-                  className={`${
-                    selectedCategories.includes(cat)
-                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
-                  } font-medium`}
+                  className={`${selectedCategories.includes(cat)
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                    } font-medium`}
                 >
                   {cat}
                 </Button>
@@ -3658,9 +3656,9 @@ const PaymentTrackingView = () => {
     return invoiceRows.map((inv) => {
       const statusRaw = String(
         (inv as any)?.status ??
-          (inv as any)?.invoice_status ??
-          (inv as any)?.invoice?.status ??
-          "draft",
+        (inv as any)?.invoice_status ??
+        (inv as any)?.invoice?.status ??
+        "draft",
       );
       const dueDateStr = String((inv as any)?.due_date || "");
       const due = dueDateStr ? new Date(dueDateStr) : null;
@@ -4105,9 +4103,9 @@ const FinancialReportsView = () => {
     return invoiceRows.map((inv) => {
       const statusRaw = String(
         (inv as any)?.status ??
-          (inv as any)?.invoice_status ??
-          (inv as any)?.invoice?.status ??
-          "draft",
+        (inv as any)?.invoice_status ??
+        (inv as any)?.invoice?.status ??
+        "draft",
       );
       const dueDateStr = String((inv as any)?.due_date || "");
       const due = dueDateStr ? new Date(dueDateStr) : null;
@@ -4205,7 +4203,7 @@ const FinancialReportsView = () => {
         payablesTotals.set(
           "USD",
           (payablesTotals.get("USD") || 0) +
-            (Number((l as any)?.net_cents || 0) || 0),
+          (Number((l as any)?.net_cents || 0) || 0),
         );
       }
     }
@@ -4800,14 +4798,14 @@ const FinancialReportsView = () => {
       <thead><tr><th>Metric</th><th style="text-align:right;">Value</th></tr></thead>
       <tbody>
         ${tableRows([
-          ["Total Revenue", moneyTotals(summary.revenueTotals)],
-          ["Pending", moneyTotals(summary.pendingTotals)],
-          ["Outstanding Receivables", moneyTotals(summary.receivablesTotals)],
-          ["Expenses", moneyTotals(expensesTotals)],
-          ["Net Income", moneyTotals(netIncomeTotals)],
-          ["Commission", moneyTotals(summary.commissionTotals)],
-          ["Sales Tax", moneyTotals(taxTotals)],
-        ])}
+      ["Total Revenue", moneyTotals(summary.revenueTotals)],
+      ["Pending", moneyTotals(summary.pendingTotals)],
+      ["Outstanding Receivables", moneyTotals(summary.receivablesTotals)],
+      ["Expenses", moneyTotals(expensesTotals)],
+      ["Net Income", moneyTotals(netIncomeTotals)],
+      ["Commission", moneyTotals(summary.commissionTotals)],
+      ["Sales Tax", moneyTotals(taxTotals)],
+    ])}
       </tbody>
     </table>
 
@@ -4816,11 +4814,11 @@ const FinancialReportsView = () => {
       <thead><tr><th>Client</th><th style="text-align:right;">Revenue</th></tr></thead>
       <tbody>
         ${topClientsByRevenue
-          .map(
-            (c) =>
-              `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${c.clientName}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${moneyTotals(c.totals)}</td></tr>`,
-          )
-          .join("")}
+        .map(
+          (c) =>
+            `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${c.clientName}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${moneyTotals(c.totals)}</td></tr>`,
+        )
+        .join("")}
       </tbody>
     </table>
 
@@ -4829,11 +4827,11 @@ const FinancialReportsView = () => {
       <thead><tr><th>Talent</th><th style="text-align:right;">Gross</th></tr></thead>
       <tbody>
         ${topTalentByRevenue
-          .map(
-            (t) =>
-              `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${t.talentName}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${money(t.grossCents, "USD")}</td></tr>`,
-          )
-          .join("")}
+        .map(
+          (t) =>
+            `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${t.talentName}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${money(t.grossCents, "USD")}</td></tr>`,
+        )
+        .join("")}
       </tbody>
     </table>
 
@@ -4842,11 +4840,11 @@ const FinancialReportsView = () => {
       <thead><tr><th>Aging Bucket</th><th style="text-align:right;">Amount</th><th style="text-align:right;">Invoices</th></tr></thead>
       <tbody>
         ${receivables.bucketDefs
-          .map(
-            (b) =>
-              `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${b.label}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${moneyTotals(receivables.bucketTotals.get(b.key) || new Map())}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${receivables.bucketCounts.get(b.key) || 0}</td></tr>`,
-          )
-          .join("")}
+        .map(
+          (b) =>
+            `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${b.label}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${moneyTotals(receivables.bucketTotals.get(b.key) || new Map())}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${receivables.bucketCounts.get(b.key) || 0}</td></tr>`,
+        )
+        .join("")}
       </tbody>
     </table>
 
@@ -5027,11 +5025,10 @@ const FinancialReportsView = () => {
             <button
               key={tab.id}
               onClick={() => setActiveReportTab(tab.id)}
-              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${
-                activeReportTab === tab.id
-                  ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-              }`}
+              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${activeReportTab === tab.id
+                ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                }`}
             >
               {tab.label}
             </button>
@@ -6206,11 +6203,11 @@ const GenerateInvoiceView = () => {
                 (t) =>
                   String((t as any)?.id || "") === String(it.talent_id || ""),
               )?.name ||
-                talents.find(
-                  (t) =>
-                    String((t as any)?.id || "") === String(it.talent_id || ""),
-                )?.full_name ||
-                "",
+              talents.find(
+                (t) =>
+                  String((t as any)?.id || "") === String(it.talent_id || ""),
+              )?.full_name ||
+              "",
             ).trim();
             const date = String(it.date_of_service || "").trim();
             const rate = String(it.rate_type || "").trim();
@@ -6739,11 +6736,10 @@ const GenerateInvoiceView = () => {
             <div className="flex gap-3">
               <Button
                 variant={createFrom === "booking" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
-                  createFrom === "booking"
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "border-gray-200 text-gray-700"
-                }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "booking"
+                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                  : "border-gray-200 text-gray-700"
+                  }`}
                 onClick={() => setCreateFrom("booking")}
               >
                 <Calendar className="w-5 h-5" />
@@ -6751,11 +6747,10 @@ const GenerateInvoiceView = () => {
               </Button>
               <Button
                 variant={createFrom === "manual" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
-                  createFrom === "manual"
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "border-gray-200 text-gray-700"
-                }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "manual"
+                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                  : "border-gray-200 text-gray-700"
+                  }`}
                 onClick={() => setCreateFrom("manual")}
               >
                 <FileText className="w-5 h-5" />
@@ -7500,9 +7495,9 @@ const InvoiceManagementView = ({
       const invoiceId = String((inv as any)?.id || "");
       const statusRaw = String(
         (inv as any)?.status ??
-          (inv as any)?.invoice_status ??
-          (inv as any)?.invoice?.status ??
-          "draft",
+        (inv as any)?.invoice_status ??
+        (inv as any)?.invoice?.status ??
+        "draft",
       );
       const sentAt = (inv as any)?.sent_at ?? (inv as any)?.sentAt;
       const paidAt = (inv as any)?.paid_at ?? (inv as any)?.paidAt;
@@ -7681,11 +7676,10 @@ const InvoiceManagementView = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveSubTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                  isActive
-                    ? "bg-indigo-600 text-white shadow-sm"
-                    : "text-gray-700 hover:bg-gray-50"
-                }`}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${isActive
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-gray-700 hover:bg-gray-50"
+                  }`}
               >
                 <Icon className="w-4 h-4" />
                 {tab.label}
@@ -8113,11 +8107,11 @@ const InvoiceManagementView = ({
                       0,
                       (Number((selectedInvoice as any)?.amountCents || 0) ||
                         0) -
-                        ((selectedInvoice as any)?.paidAt
-                          ? Number(
-                              (selectedInvoice as any)?.amountCents || 0,
-                            ) || 0
-                          : 0),
+                      ((selectedInvoice as any)?.paidAt
+                        ? Number(
+                          (selectedInvoice as any)?.amountCents || 0,
+                        ) || 0
+                        : 0),
                     ),
                     String((selectedInvoice as any)?.currency || "USD"),
                   )}
@@ -8895,11 +8889,10 @@ const ScoutingHubView = ({
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
-              activeTab === tab
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
-                : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
-            }`}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab
+              ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+              : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
+              }`}
           >
             {tab}
           </button>
@@ -9128,8 +9121,8 @@ const ProspectDetailsSheet = ({
                       Send Offer
                     </Button>
                   ) : ["offer_sent", "opened", "signed", "declined"].includes(
-                      prospect.status,
-                    ) ? (
+                    prospect.status,
+                  ) ? (
                     <div className="flex items-center gap-3">
                       <Button
                         onClick={() =>
@@ -10014,19 +10007,18 @@ const OpenCallsTab = ({
               <div className="p-4">
                 <div className="flex justify-between items-start mb-3">
                   <Badge
-                    className={`rounded-md font-bold px-2 py-0.5 text-[10px] border shadow-sm ${
-                      String((event as any).status) === "published"
-                        ? "bg-green-50 text-green-700 border-green-100"
-                        : String((event as any).status) === "draft"
-                          ? "bg-gray-50 text-gray-600 border-gray-100"
-                          : String((event as any).status) === "scheduled"
-                            ? "bg-blue-50 text-blue-700 border-blue-100"
-                            : String((event as any).status) === "completed"
-                              ? "bg-indigo-50 text-indigo-700 border-indigo-100"
-                              : String((event as any).status) === "cancelled"
-                                ? "bg-red-50 text-red-700 border-red-100"
-                                : "bg-gray-50 text-gray-600 border-gray-100"
-                    }`}
+                    className={`rounded-md font-bold px-2 py-0.5 text-[10px] border shadow-sm ${String((event as any).status) === "published"
+                      ? "bg-green-50 text-green-700 border-green-100"
+                      : String((event as any).status) === "draft"
+                        ? "bg-gray-50 text-gray-600 border-gray-100"
+                        : String((event as any).status) === "scheduled"
+                          ? "bg-blue-50 text-blue-700 border-blue-100"
+                          : String((event as any).status) === "completed"
+                            ? "bg-indigo-50 text-indigo-700 border-indigo-100"
+                            : String((event as any).status) === "cancelled"
+                              ? "bg-red-50 text-red-700 border-red-100"
+                              : "bg-gray-50 text-gray-600 border-gray-100"
+                      }`}
                   >
                     {String((event as any).status || "").toUpperCase()}
                   </Badge>
@@ -11163,13 +11155,13 @@ export const RosterView = ({
                   statusFilter !== "All Status" ||
                   consentFilter !== "All Consent" ||
                   sortConfig) && (
-                  <button
-                    onClick={clearFilters}
-                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
-                  >
-                    <X className="w-4 h-4" /> Clear Filters
-                  </button>
-                )}
+                    <button
+                      onClick={clearFilters}
+                      className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" /> Clear Filters
+                    </button>
+                  )}
               </div>
             </div>
 
@@ -11288,16 +11280,15 @@ export const RosterView = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${
-                            talent.consent === "complete"
-                              ? "bg-green-50 text-green-600"
-                              : talent.consent === "missing"
-                                ? "bg-red-50 text-red-600"
-                                : "bg-orange-50 text-orange-600"
-                          }`}
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${talent.consent === "complete"
+                            ? "bg-green-50 text-green-600"
+                            : talent.consent === "missing"
+                              ? "bg-red-50 text-red-600"
+                              : "bg-orange-50 text-orange-600"
+                            }`}
                         >
                           {talent.consent === "complete" ||
-                          talent.consent === "active" ? (
+                            talent.consent === "active" ? (
                             <svg
                               className="w-3 h-3"
                               fill="none"
@@ -11529,9 +11520,9 @@ const LicensingRequestsView = () => {
   const formatMoney = (n: number) =>
     Number.isFinite(n)
       ? n.toLocaleString(undefined, {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
       : "--";
 
   const statusStyle = (status: string) => {
@@ -12530,9 +12521,9 @@ const LicenseTemplatesView = () => {
     const updatedTemplates = templates.map((t) =>
       t.id === editingTemplate.id
         ? {
-            ...editingTemplate,
-            pricing: editingTemplate.pricingRange,
-          }
+          ...editingTemplate,
+          pricing: editingTemplate.pricingRange,
+        }
         : t,
     );
     setTemplates(updatedTemplates);
@@ -13344,11 +13335,10 @@ const ProtectionUsageView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${
-                activeTab === tab
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:text-gray-900"
-              }`}
+              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === tab
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-gray-500 hover:text-gray-900"
+                }`}
             >
               {tab}
             </button>
@@ -15519,7 +15509,7 @@ const ComplianceHubView = () => {
       title: "Action Required",
       description: message,
       action: (
-        <ToastAction altText="Try again" onClick={() => {}}>
+        <ToastAction altText="Try again" onClick={() => { }}>
           OK
         </ToastAction>
       ),
@@ -15682,11 +15672,10 @@ const ComplianceHubView = () => {
             <Button
               disabled={selectedTalentIds.length === 0}
               variant="outline"
-              className={`text-xs font-bold h-8 gap-2 ${
-                selectedTalentIds.length === 0
-                  ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
-                  : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
-              }`}
+              className={`text-xs font-bold h-8 gap-2 ${selectedTalentIds.length === 0
+                ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
+                : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
+                }`}
               onClick={handleSendRenewalRequests}
             >
               <RefreshCw
@@ -16179,11 +16168,10 @@ const RoyaltiesPayoutsView = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-              activeTab === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-            }`}
+            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+              }`}
           >
             {tab}
           </button>
@@ -17048,6 +17036,7 @@ const AnalyticsDashboardView = () => {
   const [activeTab, setActiveTab] = useState("Overview");
   const [analytics, setAnalytics] = useState<any>(null);
   const [rosterInsights, setRosterInsights] = useState<any>(null);
+  const [clientsAnalytics, setClientsAnalytics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const subTabs = [
@@ -17110,6 +17099,34 @@ const AnalyticsDashboardView = () => {
     fetchRosterInsights();
   }, [activeTab]);
 
+  useEffect(() => {
+    async function fetchClientsAnalytics() {
+      if (activeTab !== "Clients & Campaigns") return;
+      if (clientsAnalytics) return; // Already loaded
+
+      try {
+        const session = (await supabase?.auth.getSession())?.data?.session;
+        const token = session?.access_token;
+        if (!token) return;
+
+        setLoading(true);
+        const response = await fetch("/api/agency/analytics/clients-campaigns", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!response.ok) throw new Error("Failed to fetch clients analytics");
+        const data = await response.json();
+        setClientsAnalytics(data);
+      } catch (err: any) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchClientsAnalytics();
+  }, [activeTab]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -17162,11 +17179,10 @@ const AnalyticsDashboardView = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-                  activeTab === tab
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                }`}
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+                  }`}
               >
                 {tab}
               </button>
@@ -17201,11 +17217,10 @@ const AnalyticsDashboardView = () => {
                   {analytics.overview.total_earnings_formatted}
                 </h3>
                 <p
-                  className={`text-xs font-bold flex items-center gap-1.5 ${
-                    analytics.overview.earnings_growth_percentage >= 0
-                      ? "text-green-600"
-                      : "text-red-600"
-                  }`}
+                  className={`text-xs font-bold flex items-center gap-1.5 ${analytics.overview.earnings_growth_percentage >= 0
+                    ? "text-green-600"
+                    : "text-red-600"
+                    }`}
                 >
                   <TrendingUp className="w-3.5 h-3.5" />{" "}
                   {analytics.overview.earnings_growth_percentage >= 0
@@ -17894,210 +17909,205 @@ const AnalyticsDashboardView = () => {
           </div>
         )
       ) : activeTab === "Clients & Campaigns" ? (
-        <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-          <div className="grid grid-cols-2 gap-6">
-            {/* Budget Distribution Pie */}
-            <Card className="p-10 bg-white border border-gray-900 shadow-sm">
-              <h3 className="text-xl font-bold text-gray-900 mb-12 tracking-tight">
-                Earnings by Client
-              </h3>
-              <div className="h-[350px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={CLIENTS_PERFORMANCE_DATA}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={80}
-                      outerRadius={120}
-                      paddingAngle={5}
-                      dataKey="budget"
-                      stroke="none"
+        clientsAnalytics ? (
+          <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+            <div className="grid grid-cols-2 gap-6">
+              {/* Budget Distribution Pie */}
+              <Card className="p-10 bg-white border border-gray-900 shadow-sm">
+                <h3 className="text-xl font-bold text-gray-900 mb-12 tracking-tight">
+                  Earnings by Client
+                </h3>
+                <div className="h-[350px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={clientsAnalytics.earnings_by_client}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={80}
+                        outerRadius={120}
+                        paddingAngle={5}
+                        dataKey="budget"
+                        stroke="none"
+                      >
+                        {clientsAnalytics.earnings_by_client.map((entry: any, index: number) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <RechartsTooltip
+                        contentStyle={{
+                          borderRadius: "12px",
+                          border: "none",
+                          fontWeight: "bold",
+                          boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
+                        }}
+                      />
+                      <Legend
+                        verticalAlign="middle"
+                        align="right"
+                        layout="vertical"
+                        iconType="circle"
+                        wrapperStyle={{ paddingLeft: "20px", fontWeight: "bold" }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+
+              {/* Campaign Performance Bar Chart */}
+              <Card className="p-10 bg-white border border-gray-900 shadow-sm">
+                <h3 className="text-xl font-bold text-gray-900 mb-12 tracking-tight">
+                  Geographic Distribution
+                </h3>
+                <div className="h-[350px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={clientsAnalytics.geographic_distribution}
+                      margin={{ left: 20 }}
                     >
-                      {CLIENTS_PERFORMANCE_DATA.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <RechartsTooltip
-                      contentStyle={{
-                        borderRadius: "12px",
-                        border: "none",
-                        fontWeight: "bold",
-                        boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
-                      }}
-                    />
-                    <Legend
-                      verticalAlign="middle"
-                      align="right"
-                      layout="vertical"
-                      iconType="circle"
-                      wrapperStyle={{ paddingLeft: "20px", fontWeight: "bold" }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </Card>
-
-            {/* Campaign Performance Bar Chart */}
-            <Card className="p-10 bg-white border border-gray-900 shadow-sm">
-              <h3 className="text-xl font-bold text-gray-900 mb-12 tracking-tight">
-                Geographic Distribution
-              </h3>
-              <div className="h-[350px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={[
-                      { name: "North America", value: 42, color: "#f59e0b" }, // Amber
-                      { name: "Europe", value: 18, color: "#6366f1" }, // Indigo
-                      { name: "Asia-Pacific", value: 8, color: "#8b5cf6" }, // Violet
-                      { name: "Global", value: 5, color: "#ec4899" }, // Rose
-                    ]}
-                    margin={{ left: 20 }}
-                  >
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      horizontal={false}
-                      stroke="#f1f5f9"
-                    />
-                    <XAxis
-                      dataKey="name"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{
-                        fontSize: 11,
-                        fontWeight: "bold",
-                        fill: "#64748b",
-                      }}
-                    />
-                    <YAxis
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{
-                        fontSize: 13,
-                        fontWeight: "bold",
-                        fill: "#64748b",
-                      }}
-                    />
-                    <RechartsTooltip
-                      contentStyle={{
-                        borderRadius: "12px",
-                        border: "none",
-                        fontWeight: "bold",
-                        boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
-                      }}
-                      cursor={{ fill: "#f8fafc" }}
-                    />
-                    <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={40}>
-                      {[
-                        { name: "North America", value: 42, color: "#f59e0b" },
-                        { name: "Europe", value: 18, color: "#6366f1" },
-                        { name: "Asia-Pacific", value: 8, color: "#8b5cf6" },
-                        { name: "Global", value: 5, color: "#ec4899" },
-                      ].map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </Card>
-          </div>
-
-          {/* Client Performance List Table */}
-          <Card className="bg-white border border-gray-900 shadow-sm overflow-hidden">
-            <div className="p-8 border-b border-gray-100 flex justify-between items-center">
-              <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                Top Clients Performance
-              </h3>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        horizontal={false}
+                        stroke="#f1f5f9"
+                      />
+                      <XAxis
+                        dataKey="name"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{
+                          fontSize: 11,
+                          fontWeight: "bold",
+                          fill: "#64748b",
+                        }}
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{
+                          fontSize: 13,
+                          fontWeight: "bold",
+                          fill: "#64748b",
+                        }}
+                      />
+                      <RechartsTooltip
+                        contentStyle={{
+                          borderRadius: "12px",
+                          border: "none",
+                          fontWeight: "bold",
+                          boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
+                        }}
+                        cursor={{ fill: "#f8fafc" }}
+                      />
+                      <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={40}>
+                        {clientsAnalytics.geographic_distribution.map((entry: any, index: number) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="bg-gray-50/80">
-                    <th className="px-8 py-5 text-[11px] font-bold text-gray-500 tracking-widest">
-                      Client
-                    </th>
-                    <th className="px-8 py-5 text-[11px] font-bold text-gray-500 tracking-widest text-right">
-                      Action
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {CLIENTS_PERFORMANCE_DATA.map((client) => (
-                    <tr
-                      key={client.name}
-                      className="hover:bg-gray-50/50 transition-colors"
-                    >
-                      <td className="px-8 py-5">
-                        <div className="flex flex-col">
-                          <span className="text-sm font-bold text-gray-900">
-                            {client.name}
-                          </span>
-                          <span className="text-[10px] text-gray-500 font-bold">
-                            {Math.floor(Math.random() * 5) + 3} campaigns
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-8 py-5 text-right">
-                        <div className="flex flex-col items-end">
-                          <span className="text-sm font-bold text-green-600">
-                            ${client.budget.toLocaleString()}
-                          </span>
-                          <span className="text-[10px] text-gray-400 font-bold">
-                            {((client.budget / 45000) * 100).toFixed(1)}% of
-                            total
-                          </span>
-                        </div>
-                      </td>
+
+            {/* Client Performance List Table */}
+            <Card className="bg-white border border-gray-900 shadow-sm overflow-hidden">
+              <div className="p-8 border-b border-gray-100 flex justify-between items-center">
+                <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+                  Top Clients Performance
+                </h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-gray-50/80">
+                      <th className="px-8 py-5 text-[11px] font-bold text-gray-500 tracking-widest">
+                        Client
+                      </th>
+                      <th className="px-8 py-5 text-[11px] font-bold text-gray-500 tracking-widest text-right">
+                        Action
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-
-          {/* Summary Cards AT BOTTOM */}
-          <div className="grid grid-cols-3 gap-6">
-            <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
-              <p className="text-sm font-bold text-gray-500 mb-2">
-                Repeat Client Rate
-              </p>
-              <h3 className="text-4xl font-bold text-gray-900 tracking-tighter">
-                78%
-              </h3>
-              <div className="w-full bg-gray-100 h-1.5 rounded-full mt-4 overflow-hidden">
-                <div
-                  className="h-full bg-gray-900 rounded-full"
-                  style={{ width: "78%" }}
-                />
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {clientsAnalytics.top_clients_performance.map((client: any) => (
+                      <tr
+                        key={client.name}
+                        className="hover:bg-gray-50/50 transition-colors"
+                      >
+                        <td className="px-8 py-5">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold text-gray-900">
+                              {client.name}
+                            </span>
+                            <span className="text-[10px] text-gray-500 font-bold">
+                              {client.campaigns} campaigns
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-8 py-5 text-right">
+                          <div className="flex flex-col items-end">
+                            <span className="text-sm font-bold text-green-600">
+                              ${client.budget.toLocaleString()}
+                            </span>
+                            <span className="text-[10px] text-gray-400 font-bold">
+                              {client.percentage.toFixed(1)}% of total
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </Card>
 
-            <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
-              <p className="text-sm font-bold text-gray-500 mb-2">
-                Avg Campaign Duration
-              </p>
-              <h3 className="text-4xl font-bold text-gray-900 tracking-tighter">
-                18 days
-              </h3>
-              <p className="text-xs text-gray-500 mt-2 font-medium">
-                From booking to completion
-              </p>
-            </Card>
+            {/* Summary Cards AT BOTTOM */}
+            <div className="grid grid-cols-3 gap-6">
+              <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
+                <p className="text-sm font-bold text-gray-500 mb-2">
+                  Repeat Client Rate
+                </p>
+                <h3 className="text-4xl font-bold text-gray-900 tracking-tighter">
+                  {clientsAnalytics.repeat_client_rate.toFixed(0)}%
+                </h3>
+                <div className="w-full bg-gray-100 h-1.5 rounded-full mt-4 overflow-hidden">
+                  <div
+                    className="h-full bg-gray-900 rounded-full"
+                    style={{ width: `${clientsAnalytics.repeat_client_rate}%` }}
+                  />
+                </div>
+              </Card>
 
-            <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
-              <p className="text-sm font-bold text-gray-500 mb-2">
-                Client Acquisition
-              </p>
-              <h3 className="text-4xl font-bold text-green-600 tracking-tighter">
-                4
-              </h3>
-              <p className="text-xs text-green-600/70 mt-2 font-bold">
-                New clients this quarter
-              </p>
-            </Card>
+              <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
+                <p className="text-sm font-bold text-gray-500 mb-2">
+                  Avg Campaign Duration
+                </p>
+                <h3 className="text-4xl font-bold text-gray-900 tracking-tighter">
+                  {clientsAnalytics.avg_campaign_duration} days
+                </h3>
+                <p className="text-xs text-gray-500 mt-2 font-medium">
+                  From booking to completion
+                </p>
+              </Card>
+
+              <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
+                <p className="text-sm font-bold text-gray-500 mb-2">
+                  Client Acquisition
+                </p>
+                <h3 className="text-4xl font-bold text-green-600 tracking-tighter">
+                  {clientsAnalytics.client_acquisition}
+                </h3>
+                <p className="text-xs text-green-600/70 mt-2 font-bold">
+                  New clients this quarter
+                </p>
+              </Card>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center justify-center h-96">
+            <div className="text-gray-500">Loading clients & campaigns analytics...</div>
+          </div>
+        )
       ) : activeTab === "Compliance" ? (
         <div className="space-y-6 animate-in fade-in duration-500">
           {/* Top Row: 3 Stats Cards */}
@@ -18463,8 +18473,8 @@ export default function AgencyDashboard() {
   const seatsLimit = useMemo(() => {
     return Number(
       agencyProfileQuery.data?.seats_limit ||
-        (profile as any)?.seats_limit ||
-        0,
+      (profile as any)?.seats_limit ||
+      0,
     );
   }, [agencyProfileQuery.data, profile]);
 
@@ -18998,96 +19008,96 @@ export default function AgencyDashboard() {
   const sidebarItems: SidebarItem[] =
     agencyMode === "AI"
       ? [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
-          },
-          {
-            id: "licensing",
-            label: "Licensing",
-            icon: FileText,
-            subItems: [
-              "Licensing Requests",
-              "License Submissions",
-              "Active Licenses",
-              "License Templates",
-            ],
-          },
-          {
-            id: "protection",
-            label: "Protection & Usage",
-            icon: Shield,
-            subItems: ["Protect & Usage", "Compliance Hub"],
-            badges: { "Compliance Hub": "NEW" },
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-          },
-          { id: "packages", label: "Talent Packages", icon: Package },
-          {
-            id: "settings",
-            label: "Settings",
-            icon: Settings,
-            subItems: ["General Settings", "File Storage"],
-          },
-        ]
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        {
+          id: "licensing",
+          label: "Licensing",
+          icon: FileText,
+          subItems: [
+            "Licensing Requests",
+            "License Submissions",
+            "Active Licenses",
+            "License Templates",
+          ],
+        },
+        {
+          id: "protection",
+          label: "Protection & Usage",
+          icon: Shield,
+          subItems: ["Protect & Usage", "Compliance Hub"],
+          badges: { "Compliance Hub": "NEW" },
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+        },
+        { id: "packages", label: "Talent Packages", icon: Package },
+        {
+          id: "settings",
+          label: "Settings",
+          icon: Settings,
+          subItems: ["General Settings", "File Storage"],
+        },
+      ]
       : [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
-          },
-          { id: "scouting", label: "Scouting", icon: Target },
-          { id: "client-crm", label: "Client CRM", icon: Building2 },
-          {
-            id: "bookings",
-            label: "Bookings",
-            icon: Calendar,
-            subItems: [
-              "Calendar & Schedule",
-              "Booking Requests",
-              "Client Database",
-              "Talent Availability",
-              "Notifications",
-              "Management & Analytics",
-            ],
-          },
-          {
-            id: "accounting",
-            label: "Accounting & Invoicing",
-            icon: CreditCard,
-            subItems: [
-              "Invoice Generation",
-              "Invoice Management",
-              "Payment Tracking",
-              "Talent Statements",
-              "Financial Reports",
-              "Expense Tracking",
-              "Connect Bank",
-            ],
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-          },
-          { id: "packages", label: "Talent Packages", icon: Package },
-          {
-            id: "settings",
-            label: "Settings",
-            icon: Settings,
-            subItems: ["General Settings", "File Storage"],
-          },
-        ];
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        { id: "scouting", label: "Scouting", icon: Target },
+        { id: "client-crm", label: "Client CRM", icon: Building2 },
+        {
+          id: "bookings",
+          label: "Bookings",
+          icon: Calendar,
+          subItems: [
+            "Calendar & Schedule",
+            "Booking Requests",
+            "Client Database",
+            "Talent Availability",
+            "Notifications",
+            "Management & Analytics",
+          ],
+        },
+        {
+          id: "accounting",
+          label: "Accounting & Invoicing",
+          icon: CreditCard,
+          subItems: [
+            "Invoice Generation",
+            "Invoice Management",
+            "Payment Tracking",
+            "Talent Statements",
+            "Financial Reports",
+            "Expense Tracking",
+            "Connect Bank",
+          ],
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+        },
+        { id: "packages", label: "Talent Packages", icon: Package },
+        {
+          id: "settings",
+          label: "Settings",
+          icon: Settings,
+          subItems: ["General Settings", "File Storage"],
+        },
+      ];
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
@@ -19160,16 +19170,14 @@ export default function AgencyDashboard() {
                     setSidebarOpen(false);
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === item.id && !item.subItems
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
+                  ? "bg-indigo-50 text-indigo-700"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${
-                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                  }`}
+                  className={`w-5 h-5 ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"
+                    }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.subItems && (
@@ -19190,11 +19198,10 @@ export default function AgencyDashboard() {
                         setActiveSubTab(subItem);
                         setSidebarOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                        activeTab === item.id && activeSubTab === subItem
-                          ? "text-indigo-700 bg-indigo-50 font-bold"
-                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                      }`}
+                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
+                        ? "text-indigo-700 bg-indigo-50 font-bold"
+                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                        }`}
                     >
                       <span className="truncate">{subItem}</span>
                       {item.badges && item.badges[subItem] && (

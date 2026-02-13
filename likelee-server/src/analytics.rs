@@ -1,10 +1,10 @@
 use crate::auth::AuthUser;
 use crate::config::AppState;
 use axum::{extract::State, http::StatusCode, Json};
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use serde::Serialize;
 use serde_json::json;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Serialize)]
 pub struct AnalyticsDashboard {
@@ -450,6 +450,217 @@ pub async fn get_analytics_dashboard(
             missing,
             expiring,
         },
+    }))
+}
+
+#[derive(Debug, Serialize)]
+pub struct ClientsCampaignsResponse {
+    pub earnings_by_client: Vec<ClientEarning>,
+    pub geographic_distribution: Vec<GeoMetric>,
+    pub top_clients_performance: Vec<ClientPerformance>,
+    pub repeat_client_rate: f64,
+    pub avg_campaign_duration: i64,
+    pub client_acquisition: i64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ClientEarning {
+    pub name: String,
+    pub budget: i64,
+    pub color: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct GeoMetric {
+    pub name: String,
+    pub value: i64,
+    pub color: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ClientPerformance {
+    pub name: String,
+    pub campaigns: i64,
+    pub budget: i64,
+    pub percentage: f64,
+}
+
+/// GET /api/agency/analytics/clients-campaigns
+pub async fn get_clients_campaigns_analytics(
+    State(state): State<AppState>,
+    auth_user: AuthUser,
+) -> Result<Json<ClientsCampaignsResponse>, (StatusCode, String)> {
+    let agency_id = &auth_user.id;
+    let colors = vec!["#6366f1", "#8b5cf6", "#ec4899", "#f59e0b"];
+
+    // 1. Earnings by Client & Top Clients Performance
+    // We need payments summed by brand, and campaigns counted by brand.
+    
+    // Fetch all successful payments for this agency to aggregate by brand
+    let payments_resp = state.pg.from("payments")
+        .select("gross_cents, brand_id, campaign_id")
+        .eq("agency_id", agency_id)
+        .eq("status", "succeeded")
+        .execute().await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let payments_data: serde_json::Value = serde_json::from_str(&payments_resp.text().await.unwrap_or_else(|_| "[]".to_string())).unwrap_or(json!([]));
+    let mut brand_earnings: HashMap<String, i64> = HashMap::new();
+    let mut brand_campaigns_interactions: HashMap<String, HashSet<String>> = HashMap::new();
+
+    if let Some(payments) = payments_data.as_array() {
+        for p in payments {
+            if let Some(brand_id) = p.get("brand_id").and_then(|v| v.as_str()) {
+                let cents = p.get("gross_cents").and_then(|v| v.as_i64()).unwrap_or(0);
+                *brand_earnings.entry(brand_id.to_string()).or_insert(0) += cents;
+                
+                if let Some(cid) = p.get("campaign_id").and_then(|v| v.as_str()) {
+                    brand_campaigns_interactions.entry(brand_id.to_string()).or_insert_with(HashSet::new).insert(cid.to_string());
+                }
+            }
+        }
+    }
+
+    // Fetch all campaigns to get regions and count per brand
+    let campaigns_resp = state.pg.from("campaigns")
+        .select("id, brand_id, region")
+        .eq("agency_id", agency_id)
+        .execute().await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    
+    let campaigns_data: serde_json::Value = serde_json::from_str(&campaigns_resp.text().await.unwrap_or_else(|_| "[]".to_string())).unwrap_or(json!([]));
+    let mut region_earnings: HashMap<String, i64> = HashMap::new();
+    let mut brand_campaign_count: HashMap<String, i64> = HashMap::new();
+    let mut total_revenue = 0i64;
+
+    if let Some(campaigns) = campaigns_data.as_array() {
+        for c in campaigns {
+            if let Some(bid) = c.get("brand_id").and_then(|v| v.as_str()) {
+                *brand_campaign_count.entry(bid.to_string()).or_insert(0) += 1;
+            }
+            
+            if let Some(rid) = c.get("id").and_then(|v| v.as_str()) {
+                let region = c.get("region").and_then(|v| v.as_str()).unwrap_or("Unknown");
+                // Find earnings for this campaign from payments_data
+                let campaign_rev: i64 = payments_data.as_array().map(|arr| {
+                    arr.iter()
+                       .filter(|p| p.get("campaign_id").and_then(|v| v.as_str()) == Some(rid))
+                       .filter_map(|p| p.get("gross_cents").and_then(|v| v.as_i64()))
+                       .sum()
+                }).unwrap_or(0);
+                
+                *region_earnings.entry(region.to_string()).or_insert(0) += campaign_rev;
+                total_revenue += campaign_rev;
+            }
+        }
+    }
+
+    // Get Brand Names
+    let brands_resp = state.pg.from("brands")
+        .select("id, company_name")
+        .execute().await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let brands_list: serde_json::Value = serde_json::from_str(&brands_resp.text().await.unwrap_or_else(|_| "[]".to_string())).unwrap_or(json!([]));
+    let mut brand_names: HashMap<String, String> = HashMap::new();
+    if let Some(arr) = brands_list.as_array() {
+        for b in arr {
+            if let (Some(id), Some(name)) = (b.get("id").and_then(|v| v.as_str()), b.get("company_name").and_then(|v| v.as_str())) {
+                brand_names.insert(id.to_string(), name.to_string());
+            }
+        }
+    }
+
+    // Format Earnings by Client (Top 4)
+    let mut earnings_vec: Vec<ClientEarning> = brand_earnings.iter()
+        .map(|(id, cents)| ClientEarning {
+            name: brand_names.get(id).cloned().unwrap_or_else(|| "Unknown Brand".to_string()),
+            budget: cents / 100,
+            color: "".to_string(), // Will assign below
+        })
+        .collect();
+    earnings_vec.sort_by(|a, b| b.budget.cmp(&a.budget));
+    earnings_vec.truncate(4);
+    for (i, item) in earnings_vec.iter_mut().enumerate() {
+        item.color = colors[i % colors.len()].to_string();
+    }
+
+    // Format Geo Distribution (Top 4)
+    let mut geo_vec: Vec<GeoMetric> = region_earnings.iter()
+        .map(|(name, cents)| GeoMetric {
+            name: name.clone(),
+            value: cents / 100,
+            color: "".to_string(),
+        })
+        .collect();
+    geo_vec.sort_by(|a, b| b.value.cmp(&a.value));
+    geo_vec.truncate(4);
+    for (i, item) in geo_vec.iter_mut().enumerate() {
+        item.color = colors[i % colors.len()].to_string();
+    }
+
+    // Format Top Clients Performance (Top 4 by count)
+    let mut perf_vec: Vec<ClientPerformance> = brand_campaign_count.iter()
+        .map(|(id, count)| {
+            let cents = brand_earnings.get(id).cloned().unwrap_or(0);
+            ClientPerformance {
+                name: brand_names.get(id).cloned().unwrap_or_else(|| "Unknown Brand".to_string()),
+                campaigns: *count,
+                budget: cents / 100,
+                percentage: if total_revenue > 0 { (cents as f64 / total_revenue as f64) * 100.0 } else { 0.0 },
+            }
+        })
+        .collect();
+    perf_vec.sort_by(|a, b| b.campaigns.cmp(&a.campaigns).then_with(|| b.budget.cmp(&a.budget)));
+    perf_vec.truncate(4);
+
+    // Repeat Client Rate
+    // percentage = (brands with >1 unique campaign) / (total unique brands in campaigns)
+    let total_brands = brand_campaign_count.len() as f64;
+    let repeat_brands = brand_campaign_count.values().filter(|&&c| c > 1).count() as f64;
+    let repeat_client_rate = if total_brands > 0.0 { (repeat_brands / total_brands) * 100.0 } else { 0.0 };
+
+    // Avg Campaign Duration
+    // time difference between "Casting" phase (created_at) and "Completed" status
+    let bookings_resp = state.pg.from("bookings")
+        .select("created_at, updated_at")
+        .eq("status", "completed")
+        .execute().await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    
+    let bookings_data: serde_json::Value = serde_json::from_str(&bookings_resp.text().await.unwrap_or_else(|_| "[]".to_string())).unwrap_or(json!([]));
+    let mut total_days = 0i64;
+    let mut completed_count = 0i64;
+
+    if let Some(arr) = bookings_data.as_array() {
+        for b in arr {
+            if let (Some(created), Some(updated)) = (b.get("created_at").and_then(|v| v.as_str()), b.get("updated_at").and_then(|v| v.as_str())) {
+                if let (Ok(c_dt), Ok(u_dt)) = (DateTime::parse_from_rfc3339(created), DateTime::parse_from_rfc3339(updated)) {
+                    let duration = u_dt.signed_duration_since(c_dt);
+                    total_days += duration.num_days();
+                    completed_count += 1;
+                }
+            }
+        }
+    }
+    let avg_campaign_duration = if completed_count > 0 { total_days / completed_count } else { 0 };
+
+    // Client Acquisition (Brands first seen in the last 90 days as a proxy for "this quarter")
+    let ninety_days_ago = (Utc::now() - chrono::Duration::days(90)).to_rfc3339();
+    let new_brands_resp = state.pg.from("brands")
+        .select("id")
+        .gte("created_at", &ninety_days_ago)
+        .execute().await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let new_brands_data: serde_json::Value = serde_json::from_str(&new_brands_resp.text().await.unwrap_or_else(|_| "[]".to_string())).unwrap_or(json!([]));
+    let client_acquisition = new_brands_data.as_array().map(|a| a.len() as i64).unwrap_or(0);
+
+    Ok(Json(ClientsCampaignsResponse {
+        earnings_by_client: earnings_vec,
+        geographic_distribution: geo_vec,
+        top_clients_performance: perf_vec,
+        repeat_client_rate,
+        avg_campaign_duration,
+        client_acquisition,
     }))
 }
 
