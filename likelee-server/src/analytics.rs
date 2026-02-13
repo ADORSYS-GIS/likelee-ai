@@ -224,8 +224,13 @@ pub async fn get_analytics_dashboard(
             paid_at >= thirty_days_ago.as_str()
         })
         .filter_map(|p| {
-             p.get("campaign_id").and_then(|v| v.as_str()) // Prioritize string ID
-             .or_else(|| p.get("campaign_id").and_then(|v| v.as_i64()).map(|i| i.to_string().leak() as &str)) // Handle int ID if any
+            p.get("campaign_id")
+                .and_then(|v| v.as_str()) // Prioritize string ID
+                .or_else(|| {
+                    p.get("campaign_id")
+                        .and_then(|v| v.as_i64())
+                        .map(|i| i.to_string().leak() as &str)
+                }) // Handle int ID if any
         })
         .collect::<HashSet<_>>() // Unique IDs
         .len() as i64;
