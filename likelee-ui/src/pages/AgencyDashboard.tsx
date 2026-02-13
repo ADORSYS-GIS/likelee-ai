@@ -16104,6 +16104,25 @@ const RoyaltiesPayoutsView = () => {
       ? TALENT_DATA
       : TALENT_DATA.filter((t) => t.tier === selectedTier);
 
+  // Fetch Royalties & Payouts Data
+  const { data: royaltiesData } = useQuery({
+    queryKey: ["agency-royalties-payouts"],
+    queryFn: async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error("No session");
+
+      const res = await fetch("/api/agency/analytics/royalties", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch royalties");
+      return res.json();
+    },
+    enabled: activeTab === "Royalties & Payouts",
+  });
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex justify-between items-center bg-white p-6 border-b border-gray-100 rounded-xl">
@@ -16129,7 +16148,9 @@ const RoyaltiesPayoutsView = () => {
               Accrued This Month
             </p>
           </div>
-          <h3 className="text-3xl font-bold text-gray-900 mb-1">$8,450</h3>
+          <h3 className="text-3xl font-bold text-gray-900 mb-1">
+            {royaltiesData?.accrued_this_month_formatted || "$0"}
+          </h3>
           <p className="text-xs font-bold text-green-600">Ready for payout</p>
         </Card>
 
@@ -16140,7 +16161,9 @@ const RoyaltiesPayoutsView = () => {
             </div>
             <p className="text-sm font-bold text-gray-500">Pending Approval</p>
           </div>
-          <h3 className="text-3xl font-bold text-gray-900 mb-1">$3,200</h3>
+          <h3 className="text-3xl font-bold text-gray-900 mb-1">
+            {royaltiesData?.pending_approval_formatted || "$0"}
+          </h3>
           <p className="text-xs font-bold text-gray-400">
             Awaiting brand confirmation
           </p>
@@ -16153,7 +16176,9 @@ const RoyaltiesPayoutsView = () => {
             </div>
             <p className="text-sm font-bold text-gray-500">Paid YTD</p>
           </div>
-          <h3 className="text-3xl font-bold text-gray-900 mb-1">$124,800</h3>
+          <h3 className="text-3xl font-bold text-gray-900 mb-1">
+            {royaltiesData?.paid_ytd_formatted || "$0"}
+          </h3>
           <p className="text-xs font-bold text-gray-400">To Talent This year</p>
         </Card>
 
@@ -16166,7 +16191,9 @@ const RoyaltiesPayoutsView = () => {
               Agency Commission YTD
             </p>
           </div>
-          <h3 className="text-3xl font-bold text-indigo-900 mb-1">$18,720</h3>
+          <h3 className="text-3xl font-bold text-indigo-900 mb-1">
+            {royaltiesData?.agency_commission_ytd_formatted || "$0"}
+          </h3>
           <p className="text-xs font-bold text-indigo-500">
             15% avg commission rate
           </p>
@@ -18358,34 +18385,41 @@ const AnalyticsDashboardView = () => {
                   </div>
 
                   {/* Right Column: Likeness Protection */}
-                  <div className="space-y-10">
-                    <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest font-sans">
-                      Likeness Protection
-                    </p>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-6 bg-green-50/50 border border-green-100 rounded-xl">
-                        <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">
-                          Authorized Uses (30d)
-                        </span>
-                        <span className="text-3xl font-black text-green-600">
-                          73
-                        </span>
+                  <div className="space-y-10 relative">
+                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 backdrop-blur-[2px] rounded-xl">
+                      <div className="bg-black/80 text-white px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg">
+                        Coming Soon
                       </div>
-                      <div className="flex items-center justify-between p-6 bg-red-50/50 border border-red-100 rounded-xl">
-                        <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">
-                          Unauthorized Alerts
-                        </span>
-                        <span className="text-3xl font-black text-red-600">
-                          0
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between p-6 bg-blue-50/50 border border-blue-100 rounded-xl">
-                        <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">
-                          Disputes Resolved
-                        </span>
-                        <span className="text-3xl font-black text-blue-600">
-                          2
-                        </span>
+                    </div>
+                    <div className="opacity-50 pointer-events-none select-none filter blur-[2px]">
+                      <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest font-sans">
+                        Likeness Protection
+                      </p>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between p-6 bg-green-50/50 border border-green-100 rounded-xl">
+                          <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">
+                            Authorized Uses (30d)
+                          </span>
+                          <span className="text-3xl font-black text-green-600">
+                            73
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-6 bg-red-50/50 border border-red-100 rounded-xl">
+                          <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">
+                            Unauthorized Alerts
+                          </span>
+                          <span className="text-3xl font-black text-red-600">
+                            0
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-6 bg-blue-50/50 border border-blue-100 rounded-xl">
+                          <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">
+                            Disputes Resolved
+                          </span>
+                          <span className="text-3xl font-black text-blue-600">
+                            2
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
