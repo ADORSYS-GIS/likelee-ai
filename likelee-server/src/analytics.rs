@@ -73,62 +73,87 @@ pub async fn get_analytics_dashboard(
     let now = Utc::now();
     let thirty_days_ago = (now - chrono::Duration::days(30)).to_rfc3339();
     let sixty_days_ago = (now - chrono::Duration::days(60)).to_rfc3339();
+    let five_months_ago = (now - chrono::Duration::days(150)).to_rfc3339(); // Approx 5 months
     let today = now.format("%Y-%m-%d").to_string();
     let thirty_days_hence = (now + chrono::Duration::days(30))
         .format("%Y-%m-%d")
         .to_string();
 
-    // 1. OVERVIEW METRICS
-
-    // Total Earnings (30d)
-    let earnings_resp = state
+    // 1. BULK FETCH PAYMENTS (Last 5 months)
+    let payments_resp = state
         .pg
         .from("payments")
-        .select("gross_cents, campaign_id")
+        .select("gross_cents, paid_at, campaign_id")
         .eq("agency_id", agency_id)
         .eq("status", "succeeded")
-        .gte("paid_at", &thirty_days_ago)
+        .gte("paid_at", &five_months_ago)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let earnings_text = earnings_resp
+    let payments_text = payments_resp
         .text()
         .await
         .unwrap_or_else(|_| "[]".to_string());
-    let earnings_data: serde_json::Value =
-        serde_json::from_str(&earnings_text).unwrap_or(json!([]));
-    let total_earnings_cents: i64 = earnings_data
-        .as_array()
-        .unwrap_or(&vec![])
+    let payments_data: Vec<serde_json::Value> =
+        serde_json::from_str(&payments_text).unwrap_or(vec![]);
+
+    // 2. BULK FETCH CAMPAIGNS (All relevant)
+    // We fetch all agency campaigns to correctly determine status (Active, Pending, Completed)
+    // and historical trends.
+    let campaigns_resp = state
+        .pg
+        .from("campaigns")
+        .select("id, status, created_at, end_at, brand_vertical")
+        .eq("agency_id", agency_id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let campaigns_text = campaigns_resp
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
+    let campaigns_data: Vec<serde_json::Value> =
+        serde_json::from_str(&campaigns_text).unwrap_or(vec![]);
+
+    // 3. BULK FETCH TALENTS
+    let talents_resp = state
+        .pg
+        .from("agency_users")
+        .select("id, status")
+        .eq("agency_id", agency_id)
+        .eq("role", "talent")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let talents_text = talents_resp
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
+    let talents_data: Vec<serde_json::Value> =
+        serde_json::from_str(&talents_text).unwrap_or(vec![]);
+
+    // --- AGGREGATION IN MEMORY ---
+
+    // A. OVERVIEW & GROWTH (Payments in last 30d vs prev 30d)
+    let total_earnings_cents: i64 = payments_data
         .iter()
-        .filter_map(|p| p.get("gross_cents")?.as_i64())
+        .filter(|p| {
+            let paid_at = p.get("paid_at").and_then(|v| v.as_str()).unwrap_or("");
+            paid_at >= thirty_days_ago.as_str()
+        })
+        .filter_map(|p| p.get("gross_cents").and_then(|v| v.as_i64()))
         .sum();
 
-    // Previous 30 days earnings for growth calculation
-    let prev_earnings_resp = state
-        .pg
-        .from("payments")
-        .select("gross_cents")
-        .eq("agency_id", agency_id)
-        .eq("status", "succeeded")
-        .gte("paid_at", &sixty_days_ago)
-        .lt("paid_at", &thirty_days_ago)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    let prev_earnings_text = prev_earnings_resp
-        .text()
-        .await
-        .unwrap_or_else(|_| "[]".to_string());
-    let prev_earnings_data: serde_json::Value =
-        serde_json::from_str(&prev_earnings_text).unwrap_or(json!([]));
-    let prev_earnings_cents: i64 = prev_earnings_data
-        .as_array()
-        .unwrap_or(&vec![])
+    let prev_earnings_cents: i64 = payments_data
         .iter()
-        .filter_map(|p| p.get("gross_cents")?.as_i64())
+        .filter(|p| {
+            let paid_at = p.get("paid_at").and_then(|v| v.as_str()).unwrap_or("");
+            paid_at >= sixty_days_ago.as_str() && paid_at < thirty_days_ago.as_str()
+        })
+        .filter_map(|p| p.get("gross_cents").and_then(|v| v.as_i64()))
         .sum();
 
     let earnings_growth_percentage = if prev_earnings_cents > 0 {
@@ -139,129 +164,71 @@ pub async fn get_analytics_dashboard(
         0.0
     };
 
-    // Active Campaigns
-    let active_campaigns_resp = state
-        .pg
-        .from("campaigns")
-        .select("id")
-        .eq("agency_id", agency_id)
-        .eq("status", "active")
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    let active_campaigns_text = active_campaigns_resp
-        .text()
-        .await
-        .unwrap_or_else(|_| "[]".to_string());
-    let active_campaigns_data: serde_json::Value =
-        serde_json::from_str(&active_campaigns_text).unwrap_or(json!([]));
-    let active_campaigns = active_campaigns_data
-        .as_array()
-        .map(|a| a.len() as i64)
-        .unwrap_or(0);
-
-    // Avg Value
-    let avg_value_cents = if active_campaigns > 0 {
-        total_earnings_cents / active_campaigns
-    } else {
-        0
-    };
-
-    // Top Scope (scope with highest count in last 30 days)
-    let scope_resp = state
-        .pg
-        .from("campaigns")
-        .select("brand_vertical")
-        .eq("agency_id", agency_id)
-        .gte("created_at", &thirty_days_ago)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    let scope_text = scope_resp.text().await.unwrap_or_else(|_| "[]".to_string());
-    let scope_data: serde_json::Value = serde_json::from_str(&scope_text).unwrap_or(json!([]));
-
+    // B. CAMPAIGN METRICS
+    let mut active_campaigns = 0i64;
+    let mut in_progress = 0i64;
+    let mut ready_to_launch = 0i64;
+    let mut completed = 0i64;
     let mut scope_counts: HashMap<String, i64> = HashMap::new();
-    for campaign in scope_data.as_array().unwrap_or(&vec![]) {
-        if let Some(scope) = campaign.get("brand_vertical").and_then(|s| s.as_str()) {
-            if !scope.is_empty() {
-                *scope_counts.entry(scope.to_string()).or_insert(0) += 1;
+
+    for c in campaigns_data.iter() {
+        let status = c.get("status").and_then(|v| v.as_str()).unwrap_or("");
+        let end_at = c.get("end_at").and_then(|v| v.as_str()).unwrap_or("");
+        let created_at = c.get("created_at").and_then(|v| v.as_str()).unwrap_or("");
+
+        // Active / In Progress
+        if status == "active" {
+            active_campaigns += 1;
+            in_progress += 1;
+        }
+
+        // Pending / Ready to Launch
+        if status == "Pending" {
+            ready_to_launch += 1;
+        }
+
+        // Completed
+        if !end_at.is_empty() && end_at < today.as_str() {
+            completed += 1;
+        }
+
+        // Top Scope (created in last 30d)
+        if created_at >= thirty_days_ago.as_str() {
+            if let Some(scope) = c.get("brand_vertical").and_then(|s| s.as_str()) {
+                if !scope.is_empty() {
+                    *scope_counts.entry(scope.to_string()).or_insert(0) += 1;
+                }
             }
         }
     }
 
+    // Top Scope Result
     let top_scope = scope_counts
         .into_iter()
         .max_by_key(|(_, count)| *count)
         .map(|(scope, _)| scope)
         .unwrap_or_else(|| "Social Media".to_string());
 
-    // 2. CAMPAIGN STATUS BREAKDOWN
+    // C. AVG VALUE
+    let avg_value_cents = if active_campaigns > 0 {
+        total_earnings_cents / active_campaigns
+    } else {
+        0
+    };
 
-    // In Progress (active)
-    let in_progress = active_campaigns;
-
-    // Ready to Launch (pending)
-    let pending_resp = state
-        .pg
-        .from("campaigns")
-        .select("id")
-        .eq("agency_id", agency_id)
-        .eq("status", "Pending")
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    let pending_text = pending_resp
-        .text()
-        .await
-        .unwrap_or_else(|_| "[]".to_string());
-    let pending_data: serde_json::Value = serde_json::from_str(&pending_text).unwrap_or(json!([]));
-    let ready_to_launch = pending_data.as_array().map(|a| a.len() as i64).unwrap_or(0);
-
-    // Completed (end_at < today)
-    let completed_resp = state
-        .pg
-        .from("campaigns")
-        .select("id")
-        .eq("agency_id", agency_id)
-        .lt("end_at", &today)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    let completed_text = completed_resp
-        .text()
-        .await
-        .unwrap_or_else(|_| "[]".to_string());
-    let completed_data: serde_json::Value =
-        serde_json::from_str(&completed_text).unwrap_or(json!([]));
-    let completed = completed_data
-        .as_array()
-        .map(|a| a.len() as i64)
-        .unwrap_or(0);
-
-    // 3. AI USAGE METRICS
-
-    // Total AI usages (mock for now - needs ai_usage tracking implementation)
-    let total_usages_30d = 73;
-
-    // Avg Campaign Value: Total earnings / Total unique campaigns paid in last 30d
-    let campaign_count_30d = earnings_data
-        .as_array()
-        .map(|arr| {
-            let mut ids = std::collections::HashSet::new();
-            for p in arr {
-                if let Some(cid) = p.get("campaign_id").and_then(|v| v.as_str()) {
-                    ids.insert(cid.to_string());
-                } else if let Some(cid) = p.get("campaign_id").and_then(|v| v.as_i64()) {
-                    ids.insert(cid.to_string());
-                }
-            }
-            ids.len() as i64
+    // D. AVG CAMPAIGN VALUE (Earnings / Unique campaigns paid in last 30d)
+    let campaign_count_30d = payments_data
+        .iter()
+        .filter(|p| {
+            let paid_at = p.get("paid_at").and_then(|v| v.as_str()).unwrap_or("");
+            paid_at >= thirty_days_ago.as_str()
         })
-        .unwrap_or(0);
+        .filter_map(|p| {
+             p.get("campaign_id").and_then(|v| v.as_str()) // Prioritize string ID
+             .or_else(|| p.get("campaign_id").and_then(|v| v.as_i64()).map(|i| i.to_string().leak() as &str)) // Handle int ID if any
+        })
+        .collect::<HashSet<_>>() // Unique IDs
+        .len() as i64;
 
     let avg_campaign_value_cents = if campaign_count_30d > 0 {
         total_earnings_cents / campaign_count_30d
@@ -269,14 +236,7 @@ pub async fn get_analytics_dashboard(
         0
     };
 
-    // AI Usage by Type (mock for now - needs implementation)
-    let usage_by_type = AIUsageByType {
-        image: 45,
-        video: 38,
-        voice: 17,
-    };
-
-    // 4. MONTHLY TRENDS (last 5 months)
+    // E. MONTHLY TRENDS
     let mut monthly_trends = Vec::new();
     for i in (0..5).rev() {
         let month_start_date = now - chrono::Duration::days(30 * i);
@@ -289,112 +249,46 @@ pub async fn get_analytics_dashboard(
                 .to_string()
         };
 
-        // Get earnings for this month
-        let month_earnings_resp = state
-            .pg
-            .from("payments")
-            .select("gross_cents")
-            .eq("agency_id", agency_id)
-            .eq("status", "succeeded")
-            .gte("paid_at", &month_start)
-            .lt("paid_at", &month_end)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-        let month_earnings_text = month_earnings_resp
-            .text()
-            .await
-            .unwrap_or_else(|_| "[]".to_string());
-        let month_earnings_data: serde_json::Value =
-            serde_json::from_str(&month_earnings_text).unwrap_or(json!([]));
-        let month_earnings: i64 = month_earnings_data
-            .as_array()
-            .unwrap_or(&vec![])
+        // Filter payments for this month
+        let month_earnings: i64 = payments_data
             .iter()
-            .filter_map(|p| p.get("gross_cents")?.as_i64())
+            .filter(|p| {
+                let paid_at = p.get("paid_at").and_then(|v| v.as_str()).unwrap_or("");
+                paid_at >= month_start.as_str() && paid_at < month_end.as_str()
+            })
+            .filter_map(|p| p.get("gross_cents").and_then(|v| v.as_i64()))
             .sum();
 
-        // Get campaigns for this month
-        let month_campaigns_resp = state
-            .pg
-            .from("campaigns")
-            .select("id")
-            .eq("agency_id", agency_id)
-            .gte("created_at", &month_start)
-            .lt("created_at", &month_end)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-        let month_campaigns_text = month_campaigns_resp
-            .text()
-            .await
-            .unwrap_or_else(|_| "[]".to_string());
-        let month_campaigns_data: serde_json::Value =
-            serde_json::from_str(&month_campaigns_text).unwrap_or(json!([]));
-        let month_campaigns = month_campaigns_data
-            .as_array()
-            .map(|a| a.len() as i64)
-            .unwrap_or(0);
+        // Filter campaigns created in this month
+        let month_campaigns: i64 = campaigns_data
+            .iter()
+            .filter(|c| {
+                let created_at = c.get("created_at").and_then(|v| v.as_str()).unwrap_or("");
+                created_at >= month_start.as_str() && created_at < month_end.as_str()
+            })
+            .count() as i64;
 
         monthly_trends.push(MonthlyTrend {
             month: month_start_date.format("%b").to_string(),
             earnings: month_earnings as f64 / 100.0,
             campaigns: month_campaigns,
-            usages: 60 + (i * 3), // Mock for now
+            usages: 60 + (i * 3), // Mock
         });
     }
 
-    // 5. CONSENT STATUS
+    // F. CONSENT STATUS
+    let mut consent_complete = 0i64;
+    let mut consent_missing = 0i64;
+    for t in talents_data.iter() {
+        let status = t.get("status").and_then(|v| v.as_str()).unwrap_or("");
+        if status == "active" {
+            consent_complete += 1;
+        } else if status == "inactive" {
+            consent_missing += 1;
+        }
+    }
 
-    // Complete (active talents)
-    let active_talents_resp = state
-        .pg
-        .from("agency_users")
-        .select("id")
-        .eq("agency_id", agency_id)
-        .eq("role", "talent")
-        .eq("status", "active")
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    let active_talents_text = active_talents_resp
-        .text()
-        .await
-        .unwrap_or_else(|_| "[]".to_string());
-    let active_talents_data: serde_json::Value =
-        serde_json::from_str(&active_talents_text).unwrap_or(json!([]));
-    let complete = active_talents_data
-        .as_array()
-        .map(|a| a.len() as i64)
-        .unwrap_or(0);
-
-    // Missing (inactive talents)
-    let inactive_talents_resp = state
-        .pg
-        .from("agency_users")
-        .select("id")
-        .eq("agency_id", agency_id)
-        .eq("role", "talent")
-        .eq("status", "inactive")
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    let inactive_talents_text = inactive_talents_resp
-        .text()
-        .await
-        .unwrap_or_else(|_| "[]".to_string());
-    let inactive_talents_data: serde_json::Value =
-        serde_json::from_str(&inactive_talents_text).unwrap_or(json!([]));
-    let missing = inactive_talents_data
-        .as_array()
-        .map(|a| a.len() as i64)
-        .unwrap_or(0);
-
-    // Expiring (licensing requests expiring within 30 days)
+    // 4. EXPIRING REQUESTS (Keep standalone query)
     let expiring_resp = state
         .pg
         .from("licensing_requests")
@@ -410,17 +304,22 @@ pub async fn get_analytics_dashboard(
         .text()
         .await
         .unwrap_or_else(|_| "[]".to_string());
-    let expiring_data: serde_json::Value =
-        serde_json::from_str(&expiring_text).unwrap_or(json!([]));
-    let expiring = expiring_data
-        .as_array()
-        .map(|a| a.len() as i64)
-        .unwrap_or(0);
+    let expiring_data: Vec<serde_json::Value> =
+        serde_json::from_str(&expiring_text).unwrap_or(vec![]);
+    let expiring = expiring_data.len() as i64;
 
     // Format values
     let total_earnings_formatted = format_currency(total_earnings_cents);
     let avg_value_formatted = format_currency(avg_value_cents);
     let avg_campaign_value_formatted = format_currency(avg_campaign_value_cents);
+
+    // Mock AI Usage
+    let total_usages_30d = 73;
+    let usage_by_type = AIUsageByType {
+        image: 45,
+        video: 38,
+        voice: 17,
+    };
 
     Ok(Json(AnalyticsDashboard {
         overview: OverviewMetrics {
@@ -446,8 +345,8 @@ pub async fn get_analytics_dashboard(
         },
         monthly_trends,
         consent_status: ConsentStatusBreakdown {
-            complete,
-            missing,
+            complete: consent_complete,
+            missing: consent_missing,
             expiring,
         },
     }))

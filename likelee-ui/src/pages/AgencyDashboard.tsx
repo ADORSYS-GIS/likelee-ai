@@ -17065,11 +17065,21 @@ const AnalyticsDashboardView = () => {
         const token = session?.access_token;
         if (!token) throw new Error("Not authenticated");
 
-        // Fetch all data in parallel
-        const [overviewRes, rosterRes, clientsRes] = await Promise.allSettled([
-          fetch("/api/agency/analytics/dashboard", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
+        // 1. Fetch Overview (Critical) - Render immediately
+        const overviewRes = await fetch("/api/agency/analytics/dashboard", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!overviewRes.ok) {
+          throw new Error("Failed to fetch analytics overview");
+        }
+
+        const overviewData = await overviewRes.json();
+        setAnalytics(overviewData);
+        setLoading(false); // Unblock UI immediately!
+
+        // 2. Fetch non-critical data in background
+        const [rosterRes, clientsRes] = await Promise.allSettled([
           fetch("/api/agency/analytics/roster", {
             headers: { Authorization: `Bearer ${token}` },
           }),
@@ -17078,36 +17088,19 @@ const AnalyticsDashboardView = () => {
           }),
         ]);
 
-        // Handle Overview Data
-        if (overviewRes.status === "fulfilled" && overviewRes.value.ok) {
-          const data = await overviewRes.value.json();
-          setAnalytics(data);
-        } else {
-          console.error("Failed to fetch overview analytics");
-          // Only set error if critical overview data fails
-          if (overviewRes.status === "rejected") {
-            setError(overviewRes.reason?.message || "Failed to load dashboard");
-          } else {
-            setError("Failed to load dashboard data");
-          }
-        }
-
-        // Handle Roster Data (non-critical)
+        // Handle Roster Data
         if (rosterRes.status === "fulfilled" && rosterRes.value.ok) {
           const data = await rosterRes.value.json();
           setRosterInsights(data);
-        } else {
-          console.warn("Failed to fetch roster insights");
         }
 
-        // Handle Clients Data (non-critical)
+        // Handle Clients Data
         if (clientsRes.status === "fulfilled" && clientsRes.value.ok) {
           const data = await clientsRes.value.json();
           setClientsAnalytics(data);
-        } else {
-          console.warn("Failed to fetch clients analytics");
         }
       } catch (err: any) {
+        console.error(err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -18601,6 +18594,16 @@ export default function AgencyDashboard() {
     "protection",
     "analytics",
   ]);
+
+  // Ensure valid sub-tab for Analytics to avoid blank screen
+  useEffect(() => {
+    if (activeTab === "analytics") {
+      const validSubTabs = ["Analytics Dashboard", "Royalties & Payouts"];
+      if (!validSubTabs.includes(activeSubTab)) {
+        setActiveSubTab("Analytics Dashboard");
+      }
+    }
+  }, [activeTab]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [categoryFilter, setCategoryFilter] = useState("All Categories");
