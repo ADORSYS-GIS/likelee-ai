@@ -728,7 +728,8 @@ pub async fn finalize(
     ))?;
 
     // 6. Create linked licensing_request (if not already exists)
-    let talent_name = submission_data["talent_names"].as_str();
+    let talent_name = submission_data["talent_names"].as_str()
+        .or(req.talent_names.as_deref());
 
     let lr_data = json!({
         "agency_id": agency_id,
@@ -746,13 +747,20 @@ pub async fn finalize(
         "deadline": deadline.map(|d| d.to_string()),
     });
 
-    state
+    let lr_resp = state
         .pg
         .from("licensing_requests")
         .insert(lr_data.to_string())
         .execute()
-        .await
-        .ok();
+        .await;
+
+    if let Err(e) = lr_resp {
+        tracing::error!("Failed to create linked licensing_request: {}", e);
+    } else if let Ok(resp) = lr_resp {
+        if !resp.status().is_success() {
+             tracing::error!("Failed to create linked licensing_request (status {}): {}", resp.status(), resp.text().await.unwrap_or_default());
+        }
+    }
 
     Ok(Json(submission))
 }
