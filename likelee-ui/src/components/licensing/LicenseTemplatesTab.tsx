@@ -25,6 +25,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { TemplateModal } from "./TemplateModal";
 import { DocuSealBuilderModal } from "./DocuSealBuilderModal";
 import { SubmissionWizard } from "./SubmissionWizard";
+import { LicenseSubmissionsTab } from "./LicenseSubmissionsTab";
 import {
   getLicenseTemplates,
   getTemplateStats,
@@ -47,7 +48,9 @@ const CATEGORIES = [
 ];
 
 export const LicenseTemplatesTab: React.FC = () => {
-  const [topTab, setTopTab] = useState<"requests" | "templates">("requests");
+  const [topTab, setTopTab] = useState<"requests" | "templates" | "submissions">(
+    "templates",
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -263,18 +266,128 @@ export const LicenseTemplatesTab: React.FC = () => {
       <Tabs value={topTab} onValueChange={(v) => setTopTab(v as any)}>
         <TabsList className="w-full justify-start bg-transparent p-0 border-b rounded-none">
           <TabsTrigger
-            value="requests"
-            className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-600"
-          >
-            Requests
-          </TabsTrigger>
-          <TabsTrigger
             value="templates"
             className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-600"
           >
             Templates
           </TabsTrigger>
+          <TabsTrigger
+            value="submissions"
+            className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-600"
+          >
+            Submissions
+          </TabsTrigger>
+          <TabsTrigger
+            value="requests"
+            className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-600"
+          >
+            Requests
+          </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="templates" className="space-y-6 mt-6">
+          <div className="flex justify-between items-start">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">Templates</h2>
+              <p className="text-muted-foreground">
+                DocuSeal templates generated from your HTML/Markdown contract
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => {
+                  setEditingTemplate(null);
+                  setIsModalOpen(true);
+                }}
+                className="bg-indigo-600 hover:bg-indigo-700"
+              >
+                <Plus className="mr-2 h-4 w-4" /> New Template
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-3">
+            {loadingTemplates ? (
+              <p className="text-muted-foreground col-span-3 text-center py-10">
+                Loading templates...
+              </p>
+            ) : templates.length === 0 ? (
+              <p className="text-muted-foreground col-span-3 text-center py-10">
+                No templates yet.
+              </p>
+            ) : (
+              templates.map((template) => (
+                <Card
+                  key={template.id}
+                  className="bg-indigo-50/50 border border-indigo-100 overflow-hidden"
+                >
+                  <div className="h-28 bg-indigo-100/70 flex items-center justify-center">
+                    <FileText className="h-10 w-10 text-indigo-400" />
+                  </div>
+                  <CardContent className="p-4 space-y-3">
+                    <div>
+                      <div className="font-bold text-gray-900 truncate">
+                        {template.template_name}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {template.created_at
+                          ? `Created ${formatDate(template.created_at)}`
+                          : ""}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2">
+                      <Button
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11"
+                        onClick={() => {
+                          setWizardTemplate(template);
+                        }}
+                      >
+                        Use Template
+                      </Button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          variant="outline"
+                          className="bg-white text-xs"
+                          onClick={() => {
+                            if (!template.docuseal_template_id) {
+                              toast({
+                                title: "Missing DocuSeal template",
+                                description:
+                                  "Open and save the template to generate its DocuSeal template.",
+                                variant: "destructive",
+                              });
+                              return;
+                            }
+                            setBuilderTarget({
+                              id: template.id,
+                              docuseal_template_id: template.docuseal_template_id,
+                              template_name: template.template_name,
+                            });
+                            setBuilderMode("template");
+                          }}
+                        >
+                          Edit Layout
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="bg-white text-xs"
+                          onClick={() => openEditModal(template)}
+                        >
+                          Edit
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="submissions" className="mt-6">
+          <LicenseSubmissionsTab />
+        </TabsContent>
 
         <TabsContent value="requests" className="space-y-6 mt-6">
           <div className="flex justify-between items-start">
@@ -285,7 +398,6 @@ export const LicenseTemplatesTab: React.FC = () => {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              {/* Buttons removed as per requested UX change */}
             </div>
           </div>
 
@@ -468,103 +580,6 @@ export const LicenseTemplatesTab: React.FC = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="templates" className="space-y-6 mt-6">
-          <div className="flex justify-between items-start">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight">Templates</h2>
-              <p className="text-muted-foreground">
-                DocuSeal templates generated from your HTML/Markdown contract
-              </p>
-            </div>
-            <Button
-              onClick={() => {
-                setEditingTemplate(null);
-                setIsModalOpen(true);
-              }}
-              className="bg-indigo-600 hover:bg-indigo-700"
-            >
-              <Plus className="mr-2 h-4 w-4" /> New Template
-            </Button>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-3">
-            {loadingTemplates ? (
-              <p className="text-muted-foreground col-span-3 text-center py-10">
-                Loading templates...
-              </p>
-            ) : templates.length === 0 ? (
-              <p className="text-muted-foreground col-span-3 text-center py-10">
-                No templates yet.
-              </p>
-            ) : (
-              templates.map((template) => (
-                <Card
-                  key={template.id}
-                  className="bg-indigo-50/50 border border-indigo-100 overflow-hidden"
-                >
-                  <div className="h-28 bg-indigo-100/70 flex items-center justify-center">
-                    <FileText className="h-10 w-10 text-indigo-400" />
-                  </div>
-                  <CardContent className="p-4 space-y-3">
-                    <div>
-                      <div className="font-bold text-gray-900 truncate">
-                        {template.template_name}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {template.created_at
-                          ? `Created ${formatDate(template.created_at)}`
-                          : ""}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-2">
-                      <Button
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11"
-                        onClick={() => {
-                          setWizardTemplate(template);
-                        }}
-                      >
-                        Use Template
-                      </Button>
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button
-                          variant="outline"
-                          className="bg-white text-xs"
-                          onClick={() => {
-                            if (!template.docuseal_template_id) {
-                              toast({
-                                title: "Missing DocuSeal template",
-                                description:
-                                  "Open and save the template to generate its DocuSeal template.",
-                                variant: "destructive",
-                              });
-                              return;
-                            }
-                            setBuilderTarget({
-                              id: template.id,
-                              docuseal_template_id: template.docuseal_template_id,
-                              template_name: template.template_name,
-                            });
-                            setBuilderMode("template");
-                          }}
-                        >
-                          Edit Layout
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="bg-white text-xs"
-                          onClick={() => openEditModal(template)}
-                        >
-                          Edit
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-        </TabsContent>
       </Tabs>
 
       <TemplateModal
@@ -575,39 +590,43 @@ export const LicenseTemplatesTab: React.FC = () => {
         hideContract={hideContractInModal}
       />
 
-      {wizardTemplate && (
-        <SubmissionWizard
-          isOpen={!!wizardTemplate}
-          onClose={() => setWizardTemplate(null)}
-          template={wizardTemplate}
-          onComplete={() => {
-            queryClient.invalidateQueries({ queryKey: ["license-templates"] });
-            queryClient.invalidateQueries({ queryKey: ["license-submissions"] });
-          }}
-        />
-      )}
+      {
+        wizardTemplate && (
+          <SubmissionWizard
+            isOpen={!!wizardTemplate}
+            onClose={() => setWizardTemplate(null)}
+            template={wizardTemplate}
+            onComplete={() => {
+              queryClient.invalidateQueries({ queryKey: ["license-templates"] });
+              queryClient.invalidateQueries({ queryKey: ["license-submissions"] });
+            }}
+          />
+        )
+      }
 
-      {builderTarget && (
-        <DocuSealBuilderModal
-          open={!!builderTarget}
-          onClose={() => setBuilderTarget(null)}
-          templateName={builderTarget.template_name}
-          docusealTemplateId={builderTarget.docuseal_template_id}
-          // For submissions, we want a unique session ID.
-          // Using `template-${id}-${timestamp}` creates a unique editing session without a DB record.
-          externalId={builderTarget.external_id || builderTarget.id}
-          onSave={async (docusealId) => {
-            try {
-              queryClient.invalidateQueries({
-                queryKey: ["license-templates"],
-              });
-            } catch (err) {
-              console.error("Failed to update template DocuSeal ID:", err);
-            }
-            setBuilderTarget(null);
-          }}
-        />
-      )}
+      {
+        builderTarget && (
+          <DocuSealBuilderModal
+            open={!!builderTarget}
+            onClose={() => setBuilderTarget(null)}
+            templateName={builderTarget.template_name}
+            docusealTemplateId={builderTarget.docuseal_template_id}
+            // For submissions, we want a unique session ID.
+            // Using `template-${id}-${timestamp}` creates a unique editing session without a DB record.
+            externalId={builderTarget.external_id || builderTarget.id}
+            onSave={async (docusealId) => {
+              try {
+                queryClient.invalidateQueries({
+                  queryKey: ["license-templates"],
+                });
+              } catch (err) {
+                console.error("Failed to update template DocuSeal ID:", err);
+              }
+              setBuilderTarget(null);
+            }}
+          />
+        )
+      }
 
       <Dialog
         open={!!templateToDelete}
@@ -631,6 +650,6 @@ export const LicenseTemplatesTab: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </div >
   );
 };
