@@ -914,7 +914,6 @@ pub async fn get_roster_insights(
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
 
-
         let is_verified = is_verified_talent || creator_id.is_some();
 
         // Fetch name and image
