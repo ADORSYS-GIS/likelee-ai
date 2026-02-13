@@ -396,7 +396,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                     onClose={() => setStep(2)}
                     templateName={template.template_name}
                     docusealTemplateId={template.docuseal_template_id}
-                    externalId={`sub-${template.id}-${Date.now()}`}
+                    externalId={`temp-${template.id}-${Date.now()}`}
                     onSave={() => {
                         onComplete();
                         onClose();

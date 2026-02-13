@@ -664,6 +664,10 @@ pub async fn create_builder_token(
                 json!(license_template.custom_terms.clone().unwrap_or_default()),
             );
             role_data.insert(
+                "Modifications Allowed".to_string(),
+                json!(license_template.modifications_allowed.clone().unwrap_or_default()),
+            );
+            role_data.insert(
                 "Template Name".to_string(),
                 json!(license_template.template_name),
             );
