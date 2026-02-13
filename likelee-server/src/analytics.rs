@@ -491,7 +491,7 @@ pub async fn get_clients_campaigns_analytics(
     auth_user: AuthUser,
 ) -> Result<Json<ClientsCampaignsResponse>, (StatusCode, String)> {
     let agency_id = &auth_user.id;
-    let colors = vec!["#6366f1", "#8b5cf6", "#ec4899", "#f59e0b"];
+    let colors = ["#6366f1", "#8b5cf6", "#ec4899", "#f59e0b"];
 
     // 1. Earnings by Client & Top Clients Performance
     // We need payments summed by brand, and campaigns counted by brand.
@@ -514,6 +514,15 @@ pub async fn get_clients_campaigns_analytics(
             .unwrap_or_else(|_| "[]".to_string()),
     )
     .unwrap_or(json!([]));
+
+    // Debug logging
+    let payment_count = payments_data.as_array().map(|a| a.len()).unwrap_or(0);
+    tracing::info!(
+        "Found {} successful payments for agency {}",
+        payment_count,
+        agency_id
+    );
+
     let mut brand_earnings: HashMap<String, i64> = HashMap::new();
     let mut brand_campaigns_interactions: HashMap<String, HashSet<String>> = HashMap::new();
 
@@ -526,12 +535,14 @@ pub async fn get_clients_campaigns_analytics(
                 if let Some(cid) = p.get("campaign_id").and_then(|v| v.as_str()) {
                     brand_campaigns_interactions
                         .entry(brand_id.to_string())
-                        .or_insert_with(HashSet::new)
+                        .or_default()
                         .insert(cid.to_string());
                 }
             }
         }
     }
+
+    tracing::info!("Aggregated earnings for {} brands", brand_earnings.len());
 
     // Fetch all campaigns to get regions and count per brand
     let campaigns_resp = state
@@ -735,13 +746,13 @@ pub async fn get_clients_campaigns_analytics(
         0
     };
 
-    // Client Acquisition (Brands first seen in the last 90 days as a proxy for "this quarter")
-    let ninety_days_ago = (Utc::now() - chrono::Duration::days(90)).to_rfc3339();
+    // Client Acquisition (Brands first seen in the last 30 days)
+    let thirty_days_ago = (Utc::now() - chrono::Duration::days(30)).to_rfc3339();
     let new_brands_resp = state
         .pg
         .from("brands")
         .select("id")
-        .gte("created_at", &ninety_days_ago)
+        .gte("created_at", &thirty_days_ago)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;

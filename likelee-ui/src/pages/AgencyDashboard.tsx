@@ -18124,7 +18124,7 @@ const AnalyticsDashboardView = () => {
                   {clientsAnalytics.client_acquisition}
                 </h3>
                 <p className="text-xs text-green-600/70 mt-2 font-bold">
-                  New clients in the last 90 days
+                  New clients in the last 30 days
                 </p>
               </Card>
             </div>
@@ -18137,192 +18137,295 @@ const AnalyticsDashboardView = () => {
           </div>
         )
       ) : activeTab === "Compliance" ? (
-        <div className="space-y-6 animate-in fade-in duration-500">
-          {/* Top Row: 3 Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="p-8 bg-white border border-gray-900 shadow-sm rounded-lg">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-10 h-10 rounded-lg border border-gray-200 flex items-center justify-center">
-                  <ShieldCheck className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                    Verification Rate
-                  </p>
-                  <h3 className="text-3xl font-black text-gray-900 tracking-tighter">
-                    100%
-                  </h3>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gray-900 rounded-full"
-                    style={{ width: "100%" }}
-                  />
-                </div>
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                  All talent verified
-                </p>
-              </div>
-            </Card>
+        (() => {
+          const totalTalents = TALENT_DATA.length;
+          const activeTalents = TALENT_DATA.filter(
+            (t: any) => t.status === "active",
+          );
+          const activeCount = activeTalents.length;
+          const activePct = totalTalents
+            ? Math.round((activeCount / totalTalents) * 100)
+            : 0;
 
-            <Card className="p-8 bg-white border border-gray-900 shadow-sm rounded-lg">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-10 h-10 rounded-lg border border-gray-200 flex items-center justify-center">
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                    Active Consents
-                  </p>
-                  <h3 className="text-3xl font-black text-gray-900 tracking-tighter">
-                    80%
-                  </h3>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gray-400 rounded-full"
-                    style={{ width: "80%" }}
-                  />
-                </div>
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                  8 of 10 complete
-                </p>
-              </div>
-            </Card>
+          const verifiedCount = TALENT_DATA.filter((t: any) =>
+            Boolean(t.isVerified),
+          ).length;
+          const verificationPct = totalTalents
+            ? Math.round((verifiedCount / totalTalents) * 100)
+            : 0;
 
-            <Card className="p-8 bg-white border border-gray-900 shadow-sm rounded-lg">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-10 h-10 rounded-lg border border-gray-200 flex items-center justify-center">
-                  <AlertCircle className="w-5 h-5 text-orange-600" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                    Expiring Soon
-                  </p>
-                  <h3 className="text-3xl font-black text-gray-900 tracking-tighter">
-                    0
-                  </h3>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <p className="text-[10px] font-bold text-orange-600 uppercase tracking-widest">
-                  Next 30 days
-                </p>
-              </div>
-            </Card>
-          </div>
+          const parseUsDate = (v: string) => {
+            if (!v || v === "—" || v === "N/A") return null;
+            const parts = v.split("/").map((p) => Number(p));
+            if (parts.length !== 3 || parts.some((p) => Number.isNaN(p)))
+              return null;
+            const [m, d, y] = parts;
+            if (!m || !d || !y) return null;
+            const dt = new Date(y, m - 1, d);
+            return Number.isNaN(dt.getTime()) ? null : dt;
+          };
 
-          {/* Middle Row: License Expiry Pipeline */}
-          <Card className="p-8 bg-white border border-gray-900 shadow-sm rounded-lg">
-            <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest mb-6">
-              License Expiry Pipeline
-            </h3>
-            <div className="bg-[#FFF7ED] border border-orange-100 p-4 rounded-xl flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <img
-                  src={TALENT_DATA.find((t) => t.id === "julia")?.img}
-                  alt="Julia"
-                  className="w-12 h-12 rounded-lg object-cover"
-                />
-                <div>
-                  <p className="text-sm font-black text-gray-900">Julia</p>
-                  <p className="text-xs font-bold text-gray-500">
-                    License expires 2/15/2025
-                  </p>
-                </div>
-              </div>
-              <Button className="bg-[#EA580C] hover:bg-[#C2410C] text-white font-black text-xs px-8 h-10 rounded-lg uppercase tracking-widest gap-2">
-                <RefreshCw className="w-4 h-4" /> Renew
-              </Button>
-            </div>
-          </Card>
+          const startOfToday = () => {
+            const now = new Date();
+            return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          };
 
-          {/* Bottom Row: Compliance Summary */}
-          <Card className="p-8 bg-white border border-gray-900 shadow-sm rounded-lg">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-              {/* Left Column: Consent Status Distribution */}
-              <div>
-                <h3 className="text-xl font-black text-gray-900 uppercase tracking-widest mb-10">
-                  Compliance Summary
-                </h3>
-                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-6 font-sans">
-                  Consent Status Distribution
-                </p>
-                <div className="space-y-8">
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-widest">
-                      <span className="text-gray-600">Complete</span>
-                      <span className="text-green-600">8 (80%)</span>
+          const daysUntil = (dt: Date) => {
+            const base = startOfToday();
+            const ms = dt.getTime() - base.getTime();
+            return Math.floor(ms / (1000 * 60 * 60 * 24));
+          };
+
+          const expiringSoonLicensesCount = LICENSE_COMPLIANCE_DATA.filter(
+            (l: any) => {
+              const dt = parseUsDate(String(l.expiry));
+              if (!dt) return false;
+              const d = daysUntil(dt);
+              return d >= 0 && d <= 30;
+            },
+          ).length;
+
+          const consentExpiringCount = TALENT_DATA.filter(
+            (t: any) => t.status === "active" && t.consent === "expiring",
+          ).length;
+          const missingCount = Math.max(
+            totalTalents - activeCount - consentExpiringCount,
+            0,
+          );
+
+          const completePct = activePct;
+          const expiringPct = totalTalents
+            ? Math.round((consentExpiringCount / totalTalents) * 100)
+            : 0;
+          const missingPct = Math.max(100 - completePct - expiringPct, 0);
+
+          const upcomingLicenses = LICENSE_COMPLIANCE_DATA.map((l: any) => {
+            const dt = parseUsDate(String(l.expiry));
+            return {
+              license: l,
+              expiryDate: dt,
+              daysUntil: dt ? daysUntil(dt) : null,
+            };
+          }).filter((x: any) => x.expiryDate && x.daysUntil !== null) as Array<{
+            license: any;
+            expiryDate: Date;
+            daysUntil: number;
+          }>;
+
+          const nextLicense = upcomingLicenses
+            .filter((x) => x.daysUntil >= 0)
+            .sort((a, b) => a.daysUntil - b.daysUntil)[0];
+
+          const pipelineTalentName = nextLicense?.license?.talent || "Julia";
+          const pipelineTalent =
+            TALENT_DATA.find((t: any) => t.name === pipelineTalentName) ||
+            TALENT_DATA.find((t: any) => t.id === "julia");
+          const pipelineExpiryText =
+            nextLicense?.license?.expiry || "2/15/2025";
+
+          return (
+            <div className="space-y-6 animate-in fade-in duration-500">
+              {/* Top Row: 3 Stats Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="p-8 bg-white border border-gray-900 shadow-sm rounded-lg">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-10 h-10 rounded-lg border border-gray-200 flex items-center justify-center">
+                      <ShieldCheck className="w-5 h-5 text-green-600" />
                     </div>
+                    <div>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                        Verification Rate
+                      </p>
+                      <h3 className="text-3xl font-black text-gray-900 tracking-tighter">
+                        {verificationPct}%
+                      </h3>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
                     <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-gray-900 rounded-full"
-                        style={{ width: "80%" }}
+                        style={{ width: `${verificationPct}%` }}
                       />
+                    </div>
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                      {verificationPct === 100
+                        ? "All talent verified"
+                        : `${verifiedCount} of ${totalTalents} verified`}
+                    </p>
+                  </div>
+                </Card>
+
+                <Card className="p-8 bg-white border border-gray-900 shadow-sm rounded-lg">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-10 h-10 rounded-lg border border-gray-200 flex items-center justify-center">
+                      <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                        Active Consents
+                      </p>
+                      <h3 className="text-3xl font-black text-gray-900 tracking-tighter">
+                        {activePct}%
+                      </h3>
                     </div>
                   </div>
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-widest">
-                      <span className="text-gray-600">Expiring</span>
-                      <span className="text-orange-600">1 (10%)</span>
-                    </div>
                     <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-[#FB923C]/30 rounded-full shadow-inner"
-                        style={{ width: "10%" }}
+                        className="h-full bg-gray-400 rounded-full"
+                        style={{ width: `${activePct}%` }}
                       />
+                    </div>
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                      {activeCount} of {totalTalents} complete
+                    </p>
+                  </div>
+                </Card>
+
+                <Card className="p-8 bg-white border border-gray-900 shadow-sm rounded-lg">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-10 h-10 rounded-lg border border-gray-200 flex items-center justify-center">
+                      <AlertCircle className="w-5 h-5 text-orange-600" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                        Expiring Soon
+                      </p>
+                      <h3 className="text-3xl font-black text-gray-900 tracking-tighter">
+                        {expiringSoonLicensesCount}
+                      </h3>
                     </div>
                   </div>
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-widest">
-                      <span className="text-gray-600">Missing</span>
-                      <span className="text-red-600">1 (10%)</span>
-                    </div>
-                    <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-[#FECACA] rounded-full"
-                        style={{ width: "10%" }}
-                      />
-                    </div>
+                    <p className="text-[10px] font-bold text-orange-600 uppercase tracking-widest">
+                      Next 30 days
+                    </p>
                   </div>
-                </div>
+                </Card>
               </div>
 
-              {/* Right Column: Likeness Protection */}
-              <div className="space-y-10">
-                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest font-sans">
-                  Likeness Protection
-                </p>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-6 bg-green-50/50 border border-green-100 rounded-xl">
-                    <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">
-                      Authorized Uses (30d)
-                    </span>
-                    <span className="text-3xl font-black text-green-600">
-                      73
-                    </span>
+              {/* Middle Row: License Expiry Pipeline */}
+              <Card className="p-8 bg-white border border-gray-900 shadow-sm rounded-lg">
+                <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest mb-6">
+                  License Expiry Pipeline
+                </h3>
+                <div className="bg-[#FFF7ED] border border-orange-100 p-4 rounded-xl flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={pipelineTalent?.img}
+                      alt={pipelineTalentName}
+                      className="w-12 h-12 rounded-lg object-cover"
+                    />
+                    <div>
+                      <p className="text-sm font-black text-gray-900">
+                        {pipelineTalentName}
+                      </p>
+                      <p className="text-xs font-bold text-gray-500">
+                        License expires {pipelineExpiryText}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between p-6 bg-red-50/50 border border-red-100 rounded-xl">
-                    <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">
-                      Unauthorized Alerts
-                    </span>
-                    <span className="text-3xl font-black text-red-600">0</span>
+                  <Button className="bg-[#EA580C] hover:bg-[#C2410C] text-white font-black text-xs px-8 h-10 rounded-lg uppercase tracking-widest gap-2">
+                    <RefreshCw className="w-4 h-4" /> Renew
+                  </Button>
+                </div>
+              </Card>
+
+              {/* Bottom Row: Compliance Summary */}
+              <Card className="p-8 bg-white border border-gray-900 shadow-sm rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                  {/* Left Column: Consent Status Distribution */}
+                  <div>
+                    <h3 className="text-xl font-black text-gray-900 uppercase tracking-widest mb-10">
+                      Compliance Summary
+                    </h3>
+                    <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-6 font-sans">
+                      Consent Status Distribution
+                    </p>
+                    <div className="space-y-8">
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-widest">
+                          <span className="text-gray-600">Complete</span>
+                          <span className="text-green-600">
+                            {activeCount} ({completePct}%)
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gray-900 rounded-full"
+                            style={{ width: `${completePct}%` }}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-widest">
+                          <span className="text-gray-600">Expiring</span>
+                          <span className="text-orange-600">
+                            {consentExpiringCount} ({expiringPct}%)
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-[#FB923C]/30 rounded-full shadow-inner"
+                            style={{ width: `${expiringPct}%` }}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-widest">
+                          <span className="text-gray-600">Missing</span>
+                          <span className="text-red-600">
+                            {missingCount} ({missingPct}%)
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-[#FECACA] rounded-full"
+                            style={{ width: `${missingPct}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between p-6 bg-blue-50/50 border border-blue-100 rounded-xl">
-                    <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">
-                      Disputes Resolved
-                    </span>
-                    <span className="text-3xl font-black text-blue-600">2</span>
+
+                  {/* Right Column: Likeness Protection */}
+                  <div className="space-y-10">
+                    <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest font-sans">
+                      Likeness Protection
+                    </p>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-6 bg-green-50/50 border border-green-100 rounded-xl">
+                        <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">
+                          Authorized Uses (30d)
+                        </span>
+                        <span className="text-3xl font-black text-green-600">
+                          73
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between p-6 bg-red-50/50 border border-red-100 rounded-xl">
+                        <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">
+                          Unauthorized Alerts
+                        </span>
+                        <span className="text-3xl font-black text-red-600">
+                          0
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between p-6 bg-blue-50/50 border border-blue-100 rounded-xl">
+                        <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">
+                          Disputes Resolved
+                        </span>
+                        <span className="text-3xl font-black text-blue-600">
+                          2
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </Card>
             </div>
-          </Card>
-        </div>
+          );
+        })()
       ) : (
         <PlaceholderView title={activeTab} />
       )}
