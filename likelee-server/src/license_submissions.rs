@@ -1308,10 +1308,12 @@ pub async fn create_and_send(
 
     // Extract all field names present in any of the documents' schemas
     let mut allowed_field_names = std::collections::HashSet::new();
-    for doc in template_details.documents {
-        for field in doc.schema {
-            if let Some(name) = field.get("name").and_then(|n| n.as_str()) {
-                allowed_field_names.insert(name.to_string());
+    if let Some(documents) = template_details.documents {
+        for doc in documents {
+            for field in doc.schema {
+                if let Some(name) = field.get("name").and_then(|n| n.as_str()) {
+                    allowed_field_names.insert(name.to_string());
+                }
             }
         }
     }
@@ -1382,8 +1384,14 @@ pub async fn create_and_send(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let new_submission: serde_json::Value = serde_json::from_str(&insert_text)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let created_rows: Vec<serde_json::Value> = serde_json::from_str(&insert_text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse created row: {} - body: {}", e, insert_text)))?;
+
+    let new_submission = created_rows.get(0).ok_or((
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "No row returned after insert".to_string(),
+    ))?;
 
     let new_submission_id = new_submission["id"]
         .as_str()

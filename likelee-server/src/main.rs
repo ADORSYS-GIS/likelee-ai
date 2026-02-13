@@ -126,6 +126,7 @@ async fn main() {
         docuseal_api_url: cfg.docuseal_api_url.clone(),
         docuseal_app_url: cfg.docuseal_app_url.clone(),
         docuseal_webhook_url: cfg.docuseal_webhook_url.clone(),
+        docuseal_webhook_secret: cfg.docuseal_webhook_secret.clone(),
         docuseal_user_email: cfg.docuseal_user_email.clone(),
         docuseal_master_template_id: cfg.docuseal_master_template_id.clone(),
         docuseal_master_template_name: cfg.docuseal_master_template_name.clone(),

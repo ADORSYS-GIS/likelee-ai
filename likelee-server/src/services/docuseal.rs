@@ -616,9 +616,13 @@ impl DocuSealClient {
             return Err(format!("DocuSeal API error: {} - {}", status, error_text).into());
         }
 
-        let template = response.json::<TemplateDetails>().await?;
+        let text = response.text().await?;
+        let template: TemplateDetails = serde_json::from_str(&text).map_err(|e| {
+            error!(error = %e, body = %text, "Failed to decode DocuSeal template details");
+            format!("DocuSeal Template Fetch Error: {} - body: {}", e, text)
+        })?;
         info!(
-            template_id = template.id,
+            template_id = template.id.unwrap_or(0),
             "DocuSeal template details fetched"
         );
 
@@ -755,17 +759,17 @@ pub struct Template {
 
 #[derive(Debug, Deserialize)]
 pub struct TemplateDetails {
-    pub id: i32,
-    pub name: String,
-    pub documents: Vec<TemplateDocumentDetails>,
+    pub id: Option<i32>,
+    pub name: Option<String>,
+    pub documents: Option<Vec<TemplateDocumentDetails>>,
     #[serde(default)]
     pub schema: Vec<serde_json::Value>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct TemplateDocumentDetails {
-    pub id: i32,
-    pub name: String,
+    pub id: Option<i32>,
+    pub name: Option<String>,
     #[serde(default)]
     pub schema: Vec<serde_json::Value>,
 }
