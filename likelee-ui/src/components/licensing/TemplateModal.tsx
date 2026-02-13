@@ -18,7 +18,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { CreateTemplateRequest, LicenseTemplate } from "@/api/licenseTemplates";
 import { ContractEditor } from "./ContractEditor";
-import { Sparkles } from "lucide-react";
+import { Sparkles, FileText, Calendar, Users, Briefcase, Globe, Clock, Shield, DollarSign } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 interface TemplateModalProps {
   isOpen: boolean;
@@ -73,6 +74,17 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
       category: "",
       contract_body_format: "markdown",
       contract_body: "",
+      client_name: "",
+      talent_name: "",
+      start_date: "",
+      description: "",
+      usage_scope: "",
+      duration_days: 90,
+      territory: "Worldwide",
+      exclusivity: "Non-exclusive",
+      modifications_allowed: "No",
+      license_fee: undefined,
+      custom_terms: "",
     },
   });
 
@@ -95,6 +107,9 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
           docuseal_template_id: initialData.docuseal_template_id,
           contract_body: initialData.contract_body,
           contract_body_format: (initialData.contract_body_format as any) || "markdown",
+          client_name: initialData.client_name || "",
+          talent_name: initialData.talent_name || "",
+          start_date: initialData.start_date || "",
         });
       } else {
         reset({
@@ -105,12 +120,15 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
           duration_days: 90,
           territory: "Worldwide",
           exclusivity: "Non-exclusive",
-          modifications_allowed: "",
+          modifications_allowed: "No",
           license_fee: undefined,
           custom_terms: "",
           docuseal_template_id: undefined,
           contract_body: "",
           contract_body_format: "markdown",
+          client_name: "",
+          talent_name: "",
+          start_date: "",
         });
       }
     }
@@ -207,21 +225,109 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                 </div>
               </div>
 
-              {/* Contract Editor */}
-              <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm p-8">
-                <ContractEditor
-                  body={contractBodyValue}
-                  format={contractFormatValue as any}
-                  onChangeBody={(val) => setValue("contract_body", val)}
-                  onChangeFormat={(val) => setValue("contract_body_format", val)}
-                  variables={AVAILABLE_CONTRACT_VARIABLES}
-                  placeholder="Write your contract template here. Use {variable} placeholders that will be filled in when using this template..."
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-slate-800 ml-1">Description</Label>
+                <Textarea
+                  {...register("description")}
+                  placeholder="Description of the template..."
+                  className="min-h-[80px] bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium resize-none"
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-slate-800 ml-1">Usage Scope</Label>
+                <Input
+                  {...register("usage_scope")}
+                  placeholder="e.g. Organic Social Media"
+                  className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-slate-800 ml-1">Duration (days)</Label>
+                  <Input
+                    type="number"
+                    {...register("duration_days", { valueAsNumber: true })}
+                    className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-slate-800 ml-1">Territory</Label>
+                  <Input
+                    {...register("territory")}
+                    placeholder="Worldwide"
+                    className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-slate-800 ml-1">Exclusivity *</Label>
+                <Select onValueChange={(val) => setValue("exclusivity", val)} defaultValue={initialData?.exclusivity || "Non-exclusive"}>
+                  <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium">
+                    <SelectValue placeholder="Select exclusivity" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-slate-200">
+                    <SelectItem value="Non-exclusive" className="rounded-lg font-medium">Non-exclusive</SelectItem>
+                    <SelectItem value="Exclusive" className="rounded-lg font-medium">Exclusive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-slate-800 ml-1">License Fee ($)</Label>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    {...register("license_fee", { valueAsNumber: true })}
+                    placeholder="Amount ($)"
+                    className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium pl-10"
+                  />
+                  <DollarSign className="absolute left-3 top-3.5 w-5 h-5 text-slate-400 pointer-events-none" />
+                </div>
+                <p className="text-xs text-slate-500 ml-1">Enter amount in dollars (e.g. 10.00)</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-slate-800 ml-1">Custom Terms</Label>
+                <Textarea
+                  {...register("custom_terms")}
+                  placeholder="Any extra conditions..."
+                  className="min-h-[80px] bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium resize-none"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-slate-800 ml-1">Modifications Allowed</Label>
+                <Select onValueChange={(val) => setValue("modifications_allowed", val)} defaultValue={initialData?.modifications_allowed || "No"}>
+                  <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium">
+                    <SelectValue placeholder="Select option" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-slate-200">
+                    <SelectItem value="Yes" className="rounded-lg font-medium">Yes</SelectItem>
+                    <SelectItem value="No" className="rounded-lg font-medium">No</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Contract Editor */}
+            <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm p-8">
+              <ContractEditor
+                body={contractBodyValue}
+                format={contractFormatValue as any}
+                onChangeBody={(val) => setValue("contract_body", val)}
+                onChangeFormat={(val) => setValue("contract_body_format", val)}
+                variables={AVAILABLE_CONTRACT_VARIABLES}
+                placeholder="Write your contract template here. Use {variable} placeholders that will be filled in when using this template..."
+              />
             </div>
           </div>
+
         </form>
       </DialogContent>
-    </Dialog>
+    </Dialog >
   );
 };
