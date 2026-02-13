@@ -18,6 +18,8 @@ interface DocuSealBuilderModalProps {
   docusealTemplateId?: number;
   externalId?: string;
   onSave: (docusealTemplateId: number) => void;
+  onSend?: () => void;
+  isSending?: boolean;
 }
 
 export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
@@ -27,6 +29,8 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
   docusealTemplateId,
   externalId,
   onSave,
+  onSend,
+  isSending,
 }) => {
   const [token, setToken] = useState<string | null>(null);
   const [prefillValues, setPrefillValues] = useState<any>(null);
@@ -116,20 +120,49 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
-      <DialogContent className="fixed !inset-0 !z-[9999] bg-background w-screen h-screen !max-w-none !translate-x-0 !translate-y-0 !rounded-none border-none !pt-20 p-0 flex flex-col outline-none">
+      <DialogContent className="max-w-7xl h-[92vh] p-0 border-none bg-white rounded-3xl overflow-hidden flex flex-col shadow-2xl transition-all duration-300">
         <DialogTitle className="sr-only">Document Designer</DialogTitle>
         <DialogDescription className="sr-only">
           Design your contract template by uploading a PDF and adding signature
           fields
         </DialogDescription>
-        <div className="flex-1 w-full h-full relative bg-gray-50 flex overflow-hidden">
-          <div className="flex-1 relative h-full">
-            {/* Floating Close Button for mobile/tablet where sidebar is hidden */}
-            <div className="absolute top-4 right-4 z-50 lg:hidden">
-              <Button variant="destructive" size="sm" onClick={onClose}>
-                Close Designer
+
+        {/* Modal Header */}
+        <div className="bg-white px-8 py-6 border-b border-slate-100 flex items-center justify-between shrink-0">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900 leading-tight">Edit Template</h2>
+            <p className="text-slate-500 font-medium">{templateName || "License Contract"}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            {onSend && (
+              <Button
+                onClick={onSend}
+                disabled={isSending || !token}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 px-6 rounded-xl shadow-lg shadow-indigo-200"
+              >
+                {isSending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  "Finalize & Send"
+                )}
               </Button>
-            </div>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="rounded-full hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex-1 w-full relative bg-slate-50 flex overflow-hidden">
+          <div className="flex-1 relative h-full">
 
             {loading ? (
               <div className="absolute inset-0 flex items-center justify-center">
@@ -140,7 +173,6 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
                 token={token}
                 fields={prefillFields}
                 roles={["First Party"]}
-                inputMode={true}
                 withFieldPlaceholder={true}
                 onSave={(data: any) => {
                   console.log("Designer Save Clicked:", data);

@@ -1290,14 +1290,58 @@ pub async fn create_and_send(
         readonly: Some(true),
     });
 
-    // 4. Create DocuSeal Submission with fields-based pre-fill
+    if let Some(mod_allowed) = &license_template.modifications_allowed {
+        fields.push(SubmitterField {
+            name: "Modifications Allowed".to_string(),
+            default_value: Some(mod_allowed.clone()),
+            readonly: Some(true),
+        });
+    }
+
+    // 4. Fetch Template Details to get the schema (which fields actually exist on the doc)
+    let template_details = docuseal_client.get_template(docuseal_template_id).await.map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("DocuSeal Template Fetch Error: {}", e),
+        )
+    })?;
+
+    // Extract all field names present in any of the documents' schemas
+    let mut allowed_field_names = std::collections::HashSet::new();
+    for doc in template_details.documents {
+        for field in doc.schema {
+            if let Some(name) = field.get("name").and_then(|n| n.as_str()) {
+                allowed_field_names.insert(name.to_string());
+            }
+        }
+    }
+    // Also check top-level schema if present
+    for field in template_details.schema {
+        if let Some(name) = field.get("name").and_then(|n| n.as_str()) {
+            allowed_field_names.insert(name.to_string());
+        }
+    }
+
+    // Filter fields list to only include those that exist in the template
+    let filtered_fields: Vec<_> = fields
+        .into_iter()
+        .filter(|f| allowed_field_names.contains(&f.name))
+        .collect();
+
+    info!(
+        allowed_count = allowed_field_names.len(),
+        filtered_count = filtered_fields.len(),
+        "Filtered DocuSeal submission fields based on template schema"
+    );
+
+    // 5. Create DocuSeal Submission with fields-based pre-fill
     let docuseal_submission = docuseal_client
         .create_submission_with_fields(
             docuseal_template_id,
             req.client_name.clone(),
             req.client_email.clone(),
             "First Party".to_string(),
-            fields,
+            filtered_fields,
             true,
         )
         .await

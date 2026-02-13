@@ -758,12 +758,16 @@ pub struct TemplateDetails {
     pub id: i32,
     pub name: String,
     pub documents: Vec<TemplateDocumentDetails>,
+    #[serde(default)]
+    pub schema: Vec<serde_json::Value>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct TemplateDocumentDetails {
     pub id: i32,
     pub name: String,
+    #[serde(default)]
+    pub schema: Vec<serde_json::Value>,
 }
 
 #[derive(Debug, Serialize)]

@@ -18,6 +18,10 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { LicenseTemplate, updateLicenseTemplate } from "@/api/licenseTemplates";
+import {
+    getLicenseSubmissions,
+    createAndSendLicenseSubmission
+} from "@/api/licenseSubmissions";
 import { ContractEditor } from "./ContractEditor";
 import { DocuSealBuilderModal } from "./DocuSealBuilderModal";
 import { ArrowRight, ArrowLeft, Check, Sparkles, FileText, Layout } from "lucide-react";
@@ -57,6 +61,7 @@ interface FormData {
     modifications_allowed: string;
     custom_terms: string;
     contract_body: string;
+    client_email: string; // Added for DocuSeal submission
 }
 
 const EXCLUSIVITY_OPTIONS = [
@@ -73,6 +78,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
 }) => {
     const [step, setStep] = useState(1);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [currentTemplate, setCurrentTemplate] = useState<LicenseTemplate>(template);
     const { toast } = useToast();
 
     const {
@@ -94,6 +100,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
             license_fee: template.license_fee ? template.license_fee / 100 : 0,
             custom_terms: template.custom_terms || "",
             contract_body: template.contract_body || "",
+            client_email: "", // Default for new field
         },
     });
 
@@ -113,6 +120,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                 license_fee: template.license_fee ? template.license_fee / 100 : 0,
                 custom_terms: template.custom_terms || "",
                 contract_body: template.contract_body || "",
+                client_email: "", // Reset for new field
             });
         }
     }, [isOpen, template, reset]);
@@ -131,8 +139,8 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
             setIsSyncing(true);
             try {
                 // Save metadata to DB first as requested
-                await updateLicenseTemplate(template.id, {
-                    ...template,
+                const updated = await updateLicenseTemplate(currentTemplate.id, {
+                    ...currentTemplate,
                     client_name: formData.client_name,
                     talent_name: formData.talent_name,
                     start_date: formData.start_date,
@@ -143,13 +151,14 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                     license_fee: Math.round(formData.license_fee * 100),
                     custom_terms: formData.custom_terms,
                 } as any);
+                setCurrentTemplate(updated);
 
-                const rendered = replacePlaceholders(template.contract_body || "", {
+                const rendered = replacePlaceholders(updated.contract_body || "", {
                     ...formData,
-                    template_name: template.template_name,
-                    category: template.category,
-                    description: template.description,
-                    usage_scope: template.usage_scope,
+                    template_name: updated.template_name,
+                    category: updated.category,
+                    description: updated.description,
+                    usage_scope: updated.usage_scope,
                 });
                 setValue("contract_body", rendered);
                 setStep(2);
@@ -172,16 +181,50 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         setIsSyncing(true);
         try {
             // Finally update with the possibly edited contract_body
-            await updateLicenseTemplate(template.id, {
-                ...template,
+            const updated = await updateLicenseTemplate(currentTemplate.id, {
+                ...currentTemplate,
                 contract_body: formData.contract_body,
             } as any);
+            setCurrentTemplate(updated);
 
             setStep(3);
         } catch (err: any) {
             toast({
                 title: "Sync Failed",
                 description: err.message || "Failed to prepare contract for signature.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
+    const handleFinalSend = async () => {
+        setIsSyncing(true);
+        try {
+            await createAndSendLicenseSubmission({
+                template_id: currentTemplate.id,
+                docuseal_template_id: currentTemplate.docuseal_template_id,
+                client_name: formData.client_name,
+                client_email: formData.client_email,
+                talent_names: formData.talent_name,
+                license_fee: Math.round(formData.license_fee * 100),
+                duration_days: formData.duration_days,
+                start_date: formData.start_date,
+                custom_terms: formData.custom_terms,
+            });
+
+            toast({
+                title: "Success",
+                description: "License sent and recorded successfully.",
+            });
+
+            onComplete();
+            onClose();
+        } catch (err: any) {
+            toast({
+                title: "Send Failed",
+                description: err.message || "Failed to create submission record.",
                 variant: "destructive",
             });
         } finally {
@@ -272,6 +315,15 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                                 <Input
                                                     {...register("talent_name", { required: true })}
                                                     placeholder="e.g. Talent A"
+                                                    className="h-12 bg-slate-50 border-slate-200 rounded-xl font-medium focus:ring-4 focus:ring-indigo-50 transition-all"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-sm font-bold text-slate-800 ml-1">Client Email *</Label>
+                                                <Input
+                                                    type="email"
+                                                    {...register("client_email", { required: true })}
+                                                    placeholder="client@example.com"
                                                     className="h-12 bg-slate-50 border-slate-200 rounded-xl font-medium focus:ring-4 focus:ring-indigo-50 transition-all"
                                                 />
                                             </div>
@@ -394,12 +446,13 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                 <DocuSealBuilderModal
                     open={step === 3}
                     onClose={() => setStep(2)}
-                    templateName={template.template_name}
-                    docusealTemplateId={template.docuseal_template_id}
-                    externalId={`temp-${template.id}-${Date.now()}`}
+                    templateName={currentTemplate.template_name}
+                    docusealTemplateId={currentTemplate.docuseal_template_id}
+                    externalId={`temp-${currentTemplate.id}-${Date.now()}`}
+                    onSend={handleFinalSend}
+                    isSending={isSyncing}
                     onSave={() => {
-                        onComplete();
-                        onClose();
+                        // Keep open, wait for Final Send
                     }}
                 />
             )}
