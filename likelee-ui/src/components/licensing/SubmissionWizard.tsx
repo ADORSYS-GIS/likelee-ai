@@ -63,6 +63,7 @@ interface FormData {
     custom_terms: string;
     contract_body: string;
     client_email: string; // Added for DocuSeal submission
+    usage_scope: string;
 }
 
 const EXCLUSIVITY_OPTIONS = [
@@ -98,6 +99,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
             start_date: new Date().toISOString().split("T")[0],
             duration_days: template.duration_days || 90,
             territory: template.territory || "Worldwide",
+            usage_scope: template.usage_scope || "",
             exclusivity: template.exclusivity || "Non-exclusive",
             modifications_allowed: template.modifications_allowed || "",
             license_fee: template.license_fee ? template.license_fee / 100 : 0,
@@ -247,6 +249,14 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                 client_name: currentData.client_name,
                 client_email: currentData.client_email,
                 talent_names: currentData.talent_name,
+                usage_scope: currentData.usage_scope,
+                license_fee: currentData.license_fee,
+                duration_days: currentData.duration_days,
+                territory: currentData.territory,
+                exclusivity: currentData.exclusivity,
+                modifications_allowed: currentData.modifications_allowed,
+                custom_terms: currentData.custom_terms,
+                start_date: currentData.start_date,
             });
 
             toast({
@@ -346,10 +356,10 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                                 />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label className="text-sm font-bold text-slate-800 ml-1">Talent Name *</Label>
+                                                <Label className="text-sm font-bold text-slate-800 ml-1">Talents Name (comma-separated) *</Label>
                                                 <Input
                                                     {...register("talent_name", { required: true })}
-                                                    placeholder="e.g. Talent A"
+                                                    placeholder="e.g. Talent A, Talent B"
                                                     className="h-12 bg-slate-50 border-slate-200 rounded-xl font-medium focus:ring-4 focus:ring-indigo-50 transition-all"
                                                 />
                                             </div>
@@ -397,6 +407,14 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                                         className="h-12 bg-slate-50 border-slate-200 rounded-xl font-medium"
                                                     />
                                                 </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-sm font-bold text-slate-800 ml-1">Usage Scope</Label>
+                                                <Input
+                                                    {...register("usage_scope")}
+                                                    placeholder="e.g. Organic Social Media"
+                                                    className="h-12 bg-slate-50 border-slate-200 rounded-xl font-medium"
+                                                />
                                             </div>
                                             <div className="space-y-2">
                                                 <Label className="text-sm font-bold text-slate-800 ml-1">Exclusivity</Label>
