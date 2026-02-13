@@ -466,14 +466,14 @@ pub struct ClientsCampaignsResponse {
 #[derive(Debug, Serialize)]
 pub struct ClientEarning {
     pub name: String,
-    pub budget: i64,
+    pub budget: f64,
     pub color: String,
 }
 
 #[derive(Debug, Serialize)]
 pub struct GeoMetric {
     pub name: String,
-    pub value: i64,
+    pub value: f64,
     pub color: String,
 }
 
@@ -481,7 +481,7 @@ pub struct GeoMetric {
 pub struct ClientPerformance {
     pub name: String,
     pub campaigns: i64,
-    pub budget: i64,
+    pub budget: f64,
     pub percentage: f64,
 }
 
@@ -617,11 +617,11 @@ pub async fn get_clients_campaigns_analytics(
                 .get(id)
                 .cloned()
                 .unwrap_or_else(|| "Unknown Brand".to_string()),
-            budget: cents / 100,
+            budget: *cents as f64 / 100.0,
             color: "".to_string(), // Will assign below
         })
         .collect();
-    earnings_vec.sort_by(|a, b| b.budget.cmp(&a.budget));
+    earnings_vec.sort_by(|a, b| b.budget.partial_cmp(&a.budget).unwrap_or(std::cmp::Ordering::Equal));
     earnings_vec.truncate(4);
     for (i, item) in earnings_vec.iter_mut().enumerate() {
         item.color = colors[i % colors.len()].to_string();
@@ -632,11 +632,11 @@ pub async fn get_clients_campaigns_analytics(
         .iter()
         .map(|(name, cents)| GeoMetric {
             name: name.clone(),
-            value: cents / 100,
+            value: *cents as f64 / 100.0,
             color: "".to_string(),
         })
         .collect();
-    geo_vec.sort_by(|a, b| b.value.cmp(&a.value));
+    geo_vec.sort_by(|a, b| b.value.partial_cmp(&a.value).unwrap_or(std::cmp::Ordering::Equal));
     geo_vec.truncate(4);
     for (i, item) in geo_vec.iter_mut().enumerate() {
         item.color = colors[i % colors.len()].to_string();
@@ -653,7 +653,7 @@ pub async fn get_clients_campaigns_analytics(
                     .cloned()
                     .unwrap_or_else(|| "Unknown Brand".to_string()),
                 campaigns: *count,
-                budget: cents / 100,
+                budget: cents as f64 / 100.0,
                 percentage: if total_revenue > 0 {
                     (cents as f64 / total_revenue as f64) * 100.0
                 } else {
@@ -665,7 +665,7 @@ pub async fn get_clients_campaigns_analytics(
     perf_vec.sort_by(|a, b| {
         b.campaigns
             .cmp(&a.campaigns)
-            .then_with(|| b.budget.cmp(&a.budget))
+            .then_with(|| b.budget.partial_cmp(&a.budget).unwrap_or(std::cmp::Ordering::Equal))
     });
     perf_vec.truncate(4);
 
@@ -711,7 +711,9 @@ pub async fn get_clients_campaigns_analytics(
                     DateTime::parse_from_rfc3339(updated),
                 ) {
                     let duration = u_dt.signed_duration_since(c_dt);
-                    total_days += duration.num_days();
+                    let days = duration.num_days();
+                    // Ensure at least 1 day for any completed booking to avoid "0 days" display issue
+                    total_days += days.max(1);
                     completed_count += 1;
                 }
             }
