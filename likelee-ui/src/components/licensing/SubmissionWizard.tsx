@@ -300,7 +300,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                 <Button
                                     onClick={handleNext}
                                     disabled={isSyncing}
-                                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-8 rounded-xl shadow-lg shadow-indigo-200"
+                                    className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-10 px-8 rounded-xl shadow-lg shadow-indigo-100/50 transition-all active:scale-95"
                                 >
                                     {isSyncing ? "Preparing..." : step === 3 ? "Finalize" : "Next Step"}
                                     {!isSyncing && step < 3 && <ArrowRight className="w-4 h-4 ml-2" />}

@@ -313,7 +313,7 @@ export const LicenseTemplatesTab: React.FC = () => {
             <div className="flex items-center gap-2">
               <Button
                 onClick={openNewTemplateModal}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-6 rounded-xl shadow-lg shadow-indigo-100"
+                className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-10 px-6 rounded-xl shadow-lg shadow-indigo-100/50"
               >
                 <Plus className="mr-2 h-4 w-4" /> New Template
               </Button>

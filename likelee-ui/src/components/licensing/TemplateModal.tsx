@@ -174,7 +174,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                   <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-8 rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-95"
+                    className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-10 px-8 rounded-xl shadow-lg shadow-indigo-100/50 transition-all active:scale-95"
                   >
                     {isSubmitting ? "Saving..." : initialData ? "Update Template" : "Create Template"}
                   </Button>
