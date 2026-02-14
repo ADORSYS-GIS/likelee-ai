@@ -372,7 +372,7 @@ export const LicensingRequestsTab = () => {
                                 <div>
                                     <Button
                                         onClick={() => openPayModal(group)}
-                                        className={`w-full font-bold h-11 rounded-md flex items-center justify-center gap-2 ${group.pay_set ? "bg-white text-gray-900 border border-gray-300 hover:bg-gray-50" : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 animate-pulse"}`}
+                                        className={`w-full font-bold h-10 rounded-md flex items-center justify-center gap-2 ${group.pay_set ? "bg-white text-gray-900 border border-gray-300 hover:bg-gray-50" : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 animate-pulse"}`}
                                     >
                                         {group.pay_set ? (
                                             <>
@@ -390,7 +390,7 @@ export const LicensingRequestsTab = () => {
                                     <Button
                                         variant="outline"
                                         onClick={() => updateGroupStatus(group, "pending")}
-                                        className="border-gray-300 text-gray-700 font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                                        className="border-gray-300 text-gray-700 font-bold h-10 rounded-md flex items-center justify-center gap-2"
                                     >
                                         <RefreshCw className="w-4 h-4" />
                                         Recover to Active
@@ -400,7 +400,7 @@ export const LicensingRequestsTab = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <Button
                                         onClick={() => updateGroupStatus(group, "approved")}
-                                        className="bg-green-600 hover:bg-green-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                                        className="bg-green-600 hover:bg-green-700 text-white font-bold h-10 rounded-md flex items-center justify-center gap-2"
                                     >
                                         <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
                                             <span className="text-[10px]">✓</span>
@@ -413,14 +413,14 @@ export const LicensingRequestsTab = () => {
                                             setGroupToCounter(group);
                                             setCounterOfferModalOpen(true);
                                         }}
-                                        className="border-gray-300 text-gray-700 font-bold h-11 rounded-md"
+                                        className="border-gray-300 text-gray-700 font-bold h-10 rounded-md"
                                     >
                                         Counter Offer
                                     </Button>
                                     <Button
                                         variant="outline"
                                         onClick={() => updateGroupStatus(group, "rejected")}
-                                        className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                                        className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-10 rounded-md flex items-center justify-center gap-2"
                                     >
                                         <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
                                             <span className="text-[10px]">✕</span>

@@ -18,7 +18,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { CreateTemplateRequest, LicenseTemplate } from "@/api/licenseTemplates";
 import { ContractEditor } from "./ContractEditor";
-import { Sparkles, FileText, Calendar, Users, Briefcase, Globe, Clock, Shield, DollarSign } from "lucide-react";
+import { FileText, Calendar, Users, Briefcase, Globe, Clock, Shield, DollarSign } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
 interface TemplateModalProps {
@@ -164,14 +164,14 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                   type="button"
                   variant="ghost"
                   onClick={onClose}
-                  className="text-slate-500 font-bold hover:bg-slate-50 rounded-xl px-6"
+                  className="text-slate-500 font-bold hover:bg-slate-50 rounded-xl px-6 h-10"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 px-8 rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-95"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-8 rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-95"
                 >
                   {isSubmitting ? "Saving..." : initialData ? "Update Template" : "Create Template"}
                 </Button>
@@ -186,7 +186,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
               <div className="p-8 bg-white rounded-3xl border border-slate-200/60 shadow-sm space-y-6">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-10 h-10 bg-indigo-50 rounded-2xl flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-indigo-600 fill-indigo-600" />
+                    <FileText className="w-5 h-5 text-indigo-600" />
                   </div>
                   <h3 className="font-bold text-slate-900">Template Identity</h3>
                 </div>

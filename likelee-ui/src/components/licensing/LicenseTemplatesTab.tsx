@@ -339,7 +339,7 @@ export const LicenseTemplatesTab: React.FC = () => {
 
                     <div className="grid grid-cols-1 gap-2">
                       <Button
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11"
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10"
                         onClick={() => {
                           setWizardTemplate(template);
                         }}

@@ -25,7 +25,7 @@ import {
 } from "@/api/licenseSubmissions";
 import { ContractEditor } from "./ContractEditor";
 import { DocuSealBuilderModal } from "./DocuSealBuilderModal";
-import { ArrowRight, ArrowLeft, Check, Sparkles, FileText, Layout } from "lucide-react";
+import { ArrowRight, ArrowLeft, Check, FileText, Layout } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 interface SubmissionWizardProps {
@@ -277,7 +277,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                             <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
                                     <div className="bg-indigo-50 p-1.5 rounded-lg">
-                                        <Sparkles className="w-4 h-4 text-indigo-600 fill-indigo-600" />
+                                        <FileText className="w-4 h-4 text-indigo-600" />
                                     </div>
                                     <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest">Step {step} of 3</span>
                                 </div>
@@ -289,18 +289,18 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                 </p>
                             </div>
                             <div className="flex items-center gap-3">
-                                <Button variant="ghost" onClick={onClose} className="rounded-xl font-bold text-slate-500 px-6">
+                                <Button variant="ghost" onClick={onClose} className="rounded-xl font-bold text-slate-500 px-6 h-10">
                                     Cancel
                                 </Button>
                                 {step > 1 && (
-                                    <Button variant="outline" onClick={() => setStep(step - 1)} className="rounded-xl font-bold border-slate-200">
+                                    <Button variant="outline" onClick={() => setStep(step - 1)} className="rounded-xl font-bold border-slate-200 h-10">
                                         <ArrowLeft className="w-4 h-4 mr-2" /> Back
                                     </Button>
                                 )}
                                 <Button
                                     onClick={handleNext}
                                     disabled={isSyncing}
-                                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 px-8 rounded-xl shadow-lg shadow-indigo-200"
+                                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-8 rounded-xl shadow-lg shadow-indigo-200"
                                 >
                                     {isSyncing ? "Preparing..." : step === 3 ? "Finalize" : "Next Step"}
                                     {!isSyncing && step < 3 && <ArrowRight className="w-4 h-4 ml-2" />}
@@ -460,7 +460,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                 </div>
                                 <div className="mt-8 p-6 bg-indigo-50/50 border border-indigo-100 rounded-2xl flex items-start gap-4">
                                     <div className="bg-indigo-600 p-2 rounded-xl mt-1">
-                                        <Sparkles className="w-5 h-5 text-white" />
+                                        <FileText className="w-5 h-5 text-white" />
                                     </div>
                                     <div>
                                         <h4 className="font-bold text-indigo-900 mb-1">Pre-filled Data Applied</h4>
