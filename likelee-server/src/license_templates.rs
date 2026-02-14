@@ -149,10 +149,7 @@ pub async fn list(
         .map_err(|e| crate::errors::handle_error(e, "list_license_templates_read_body"))?;
 
     if !status.is_success() {
-        return Err(crate::errors::sanitize_db_error(
-            status.as_u16(),
-            text,
-        ));
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
     }
 
     let templates: Vec<LicenseTemplate> = serde_json::from_str(&text).unwrap_or(vec![]);
