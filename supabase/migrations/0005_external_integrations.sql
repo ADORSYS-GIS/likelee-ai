@@ -147,4 +147,9 @@ BEGIN
   END IF;
 END $$;
 
+-- 4. Creator profile social links
+ALTER TABLE IF EXISTS public.creators
+  ADD COLUMN IF NOT EXISTS tiktok_handle text,
+  ADD COLUMN IF NOT EXISTS portfolio_link text;
+
 COMMIT;

@@ -48,16 +48,22 @@ const Toast = React.forwardRef(({ className, variant, ...props }, ref) => {
 });
 Toast.displayName = "Toast";
 
-const ToastAction = React.forwardRef(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      "inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium ring-offset-background transition-colors hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 group-[.destructive]:border-black group-[.destructive]:hover:border-black group-[.destructive]:hover:bg-black/10 group-[.destructive]:hover:text-white group-[.destructive]:focus:ring-teal-400",
-      className,
-    )}
-    {...props}
-  />
-));
+const ToastAction = React.forwardRef(
+  ({ className, altText, ...props }: any, ref) => (
+    <button
+      ref={ref}
+      type="button"
+      aria-label={altText}
+      className={cn(
+        "inline-flex h-9 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60",
+        "hover:bg-secondary/70 active:bg-secondary",
+        "group-[.destructive]:border-white/40 group-[.destructive]:text-white group-[.destructive]:hover:bg-white/10 group-[.destructive]:active:bg-white/20 group-[.destructive]:focus-visible:ring-white/70",
+        className,
+      )}
+      {...props}
+    />
+  ),
+);
 ToastAction.displayName = "ToastAction";
 
 const ToastClose = React.forwardRef(({ className, ...props }, ref) => (

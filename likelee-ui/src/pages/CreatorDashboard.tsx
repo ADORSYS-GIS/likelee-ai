@@ -781,6 +781,16 @@ export default function CreatorDashboard() {
       return new URL("/", window.location.origin).toString();
     }
   })();
+  const api = (path: string) => {
+    const normalizedBase = API_BASE_ABS.endsWith("/")
+      ? API_BASE_ABS
+      : `${API_BASE_ABS}/`;
+    let normalizedPath = path.startsWith("/") ? path.slice(1) : path;
+    if (normalizedBase.endsWith("/api/") && normalizedPath.startsWith("api/")) {
+      normalizedPath = normalizedPath.slice("api/".length);
+    }
+    return new URL(normalizedPath, normalizedBase).toString();
+  };
   const [activeSection, setActiveSection] = useState("dashboard");
   const [settingsTab, setSettingsTab] = useState("profile"); // 'profile' or 'rules'
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -907,6 +917,7 @@ export default function CreatorDashboard() {
     bio: "",
     instagram_handle: "",
     tiktok_handle: "",
+    portfolio_url: "",
     instagram_connected: false,
     instagram_followers: 0,
     content_types: [] as string[],
@@ -944,6 +955,9 @@ export default function CreatorDashboard() {
         email: profile.email || prev.email,
         profile_photo: profile.profile_photo_url || prev.profile_photo,
         kyc_status: profile.kyc_status || prev.kyc_status,
+        bio: profile.bio ?? prev.bio,
+        tiktok_handle: profile.tiktok_handle ?? prev.tiktok_handle,
+        portfolio_url: profile.portfolio_link ?? prev.portfolio_url,
       }));
     }
   }, [profile]);
@@ -1145,6 +1159,8 @@ export default function CreatorDashboard() {
   const [showRatesModal, setShowRatesModal] = useState<
     "content" | "industry" | null
   >(null);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [savingSocialLinks, setSavingSocialLinks] = useState(false);
   const [savingRates, setSavingRates] = useState(false);
   const [showCardModal, setShowCardModal] = useState(false);
   const [showConnectBankAccount, setShowConnectBankAccount] = useState(false);
@@ -1291,8 +1307,15 @@ export default function CreatorDashboard() {
     const abort = new AbortController();
     (async () => {
       try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        if (!token) return;
+
         // 1) List recordings via authenticated client
         const rows = await base44.get<any[]>(`/voice/recordings`, {
+          headers: { Authorization: `Bearer ${token}` },
           params: { user_id: user.id },
         } as any);
         if (!Array.isArray(rows)) return;
@@ -1301,7 +1324,24 @@ export default function CreatorDashboard() {
         const withUrls = await Promise.all(
           rows.map(async (row: any) => {
             try {
+              if (row?.accessible === false) {
+                return {
+                  id: row.id,
+                  emotion: row.emotion_tag || null,
+                  url: null,
+                  blob: null,
+                  mimeType: row.mime_type || "audio/webm",
+                  duration: row.duration_sec || 0,
+                  date: row.created_at,
+                  accessible: false,
+                  voiceProfileCreated: !!row.voice_profile_created,
+                  usageCount: 0,
+                  server_recording_id: row.id,
+                };
+              }
+
               const j = await base44.get<any>(`/voice/recordings/signed-url`, {
+                headers: { Authorization: `Bearer ${token}` },
                 params: { recording_id: row.id, expires_sec: 600 },
               } as any);
               return {
@@ -1317,7 +1357,26 @@ export default function CreatorDashboard() {
                 usageCount: 0,
                 server_recording_id: row.id,
               };
-            } catch (_) {
+            } catch (e: any) {
+              const msg = typeof e?.message === "string" ? e.message : "";
+              const isNotFound = msg.includes(" failed: 404 ");
+
+              if (isNotFound) {
+                return {
+                  id: row.id,
+                  emotion: row.emotion_tag || null,
+                  url: null,
+                  blob: null,
+                  mimeType: row.mime_type || "audio/webm",
+                  duration: row.duration_sec || 0,
+                  date: row.created_at,
+                  accessible: false,
+                  voiceProfileCreated: !!row.voice_profile_created,
+                  usageCount: 0,
+                  server_recording_id: row.id,
+                };
+              }
+
               return null;
             }
           }),
@@ -1358,7 +1417,9 @@ export default function CreatorDashboard() {
   const [countdown, setCountdown] = useState(3);
   const [recordingTime, setRecordingTime] = useState(0);
   const [currentWord, setCurrentWord] = useState(0);
-  const [generatingVoice, setGeneratingVoice] = useState(false);
+  const [generatingVoiceId, setGeneratingVoiceId] = useState<
+    string | number | null
+  >(null);
   const [tempContentTypes, setTempContentTypes] = useState<string[]>([]);
   const [tempIndustries, setTempIndustries] = useState<string[]>([]);
 
@@ -1409,7 +1470,8 @@ export default function CreatorDashboard() {
           instagram_handle: profile.platform_handle
             ? `@${profile.platform_handle}`
             : prev.instagram_handle,
-          tiktok_handle: prev.tiktok_handle,
+          tiktok_handle: profile.tiktok_handle ?? prev.tiktok_handle,
+          portfolio_url: profile.portfolio_link ?? prev.portfolio_url,
           instagram_connected: prev.instagram_connected ?? false,
           instagram_followers: prev.instagram_followers ?? 0,
           content_types: profile.content_types || [],
@@ -2043,39 +2105,45 @@ export default function CreatorDashboard() {
   };
 
   const renderPublicProfilePreview = () => {
-    // Use real user data if available, otherwise example data
+    const fullName =
+      creator.name ||
+      profile?.full_name ||
+      user?.user_metadata?.full_name ||
+      user?.email?.split("@")[0] ||
+      "";
+    const location =
+      creator.location ||
+      [profile?.city, profile?.state].filter(Boolean).join(", ") ||
+      "";
+    const handles = [creator.instagram_handle, creator.tiktok_handle]
+      .map((h: any) => (typeof h === "string" ? h.trim() : ""))
+      .filter(Boolean)
+      .join(" ");
+
     const data = {
-      ...exampleProfilePreviewData,
-      first_name:
-        creator.name ||
-        profile?.full_name ||
-        user?.user_metadata?.full_name ||
-        user?.email?.split("@")[0] ||
-        t("creatorDashboard.publicProfile.namePlaceholder"),
-      location:
-        user?.user_metadata?.location ||
-        t("creatorDashboard.publicProfile.locationPlaceholder"),
-      handles: t("creatorDashboard.publicProfile.handlesPlaceholder"),
-      bio: t("creatorDashboard.publicProfile.exampleBio"),
-      portfolio: exampleProfilePreviewData.portfolio.map((item, idx) => {
-        const itemKeys = [
-          { brand: "targetRetail", campaign: "holidayCampaign" },
-          { brand: "spotifyPremium", campaign: "audioCampaign" },
-          { brand: "lululemon", campaign: "fitnessSeries" },
-        ];
-        return {
-          ...item,
-          brand: t(
-            `creatorDashboard.publicProfile.portfolioItems.${itemKeys[idx].brand}`,
-          ),
-          campaign: t(
-            `creatorDashboard.publicProfile.portfolioItems.${itemKeys[idx].campaign}`,
-          ),
-          duration: t("creatorDashboard.publicProfile.portfolioItems.months", {
-            count: parseInt(item.duration),
-          }),
-        };
-      }),
+      first_name: fullName,
+      location,
+      handles,
+      followers:
+        typeof creator.instagram_followers === "number"
+          ? creator.instagram_followers.toLocaleString()
+          : "0",
+      bio: creator.bio || profile?.bio || "",
+      active_campaigns: Array.isArray(activeCampaigns)
+        ? activeCampaigns.length
+        : 0,
+      completed_projects: 0,
+      voice_profiles: Array.isArray(voiceLibrary) ? voiceLibrary.length : 0,
+      open_to_work: Array.isArray(creator.content_types)
+        ? creator.content_types
+        : [],
+      industries: Array.isArray(creator.industries) ? creator.industries : [],
+      base_rate:
+        typeof creator.price_per_month === "number"
+          ? creator.price_per_month
+          : 0,
+      portfolio_link:
+        typeof creator.portfolio_url === "string" ? creator.portfolio_url : "",
     };
 
     return (
@@ -2111,61 +2179,63 @@ export default function CreatorDashboard() {
         <Card className="overflow-hidden border-gray-200 bg-white shadow-sm w-full max-w-10xl">
           {/* Banner */}
           <div className="h-48 bg-[#32C8D1]"></div>
-          {/* Header Section with Avatar */}
-          <div className="relative flex justify-between items-start mb-6">
-            <div className="flex items-end -mt-16 mb-4 px-6">
-              <div className="relative">
-                <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
-                  <AvatarImage
-                    src={
-                      profile?.profile_photo_url ||
-                      creator.profile_photo ||
-                      user?.user_metadata?.avatar_url
-                    }
-                  />
-                  <AvatarFallback className="bg-[#32C8D1] text-white text-4xl">
-                    {data.first_name && data.first_name[0] !== "["
-                      ? data.first_name[0].toUpperCase()
-                      : user?.email?.[0].toUpperCase() || "U"}
-                  </AvatarFallback>
-                </Avatar>
-              </div>
-              <div className="ml-6 mb-2">
-                <div className="flex items-center gap-3 mb-1">
-                  <h1 className="text-3xl font-bold text-gray-900">
-                    {data.first_name}
-                  </h1>
-                  <Badge
-                    variant="secondary"
-                    className="bg-green-100 text-green-700 hover:bg-green-200 border-green-200 gap-1"
-                  >
-                    <CheckCircle2 className="h-3 w-3" />
-                    {t("creatorDashboard.publicProfile.verifiedUser")}
-                  </Badge>
+          <div className="px-6">
+            {/* Header Section with Avatar */}
+            <div className="relative flex justify-between items-start mb-6">
+              <div className="flex items-end -mt-16 mb-4">
+                <div className="relative">
+                  <Avatar className="h-32 w-32 border-4 border-white shadow-lg">
+                    <AvatarImage
+                      src={
+                        profile?.profile_photo_url ||
+                        creator.profile_photo ||
+                        user?.user_metadata?.avatar_url
+                      }
+                    />
+                    <AvatarFallback className="bg-[#32C8D1] text-white text-4xl">
+                      {data.first_name && data.first_name[0] !== "["
+                        ? data.first_name[0].toUpperCase()
+                        : user?.email?.[0].toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
                 </div>
-                <div className="flex items-center gap-4 text-gray-600 text-sm">
-                  <span>{data.location}</span>
-                  <span className="flex items-center gap-1">
-                    <Badge
-                      variant="secondary"
-                      className="bg-pink-50 text-pink-700 hover:bg-pink-100 border-pink-200 text-xs"
-                    >
-                      {data.handles}
-                    </Badge>
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Users className="h-3 w-3" />
-                    {data.followers}{" "}
-                    {t("creatorDashboard.publicProfile.followers")}
-                  </span>
+                <div className="ml-6 mb-2">
+                  <div className="flex items-center gap-3 mb-1">
+                    <h1 className="text-3xl font-bold text-gray-900">
+                      {data.first_name}
+                    </h1>
+                    {profile?.kyc_status === "approved" && (
+                      <Badge
+                        variant="secondary"
+                        className="bg-green-100 text-green-700 hover:bg-green-200 border-green-200 gap-1"
+                      >
+                        <CheckCircle2 className="h-3 w-3" />
+                        {t("creatorDashboard.publicProfile.verifiedUser")}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-4 text-gray-600 text-sm">
+                    <span>{data.location}</span>
+                    <span className="flex items-center gap-1">
+                      <Badge
+                        variant="secondary"
+                        className="bg-pink-50 text-pink-700 hover:bg-pink-100 border-pink-200 text-xs"
+                      >
+                        {data.handles || "-"}
+                      </Badge>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      {data.followers}{" "}
+                      {t("creatorDashboard.publicProfile.followers")}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="px-6 pb-6">
             {/* Bio */}
-            <p className="text-gray-700 mb-8 max-w-3xl">{data.bio}</p>
+            <p className="text-gray-700 mb-8 max-w-3xl">{data.bio || "-"}</p>
 
             {/* Stats Grid */}
             <div className="grid grid-cols-3 gap-4 mb-8">
@@ -2196,38 +2266,51 @@ export default function CreatorDashboard() {
             </div>
 
             {/* Tags */}
-            <div className="space-y-6 mb-8">
+            <div className="space-y-8 mb-8 border-t border-gray-100 pt-6">
               <div>
-                <h3 className="text-sm font-bold text-gray-900 mb-3">
+                <h3 className="text-base font-semibold text-gray-900 mb-3">
                   {t("creatorDashboard.publicProfile.openToWork")}
                 </h3>
-                <div className="flex flex-wrap gap-2">
-                  {data.open_to_work.map((tag: string) => (
-                    <Badge
-                      key={tag}
-                      variant="default"
-                      className="bg-[#32C8D1] hover:bg-[#2bb0b8] text-white border-0"
-                    >
-                      {t(`common.contentTypes.${tag}`, { defaultValue: tag })}
-                    </Badge>
-                  ))}
-                </div>
+                {data.open_to_work.length ? (
+                  <div className="flex flex-wrap gap-2">
+                    {data.open_to_work.map((tag: string) => (
+                      <Badge
+                        key={tag}
+                        variant="default"
+                        className="bg-[#32C8D1] hover:bg-[#2bb0b8] text-white border-0 text-sm px-3 py-1"
+                      >
+                        {t(`common.contentTypes.${tag}`, { defaultValue: tag })}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">
+                    No content types selected yet.
+                  </p>
+                )}
               </div>
               <div>
-                <h3 className="text-sm font-bold text-gray-900 mb-3">
+                <h3 className="text-base font-semibold text-gray-900 mb-3">
                   {t("creatorDashboard.publicProfile.industries")}
                 </h3>
-                <div className="flex flex-wrap gap-2">
-                  {data.industries.map((tag: string) => (
-                    <Badge
-                      key={tag}
-                      variant="secondary"
-                      className="bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200"
-                    >
-                      {t(`common.industries.${tag}`, { defaultValue: tag })}
-                    </Badge>
-                  ))}
-                </div>
+                {data.industries.length ? (
+                  <div className="flex flex-wrap gap-2">
+                    {data.industries.map((tag: string) => (
+                      <Badge
+                        key={tag}
+                        variant="secondary"
+                        className="bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200 text-sm px-3 py-1"
+                      >
+                        {t(`common.industries.${tag}`, { defaultValue: tag })}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">
+                    No industries selected yet.
+                  </p>
+                )}
+
               </div>
             </div>
 
@@ -2256,38 +2339,25 @@ export default function CreatorDashboard() {
             </div>
 
             {/* Portfolio */}
-            <div>
-              <h3 className="font-bold text-gray-900 mb-4">
+            <div className="border-t border-gray-100 pt-6">
+              <h3 className="text-base font-semibold text-gray-900 mb-3">
                 {t("creatorDashboard.publicProfile.portfolio")}
               </h3>
-              <div className="grid md:grid-cols-3 gap-4">
-                {data.portfolio.map((item: any) => (
-                  <div
-                    key={item.id}
-                    className="border border-gray-200 rounded-lg p-4 flex items-center gap-4"
-                  >
-                    <img
-                      src={item.logo}
-                      alt={item.brand}
-                      className="w-10 h-10 object-contain"
-                    />
-                    <div>
-                      <div className="font-bold text-gray-900 text-sm">
-                        {item.brand}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {item.campaign}
-                      </div>
-                      <Badge
-                        variant="secondary"
-                        className="mt-1 text-[10px] h-5"
-                      >
-                        {item.duration}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              {data.portfolio_link ? (
+                <a
+                  href={data.portfolio_link}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 text-[#32C8D1] hover:underline"
+                >
+                  <LinkIcon className="h-4 w-4" />
+                  {data.portfolio_link}
+                </a>
+              ) : (
+                <p className="text-sm text-gray-500">
+                  Add your portfolio link in Settings → Profile.
+                </p>
+              )}
             </div>
 
             {/* Social Links */}
@@ -2300,6 +2370,13 @@ export default function CreatorDashboard() {
                 <Video className="h-4 w-4" />
                 TikTok
               </Button>
+            </div>
+
+            <div className="mt-8 -mx-6 border-t border-blue-100 bg-blue-50 px-6 py-4 flex gap-3 items-start">
+              <AlertCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+              <p className="text-blue-900 text-sm">
+                {t("creatorDashboard.publicProfile.previewNote")}
+              </p>
             </div>
           </div>
         </Card>
@@ -2343,12 +2420,16 @@ export default function CreatorDashboard() {
                   <h3 className="text-xl font-bold text-gray-900">
                     {data.first_name}
                   </h3>
-                  <Badge
-                    variant="secondary"
-                    className="bg-green-100 text-green-700 border-green-200 text-[10px]"
-                  >
-                    {t("creatorDashboard.publicProfile.verifiedCreator")}
-                  </Badge>
+
+                  {profile?.kyc_status === "approved" && (
+                    <Badge
+                      variant="secondary"
+                      className="bg-green-100 text-green-700 border-green-200 text-[10px]"
+                    >
+                      {t("creatorDashboard.publicProfile.verifiedCreator")}
+                    </Badge>
+                  )}
+
                 </div>
 
                 <p className="text-xs text-gray-500 mb-4">{data.location}</p>
@@ -2623,7 +2704,7 @@ export default function CreatorDashboard() {
       };
 
       mediaRecorderRef.current.onstop = async () => {
-        const finalize = () => {
+        const finalize = async () => {
           if (!audioChunksRef.current || audioChunksRef.current.length === 0) {
             console.warn(
               "Recording stopped but no audio chunks were captured (after wait).",
@@ -2653,8 +2734,9 @@ export default function CreatorDashboard() {
           });
           const audioUrl = URL.createObjectURL(audioBlob);
 
+          const tempId = Date.now();
           const newRecording = {
-            id: Date.now(),
+            id: tempId,
             emotion: selectedEmotion,
             url: audioUrl,
             blob: audioBlob,
@@ -2666,19 +2748,81 @@ export default function CreatorDashboard() {
             usageCount: 0,
           };
 
-          setVoiceLibrary([...voiceLibrary, newRecording]);
+          setVoiceLibrary((prev) => [...prev, newRecording]);
           setShowRecordingModal(false);
           setRecordingTime(0);
           setCurrentWord(0);
 
           stream.getTracks().forEach((track) => track.stop());
+
+          // Persist to backend so it remains after refresh
+          try {
+            const {
+              data: { session },
+            } = await supabase.auth.getSession();
+            const token = session?.access_token;
+            if (!token)
+              throw new Error("Missing auth session. Please sign in again.");
+
+            const uploadRes = await fetch(
+              api(
+                `/voice/recordings?emotion_tag=${encodeURIComponent(selectedEmotion || "")}`,
+              ),
+              {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "content-type": mimeType || "audio/webm",
+                },
+                body: audioBlob,
+              },
+            );
+            if (!uploadRes.ok) {
+              const txt = await uploadRes.text();
+              throw new Error(txt || `Upload failed (${uploadRes.status})`);
+            }
+            const uploaded = await uploadRes.json();
+            const serverId = uploaded?.id;
+            if (!serverId) throw new Error("Missing recording id after upload");
+
+            const signed = await base44.get<any>(
+              `/voice/recordings/signed-url`,
+              {
+                params: { recording_id: serverId, expires_sec: 600 },
+              } as any,
+            );
+
+            setVoiceLibrary((prev) =>
+              prev.map((r) =>
+                r.id === tempId
+                  ? {
+                      ...r,
+                      id: serverId,
+                      server_recording_id: serverId,
+                      url: signed?.url || r.url,
+                      blob: null,
+                    }
+                  : r,
+              ),
+            );
+          } catch (e: any) {
+            toast({
+              variant: "destructive",
+              title: t("creatorDashboard.toasts.voiceErrorTitle"),
+              description:
+                e?.message ||
+                "Failed to save recording. It may disappear after refresh.",
+            });
+          }
         };
 
         // If no chunks yet, some browsers emit the final chunk just after stop
         if (!audioChunksRef.current || audioChunksRef.current.length === 0) {
-          setTimeout(finalize, 150);
+          setTimeout(() => {
+            void finalize();
+          }, 150);
         } else {
-          finalize();
+          void finalize();
         }
       };
 
@@ -2775,10 +2919,99 @@ export default function CreatorDashboard() {
     );
   };
 
+  const DeleteVoiceRecordingToastAction = ({
+    uiId,
+    serverId,
+    dismiss,
+  }: {
+    uiId: any;
+    serverId: any;
+    dismiss: () => void;
+  }) => {
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    return (
+      <ToastAction
+        altText={t(
+          "creatorDashboard.voice.deleteConfirmation.action",
+          "Delete",
+        )}
+        disabled={isDeleting}
+        className={
+          "border-white/40 bg-white/10 text-white font-semibold shadow-sm " +
+          "hover:bg-white/15 active:bg-white/20 focus-visible:ring-white/70"
+        }
+        onClick={async () => {
+          try {
+            if (!serverId) {
+              toast({
+                title: t(
+                  "creatorDashboard.voice.deleteFailedTitle",
+                  "Delete failed",
+                ),
+                description: t(
+                  "creatorDashboard.voice.deleteFailedDesc",
+                  "Missing recording id.",
+                ),
+                variant: "destructive",
+              });
+              return;
+            }
+
+            if (isDeleting) return;
+            setIsDeleting(true);
+
+            await base44.delete(
+              `/voice/recordings/${encodeURIComponent(String(serverId))}`,
+            );
+            setVoiceLibrary((prev) =>
+              prev.filter(
+                (r) =>
+                  r.id !== uiId &&
+                  String(r?.server_recording_id || r?.id) !== String(serverId),
+              ),
+            );
+            dismiss();
+          } catch (err: any) {
+            const msg =
+              typeof err?.message === "string"
+                ? err.message
+                : t(
+                    "creatorDashboard.voice.deleteFailedDesc",
+                    "Failed to delete recording.",
+                  );
+            toast({
+              title: t(
+                "creatorDashboard.voice.deleteFailedTitle",
+                "Delete failed",
+              ),
+              description: msg,
+              variant: "destructive",
+            });
+          } finally {
+            setIsDeleting(false);
+          }
+        }}
+      >
+        {isDeleting ? (
+          <>
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            Deleting…
+          </>
+        ) : (
+          t("creatorDashboard.voice.deleteConfirmation.action", "Delete")
+        )}
+      </ToastAction>
+    );
+  };
+
   const deleteRecording = async (id) => {
     const rec = voiceLibrary.find((r) => r.id === id);
+    const sid = rec?.server_recording_id || rec?.id;
 
-    const { dismiss } = toast({
+    // Create the toast first, then attach an action using `update`.
+    // This avoids a TDZ crash when passing `dismiss` into the JSX before it's initialized.
+    const tinst = toast({
       title: t(
         "creatorDashboard.voice.deleteConfirmation.title",
         "Delete Recording?",
@@ -2788,78 +3021,73 @@ export default function CreatorDashboard() {
         "This action cannot be undone.",
       ),
       variant: "destructive",
+    });
+
+    tinst.update({
       action: (
-        <ToastAction
-          altText={t(
-            "creatorDashboard.voice.deleteConfirmation.action",
-            "Delete",
-          )}
-          className="bg-white text-red-600 hover:bg-gray-100 border-none font-bold shadow-sm"
-          onClick={async () => {
-            setVoiceLibrary(voiceLibrary.filter((r) => r.id !== id));
-            dismiss();
-            try {
-              const sid = rec?.server_recording_id || rec?.id;
-              if (sid) {
-                await fetch(
-                  api(`/voice/recordings/${encodeURIComponent(sid)}`),
-                  {
-                    method: "DELETE",
-                  },
-                );
-              }
-            } catch (err) {
-              console.error("Error deleting recording:", err);
-            }
-          }}
-        >
-          {t("creatorDashboard.voice.deleteConfirmation.action", "Delete")}
-        </ToastAction>
+        <DeleteVoiceRecordingToastAction
+          uiId={id}
+          serverId={sid}
+          dismiss={tinst.dismiss}
+        />
       ),
     });
   };
 
   const createVoiceProfile = async (recording) => {
     try {
-      setGeneratingVoice(true);
+      const genId = recording?.server_recording_id ?? recording?.id;
+      if (generatingVoiceId && generatingVoiceId !== genId) return;
+      setGeneratingVoiceId(genId);
 
       const ct = recording?.mimeType || recording?.blob?.type || "audio/webm";
 
-      // 1) Upload recording to Likelee server (private bucket)
-      const uploadRes = await fetch(
-        api(
-          `/voice/recordings?user_id=${encodeURIComponent(user.id)}&emotion_tag=${encodeURIComponent(recording.emotion || "")}`,
-        ),
-        {
-          method: "POST",
-          headers: { "content-type": ct },
-          body: recording.blob,
-        },
-      );
-      if (!uploadRes.ok) {
-        const txt = await uploadRes.text();
-        throw new Error(`Upload failed: ${txt}`);
+      // 1) Use existing persisted recording if available, otherwise upload it
+      let recordingId = recording?.server_recording_id;
+      if (!recordingId) {
+        if (!recording?.blob) {
+          throw new Error(
+            "Recording audio is not available. Please re-record and try again.",
+          );
+        }
+
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        if (!token) {
+          throw new Error("Missing auth session. Please sign in again.");
+        }
+
+        const uploadRes = await fetch(
+          api(
+            `/voice/recordings?emotion_tag=${encodeURIComponent(recording.emotion || "")}`,
+          ),
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "content-type": ct,
+            },
+            body: recording.blob,
+          },
+        );
+        if (!uploadRes.ok) {
+          const txt = await uploadRes.text();
+          throw new Error(`Upload failed: ${txt}`);
+        }
+        const uploaded = await uploadRes.json(); // { id, storage_bucket, storage_path }
+        recordingId = uploaded?.id;
+        if (!recordingId) throw new Error("Missing recording id after upload");
       }
-      const uploaded = await uploadRes.json(); // { id, storage_bucket, storage_path }
-      const recordingId = uploaded?.id;
-      if (!recordingId) throw new Error("Missing recording id after upload");
 
       // 2) Create ElevenLabs clone via Likelee server
-      const cloneRes = await fetch(api(`/api/voice/models/clone`), {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          user_id: user.id,
-          recording_id: recordingId,
-          voice_name: `${creator.name}_${recording.emotion}`,
-          description: `${recording.emotion} voice profile for ${creator.name}`,
-        }),
+      const cloned = await base44.post(`/voice/models/clone`, {
+        user_id: user.id,
+        recording_id: recordingId,
+        voice_name: `${creator.name}_${recording.emotion}`,
+        description: `${recording.emotion} voice profile for ${creator.name}`,
       });
-      if (!cloneRes.ok) {
-        const txt = await cloneRes.text();
-        throw new Error(`Clone failed: ${txt}`);
-      }
-      const cloned = await cloneRes.json(); // { provider, voice_id, model_row_id }
 
       setVoiceLibrary(
         voiceLibrary.map((rec) =>
@@ -2899,7 +3127,7 @@ export default function CreatorDashboard() {
         }),
       });
     } finally {
-      setGeneratingVoice(false);
+      setGeneratingVoiceId(null);
     }
   };
 
@@ -3031,6 +3259,19 @@ export default function CreatorDashboard() {
         ? customToast
         : t("creatorDashboard.toasts.profileSaved");
 
+    const rawTiktok =
+      typeof creator.tiktok_handle === "string"
+        ? creator.tiktok_handle.trim()
+        : "";
+    const normalizedTiktok =
+      rawTiktok.length > 0 && !rawTiktok.startsWith("@")
+        ? `@${rawTiktok}`
+        : rawTiktok;
+    const normalizedPortfolio =
+      typeof creator.portfolio_url === "string"
+        ? creator.portfolio_url.trim()
+        : "";
+
     // Only send fields that exist in the profiles table
     // Apply overrides if provided (e.g. for immediate toggle updates)
     const profileData = {
@@ -3042,6 +3283,8 @@ export default function CreatorDashboard() {
       state: creator.location?.split(",")[1]?.trim(),
       base_monthly_price_cents: (creator.price_per_month || 0) * 100,
       platform_handle: creator.instagram_handle?.replace("@", ""),
+      tiktok_handle: normalizedTiktok,
+      portfolio_link: normalizedPortfolio,
       accept_negotiations:
         overrides?.accept_negotiations ?? creator.accept_negotiations,
       content_restrictions:
@@ -3077,6 +3320,9 @@ export default function CreatorDashboard() {
         setCreator((prev) => ({
           ...prev,
           name: savedProfile.full_name || prev.name,
+          bio: savedProfile.bio ?? prev.bio,
+          tiktok_handle: savedProfile.tiktok_handle ?? prev.tiktok_handle,
+          portfolio_url: savedProfile.portfolio_link ?? prev.portfolio_url,
           content_types: savedProfile.content_types ?? prev.content_types,
           industries: savedProfile.industries ?? prev.industries,
           content_restrictions:
@@ -3105,10 +3351,24 @@ export default function CreatorDashboard() {
     }
   };
 
-  const handleSaveProfile = () => {
-    toast({
-      title: t("creatorDashboard.toasts.profileUpdatedDemo"),
-    });
+  const handleSaveProfile = async () => {
+    if (savingProfile) return;
+    setSavingProfile(true);
+    try {
+      await handleSaveRules(t("creatorDashboard.toasts.profileSaved"));
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleSaveSocialLinks = async () => {
+    if (savingSocialLinks) return;
+    setSavingSocialLinks(true);
+    try {
+      await handleSaveRules(t("creatorDashboard.toasts.profileSaved"));
+    } finally {
+      setSavingSocialLinks(false);
+    }
   };
 
   const renderDashboard = () => {
@@ -3119,6 +3379,44 @@ export default function CreatorDashboard() {
 
     return (
       <div className="space-y-6">
+        {profile?.kyc_status !== "approved" && (
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-blue-700 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-blue-900">
+                  {t(
+                    "creatorDashboard.publicProfile.verifyBannerTitle",
+                    "Verify your account",
+                  )}
+                </p>
+                <p className="text-sm text-blue-900/80">
+                  {t(
+                    "creatorDashboard.publicProfile.verifyBannerDesc",
+                    "Complete identity verification to become visible to brands.",
+                  )}
+                </p>
+              </div>
+            </div>
+
+            <Button
+              onClick={startVerificationFromDashboard}
+              disabled={kycLoading || creator?.kyc_status === "pending"}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {creator?.kyc_status === "pending"
+                ? t(
+                    "creatorDashboard.publicProfile.verifyBannerPending",
+                    "Verification pending",
+                  )
+                : t(
+                    "creatorDashboard.publicProfile.verifyBannerCta",
+                    "Verify now",
+                  )}
+            </Button>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card className="p-6 bg-white border border-gray-200">
             <div className="flex items-center justify-between mb-2">
@@ -3417,23 +3715,73 @@ export default function CreatorDashboard() {
   };
 
   const deleteReferenceImage = (sectionId) => {
-    toast({
+    const DeleteReferenceImageToastAction = ({
+      sectionId,
+      dismiss,
+    }: {
+      sectionId: string;
+      dismiss: () => void;
+    }) => {
+      const [isDeleting, setIsDeleting] = useState(false);
+
+      return (
+        <ToastAction
+          altText="Delete"
+          disabled={isDeleting}
+          className={
+            "border-white/40 bg-white/10 text-white font-semibold shadow-sm " +
+            "hover:bg-white/15 active:bg-white/20 focus-visible:ring-white/70"
+          }
+          onClick={async () => {
+            try {
+              if (isDeleting) return;
+              setIsDeleting(true);
+
+              await base44.delete(
+                `/reference-images/${encodeURIComponent(String(sectionId))}`,
+              );
+
+              setReferenceImages((prev) => ({
+                ...prev,
+                [sectionId]: null,
+              }));
+
+              dismiss();
+            } catch (e: any) {
+              toast({
+                variant: "destructive",
+                title: "Delete failed",
+                description: getUserFriendlyError(e),
+              });
+            } finally {
+              setIsDeleting(false);
+            }
+          }}
+        >
+          {isDeleting ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Deleting…
+            </>
+          ) : (
+            "Delete"
+          )}
+        </ToastAction>
+      );
+    };
+
+    const tinst = toast({
       title: "Delete Reference Image?",
       description: "This action cannot be undone.",
       variant: "destructive",
+    });
+
+    tinst.update({
       action: (
-        <ToastAction
-          altText="Delete"
-          className="bg-white text-red-600 hover:bg-gray-100 border-none font-bold shadow-sm"
-          onClick={() => {
-            setReferenceImages({
-              ...referenceImages,
-              [sectionId]: null,
-            });
-          }}
-        >
-          Delete
-        </ToastAction>
+        <DeleteReferenceImageToastAction
+          sectionId={sectionId}
+          dismiss={tinst.dismiss}
+        />
       ),
     });
   };
@@ -4022,10 +4370,15 @@ export default function CreatorDashboard() {
                 {!recording.voiceProfileCreated && recording.accessible && (
                   <Button
                     onClick={() => createVoiceProfile(recording)}
-                    disabled={generatingVoice}
+                    disabled={
+                      generatingVoiceId !== null &&
+                      generatingVoiceId !==
+                        (recording?.server_recording_id ?? recording?.id)
+                    }
                     className="w-full bg-purple-600 hover:bg-purple-700 text-white"
                   >
-                    {generatingVoice ? (
+                    {generatingVoiceId ===
+                    (recording?.server_recording_id ?? recording?.id) ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                         {t("creatorDashboard.voice.library.creatingProfile")}
@@ -6068,6 +6421,7 @@ export default function CreatorDashboard() {
   };
   const handleSaveRates = async (e: any) => {
     e.preventDefault();
+    if (savingRates) return;
     setSavingRates(true);
     try {
       const formData = new FormData(e.target);
@@ -6131,11 +6485,22 @@ export default function CreatorDashboard() {
       );
       const finalRates = [...newRates, ...preservedRates];
 
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        throw new Error("Missing auth session. Please sign in again.");
+      }
+
       const res = await fetch(
         api(`/api/creator-rates?user_id=${encodeURIComponent(user.id)}`),
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify(finalRates),
         },
       );
@@ -6170,6 +6535,11 @@ export default function CreatorDashboard() {
       // Reload rates from database to confirm persistence
       const reloadRes = await fetch(
         api(`/api/creator-rates?user_id=${encodeURIComponent(user.id)}`),
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
       );
       if (reloadRes.ok) {
         const reloadedRates = await reloadRes.json();
@@ -6343,9 +6713,17 @@ export default function CreatorDashboard() {
 
               <Button
                 onClick={handleSaveProfile}
+                disabled={savingProfile}
                 className="w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
               >
-                {t("creatorDashboard.settingsView.profile.saveProfile")}
+                {savingProfile ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {t("creatorDashboard.settingsView.profile.saveProfile")}
+                  </>
+                ) : (
+                  t("creatorDashboard.settingsView.profile.saveProfile")
+                )}
               </Button>
             </div>
           </Card>
@@ -6408,10 +6786,18 @@ export default function CreatorDashboard() {
               </div>
 
               <Button
-                onClick={handleSaveProfile}
+                onClick={handleSaveSocialLinks}
+                disabled={savingSocialLinks}
                 className="w-full bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
               >
-                {t("creatorDashboard.settingsView.profile.saveSocial")}
+                {savingSocialLinks ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    {t("creatorDashboard.settingsView.profile.saveSocial")}
+                  </>
+                ) : (
+                  t("creatorDashboard.settingsView.profile.saveSocial")
+                )}
               </Button>
             </div>
           </Card>

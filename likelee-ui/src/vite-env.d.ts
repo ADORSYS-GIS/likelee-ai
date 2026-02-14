@@ -2,6 +2,14 @@
 
 declare const __API_BASE_URL__: string;
 
+interface ImportMetaEnv {
+  readonly VITE_CONTACT_EMAIL?: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
+
 declare namespace JSX {
   interface IntrinsicElements {
     "docuseal-builder": React.DetailedHTMLProps<
