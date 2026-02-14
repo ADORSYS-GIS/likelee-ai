@@ -91,11 +91,15 @@ fn extract_text_from_html(input: &str) -> String {
 fn replace_placeholders(text: &str, values: &std::collections::HashMap<String, String>) -> String {
     use regex::Regex;
     let re = Regex::new(r"\{(\w+)\}").unwrap();
-    
+
     re.replace_all(text, |caps: &regex::Captures| {
         let key = &caps[1];
-        values.get(key).cloned().unwrap_or_else(|| caps[0].to_string())
-    }).to_string()
+        values
+            .get(key)
+            .cloned()
+            .unwrap_or_else(|| caps[0].to_string())
+    })
+    .to_string()
 }
 
 fn wrap_text(text: &str, max_chars: usize) -> Vec<String> {
@@ -145,7 +149,7 @@ fn render_template_to_pdf_data_uri(
     let mut current_page = page1;
     let mut current_layer_index = layer1;
     let mut current_layer = doc.get_page(current_page).get_layer(current_layer_index);
-    
+
     let font = doc
         .add_builtin_font(BuiltinFont::Helvetica)
         .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
@@ -166,7 +170,7 @@ fn render_template_to_pdf_data_uri(
             current_layer = doc.get_page(current_page).get_layer(current_layer_index);
             y = 280.0;
         }
-        
+
         if !line.is_empty() {
             current_layer.use_text(line, font_size, Mm(margin_x), Mm(y), &font);
         }
@@ -627,29 +631,65 @@ pub async fn create_builder_token(
             if !contract_body.trim().is_empty() {
                 // Build replacement map from template data
                 let mut replacements = std::collections::HashMap::new();
-                replacements.insert("client_name".to_string(), license_template.client_name.clone().unwrap_or_default());
-                replacements.insert("talent_name".to_string(), license_template.talent_name.clone().unwrap_or_default());
-                replacements.insert("template_name".to_string(), license_template.template_name.clone());
+                replacements.insert(
+                    "client_name".to_string(),
+                    license_template.client_name.clone().unwrap_or_default(),
+                );
+                replacements.insert(
+                    "talent_name".to_string(),
+                    license_template.talent_name.clone().unwrap_or_default(),
+                );
+                replacements.insert(
+                    "template_name".to_string(),
+                    license_template.template_name.clone(),
+                );
                 replacements.insert("category".to_string(), license_template.category.clone());
-                replacements.insert("description".to_string(), license_template.description.clone().unwrap_or_default());
-                replacements.insert("usage_scope".to_string(), license_template.usage_scope.clone().unwrap_or_default());
+                replacements.insert(
+                    "description".to_string(),
+                    license_template.description.clone().unwrap_or_default(),
+                );
+                replacements.insert(
+                    "usage_scope".to_string(),
+                    license_template.usage_scope.clone().unwrap_or_default(),
+                );
                 replacements.insert("territory".to_string(), license_template.territory.clone());
-                replacements.insert("exclusivity".to_string(), license_template.exclusivity.clone());
-                replacements.insert("duration_days".to_string(), license_template.duration_days.to_string());
-                replacements.insert("modifications_allowed".to_string(), license_template.modifications_allowed.clone().unwrap_or_default());
-                replacements.insert("custom_terms".to_string(), license_template.custom_terms.clone().unwrap_or_default());
-                
+                replacements.insert(
+                    "exclusivity".to_string(),
+                    license_template.exclusivity.clone(),
+                );
+                replacements.insert(
+                    "duration_days".to_string(),
+                    license_template.duration_days.to_string(),
+                );
+                replacements.insert(
+                    "modifications_allowed".to_string(),
+                    license_template
+                        .modifications_allowed
+                        .clone()
+                        .unwrap_or_default(),
+                );
+                replacements.insert(
+                    "custom_terms".to_string(),
+                    license_template.custom_terms.clone().unwrap_or_default(),
+                );
+
                 // Format license fee
-                let fee_str = format!("${:.2}", license_template.license_fee.unwrap_or(0) as f64 / 100.0);
+                let fee_str = format!(
+                    "${:.2}",
+                    license_template.license_fee.unwrap_or(0) as f64 / 100.0
+                );
                 replacements.insert("license_fee".to_string(), fee_str);
-                
+
                 // Format start date
-                let start_date_str = license_template.start_date.clone().unwrap_or_else(|| "-".to_string());
+                let start_date_str = license_template
+                    .start_date
+                    .clone()
+                    .unwrap_or_else(|| "-".to_string());
                 replacements.insert("start_date".to_string(), start_date_str);
-                
+
                 // Perform placeholder replacement
                 let rendered_contract = replace_placeholders(&contract_body, &replacements);
-                
+
                 let document_base64 = render_template_to_pdf_data_uri(
                     &license_template.template_name,
                     &rendered_contract,

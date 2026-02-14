@@ -643,7 +643,11 @@ pub async fn finalize(
         .or_else(|| submission_data["client_email"].as_str().map(String::from))
         .unwrap_or_default();
 
-    tracing::info!("Finalize: client_name={}, client_email={}", client_name, client_email);
+    tracing::info!(
+        "Finalize: client_name={}, client_email={}",
+        client_name,
+        client_email
+    );
 
     // If client info was provided in this request, update the record first
     if req.client_name.is_some() || req.client_email.is_some() || req.talent_names.is_some() {
@@ -771,7 +775,8 @@ pub async fn finalize(
     ))?;
 
     // 6. Create linked licensing_request (if not already exists)
-    let talent_name = submission_data["talent_names"].as_str()
+    let talent_name = submission_data["talent_names"]
+        .as_str()
         .or(req.talent_names.as_deref());
 
     let client_name_str = submission_data["client_name"]
@@ -815,7 +820,10 @@ pub async fn finalize(
         Ok(resp) => {
             let status = resp.status();
             if status.is_success() {
-                tracing::info!("Successfully created licensing_request for submission {}", submission.id);
+                tracing::info!(
+                    "Successfully created licensing_request for submission {}",
+                    submission.id
+                );
             } else {
                 let body = resp.text().await.unwrap_or_default();
                 tracing::error!(
@@ -1375,12 +1383,15 @@ pub async fn create_and_send(
     }
 
     // 4. Fetch Template Details to get the schema (which fields actually exist on the doc)
-    let template_details = docuseal_client.get_template(docuseal_template_id).await.map_err(|e| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("DocuSeal Template Fetch Error: {}", e),
-        )
-    })?;
+    let template_details = docuseal_client
+        .get_template(docuseal_template_id)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("DocuSeal Template Fetch Error: {}", e),
+            )
+        })?;
 
     // Extract all field names present in any of the documents' schemas
     let mut allowed_field_names = std::collections::HashSet::new();
@@ -1461,8 +1472,12 @@ pub async fn create_and_send(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let created_rows: Vec<serde_json::Value> = serde_json::from_str(&insert_text)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to parse created row: {} - body: {}", e, insert_text)))?;
+    let created_rows: Vec<serde_json::Value> = serde_json::from_str(&insert_text).map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to parse created row: {} - body: {}", e, insert_text),
+        )
+    })?;
 
     let new_submission = created_rows.get(0).ok_or((
         StatusCode::INTERNAL_SERVER_ERROR,

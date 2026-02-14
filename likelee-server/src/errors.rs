@@ -27,7 +27,10 @@ pub fn sanitize_db_error(status: StatusCode, text: String) -> (StatusCode, Strin
                     "foreign key",
                     "violates",
                 ];
-                if sensitive_keywords.iter().any(|&k| msg.to_lowercase().contains(k)) {
+                if sensitive_keywords
+                    .iter()
+                    .any(|&k| msg.to_lowercase().contains(k))
+                {
                     return (
                         status,
                         json!({
