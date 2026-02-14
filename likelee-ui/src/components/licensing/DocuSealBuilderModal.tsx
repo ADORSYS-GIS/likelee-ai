@@ -190,6 +190,7 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
                 roles={["First Party"]}
                 withFieldPlaceholder={true}
                 withSendButton={false}
+                withSignYourselfButton={false}
                 className="w-full h-full"
               />
             ) : null}
