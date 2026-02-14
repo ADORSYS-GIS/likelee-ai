@@ -113,10 +113,11 @@ export const ContractEditor: React.FC<ContractEditorProps> = ({
               type="button"
               onClick={() => insertVariable(variable)}
               disabled={readOnly}
-              className={`text-[11px] font-bold px-3 py-1.5 rounded-lg border transition-all ${readOnly
+              className={`text-[11px] font-bold px-3 py-1.5 rounded-lg border transition-all ${
+                readOnly
                   ? "bg-slate-50 text-slate-400 border-slate-200 cursor-default"
                   : "bg-white text-indigo-600 border-indigo-100 hover:border-indigo-300 hover:shadow-sm active:scale-95"
-                }`}
+              }`}
             >
               {variable}
             </button>

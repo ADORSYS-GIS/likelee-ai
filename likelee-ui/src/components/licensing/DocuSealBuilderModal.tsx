@@ -187,7 +187,7 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
               <DocusealBuilder
                 token={token}
                 fields={prefillFields}
-                roles={['First Party']}
+                roles={["First Party"]}
                 withFieldPlaceholder={true}
                 withSendButton={false}
                 className="w-full h-full"
