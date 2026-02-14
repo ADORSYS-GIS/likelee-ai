@@ -9,7 +9,6 @@ use serde_json::json;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CampaignPayload {
-    pub booking_id: String,
     pub name: String,
     pub status: Option<String>,
     pub duration_days: Option<i32>,
@@ -20,12 +19,13 @@ pub async fn list(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    // We only list campaigns linked to bookings owned by this agency user
+    // List campaigns owned by this agency
+    // We join with bookings to see which ones are linked to this campaign
     let resp = state
         .pg
         .from("bookings_campaigns")
-        .select("*, bookings!inner(agency_user_id, talent_name, client_name)")
-        .eq("bookings.agency_user_id", &user.id)
+        .select("*, bookings(id, talent_name, client_name)")
+        .eq("agency_id", &user.id)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -51,29 +51,8 @@ pub async fn create(
     user: AuthUser,
     Json(payload): Json<CampaignPayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    // Validate booking ownership
-    let booking_check = state
-        .pg
-        .from("bookings")
-        .select("id")
-        .eq("id", &payload.booking_id)
-        .eq("agency_user_id", &user.id)
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    let b_status = booking_check.status();
-    let check_text = booking_check.text().await.unwrap_or_default();
-    if !b_status.is_success() || check_text == "[]" {
-        return Err((
-            StatusCode::FORBIDDEN,
-            "Unauthorized booking access or booking not found".to_string(),
-        ));
-    }
-
     let row = json!({
-        "booking_id": payload.booking_id,
+        "agency_id": user.id,
         "name": payload.name,
         "status": payload.status.unwrap_or_else(|| "created".to_string()),
         "duration_days": payload.duration_days,
@@ -117,48 +96,29 @@ pub async fn update(
     Path(id): Path<String>,
     Json(payload): Json<UpdateCampaignPayload>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    // Ensure ownership via booking
+    // Check ownership
     let campaign_check = state
         .pg
         .from("bookings_campaigns")
-        .select("id, booking_id, status, start_date")
+        .select("id, agency_id, status, start_date")
         .eq("id", &id)
+        .eq("agency_id", &user.id)
         .limit(1)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    let campaign_status = campaign_check.status();
     let campaign_text = campaign_check.text().await.unwrap_or_default();
+    if !campaign_status.is_success() || campaign_text == "[]" {
+        return Err((StatusCode::FORBIDDEN, "Unauthorized campaign access".to_string()));
+    }
+
     let campaigns: Vec<serde_json::Value> =
         serde_json::from_str(&campaign_text).unwrap_or_default();
     let existing = campaigns
         .first()
         .ok_or((StatusCode::NOT_FOUND, "Campaign not found".to_string()))?;
-
-    let booking_id = existing.get("booking_id").and_then(|v| v.as_str()).ok_or((
-        StatusCode::INTERNAL_SERVER_ERROR,
-        "Invalid campaign record".to_string(),
-    ))?;
-
-    let booking_check = state
-        .pg
-        .from("bookings")
-        .select("id")
-        .eq("id", booking_id)
-        .eq("agency_user_id", &user.id)
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    let b_status = booking_check.status();
-    let b_check_text = booking_check.text().await.unwrap_or_default();
-    if !b_status.is_success() || b_check_text == "[]" {
-        return Err((
-            StatusCode::FORBIDDEN,
-            "Unauthorized campaign access".to_string(),
-        ));
-    }
 
     let mut map = serde_json::Map::new();
     if let Some(n) = payload.name {
@@ -218,42 +178,19 @@ pub async fn delete_campaign(
     user: AuthUser,
     Path(id): Path<String>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    // Check ownership
     let campaign_check = state
         .pg
         .from("bookings_campaigns")
-        .select("id, booking_id")
-        .eq("id", &id)
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    let campaign_text = campaign_check.text().await.unwrap_or_default();
-    let campaigns: Vec<serde_json::Value> =
-        serde_json::from_str(&campaign_text).unwrap_or_default();
-    let existing = campaigns
-        .first()
-        .ok_or((StatusCode::NOT_FOUND, "Campaign not found".to_string()))?;
-
-    let booking_id = existing.get("booking_id").and_then(|v| v.as_str()).ok_or((
-        StatusCode::INTERNAL_SERVER_ERROR,
-        "Invalid campaign record".to_string(),
-    ))?;
-
-    let booking_check = state
-        .pg
-        .from("bookings")
         .select("id")
-        .eq("id", booking_id)
-        .eq("agency_user_id", &user.id)
+        .eq("id", &id)
+        .eq("agency_id", &user.id)
         .limit(1)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let b_status = booking_check.status();
-    let b_check_text = booking_check.text().await.unwrap_or_default();
-    if !b_status.is_success() || b_check_text == "[]" {
+    if !campaign_check.status().is_success() || campaign_check.text().await.unwrap_or_default() == "[]" {
         return Err((
             StatusCode::FORBIDDEN,
             "Unauthorized campaign access".to_string(),

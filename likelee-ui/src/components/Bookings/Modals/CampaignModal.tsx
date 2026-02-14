@@ -25,38 +25,20 @@ export const CampaignModal = ({
   onOpenChange,
   initialData,
   onSaveSuccess,
-  prefilledBookingId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialData?: any;
   onSaveSuccess?: (campaign: any) => void;
-  prefilledBookingId?: string;
 }) => {
   const [formData, setFormData] = useState({
     name: "",
     status: "created",
     duration_days: "",
-    booking_id: prefilledBookingId || "",
     start_date: "",
   });
 
   const queryClient = useQueryClient();
-
-  // Fetch bookings for the dropdown if not prefilled
-  const { data: bookings } = useQuery({
-    queryKey: ["all-bookings-for-campaign"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("bookings")
-        .select("id, talent_name, client_name, date")
-        .order("date", { ascending: false });
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !prefilledBookingId,
-  });
 
   useEffect(() => {
     if (initialData) {
@@ -64,13 +46,17 @@ export const CampaignModal = ({
         name: initialData.name || "",
         status: initialData.status || "created",
         duration_days: initialData.duration_days?.toString() || "",
-        booking_id: initialData.booking_id || prefilledBookingId || "",
         start_date: initialData.start_date || "",
       });
-    } else if (prefilledBookingId) {
-      setFormData((prev) => ({ ...prev, booking_id: prefilledBookingId }));
+    } else {
+      setFormData({
+        name: "",
+        status: "created",
+        duration_days: "",
+        start_date: "",
+      });
     }
-  }, [initialData, prefilledBookingId]);
+  }, [initialData, open]);
 
   const mutation = useMutation({
     mutationFn: async (data: any) => {
@@ -112,9 +98,9 @@ export const CampaignModal = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.booking_id) {
+    if (!formData.name) {
       toast({
-        title: "Please fill in all required fields",
+        title: "Please fill in the campaign name",
         variant: "destructive",
       });
       return;
@@ -123,7 +109,6 @@ export const CampaignModal = ({
     const submissionData: any = {
       name: formData.name,
       status: formData.status,
-      booking_id: formData.booking_id,
       duration_days: formData.duration_days
         ? parseInt(formData.duration_days)
         : null,
@@ -158,31 +143,6 @@ export const CampaignModal = ({
               placeholder="e.g. Summer Shoot 2024"
               required
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Linked Booking *</Label>
-            {prefilledBookingId ? (
-              <Input value="Current Booking" disabled className="bg-gray-50" />
-            ) : (
-              <Select
-                value={formData.booking_id}
-                onValueChange={(v) =>
-                  setFormData({ ...formData, booking_id: v })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a booking" />
-                </SelectTrigger>
-                <SelectContent>
-                  {bookings?.map((b) => (
-                    <SelectItem key={b.id} value={b.id}>
-                      {b.talent_name} @ {b.client_name} ({b.date})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -237,7 +197,11 @@ export const CampaignModal = ({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={mutation.isPending}>
+            <Button
+              type="submit"
+              disabled={mutation.isPending}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-2 rounded-xl transition-all"
+            >
               {mutation.isPending ? "Saving..." : "Save Campaign"}
             </Button>
           </DialogFooter>

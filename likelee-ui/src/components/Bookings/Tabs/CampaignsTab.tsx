@@ -25,7 +25,7 @@ export const CampaignsTab = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("bookings_campaigns")
-        .select("*, booking:bookings(id, talent_name, client_name)")
+        .select("*, bookings:bookings(id, talent_name, client_name)")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -89,6 +89,7 @@ export const CampaignsTab = () => {
             setEditingCampaign(null);
             setModalOpen(true);
           }}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 px-6 rounded-xl"
         >
           <Plus className="w-4 h-4 mr-2" />
           Create Campaign
@@ -103,7 +104,7 @@ export const CampaignsTab = () => {
               <TableHead>Status</TableHead>
               <TableHead>Duration</TableHead>
               <TableHead>Start Date</TableHead>
-              <TableHead>Linked Booking</TableHead>
+              <TableHead>Bookings</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -137,14 +138,14 @@ export const CampaignsTab = () => {
                   </TableCell>
                   <TableCell>{campaign.start_date || "—"}</TableCell>
                   <TableCell>
-                    {campaign.booking ? (
-                      <div className="text-sm">
-                        <span className="text-indigo-600 truncate block max-w-[150px]">
-                          {campaign.booking.talent_name}
-                        </span>
-                        <span className="text-gray-400 text-xs">
-                          {campaign.booking.client_name}
-                        </span>
+                    {campaign.bookings && campaign.bookings.length > 0 ? (
+                      <div className="flex flex-col gap-1">
+                        <Badge variant="outline" className="w-fit">
+                          {campaign.bookings.length} Booking{campaign.bookings.length > 1 ? 's' : ''}
+                        </Badge>
+                        <div className="text-xs text-gray-400 truncate max-w-[150px]">
+                          {campaign.bookings.map((b: any) => b.talent_name).join(", ")}
+                        </div>
                       </div>
                     ) : (
                       "—"
