@@ -10,6 +10,7 @@ import { createBuilderToken } from "@/api/licenseTemplates";
 import { Loader2, X } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
+import { getFriendlyErrorMessage } from "@/utils/errorUtils";
 
 interface DocuSealBuilderModalProps {
   open: boolean;
@@ -104,8 +105,7 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
         .catch((err) => {
           toast({
             title: "Error",
-            description:
-              "Failed to initialize DocuSeal builder: " + err.message,
+            description: getFriendlyErrorMessage(err),
             variant: "destructive",
           });
           onClose();

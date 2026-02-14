@@ -148,7 +148,7 @@ fn render_template_to_pdf_data_uri(
     
     let font = doc
         .add_builtin_font(BuiltinFont::Helvetica)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
     let font_size = 11.0;
     let mut y = 280.0;
@@ -176,10 +176,10 @@ fn render_template_to_pdf_data_uri(
     let cursor = std::io::Cursor::new(Vec::<u8>::new());
     let mut writer = std::io::BufWriter::new(cursor);
     doc.save(&mut writer)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
     let bytes = writer
         .into_inner()
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?
         .into_inner();
     let base64_content = general_purpose::STANDARD.encode(bytes);
     Ok(format!("data:application/pdf;base64,{}", base64_content))
@@ -208,16 +208,16 @@ pub async fn list(
         .order("created_at.desc")
         .execute()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "list_license_templates"))?;
 
     let status = resp.status();
     let text = resp
         .text()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "list_license_templates_read_body"))?;
 
     if !status.is_success() {
-        return Err((
+        return Err(crate::errors::sanitize_db_error(
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
             text,
         ));
@@ -241,13 +241,13 @@ pub async fn stats(
         .eq("agency_id", agency_id)
         .execute()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
     let status = resp.status();
     let text = resp
         .text()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
     if !status.is_success() {
         return Err((
@@ -338,13 +338,13 @@ pub async fn create(
         .insert(body.to_string())
         .execute()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
     let status = resp.status();
     let text = resp
         .text()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
     if !status.is_success() {
         return Err((
@@ -410,13 +410,13 @@ pub async fn update(
         .eq("agency_id", agency_id)
         .execute()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
     let status = resp.status();
     let text = resp
         .text()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
     if !status.is_success() {
         return Err((
@@ -458,7 +458,7 @@ pub async fn delete_template(
         .eq("agency_id", agency_id)
         .execute()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
     Ok(StatusCode::NO_CONTENT)
 }
@@ -480,12 +480,12 @@ pub async fn copy(
         .eq("agency_id", &agency_id)
         .execute()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
     let text = resp
         .text()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
     let originals: Vec<LicenseTemplate> = serde_json::from_str(&text).unwrap_or(vec![]);
     let original = originals
         .first()
@@ -518,13 +518,13 @@ pub async fn copy(
         .insert(body.to_string())
         .execute()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
     let create_status = create_resp.status();
     let create_text = create_resp
         .text()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
     if !create_status.is_success() {
         return Err((
@@ -598,12 +598,12 @@ pub async fn create_builder_token(
             .eq("id", &template_id)
             .execute()
             .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
         let text = resp
             .text()
             .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
         let templates: Vec<LicenseTemplate> = serde_json::from_str(&text).unwrap_or_default();
 
         if let Some(license_template) = templates.first() {
@@ -665,7 +665,7 @@ pub async fn create_builder_token(
                             document_base64,
                         )
                         .await
-                        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
                     existing_id
                 } else {
                     let created = docuseal
@@ -675,7 +675,7 @@ pub async fn create_builder_token(
                             document_base64,
                         )
                         .await
-                        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
                     // Persist DS template id back to license_templates
                     let update_json = json!({
@@ -719,7 +719,7 @@ pub async fn create_builder_token(
             None, // No values - we pre-fill in the PDF itself
             None, // No submitters - we pre-fill in the PDF itself
         )
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
     Ok(Json(json!({
         "token": token,
