@@ -34,7 +34,6 @@ export interface CreateSubmissionRequest {
   client_name: string;
   docuseal_template_id?: number;
   talent_names?: string;
-  document_base64?: string;
   license_fee?: number;
   duration_days?: number;
   start_date?: string;

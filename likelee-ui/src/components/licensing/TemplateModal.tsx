@@ -5,11 +5,9 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -19,13 +17,42 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { CreateTemplateRequest, LicenseTemplate } from "@/api/licenseTemplates";
+import { ContractEditor } from "./ContractEditor";
+import {
+  FileSignature,
+  Calendar,
+  Users,
+  Briefcase,
+  Globe,
+  Trash2,
+  DollarSign,
+} from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 interface TemplateModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: CreateTemplateRequest) => Promise<void>;
   initialData?: LicenseTemplate | null;
+  hideContract?: boolean;
+  readOnly?: boolean;
 }
+
+const AVAILABLE_CONTRACT_VARIABLES = [
+  "{client_name}",
+  "{talent_name}",
+  "{start_date}",
+  "{template_name}",
+  "{category}",
+  "{description}",
+  "{usage_scope}",
+  "{duration_days}",
+  "{territory}",
+  "{exclusivity}",
+  "{license_fee}",
+  "{custom_terms}",
+  "{modifications_allowed}",
+];
 
 const CATEGORIES = [
   "Social Media",
@@ -36,20 +63,14 @@ const CATEGORIES = [
   "Custom",
 ];
 
-const EXCLUSIVITY_OPTIONS = [
-  "Non-exclusive",
-  "Category exclusive",
-  "Full exclusivity",
-];
-
 export const TemplateModal: React.FC<TemplateModalProps> = ({
   isOpen,
   onClose,
   onSave,
   initialData,
+  hideContract,
+  readOnly = false,
 }) => {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-
   const {
     register,
     handleSubmit,
@@ -61,17 +82,21 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
     defaultValues: {
       template_name: "",
       category: "",
-      exclusivity: "",
-      duration_days: 30,
-      client_name: "",
-      talent_name: "",
-      start_date: "",
+      contract_body_format: "markdown",
+      contract_body: "",
+      description: "",
+      usage_scope: "",
+      duration_days: 90,
+      territory: "Worldwide",
+      exclusivity: "Non-exclusive",
+      modifications_allowed: "No",
+      license_fee: undefined,
+      custom_terms: "",
     },
   });
 
   useEffect(() => {
     if (isOpen) {
-      setSelectedFile(null); // Reset file on open
       if (initialData) {
         reset({
           template_name: initialData.template_name,
@@ -87,9 +112,9 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
             : undefined,
           custom_terms: initialData.custom_terms,
           docuseal_template_id: initialData.docuseal_template_id,
-          client_name: initialData.client_name,
-          talent_name: initialData.talent_name,
-          start_date: initialData.start_date,
+          contract_body: initialData.contract_body,
+          contract_body_format:
+            (initialData.contract_body_format as any) || "markdown",
         });
       } else {
         reset({
@@ -99,53 +124,29 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
           usage_scope: "",
           duration_days: 90,
           territory: "Worldwide",
-          exclusivity: "",
-          modifications_allowed: "",
+          exclusivity: "Non-exclusive",
+          modifications_allowed: "No",
           license_fee: undefined,
           custom_terms: "",
           docuseal_template_id: undefined,
-          client_name: "",
-          talent_name: "",
-          start_date: "",
+          contract_body: "",
+          contract_body_format: "markdown",
         });
       }
     }
   }, [isOpen, initialData, reset]);
 
+  const contractBodyValue = watch("contract_body") || "";
+  const contractFormatValue = watch("contract_body_format") || "markdown";
   const categoryValue = watch("category");
-  const exclusivityValue = watch("exclusivity");
-
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        const base64 = reader.result?.toString().split(",")[1];
-        resolve(base64 || "");
-      };
-      reader.onerror = (error) => reject(error);
-    });
-  };
 
   const onSubmit = async (data: CreateTemplateRequest) => {
-    let document_base64 = undefined;
-    try {
-      if (selectedFile) {
-        document_base64 = await fileToBase64(selectedFile);
-      }
-    } catch (err) {
-      console.error("File to base64 conversion failed:", err);
-    }
-
-    // Convert dollars back to cents for API
     const payload = {
       ...data,
       license_fee: data.license_fee
         ? Math.round(data.license_fee * 100)
         : undefined,
-      // Ensure empty docuseal_template_id is undefined, not ""
       docuseal_template_id: data.docuseal_template_id || undefined,
-      document_base64,
     };
     await onSave(payload);
     onClose();
@@ -153,172 +154,271 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="pb-4">
-          <DialogTitle>
-            {initialData ? "Edit Template" : "New Template"}
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 border-none bg-slate-50 rounded-3xl shadow-2xl">
+        <form
+          id="license-template-form"
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex flex-col h-full"
+        >
+          <DialogHeader className="p-8 bg-white border-b border-slate-100 rounded-t-3xl shrink-0">
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="text-2xl font-bold text-slate-900 mb-1">
+                  {readOnly
+                    ? "License Template Details"
+                    : initialData
+                      ? "Edit License Template"
+                      : "New License Template"}
+                </DialogTitle>
+                <p className="text-sm text-slate-500 font-medium tracking-tight">
+                  {readOnly
+                    ? "View your standardized agency terms and details"
+                    : "Standardize your agency terms with dynamic placeholders"}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={onClose}
+                  className="text-slate-500 font-bold hover:bg-slate-50 rounded-xl px-6 h-10"
+                >
+                  {readOnly ? "Close" : "Cancel"}
+                </Button>
+                {!readOnly && (
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-10 px-8 rounded-xl shadow-lg shadow-indigo-100/50 transition-all active:scale-95"
+                  >
+                    {isSubmitting
+                      ? "Saving..."
+                      : initialData
+                        ? "Update Template"
+                        : "Create Template"}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="bg-blue-50/50 p-4 rounded-lg border border-blue-100 space-y-4">
-            <h3 className="text-sm font-semibold text-blue-900 border-b border-blue-100 pb-2">
-              Deal Specifics
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
+          <div className="flex-1 overflow-y-auto p-8">
+            <div className="max-w-3xl mx-auto space-y-8">
+              {/* Template Identity */}
+              <div className="p-8 bg-white rounded-3xl border border-slate-200/60 shadow-sm space-y-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center rotate-3 group-hover:rotate-0 transition-transform">
+                    <FileSignature className="w-6 h-6 text-indigo-600" />
+                  </div>
+                  <h3 className="font-bold text-slate-900">
+                    Template Identity
+                  </h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-bold text-slate-800 ml-1">
+                      Template Name *
+                    </Label>
+                    <Input
+                      {...register("template_name", { required: true })}
+                      placeholder="e.g. Standard Social Media"
+                      disabled={readOnly}
+                      className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75"
+                    />
+                    {errors.template_name && (
+                      <span className="text-red-500 text-xs font-bold px-1">
+                        This field is required
+                      </span>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm font-bold text-slate-800 ml-1">
+                      Category *
+                    </Label>
+                    <Select
+                      value={categoryValue}
+                      onValueChange={(val) => setValue("category", val)}
+                      disabled={readOnly}
+                    >
+                      <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-slate-200">
+                        {CATEGORIES.map((cat) => (
+                          <SelectItem
+                            key={cat}
+                            value={cat}
+                            className="rounded-lg font-medium"
+                          >
+                            {cat}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.category && (
+                      <span className="text-red-500 text-xs font-bold px-1">
+                        This field is required
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <Label htmlFor="client_name">Client/Brand Name</Label>
-                <Input
-                  id="client_name"
-                  {...register("client_name")}
-                  placeholder="Enter client name"
+                <Label className="text-sm font-bold text-slate-800 ml-1">
+                  Description
+                </Label>
+                <Textarea
+                  {...register("description")}
+                  placeholder="Description of the template..."
+                  disabled={readOnly}
+                  className="min-h-[80px] bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium resize-none disabled:opacity-75"
                 />
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="talent_name">
-                  Talent Name (comma-separated)
+                <Label className="text-sm font-bold text-slate-800 ml-1">
+                  Usage Scope
                 </Label>
                 <Input
-                  id="talent_name"
-                  {...register("talent_name")}
-                  placeholder="e.g. Talent A, Talent B"
+                  {...register("usage_scope")}
+                  placeholder="e.g. Organic Social Media"
+                  disabled={readOnly}
+                  className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75"
                 />
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-slate-800 ml-1">
+                    Duration (days)
+                  </Label>
+                  <Input
+                    type="number"
+                    {...register("duration_days", { valueAsNumber: true })}
+                    disabled={readOnly}
+                    className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-slate-800 ml-1">
+                    Territory
+                  </Label>
+                  <Input
+                    {...register("territory")}
+                    placeholder="Worldwide"
+                    disabled={readOnly}
+                    className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <Label htmlFor="start_date">Start Date</Label>
-                <Input
-                  id="start_date"
-                  type="date"
-                  {...register("start_date")}
+                <Label className="text-sm font-bold text-slate-800 ml-1">
+                  Exclusivity *
+                </Label>
+                <Select
+                  onValueChange={(val) => setValue("exclusivity", val)}
+                  defaultValue={initialData?.exclusivity || "Non-exclusive"}
+                  disabled={readOnly}
+                >
+                  <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75">
+                    <SelectValue placeholder="Select exclusivity" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-slate-200">
+                    <SelectItem
+                      value="Non-exclusive"
+                      className="rounded-lg font-medium"
+                    >
+                      Non-exclusive
+                    </SelectItem>
+                    <SelectItem
+                      value="Category exclusive"
+                      className="rounded-lg font-medium"
+                    >
+                      Category exclusive
+                    </SelectItem>
+                    <SelectItem
+                      value="Full exclusivity"
+                      className="rounded-lg font-medium"
+                    >
+                      Full exclusivity
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-slate-800 ml-1">
+                  License Fee ($)
+                </Label>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    {...register("license_fee", { valueAsNumber: true })}
+                    placeholder="Amount ($)"
+                    disabled={readOnly}
+                    className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium pl-10 disabled:opacity-75"
+                  />
+                  <DollarSign className="absolute left-3 top-3.5 w-5 h-5 text-slate-400 pointer-events-none" />
+                </div>
+                <p className="text-xs text-slate-500 ml-1">
+                  Enter amount in dollars (e.g. 10.00)
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-slate-800 ml-1">
+                  Custom Terms
+                </Label>
+                <Textarea
+                  {...register("custom_terms")}
+                  placeholder="Any extra conditions..."
+                  disabled={readOnly}
+                  className="min-h-[80px] bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium resize-none disabled:opacity-75"
                 />
               </div>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="template_name">Template Name *</Label>
-              <Input
-                id="template_name"
-                {...register("template_name", { required: true })}
-                placeholder="e.g. Standard Social Media"
-              />
-              {errors.template_name && (
-                <span className="text-red-500 text-sm">Required</span>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="category">Category *</Label>
-              <Select
-                value={categoryValue}
-                onValueChange={(val) => setValue("category", val)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-slate-800 ml-1">
+                  Modifications Allowed
+                </Label>
+                <Select
+                  onValueChange={(val) =>
+                    setValue("modifications_allowed", val)
+                  }
+                  defaultValue={initialData?.modifications_allowed || "No"}
+                  disabled={readOnly}
+                >
+                  <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75">
+                    <SelectValue placeholder="Select option" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-slate-200">
+                    <SelectItem value="Yes" className="rounded-lg font-medium">
+                      Yes
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    <SelectItem value="No" className="rounded-lg font-medium">
+                      No
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              {...register("description")}
-              placeholder="Description of the template..."
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="usage_scope">Usage Scope</Label>
-            <Input
-              id="usage_scope"
-              {...register("usage_scope")}
-              placeholder="e.g. Organic Social Media"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="duration_days">Duration (days)</Label>
-              <Input
-                id="duration_days"
-                type="number"
-                {...register("duration_days", { valueAsNumber: true })}
-                placeholder="e.g. 90"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="territory">Territory</Label>
-              <Input
-                id="territory"
-                {...register("territory")}
-                placeholder="e.g. North America"
+            {/* Contract Editor */}
+            <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm p-8">
+              <ContractEditor
+                body={contractBodyValue}
+                format={contractFormatValue as any}
+                onChangeBody={(val) => setValue("contract_body", val)}
+                onChangeFormat={(val) => setValue("contract_body_format", val)}
+                variables={AVAILABLE_CONTRACT_VARIABLES}
+                placeholder="Write your contract template here. Use {variable} placeholders that will be filled in when using this template..."
+                readOnly={readOnly}
               />
             </div>
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="exclusivity">Exclusivity *</Label>
-            <Select
-              value={exclusivityValue}
-              onValueChange={(val) => setValue("exclusivity", val)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select exclusivity" />
-              </SelectTrigger>
-              <SelectContent>
-                {EXCLUSIVITY_OPTIONS.map((opt) => (
-                  <SelectItem key={opt} value={opt}>
-                    {opt}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="license_fee">License Fee ($)</Label>
-              <Input
-                id="license_fee"
-                placeholder="Amount ($)"
-                type="number"
-                step="0.01"
-                {...register("license_fee", { valueAsNumber: true })}
-              />
-              <p className="text-xs text-gray-500">
-                Enter amount in dollars (e.g. 10.00)
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="custom_terms">Custom Terms</Label>
-            <Textarea
-              id="custom_terms"
-              {...register("custom_terms")}
-              placeholder="Any extra conditions..."
-            />
-          </div>
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {initialData ? "Update Template" : "Create Template"}
-            </Button>
-          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

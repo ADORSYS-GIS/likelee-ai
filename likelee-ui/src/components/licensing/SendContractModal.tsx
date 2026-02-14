@@ -279,7 +279,7 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
               </Button>
               <Button
                 type="submit"
-                className="bg-indigo-600 hover:bg-indigo-700"
+                className="bg-indigo-500 hover:bg-indigo-700"
                 disabled={finalizeMutation.isPending}
               >
                 {finalizeMutation.isPending ? "Sending..." : "Send Now"}

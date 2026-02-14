@@ -19,6 +19,8 @@ export interface LicenseTemplate {
   client_name?: string;
   talent_name?: string;
   start_date?: string;
+  contract_body?: string;
+  contract_body_format?: "markdown" | "html";
 }
 
 export interface CreateTemplateRequest {
@@ -33,10 +35,11 @@ export interface CreateTemplateRequest {
   license_fee?: number;
   custom_terms?: string;
   docuseal_template_id?: number;
-  document_base64?: string;
   client_name?: string;
   talent_name?: string;
   start_date?: string;
+  contract_body?: string;
+  contract_body_format?: "markdown" | "html";
 }
 
 export interface TemplateStats {
@@ -78,17 +81,19 @@ export const copyLicenseTemplate = async (
 };
 
 export const createBuilderToken = async (
-  template_name: string,
-  docuseal_template_id?: number,
-  external_id?: string,
-): Promise<{ token: string; values: any; docuseal_user_email: string }> => {
-  return await base44.post<{
+  templateName: string,
+  docusealTemplateId?: number,
+  externalId?: string,
+  contractBody?: string,
+) => {
+  return base44.post<{
     token: string;
     values: any;
     docuseal_user_email: string;
   }>("/docuseal/builder-token", {
-    template_name,
-    docuseal_template_id,
-    external_id,
+    template_name: templateName,
+    docuseal_template_id: docusealTemplateId,
+    external_id: externalId,
+    contract_body: contractBody,
   });
 };

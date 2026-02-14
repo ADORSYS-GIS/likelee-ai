@@ -49,7 +49,6 @@ pub struct CreateSubmissionRequest {
     pub client_name: String,
     pub docuseal_template_id: Option<i32>,
     pub talent_names: Option<String>,
-    pub document_base64: Option<String>,
     pub license_fee: Option<i64>,
     pub duration_days: Option<i32>,
     pub start_date: Option<String>,
@@ -97,27 +96,10 @@ pub async fn create_draft(
         serde_json::from_str(&template_text)
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    // 2. Setup DocuSeal client
-    let docuseal = DocuSealClient::new(
-        state.docuseal_api_key.clone(),
-        state.docuseal_base_url.clone(),
-    );
-
-    let docuseal_template_id = if let Some(base64) = req.document_base64 {
-        let template_name = format!(
-            "Contract - {} - {}",
-            req.client_name, license_template.template_name
-        );
-        let ds_template = docuseal
-            .create_template(template_name, "contract.pdf".to_string(), base64)
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        Some(ds_template.id)
-    } else {
-        license_template
-            .docuseal_template_id
-            .or_else(|| state.docuseal_master_template_id.parse::<i32>().ok())
-    };
+    // Licensing only: docuseal_template_id is optional in draft stage.
+    let docuseal_template_id = req
+        .docuseal_template_id
+        .or(license_template.docuseal_template_id);
 
     // 3. Create a draft record in Likelee
     let client_name = if !req.client_name.is_empty() {
@@ -315,7 +297,6 @@ pub async fn preview(
                 .map(|i| i as i32)
         })
         .or(license_template.docuseal_template_id)
-        .or_else(|| state.docuseal_master_template_id.parse::<i32>().ok())
         .ok_or((
             StatusCode::INTERNAL_SERVER_ERROR,
             "Invalid DS template id".to_string(),
@@ -643,7 +624,6 @@ pub async fn finalize(
                 .map(|i| i as i32)
         })
         .or(license_template.docuseal_template_id)
-        .or_else(|| state.docuseal_master_template_id.parse::<i32>().ok())
         .ok_or((
             StatusCode::INTERNAL_SERVER_ERROR,
             "Invalid DS template id".to_string(),
@@ -652,14 +632,22 @@ pub async fn finalize(
     let client_name = req
         .client_name
         .clone()
+        .filter(|s| !s.trim().is_empty())
         .or_else(|| submission_data["client_name"].as_str().map(String::from))
         .unwrap_or_else(|| "Client".to_string());
 
     let client_email = req
         .client_email
         .clone()
+        .filter(|s| !s.trim().is_empty())
         .or_else(|| submission_data["client_email"].as_str().map(String::from))
         .unwrap_or_default();
+
+    tracing::info!(
+        "Finalize: client_name={}, client_email={}",
+        client_name,
+        client_email
+    );
 
     // If client info was provided in this request, update the record first
     if req.client_name.is_some() || req.client_email.is_some() || req.talent_names.is_some() {
@@ -683,14 +671,54 @@ pub async fn finalize(
             .await;
     }
 
-    // 4. Create DocuSeal Submission with fields-based pre-fill
+    // 4. Fetch Template details for field filtering
+    let template_details = docuseal
+        .get_template(docuseal_template_id)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("DocuSeal Template Fetch Error: {}", e),
+            )
+        })?;
+
+    // Extract all field names present in the template's schema
+    let mut allowed_field_names = std::collections::HashSet::new();
+    if let Some(documents) = template_details.documents {
+        for doc in documents {
+            for field in doc.schema {
+                if let Some(name) = field.get("name").and_then(|n| n.as_str()) {
+                    allowed_field_names.insert(name.to_string());
+                }
+            }
+        }
+    }
+    for field in template_details.schema {
+        if let Some(name) = field.get("name").and_then(|n| n.as_str()) {
+            allowed_field_names.insert(name.to_string());
+        }
+    }
+
+    // Filter fields to only include those that exist in the template
+    let filtered_fields: Vec<_> = fields
+        .into_iter()
+        .filter(|f| allowed_field_names.contains(&f.name))
+        .collect();
+
+    tracing::info!(
+        allowed_count = allowed_field_names.len(),
+        filtered_count = filtered_fields.len(),
+        "Filtered DocuSeal submission fields for finalize"
+    );
+
+    // 5. Create DocuSeal Submission with fields-based pre-fill
     let docuseal_submission = docuseal
         .create_submission_with_fields(
             docuseal_template_id,
             client_name.clone(),
             client_email.clone(),
             "First Party".to_string(),
-            fields,
+            filtered_fields,
             true,
         )
         .await
@@ -747,12 +775,26 @@ pub async fn finalize(
     ))?;
 
     // 6. Create linked licensing_request (if not already exists)
-    let talent_name = submission_data["talent_names"].as_str();
+    let talent_name = submission_data["talent_names"]
+        .as_str()
+        .or(req.talent_names.as_deref());
+
+    let client_name_str = submission_data["client_name"]
+        .as_str()
+        .unwrap_or(&client_name);
+
+    tracing::info!(
+        "Creating licensing_request for submission {}: agency_id={}, client_name={}, talent_name={:?}",
+        submission.id,
+        agency_id,
+        client_name_str,
+        talent_name
+    );
 
     let lr_data = json!({
         "agency_id": agency_id,
         "brand_id": submission.client_id,
-        "client_name": submission_data["client_name"],
+        "client_name": client_name_str,
         "talent_id": None::<String>,
         "talent_name": talent_name,
         "submission_id": submission.id,
@@ -765,13 +807,36 @@ pub async fn finalize(
         "deadline": deadline.map(|d| d.to_string()),
     });
 
-    state
+    tracing::debug!("Licensing request payload: {}", lr_data);
+
+    let lr_resp = state
         .pg
         .from("licensing_requests")
         .insert(lr_data.to_string())
         .execute()
-        .await
-        .ok();
+        .await;
+
+    match lr_resp {
+        Ok(resp) => {
+            let status = resp.status();
+            if status.is_success() {
+                tracing::info!(
+                    "Successfully created licensing_request for submission {}",
+                    submission.id
+                );
+            } else {
+                let body = resp.text().await.unwrap_or_default();
+                tracing::error!(
+                    "Failed to create licensing_request (HTTP {}): {}",
+                    status,
+                    body
+                );
+            }
+        }
+        Err(e) => {
+            tracing::error!("Failed to create licensing_request (network error): {}", e);
+        }
+    }
 
     Ok(Json(submission))
 }
@@ -991,7 +1056,6 @@ pub async fn resend(
             talent_names: existing_data["talent_names"]
                 .as_str()
                 .map(|s| s.to_string()),
-            document_base64: None,
             license_fee: existing_data["license_fee"].as_i64(),
             duration_days: existing_data["duration_days"].as_i64().map(|v| v as i32),
             start_date: existing_data["start_date"].as_str().map(|s| s.to_string()),
@@ -1201,7 +1265,6 @@ pub async fn create_and_send(
     let docuseal_template_id = req
         .docuseal_template_id
         .or(license_template.docuseal_template_id)
-        .or_else(|| state.docuseal_master_template_id.parse::<i32>().ok())
         .ok_or((
             StatusCode::INTERNAL_SERVER_ERROR,
             "Invalid DS template id".to_string(),
@@ -1311,14 +1374,63 @@ pub async fn create_and_send(
         readonly: Some(true),
     });
 
-    // 4. Create DocuSeal Submission with fields-based pre-fill
+    if let Some(mod_allowed) = &license_template.modifications_allowed {
+        fields.push(SubmitterField {
+            name: "Modifications Allowed".to_string(),
+            default_value: Some(mod_allowed.clone()),
+            readonly: Some(true),
+        });
+    }
+
+    // 4. Fetch Template Details to get the schema (which fields actually exist on the doc)
+    let template_details = docuseal_client
+        .get_template(docuseal_template_id)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("DocuSeal Template Fetch Error: {}", e),
+            )
+        })?;
+
+    // Extract all field names present in any of the documents' schemas
+    let mut allowed_field_names = std::collections::HashSet::new();
+    if let Some(documents) = template_details.documents {
+        for doc in documents {
+            for field in doc.schema {
+                if let Some(name) = field.get("name").and_then(|n| n.as_str()) {
+                    allowed_field_names.insert(name.to_string());
+                }
+            }
+        }
+    }
+    // Also check top-level schema if present
+    for field in template_details.schema {
+        if let Some(name) = field.get("name").and_then(|n| n.as_str()) {
+            allowed_field_names.insert(name.to_string());
+        }
+    }
+
+    // Filter fields list to only include those that exist in the template
+    let filtered_fields: Vec<_> = fields
+        .into_iter()
+        .filter(|f| allowed_field_names.contains(&f.name))
+        .collect();
+
+    info!(
+        allowed_count = allowed_field_names.len(),
+        filtered_count = filtered_fields.len(),
+        "Filtered DocuSeal submission fields based on template schema"
+    );
+
+    // 5. Create DocuSeal Submission with fields-based pre-fill
     let docuseal_submission = docuseal_client
         .create_submission_with_fields(
             docuseal_template_id,
             req.client_name.clone(),
             req.client_email.clone(),
             "First Party".to_string(),
-            fields,
+            filtered_fields,
             true,
         )
         .await
@@ -1359,8 +1471,18 @@ pub async fn create_and_send(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let new_submission: serde_json::Value = serde_json::from_str(&insert_text)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let created_rows: Vec<serde_json::Value> = serde_json::from_str(&insert_text).map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to parse created row: {} - body: {}", e, insert_text),
+        )
+    })?;
+
+    let new_submission = created_rows.first().ok_or((
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "No row returned after insert".to_string(),
+    ))?;
 
     let new_submission_id = new_submission["id"]
         .as_str()
