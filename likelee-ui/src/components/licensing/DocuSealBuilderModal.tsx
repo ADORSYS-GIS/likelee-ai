@@ -18,6 +18,7 @@ interface DocuSealBuilderModalProps {
   templateName: string;
   docusealTemplateId?: number;
   externalId?: string;
+  contractBody?: string;
   onSave: (docusealTemplateId: number) => void;
   onSend?: () => void;
   isSending?: boolean;
@@ -29,6 +30,7 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
   templateName,
   docusealTemplateId,
   externalId,
+  contractBody,
   onSave,
   onSend,
   isSending,
@@ -95,7 +97,7 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
     if (open) {
       setLoading(true);
       const name = templateName || "License Contract";
-      createBuilderToken(name, docusealTemplateId, externalId)
+      createBuilderToken(name, docusealTemplateId, externalId, contractBody)
         .then((res) => {
           console.log("DocuSeal Token Response:", res);
           setToken(res.token);
@@ -116,7 +118,15 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
       setPrefillValues(null);
       setDocusealUserEmail(null);
     }
-  }, [open, templateName, docusealTemplateId, externalId, onClose, toast]);
+  }, [
+    open,
+    templateName,
+    docusealTemplateId,
+    externalId,
+    contractBody,
+    onClose,
+    toast,
+  ]);
 
   return (
     <Dialog open={open} onOpenChange={(val) => !val && onClose()}>

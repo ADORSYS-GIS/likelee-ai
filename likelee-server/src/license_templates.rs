@@ -559,6 +559,7 @@ pub struct BuilderTokenRequest {
     pub template_name: String,
     pub docuseal_template_id: Option<i32>,
     pub external_id: Option<String>,
+    pub contract_body: Option<String>,
 }
 
 pub async fn create_builder_token(
@@ -611,10 +612,13 @@ pub async fn create_builder_token(
 
             // Ensure DocuSeal template exists and is based on the latest contract body.
             // Licensing only: no master-template fallback, no PDF upload paths.
-            let contract_body = license_template
+            // Use the provided contract_body if available, otherwise use the template's body.
+            let contract_body = req
                 .contract_body
                 .clone()
+                .or_else(|| license_template.contract_body.clone())
                 .unwrap_or_default();
+
             let contract_body_format = license_template
                 .contract_body_format
                 .clone()
