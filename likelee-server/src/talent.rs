@@ -1,3 +1,4 @@
+use crate::errors::sanitize_db_error;
 use crate::{auth::AuthUser, auth::RoleGuard, config::AppState};
 use axum::{
     extract::{Multipart, Path, Query, State},
@@ -37,11 +38,13 @@ pub async fn get_portal_settings(
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !resp.status().is_success() {
-        let err = resp.text().await.unwrap_or_default();
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+
+    let status = resp.status();
+    let txt = resp.text().await.unwrap_or_else(|_| "[]".into());
+
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), txt));
     }
-    let txt = resp.text().await.unwrap_or("[]".into());
     let rows: serde_json::Value = serde_json::from_str(&txt).unwrap_or(json!([]));
     if let Some(first) = rows.as_array().and_then(|a| a.first()).cloned() {
         return Ok(Json(first));
@@ -77,9 +80,12 @@ pub async fn update_portal_settings(
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !resp.status().is_success() {
-        let err = resp.text().await.unwrap_or_default();
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+
+    let status = resp.status();
+    let txt = resp.text().await.unwrap_or_default();
+
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), txt));
     }
 
     // Mirror public visibility to creators table (marketplace search filter)
@@ -168,11 +174,13 @@ pub async fn get_booking_preferences(
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !resp.status().is_success() {
-        let err = resp.text().await.unwrap_or_default();
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
-    }
+
+    let status = resp.status();
     let txt = resp.text().await.unwrap_or_else(|_| "[]".into());
+
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), txt));
+    }
     let rows: serde_json::Value = serde_json::from_str(&txt).unwrap_or(json!([]));
     if let Some(first) = rows.as_array().and_then(|a| a.first()).cloned() {
         return Ok(Json(first));
@@ -226,9 +234,12 @@ pub async fn update_booking_preferences(
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !resp.status().is_success() {
-        let err = resp.text().await.unwrap_or_default();
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+
+    let status = resp.status();
+    let txt = resp.text().await.unwrap_or_default();
+
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), txt));
     }
 
     Ok(Json(json!({"status":"ok"})))

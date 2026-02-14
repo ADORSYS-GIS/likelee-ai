@@ -116,12 +116,12 @@ pub async fn send_payment_reminder(
         .single()
         .execute()
         .await
-        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "db_error".to_string()))?;
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let status = resp.status();
     let txt = resp
         .text()
         .await
-        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "db_error".to_string()))?;
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if status.is_success() {
         if let Ok(v) = serde_json::from_str::<serde_json::Value>(&txt) {
             agency_email = v
@@ -338,12 +338,9 @@ async fn get_client_snapshot(
     let text = resp
         .text()
         .await
-        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "db_error".to_string()))?;
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !status.is_success() {
-        let code =
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        tracing::warn!("mark_sent_db_error: {}", text);
-        return Err((code, "db_error".to_string()));
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
     }
 
     let v: serde_json::Value = serde_json::from_str(&text)
@@ -371,12 +368,9 @@ async fn get_booking(
     let text = resp
         .text()
         .await
-        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "db_error".to_string()))?;
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !status.is_success() {
-        let code =
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        tracing::warn!("mark_sent_db_error: {}", text);
-        return Err((code, "db_error".to_string()));
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
     }
 
     let v: serde_json::Value = serde_json::from_str(&text)
@@ -404,12 +398,9 @@ async fn ensure_invoice_owned(
     let text = resp
         .text()
         .await
-        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "db_error".to_string()))?;
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !status.is_success() {
-        let code =
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        tracing::warn!("mark_sent_db_error: {}", text);
-        return Err((code, "db_error".to_string()));
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
     }
 
     let v: serde_json::Value = serde_json::from_str(&text)
@@ -527,7 +518,7 @@ pub async fn create(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err(crate::errors::sanitize_db_error(code, text));
+        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
     }
     // Postgrest returns JSON; accept either {"next_invoice_number":"..."} or string
     let v: serde_json::Value = serde_json::from_str(&text)
@@ -606,7 +597,7 @@ pub async fn create(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err(crate::errors::sanitize_db_error(code, text));
+        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
     }
 
     let created: Vec<serde_json::Value> = serde_json::from_str(&text)
@@ -964,7 +955,7 @@ pub async fn update(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err(crate::errors::sanitize_db_error(code, text));
+        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
     }
 
     let v: serde_json::Value = serde_json::from_str(&text)
@@ -1013,7 +1004,7 @@ pub async fn mark_sent(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err(crate::errors::sanitize_db_error(code, text));
+        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
     }
 
     let v: serde_json::Value = serde_json::from_str(&text)
@@ -1166,7 +1157,7 @@ pub async fn mark_paid(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err(crate::errors::sanitize_db_error(code, text));
+        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
     }
 
     let v: serde_json::Value = serde_json::from_str(&text)
@@ -1204,7 +1195,7 @@ pub async fn void_invoice(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err(crate::errors::sanitize_db_error(code, text));
+        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
     }
 
     let v: serde_json::Value = serde_json::from_str(&text)

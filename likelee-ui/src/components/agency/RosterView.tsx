@@ -2029,17 +2029,18 @@ const RosterView = ({
                 Insufficient seats!
               </h3>
               <p className="text-gray-500 mb-8 font-medium">
-                Buy seats to create talents.
+                Your current plan allows {seatsLimit || 0} talent
+                {seatsLimit === 1 ? "" : "s"}. Upgrade to add more.
               </p>
               <div className="flex flex-col w-full gap-3">
                 <Button
                   onClick={() => {
                     setShowInsufficientSeatsModal(false);
-                    navigate("/buy-seats");
+                    navigate("/agencysubscribe");
                   }}
                   className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-12 rounded-xl"
                 >
-                  Buy seat
+                  View plans
                 </Button>
                 <Button
                   variant="ghost"

@@ -1,4 +1,4 @@
-use crate::{auth::AuthUser, config::AppState};
+use crate::{auth::AuthUser, config::AppState, errors::sanitize_db_error};
 use axum::{extract::Query, extract::State, http::StatusCode, Json};
 use chrono::{Datelike, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
@@ -64,10 +64,9 @@ pub async fn list(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
     if !status.is_success() {
-        let code =
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err(crate::errors::sanitize_db_error(code, text));
+        return Err(sanitize_db_error(status.as_u16(), text));
     }
 
     let rows: serde_json::Value = serde_json::from_str(&text)

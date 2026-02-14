@@ -1279,7 +1279,7 @@ pub async fn create_talent(
     let agency_resp = state
         .pg
         .from("agencies")
-        .select("seats_limit")
+        .select("seats_limit,plan_tier")
         .eq("id", &user.id)
         .single()
         .execute()
@@ -1296,10 +1296,22 @@ pub async fn create_talent(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let agency_data: serde_json::Value = serde_json::from_str(&agency_text).unwrap_or(json!({}));
-    let seats_limit = agency_data
+    let plan_tier = agency_data
+        .get("plan_tier")
+        .and_then(|v| v.as_str())
+        .unwrap_or("free")
+        .trim()
+        .to_lowercase();
+    let mut seats_limit = agency_data
         .get("seats_limit")
         .and_then(|v| v.as_i64())
         .unwrap_or(0);
+    if seats_limit <= 0 {
+        seats_limit = match plan_tier.as_str() {
+            "basic" | "pro" | "enterprise" => 186,
+            _ => 1,
+        };
+    }
 
     // 2. Check current talent count
     let count_resp = state
