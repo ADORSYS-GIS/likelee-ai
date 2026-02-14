@@ -18,7 +18,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { CreateTemplateRequest, LicenseTemplate } from "@/api/licenseTemplates";
 import { ContractEditor } from "./ContractEditor";
-import { FileText, Calendar, Users, Briefcase, Globe, Clock, Shield, DollarSign } from "lucide-react";
+import { FileSignature, Calendar, Users, Briefcase, Globe, Trash2, DollarSign } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
 interface TemplateModalProps {
@@ -27,6 +27,7 @@ interface TemplateModalProps {
   onSave: (data: CreateTemplateRequest) => Promise<void>;
   initialData?: LicenseTemplate | null;
   hideContract?: boolean;
+  readOnly?: boolean;
 }
 
 const AVAILABLE_CONTRACT_VARIABLES = [
@@ -60,6 +61,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
   onSave,
   initialData,
   hideContract,
+  readOnly = false,
 }) => {
   const {
     register,
@@ -166,15 +168,17 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                   onClick={onClose}
                   className="text-slate-500 font-bold hover:bg-slate-50 rounded-xl px-6 h-10"
                 >
-                  Cancel
+                  {readOnly ? "Close" : "Cancel"}
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-8 rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-95"
-                >
-                  {isSubmitting ? "Saving..." : initialData ? "Update Template" : "Create Template"}
-                </Button>
+                {!readOnly && (
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-8 rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-95"
+                  >
+                    {isSubmitting ? "Saving..." : initialData ? "Update Template" : "Create Template"}
+                  </Button>
+                )}
               </div>
             </div>
           </DialogHeader>
@@ -185,8 +189,8 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
               {/* Template Identity */}
               <div className="p-8 bg-white rounded-3xl border border-slate-200/60 shadow-sm space-y-6">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 bg-indigo-50 rounded-2xl flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-indigo-600" />
+                  <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center rotate-3 group-hover:rotate-0 transition-transform">
+                    <FileSignature className="w-6 h-6 text-indigo-600" />
                   </div>
                   <h3 className="font-bold text-slate-900">Template Identity</h3>
                 </div>
@@ -196,14 +200,15 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                     <Input
                       {...register("template_name", { required: true })}
                       placeholder="e.g. Standard Social Media"
-                      className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium"
+                      disabled={readOnly}
+                      className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75"
                     />
                     {errors.template_name && <span className="text-red-500 text-xs font-bold px-1">This field is required</span>}
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm font-bold text-slate-800 ml-1">Category *</Label>
-                    <Select value={categoryValue} onValueChange={(val) => setValue("category", val)}>
-                      <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium">
+                    <Select value={categoryValue} onValueChange={(val) => setValue("category", val)} disabled={readOnly}>
+                      <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75">
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl border-slate-200">
@@ -222,7 +227,8 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                 <Textarea
                   {...register("description")}
                   placeholder="Description of the template..."
-                  className="min-h-[80px] bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium resize-none"
+                  disabled={readOnly}
+                  className="min-h-[80px] bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium resize-none disabled:opacity-75"
                 />
               </div>
 
@@ -231,7 +237,8 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                 <Input
                   {...register("usage_scope")}
                   placeholder="e.g. Organic Social Media"
-                  className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium"
+                  disabled={readOnly}
+                  className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75"
                 />
               </div>
 
@@ -241,7 +248,8 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                   <Input
                     type="number"
                     {...register("duration_days", { valueAsNumber: true })}
-                    className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium"
+                    disabled={readOnly}
+                    className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75"
                   />
                 </div>
                 <div className="space-y-2">
@@ -249,15 +257,16 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                   <Input
                     {...register("territory")}
                     placeholder="Worldwide"
-                    className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium"
+                    disabled={readOnly}
+                    className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label className="text-sm font-bold text-slate-800 ml-1">Exclusivity *</Label>
-                <Select onValueChange={(val) => setValue("exclusivity", val)} defaultValue={initialData?.exclusivity || "Non-exclusive"}>
-                  <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium">
+                <Select onValueChange={(val) => setValue("exclusivity", val)} defaultValue={initialData?.exclusivity || "Non-exclusive"} disabled={readOnly}>
+                  <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75">
                     <SelectValue placeholder="Select exclusivity" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl border-slate-200">
@@ -275,7 +284,8 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                     step="0.01"
                     {...register("license_fee", { valueAsNumber: true })}
                     placeholder="Amount ($)"
-                    className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium pl-10"
+                    disabled={readOnly}
+                    className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium pl-10 disabled:opacity-75"
                   />
                   <DollarSign className="absolute left-3 top-3.5 w-5 h-5 text-slate-400 pointer-events-none" />
                 </div>
@@ -287,14 +297,15 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                 <Textarea
                   {...register("custom_terms")}
                   placeholder="Any extra conditions..."
-                  className="min-h-[80px] bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium resize-none"
+                  disabled={readOnly}
+                  className="min-h-[80px] bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium resize-none disabled:opacity-75"
                 />
               </div>
 
               <div className="space-y-2">
                 <Label className="text-sm font-bold text-slate-800 ml-1">Modifications Allowed</Label>
-                <Select onValueChange={(val) => setValue("modifications_allowed", val)} defaultValue={initialData?.modifications_allowed || "No"}>
-                  <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium">
+                <Select onValueChange={(val) => setValue("modifications_allowed", val)} defaultValue={initialData?.modifications_allowed || "No"} disabled={readOnly}>
+                  <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75">
                     <SelectValue placeholder="Select option" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl border-slate-200">
@@ -314,6 +325,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                 onChangeFormat={(val) => setValue("contract_body_format", val)}
                 variables={AVAILABLE_CONTRACT_VARIABLES}
                 placeholder="Write your contract template here. Use {variable} placeholders that will be filled in when using this template..."
+                readOnly={readOnly}
               />
             </div>
           </div>

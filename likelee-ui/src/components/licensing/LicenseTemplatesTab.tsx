@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Search, Copy, Edit, Trash2, FileText } from "lucide-react";
+import { Plus, Search, Copy, Edit, Trash2, FileSignature, MoreVertical, Layout } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,6 +20,12 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { TemplateModal } from "./TemplateModal";
@@ -56,8 +62,8 @@ export const LicenseTemplatesTab: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hideContractInModal, setHideContractInModal] = useState(false);
-  const [editingTemplate, setEditingTemplate] =
-    useState<LicenseTemplate | null>(null);
+  const [editingTemplate, setEditingTemplate] = useState<LicenseTemplate | null>(null);
+  const [isViewOnly, setIsViewOnly] = useState(false);
 
   const [templateToDelete, setTemplateToDelete] = useState<{
     id: string;
@@ -199,6 +205,7 @@ export const LicenseTemplatesTab: React.FC = () => {
 
   const openNewTemplateModal = () => {
     setEditingTemplate(null);
+    setIsViewOnly(false);
     setTopTab("templates");
     setHideContractInModal(false);
     setIsModalOpen(true);
@@ -206,12 +213,21 @@ export const LicenseTemplatesTab: React.FC = () => {
 
   const openEditModal = (template: LicenseTemplate) => {
     setEditingTemplate(template);
+    setIsViewOnly(false);
     setHideContractInModal(topTab === "requests");
+    setIsModalOpen(true);
+  };
+
+  const openViewModal = (template: LicenseTemplate) => {
+    setEditingTemplate(template);
+    setIsViewOnly(true);
+    setHideContractInModal(false);
     setIsModalOpen(true);
   };
 
   const openRequestLicenseModal = () => {
     setEditingTemplate(null);
+    setIsViewOnly(false);
     setHideContractInModal(true);
     setIsModalOpen(true);
   };
@@ -268,19 +284,19 @@ export const LicenseTemplatesTab: React.FC = () => {
         <TabsList className="w-full justify-start bg-transparent p-0 border-b rounded-none">
           <TabsTrigger
             value="templates"
-            className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-600"
+            className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 px-6 font-bold"
           >
             Templates
           </TabsTrigger>
           <TabsTrigger
             value="submissions"
-            className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-600"
+            className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 px-6 font-bold"
           >
             Submissions
           </TabsTrigger>
           <TabsTrigger
             value="requests"
-            className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-600"
+            className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 px-6 font-bold"
           >
             Requests
           </TabsTrigger>
@@ -291,16 +307,13 @@ export const LicenseTemplatesTab: React.FC = () => {
             <div>
               <h2 className="text-2xl font-bold tracking-tight">Templates</h2>
               <p className="text-muted-foreground">
-                DocuSeal templates generated from your HTML/Markdown contract
+                Manage your agency license agreements and contract templates
               </p>
             </div>
             <div className="flex items-center gap-2">
               <Button
-                onClick={() => {
-                  setEditingTemplate(null);
-                  setIsModalOpen(true);
-                }}
-                className="bg-indigo-600 hover:bg-indigo-700"
+                onClick={openNewTemplateModal}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-6 rounded-xl shadow-lg shadow-indigo-100"
               >
                 <Plus className="mr-2 h-4 w-4" /> New Template
               </Button>
@@ -309,66 +322,88 @@ export const LicenseTemplatesTab: React.FC = () => {
 
           <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-3">
             {loadingTemplates ? (
-              <p className="text-muted-foreground col-span-3 text-center py-10">
+              <p className="text-muted-foreground col-span-3 text-center py-20">
                 Loading templates...
               </p>
-            ) : templates.length === 0 ? (
-              <p className="text-muted-foreground col-span-3 text-center py-10">
-                No templates yet.
+            ) : filteredTemplates.length === 0 ? (
+              <p className="text-muted-foreground col-span-3 text-center py-20">
+                {searchTerm || selectedCategory !== "All Categories"
+                  ? "No templates match your criteria."
+                  : "No templates yet. Create your first one to get started!"}
               </p>
             ) : (
-              templates.map((template) => (
+              filteredTemplates.map((template) => (
                 <Card
                   key={template.id}
-                  className="bg-indigo-50/50 border border-indigo-100 overflow-hidden"
+                  className="bg-white border-slate-200 overflow-hidden group hover:shadow-xl hover:border-indigo-200 transition-all cursor-pointer flex flex-col rounded-2xl shadow-sm"
+                  onClick={() => openViewModal(template)}
                 >
-                  <div className="h-28 bg-indigo-100/70 flex items-center justify-center">
-                    <FileText className="h-10 w-10 text-indigo-400" />
+                  <div className="h-32 bg-slate-50 flex items-center justify-center relative shrink-0 border-b border-slate-100 transition-colors group-hover:bg-indigo-50/50">
+                    <div className="w-14 h-14 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center rotate-3 group-hover:rotate-0 transition-transform">
+                      <FileSignature className="h-7 w-7 text-indigo-600" />
+                    </div>
+
+                    <div className="absolute top-3 right-3" onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-white shadow-sm border border-transparent hover:border-slate-100 transition-all">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48 rounded-xl border-slate-200 shadow-xl p-1.5">
+                          <DropdownMenuItem onClick={() => openEditModal(template)} className="rounded-lg gap-2 cursor-pointer font-semibold py-2.5">
+                            <Edit className="h-4 w-4 text-slate-500" /> Edit Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setBuilderTarget({
+                                id: template.id,
+                                docuseal_template_id: template.docuseal_template_id as any,
+                                template_name: template.template_name,
+                              });
+                              setBuilderMode("template");
+                            }}
+                            className="rounded-lg gap-2 cursor-pointer font-semibold py-2.5"
+                          >
+                            <Layout className="h-4 w-4 text-slate-500" /> Edit Layout
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleCopy(template.id)} className="rounded-lg gap-2 cursor-pointer font-semibold py-2.5">
+                            <Copy className="h-4 w-4 text-slate-500" /> Duplicate
+                          </DropdownMenuItem>
+                          <div className="h-px bg-slate-100 my-1" />
+                          <DropdownMenuItem onClick={() => handleDelete(template.id, template.template_name)} className="rounded-lg gap-2 cursor-pointer font-semibold text-red-600 py-2.5 hover:bg-red-50 focus:bg-red-50">
+                            <Trash2 className="h-4 w-4" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
-                  <CardContent className="p-4 space-y-3">
+
+                  <CardContent className="p-5 flex-1 flex flex-col justify-between">
                     <div>
-                      <div className="font-bold text-gray-900 truncate">
+                      <div className="font-bold text-slate-900 truncate text-base mb-1">
                         {template.template_name}
                       </div>
-                      <div className="text-xs text-gray-500">
-                        {template.created_at
-                          ? `Created ${formatDate(template.created_at)}`
-                          : ""}
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="bg-slate-100 text-slate-600 text-[10px] uppercase font-bold tracking-tight px-1.5 py-0">
+                          {template.category}
+                        </Badge>
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                          {template.created_at ? formatDate(template.created_at) : ""}
+                        </span>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-2">
+                    <div className="mt-6">
                       <Button
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10"
-                        onClick={() => {
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 rounded-xl shadow-lg shadow-indigo-100 transition-all active:scale-95 flex items-center justify-center gap-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setWizardTemplate(template);
                         }}
                       >
                         Use Template
                       </Button>
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button
-                          variant="outline"
-                          className="bg-white text-xs"
-                          onClick={() => {
-                            setBuilderTarget({
-                              id: template.id,
-                              docuseal_template_id: template.docuseal_template_id as any,
-                              template_name: template.template_name,
-                            });
-                            setBuilderMode("template");
-                          }}
-                        >
-                          Edit Layout
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="bg-white text-xs"
-                          onClick={() => openEditModal(template)}
-                        >
-                          Edit
-                        </Button>
-                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -384,7 +419,6 @@ export const LicenseTemplatesTab: React.FC = () => {
         <TabsContent value="requests" className="mt-6">
           <LicensingRequestsTab />
         </TabsContent>
-
       </Tabs>
 
       <TemplateModal
@@ -393,68 +427,68 @@ export const LicenseTemplatesTab: React.FC = () => {
         onSave={handleSave}
         initialData={editingTemplate}
         hideContract={hideContractInModal}
+        readOnly={isViewOnly}
       />
 
-      {
-        wizardTemplate && (
-          <SubmissionWizard
-            isOpen={!!wizardTemplate}
-            onClose={() => setWizardTemplate(null)}
-            template={wizardTemplate}
-            onComplete={() => {
-              queryClient.invalidateQueries({ queryKey: ["license-templates"] });
-              queryClient.invalidateQueries({ queryKey: ["license-submissions"] });
-            }}
-          />
-        )
-      }
+      {wizardTemplate && (
+        <SubmissionWizard
+          isOpen={!!wizardTemplate}
+          onClose={() => setWizardTemplate(null)}
+          template={wizardTemplate}
+          onComplete={() => {
+            queryClient.invalidateQueries({ queryKey: ["license-templates"] });
+            queryClient.invalidateQueries({ queryKey: ["license-submissions"] });
+          }}
+        />
+      )}
 
-      {
-        builderTarget && (
-          <DocuSealBuilderModal
-            open={!!builderTarget}
-            onClose={() => setBuilderTarget(null)}
-            templateName={builderTarget.template_name}
-            docusealTemplateId={builderTarget.docuseal_template_id}
-            // For submissions, we want a unique session ID.
-            // Using `template-${id}-${timestamp}` creates a unique editing session without a DB record.
-            externalId={builderTarget.external_id || builderTarget.id}
-            onSave={async (docusealId) => {
-              try {
-                queryClient.invalidateQueries({
-                  queryKey: ["license-templates"],
-                });
-              } catch (err) {
-                console.error("Failed to update template DocuSeal ID:", err);
-              }
-              setBuilderTarget(null);
-            }}
-          />
-        )
-      }
+      {builderTarget && (
+        <DocuSealBuilderModal
+          open={!!builderTarget}
+          onClose={() => setBuilderTarget(null)}
+          templateName={builderTarget.template_name}
+          docusealTemplateId={builderTarget.docuseal_template_id}
+          externalId={builderTarget.external_id || builderTarget.id}
+          onSave={async (docusealId) => {
+            queryClient.invalidateQueries({ queryKey: ["license-templates"] });
+            setBuilderTarget(null);
+          }}
+        />
+      )}
 
       <Dialog
         open={!!templateToDelete}
         onOpenChange={(open) => !open && setTemplateToDelete(null)}
       >
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Delete Template</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete "{templateToDelete?.name}"? This
-              action cannot be undone.
+        <DialogContent className="sm:max-w-[400px] rounded-3xl p-8 border-none shadow-2xl">
+          <DialogHeader className="space-y-3">
+            <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center mb-2">
+              <Trash2 className="w-6 h-6 text-red-600" />
+            </div>
+            <DialogTitle className="text-xl font-bold text-slate-900">Delete Template</DialogTitle>
+            <DialogDescription className="text-slate-500 font-medium">
+              Are you sure you want to delete <span className="text-slate-900 font-bold">"{templateToDelete?.name}"</span>?
+              This action cannot be undone and will remove the template from your library.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setTemplateToDelete(null)}>
+          <DialogFooter className="mt-8 sm:justify-start gap-3">
+            <Button
+              variant="ghost"
+              onClick={() => setTemplateToDelete(null)}
+              className="px-6 font-bold text-slate-500 rounded-xl h-10"
+            >
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
-              Delete
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700 font-bold px-8 rounded-xl h-10 shadow-lg shadow-red-100"
+            >
+              Delete Template
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div >
+    </div>
   );
 };
