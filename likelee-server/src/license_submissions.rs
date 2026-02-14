@@ -1479,7 +1479,7 @@ pub async fn create_and_send(
         )
     })?;
 
-    let new_submission = created_rows.get(0).ok_or((
+    let new_submission = created_rows.first().ok_or((
         StatusCode::INTERNAL_SERVER_ERROR,
         "No row returned after insert".to_string(),
     ))?;
