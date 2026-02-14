@@ -300,7 +300,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                 <Button
                                     onClick={handleNext}
                                     disabled={isSyncing}
-                                    className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-10 px-8 rounded-xl shadow-lg shadow-indigo-100/50 transition-all active:scale-95"
+                                    className="bg-indigo-500 hover:bg-indigo-500 text-white font-bold h-10 px-8 rounded-xl shadow-lg shadow-indigo-100/50 transition-all active:scale-95"
                                 >
                                     {isSyncing ? "Preparing..." : step === 3 ? "Finalize" : "Next Step"}
                                     {!isSyncing && step < 3 && <ArrowRight className="w-4 h-4 ml-2" />}
@@ -312,13 +312,13 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                         <div className="flex items-center gap-4 px-1">
                             {[1, 2, 3].map((s) => (
                                 <div key={s} className="flex-1 flex items-center gap-3">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all ${step === s ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200 scale-110" :
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all ${step === s ? "bg-indigo-500 text-white shadow-lg shadow-indigo-200 scale-110" :
                                         step > s ? "bg-green-500 text-white" : "bg-slate-100 text-slate-400"
                                         }`}>
                                         {step > s ? <Check className="w-4 h-4" /> : s}
                                     </div>
-                                    <div className={`flex-1 h-1.5 rounded-full transition-all ${step >= s ? "bg-indigo-600/10" : "bg-slate-100"}`}>
-                                        <div className={`h-full bg-indigo-600 rounded-full transition-all duration-500 ${step === s ? "w-1/2" : step > s ? "w-full" : "w-0"}`} />
+                                    <div className={`flex-1 h-1.5 rounded-full transition-all ${step >= s ? "bg-indigo-500/10" : "bg-slate-100"}`}>
+                                        <div className={`h-full bg-indigo-500 rounded-full transition-all duration-500 ${step === s ? "w-1/2" : step > s ? "w-full" : "w-0"}`} />
                                     </div>
                                 </div>
                             ))}
@@ -459,7 +459,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                     />
                                 </div>
                                 <div className="mt-8 p-6 bg-indigo-50/50 border border-indigo-100 rounded-2xl flex items-start gap-4">
-                                    <div className="bg-indigo-600 p-2 rounded-xl mt-1">
+                                    <div className="bg-indigo-500 p-2 rounded-xl mt-1">
                                         <FileText className="w-5 h-5 text-white" />
                                     </div>
                                     <div>

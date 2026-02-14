@@ -138,7 +138,7 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
               <Button
                 onClick={onSend}
                 disabled={isSending || !token}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 px-6 rounded-xl shadow-lg shadow-indigo-200"
+                className="bg-indigo-500 hover:bg-indigo-700 text-white font-bold h-11 px-6 rounded-xl shadow-lg shadow-indigo-200"
               >
                 {isSending ? (
                   <>

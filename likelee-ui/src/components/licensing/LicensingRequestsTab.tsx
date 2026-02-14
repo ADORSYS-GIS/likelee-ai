@@ -372,7 +372,7 @@ export const LicensingRequestsTab = () => {
                                 <div>
                                     <Button
                                         onClick={() => openPayModal(group)}
-                                        className={`w-full font-bold h-10 rounded-md flex items-center justify-center gap-2 ${group.pay_set ? "bg-white text-gray-900 border border-gray-300 hover:bg-gray-50" : "bg-indigo-500 hover:bg-indigo-600 text-white shadow-lg shadow-indigo-200 animate-pulse"}`}
+                                        className={`w-full font-bold h-10 rounded-md flex items-center justify-center gap-2 ${group.pay_set ? "bg-white text-gray-900 border border-gray-300 hover:bg-gray-50" : "bg-indigo-500 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-200 animate-pulse"}`}
                                     >
                                         {group.pay_set ? (
                                             <>
@@ -548,7 +548,7 @@ export const LicensingRequestsTab = () => {
                                     )
                                 }
                                 disabled={!counterOfferMessage.trim()}
-                                className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold"
+                                className="bg-indigo-500 hover:bg-indigo-500 text-white font-bold"
                             >
                                 Send Counter Offer
                             </Button>
