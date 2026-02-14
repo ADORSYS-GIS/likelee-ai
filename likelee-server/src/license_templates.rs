@@ -52,7 +52,6 @@ pub struct CreateTemplateRequest {
     pub contract_body_format: Option<String>,
 }
 
-
 /// Render contract body (MD or HTML) into a clean, styled HTML document for DocuSeal
 fn render_contract_to_html(body: &str, format: &str) -> String {
     let content_html = if format == "markdown" {
@@ -117,7 +116,6 @@ fn replace_placeholders(text: &str, values: &std::collections::HashMap<String, S
     })
     .to_string()
 }
-
 
 #[derive(Debug, Serialize)]
 pub struct TemplateStats {
@@ -620,22 +618,18 @@ pub async fn create_builder_token(
                 // Perform placeholder replacement
                 let rendered_contract = replace_placeholders(&contract_body, &replacements);
 
-                let document_html = render_contract_to_html(&rendered_contract, &contract_body_format);
+                let document_html =
+                    render_contract_to_html(&rendered_contract, &contract_body_format);
 
                 let docuseal = DocuSealClient::new(
                     state.docuseal_api_key.clone(),
                     state.docuseal_base_url.clone(),
                 );
 
+                // IMPORTANT: Do not replace/update template documents on every builder open.
+                // Updating the underlying document can wipe previously placed fields in DocuSeal.
+                // We only create a template when missing; otherwise reuse the existing template.
                 let ensured_id = if let Some(existing_id) = license_template.docuseal_template_id {
-                    docuseal
-                        .update_template_from_html(
-                            existing_id,
-                            license_template.template_name.clone(),
-                            document_html,
-                        )
-                        .await
-                        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
                     existing_id
                 } else {
                     let created = docuseal
@@ -644,7 +638,7 @@ pub async fn create_builder_token(
                             document_html,
                         )
                         .await
-                        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
+                        .map_err(|e| crate::errors::handle_error(e, "docuseal_create_template"))?;
 
                     // Persist DS template id back to license_templates
                     let update_json = json!({
@@ -661,6 +655,7 @@ pub async fn create_builder_token(
 
                     created.id
                 };
+
                 template_docuseal_id = Some(ensured_id);
             }
         }

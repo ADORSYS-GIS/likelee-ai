@@ -849,7 +849,10 @@ impl DocuSealClient {
         }
 
         let template = response.json::<CreateTemplateResponse>().await?;
-        info!(template_id = template.id, "DocuSeal template created from HTML");
+        info!(
+            template_id = template.id,
+            "DocuSeal template created from HTML"
+        );
 
         Ok(template)
     }
@@ -896,7 +899,10 @@ impl DocuSealClient {
         // The documents update endpoint usually returns the template object or a simple success.
         // We'll try to parse it as CreateTemplateResponse for consistency.
         let template = response.json::<CreateTemplateResponse>().await?;
-        info!(template_id = template.id, "DocuSeal template updated from HTML");
+        info!(
+            template_id = template.id,
+            "DocuSeal template updated from HTML"
+        );
 
         Ok(template)
     }

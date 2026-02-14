@@ -150,7 +150,9 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
           <div className="flex items-center gap-3">
             {onSend && (
               <Button
-                onClick={onSend}
+                onClick={() => {
+                  onSend();
+                }}
                 disabled={isSending || !token}
                 className="bg-indigo-500 hover:bg-indigo-700 text-white font-bold h-11 px-6 rounded-xl shadow-lg shadow-indigo-200"
               >
@@ -185,31 +187,9 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
               <DocusealBuilder
                 token={token}
                 fields={prefillFields}
-                roles={["First Party"]}
+                roles={['First Party']}
                 withFieldPlaceholder={true}
                 withSendButton={false}
-                withSignYourselfButton={false}
-                onSave={(data: any) => {
-                  console.log("Designer Save Clicked:", data);
-
-                  // Check if there are any fields defined
-                  const hasFields = data?.documents?.some(
-                    (doc: any) => doc.fields && doc.fields.length > 0,
-                  );
-
-                  if (data?.id && hasFields) {
-                    onSave(data.id);
-                    toast({
-                      title: "Layout Saved",
-                      description:
-                        "The document layout has been updated and sent.",
-                    });
-                  } else if (data?.id && !hasFields) {
-                    console.log(
-                      "ignoring save with no fields (likely just upload)",
-                    );
-                  }
-                }}
                 className="w-full h-full"
               />
             ) : null}
