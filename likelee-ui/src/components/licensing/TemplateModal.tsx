@@ -333,10 +333,16 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                       Non-exclusive
                     </SelectItem>
                     <SelectItem
-                      value="Exclusive"
+                      value="Category exclusive"
                       className="rounded-lg font-medium"
                     >
-                      Exclusive
+                      Category exclusive
+                    </SelectItem>
+                    <SelectItem
+                      value="Full exclusivity"
+                      className="rounded-lg font-medium"
+                    >
+                      Full exclusivity
                     </SelectItem>
                   </SelectContent>
                 </Select>
