@@ -177,6 +177,8 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
                 fields={prefillFields}
                 roles={["First Party"]}
                 withFieldPlaceholder={true}
+                withSendButton={false}
+                withSignYourselfButton={false}
                 onSave={(data: any) => {
                   console.log("Designer Save Clicked:", data);
 
