@@ -790,9 +790,114 @@ pub struct TemplateDocument {
     pub file: String,
 }
 
+#[derive(Debug, Serialize)]
+pub struct UpdateTemplateFromHtmlRequest {
+    pub documents: Vec<UpdateTemplateDocument>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct UpdateTemplateDocument {
+    pub html: String,
+    pub position: i32,
+    pub replace: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CreateTemplateFromHtmlRequest {
+    pub name: String,
+    pub html: String,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct CreateTemplateResponse {
     pub id: i32,
     pub slug: String,
     pub name: String,
+}
+
+impl DocuSealClient {
+    /// Create a new template from HTML
+    pub async fn create_template_from_html(
+        &self,
+        name: String,
+        html: String,
+    ) -> Result<CreateTemplateResponse, Box<dyn std::error::Error>> {
+        let url = format!("{}/templates/html", self.base_url);
+
+        let request_body = CreateTemplateFromHtmlRequest { name, html };
+
+        info!(url = %url, "Creating DocuSeal template from HTML");
+
+        let response = self
+            .client
+            .post(&url)
+            .header("X-Auth-Token", &self.api_key)
+            .header("Content-Type", "application/json")
+            .json(&request_body)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response.text().await.unwrap_or_default();
+            error!(
+                status = %status,
+                error = %error_text,
+                "DocuSeal API error"
+            );
+            return Err(format!("DocuSeal API error: {} - {}", status, error_text).into());
+        }
+
+        let template = response.json::<CreateTemplateResponse>().await?;
+        info!(template_id = template.id, "DocuSeal template created from HTML");
+
+        Ok(template)
+    }
+
+    /// Update an existing template using HTML
+    pub async fn update_template_from_html(
+        &self,
+        template_id: i32,
+        _name: String,
+        html: String,
+    ) -> Result<CreateTemplateResponse, Box<dyn std::error::Error>> {
+        let url = format!("{}/templates/{}/documents", self.base_url, template_id);
+
+        let request_body = UpdateTemplateFromHtmlRequest {
+            documents: vec![UpdateTemplateDocument {
+                html,
+                position: 0,
+                replace: true,
+            }],
+        };
+
+        info!(template_id, url = %url, "Updating DocuSeal template from HTML via documents endpoint");
+
+        let response = self
+            .client
+            .put(&url)
+            .header("X-Auth-Token", &self.api_key)
+            .header("Content-Type", "application/json")
+            .json(&request_body)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response.text().await.unwrap_or_default();
+            error!(
+                status = %status,
+                error = %error_text,
+                "DocuSeal API error"
+            );
+            return Err(format!("DocuSeal API error: {} - {}", status, error_text).into());
+        }
+
+        // The documents update endpoint usually returns the template object or a simple success.
+        // We'll try to parse it as CreateTemplateResponse for consistency.
+        let template = response.json::<CreateTemplateResponse>().await?;
+        info!(template_id = template.id, "DocuSeal template updated from HTML");
+
+        Ok(template)
+    }
 }

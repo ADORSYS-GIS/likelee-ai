@@ -5,7 +5,6 @@ use axum::{
     http::StatusCode,
     Json,
 };
-use base64::{engine::general_purpose, Engine as _};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -53,38 +52,55 @@ pub struct CreateTemplateRequest {
     pub contract_body_format: Option<String>,
 }
 
-fn extract_text_from_markdown(input: &str) -> String {
-    use pulldown_cmark::{Event, Parser};
-    let mut out = String::new();
-    for ev in Parser::new(input) {
-        match ev {
-            Event::Text(t) | Event::Code(t) => {
-                out.push_str(&t);
-            }
-            Event::SoftBreak | Event::HardBreak => {
-                out.push('\n');
-            }
-            _ => {}
-        }
-    }
-    out
-}
 
-fn extract_text_from_html(input: &str) -> String {
-    let mut out = String::new();
-    let mut in_tag = false;
-    for ch in input.chars() {
-        match ch {
-            '<' => in_tag = true,
-            '>' => in_tag = false,
-            _ => {
-                if !in_tag {
-                    out.push(ch);
-                }
-            }
-        }
-    }
-    out
+/// Render contract body (MD or HTML) into a clean, styled HTML document for DocuSeal
+fn render_contract_to_html(body: &str, format: &str) -> String {
+    let content_html = if format == "markdown" {
+        use pulldown_cmark::{html, Parser};
+        let parser = Parser::new(body);
+        let mut html_output = String::new();
+        html::push_html(&mut html_output, parser);
+        html_output
+    } else {
+        body.to_string() // Already HTML
+    };
+
+    format!(
+        r#"
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body {{
+                    font-family: 'Helvetica', 'Arial', sans-serif;
+                    line-height: 1.6;
+                    color: #1a202c;
+                    margin: 0;
+                    padding: 0;
+                }}
+                .container {{
+                    max-width: 800px;
+                    margin: 0 auto;
+                }}
+                h1 {{ font-size: 24pt; color: #1a202c; margin-bottom: 24pt; }}
+                h2 {{ font-size: 18pt; color: #2d3748; margin-top: 24pt; margin-bottom: 12pt; border-bottom: 1px solid #e2e8f0; }}
+                p {{ margin-bottom: 12pt; text-align: justify; }}
+                strong {{ font-weight: bold; }}
+                hr {{ border: 0; border-top: 1px solid #cbd5e0; margin: 24pt 0; }}
+                ul, ol {{ margin-bottom: 12pt; padding-left: 24pt; }}
+                li {{ margin-bottom: 6pt; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                {}
+            </div>
+        </body>
+        </html>
+        "#,
+        content_html
+    )
 }
 
 /// Replace placeholders like {client_name} with actual values
@@ -102,92 +118,6 @@ fn replace_placeholders(text: &str, values: &std::collections::HashMap<String, S
     .to_string()
 }
 
-fn wrap_text(text: &str, max_chars: usize) -> Vec<String> {
-    let mut lines = Vec::new();
-    for paragraph in text.split('\n') {
-        if paragraph.trim().is_empty() {
-            lines.push(String::new());
-            continue;
-        }
-        let mut current_line = String::new();
-        for word in paragraph.split_whitespace() {
-            if current_line.len() + word.len() + 1 > max_chars {
-                if !current_line.is_empty() {
-                    lines.push(current_line);
-                    current_line = word.to_string();
-                } else {
-                    lines.push(word.to_string());
-                    current_line = String::new();
-                }
-            } else {
-                if !current_line.is_empty() {
-                    current_line.push(' ');
-                }
-                current_line.push_str(word);
-            }
-        }
-        if !current_line.is_empty() {
-            lines.push(current_line);
-        }
-    }
-    lines
-}
-
-fn render_template_to_pdf_data_uri(
-    template_name: &str,
-    contract_body: &str,
-    contract_body_format: &str,
-) -> Result<String, (StatusCode, String)> {
-    use printpdf::{BuiltinFont, Mm, PdfDocument};
-
-    let text = match contract_body_format {
-        "html" => extract_text_from_html(contract_body),
-        _ => extract_text_from_markdown(contract_body),
-    };
-
-    let (doc, page1, layer1) = PdfDocument::new(template_name, Mm(210.0), Mm(297.0), "Layer 1");
-    let mut current_page = page1;
-    let mut current_layer_index = layer1;
-    let mut current_layer = doc.get_page(current_page).get_layer(current_layer_index);
-
-    let font = doc
-        .add_builtin_font(BuiltinFont::Helvetica)
-        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
-
-    let font_size = 11.0;
-    let mut y = 280.0;
-    let margin_x = 15.0;
-    let line_height = 6.0;
-    let max_chars_per_line = 95; // Conservative for Helvetica 11pt on 180mm width
-
-    let wrapped_lines = wrap_text(&text, max_chars_per_line);
-
-    for line in wrapped_lines {
-        if y < 20.0 {
-            let (new_page, new_layer) = doc.add_page(Mm(210.0), Mm(297.0), "Layer 1");
-            current_page = new_page;
-            current_layer_index = new_layer;
-            current_layer = doc.get_page(current_page).get_layer(current_layer_index);
-            y = 280.0;
-        }
-
-        if !line.is_empty() {
-            current_layer.use_text(line, font_size, Mm(margin_x), Mm(y), &font);
-        }
-        y -= line_height;
-    }
-
-    let cursor = std::io::Cursor::new(Vec::<u8>::new());
-    let mut writer = std::io::BufWriter::new(cursor);
-    doc.save(&mut writer)
-        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
-    let bytes = writer
-        .into_inner()
-        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?
-        .into_inner();
-    let base64_content = general_purpose::STANDARD.encode(bytes);
-    Ok(format!("data:application/pdf;base64,{}", base64_content))
-}
 
 #[derive(Debug, Serialize)]
 pub struct TemplateStats {
@@ -690,11 +620,7 @@ pub async fn create_builder_token(
                 // Perform placeholder replacement
                 let rendered_contract = replace_placeholders(&contract_body, &replacements);
 
-                let document_base64 = render_template_to_pdf_data_uri(
-                    &license_template.template_name,
-                    &rendered_contract,
-                    &contract_body_format,
-                )?;
+                let document_html = render_contract_to_html(&rendered_contract, &contract_body_format);
 
                 let docuseal = DocuSealClient::new(
                     state.docuseal_api_key.clone(),
@@ -703,20 +629,19 @@ pub async fn create_builder_token(
 
                 let ensured_id = if let Some(existing_id) = license_template.docuseal_template_id {
                     docuseal
-                        .update_template_documents(
+                        .update_template_from_html(
                             existing_id,
-                            "contract.pdf".to_string(),
-                            document_base64,
+                            license_template.template_name.clone(),
+                            document_html,
                         )
                         .await
                         .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
                     existing_id
                 } else {
                     let created = docuseal
-                        .create_template(
+                        .create_template_from_html(
                             license_template.template_name.clone(),
-                            "contract.pdf".to_string(),
-                            document_base64,
+                            document_html,
                         )
                         .await
                         .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;

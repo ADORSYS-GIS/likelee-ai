@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
@@ -8,6 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 
 interface ContractEditorProps {
   body: string;
@@ -28,10 +30,48 @@ export const ContractEditor: React.FC<ContractEditorProps> = ({
   placeholder,
   readOnly = false,
 }) => {
+  const quillRef = useRef<ReactQuill>(null);
+
   const insertVariable = (variable: string) => {
     if (readOnly) return;
-    onChangeBody(body + variable);
+
+    if (format === "html" && quillRef.current) {
+      const editor = quillRef.current.getEditor();
+      const range = editor.getSelection();
+      const insertIndex = range ? range.index : editor.getLength();
+      editor.insertText(insertIndex, variable);
+    } else {
+      onChangeBody(body + variable);
+    }
   };
+
+  const quillModules = {
+    toolbar: [
+      [{ header: [1, 2, false] }],
+      ["bold", "italic", "underline", "strike", "blockquote"],
+      [
+        { list: "ordered" },
+        { list: "bullet" },
+        { indent: "-1" },
+        { indent: "+1" },
+      ],
+      ["link"],
+      ["clean"],
+    ],
+  };
+
+  const quillFormats = [
+    "header",
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+    "blockquote",
+    "list",
+    "bullet",
+    "indent",
+    "link",
+  ];
 
   return (
     <div className="space-y-6">
@@ -73,11 +113,10 @@ export const ContractEditor: React.FC<ContractEditorProps> = ({
               type="button"
               onClick={() => insertVariable(variable)}
               disabled={readOnly}
-              className={`text-[11px] font-bold px-3 py-1.5 rounded-lg border transition-all ${
-                readOnly
+              className={`text-[11px] font-bold px-3 py-1.5 rounded-lg border transition-all ${readOnly
                   ? "bg-slate-50 text-slate-400 border-slate-200 cursor-default"
                   : "bg-white text-indigo-600 border-indigo-100 hover:border-indigo-300 hover:shadow-sm active:scale-95"
-              }`}
+                }`}
             >
               {variable}
             </button>
@@ -89,14 +128,49 @@ export const ContractEditor: React.FC<ContractEditorProps> = ({
         <Label className="text-sm font-bold text-slate-900">
           Contract Body
         </Label>
-        <Textarea
-          value={body}
-          onChange={(e) => onChangeBody(e.target.value)}
-          readOnly={readOnly}
-          placeholder={placeholder || "Write your contract here..."}
-          className="min-h-[400px] bg-white border-slate-200 rounded-xl shadow-sm focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-700 leading-relaxed font-mono text-sm p-6"
-        />
+        {format === "html" ? (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden min-h-[400px]">
+            <ReactQuill
+              ref={quillRef}
+              theme="snow"
+              value={body}
+              onChange={onChangeBody}
+              modules={quillModules}
+              formats={quillFormats}
+              readOnly={readOnly}
+              placeholder={placeholder || "Write your contract here..."}
+              className="h-[400px] flex flex-col"
+            />
+          </div>
+        ) : (
+          <Textarea
+            value={body}
+            onChange={(e) => onChangeBody(e.target.value)}
+            readOnly={readOnly}
+            placeholder={placeholder || "Write your contract here..."}
+            className="min-h-[400px] bg-white border-slate-200 rounded-xl shadow-sm focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-700 leading-relaxed font-mono text-sm p-6"
+          />
+        )}
       </div>
+      <style>{`
+        .ql-container.ql-snow {
+          border: none !important;
+          font-family: inherit;
+          font-size: 0.875rem;
+        }
+        .ql-toolbar.ql-snow {
+          border: none !important;
+          border-bottom: 1px solid #e2e8f0 !important;
+          background: #f8fafc;
+        }
+        .ql-editor {
+          min-height: 350px;
+          padding: 1.5rem;
+        }
+        .ql-editor.ql-blank::before {
+          left: 1.5rem;
+        }
+      `}</style>
     </div>
   );
 };
