@@ -87,6 +87,37 @@ fn extract_text_from_html(input: &str) -> String {
     out
 }
 
+fn wrap_text(text: &str, max_chars: usize) -> Vec<String> {
+    let mut lines = Vec::new();
+    for paragraph in text.split('\n') {
+        if paragraph.trim().is_empty() {
+            lines.push(String::new());
+            continue;
+        }
+        let mut current_line = String::new();
+        for word in paragraph.split_whitespace() {
+            if current_line.len() + word.len() + 1 > max_chars {
+                if !current_line.is_empty() {
+                    lines.push(current_line);
+                    current_line = word.to_string();
+                } else {
+                    lines.push(word.to_string());
+                    current_line = String::new();
+                }
+            } else {
+                if !current_line.is_empty() {
+                    current_line.push(' ');
+                }
+                current_line.push_str(word);
+            }
+        }
+        if !current_line.is_empty() {
+            lines.push(current_line);
+        }
+    }
+    lines
+}
+
 fn render_template_to_pdf_data_uri(
     template_name: &str,
     contract_body: &str,
@@ -100,21 +131,35 @@ fn render_template_to_pdf_data_uri(
     };
 
     let (doc, page1, layer1) = PdfDocument::new(template_name, Mm(210.0), Mm(297.0), "Layer 1");
-    let current_layer = doc.get_page(page1).get_layer(layer1);
+    let mut current_page = page1;
+    let mut current_layer_index = layer1;
+    let mut current_layer = doc.get_page(current_page).get_layer(current_layer_index);
+    
     let font = doc
         .add_builtin_font(BuiltinFont::Helvetica)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    // Very simple text layout: single page, fixed-width lines.
-    // This is enough to bootstrap DocuSeal template generation and builder workflow.
     let font_size = 11.0;
     let mut y = 280.0;
-    for line in text.lines() {
-        if y < 15.0 {
-            break;
+    let margin_x = 15.0;
+    let line_height = 6.0;
+    let max_chars_per_line = 95; // Conservative for Helvetica 11pt on 180mm width
+
+    let wrapped_lines = wrap_text(&text, max_chars_per_line);
+
+    for line in wrapped_lines {
+        if y < 20.0 {
+            let (new_page, new_layer) = doc.add_page(Mm(210.0), Mm(297.0), "Layer 1");
+            current_page = new_page;
+            current_layer_index = new_layer;
+            current_layer = doc.get_page(current_page).get_layer(current_layer_index);
+            y = 280.0;
         }
-        current_layer.use_text(line, font_size, Mm(15.0), Mm(y), &font);
-        y -= 6.0;
+        
+        if !line.is_empty() {
+            current_layer.use_text(line, font_size, Mm(margin_x), Mm(y), &font);
+        }
+        y -= line_height;
     }
 
     let cursor = std::io::Cursor::new(Vec::<u8>::new());
