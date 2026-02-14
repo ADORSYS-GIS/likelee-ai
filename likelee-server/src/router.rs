@@ -51,6 +51,10 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::talent::get_earnings_by_campaign),
         )
         .route(
+            "/api/talent/licensing/earnings-by-agency",
+            get(crate::talent::get_earnings_by_agency),
+        )
+        .route(
             "/api/talent/payouts/balance",
             get(crate::payouts::get_my_balance),
         )
@@ -294,6 +298,34 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::licensing_requests::get_pay_split)
                 .post(crate::licensing_requests::set_pay_split),
         )
+        // Payment Links (for licensing)
+        .route(
+            "/api/agency/payment-links",
+            get(crate::payment_links::list_payment_links)
+                .post(crate::payment_links::generate_payment_link),
+        )
+        .route(
+            "/api/agency/payment-links/:id",
+            get(crate::payment_links::get_payment_link)
+                .post(crate::payment_links::cancel_payment_link),
+        )
+        .route(
+            "/api/agency/payment-links/send",
+            post(crate::payment_links::send_payment_link_email),
+        )
+        // Creator Balance & Payout
+        .route(
+            "/api/creator/balance",
+            get(crate::payment_links::get_creator_balance),
+        )
+        .route(
+            "/api/creator/payout-request",
+            post(crate::payment_links::request_creator_payout),
+        )
+        .route(
+            "/api/creator/payout-history",
+            get(crate::payment_links::get_creator_payout_history),
+        )
         .route(
             "/api/agency/digitals",
             get(crate::digitals::list_agency_digitals),
@@ -406,6 +438,10 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/public/packages/:token",
             get(crate::packages::get_public_package),
+        )
+        .route(
+            "/api/public/packages/:token/full-assets-request",
+            post(crate::packages::create_public_package_full_assets_request),
         )
         .route(
             "/api/public/packages/:token/interactions",
@@ -540,6 +576,18 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/agency/payouts/account_status",
             get(crate::payouts::get_agency_account_status),
+        )
+        .route(
+            "/api/agency/payouts/balance",
+            get(crate::payouts::get_agency_balance),
+        )
+        .route(
+            "/api/agency/payouts/request",
+            post(crate::payouts::request_agency_payout),
+        )
+        .route(
+            "/api/agency/payouts/history",
+            get(crate::payouts::get_agency_payout_history),
         )
         .route(
             "/api/agency/billing/checkout",

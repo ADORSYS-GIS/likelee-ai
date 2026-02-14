@@ -570,6 +570,157 @@ pub async fn update_package(
     Ok(Json(package))
 }
 
+#[derive(Debug, Deserialize)]
+pub struct PublicPackageFullAssetsRequest {
+    pub client_name: Option<String>,
+    pub client_email: Option<String>,
+    pub message: Option<String>,
+}
+
+pub async fn create_public_package_full_assets_request(
+    State(state): State<AppState>,
+    Path(token): Path<String>,
+    Json(payload): Json<PublicPackageFullAssetsRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    // Resolve package by token.
+    let meta_resp = state
+        .pg
+        .from("agency_talent_packages")
+        .select("agency_id,title")
+        .eq("access_token", &token)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !meta_resp.status().is_success() {
+        let status = meta_resp.status();
+        let err_text = meta_resp.text().await.unwrap_or_default();
+        return Err((
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::NOT_FOUND),
+            if err_text.is_empty() {
+                "package_not_found".to_string()
+            } else {
+                err_text
+            },
+        ));
+    }
+
+    let meta_text = meta_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let meta: serde_json::Value = serde_json::from_str(&meta_text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let agency_id = meta
+        .get("agency_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    if agency_id.is_empty() {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "package_meta_invalid".to_string(),
+        ));
+    }
+    let package_title = meta
+        .get("title")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    let client_name = payload
+        .client_name
+        .as_deref()
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let client_email = payload
+        .client_email
+        .as_deref()
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let message = payload.message.as_deref().unwrap_or("").trim().to_string();
+
+    let notes = format!(
+        "Full assets requested for package.\n\nPackage: {}\nToken: {}\n\nClient name: {}\nClient email: {}\n\nMessage:\n{}",
+        package_title, token, client_name, client_email, message
+    );
+
+    let insert_row = serde_json::json!({
+        "agency_id": agency_id,
+        "status": "pending",
+        "campaign_title": "Full Assets Request",
+        "client_name": if client_name.is_empty() { serde_json::Value::Null } else { serde_json::Value::String(client_name.clone()) },
+        "usage_scope": "package_full_assets",
+        "notes": notes,
+    });
+
+    let ins_resp = state
+        .pg
+        .from("licensing_requests")
+        .insert(insert_row.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !ins_resp.status().is_success() {
+        let err = ins_resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+
+    // Best-effort email notification to agency.
+    let mut agency_email: Option<String> = None;
+    let mut agency_name: Option<String> = None;
+    if let Ok(resp) = state
+        .pg
+        .from("agencies")
+        .select("email,agency_name")
+        .eq("id", &agency_id)
+        .single()
+        .execute()
+        .await
+    {
+        if resp.status().is_success() {
+            if let Ok(txt) = resp.text().await {
+                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&txt) {
+                    agency_email = v
+                        .get("email")
+                        .and_then(|x| x.as_str())
+                        .map(|s| s.to_string());
+                    agency_name = v
+                        .get("agency_name")
+                        .and_then(|x| x.as_str())
+                        .map(|s| s.to_string());
+                }
+            }
+        }
+    }
+
+    if let Some(dest) = agency_email.as_ref().filter(|s| !s.trim().is_empty()) {
+        let subject = "New request for full package assets";
+        let body = format!(
+            "You received a new request for full package assets.\n\nPackage: {}\nToken: {}\n\nClient name: {}\nClient email: {}\n\nMessage:\n{}\n\nView and manage requests in your Agency Dashboard under Licensing Requests.",
+            package_title,
+            token,
+            payload.client_name.as_deref().unwrap_or(""),
+            payload.client_email.as_deref().unwrap_or(""),
+            payload.message.as_deref().unwrap_or("")
+        );
+        let _ = crate::email::send_plain_text_email(
+            &state,
+            dest,
+            subject,
+            &body,
+            agency_name.as_deref(),
+        );
+    }
+
+    Ok(Json(serde_json::json!({ "ok": true })))
+}
+
 async fn fetch_agency_name(state: &AppState, agency_id: &str) -> Result<String, String> {
     let resp = state
         .pg
@@ -830,6 +981,13 @@ pub async fn get_public_package(
             format!("Failed to parse public package: {}", e),
         )
     })?;
+
+    if let Some(obj) = package.as_object_mut() {
+        obj.insert(
+            "licensing_unlocked".to_string(),
+            serde_json::Value::Bool(true),
+        );
+    }
 
     if let Some(items) = package.get_mut("items").and_then(|i| i.as_array_mut()) {
         for item in items {

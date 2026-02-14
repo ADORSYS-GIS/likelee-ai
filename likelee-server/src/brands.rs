@@ -1,4 +1,6 @@
-use crate::{auth::AuthUser, config::AppState};
+use crate::auth::AuthUser;
+use crate::config::AppState;
+use crate::errors::sanitize_db_error;
 use axum::{extract::State, http::StatusCode, Json};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -135,12 +137,13 @@ pub async fn register(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    if !resp.status().is_success() {
-        let txt = resp
-            .text()
-            .await
-            .unwrap_or_else(|_| "failed to create brand profile".to_string());
-        return Err((StatusCode::BAD_REQUEST, txt));
+    let status = resp.status();
+    let txt = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), txt));
     }
 
     Ok(Json(json!({
@@ -184,10 +187,16 @@ pub async fn update(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    let status = resp.status();
     let text = resp
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
+
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -208,10 +217,16 @@ pub async fn get_by_user(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    let status = resp.status();
     let text = resp
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
+
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 

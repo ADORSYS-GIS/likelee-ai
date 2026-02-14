@@ -1,13 +1,16 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
+import { createPageUrl } from "@/utils";
+import { getAgencyPayoutsAccountStatus } from "@/api/functions";
 import { RefreshCw } from "lucide-react";
 import {
   Building2,
   Upload,
   Save,
   DollarSign,
+  CreditCard,
   Plus,
   Edit2,
   Mail,
@@ -394,6 +397,50 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [bankStatusLoading, setBankStatusLoading] = useState(false);
+  const [bankStatus, setBankStatus] = useState<{
+    connected: boolean;
+    bank_last4?: string;
+  } | null>(null);
+
+  const planTier = useMemo(() => {
+    const t = (profile as any)?.plan_tier;
+    return typeof t === "string" && t.trim() ? t.trim().toLowerCase() : "free";
+  }, [profile]);
+
+  const planLabel = useMemo(() => {
+    if (planTier === "pro") return "Pro";
+    if (planTier === "basic") return "Basic";
+    if (planTier === "enterprise") return "Enterprise";
+    return "Free";
+  }, [planTier]);
+
+  useEffect(() => {
+    if (activeTab !== "Integrations") return;
+    let mounted = true;
+    (async () => {
+      setBankStatusLoading(true);
+      try {
+        const resp = await getAgencyPayoutsAccountStatus();
+        const data = (resp as any)?.data ?? resp;
+        if (!mounted) return;
+        const last4 = String((data as any)?.bank_last4 || "").trim();
+        setBankStatus({
+          connected: Boolean((data as any)?.connected),
+          bank_last4: last4 || undefined,
+        });
+      } catch {
+        if (!mounted) return;
+        setBankStatus(null);
+      } finally {
+        if (mounted) setBankStatusLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [activeTab]);
 
   const defaultNotificationPrefs = [
     {
@@ -1282,6 +1329,76 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
 
         {activeTab === "Profile" && (
           <div className="space-y-6">
+            <Card
+              className={`p-4 sm:p-6 border shadow-sm rounded-2xl transition-all duration-300 ${
+                planTier === "pro"
+                  ? "bg-[#0F1225] border-indigo-500/30 text-white"
+                  : planTier === "basic" || planTier === "agency"
+                    ? "bg-emerald-50 border-emerald-100 text-gray-900"
+                    : planTier === "enterprise"
+                      ? "bg-amber-50 border-amber-200 text-gray-900"
+                      : "bg-white border-gray-200 text-gray-900"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div>
+                  <div
+                    className={`text-[11px] font-black uppercase tracking-[0.3em] ${
+                      planTier === "pro" ? "text-indigo-300" : "text-gray-400"
+                    }`}
+                  >
+                    Current Plan
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <div
+                      className={`text-xl font-black ${
+                        planTier === "pro" ? "text-white" : "text-gray-900"
+                      }`}
+                    >
+                      {planLabel}
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className={`font-black uppercase tracking-wider px-2 py-0.5 text-[10px] border-none ${
+                        planTier === "pro"
+                          ? "bg-indigo-500 text-white"
+                          : planTier === "basic" || planTier === "agency"
+                            ? "bg-emerald-600 text-white shadow-sm"
+                            : planTier === "enterprise"
+                              ? "bg-amber-500 text-white shadow-sm"
+                              : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      {planTier}
+                    </Badge>
+                  </div>
+                </div>
+                <Button
+                  asChild
+                  variant={
+                    planTier === "pro" ||
+                    planTier === "basic" ||
+                    planTier === "enterprise"
+                      ? "default"
+                      : "outline"
+                  }
+                  className={`rounded-xl font-bold ${
+                    planTier === "pro"
+                      ? "bg-indigo-600 hover:bg-indigo-700 text-white border-none shadow-lg shadow-indigo-500/20"
+                      : planTier === "basic" || planTier === "agency"
+                        ? "bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-lg shadow-emerald-500/20"
+                        : planTier === "enterprise"
+                          ? "bg-amber-600 hover:bg-amber-700 text-white border-none shadow-lg shadow-amber-500/20"
+                          : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  <a href={createPageUrl("AgencySubscribe")}>
+                    Billing & Subscription
+                  </a>
+                </Button>
+              </div>
+            </Card>
+
             {/* Agency Information */}
             {/* Agency Information */}
             <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
@@ -2567,6 +2684,49 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                 Add Integration
               </Button>
             </div>
+
+            <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
+                    <CreditCard className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-bold text-gray-900 tracking-tight">
+                      Connect Bank Account
+                    </h4>
+                    <p className="text-sm text-gray-500 font-medium mt-1">
+                      Link your bank to receive client payments and manage
+                      payouts.
+                    </p>
+                    {bankStatus?.connected && (
+                      <p className="text-xs text-gray-600 font-medium mt-2">
+                        Connected
+                        {bankStatus.bank_last4
+                          ? ` • Account ending in ••••${bankStatus.bank_last4}`
+                          : ""}
+                      </p>
+                    )}
+                    {!bankStatusLoading &&
+                      bankStatus &&
+                      !bankStatus.connected && (
+                        <p className="text-xs text-gray-500 font-medium mt-2">
+                          Not connected
+                        </p>
+                      )}
+                  </div>
+                </div>
+                <Button asChild className="h-10 px-5 rounded-xl font-bold">
+                  <a
+                    href={`/AgencyDashboard?mode=IRL&tab=accounting&subTab=${encodeURIComponent(
+                      "Connect Bank",
+                    )}`}
+                  >
+                    {bankStatus?.connected ? "Change account" : "Connect"}
+                  </a>
+                </Button>
+              </div>
+            </Card>
 
             <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
               <div className="flex items-start justify-between gap-4">

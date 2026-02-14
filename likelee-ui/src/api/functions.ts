@@ -130,7 +130,13 @@ export const getAgencyProfile = () => base44Client.get(`/agency-profile/user`);
 
 // Agency billing (Stripe subscriptions)
 export const createAgencySubscriptionCheckout = (data: {
-  tier: "agency" | "scale";
+  plan: "basic" | "pro" | "enterprise";
+  roster_models: number;
+  addons?: {
+    irl_booking?: boolean;
+    deepfake_protection_models?: number;
+    additional_team_members?: number;
+  };
 }) => base44Client.post(`/agency/billing/checkout`, data);
 
 export const updateBrandProfile = (data: any) =>
@@ -163,11 +169,16 @@ export const declineTalentLicensingRequest = (id: string) =>
 export const listTalentLicenses = () =>
   base44Client.get(`/api/talent/licenses`);
 
-export const getTalentLicensingRevenue = (params?: { month?: string }) =>
+export const getTalentLicensingRevenue = (params?: { month?: string; agency_id?: string }) =>
   base44Client.get(`/api/talent/licensing/revenue`, { params: params || {} });
 
-export const getTalentEarningsByCampaign = (params?: { month?: string }) =>
+export const getTalentEarningsByCampaign = (params?: { month?: string; agency_id?: string }) =>
   base44Client.get(`/api/talent/licensing/earnings-by-campaign`, {
+    params: params || {},
+  });
+
+export const getTalentEarningsByAgency = (params?: { month?: string; agency_id?: string }) =>
+  base44Client.get(`/api/talent/licensing/earnings-by-agency`, {
     params: params || {},
   });
 
@@ -325,6 +336,26 @@ export const getAgencyStripeOnboardingLink = async () => {
   return { data: { status: "ok", url: (resp as any)?.url } } as any;
 };
 
+// Agency Payout Balance and Requests
+export const getAgencyPayoutBalance = async () => {
+  const resp = await base44Client.get(`/api/agency/payouts/balance`);
+  return { data: resp } as any;
+};
+
+export const requestAgencyPayout = async (data: {
+  amount_cents: number;
+  currency?: string;
+  payout_method?: "standard" | "instant";
+}) => {
+  const resp = await base44Client.post(`/api/agency/payouts/request`, data);
+  return { data: resp } as any;
+};
+
+export const getAgencyPayoutHistory = async () => {
+  const resp = await base44Client.get(`/api/agency/payouts/history`);
+  return { data: resp } as any;
+};
+
 // Some flows may reference an OAuth code exchange; backend currently uses account links.
 // Provide a safe placeholder to avoid runtime import errors if called.
 export const exchangeStripeOAuthCode = async (
@@ -439,6 +470,32 @@ export const setAgencyLicensingRequestsPaySplit = (data: {
   total_payment_amount: number;
   agency_percent: number;
 }) => base44Client.post(`/agency/licensing-requests/pay-split`, data);
+
+// Payment Links (Agency)
+export const generateAgencyPaymentLink = (data: {
+  licensing_request_ids: string[];
+  total_amount_cents: number;
+  currency?: string;
+  expires_in_hours?: number;
+  client_email?: string;
+  client_name?: string;
+}) => base44Client.post(`/agency/payment-links`, data);
+
+export const sendAgencyPaymentLinkEmail = (data: {
+  payment_link_id: string;
+  custom_message?: string;
+}) => base44Client.post(`/agency/payment-links/send`, data);
+
+export const listAgencyPaymentLinks = (params?: {
+  licensing_request_id?: string;
+  status?: string;
+}) => base44Client.get(`/agency/payment-links`, { params: params || {} });
+
+export const getAgencyPaymentLink = (id: string) =>
+  base44Client.get(`/agency/payment-links/${id}`);
+
+export const cancelAgencyPaymentLink = (id: string) =>
+  base44Client.post(`/agency/payment-links/${id}`, {});
 
 export const createTalentDigitals = (talentId: string, data: any) =>
   base44Client.post(`/agency/talent/${talentId}/digitals`, data);
