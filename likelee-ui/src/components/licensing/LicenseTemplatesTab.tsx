@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Search, Copy, Edit, Trash2, FileSignature, MoreVertical, Layout } from "lucide-react";
+import { Plus, Search, Copy, Edit, Trash2, ScrollText, MoreVertical, Layout } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -335,12 +335,12 @@ export const LicenseTemplatesTab: React.FC = () => {
               filteredTemplates.map((template) => (
                 <Card
                   key={template.id}
-                  className="bg-white border-slate-200 overflow-hidden group hover:shadow-xl hover:border-indigo-200 transition-all cursor-pointer flex flex-col rounded-2xl shadow-sm"
+                  className="bg-indigo-50/50 border-indigo-100 overflow-hidden group hover:shadow-xl hover:border-indigo-300 transition-all cursor-pointer flex flex-col rounded-2xl shadow-sm"
                   onClick={() => openViewModal(template)}
                 >
-                  <div className="h-32 bg-slate-50 flex items-center justify-center relative shrink-0 border-b border-slate-100 transition-colors group-hover:bg-indigo-50/50">
-                    <div className="w-14 h-14 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center rotate-3 group-hover:rotate-0 transition-transform">
-                      <FileSignature className="h-7 w-7 text-indigo-600" />
+                  <div className="h-32 bg-indigo-100/70 flex items-center justify-center relative shrink-0 border-b border-indigo-200 transition-colors group-hover:bg-indigo-100">
+                    <div className="w-14 h-14 bg-white rounded-2xl shadow-sm border border-indigo-100 flex items-center justify-center rotate-3 group-hover:rotate-0 transition-transform">
+                      <ScrollText className="h-7 w-7 text-indigo-600" />
                     </div>
 
                     <div className="absolute top-3 right-3" onClick={(e) => e.stopPropagation()}>
@@ -385,10 +385,10 @@ export const LicenseTemplatesTab: React.FC = () => {
                         {template.template_name}
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="bg-slate-100 text-slate-600 text-[10px] uppercase font-bold tracking-tight px-1.5 py-0">
+                        <Badge variant="secondary" className="bg-white text-indigo-600 border-indigo-100 text-[10px] uppercase font-bold tracking-tight px-1.5 py-0">
                           {template.category}
                         </Badge>
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                        <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">
                           {template.created_at ? formatDate(template.created_at) : ""}
                         </span>
                       </div>
@@ -396,7 +396,7 @@ export const LicenseTemplatesTab: React.FC = () => {
 
                     <div className="mt-6">
                       <Button
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 rounded-xl shadow-lg shadow-indigo-100 transition-all active:scale-95 flex items-center justify-center gap-2"
+                        className="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-10 rounded-xl shadow-lg shadow-indigo-100/50 transition-all active:scale-95 flex items-center justify-center gap-2"
                         onClick={(e) => {
                           e.stopPropagation();
                           setWizardTemplate(template);

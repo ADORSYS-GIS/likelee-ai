@@ -155,10 +155,10 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <DialogTitle className="text-2xl font-bold text-slate-900 mb-1">
-                  {initialData ? "Edit License Template" : "New License Template"}
+                  {readOnly ? "License Template Details" : initialData ? "Edit License Template" : "New License Template"}
                 </DialogTitle>
                 <p className="text-sm text-slate-500 font-medium tracking-tight">
-                  Standardize your agency terms with dynamic placeholders
+                  {readOnly ? "View your standardized agency terms and details" : "Standardize your agency terms with dynamic placeholders"}
                 </p>
               </div>
               <div className="flex items-center gap-3">
