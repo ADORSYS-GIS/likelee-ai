@@ -141,10 +141,13 @@ export const CampaignsTab = () => {
                     {campaign.bookings && campaign.bookings.length > 0 ? (
                       <div className="flex flex-col gap-1">
                         <Badge variant="outline" className="w-fit">
-                          {campaign.bookings.length} Booking{campaign.bookings.length > 1 ? 's' : ''}
+                          {campaign.bookings.length} Booking
+                          {campaign.bookings.length > 1 ? "s" : ""}
                         </Badge>
                         <div className="text-xs text-gray-400 truncate max-w-[150px]">
-                          {campaign.bookings.map((b: any) => b.talent_name).join(", ")}
+                          {campaign.bookings
+                            .map((b: any) => b.talent_name)
+                            .join(", ")}
                         </div>
                       </div>
                     ) : (

@@ -111,7 +111,10 @@ pub async fn update(
     let campaign_status = campaign_check.status();
     let campaign_text = campaign_check.text().await.unwrap_or_default();
     if !campaign_status.is_success() || campaign_text == "[]" {
-        return Err((StatusCode::FORBIDDEN, "Unauthorized campaign access".to_string()));
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Unauthorized campaign access".to_string(),
+        ));
     }
 
     let campaigns: Vec<serde_json::Value> =
@@ -190,7 +193,9 @@ pub async fn delete_campaign(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    if !campaign_check.status().is_success() || campaign_check.text().await.unwrap_or_default() == "[]" {
+    if !campaign_check.status().is_success()
+        || campaign_check.text().await.unwrap_or_default() == "[]"
+    {
         return Err((
             StatusCode::FORBIDDEN,
             "Unauthorized campaign access".to_string(),
