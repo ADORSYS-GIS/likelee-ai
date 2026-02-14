@@ -1,6 +1,15 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Search, Copy, Edit, Trash2, ScrollText, MoreVertical, Layout } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Copy,
+  Edit,
+  Trash2,
+  ScrollText,
+  MoreVertical,
+  Layout,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -55,14 +64,15 @@ const CATEGORIES = [
 ];
 
 export const LicenseTemplatesTab: React.FC = () => {
-  const [topTab, setTopTab] = useState<"requests" | "templates" | "submissions">(
-    "templates",
-  );
+  const [topTab, setTopTab] = useState<
+    "requests" | "templates" | "submissions"
+  >("templates");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hideContractInModal, setHideContractInModal] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<LicenseTemplate | null>(null);
+  const [editingTemplate, setEditingTemplate] =
+    useState<LicenseTemplate | null>(null);
   const [isViewOnly, setIsViewOnly] = useState(false);
 
   const [templateToDelete, setTemplateToDelete] = useState<{
@@ -343,35 +353,60 @@ export const LicenseTemplatesTab: React.FC = () => {
                       <ScrollText className="h-7 w-7 text-indigo-600" />
                     </div>
 
-                    <div className="absolute top-3 right-3" onClick={(e) => e.stopPropagation()}>
+                    <div
+                      className="absolute top-3 right-3"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-white shadow-sm border border-transparent hover:border-slate-100 transition-all">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full text-slate-400 hover:text-slate-600 hover:bg-white shadow-sm border border-transparent hover:border-slate-100 transition-all"
+                          >
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48 rounded-xl border-slate-200 shadow-xl p-1.5">
-                          <DropdownMenuItem onClick={() => openEditModal(template)} className="rounded-lg gap-2 cursor-pointer font-semibold py-2.5">
-                            <Edit className="h-4 w-4 text-slate-500" /> Edit Details
+                        <DropdownMenuContent
+                          align="end"
+                          className="w-48 rounded-xl border-slate-200 shadow-xl p-1.5"
+                        >
+                          <DropdownMenuItem
+                            onClick={() => openEditModal(template)}
+                            className="rounded-lg gap-2 cursor-pointer font-semibold py-2.5"
+                          >
+                            <Edit className="h-4 w-4 text-slate-500" /> Edit
+                            Details
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => {
                               setBuilderTarget({
                                 id: template.id,
-                                docuseal_template_id: template.docuseal_template_id as any,
+                                docuseal_template_id:
+                                  template.docuseal_template_id as any,
                                 template_name: template.template_name,
                               });
                               setBuilderMode("template");
                             }}
                             className="rounded-lg gap-2 cursor-pointer font-semibold py-2.5"
                           >
-                            <Layout className="h-4 w-4 text-slate-500" /> Edit Layout
+                            <Layout className="h-4 w-4 text-slate-500" /> Edit
+                            Layout
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleCopy(template.id)} className="rounded-lg gap-2 cursor-pointer font-semibold py-2.5">
-                            <Copy className="h-4 w-4 text-slate-500" /> Duplicate
+                          <DropdownMenuItem
+                            onClick={() => handleCopy(template.id)}
+                            className="rounded-lg gap-2 cursor-pointer font-semibold py-2.5"
+                          >
+                            <Copy className="h-4 w-4 text-slate-500" />{" "}
+                            Duplicate
                           </DropdownMenuItem>
                           <div className="h-px bg-slate-100 my-1" />
-                          <DropdownMenuItem onClick={() => handleDelete(template.id, template.template_name)} className="rounded-lg gap-2 cursor-pointer font-semibold text-red-600 py-2.5 hover:bg-red-50 focus:bg-red-50">
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleDelete(template.id, template.template_name)
+                            }
+                            className="rounded-lg gap-2 cursor-pointer font-semibold text-red-600 py-2.5 hover:bg-red-50 focus:bg-red-50"
+                          >
                             <Trash2 className="h-4 w-4" /> Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -385,11 +420,16 @@ export const LicenseTemplatesTab: React.FC = () => {
                         {template.template_name}
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="bg-white text-indigo-600 border-indigo-100 text-[10px] uppercase font-bold tracking-tight px-1.5 py-0">
+                        <Badge
+                          variant="secondary"
+                          className="bg-white text-indigo-600 border-indigo-100 text-[10px] uppercase font-bold tracking-tight px-1.5 py-0"
+                        >
                           {template.category}
                         </Badge>
                         <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">
-                          {template.created_at ? formatDate(template.created_at) : ""}
+                          {template.created_at
+                            ? formatDate(template.created_at)
+                            : ""}
                         </span>
                       </div>
                     </div>
@@ -437,7 +477,9 @@ export const LicenseTemplatesTab: React.FC = () => {
           template={wizardTemplate}
           onComplete={() => {
             queryClient.invalidateQueries({ queryKey: ["license-templates"] });
-            queryClient.invalidateQueries({ queryKey: ["license-submissions"] });
+            queryClient.invalidateQueries({
+              queryKey: ["license-submissions"],
+            });
           }}
         />
       )}
@@ -465,10 +507,16 @@ export const LicenseTemplatesTab: React.FC = () => {
             <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center mb-2">
               <Trash2 className="w-6 h-6 text-red-600" />
             </div>
-            <DialogTitle className="text-xl font-bold text-slate-900">Delete Template</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-slate-900">
+              Delete Template
+            </DialogTitle>
             <DialogDescription className="text-slate-500 font-medium">
-              Are you sure you want to delete <span className="text-slate-900 font-bold">"{templateToDelete?.name}"</span>?
-              This action cannot be undone and will remove the template from your library.
+              Are you sure you want to delete{" "}
+              <span className="text-slate-900 font-bold">
+                "{templateToDelete?.name}"
+              </span>
+              ? This action cannot be undone and will remove the template from
+              your library.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-8 sm:justify-start gap-3">

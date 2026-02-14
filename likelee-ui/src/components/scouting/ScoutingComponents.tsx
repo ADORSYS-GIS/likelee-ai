@@ -294,11 +294,21 @@ export const AddProspectModal = ({
                   <SelectContent>
                     <SelectItem value="new_lead">New Lead</SelectItem>
                     <SelectItem value="in_contact">In Contact</SelectItem>
-                    <SelectItem value="test_shoot_pending">Test Shoot (Pending)</SelectItem>
-                    <SelectItem value="test_shoot_success">Test Shoot (Success)</SelectItem>
-                    <SelectItem value="test_shoot_failed">Test Shoot (Failed)</SelectItem>
-                    <SelectItem value="offer_sent">Offer Sent (Awaiting)</SelectItem>
-                    <SelectItem value="opened">Offer Opened (Awaiting)</SelectItem>
+                    <SelectItem value="test_shoot_pending">
+                      Test Shoot (Pending)
+                    </SelectItem>
+                    <SelectItem value="test_shoot_success">
+                      Test Shoot (Success)
+                    </SelectItem>
+                    <SelectItem value="test_shoot_failed">
+                      Test Shoot (Failed)
+                    </SelectItem>
+                    <SelectItem value="offer_sent">
+                      Offer Sent (Awaiting)
+                    </SelectItem>
+                    <SelectItem value="opened">
+                      Offer Opened (Awaiting)
+                    </SelectItem>
                     <SelectItem value="signed">Signed</SelectItem>
                     <SelectItem value="declined">Declined</SelectItem>
                   </SelectContent>
@@ -497,9 +507,15 @@ export const ProspectPipelineTab = ({
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="new_lead">New Lead</SelectItem>
                 <SelectItem value="in_contact">In Contact</SelectItem>
-                <SelectItem value="test_shoot_pending">Test Shoot (Pending)</SelectItem>
-                <SelectItem value="test_shoot_success">Test Shoot (Success)</SelectItem>
-                <SelectItem value="test_shoot_failed">Test Shoot (Failed)</SelectItem>
+                <SelectItem value="test_shoot_pending">
+                  Test Shoot (Pending)
+                </SelectItem>
+                <SelectItem value="test_shoot_success">
+                  Test Shoot (Success)
+                </SelectItem>
+                <SelectItem value="test_shoot_failed">
+                  Test Shoot (Failed)
+                </SelectItem>
                 <SelectItem value="offer_sent">Offer Sent</SelectItem>
                 <SelectItem value="opened">Offer Opened</SelectItem>
                 <SelectItem value="signed">Signed</SelectItem>

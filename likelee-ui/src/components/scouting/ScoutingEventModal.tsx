@@ -238,9 +238,13 @@ export const ScoutingEventModal = ({
       casting_for: eventToEdit.casting_for || "",
       looking_for: (eventToEdit.looking_for || []).join(", "),
       min_age:
-        typeof eventToEdit.min_age === "number" ? String(eventToEdit.min_age) : "",
+        typeof eventToEdit.min_age === "number"
+          ? String(eventToEdit.min_age)
+          : "",
       max_age:
-        typeof eventToEdit.max_age === "number" ? String(eventToEdit.max_age) : "",
+        typeof eventToEdit.max_age === "number"
+          ? String(eventToEdit.max_age)
+          : "",
       gender_preference: eventToEdit.gender_preference || "all",
       special_skills: eventToEdit.special_skills || "",
       what_to_bring: eventToEdit.what_to_bring || "",
@@ -326,7 +330,9 @@ export const ScoutingEventModal = ({
 
       const payload: Partial<ScoutingEvent> = {
         name: form.name.trim(),
-        event_date: form.event_date ? new Date(form.event_date).toISOString() : null,
+        event_date: form.event_date
+          ? new Date(form.event_date).toISOString()
+          : null,
         location: form.location.trim(),
         description: form.description.trim() || null,
         status: form.status,
@@ -445,151 +451,174 @@ export const ScoutingEventModal = ({
                 <h3 className="text-sm font-bold text-gray-900">Basics</h3>
                 <div className="mt-3 rounded-xl border border-sky-100 bg-sky-50/40 p-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2 sm:col-span-2">
-                <Label className="text-sm font-bold text-gray-700">Name</Label>
-                <Input
-                  value={form.name}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, name: e.target.value }))
-                  }
-                  placeholder="Event name"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">Date</Label>
-                <Input
-                  type="date"
-                  value={form.event_date}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, event_date: e.target.value }))
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">Status</Label>
-                <Select
-                  value={form.status}
-                  onValueChange={(v) =>
-                    setForm((p) => ({ ...p, status: v as any }))
-                  }
-                >
-                  <SelectTrigger
-                    className={cn(
-                      "h-10",
-                      "border",
-                      statusMeta[form.status].chip,
-                    )}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={cn(
-                          "h-2.5 w-2.5 rounded-full",
-                          statusMeta[form.status].dot,
-                        )}
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Name
+                      </Label>
+                      <Input
+                        value={form.name}
+                        onChange={(e) =>
+                          setForm((p) => ({ ...p, name: e.target.value }))
+                        }
+                        placeholder="Event name"
                       />
-                      <span className="text-sm font-bold">
-                        {statusMeta[form.status].label}
-                      </span>
                     </div>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(Object.keys(statusMeta) as ScoutingEvent["status"][]).map(
-                      (s) => (
-                        <SelectItem key={s} value={s}>
+
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Date
+                      </Label>
+                      <Input
+                        type="date"
+                        value={form.event_date}
+                        onChange={(e) =>
+                          setForm((p) => ({ ...p, event_date: e.target.value }))
+                        }
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Status
+                      </Label>
+                      <Select
+                        value={form.status}
+                        onValueChange={(v) =>
+                          setForm((p) => ({ ...p, status: v as any }))
+                        }
+                      >
+                        <SelectTrigger
+                          className={cn(
+                            "h-10",
+                            "border",
+                            statusMeta[form.status].chip,
+                          )}
+                        >
                           <div className="flex items-center gap-2">
                             <span
                               className={cn(
-                                "h-2 w-2 rounded-full",
-                                statusMeta[s].dot,
+                                "h-2.5 w-2.5 rounded-full",
+                                statusMeta[form.status].dot,
                               )}
                             />
-                            <span className="font-semibold">
-                              {statusMeta[s].label}
+                            <span className="text-sm font-bold">
+                              {statusMeta[form.status].label}
                             </span>
                           </div>
-                        </SelectItem>
-                      ),
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(
+                            Object.keys(statusMeta) as ScoutingEvent["status"][]
+                          ).map((s) => (
+                            <SelectItem key={s} value={s}>
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={cn(
+                                    "h-2 w-2 rounded-full",
+                                    statusMeta[s].dot,
+                                  )}
+                                />
+                                <span className="font-semibold">
+                                  {statusMeta[s].label}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">
-                  Start time
-                </Label>
-                <Input
-                  value={form.start_time}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, start_time: e.target.value }))
-                  }
-                  placeholder="09:00"
-                />
-              </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Start time
+                      </Label>
+                      <Input
+                        value={form.start_time}
+                        onChange={(e) =>
+                          setForm((p) => ({ ...p, start_time: e.target.value }))
+                        }
+                        placeholder="09:00"
+                      />
+                    </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">End time</Label>
-                <Input
-                  value={form.end_time}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, end_time: e.target.value }))
-                  }
-                  placeholder="18:00"
-                />
-              </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        End time
+                      </Label>
+                      <Input
+                        value={form.end_time}
+                        onChange={(e) =>
+                          setForm((p) => ({ ...p, end_time: e.target.value }))
+                        }
+                        placeholder="18:00"
+                      />
+                    </div>
 
-              <div className="space-y-2 sm:col-span-2">
-                <Label className="text-sm font-bold text-gray-700">Location</Label>
-                <div className="relative">
-                  <Input
-                    value={locationSearch}
-                    onFocus={() => setLocationOpen(true)}
-                    onBlur={() => setTimeout(() => setLocationOpen(false), 150)}
-                    onChange={(e) => {
-                      setLocationSearch(e.target.value);
-                      setForm((p) => ({ ...p, location: e.target.value }));
-                    }}
-                    placeholder="Search a city, venue, or address"
-                  />
-                  <p className="mt-1 text-xs text-gray-500 font-medium">
-                    Type 3+ characters to search.
-                  </p>
-                  {locationOpen && locationResults.length > 0 && (
-                    <div className="absolute z-50 mt-1 w-full rounded-md border bg-white shadow-md overflow-hidden">
-                      <div className="max-h-56 overflow-auto">
-                        {locationResults.map((r) => (
-                          <button
-                            key={`${r.name}-${r.lat}-${r.lng}`}
-                            type="button"
-                            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50"
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              setLocationSearch(r.name);
-                              setForm((p) => ({ ...p, location: r.name }));
-                              setLocationOpen(false);
-                            }}
-                          >
-                            {r.name}
-                          </button>
-                        ))}
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Location
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          value={locationSearch}
+                          onFocus={() => setLocationOpen(true)}
+                          onBlur={() =>
+                            setTimeout(() => setLocationOpen(false), 150)
+                          }
+                          onChange={(e) => {
+                            setLocationSearch(e.target.value);
+                            setForm((p) => ({
+                              ...p,
+                              location: e.target.value,
+                            }));
+                          }}
+                          placeholder="Search a city, venue, or address"
+                        />
+                        <p className="mt-1 text-xs text-gray-500 font-medium">
+                          Type 3+ characters to search.
+                        </p>
+                        {locationOpen && locationResults.length > 0 && (
+                          <div className="absolute z-50 mt-1 w-full rounded-md border bg-white shadow-md overflow-hidden">
+                            <div className="max-h-56 overflow-auto">
+                              {locationResults.map((r) => (
+                                <button
+                                  key={`${r.name}-${r.lat}-${r.lng}`}
+                                  type="button"
+                                  className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50"
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    setLocationSearch(r.name);
+                                    setForm((p) => ({
+                                      ...p,
+                                      location: r.name,
+                                    }));
+                                    setLocationOpen(false);
+                                  }}
+                                >
+                                  {r.name}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  )}
-                </div>
-              </div>
 
-              <div className="space-y-2 sm:col-span-2">
-                <Label className="text-sm font-bold text-gray-700">Description</Label>
-                <Textarea
-                  value={form.description}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, description: e.target.value }))
-                  }
-                  placeholder="Optional details"
-                />
-              </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Description
+                      </Label>
+                      <Textarea
+                        value={form.description}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            description: e.target.value,
+                          }))
+                        }
+                        placeholder="Optional details"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -597,162 +626,198 @@ export const ScoutingEventModal = ({
 
             {step === 1 && (
               <div>
-                <h3 className="text-sm font-bold text-gray-900">Event details</h3>
+                <h3 className="text-sm font-bold text-gray-900">
+                  Event details
+                </h3>
                 <div className="mt-3 rounded-xl border border-indigo-100 bg-indigo-50/40 p-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">Event type</Label>
-                <Select
-                  value={form.event_type || ""}
-                  onValueChange={(v) => setForm((p) => ({ ...p, event_type: v }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Open Call">Open Call</SelectItem>
-                    <SelectItem value="Casting">Casting</SelectItem>
-                    <SelectItem value="Meet & Greet">Meet & Greet</SelectItem>
-                    <SelectItem value="Test Shoot">Test Shoot</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Event type
+                      </Label>
+                      <Select
+                        value={form.event_type || ""}
+                        onValueChange={(v) =>
+                          setForm((p) => ({ ...p, event_type: v }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Open Call">Open Call</SelectItem>
+                          <SelectItem value="Casting">Casting</SelectItem>
+                          <SelectItem value="Meet & Greet">
+                            Meet & Greet
+                          </SelectItem>
+                          <SelectItem value="Test Shoot">Test Shoot</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">Casting for</Label>
-                <Input
-                  value={form.casting_for}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, casting_for: e.target.value }))
-                  }
-                  placeholder="Brand / project / role"
-                />
-              </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Casting for
+                      </Label>
+                      <Input
+                        value={form.casting_for}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            casting_for: e.target.value,
+                          }))
+                        }
+                        placeholder="Brand / project / role"
+                      />
+                    </div>
 
-              <div className="space-y-2 sm:col-span-2">
-                <Label className="text-sm font-bold text-gray-700">
-                  Looking for
-                </Label>
-                <Input
-                  value={form.looking_for}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, looking_for: e.target.value }))
-                  }
-                  placeholder="Comma-separated (e.g. Model, Actor, UGC Creator)"
-                />
-              </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Looking for
+                      </Label>
+                      <Input
+                        value={form.looking_for}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            looking_for: e.target.value,
+                          }))
+                        }
+                        placeholder="Comma-separated (e.g. Model, Actor, UGC Creator)"
+                      />
+                    </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">Min age</Label>
-                <Input
-                  type="number"
-                  min={18}
-                  max={65}
-                  value={form.min_age}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, min_age: e.target.value }))
-                  }
-                  placeholder="18"
-                />
-              </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Min age
+                      </Label>
+                      <Input
+                        type="number"
+                        min={18}
+                        max={65}
+                        value={form.min_age}
+                        onChange={(e) =>
+                          setForm((p) => ({ ...p, min_age: e.target.value }))
+                        }
+                        placeholder="18"
+                      />
+                    </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">Max age</Label>
-                <Input
-                  type="number"
-                  min={18}
-                  max={65}
-                  value={form.max_age}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, max_age: e.target.value }))
-                  }
-                  placeholder="65"
-                />
-              </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Max age
+                      </Label>
+                      <Input
+                        type="number"
+                        min={18}
+                        max={65}
+                        value={form.max_age}
+                        onChange={(e) =>
+                          setForm((p) => ({ ...p, max_age: e.target.value }))
+                        }
+                        placeholder="65"
+                      />
+                    </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">
-                  Gender preference
-                </Label>
-                <Select
-                  value={form.gender_preference}
-                  onValueChange={(v) =>
-                    setForm((p) => ({ ...p, gender_preference: v }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="nonbinary">Non-binary</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Gender preference
+                      </Label>
+                      <Select
+                        value={form.gender_preference}
+                        onValueChange={(v) =>
+                          setForm((p) => ({ ...p, gender_preference: v }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All</SelectItem>
+                          <SelectItem value="female">Female</SelectItem>
+                          <SelectItem value="male">Male</SelectItem>
+                          <SelectItem value="nonbinary">Non-binary</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">Virtual link</Label>
-                <Input
-                  value={form.virtual_link}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, virtual_link: e.target.value }))
-                  }
-                  placeholder="https://..."
-                />
-              </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Virtual link
+                      </Label>
+                      <Input
+                        value={form.virtual_link}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            virtual_link: e.target.value,
+                          }))
+                        }
+                        placeholder="https://..."
+                      />
+                    </div>
 
-              <div className="space-y-2 sm:col-span-2">
-                <Label className="text-sm font-bold text-gray-700">
-                  Location details
-                </Label>
-                <Textarea
-                  value={form.location_details}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, location_details: e.target.value }))
-                  }
-                  placeholder="Parking, room number, entry instructions..."
-                />
-              </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Location details
+                      </Label>
+                      <Textarea
+                        value={form.location_details}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            location_details: e.target.value,
+                          }))
+                        }
+                        placeholder="Parking, room number, entry instructions..."
+                      />
+                    </div>
 
-              <div className="space-y-2 sm:col-span-2">
-                <Label className="text-sm font-bold text-gray-700">
-                  Special skills
-                </Label>
-                <Textarea
-                  value={form.special_skills}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, special_skills: e.target.value }))
-                  }
-                  placeholder="Any requirements or skills"
-                />
-              </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Special skills
+                      </Label>
+                      <Textarea
+                        value={form.special_skills}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            special_skills: e.target.value,
+                          }))
+                        }
+                        placeholder="Any requirements or skills"
+                      />
+                    </div>
 
-              <div className="space-y-2 sm:col-span-2">
-                <Label className="text-sm font-bold text-gray-700">
-                  What to bring
-                </Label>
-                <Textarea
-                  value={form.what_to_bring}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, what_to_bring: e.target.value }))
-                  }
-                  placeholder="Items to bring"
-                />
-              </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        What to bring
+                      </Label>
+                      <Textarea
+                        value={form.what_to_bring}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            what_to_bring: e.target.value,
+                          }))
+                        }
+                        placeholder="Items to bring"
+                      />
+                    </div>
 
-              <div className="space-y-2 sm:col-span-2">
-                <Label className="text-sm font-bold text-gray-700">Dress code</Label>
-                <Textarea
-                  value={form.dress_code}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, dress_code: e.target.value }))
-                  }
-                  placeholder="Optional dress code"
-                />
-              </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Dress code
+                      </Label>
+                      <Textarea
+                        value={form.dress_code}
+                        onChange={(e) =>
+                          setForm((p) => ({ ...p, dress_code: e.target.value }))
+                        }
+                        placeholder="Optional dress code"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -765,98 +830,124 @@ export const ScoutingEventModal = ({
                 </h3>
                 <div className="mt-3 rounded-xl border border-violet-100 bg-violet-50/40 p-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">
-                  Registration required
-                </Label>
-                <div className="flex items-center gap-3 h-9">
-                  <Switch
-                    checked={form.registration_required}
-                    onCheckedChange={(checked) =>
-                      setForm((p) => ({ ...p, registration_required: checked }))
-                    }
-                  />
-                  <span className="text-sm text-gray-600">
-                    {form.registration_required ? "Yes" : "No"}
-                  </span>
-                </div>
-              </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Registration required
+                      </Label>
+                      <div className="flex items-center gap-3 h-9">
+                        <Switch
+                          checked={form.registration_required}
+                          onCheckedChange={(checked) =>
+                            setForm((p) => ({
+                              ...p,
+                              registration_required: checked,
+                            }))
+                          }
+                        />
+                        <span className="text-sm text-gray-600">
+                          {form.registration_required ? "Yes" : "No"}
+                        </span>
+                      </div>
+                    </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">Max attendees</Label>
-                <Input
-                  value={form.max_attendees}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, max_attendees: e.target.value }))
-                  }
-                  placeholder="Optional"
-                />
-              </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Max attendees
+                      </Label>
+                      <Input
+                        value={form.max_attendees}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            max_attendees: e.target.value,
+                          }))
+                        }
+                        placeholder="Optional"
+                      />
+                    </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">
-                  Registration fee
-                </Label>
-                {form.registration_required ? (
-                  <Input
-                    value={form.registration_fee}
-                    onChange={(e) =>
-                      setForm((p) => ({
-                        ...p,
-                        registration_fee: e.target.value,
-                      }))
-                    }
-                    placeholder="0"
-                  />
-                ) : (
-                  <div className="h-9 flex items-center text-sm font-medium text-gray-500">
-                    Enable registration to set a fee.
-                  </div>
-                )}
-              </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Registration fee
+                      </Label>
+                      {form.registration_required ? (
+                        <Input
+                          value={form.registration_fee}
+                          onChange={(e) =>
+                            setForm((p) => ({
+                              ...p,
+                              registration_fee: e.target.value,
+                            }))
+                          }
+                          placeholder="0"
+                        />
+                      ) : (
+                        <div className="h-9 flex items-center text-sm font-medium text-gray-500">
+                          Enable registration to set a fee.
+                        </div>
+                      )}
+                    </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">
-                  Targeted talent goal
-                </Label>
-                <Input
-                  value={form.targeted_talent_goal}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, targeted_talent_goal: e.target.value }))
-                  }
-                  placeholder="Optional"
-                />
-              </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Targeted talent goal
+                      </Label>
+                      <Input
+                        value={form.targeted_talent_goal}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            targeted_talent_goal: e.target.value,
+                          }))
+                        }
+                        placeholder="Optional"
+                      />
+                    </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">Contact name</Label>
-                <Input
-                  value={form.contact_name}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, contact_name: e.target.value }))
-                  }
-                />
-              </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Contact name
+                      </Label>
+                      <Input
+                        value={form.contact_name}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            contact_name: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">Contact email</Label>
-                <Input
-                  value={form.contact_email}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, contact_email: e.target.value }))
-                  }
-                />
-              </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Contact email
+                      </Label>
+                      <Input
+                        value={form.contact_email}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            contact_email: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
 
-              <div className="space-y-2 sm:col-span-2">
-                <Label className="text-sm font-bold text-gray-700">Contact phone</Label>
-                <Input
-                  value={form.contact_phone}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, contact_phone: e.target.value }))
-                  }
-                />
-              </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Contact phone
+                      </Label>
+                      <Input
+                        value={form.contact_phone}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            contact_phone: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -867,76 +958,90 @@ export const ScoutingEventModal = ({
                 <h3 className="text-sm font-bold text-gray-900">Tracking</h3>
                 <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50/40 p-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">
-                  Expected attendance
-                </Label>
-                <Input
-                  value={form.expected_attendance}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, expected_attendance: e.target.value }))
-                  }
-                  placeholder="Optional"
-                />
-              </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Expected attendance
+                      </Label>
+                      <Input
+                        value={form.expected_attendance}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            expected_attendance: e.target.value,
+                          }))
+                        }
+                        placeholder="Optional"
+                      />
+                    </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">Is attending</Label>
-                <div className="flex items-center gap-3 h-9">
-                  <Switch
-                    checked={form.is_attending}
-                    onCheckedChange={(checked) =>
-                      setForm((p) => ({ ...p, is_attending: checked }))
-                    }
-                  />
-                  <span className="text-sm text-gray-600">
-                    {form.is_attending ? "Yes" : "No"}
-                  </span>
-                </div>
-              </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Is attending
+                      </Label>
+                      <div className="flex items-center gap-3 h-9">
+                        <Switch
+                          checked={form.is_attending}
+                          onCheckedChange={(checked) =>
+                            setForm((p) => ({ ...p, is_attending: checked }))
+                          }
+                        />
+                        <span className="text-sm text-gray-600">
+                          {form.is_attending ? "Yes" : "No"}
+                        </span>
+                      </div>
+                    </div>
 
-              <div className="space-y-2 sm:col-span-2">
-                <Label className="text-sm font-bold text-gray-700">
-                  Prospects to meet
-                </Label>
-                <Input
-                  value={form.prospects_to_meet}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, prospects_to_meet: e.target.value }))
-                  }
-                  placeholder="Comma-separated names"
-                />
-              </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Prospects to meet
+                      </Label>
+                      <Input
+                        value={form.prospects_to_meet}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            prospects_to_meet: e.target.value,
+                          }))
+                        }
+                        placeholder="Comma-separated names"
+                      />
+                    </div>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">
-                  Sync with calendar
-                </Label>
-                <div className="flex items-center gap-3 h-9">
-                  <Switch
-                    checked={form.sync_with_calendar}
-                    onCheckedChange={(checked) =>
-                      setForm((p) => ({ ...p, sync_with_calendar: checked }))
-                    }
-                  />
-                  <span className="text-sm text-gray-600">
-                    {form.sync_with_calendar ? "Yes" : "No"}
-                  </span>
-                </div>
-              </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Sync with calendar
+                      </Label>
+                      <div className="flex items-center gap-3 h-9">
+                        <Switch
+                          checked={form.sync_with_calendar}
+                          onCheckedChange={(checked) =>
+                            setForm((p) => ({
+                              ...p,
+                              sync_with_calendar: checked,
+                            }))
+                          }
+                        />
+                        <span className="text-sm text-gray-600">
+                          {form.sync_with_calendar ? "Yes" : "No"}
+                        </span>
+                      </div>
+                    </div>
 
-              <div className="space-y-2 sm:col-span-2">
-                <Label className="text-sm font-bold text-gray-700">
-                  Internal notes
-                </Label>
-                <Textarea
-                  value={form.internal_notes}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, internal_notes: e.target.value }))
-                  }
-                  placeholder="Only visible to your team"
-                />
-              </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label className="text-sm font-bold text-gray-700">
+                        Internal notes
+                      </Label>
+                      <Textarea
+                        value={form.internal_notes}
+                        onChange={(e) =>
+                          setForm((p) => ({
+                            ...p,
+                            internal_notes: e.target.value,
+                          }))
+                        }
+                        placeholder="Only visible to your team"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -953,7 +1058,7 @@ export const ScoutingEventModal = ({
             <div className="flex items-center justify-end gap-2">
               <Button
                 variant="outline"
-                onClick={() => setStep((s) => (Math.max(0, s - 1) as any))}
+                onClick={() => setStep((s) => Math.max(0, s - 1) as any)}
                 disabled={isSaving || step === 0}
               >
                 Back
@@ -961,7 +1066,7 @@ export const ScoutingEventModal = ({
               {step < 3 ? (
                 <Button
                   className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
-                  onClick={() => setStep((s) => (Math.min(3, s + 1) as any))}
+                  onClick={() => setStep((s) => Math.min(3, s + 1) as any)}
                   disabled={isSaving}
                 >
                   Next

@@ -130,8 +130,12 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
         {/* Modal Header */}
         <div className="bg-white px-8 py-6 border-b border-slate-100 flex items-center justify-between shrink-0">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900 leading-tight">Edit Template</h2>
-            <p className="text-slate-500 font-medium">{templateName || "License Contract"}</p>
+            <h2 className="text-2xl font-bold text-slate-900 leading-tight">
+              Edit Template
+            </h2>
+            <p className="text-slate-500 font-medium">
+              {templateName || "License Contract"}
+            </p>
           </div>
           <div className="flex items-center gap-3">
             {onSend && (
@@ -163,7 +167,6 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
 
         <div className="flex-1 w-full relative bg-slate-50 flex overflow-hidden">
           <div className="flex-1 relative h-full">
-
             {loading ? (
               <div className="absolute inset-0 flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-600" />

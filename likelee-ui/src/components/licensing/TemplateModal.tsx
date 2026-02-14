@@ -18,7 +18,15 @@ import {
 import { Label } from "@/components/ui/label";
 import { CreateTemplateRequest, LicenseTemplate } from "@/api/licenseTemplates";
 import { ContractEditor } from "./ContractEditor";
-import { FileSignature, Calendar, Users, Briefcase, Globe, Trash2, DollarSign } from "lucide-react";
+import {
+  FileSignature,
+  Calendar,
+  Users,
+  Briefcase,
+  Globe,
+  Trash2,
+  DollarSign,
+} from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
 interface TemplateModalProps {
@@ -105,7 +113,8 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
           custom_terms: initialData.custom_terms,
           docuseal_template_id: initialData.docuseal_template_id,
           contract_body: initialData.contract_body,
-          contract_body_format: (initialData.contract_body_format as any) || "markdown",
+          contract_body_format:
+            (initialData.contract_body_format as any) || "markdown",
         });
       } else {
         reset({
@@ -155,10 +164,16 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
             <div className="flex items-center justify-between">
               <div>
                 <DialogTitle className="text-2xl font-bold text-slate-900 mb-1">
-                  {readOnly ? "License Template Details" : initialData ? "Edit License Template" : "New License Template"}
+                  {readOnly
+                    ? "License Template Details"
+                    : initialData
+                      ? "Edit License Template"
+                      : "New License Template"}
                 </DialogTitle>
                 <p className="text-sm text-slate-500 font-medium tracking-tight">
-                  {readOnly ? "View your standardized agency terms and details" : "Standardize your agency terms with dynamic placeholders"}
+                  {readOnly
+                    ? "View your standardized agency terms and details"
+                    : "Standardize your agency terms with dynamic placeholders"}
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -176,7 +191,11 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                     disabled={isSubmitting}
                     className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-10 px-8 rounded-xl shadow-lg shadow-indigo-100/50 transition-all active:scale-95"
                   >
-                    {isSubmitting ? "Saving..." : initialData ? "Update Template" : "Create Template"}
+                    {isSubmitting
+                      ? "Saving..."
+                      : initialData
+                        ? "Update Template"
+                        : "Create Template"}
                   </Button>
                 )}
               </div>
@@ -185,45 +204,70 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
 
           <div className="flex-1 overflow-y-auto p-8">
             <div className="max-w-3xl mx-auto space-y-8">
-
               {/* Template Identity */}
               <div className="p-8 bg-white rounded-3xl border border-slate-200/60 shadow-sm space-y-6">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center rotate-3 group-hover:rotate-0 transition-transform">
                     <FileSignature className="w-6 h-6 text-indigo-600" />
                   </div>
-                  <h3 className="font-bold text-slate-900">Template Identity</h3>
+                  <h3 className="font-bold text-slate-900">
+                    Template Identity
+                  </h3>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label className="text-sm font-bold text-slate-800 ml-1">Template Name *</Label>
+                    <Label className="text-sm font-bold text-slate-800 ml-1">
+                      Template Name *
+                    </Label>
                     <Input
                       {...register("template_name", { required: true })}
                       placeholder="e.g. Standard Social Media"
                       disabled={readOnly}
                       className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75"
                     />
-                    {errors.template_name && <span className="text-red-500 text-xs font-bold px-1">This field is required</span>}
+                    {errors.template_name && (
+                      <span className="text-red-500 text-xs font-bold px-1">
+                        This field is required
+                      </span>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-sm font-bold text-slate-800 ml-1">Category *</Label>
-                    <Select value={categoryValue} onValueChange={(val) => setValue("category", val)} disabled={readOnly}>
+                    <Label className="text-sm font-bold text-slate-800 ml-1">
+                      Category *
+                    </Label>
+                    <Select
+                      value={categoryValue}
+                      onValueChange={(val) => setValue("category", val)}
+                      disabled={readOnly}
+                    >
                       <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75">
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl border-slate-200">
                         {CATEGORIES.map((cat) => (
-                          <SelectItem key={cat} value={cat} className="rounded-lg font-medium">{cat}</SelectItem>
+                          <SelectItem
+                            key={cat}
+                            value={cat}
+                            className="rounded-lg font-medium"
+                          >
+                            {cat}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    {errors.category && <span className="text-red-500 text-xs font-bold px-1">This field is required</span>}
+                    {errors.category && (
+                      <span className="text-red-500 text-xs font-bold px-1">
+                        This field is required
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-bold text-slate-800 ml-1">Description</Label>
+                <Label className="text-sm font-bold text-slate-800 ml-1">
+                  Description
+                </Label>
                 <Textarea
                   {...register("description")}
                   placeholder="Description of the template..."
@@ -233,7 +277,9 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-bold text-slate-800 ml-1">Usage Scope</Label>
+                <Label className="text-sm font-bold text-slate-800 ml-1">
+                  Usage Scope
+                </Label>
                 <Input
                   {...register("usage_scope")}
                   placeholder="e.g. Organic Social Media"
@@ -244,7 +290,9 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label className="text-sm font-bold text-slate-800 ml-1">Duration (days)</Label>
+                  <Label className="text-sm font-bold text-slate-800 ml-1">
+                    Duration (days)
+                  </Label>
                   <Input
                     type="number"
                     {...register("duration_days", { valueAsNumber: true })}
@@ -253,7 +301,9 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm font-bold text-slate-800 ml-1">Territory</Label>
+                  <Label className="text-sm font-bold text-slate-800 ml-1">
+                    Territory
+                  </Label>
                   <Input
                     {...register("territory")}
                     placeholder="Worldwide"
@@ -264,20 +314,38 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-bold text-slate-800 ml-1">Exclusivity *</Label>
-                <Select onValueChange={(val) => setValue("exclusivity", val)} defaultValue={initialData?.exclusivity || "Non-exclusive"} disabled={readOnly}>
+                <Label className="text-sm font-bold text-slate-800 ml-1">
+                  Exclusivity *
+                </Label>
+                <Select
+                  onValueChange={(val) => setValue("exclusivity", val)}
+                  defaultValue={initialData?.exclusivity || "Non-exclusive"}
+                  disabled={readOnly}
+                >
                   <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75">
                     <SelectValue placeholder="Select exclusivity" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl border-slate-200">
-                    <SelectItem value="Non-exclusive" className="rounded-lg font-medium">Non-exclusive</SelectItem>
-                    <SelectItem value="Exclusive" className="rounded-lg font-medium">Exclusive</SelectItem>
+                    <SelectItem
+                      value="Non-exclusive"
+                      className="rounded-lg font-medium"
+                    >
+                      Non-exclusive
+                    </SelectItem>
+                    <SelectItem
+                      value="Exclusive"
+                      className="rounded-lg font-medium"
+                    >
+                      Exclusive
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-bold text-slate-800 ml-1">License Fee ($)</Label>
+                <Label className="text-sm font-bold text-slate-800 ml-1">
+                  License Fee ($)
+                </Label>
                 <div className="relative">
                   <Input
                     type="number"
@@ -289,11 +357,15 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                   />
                   <DollarSign className="absolute left-3 top-3.5 w-5 h-5 text-slate-400 pointer-events-none" />
                 </div>
-                <p className="text-xs text-slate-500 ml-1">Enter amount in dollars (e.g. 10.00)</p>
+                <p className="text-xs text-slate-500 ml-1">
+                  Enter amount in dollars (e.g. 10.00)
+                </p>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-bold text-slate-800 ml-1">Custom Terms</Label>
+                <Label className="text-sm font-bold text-slate-800 ml-1">
+                  Custom Terms
+                </Label>
                 <Textarea
                   {...register("custom_terms")}
                   placeholder="Any extra conditions..."
@@ -303,14 +375,26 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-bold text-slate-800 ml-1">Modifications Allowed</Label>
-                <Select onValueChange={(val) => setValue("modifications_allowed", val)} defaultValue={initialData?.modifications_allowed || "No"} disabled={readOnly}>
+                <Label className="text-sm font-bold text-slate-800 ml-1">
+                  Modifications Allowed
+                </Label>
+                <Select
+                  onValueChange={(val) =>
+                    setValue("modifications_allowed", val)
+                  }
+                  defaultValue={initialData?.modifications_allowed || "No"}
+                  disabled={readOnly}
+                >
                   <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-xl focus:ring-4 focus:ring-indigo-50 transition-all font-medium disabled:opacity-75">
                     <SelectValue placeholder="Select option" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl border-slate-200">
-                    <SelectItem value="Yes" className="rounded-lg font-medium">Yes</SelectItem>
-                    <SelectItem value="No" className="rounded-lg font-medium">No</SelectItem>
+                    <SelectItem value="Yes" className="rounded-lg font-medium">
+                      Yes
+                    </SelectItem>
+                    <SelectItem value="No" className="rounded-lg font-medium">
+                      No
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -329,9 +413,8 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
               />
             </div>
           </div>
-
         </form>
       </DialogContent>
-    </Dialog >
+    </Dialog>
   );
 };
