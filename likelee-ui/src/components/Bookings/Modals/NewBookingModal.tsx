@@ -8,6 +8,7 @@ import {
   MapPin,
   Plus,
   Search,
+  Tag,
   Upload,
   File as FileIcon,
   User,
@@ -40,7 +41,9 @@ import {
   getAgencyClients,
   createAgencyClient,
   createBookingWithFiles,
+  getBookingsCampaigns,
 } from "@/api/functions";
+import { CampaignModal } from "./CampaignModal";
 
 export const NewBookingModal = ({
   open,
@@ -94,6 +97,10 @@ export const NewBookingModal = ({
   });
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
+  const [campaignSearch, setCampaignSearch] = useState("");
+  const [showCampaignModal, setShowCampaignModal] = useState(false);
 
   // When all-day is enabled, normalize times to full-day window
   useEffect(() => {
@@ -149,6 +156,18 @@ export const NewBookingModal = ({
     loadClients();
   }, [open]);
 
+  // Load campaigns when modal opens
+  useEffect(() => {
+    const loadCampaigns = async () => {
+      if (!open) return;
+      try {
+        const rows = await getBookingsCampaigns();
+        setCampaigns(Array.isArray(rows) ? rows : []);
+      } catch (_e) {}
+    };
+    loadCampaigns();
+  }, [open]);
+
   // Pre-fill data for Edit or Duplicate modes
   useEffect(() => {
     if (open && initialData) {
@@ -194,8 +213,9 @@ export const NewBookingModal = ({
       setSelectedClient(null);
       setNotes("");
       setDate("2026-01-12");
+      setSelectedCampaign(null);
     }
-  }, [open, initialData, clients, talents]);
+  }, [open, initialData, clients, talents, campaigns]);
 
   // Server-side filtering of talents via q param
   useEffect(() => {
@@ -310,6 +330,7 @@ export const NewBookingModal = ({
           notify_sms: notifications.sms,
           notify_push: notifications.push,
           notify_calendar: notifications.calendar,
+          campaign_id: selectedCampaign?.id,
         };
         const created = await createBookingWithFiles(payload, files);
         const row = Array.isArray(created) ? created[0] : created;
@@ -698,6 +719,67 @@ export const NewBookingModal = ({
                     </div>
                   </div>
                 </>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Campaign</Label>
+              <div className="relative">
+                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  className="pl-9"
+                  placeholder="Search campaigns..."
+                  value={campaignSearch}
+                  onChange={(e) => setCampaignSearch(e.target.value)}
+                />
+              </div>
+              <div className="border border-gray-200 rounded-lg max-h-32 overflow-y-auto bg-white">
+                {campaigns
+                  .filter((c) =>
+                    c.name.toLowerCase().includes(campaignSearch.toLowerCase()),
+                  )
+                  .map((c) => (
+                    <div
+                      key={c.id}
+                      onClick={() => {
+                        setSelectedCampaign(c);
+                        setCampaignSearch("");
+                      }}
+                      className={`flex items-center gap-2 p-2 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0 ${
+                        selectedCampaign?.id === c.id ? "bg-indigo-50/50" : ""
+                      }`}
+                    >
+                      <Tag className="w-4 h-4 text-gray-400" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{c.name}</p>
+                      </div>
+                      {selectedCampaign?.id === c.id && (
+                        <CheckCircle2 className="w-4 h-4 text-indigo-600" />
+                      )}
+                    </div>
+                  ))}
+                <div
+                  onClick={() => setShowCampaignModal(true)}
+                  className="flex items-center gap-2 p-2 text-indigo-600 hover:bg-indigo-50 cursor-pointer border-t border-gray-100 font-bold text-xs"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Create New Campaign
+                </div>
+              </div>
+              {selectedCampaign && (
+                <div className="flex items-center justify-between p-2 bg-indigo-50 border border-indigo-100 rounded-lg mt-1">
+                  <div className="flex items-center gap-2">
+                    <Tag className="w-4 h-4 text-indigo-600" />
+                    <p className="text-sm font-bold text-indigo-900">
+                      Campaign: {selectedCampaign.name}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedCampaign(null)}
+                    className="text-indigo-400 hover:text-indigo-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
               )}
             </div>
 
@@ -1108,6 +1190,17 @@ export const NewBookingModal = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {showCampaignModal && (
+        <CampaignModal
+          open={showCampaignModal}
+          onOpenChange={setShowCampaignModal}
+          onSaveSuccess={(newCampaign) => {
+            setCampaigns([...campaigns, newCampaign]);
+            setSelectedCampaign(newCampaign);
+          }}
+        />
+      )}
     </>
   );
 };

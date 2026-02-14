@@ -35,6 +35,7 @@ pub struct CreateBookingPayload {
     pub notify_sms: Option<bool>,
     pub notify_push: Option<bool>,
     pub notify_calendar: Option<bool>,
+    pub campaign_id: Option<String>,
 }
 
 // Create a booking and attach uploaded files (multipart):
@@ -145,6 +146,7 @@ pub async fn create_with_files(
         "notify_sms": payload.notify_sms.unwrap_or(false),
         "notify_push": payload.notify_push.unwrap_or(false),
         "notify_calendar": payload.notify_calendar.unwrap_or(true),
+        "campaign_id": payload.campaign_id,
     });
 
     // Insert booking and return generated id
@@ -328,6 +330,7 @@ pub async fn create(
         "status": payload.status.unwrap_or_else(|| "pending".to_string()),
         "notes": payload.notes,
         "industries": payload.industries,
+        "campaign_id": payload.campaign_id,
     });
 
     let resp = state
@@ -542,6 +545,7 @@ pub struct UpdateBookingPayload {
     pub notify_sms: Option<bool>,
     pub notify_push: Option<bool>,
     pub notify_calendar: Option<bool>,
+    pub campaign_id: Option<String>,
 }
 
 pub async fn update(

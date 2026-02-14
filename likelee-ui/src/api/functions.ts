@@ -639,3 +639,15 @@ export const sendEmail = (data: {
     content_base64: string;
   }>;
 }) => base44Client.post(`/integrations/core/send-email`, data);
+
+export const getBookingsCampaigns = () =>
+  base44Client.get("/bookings-campaigns");
+
+export const createBookingsCampaign = (data: any) =>
+  base44Client.post("/bookings-campaigns", data);
+
+export const updateBookingsCampaign = (id: string, data: any) =>
+  base44Client.post(`/bookings-campaigns/${id}`, data);
+
+export const deleteBookingsCampaign = (id: string) =>
+  base44Client.delete(`/bookings-campaigns/${id}`);

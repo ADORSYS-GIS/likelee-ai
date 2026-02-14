@@ -19033,6 +19033,7 @@ export default function AgencyDashboard() {
               "Talent Availability",
               "Notifications",
               "Management & Analytics",
+              "Campaigns",
             ],
           },
           {
