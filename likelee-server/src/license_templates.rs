@@ -150,7 +150,7 @@ pub async fn list(
 
     if !status.is_success() {
         return Err(crate::errors::sanitize_db_error(
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            status.as_u16(),
             text,
         ));
     }

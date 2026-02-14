@@ -1,10 +1,13 @@
 use axum::http::StatusCode;
 use serde_json::json;
 
-pub fn sanitize_db_error(status: StatusCode, text: String) -> (StatusCode, String) {
+pub fn sanitize_db_error(status_code: u16, text: String) -> (StatusCode, String) {
+    let axum_status =
+        StatusCode::from_u16(status_code).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+
     // Log the original error for debugging
     tracing::error!(
-        status = %status,
+        status = %axum_status,
         error = %text,
         "Database error occurred"
     );
@@ -25,8 +28,8 @@ pub fn sanitize_db_error(status: StatusCode, text: String) -> (StatusCode, Strin
                     "schema",
                     "cache",
                     "null constraint",
-<<<<<<< HEAD
                     "violates",
+                    "foreign key",
                     "fk_",
                     "pk_",
                     "idx_",
@@ -40,7 +43,7 @@ pub fn sanitize_db_error(status: StatusCode, text: String) -> (StatusCode, Strin
                 match code {
                     "23505" => {
                         return (
-                            axum_status,
+                            StatusCode::CONFLICT,
                             json!({
                                 "error": "This record already exists.",
                                 "code": code
@@ -81,7 +84,7 @@ pub fn sanitize_db_error(status: StatusCode, text: String) -> (StatusCode, Strin
                     }
                     _ if contains_sensitive => {
                         return (
-                            axum_status,
+                            StatusCode::INTERNAL_SERVER_ERROR,
                             json!({
                                 "error": "Invalid data provided. Please check your input.",
                                 "details": "A validation error occurred on the server.",
@@ -100,47 +103,6 @@ pub fn sanitize_db_error(status: StatusCode, text: String) -> (StatusCode, Strin
                             .to_string(),
                         );
                     }
-=======
-                    "foreign key",
-                    "violates",
-                ];
-                if sensitive_keywords
-                    .iter()
-                    .any(|&k| msg.to_lowercase().contains(k))
-                {
-                    return (
-                        status,
-                        json!({
-                            "error": "Invalid data provided. Please check your input.",
-                            "details": "A validation error occurred on the server."
-                        })
-                        .to_string(),
-                    );
-                }
-
-                // If it's a unique constraint violation, we can be more specific
-                if msg.contains("duplicate key") || msg.contains("already exists") {
-                    return (
-                        StatusCode::CONFLICT,
-                        json!({
-                            "error": "This record already exists.",
-                            "details": "Please use a different identifier or update the existing record."
-                        })
-                        .to_string(),
-                    );
-                }
-
-                // If it's a not found error
-                if msg.contains("not found") || msg.contains("no rows") {
-                    return (
-                        StatusCode::NOT_FOUND,
-                        json!({
-                            "error": "The requested resource was not found.",
-                            "details": "Please verify the ID and try again."
-                        })
-                        .to_string(),
-                    );
->>>>>>> licRequest
                 }
             }
         }
@@ -148,11 +110,7 @@ pub fn sanitize_db_error(status: StatusCode, text: String) -> (StatusCode, Strin
 
     // For 5xx or unknown 4xx, return generic error
     (
-<<<<<<< HEAD
-        axum_status,
-=======
         StatusCode::INTERNAL_SERVER_ERROR,
->>>>>>> licRequest
         json!({
             "error": "An internal error occurred. Our team has been notified.",
             "details": "Please try again later or contact support if the issue persists."
@@ -169,5 +127,5 @@ pub fn handle_error<E: std::fmt::Display>(err: E, context: &str) -> (StatusCode,
         error = %err_str,
         "Error occurred"
     );
-    sanitize_db_error(StatusCode::INTERNAL_SERVER_ERROR, err_str)
+    sanitize_db_error(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), err_str)
 }
