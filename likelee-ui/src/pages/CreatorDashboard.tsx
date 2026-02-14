@@ -2310,7 +2310,6 @@ export default function CreatorDashboard() {
                     No industries selected yet.
                   </p>
                 )}
-
               </div>
             </div>
 
@@ -2429,7 +2428,6 @@ export default function CreatorDashboard() {
                       {t("creatorDashboard.publicProfile.verifiedCreator")}
                     </Badge>
                   )}
-
                 </div>
 
                 <p className="text-xs text-gray-500 mb-4">{data.location}</p>

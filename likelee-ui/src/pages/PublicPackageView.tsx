@@ -82,7 +82,12 @@ export function PublicPackageView() {
   const [requestEmail, setRequestEmail] = useState("");
   const [requestMessage, setRequestMessage] = useState("");
 
-  const { data: packageData, isLoading, error, refetch } = useQuery<any>({
+  const {
+    data: packageData,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery<any>({
     queryKey: ["public-package", token],
     queryFn: () => packageApi.getPublicPackage(token!, password),
     enabled: !!token,
@@ -975,7 +980,10 @@ export function PublicPackageView() {
         )}
       </AnimatePresence>
 
-      <Dialog open={fullAssetsRequestOpen} onOpenChange={setFullAssetsRequestOpen}>
+      <Dialog
+        open={fullAssetsRequestOpen}
+        onOpenChange={setFullAssetsRequestOpen}
+      >
         <DialogContent className="sm:max-w-[460px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">

@@ -1334,10 +1334,10 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                 planTier === "pro"
                   ? "bg-[#0F1225] border-indigo-500/30 text-white"
                   : planTier === "basic" || planTier === "agency"
-                  ? "bg-emerald-50 border-emerald-100 text-gray-900"
-                  : planTier === "enterprise"
-                  ? "bg-amber-50 border-amber-200 text-gray-900"
-                  : "bg-white border-gray-200 text-gray-900"
+                    ? "bg-emerald-50 border-emerald-100 text-gray-900"
+                    : planTier === "enterprise"
+                      ? "bg-amber-50 border-amber-200 text-gray-900"
+                      : "bg-white border-gray-200 text-gray-900"
               }`}
             >
               <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -1363,10 +1363,10 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                         planTier === "pro"
                           ? "bg-indigo-500 text-white"
                           : planTier === "basic" || planTier === "agency"
-                          ? "bg-emerald-600 text-white shadow-sm"
-                          : planTier === "enterprise"
-                          ? "bg-amber-500 text-white shadow-sm"
-                          : "bg-gray-100 text-gray-600"
+                            ? "bg-emerald-600 text-white shadow-sm"
+                            : planTier === "enterprise"
+                              ? "bg-amber-500 text-white shadow-sm"
+                              : "bg-gray-100 text-gray-600"
                       }`}
                     >
                       {planTier}
@@ -1375,18 +1375,26 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                 </div>
                 <Button
                   asChild
-                  variant={planTier === "pro" || planTier === "basic" || planTier === "enterprise" ? "default" : "outline"}
+                  variant={
+                    planTier === "pro" ||
+                    planTier === "basic" ||
+                    planTier === "enterprise"
+                      ? "default"
+                      : "outline"
+                  }
                   className={`rounded-xl font-bold ${
                     planTier === "pro"
                       ? "bg-indigo-600 hover:bg-indigo-700 text-white border-none shadow-lg shadow-indigo-500/20"
                       : planTier === "basic" || planTier === "agency"
-                      ? "bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-lg shadow-emerald-500/20"
-                      : planTier === "enterprise"
-                      ? "bg-amber-600 hover:bg-amber-700 text-white border-none shadow-lg shadow-amber-500/20"
-                      : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                        ? "bg-emerald-600 hover:bg-emerald-700 text-white border-none shadow-lg shadow-emerald-500/20"
+                        : planTier === "enterprise"
+                          ? "bg-amber-600 hover:bg-amber-700 text-white border-none shadow-lg shadow-amber-500/20"
+                          : "border-gray-200 text-gray-600 hover:bg-gray-50"
                   }`}
                 >
-                  <a href={createPageUrl("AgencySubscribe")}>Billing & Subscription</a>
+                  <a href={createPageUrl("AgencySubscribe")}>
+                    Billing & Subscription
+                  </a>
                 </Button>
               </div>
             </Card>
@@ -2688,7 +2696,8 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                       Connect Bank Account
                     </h4>
                     <p className="text-sm text-gray-500 font-medium mt-1">
-                      Link your bank to receive client payments and manage payouts.
+                      Link your bank to receive client payments and manage
+                      payouts.
                     </p>
                     {bankStatus?.connected && (
                       <p className="text-xs text-gray-600 font-medium mt-2">
@@ -2698,11 +2707,13 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                           : ""}
                       </p>
                     )}
-                    {!bankStatusLoading && bankStatus && !bankStatus.connected && (
-                      <p className="text-xs text-gray-500 font-medium mt-2">
-                        Not connected
-                      </p>
-                    )}
+                    {!bankStatusLoading &&
+                      bankStatus &&
+                      !bankStatus.connected && (
+                        <p className="text-xs text-gray-500 font-medium mt-2">
+                          Not connected
+                        </p>
+                      )}
                   </div>
                 </div>
                 <Button asChild className="h-10 px-5 rounded-xl font-bold">

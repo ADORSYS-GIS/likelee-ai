@@ -4,7 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Check } from "lucide-react";
-import { createAgencySubscriptionCheckout, getAgencyProfile } from "@/api/functions";
+import {
+  createAgencySubscriptionCheckout,
+  getAgencyProfile,
+} from "@/api/functions";
 import { useToast } from "@/components/ui/use-toast";
 
 type PricingBracket = {
@@ -34,7 +37,9 @@ export default function AgencySubscribe() {
   const canceled = searchParams.get("canceled") === "1";
 
   const [plan, setPlan] = React.useState<"basic" | "pro" | "enterprise">("pro");
-  const [currentPlanTier, setCurrentPlanTier] = React.useState<string | null>(null);
+  const [currentPlanTier, setCurrentPlanTier] = React.useState<string | null>(
+    null,
+  );
 
   const rosterModels = 186;
   const rosterRate = 10;
@@ -64,12 +69,9 @@ export default function AgencySubscribe() {
 
   React.useEffect(() => {
     if (!success) return;
-    navigate(
-      `/AgencyDashboard?tab=settings&subTab=General%20Settings`,
-      {
-        replace: true,
-      },
-    );
+    navigate(`/AgencyDashboard?tab=settings&subTab=General%20Settings`, {
+      replace: true,
+    });
   }, [navigate, success]);
 
   const onContact = () => navigate("/SalesInquiry");
@@ -164,7 +166,9 @@ export default function AgencySubscribe() {
           <Card className="rounded-[28px] border border-gray-200 bg-white p-8">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
               <div>
-                <div className="text-2xl font-black">How many models on your roster?</div>
+                <div className="text-2xl font-black">
+                  How many models on your roster?
+                </div>
                 <div className="text-gray-500 mt-1">Fixed at 186 models.</div>
               </div>
               <div className="flex items-center gap-3">
@@ -176,7 +180,8 @@ export default function AgencySubscribe() {
             </div>
 
             <div className="text-center text-[#4B4AE6] font-black mt-6">
-              {rosterModels} models × ${rosterRate}/mo = ${rosterCost}/mo (headcount)
+              {rosterModels} models × ${rosterRate}/mo = ${rosterCost}/mo
+              (headcount)
             </div>
           </Card>
         </div>
@@ -186,18 +191,33 @@ export default function AgencySubscribe() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="text-3xl font-black">Basic</div>
-                <div className="text-gray-500 mt-1">Get started with licensing</div>
+                <div className="text-gray-500 mt-1">
+                  Get started with licensing
+                </div>
               </div>
-              <Badge className="bg-amber-100 text-amber-700 border border-amber-200">10% fee</Badge>
+              <Badge className="bg-amber-100 text-amber-700 border border-amber-200">
+                10% fee
+              </Badge>
             </div>
             <div className="mt-6 flex items-end gap-2">
               <div className="text-6xl font-black">${totalMonthlyBasic}</div>
               <div className="text-gray-500 font-bold">/mo</div>
             </div>
             <div className="mt-6 text-gray-500 font-medium">
-              <div className="flex justify-between"><span>Base plan</span><span>${399}</span></div>
-              <div className="flex justify-between"><span>{rosterModels} models × ${rosterRate}</span><span>${rosterCost}</span></div>
-              <div className="flex justify-between"><span>IRL Booking add-on</span><span>+${irlBookingCost}</span></div>
+              <div className="flex justify-between">
+                <span>Base plan</span>
+                <span>${399}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>
+                  {rosterModels} models × ${rosterRate}
+                </span>
+                <span>${rosterCost}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>IRL Booking add-on</span>
+                <span>+${irlBookingCost}</span>
+              </div>
             </div>
 
             <div className="mt-8">
@@ -232,8 +252,8 @@ export default function AgencySubscribe() {
             <div className="mt-8">
               <Button
                 className={`w-full h-12 rounded-2xl font-black ${
-                  currentPlanTier === "basic" 
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 cursor-default hover:bg-emerald-50" 
+                  currentPlanTier === "basic"
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 cursor-default hover:bg-emerald-50"
                     : ""
                 }`}
                 variant={plan === "basic" ? "default" : "outline"}
@@ -261,20 +281,35 @@ export default function AgencySubscribe() {
               <div>
                 <div className="flex items-center gap-3">
                   <div className="text-3xl font-black">Pro</div>
-                  <Badge className="bg-[#4B4AE6] text-white border border-[#4B4AE6]">Most Popular</Badge>
+                  <Badge className="bg-[#4B4AE6] text-white border border-[#4B4AE6]">
+                    Most Popular
+                  </Badge>
                 </div>
                 <div className="text-white/70 mt-1">Full licensing power</div>
               </div>
-              <Badge className="bg-emerald-100 text-emerald-700 border border-emerald-200">5% fee</Badge>
+              <Badge className="bg-emerald-100 text-emerald-700 border border-emerald-200">
+                5% fee
+              </Badge>
             </div>
             <div className="mt-6 flex items-end gap-2">
               <div className="text-6xl font-black">${totalMonthlyPro}</div>
               <div className="text-white/60 font-bold">/mo</div>
             </div>
             <div className="mt-6 text-white/70 font-medium">
-              <div className="flex justify-between"><span>Base plan</span><span>${489}</span></div>
-              <div className="flex justify-between"><span>{rosterModels} models × ${rosterRate}</span><span>${rosterCost}</span></div>
-              <div className="flex justify-between"><span>IRL Booking add-on</span><span>+${irlBookingCost}</span></div>
+              <div className="flex justify-between">
+                <span>Base plan</span>
+                <span>${489}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>
+                  {rosterModels} models × ${rosterRate}
+                </span>
+                <span>${rosterCost}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>IRL Booking add-on</span>
+                <span>+${irlBookingCost}</span>
+              </div>
             </div>
 
             <div className="mt-8">
@@ -334,21 +369,33 @@ export default function AgencySubscribe() {
         <div className="mt-12">
           <div className="text-center text-3xl font-black">Add-Ons</div>
           <div className="text-center text-gray-500 mt-2">
-            Already have booking software? No problem — Likelee works as a standalone licensing platform. Add what you need.
+            Already have booking software? No problem — Likelee works as a
+            standalone licensing platform. Add what you need.
           </div>
 
           <div className="mt-8 space-y-6">
             <Card className="rounded-[28px] border border-gray-200 bg-white p-8">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <div className="text-2xl font-black">IRL AI-Powered Booking Software</div>
+                  <div className="text-2xl font-black">
+                    IRL AI-Powered Booking Software
+                  </div>
                   <div className="text-gray-500 mt-1">
-                    Manage real-world gigs alongside your licensing income — all in one place.
+                    Manage real-world gigs alongside your licensing income — all
+                    in one place.
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="text-xl font-black text-gray-900">+${489}<span className="text-gray-400 text-sm">/mo</span></div>
-                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">Included</Badge>
+                  <div className="text-xl font-black text-gray-900">
+                    +${489}
+                    <span className="text-gray-400 text-sm">/mo</span>
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className="bg-emerald-50 text-emerald-700 border-emerald-200"
+                  >
+                    Included
+                  </Badge>
                 </div>
               </div>
             </Card>
@@ -356,13 +403,18 @@ export default function AgencySubscribe() {
             <Card className="rounded-[28px] border border-gray-200 bg-white p-8">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <div className="text-2xl font-black">Deepfake Detection & Protection</div>
+                  <div className="text-2xl font-black">
+                    Deepfake Detection & Protection
+                  </div>
                   <div className="text-gray-500 mt-1">
-                    Track facial usage and unauthorized use of your models across the web
+                    Track facial usage and unauthorized use of your models
+                    across the web
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <Badge variant="outline" className="bg-white/70">Coming Soon</Badge>
+                  <Badge variant="outline" className="bg-white/70">
+                    Coming Soon
+                  </Badge>
                 </div>
               </div>
             </Card>
@@ -370,23 +422,30 @@ export default function AgencySubscribe() {
             <Card className="rounded-[28px] border border-gray-200 bg-white p-8">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <div className="text-2xl font-black">Additional Team Members</div>
+                  <div className="text-2xl font-black">
+                    Additional Team Members
+                  </div>
                   <div className="text-gray-500 mt-1">
-                    Give your team access to the dashboard — bookers, scouts, account managers
+                    Give your team access to the dashboard — bookers, scouts,
+                    account managers
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <Badge variant="outline" className="bg-white/70">Coming Soon</Badge>
+                  <Badge variant="outline" className="bg-white/70">
+                    Coming Soon
+                  </Badge>
                 </div>
               </div>
             </Card>
 
             <Card className="rounded-[28px] border border-amber-200 bg-amber-50 p-6">
               <div className="text-amber-900 font-bold">
-                Protection & Usage and Compliance Hub are exclusive to the Pro plan — regardless of add-ons.
+                Protection & Usage and Compliance Hub are exclusive to the Pro
+                plan — regardless of add-ons.
               </div>
               <div className="text-amber-800 mt-1">
-                Upgrade to Pro to track and protect your talent's likeness across all AI campaigns.
+                Upgrade to Pro to track and protect your talent's likeness
+                across all AI campaigns.
               </div>
             </Card>
           </div>
@@ -406,12 +465,16 @@ export default function AgencySubscribe() {
             <Button
               className="rounded-2xl font-black bg-[#4B4AE6] hover:bg-[#3F3EE0]"
               onClick={() => onCheckout()}
-              disabled={checkingOut || (plan === "basic" && currentPlanTier === "basic") || (plan === "pro" && currentPlanTier === "pro")}
-            >
-              { (plan === "basic" && currentPlanTier === "basic") || (plan === "pro" && currentPlanTier === "pro") 
-                ? "Already Subscribed" 
-                : "Get Started"
+              disabled={
+                checkingOut ||
+                (plan === "basic" && currentPlanTier === "basic") ||
+                (plan === "pro" && currentPlanTier === "pro")
               }
+            >
+              {(plan === "basic" && currentPlanTier === "basic") ||
+              (plan === "pro" && currentPlanTier === "pro")
+                ? "Already Subscribed"
+                : "Get Started"}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
@@ -423,11 +486,15 @@ export default function AgencySubscribe() {
               <div>
                 <div className="text-2xl font-black">Enterprise</div>
                 <div className="text-gray-500 mt-1">
-                  Custom storage, security, SLAs, onboarding, integrations — and required
-                  for agencies with more than 186 models on roster.
+                  Custom storage, security, SLAs, onboarding, integrations — and
+                  required for agencies with more than 186 models on roster.
                 </div>
               </div>
-              <Button className="rounded-2xl font-black" variant="outline" onClick={onContact}>
+              <Button
+                className="rounded-2xl font-black"
+                variant="outline"
+                onClick={onContact}
+              >
                 Contact Sales
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>

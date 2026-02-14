@@ -226,7 +226,9 @@ const ConnectBankView = () => {
   const [payoutHistory, setPayoutHistory] = useState<any[]>([]);
   const [showPayoutDialog, setShowPayoutDialog] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState("");
-  const [payoutMethod, setPayoutMethod] = useState<"standard" | "instant">("standard");
+  const [payoutMethod, setPayoutMethod] = useState<"standard" | "instant">(
+    "standard",
+  );
   const [requestingPayout, setRequestingPayout] = useState(false);
 
   useEffect(() => {
@@ -239,22 +241,23 @@ const ConnectBankView = () => {
           getAgencyPayoutBalance(),
           getAgencyPayoutHistory(),
         ]);
-        
+
         const statusData = (statusResp as any)?.data ?? statusResp;
         const balanceData = (balanceResp as any)?.data ?? balanceResp;
         const historyData = (historyResp as any)?.data ?? historyResp;
-        
+
         if (!mounted) return;
-        
+
         setStatus({
           connected: Boolean((statusData as any)?.connected),
           payouts_enabled: Boolean((statusData as any)?.payouts_enabled),
           transfers_enabled: Boolean((statusData as any)?.transfers_enabled),
           last_error: String((statusData as any)?.last_error || ""),
-          bank_last4: String((statusData as any)?.bank_last4 || "") || undefined,
+          bank_last4:
+            String((statusData as any)?.bank_last4 || "") || undefined,
           available_balance: (balanceData as any)?.available_balance,
         });
-        
+
         setPayoutHistory((historyData as any)?.items || []);
       } catch (e: any) {
         toast({
@@ -359,7 +362,8 @@ const ConnectBankView = () => {
 
   const payoutStatusClass = (s: string) => {
     const key = String(s || "pending").toLowerCase();
-    if (key === "paid") return "bg-green-50 text-green-700 border border-green-200";
+    if (key === "paid")
+      return "bg-green-50 text-green-700 border border-green-200";
     if (key === "failed") return "bg-red-50 text-red-700 border border-red-200";
     if (key === "processing")
       return "bg-blue-50 text-blue-700 border border-blue-200";
@@ -416,10 +420,15 @@ const ConnectBankView = () => {
                   </p>
                 </div>
                 <p className="text-2xl font-black text-gray-900">
-                  {status?.available_balance 
-                    ? new Intl.NumberFormat('en-US', { style: 'currency', currency: status.available_balance.currency.toUpperCase() }).format((status.available_balance.amount_cents || 0) / 100)
-                    : "$0.00"
-                  }
+                  {status?.available_balance
+                    ? new Intl.NumberFormat("en-US", {
+                        style: "currency",
+                        currency:
+                          status.available_balance.currency.toUpperCase(),
+                      }).format(
+                        (status.available_balance.amount_cents || 0) / 100,
+                      )
+                    : "$0.00"}
                 </p>
                 <p className="text-[10px] text-gray-500 font-medium mt-1">
                   Ready for payout to your bank
@@ -467,14 +476,18 @@ const ConnectBankView = () => {
                   <div className="flex gap-2 mt-2">
                     <Button
                       type="button"
-                      variant={payoutMethod === "standard" ? "default" : "outline"}
+                      variant={
+                        payoutMethod === "standard" ? "default" : "outline"
+                      }
                       onClick={() => setPayoutMethod("standard")}
                     >
                       Standard
                     </Button>
                     <Button
                       type="button"
-                      variant={payoutMethod === "instant" ? "default" : "outline"}
+                      variant={
+                        payoutMethod === "instant" ? "default" : "outline"
+                      }
                       onClick={() => setPayoutMethod("instant")}
                     >
                       Instant
@@ -484,10 +497,16 @@ const ConnectBankView = () => {
               </div>
 
               <DialogFooter>
-                <Button variant="outline" onClick={() => setShowPayoutDialog(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowPayoutDialog(false)}
+                >
                   Cancel
                 </Button>
-                <Button onClick={handleRequestPayout} disabled={requestingPayout}>
+                <Button
+                  onClick={handleRequestPayout}
+                  disabled={requestingPayout}
+                >
                   {requestingPayout ? "Requesting..." : "Request"}
                 </Button>
               </DialogFooter>
@@ -496,7 +515,9 @@ const ConnectBankView = () => {
 
           {connected && payoutHistory.length > 0 && (
             <div className="mt-6">
-              <div className="text-sm font-bold text-gray-900 mb-2">Payout History</div>
+              <div className="text-sm font-bold text-gray-900 mb-2">
+                Payout History
+              </div>
               <div className="space-y-2">
                 {payoutHistory.slice(0, 5).map((p) => (
                   <div
@@ -504,7 +525,8 @@ const ConnectBankView = () => {
                     className="flex items-center justify-between p-3 rounded-xl border border-gray-100"
                   >
                     <div className="text-sm font-medium text-gray-900">
-                      {(p.amount_cents || 0) / 100} {String(p.currency || "USD").toUpperCase()}
+                      {(p.amount_cents || 0) / 100}{" "}
+                      {String(p.currency || "USD").toUpperCase()}
                       <span className="text-xs text-gray-500 font-normal ml-2">
                         ({p.payout_method || "standard"})
                       </span>
@@ -1219,10 +1241,13 @@ const ConnectBankViewAlt = () => {
                   </p>
                 </div>
                 <p className="text-2xl font-black text-gray-900">
-                  {status?.available_balance 
-                    ? new Intl.NumberFormat('en-US', { style: 'currency', currency: status.available_balance.currency.toUpperCase() }).format(status.available_balance.amount / 100)
-                    : "$0.00"
-                  }
+                  {status?.available_balance
+                    ? new Intl.NumberFormat("en-US", {
+                        style: "currency",
+                        currency:
+                          status.available_balance.currency.toUpperCase(),
+                      }).format(status.available_balance.amount / 100)
+                    : "$0.00"}
                 </p>
                 <p className="text-[10px] text-gray-500 font-medium mt-1">
                   Ready for payout to your bank
@@ -1237,10 +1262,12 @@ const ConnectBankViewAlt = () => {
                   </p>
                 </div>
                 <p className="text-2xl font-black text-gray-400">
-                  {status?.pending_balance 
-                    ? new Intl.NumberFormat('en-US', { style: 'currency', currency: status.pending_balance.currency.toUpperCase() }).format(status.pending_balance.amount / 100)
-                    : "$0.00"
-                  }
+                  {status?.pending_balance
+                    ? new Intl.NumberFormat("en-US", {
+                        style: "currency",
+                        currency: status.pending_balance.currency.toUpperCase(),
+                      }).format(status.pending_balance.amount / 100)
+                    : "$0.00"}
                 </p>
                 <p className="text-[10px] text-gray-400 font-medium mt-1">
                   Funds processing from recent payments
@@ -18700,7 +18727,8 @@ export default function AgencyDashboard() {
 
   const agencyPlanTier = useMemo(() => {
     const t =
-      (agencyProfileQuery.data as any)?.plan_tier || (profile as any)?.plan_tier;
+      (agencyProfileQuery.data as any)?.plan_tier ||
+      (profile as any)?.plan_tier;
     return typeof t === "string" && t.trim() ? t.trim().toLowerCase() : "free";
   }, [agencyProfileQuery.data, profile]);
 
@@ -18711,7 +18739,8 @@ export default function AgencyDashboard() {
     return "Free";
   }, [agencyPlanTier]);
 
-  const hasProAccess = agencyPlanTier === "pro" || agencyPlanTier === "enterprise";
+  const hasProAccess =
+    agencyPlanTier === "pro" || agencyPlanTier === "enterprise";
 
   useEffect(() => {
     if (!user?.id) return;
@@ -19264,6 +19293,7 @@ export default function AgencyDashboard() {
               "License Templates",
             ],
           },
+          { id: "payouts", label: "Payouts", icon: DollarSign },
           {
             id: "protection",
             label: "Protection & Usage",
@@ -19312,6 +19342,7 @@ export default function AgencyDashboard() {
               "Management & Analytics",
             ],
           },
+          { id: "payouts", label: "Payouts", icon: DollarSign },
           {
             id: "accounting",
             label: "Accounting & Invoicing",
@@ -19423,7 +19454,11 @@ export default function AgencyDashboard() {
                     setSidebarOpen(false);
                   }
                 }}
-                title={item.disabled ? item.disabledReason || "Requires Pro" : undefined}
+                title={
+                  item.disabled
+                    ? item.disabledReason || "Requires Pro"
+                    : undefined
+                }
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                   activeTab === item.id && !item.subItems
                     ? "bg-indigo-50 text-indigo-700"
@@ -19455,7 +19490,10 @@ export default function AgencyDashboard() {
                     <button
                       key={subItem}
                       onClick={() => {
-                        if (item.disabledSubItems && item.disabledSubItems[subItem]) {
+                        if (
+                          item.disabledSubItems &&
+                          item.disabledSubItems[subItem]
+                        ) {
                           navigate("/AgencySubscribe");
                           setSidebarOpen(false);
                           return;
@@ -19477,11 +19515,12 @@ export default function AgencyDashboard() {
                     >
                       <span className="truncate">{subItem}</span>
                       <span className="flex items-center gap-2">
-                        {item.disabledSubItems && item.disabledSubItems[subItem] && (
-                          <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold">
-                            Pro
-                          </span>
-                        )}
+                        {item.disabledSubItems &&
+                          item.disabledSubItems[subItem] && (
+                            <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold">
+                              Pro
+                            </span>
+                          )}
                         {item.badges && item.badges[subItem] && (
                           <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
                             {item.badges[subItem]}
@@ -19682,7 +19721,9 @@ export default function AgencyDashboard() {
                         <p className="text-sm font-bold text-gray-700 group-hover:text-gray-900">
                           Billing & Subscription
                         </p>
-                        <p className="text-xs text-gray-500">Agency {agencyPlanLabel} Plan</p>
+                        <p className="text-xs text-gray-500">
+                          Agency {agencyPlanLabel} Plan
+                        </p>
                       </div>
                     </button>
                     <button
@@ -19930,76 +19971,96 @@ export default function AgencyDashboard() {
           )}
           {activeTab === "licensing" &&
             activeSubTab === "License Templates" && <LicenseTemplatesTab />}
-          {activeTab === "protection" && activeSubTab === "Protect & Usage" && (
-            hasProAccess ? (
+          {activeTab === "protection" &&
+            activeSubTab === "Protect & Usage" &&
+            (hasProAccess ? (
               <ProtectionUsageView />
             ) : (
               <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                <div className="text-lg font-black text-gray-900">Upgrade required</div>
+                <div className="text-lg font-black text-gray-900">
+                  Upgrade required
+                </div>
                 <div className="text-gray-500 font-medium mt-1">
                   Protection & Usage is available on the Pro plan.
                 </div>
                 <div className="mt-4">
-                  <Button className="rounded-xl font-bold" onClick={() => navigate("/agencysubscribe")}>
+                  <Button
+                    className="rounded-xl font-bold"
+                    onClick={() => navigate("/agencysubscribe")}
+                  >
                     View plans
                   </Button>
                 </div>
               </Card>
-            )
-          )}
-          {activeTab === "protection" && activeSubTab === "Compliance Hub" && (
-            hasProAccess ? (
+            ))}
+          {activeTab === "protection" &&
+            activeSubTab === "Compliance Hub" &&
+            (hasProAccess ? (
               <ComplianceHubView />
             ) : (
               <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                <div className="text-lg font-black text-gray-900">Upgrade required</div>
+                <div className="text-lg font-black text-gray-900">
+                  Upgrade required
+                </div>
                 <div className="text-gray-500 font-medium mt-1">
                   Compliance Hub is available on the Pro plan.
                 </div>
                 <div className="mt-4">
-                  <Button className="rounded-xl font-bold" onClick={() => navigate("/agencysubscribe")}>
+                  <Button
+                    className="rounded-xl font-bold"
+                    onClick={() => navigate("/agencysubscribe")}
+                  >
                     View plans
                   </Button>
                 </div>
               </Card>
-            )
-          )}
+            ))}
           {activeTab === "analytics" &&
-            activeSubTab === "Analytics Dashboard" && (
-              hasProAccess ? (
-                <AnalyticsDashboardView />
-              ) : (
-                <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                  <div className="text-lg font-black text-gray-900">Upgrade required</div>
-                  <div className="text-gray-500 font-medium mt-1">
-                    Advanced Analytics is available on the Pro plan.
-                  </div>
-                  <div className="mt-4">
-                    <Button className="rounded-xl font-bold" onClick={() => navigate("/agencysubscribe")}>
-                      View plans
-                    </Button>
-                  </div>
-                </Card>
-              )
-            )}
+            activeSubTab === "Analytics Dashboard" &&
+            (hasProAccess ? (
+              <AnalyticsDashboardView />
+            ) : (
+              <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                <div className="text-lg font-black text-gray-900">
+                  Upgrade required
+                </div>
+                <div className="text-gray-500 font-medium mt-1">
+                  Advanced Analytics is available on the Pro plan.
+                </div>
+                <div className="mt-4">
+                  <Button
+                    className="rounded-xl font-bold"
+                    onClick={() => navigate("/agencysubscribe")}
+                  >
+                    View plans
+                  </Button>
+                </div>
+              </Card>
+            ))}
           {activeTab === "analytics" &&
             activeSubTab === "Royalties & Payouts" &&
             (hasProAccess ? (
               <RoyaltiesPayoutsView />
             ) : (
               <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                <div className="text-lg font-black text-gray-900">Upgrade required</div>
+                <div className="text-lg font-black text-gray-900">
+                  Upgrade required
+                </div>
                 <div className="text-gray-500 font-medium mt-1">
                   Royalties & Payouts is available on the Pro plan.
                 </div>
                 <div className="mt-4">
-                  <Button className="rounded-xl font-bold" onClick={() => navigate("/agencysubscribe")}>
+                  <Button
+                    className="rounded-xl font-bold"
+                    onClick={() => navigate("/agencysubscribe")}
+                  >
                     View plans
                   </Button>
                 </div>
               </Card>
             ))}
           {activeTab === "packages" && <PackagesView />}
+          {activeTab === "payouts" && <ConnectBankView />}
           {activeTab === "settings" && activeSubTab === "General Settings" && (
             <GeneralSettingsView />
           )}
@@ -20043,12 +20104,17 @@ export default function AgencyDashboard() {
                   <FinancialReportsView />
                 ) : (
                   <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                    <div className="text-lg font-black text-gray-900">Upgrade required</div>
+                    <div className="text-lg font-black text-gray-900">
+                      Upgrade required
+                    </div>
                     <div className="text-gray-500 font-medium mt-1">
                       Financial Reports are available on the Pro plan.
                     </div>
                     <div className="mt-4">
-                      <Button className="rounded-xl font-bold" onClick={() => navigate("/agencysubscribe")}>
+                      <Button
+                        className="rounded-xl font-bold"
+                        onClick={() => navigate("/agencysubscribe")}
+                      >
                         View plans
                       </Button>
                     </div>
@@ -20059,12 +20125,17 @@ export default function AgencyDashboard() {
                   <ExpenseTrackingView />
                 ) : (
                   <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                    <div className="text-lg font-black text-gray-900">Upgrade required</div>
+                    <div className="text-lg font-black text-gray-900">
+                      Upgrade required
+                    </div>
                     <div className="text-gray-500 font-medium mt-1">
                       Expense Tracking is available on the Pro plan.
                     </div>
                     <div className="mt-4">
-                      <Button className="rounded-xl font-bold" onClick={() => navigate("/agencysubscribe")}>
+                      <Button
+                        className="rounded-xl font-bold"
+                        onClick={() => navigate("/agencysubscribe")}
+                      >
                         View plans
                       </Button>
                     </div>
