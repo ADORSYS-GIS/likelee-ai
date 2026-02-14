@@ -74,14 +74,6 @@ export const finalizeLicenseSubmission = async (
     client_name?: string;
     client_email?: string;
     talent_names?: string;
-    usage_scope?: string;
-    license_fee?: number;
-    duration_days?: number;
-    territory?: string;
-    exclusivity?: string;
-    modifications_allowed?: string;
-    custom_terms?: string;
-    start_date?: string;
   },
 ): Promise<LicenseSubmission> => {
   return await base44.post<LicenseSubmission>(

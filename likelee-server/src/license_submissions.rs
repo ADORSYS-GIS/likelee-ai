@@ -96,11 +96,10 @@ pub async fn create_draft(
         serde_json::from_str(&template_text)
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    // Licensing only: do not allow PDF upload and do not use master-template fallback.
+    // Licensing only: docuseal_template_id is optional in draft stage.
     let docuseal_template_id = req
         .docuseal_template_id
-        .or(license_template.docuseal_template_id)
-        .ok_or((StatusCode::BAD_REQUEST, "docuseal_template_id_missing".to_string()))?;
+        .or(license_template.docuseal_template_id);
 
     // 3. Create a draft record in Likelee
     let client_name = if !req.client_name.is_empty() {

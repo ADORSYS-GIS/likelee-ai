@@ -271,7 +271,7 @@ pub async fn create(
         "docuseal_template_id": payload.docuseal_template_id,
         "client_name": payload.client_name,
         "talent_name": payload.talent_name,
-        "start_date": payload.start_date.filter(|s| !s.is_empty()),
+        "start_date": payload.start_date,
         "contract_body": payload.contract_body,
         "contract_body_format": payload.contract_body_format,
     });
@@ -340,7 +340,7 @@ pub async fn update(
         "docuseal_template_id": payload.docuseal_template_id,
         "client_name": payload.client_name,
         "talent_name": payload.talent_name,
-        "start_date": payload.start_date.filter(|s| !s.is_empty()),
+        "start_date": payload.start_date,
         "contract_body": payload.contract_body,
         "contract_body_format": payload.contract_body_format,
         "updated_at": chrono::Utc::now().to_rfc3339(),

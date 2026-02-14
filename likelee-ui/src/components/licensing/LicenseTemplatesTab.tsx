@@ -351,18 +351,9 @@ export const LicenseTemplatesTab: React.FC = () => {
                           variant="outline"
                           className="bg-white text-xs"
                           onClick={() => {
-                            if (!template.docuseal_template_id) {
-                              toast({
-                                title: "Missing DocuSeal template",
-                                description:
-                                  "Open and save the template to generate its DocuSeal template.",
-                                variant: "destructive",
-                              });
-                              return;
-                            }
                             setBuilderTarget({
                               id: template.id,
-                              docuseal_template_id: template.docuseal_template_id,
+                              docuseal_template_id: template.docuseal_template_id as any,
                               template_name: template.template_name,
                             });
                             setBuilderMode("template");

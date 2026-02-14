@@ -74,9 +74,6 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
       category: "",
       contract_body_format: "markdown",
       contract_body: "",
-      client_name: "",
-      talent_name: "",
-      start_date: "",
       description: "",
       usage_scope: "",
       duration_days: 90,
@@ -107,9 +104,6 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
           docuseal_template_id: initialData.docuseal_template_id,
           contract_body: initialData.contract_body,
           contract_body_format: (initialData.contract_body_format as any) || "markdown",
-          client_name: initialData.client_name || "",
-          talent_name: initialData.talent_name || "",
-          start_date: initialData.start_date || "",
         });
       } else {
         reset({
@@ -126,9 +120,6 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
           docuseal_template_id: undefined,
           contract_body: "",
           contract_body_format: "markdown",
-          client_name: "",
-          talent_name: "",
-          start_date: "",
         });
       }
     }
@@ -190,6 +181,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
 
           <div className="flex-1 overflow-y-auto p-8">
             <div className="max-w-3xl mx-auto space-y-8">
+
               {/* Template Identity */}
               <div className="p-8 bg-white rounded-3xl border border-slate-200/60 shadow-sm space-y-6">
                 <div className="flex items-center gap-3 mb-2">
