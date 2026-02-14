@@ -87,6 +87,17 @@ fn extract_text_from_html(input: &str) -> String {
     out
 }
 
+/// Replace placeholders like {client_name} with actual values
+fn replace_placeholders(text: &str, values: &std::collections::HashMap<String, String>) -> String {
+    use regex::Regex;
+    let re = Regex::new(r"\{(\w+)\}").unwrap();
+    
+    re.replace_all(text, |caps: &regex::Captures| {
+        let key = &caps[1];
+        values.get(key).cloned().unwrap_or_else(|| caps[0].to_string())
+    }).to_string()
+}
+
 fn wrap_text(text: &str, max_chars: usize) -> Vec<String> {
     let mut lines = Vec::new();
     for paragraph in text.split('\n') {
@@ -575,11 +586,8 @@ pub async fn create_builder_token(
             .unwrap_or_default()
     };
 
-    // 2. Fetch template from DB to get pre-fill values
-    let mut values = None;
-    let mut submitters = None;
+    // 2. Fetch template from DB to ensure DocuSeal template is up-to-date
     let target_email = state.docuseal_user_email.clone();
-
     let mut template_docuseal_id: Option<i32> = None;
 
     if !template_id.is_empty() {
@@ -613,9 +621,34 @@ pub async fn create_builder_token(
                 .unwrap_or_else(|| "markdown".to_string());
 
             if !contract_body.trim().is_empty() {
+                // Build replacement map from template data
+                let mut replacements = std::collections::HashMap::new();
+                replacements.insert("client_name".to_string(), license_template.client_name.clone().unwrap_or_default());
+                replacements.insert("talent_name".to_string(), license_template.talent_name.clone().unwrap_or_default());
+                replacements.insert("template_name".to_string(), license_template.template_name.clone());
+                replacements.insert("category".to_string(), license_template.category.clone());
+                replacements.insert("description".to_string(), license_template.description.clone().unwrap_or_default());
+                replacements.insert("usage_scope".to_string(), license_template.usage_scope.clone().unwrap_or_default());
+                replacements.insert("territory".to_string(), license_template.territory.clone());
+                replacements.insert("exclusivity".to_string(), license_template.exclusivity.clone());
+                replacements.insert("duration_days".to_string(), license_template.duration_days.to_string());
+                replacements.insert("modifications_allowed".to_string(), license_template.modifications_allowed.clone().unwrap_or_default());
+                replacements.insert("custom_terms".to_string(), license_template.custom_terms.clone().unwrap_or_default());
+                
+                // Format license fee
+                let fee_str = format!("${:.2}", license_template.license_fee.unwrap_or(0) as f64 / 100.0);
+                replacements.insert("license_fee".to_string(), fee_str);
+                
+                // Format start date
+                let start_date_str = license_template.start_date.clone().unwrap_or_else(|| "-".to_string());
+                replacements.insert("start_date".to_string(), start_date_str);
+                
+                // Perform placeholder replacement
+                let rendered_contract = replace_placeholders(&contract_body, &replacements);
+                
                 let document_base64 = render_template_to_pdf_data_uri(
                     &license_template.template_name,
-                    &contract_body,
+                    &rendered_contract,
                     &contract_body_format,
                 )?;
 
@@ -661,97 +694,6 @@ pub async fn create_builder_token(
                 };
                 template_docuseal_id = Some(ensured_id);
             }
-
-            let talent_names = license_template.talent_name.clone().unwrap_or_default();
-            let fee_str = format!(
-                "${:.2}",
-                license_template.license_fee.unwrap_or(0) as f64 / 100.0
-            );
-            let start_date = license_template
-                .start_date
-                .clone()
-                .and_then(|date| {
-                    chrono::NaiveDate::parse_from_str(&date, "%Y-%m-%d")
-                        .ok()
-                        .map(|parsed| parsed.format("%m/%d/%Y").to_string())
-                        .or(Some(date))
-                })
-                .unwrap_or_default();
-
-            let mut role_data = serde_json::Map::new();
-            role_data.insert(
-                "Client/Brand Name".to_string(),
-                json!(license_template.client_name.clone().unwrap_or_default()),
-            );
-            role_data.insert("Talent Name".to_string(), json!(talent_names));
-            role_data.insert("License Fee".to_string(), json!(fee_str));
-            role_data.insert("Category".to_string(), json!(license_template.category));
-            role_data.insert(
-                "Description".to_string(),
-                json!(license_template.description.clone().unwrap_or_default()),
-            );
-            role_data.insert(
-                "Usage Scope".to_string(),
-                json!(license_template.usage_scope.clone().unwrap_or_default()),
-            );
-            role_data.insert("Territory".to_string(), json!(license_template.territory));
-            role_data.insert(
-                "Exclusivity".to_string(),
-                json!(license_template.exclusivity),
-            );
-            role_data.insert(
-                "Duration".to_string(),
-                json!(license_template.duration_days),
-            );
-            role_data.insert("Start Date".to_string(), json!(start_date));
-            role_data.insert(
-                "Custom Terms".to_string(),
-                json!(license_template.custom_terms.clone().unwrap_or_default()),
-            );
-            role_data.insert(
-                "Modifications Allowed".to_string(),
-                json!(license_template.modifications_allowed.clone().unwrap_or_default()),
-            );
-            role_data.insert(
-                "Template Name".to_string(),
-                json!(license_template.template_name),
-            );
-
-            // Prepare submitters array for role pre-fill
-            let mut fields_list = Vec::new();
-            let mut values_map = serde_json::Map::new();
-
-            for (k, v) in role_data.iter() {
-                let val_str = if let Some(s) = v.as_str() {
-                    s.to_string()
-                } else {
-                    v.to_string()
-                };
-
-                // Add to fields array (standard builder prop)
-                fields_list.push(json!({
-                    "name": k,
-                    "default_value": val_str,
-                    "value": val_str
-                }));
-
-                // Add to values map (standard submission pre-fill)
-                values_map.insert(k.clone(), json!(val_str));
-            }
-
-            submitters = Some(json!([{
-                "email": target_email.clone(),
-                "role": "First Party",
-                "fields": fields_list,
-                "values": values_map
-            }]));
-
-            let mut final_values = serde_json::Map::new();
-            final_values.insert("First Party".to_string(), json!(role_data));
-            for (k, v) in role_data.iter() {
-                final_values.insert(k.clone(), v.clone());
-            }
-            values = Some(serde_json::Value::Object(final_values));
         }
     }
 
@@ -774,14 +716,13 @@ pub async fn create_builder_token(
             target_email.clone(),
             Some(docuseal_template_id),
             req.external_id,
-            values.clone(),
-            submitters,
+            None, // No values - we pre-fill in the PDF itself
+            None, // No submitters - we pre-fill in the PDF itself
         )
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     Ok(Json(json!({
         "token": token,
-        "values": values,
         "docuseal_user_email": state.docuseal_user_email.clone()
     })))
 }

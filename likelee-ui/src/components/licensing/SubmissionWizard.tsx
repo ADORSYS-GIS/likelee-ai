@@ -197,10 +197,20 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         setIsSyncing(true);
         const currentData = getValues();
         try {
-            // Finally update the template with the possibly edited contract_body from Step 2
+            // Update the template with the edited contract_body AND deal-specific metadata
+            // This ensures the backend has the correct values for placeholder replacement
             const updated = await updateLicenseTemplate(currentTemplate.id, {
                 ...currentTemplate,
                 contract_body: currentData.contract_body,
+                client_name: currentData.client_name,
+                talent_name: currentData.talent_name,
+                license_fee: Math.round(currentData.license_fee * 100),
+                duration_days: currentData.duration_days,
+                start_date: currentData.start_date,
+                territory: currentData.territory,
+                exclusivity: currentData.exclusivity,
+                modifications_allowed: currentData.modifications_allowed,
+                custom_terms: currentData.custom_terms,
             } as any);
             setCurrentTemplate(updated);
 
