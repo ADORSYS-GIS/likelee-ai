@@ -36,9 +36,7 @@ pub async fn list(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !status.is_success() {
-        let code =
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err(crate::errors::sanitize_db_error(code, text));
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
     }
 
     let v: serde_json::Value = serde_json::from_str(&text)
@@ -73,9 +71,7 @@ pub async fn create(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !status.is_success() {
-        let code =
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err(crate::errors::sanitize_db_error(code, text));
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
     }
 
     let created: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
@@ -169,7 +165,7 @@ pub async fn update(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err(crate::errors::sanitize_db_error(code, text));
+        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
     }
 
     let updated: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
@@ -216,7 +212,7 @@ pub async fn delete_campaign(
         let text = resp.text().await.unwrap_or_default();
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err(crate::errors::sanitize_db_error(code, text));
+        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
     }
 
     Ok(Json(json!({"deleted": true})))
