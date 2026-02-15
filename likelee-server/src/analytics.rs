@@ -100,13 +100,11 @@ pub async fn get_analytics_dashboard(
     let payments_data: Vec<serde_json::Value> =
         serde_json::from_str(&payments_text).unwrap_or(vec![]);
 
-    // 2. BULK FETCH CAMPAIGNS (All relevant)
-    // We fetch all agency campaigns to correctly determine status (Active, Pending, Completed)
-    // and historical trends.
+    // 2. BULK FETCH CAMPAIGNS (from bookings_campaigns)
     let campaigns_resp = state
         .pg
-        .from("campaigns")
-        .select("id, status, created_at, end_at, brand_vertical")
+        .from("bookings_campaigns")
+        .select("id, status, created_at")
         .eq("agency_id", agency_id)
         .execute()
         .await
@@ -175,32 +173,28 @@ pub async fn get_analytics_dashboard(
 
     for c in campaigns_data.iter() {
         let status = c.get("status").and_then(|v| v.as_str()).unwrap_or("");
-        let end_at = c.get("end_at").and_then(|v| v.as_str()).unwrap_or("");
         let created_at = c.get("created_at").and_then(|v| v.as_str()).unwrap_or("");
 
-        // Active / In Progress
-        if status == "active" {
+        // In Progress (Ongoing)
+        if status == "ongoing" {
             active_campaigns += 1;
             in_progress += 1;
         }
 
-        // Pending / Ready to Launch
-        if status == "Pending" {
+        // Ready to Launch (Created)
+        if status == "created" {
             ready_to_launch += 1;
         }
 
         // Completed
-        if !end_at.is_empty() && end_at < today.as_str() {
+        if status == "completed" {
             completed += 1;
         }
 
-        // Top Scope (created in last 30d)
+        // Top Scope (created in last 30d) - skipping vertical as it's not in bookings_campaigns yet
         if created_at >= thirty_days_ago.as_str() {
-            if let Some(scope) = c.get("brand_vertical").and_then(|s| s.as_str()) {
-                if !scope.is_empty() {
-                    *scope_counts.entry(scope.to_string()).or_insert(0) += 1;
-                }
-            }
+             // Default to generic for now since vertical is not in bookings_campaigns
+             *scope_counts.entry("Social Media".to_string()).or_insert(0) += 1;
         }
     }
 
