@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { format } from "date-fns";
 import {
   Building2,
   Calendar as CalendarIcon,
@@ -76,7 +77,7 @@ export const NewBookingModal = ({
     terms: "Net 30",
     industry: "",
   });
-  const [date, setDate] = useState("2026-01-12");
+  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [allDay, setAllDay] = useState(false);
   const [callTime, setCallTime] = useState("09:00");
   const [wrapTime, setWrapTime] = useState("17:00");
@@ -174,7 +175,7 @@ export const NewBookingModal = ({
       setBookingType(
         initialData.type || initialData.booking_type || "confirmed",
       );
-      setDate(initialData.date || "2026-01-12");
+      setDate(initialData.date || format(new Date(), "yyyy-MM-dd"));
       setNotes(initialData.notes || "");
 
       if (typeof initialData.all_day === "boolean") {
@@ -212,7 +213,7 @@ export const NewBookingModal = ({
       setSelectedTalents([]);
       setSelectedClient(null);
       setNotes("");
-      setDate("2026-01-12");
+      setDate(format(new Date(), "yyyy-MM-dd"));
       setSelectedCampaign(null);
     }
   }, [open, initialData, clients, talents, campaigns]);
@@ -302,6 +303,17 @@ export const NewBookingModal = ({
   // Shared submit routine for Save button and Preview -> Confirm
   const submitBookings = async () => {
     if (selectedTalents.length === 0 || !selectedClient || saving) return;
+
+    // Require campaign selection
+    if (!selectedCampaign) {
+      toast({
+        title: "Campaign Required",
+        description: "Please select a campaign before creating a booking.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+
     setSaving(true);
     try {
       for (let index = 0; index < selectedTalents.length; index++) {
@@ -340,7 +352,10 @@ export const NewBookingModal = ({
             status: row.status || payload.status,
             type: row.type || payload.booking_type,
             date: row.date || payload.date,
+            talent_id: row.talent_id || payload.talent_id,
             talent_name: row.talent_name || payload.talent_name,
+            client_id: row.client_id || payload.client_id,
+            client_name: row.client_name || payload.client_name,
           };
           onSave(normalized);
         }
@@ -723,7 +738,9 @@ export const NewBookingModal = ({
             </div>
 
             <div className="space-y-2">
-              <Label>Campaign</Label>
+              <Label>
+                Campaign <span className="text-red-500">*</span>
+              </Label>
               <div className="relative">
                 <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input

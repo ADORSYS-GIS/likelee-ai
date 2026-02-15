@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { format, addDays } from "date-fns";
 import { LicenseTemplatesTab } from "@/components/licensing/LicenseTemplatesTab";
 import { LicenseSubmissionsTab } from "@/components/licensing/LicenseSubmissionsTab";
 import { ActiveLicenseDetailsSheet } from "@/components/licensing/ActiveLicenseDetailsSheet";
@@ -5608,8 +5609,12 @@ const GenerateInvoiceView = () => {
   const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [clients, setClients] = useState<any[]>([]);
   const [talents, setTalents] = useState<any[]>([]);
-  const [invoiceDate, setInvoiceDate] = useState("2026-01-13");
-  const [dueDate, setDueDate] = useState("2026-02-13");
+  const [invoiceDate, setInvoiceDate] = useState(
+    format(new Date(), "yyyy-MM-dd"),
+  );
+  const [dueDate, setDueDate] = useState(
+    format(addDays(new Date(), 30), "yyyy-MM-dd"),
+  );
   const [paymentTerms, setPaymentTerms] = useState("net_30");
   const [poNumber, setPoNumber] = useState("");
   const [projectReference, setProjectReference] = useState("");
@@ -18701,7 +18706,11 @@ export default function AgencyDashboard() {
     (async () => {
       try {
         const data = await listBookings();
-        setBookings(Array.isArray(data) ? data : []);
+        const normalized = (Array.isArray(data) ? data : []).map((b: any) => ({
+          ...b,
+          date: typeof b.date === "string" ? b.date.split("T")[0] : b.date,
+        }));
+        setBookings(normalized);
       } catch (e) {
         // noop for now
       }
@@ -18725,7 +18734,21 @@ export default function AgencyDashboard() {
       // If booking already has an id, it was created upstream (e.g., multipart with files).
       // Append directly to state to reflect immediately and avoid duplicate API call.
       if (booking && booking.id) {
-        setBookings([...bookings, booking]);
+        // Normalize the date to YYYY-MM-DD format
+        const normalizedBooking = {
+          ...booking,
+          date:
+            typeof booking.date === "string"
+              ? booking.date.includes("T")
+                ? booking.date.split("T")[0]
+                : booking.date.slice(0, 10)
+              : booking.date,
+        };
+        setBookings((prev) => {
+          const exists = prev.some((b) => b.id === normalizedBooking.id);
+          if (exists) return prev;
+          return [...prev, normalizedBooking];
+        });
         try {
           await notifyBookingCreatedEmail(booking.id);
           toast({ title: "Talent notified via email" });
@@ -18749,8 +18772,13 @@ export default function AgencyDashboard() {
         notes: booking.notes,
       };
       const created = await apiCreateBooking(payload);
+      if (!created || (Array.isArray(created) && created.length === 0)) {
+        throw new Error("Failed to create booking: empty response from server");
+      }
       const row = Array.isArray(created) ? created[0] : created;
-      setBookings([...bookings, row]);
+      if (row && row.id) {
+        setBookings((prev) => [...prev, row]);
+      }
       try {
         if (row?.id) {
           await notifyBookingCreatedEmail(row.id);
@@ -18786,17 +18814,19 @@ export default function AgencyDashboard() {
       };
       const updated = await apiUpdateBooking(id, payload);
       const row = Array.isArray(updated) ? updated[0] : updated;
-      setBookings(bookings.map((b) => (b.id === row.id ? row : b)));
+      setBookings((prev) => prev.map((b) => (b.id === row.id ? row : b)));
     } catch (e) {
-      setBookings(bookings.map((b) => (b.id === booking.id ? booking : b)));
+      setBookings((prev) =>
+        prev.map((b) => (b.id === booking.id ? booking : b)),
+      );
     }
   };
   const onCancelBooking = async (id: string) => {
     try {
       await apiCancelBooking(id);
-      setBookings(bookings.filter((b) => b.id !== id));
+      setBookings((prev) => prev.filter((b) => b.id !== id));
     } catch (e) {
-      setBookings(bookings.filter((b) => b.id !== id));
+      setBookings((prev) => prev.filter((b) => b.id !== id));
     }
   };
   const onAddBookOut = async (bookOut: any) => {

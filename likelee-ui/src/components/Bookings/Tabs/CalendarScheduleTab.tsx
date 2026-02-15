@@ -484,9 +484,16 @@ export const CalendarScheduleTab = ({
               const year = currentDate.getFullYear();
               const month = currentDate.getMonth() + 1;
               const dayString = `${year}-${month.toString().padStart(2, "0")}-${d.toString().padStart(2, "0")}`;
-              const dayBookings = visibleBookings.filter(
-                (b) => b.date === dayString,
-              );
+              const dayBookings = visibleBookings.filter((b) => {
+                // Normalize date to YYYY-MM-DD by taking first 10 chars or splitting on 'T'
+                let bDate = "";
+                if (typeof b.date === "string") {
+                  bDate = b.date.includes("T")
+                    ? b.date.split("T")[0]
+                    : b.date.slice(0, 10);
+                }
+                return bDate === dayString;
+              });
               const dayBookOutsCount = countBookOutsOnDate(dayString);
 
               const getEventColor = (type?: string, status?: string) => {
