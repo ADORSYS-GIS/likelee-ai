@@ -6,16 +6,20 @@ use crate::config::AppState;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PlanTier {
     Free,
-    Agency,
-    Scale,
+    Basic,
+    Pro,
     Enterprise,
 }
 
 impl PlanTier {
     pub fn from_db(value: &str) -> Self {
         match value.trim().to_lowercase().as_str() {
-            "agency" => PlanTier::Agency,
-            "scale" => PlanTier::Scale,
+            // New tiers
+            "basic" => PlanTier::Basic,
+            "pro" => PlanTier::Pro,
+            // Backward compatibility
+            "agency" => PlanTier::Basic,
+            "scale" => PlanTier::Pro,
             "enterprise" => PlanTier::Enterprise,
             _ => PlanTier::Free,
         }
@@ -44,7 +48,7 @@ pub async fn get_agency_plan_tier(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err(crate::errors::sanitize_db_error(code, text));
+        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
     }
 
     let rows: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
@@ -62,15 +66,15 @@ pub async fn get_agency_plan_tier(
 pub fn docuseal_template_limit(tier: PlanTier) -> Option<usize> {
     match tier {
         PlanTier::Free => Some(3),
-        PlanTier::Agency | PlanTier::Scale | PlanTier::Enterprise => None,
+        PlanTier::Basic | PlanTier::Pro | PlanTier::Enterprise => None,
     }
 }
 
 pub fn veriff_monthly_limit(tier: PlanTier) -> u32 {
     match tier {
         PlanTier::Free => 1,
-        PlanTier::Agency => 50,
-        PlanTier::Scale => 150,
+        PlanTier::Basic => 50,
+        PlanTier::Pro => 150,
         PlanTier::Enterprise => 150,
     }
 }
@@ -78,8 +82,8 @@ pub fn veriff_monthly_limit(tier: PlanTier) -> u32 {
 pub fn voice_clone_limit(tier: PlanTier) -> u32 {
     match tier {
         PlanTier::Free => 0,
-        PlanTier::Agency => 6,
-        PlanTier::Scale => 20,
+        PlanTier::Basic => 6,
+        PlanTier::Pro => 20,
         PlanTier::Enterprise => 20,
     }
 }

@@ -33,6 +33,11 @@ export const packageApi = {
     return base44Client.get(`/public/packages/${token}`, { headers });
   },
 
+  createPublicPackageFullAssetsRequest: (
+    token: string,
+    data: { client_name?: string; client_email?: string; message?: string },
+  ) => base44Client.post(`/public/packages/${token}/full-assets-request`, data),
+
   createInteraction: (token: string, data: any) =>
     base44Client.post(`/public/packages/${token}/interactions`, data),
 

@@ -130,7 +130,13 @@ export const getAgencyProfile = () => base44Client.get(`/agency-profile/user`);
 
 // Agency billing (Stripe subscriptions)
 export const createAgencySubscriptionCheckout = (data: {
-  tier: "agency" | "scale";
+  plan: "basic" | "pro" | "enterprise";
+  roster_models: number;
+  addons?: {
+    irl_booking?: boolean;
+    deepfake_protection_models?: number;
+    additional_team_members?: number;
+  };
 }) => base44Client.post(`/agency/billing/checkout`, data);
 
 export const updateBrandProfile = (data: any) =>
@@ -323,6 +329,26 @@ export const getStripeOAuthUrl = async (profileId: string) => {
 export const getAgencyStripeOnboardingLink = async () => {
   const resp = await base44Client.post(`/agency/payouts/onboarding_link`, {});
   return { data: { status: "ok", url: (resp as any)?.url } } as any;
+};
+
+// Agency Payout Balance and Requests
+export const getAgencyPayoutBalance = async () => {
+  const resp = await base44Client.get(`/api/agency/payouts/balance`);
+  return { data: resp } as any;
+};
+
+export const requestAgencyPayout = async (data: {
+  amount_cents: number;
+  currency?: string;
+  payout_method?: "standard" | "instant";
+}) => {
+  const resp = await base44Client.post(`/api/agency/payouts/request`, data);
+  return { data: resp } as any;
+};
+
+export const getAgencyPayoutHistory = async () => {
+  const resp = await base44Client.get(`/api/agency/payouts/history`);
+  return { data: resp } as any;
 };
 
 // Some flows may reference an OAuth code exchange; backend currently uses account links.

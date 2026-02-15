@@ -199,21 +199,27 @@ pub async fn moderate_image(
         "created_at": Utc::now().to_rfc3339(),
     });
     let body = serde_json::to_string(&payload).unwrap_or("{}".into());
-    match state
+    let pg_res = state
         .pg
         .from("moderation_events")
         .insert(body)
         .execute()
-        .await
-    {
-        Ok(_) => {}
-        Err(e) => {
-            let msg = e.to_string();
-            if msg.contains("relation") && msg.contains("does not exist") {
-                tracing::warn!(%msg, "moderation_events table missing; skipping persistence");
-            } else {
-                tracing::debug!(%msg, "moderation_events insert error");
+        .await;
+
+    match pg_res {
+        Ok(resp) => {
+            let status = resp.status();
+            if !status.is_success() {
+                let text = resp.text().await.unwrap_or_default();
+                if text.contains("relation") && text.contains("does not exist") {
+                    tracing::warn!(%text, "moderation_events table missing; skipping persistence");
+                } else {
+                    tracing::debug!(status = %status, text = %text, "moderation_events insert error");
+                }
             }
+        }
+        Err(e) => {
+            tracing::debug!(error = %e, "moderation_events database request failed");
         }
     }
 
