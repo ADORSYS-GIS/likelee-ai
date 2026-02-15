@@ -1,6 +1,7 @@
 use axum::http::StatusCode;
 use serde_json::json;
 
+// Option 2: Reverted to StatusCode to avoid changing unrelated files
 pub fn sanitize_db_error(status: StatusCode, text: String) -> (StatusCode, String) {
     // If it's a 4xx error that looks like a PostgREST error, try to extract a user-friendly message
     // but default to a generic one if it contains schema info.
