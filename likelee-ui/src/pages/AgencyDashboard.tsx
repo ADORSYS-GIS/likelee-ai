@@ -16544,26 +16544,7 @@ const RoyaltiesPayoutsView = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-4 relative z-10">
-                    <div className="flex justify-between items-end">
-                      <div className="space-y-1">
-                        <p className="text-sm font-bold text-gray-700">
-                          {currencyFormatter.format(group.min_monthly_earnings)}
-                          +{" "}
-                          <span className="text-gray-400 font-medium">
-                            monthly
-                          </span>
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-gray-700">
-                          {group.talents.length}{" "}
-                          <span className="text-gray-400 font-medium">
-                            Talent
-                          </span>
-                        </p>
-                      </div>
-                    </div>
+                  <div className="relative z-10">
                     <div className="w-full bg-white/50 h-3 rounded-full overflow-hidden border border-gray-100 shadow-inner">
                       <div
                         className={`h-full rounded-full transition-all duration-1000 ${group.name === "Premium" ? "bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.4)]" : group.name === "Core" ? "bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]" : group.name === "Growth" ? "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.4)]" : "bg-gray-400"}`}
