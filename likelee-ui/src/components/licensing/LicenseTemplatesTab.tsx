@@ -325,7 +325,7 @@ export const LicenseTemplatesTab: React.FC = () => {
                 onClick={openNewTemplateModal}
                 className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-10 px-6 rounded-xl shadow-lg shadow-indigo-100/50"
               >
-                <Plus className="mr-2 h-4 w-4" /> New Template
+                <Plus className="mr-2 h-4 w-4" /> New Contract Template
               </Button>
             </div>
           </div>
@@ -442,7 +442,7 @@ export const LicenseTemplatesTab: React.FC = () => {
                           setWizardTemplate(template);
                         }}
                       >
-                        Use Template
+                        Use Contract
                       </Button>
                     </div>
                   </CardContent>

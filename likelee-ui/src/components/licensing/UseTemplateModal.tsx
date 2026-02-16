@@ -52,7 +52,7 @@ export const UseTemplateModal: React.FC<UseTemplateModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Use Template: {template.template_name}</DialogTitle>
+          <DialogTitle>Use Contract: {template.template_name}</DialogTitle>
           <DialogDescription>
             Enter the client's information to create a new contract from this
             template.

@@ -63,6 +63,27 @@ const CATEGORIES = [
   "Custom",
 ];
 
+const CONTRACT_EXAMPLE_PLACEHOLDER = `LICENSE AGREEMENT
+
+This License Agreement ("Agreement") is made between {client_name} ("Licensee") and {talent_name} ("Licensor").
+
+1. GRANT OF RIGHTS:
+Licensor hereby grants to Licensee a {exclusivity} license to use the content for {usage_scope} purposes.
+
+2. TERM & TERRITORY:
+The license shall be valid for {duration_days} days starting from {start_date} within the territory of {territory}.
+
+3. COMPENSATION:
+Licensee shall pay a total license fee of {license_fee} as consideration for the rights granted herein.
+
+4. CUSTOM TERMS:
+{custom_terms}
+
+5. MODIFICATIONS:
+Modifications to the content are {modifications_allowed}.
+
+[Signed by {client_name}]`;
+
 export const TemplateModal: React.FC<TemplateModalProps> = ({
   isOpen,
   onClose,
@@ -168,7 +189,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                     ? "License Template Details"
                     : initialData
                       ? "Edit License Template"
-                      : "New License Template"}
+                      : "New Contract Template"}
                 </DialogTitle>
                 <p className="text-sm text-slate-500 font-medium tracking-tight">
                   {readOnly
@@ -414,7 +435,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                 onChangeBody={(val) => setValue("contract_body", val)}
                 onChangeFormat={(val) => setValue("contract_body_format", val)}
                 variables={AVAILABLE_CONTRACT_VARIABLES}
-                placeholder="Write your contract template here. Use {variable} placeholders that will be filled in when using this template..."
+                placeholder={CONTRACT_EXAMPLE_PLACEHOLDER}
                 readOnly={readOnly}
               />
             </div>
