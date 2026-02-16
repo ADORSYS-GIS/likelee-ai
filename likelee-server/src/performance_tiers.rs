@@ -210,8 +210,8 @@ pub async fn get_performance_tiers(
                 tier_name: t.tier_name,
                 tier_level: t.tier_level,
                 min_monthly_earnings: 0.0, // Will be set from config
-                min_monthly_bookings: 0, // Will be set from config
-                commission_rate: 0.0, // Will be set from config
+                min_monthly_bookings: 0,   // Will be set from config
+                commission_rate: 0.0,      // Will be set from config
                 description: t.description,
             }
         })
@@ -451,8 +451,8 @@ pub async fn update_talent_commission(
                 tier_name: t.tier_name,
                 tier_level: t.tier_level,
                 min_monthly_earnings: 0.0, // Will be set from config
-                min_monthly_bookings: 0, // Will be set from config
-                commission_rate: 0.0, // Will be set from config
+                min_monthly_bookings: 0,   // Will be set from config
+                commission_rate: 0.0,      // Will be set from config
                 description: t.description,
             }
         })
@@ -529,10 +529,7 @@ pub async fn update_talent_commission(
     if !update_resp.status().is_success() {
         return Err((
             StatusCode::INTERNAL_SERVER_ERROR,
-            format!(
-                "Failed to update commission rate: {}",
-                update_resp.status()
-            ),
+            format!("Failed to update commission rate: {}", update_resp.status()),
         ));
     }
 
@@ -553,7 +550,6 @@ pub async fn update_talent_commission(
         .await;
 
     Ok(StatusCode::OK)
-
 }
 
 pub async fn get_commission_history(
@@ -586,7 +582,11 @@ pub async fn get_commission_history(
                 .to_string();
 
             CommissionHistoryLog {
-                id: r.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                id: r
+                    .get("id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string(),
                 talent_name,
                 old_rate: r.get("old_rate").and_then(|v| v.as_f64()),
                 new_rate: r.get("new_rate").and_then(|v| v.as_f64()).unwrap_or(0.0),
@@ -599,7 +599,6 @@ pub async fn get_commission_history(
             }
         })
         .collect();
-
 
     Ok(Json(logs))
 }
@@ -632,46 +631,62 @@ pub async fn get_commission_breakdowns(
     let text = resp.text().await.unwrap_or_else(|_| "[]".to_string());
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
 
-    let breakdowns: Vec<CommissionBreakdown> = rows.into_iter().map(|row| {
-        let id = row.get("id").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-        let date = row.get("created_at").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-        
-        let gross_cents = row.get("gross_cents").and_then(|v| v.as_i64()).unwrap_or(0);
-        let talent_cents = row.get("talent_earnings_cents").and_then(|v| v.as_i64()).unwrap_or(0);
-        
-        let total_value = gross_cents as f64 / 100.0;
-        let talent_share = talent_cents as f64 / 100.0;
-        let agency_share = (gross_cents - talent_cents) as f64 / 100.0;
-        
-        let commission_percentage = if total_value > 0.0 {
-            (agency_share / total_value) * 100.0
-        } else {
-            0.0
-        };
+    let breakdowns: Vec<CommissionBreakdown> = rows
+        .into_iter()
+        .map(|row| {
+            let id = row
+                .get("id")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string();
+            let date = row
+                .get("created_at")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string();
 
-        let talent_name = row.get("agency_users")
-            .and_then(|v| v.get("full_legal_name"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("Unknown")
-            .to_string();
-            
-        let brand_name = row.get("brands")
-            .and_then(|v| v.get("name"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("Direct Project")
-            .to_string();
+            let gross_cents = row.get("gross_cents").and_then(|v| v.as_i64()).unwrap_or(0);
+            let talent_cents = row
+                .get("talent_earnings_cents")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(0);
 
-        CommissionBreakdown {
-            id,
-            talent_name,
-            brand_name,
-            date,
-            total_value,
-            talent_share,
-            agency_share,
-            commission_percentage,
-        }
-    }).collect();
+            let total_value = gross_cents as f64 / 100.0;
+            let talent_share = talent_cents as f64 / 100.0;
+            let agency_share = (gross_cents - talent_cents) as f64 / 100.0;
+
+            let commission_percentage = if total_value > 0.0 {
+                (agency_share / total_value) * 100.0
+            } else {
+                0.0
+            };
+
+            let talent_name = row
+                .get("agency_users")
+                .and_then(|v| v.get("full_legal_name"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("Unknown")
+                .to_string();
+
+            let brand_name = row
+                .get("brands")
+                .and_then(|v| v.get("name"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("Direct Project")
+                .to_string();
+
+            CommissionBreakdown {
+                id,
+                talent_name,
+                brand_name,
+                date,
+                total_value,
+                talent_share,
+                agency_share,
+                commission_percentage,
+            }
+        })
+        .collect();
 
     Ok(Json(breakdowns))
 }

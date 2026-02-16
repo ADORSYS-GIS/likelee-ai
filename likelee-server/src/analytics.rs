@@ -193,8 +193,8 @@ pub async fn get_analytics_dashboard(
 
         // Top Scope (created in last 30d) - skipping vertical as it's not in bookings_campaigns yet
         if created_at >= thirty_days_ago.as_str() {
-             // Default to generic for now since vertical is not in bookings_campaigns
-             *scope_counts.entry("Social Media".to_string()).or_insert(0) += 1;
+            // Default to generic for now since vertical is not in bookings_campaigns
+            *scope_counts.entry("Social Media".to_string()).or_insert(0) += 1;
         }
     }
 
