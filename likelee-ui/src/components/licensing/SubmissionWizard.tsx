@@ -24,6 +24,7 @@ import {
   createLicenseSubmissionDraft,
   finalizeLicenseSubmission,
 } from "@/api/licenseSubmissions";
+import { getAgencyTalents } from "@/api/functions";
 import { ContractEditor } from "./ContractEditor";
 import { DocuSealBuilderModal } from "./DocuSealBuilderModal";
 import { ArrowRight, ArrowLeft, Check, FileText, Layout } from "lucide-react";
@@ -83,6 +84,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
   const [draftId, setDraftId] = useState<string | null>(null);
   const [currentTemplate, setCurrentTemplate] =
     useState<LicenseTemplate>(template);
+  const [talents, setTalents] = useState<any[]>([]);
   const { toast } = useToast();
 
   const {
@@ -127,6 +129,15 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         contract_body: template.contract_body || "",
         client_email: "", // Reset for new field
       });
+
+      // Fetch agency talents
+      getAgencyTalents()
+        .then((res) => {
+          setTalents(res || []);
+        })
+        .catch((err) => {
+          console.error("Failed to fetch talents:", err);
+        });
     }
   }, [isOpen, template, reset]);
 
@@ -346,13 +357,12 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
               {[1, 2, 3].map((s) => (
                 <div key={s} className="flex-1 flex items-center gap-3">
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all ${
-                      step === s
-                        ? "bg-indigo-500 text-white shadow-lg shadow-indigo-200 scale-110"
-                        : step > s
-                          ? "bg-green-500 text-white"
-                          : "bg-slate-100 text-slate-400"
-                    }`}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all ${step === s
+                      ? "bg-indigo-500 text-white shadow-lg shadow-indigo-200 scale-110"
+                      : step > s
+                        ? "bg-green-500 text-white"
+                        : "bg-slate-100 text-slate-400"
+                      }`}
                   >
                     {step > s ? <Check className="w-4 h-4" /> : s}
                   </div>
@@ -396,11 +406,34 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                         <Label className="text-sm font-bold text-slate-800 ml-1">
                           Talent Name *
                         </Label>
-                        <Input
-                          {...register("talent_name", { required: true })}
-                          placeholder="e.g. Talent A"
-                          className="h-12 bg-slate-50 border-slate-200 rounded-xl font-medium focus:ring-4 focus:ring-indigo-50 transition-all"
-                        />
+                        <Select
+                          onValueChange={(id) => {
+                            const talent = talents.find((t) => t.id === id);
+                            if (talent) {
+                              setValue("talent_name", talent.full_name || "");
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-xl font-medium focus:ring-4 focus:ring-indigo-50 transition-all">
+                            <SelectValue placeholder={formData.talent_name || "Select talent"} />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-slate-200">
+                            {talents.map((t) => (
+                              <SelectItem
+                                key={t.id}
+                                value={t.id}
+                                className="font-medium rounded-lg"
+                              >
+                                {t.full_name || "Unknown Talent"}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors.talent_name && (
+                          <span className="text-red-500 text-xs font-bold px-1">
+                            Please select a talent
+                          </span>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label className="text-sm font-bold text-slate-800 ml-1">
@@ -528,7 +561,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                       (template.contract_body_format as any) || "markdown"
                     }
                     onChangeBody={(val) => setValue("contract_body", val)}
-                    onChangeFormat={() => {}} // Format locked in submission
+                    onChangeFormat={() => { }} // Format locked in submission
                     variables={AVAILABLE_CONTRACT_VARIABLES}
                     placeholder="The contract content will appear here..."
                   />

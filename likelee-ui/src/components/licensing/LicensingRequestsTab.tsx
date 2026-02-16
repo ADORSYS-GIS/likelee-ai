@@ -76,9 +76,9 @@ export const LicensingRequestsTab = () => {
   const formatMoney = (n: number) =>
     Number.isFinite(n)
       ? n.toLocaleString(undefined, {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
       : "--";
 
   const statusStyle = (status: string) => {
@@ -87,21 +87,14 @@ export const LicensingRequestsTab = () => {
     return "bg-gray-100 text-gray-700";
   };
 
-  const formatBudget = (min?: number | null, max?: number | null) => {
-    const minOk = typeof min === "number" && Number.isFinite(min);
-    const maxOk = typeof max === "number" && Number.isFinite(max);
-    const fmt = (n: number) =>
-      n.toLocaleString(undefined, {
-        style: "currency",
-        currency: "USD",
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      });
-
-    if (minOk && maxOk) return `${fmt(min!)} - ${fmt(max!)}`;
-    if (minOk) return fmt(min!);
-    if (maxOk) return fmt(max!);
-    return "—";
+  const formatLicenseFee = (fee?: number | null) => {
+    if (typeof fee !== "number" || !Number.isFinite(fee)) return "—";
+    return fee.toLocaleString(undefined, {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    });
   };
 
   const openPayModal = async (group: any) => {
@@ -327,10 +320,10 @@ export const LicensingRequestsTab = () => {
                 <div className="space-y-4">
                   <div>
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                      Budget Range
+                      License Fee
                     </p>
                     <p className="text-sm font-bold text-gray-900">
-                      {formatBudget(group.budget_min, group.budget_max)}
+                      {formatLicenseFee(group.license_fee)}
                     </p>
                   </div>
                   <div>

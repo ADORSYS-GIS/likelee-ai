@@ -1530,8 +1530,6 @@ pub async fn create_and_send(
             "status": "pending",
             "regions": license_template.territory.clone(),
             "payment_amount": license_fee_val.unwrap_or(0),
-            "budget_min": license_fee_val.unwrap_or(0) as f64 / 100.0,
-            "budget_max": license_fee_val.unwrap_or(0) as f64 / 100.0,
             "notes": license_template.template_name.clone(), // Use template name for description/notes
             "created_at": now.clone(),
         });
