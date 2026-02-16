@@ -436,6 +436,18 @@ pub fn build_router(state: AppState) -> Router {
             "/api/agency/dashboard/performance-tiers/configure",
             post(crate::performance_tiers::configure_performance_tiers),
         )
+        .route(
+            "/api/agency/dashboard/talent-commissions/update",
+            post(crate::performance_tiers::update_talent_commission),
+        )
+        .route(
+            "/api/agency/dashboard/talent-commissions/history",
+            get(crate::performance_tiers::get_commission_history),
+        )
+        .route(
+            "/api/agency/analytics/commission-breakdowns",
+            get(crate::performance_tiers::get_commission_breakdowns),
+        )
         .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))
         .route("/api/email/available", get(crate::creators::check_email))
         .route("/api/profile", post(crate::creators::upsert_profile))
