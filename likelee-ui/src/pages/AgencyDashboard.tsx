@@ -16149,12 +16149,14 @@ const RoyaltiesPayoutsView = () => {
     const next: Record<string, number | ""> = {};
     for (const name of tierNames) {
       const cfgRate = tierConfig?.[name]?.commission_rate;
-      const fallbackTierRate = (tiersData?.tiers || []).find((t: any) => t.name === name)
-        ?.commission_rate;
+      const fallbackTierRate = (tiersData?.tiers || []).find(
+        (t: any) => t.name === name,
+      )?.commission_rate;
       const rate =
         typeof cfgRate === "number" && Number.isFinite(cfgRate)
           ? cfgRate
-          : typeof fallbackTierRate === "number" && Number.isFinite(fallbackTierRate)
+          : typeof fallbackTierRate === "number" &&
+              Number.isFinite(fallbackTierRate)
             ? fallbackTierRate
             : "";
       next[name] = rate;
@@ -16174,7 +16176,10 @@ const RoyaltiesPayoutsView = () => {
 
   const tierCommissionMutation = useMutation({
     mutationFn: async (payload: { config: any }) => {
-      await base44.post("/agency/dashboard/performance-tiers/configure", payload);
+      await base44.post(
+        "/agency/dashboard/performance-tiers/configure",
+        payload,
+      );
       return true;
     },
     onSuccess: () => {
@@ -16184,7 +16189,13 @@ const RoyaltiesPayoutsView = () => {
   });
 
   const talentCommissionMutation = useMutation({
-    mutationFn: async ({ talentId, rate }: { talentId: string; rate: number | null }) => {
+    mutationFn: async ({
+      talentId,
+      rate,
+    }: {
+      talentId: string;
+      rate: number | null;
+    }) => {
       await base44.post("/agency/dashboard/talent-commissions/update", {
         talent_id: talentId,
         custom_rate: rate,
@@ -16201,7 +16212,9 @@ const RoyaltiesPayoutsView = () => {
   const { data: breakdownData } = useQuery({
     queryKey: ["commission-breakdowns"],
     queryFn: async () => {
-      const resp = await base44.get<any>("/api/agency/analytics/commission-breakdowns");
+      const resp = await base44.get<any>(
+        "/api/agency/analytics/commission-breakdowns",
+      );
       return resp;
     },
     enabled: activeTab === "Commission Breakdown",
@@ -16211,7 +16224,9 @@ const RoyaltiesPayoutsView = () => {
   const { data: historyData } = useQuery({
     queryKey: ["commission-history"],
     queryFn: async () => {
-      const resp = await base44.get<any>("/agency/dashboard/talent-commissions/history");
+      const resp = await base44.get<any>(
+        "/agency/dashboard/talent-commissions/history",
+      );
       return resp;
     },
     enabled: showHistory,
@@ -16297,7 +16312,8 @@ const RoyaltiesPayoutsView = () => {
     if (lastSaved === draft) return;
 
     const rate = draft === "" ? null : Number(draft);
-    if (draft !== "" && (!Number.isFinite(rate) || rate < 0 || rate > 100)) return;
+    if (draft !== "" && (!Number.isFinite(rate) || rate < 0 || rate > 100))
+      return;
 
     setLastSavedTalentDraft((prev) => ({ ...(prev || {}), [talentId]: draft }));
     talentCommissionMutation.mutate({ talentId, rate });
@@ -16426,11 +16442,15 @@ const RoyaltiesPayoutsView = () => {
                   <Button
                     variant="default"
                     onClick={saveTierCommissionRates}
-                    disabled={!isTierCommissionDirty || tierCommissionMutation.isPending}
+                    disabled={
+                      !isTierCommissionDirty || tierCommissionMutation.isPending
+                    }
                     className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 px-6 text-sm rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-70"
                   >
                     <Save className="w-5 h-5" />
-                    {tierCommissionMutation.isPending ? "Saving..." : "Save Changes"}
+                    {tierCommissionMutation.isPending
+                      ? "Saving..."
+                      : "Save Changes"}
                   </Button>
                 </div>
               ) : (
@@ -16495,7 +16515,9 @@ const RoyaltiesPayoutsView = () => {
                               setTierCommissionDraft((prev) => ({
                                 ...(prev || {}),
                                 [group.name]:
-                                  e.target.value === "" ? "" : Number(e.target.value),
+                                  e.target.value === ""
+                                    ? ""
+                                    : Number(e.target.value),
                               }))
                             }
                             className="h-9 pr-6 text-right font-black bg-white border-2 rounded-xl"
@@ -16804,7 +16826,9 @@ const RoyaltiesPayoutsView = () => {
                                 min="0"
                                 max="100"
                                 step="1"
-                                value={talentCustomRateDrafts?.[talent.id] ?? ""}
+                                value={
+                                  talentCustomRateDrafts?.[talent.id] ?? ""
+                                }
                                 onChange={(e) =>
                                   setTalentCustomRateDrafts((prev) => ({
                                     ...(prev || {}),
@@ -16817,7 +16841,9 @@ const RoyaltiesPayoutsView = () => {
                                     (e.target as HTMLInputElement).blur();
                                   }
                                 }}
-                                placeholder={talent.is_custom_rate ? "" : "Default"}
+                                placeholder={
+                                  talent.is_custom_rate ? "" : "Default"
+                                }
                                 className="w-full h-10 bg-white border border-gray-200 rounded-lg pl-3 pr-8 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/30 transition-all"
                               />
                               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-gray-300">
