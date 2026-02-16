@@ -27,8 +27,20 @@ import {
 import { getAgencyTalents } from "@/api/functions";
 import { ContractEditor } from "./ContractEditor";
 import { DocuSealBuilderModal } from "./DocuSealBuilderModal";
-import { ArrowRight, ArrowLeft, Check, FileText, Layout } from "lucide-react";
+import { ArrowRight, ArrowLeft, Check, FileText, Layout, ChevronsUpDown, X } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface SubmissionWizardProps {
   isOpen: boolean;
@@ -406,29 +418,103 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                         <Label className="text-sm font-bold text-slate-800 ml-1">
                           Talent Name *
                         </Label>
-                        <Select
-                          onValueChange={(id) => {
-                            const talent = talents.find((t) => t.id === id);
-                            if (talent) {
-                              setValue("talent_name", talent.full_name || "");
-                            }
-                          }}
-                        >
-                          <SelectTrigger className="h-12 bg-slate-50 border-slate-200 rounded-xl font-medium focus:ring-4 focus:ring-indigo-50 transition-all">
-                            <SelectValue placeholder={formData.talent_name || "Select talent"} />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl border-slate-200">
-                            {talents.map((t) => (
-                              <SelectItem
-                                key={t.id}
-                                value={t.id}
-                                className="font-medium rounded-lg"
-                              >
-                                {t.full_name || "Unknown Talent"}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className="w-full h-auto min-h-[48px] justify-between bg-slate-50 border-slate-200 rounded-xl hover:bg-slate-100 transition-all font-medium py-2 px-3"
+                            >
+                              <div className="flex flex-wrap gap-1.5 items-center">
+                                {formData.talent_name ? (
+                                  formData.talent_name.split(", ").map((name) => (
+                                    <Badge
+                                      key={name}
+                                      variant="secondary"
+                                      className="bg-white text-indigo-600 border-indigo-100 rounded-lg px-2 py-0.5 flex items-center gap-1 group/badge"
+                                    >
+                                      {name}
+                                      <X
+                                        className="h-3 w-3 cursor-pointer hover:text-indigo-800"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          const selected = formData.talent_name
+                                            .split(", ")
+                                            .filter((n) => n !== name)
+                                            .join(", ");
+                                          setValue("talent_name", selected);
+                                        }}
+                                      />
+                                    </Badge>
+                                  ))
+                                ) : (
+                                  <span className="text-slate-400">Select talents...</span>
+                                )}
+                              </div>
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50 text-slate-500" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[400px] p-0 rounded-2xl border-slate-200 shadow-2xl overflow-hidden" align="start">
+                            <Command className="border-none">
+                              <CommandInput placeholder="Search talent..." className="border-none focus:ring-0 h-12" />
+                              <CommandList className="max-h-[300px]">
+                                <CommandEmpty className="py-6 text-center text-sm text-slate-500 font-medium">No talent found.</CommandEmpty>
+                                <CommandGroup>
+                                  {talents.map((t) => {
+                                    const isSelected = formData.talent_name
+                                      ? formData.talent_name.split(", ").includes(t.full_name)
+                                      : false;
+                                    return (
+                                      <CommandItem
+                                        key={t.id}
+                                        value={t.full_name}
+                                        onSelect={() => {
+                                          const currentNames = formData.talent_name
+                                            ? formData.talent_name.split(", ")
+                                            : [];
+                                          let updatedNames;
+                                          if (isSelected) {
+                                            updatedNames = currentNames.filter((n) => n !== t.full_name);
+                                          } else {
+                                            if (t.full_name) {
+                                              updatedNames = [...currentNames, t.full_name];
+                                            } else {
+                                              updatedNames = currentNames;
+                                            }
+                                          }
+                                          setValue("talent_name", updatedNames.join(", "));
+                                        }}
+                                        className="flex items-center gap-3 p-3 cursor-pointer hover:bg-slate-50 transition-colors rounded-lg m-1"
+                                      >
+                                        <div className="relative">
+                                          <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
+                                            <AvatarImage src={t.profile_photo_url} />
+                                            <AvatarFallback className="bg-indigo-50 text-indigo-600 font-bold text-xs uppercase">
+                                              {t.full_name?.substring(0, 2) || "UT"}
+                                            </AvatarFallback>
+                                          </Avatar>
+                                          {isSelected && (
+                                            <div className="absolute -top-1 -right-1 h-4 w-4 bg-indigo-500 rounded-full flex items-center justify-center border-2 border-white">
+                                              <Check className="h-2.5 w-2.5 text-white" />
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="flex flex-col">
+                                          <span className={cn("font-bold text-slate-900", isSelected && "text-indigo-600")}>
+                                            {t.full_name || "Unknown Talent"}
+                                          </span>
+                                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                                            Agency Talent
+                                          </span>
+                                        </div>
+                                      </CommandItem>
+                                    );
+                                  })}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                         {errors.talent_name && (
                           <span className="text-red-500 text-xs font-bold px-1">
                             Please select a talent
