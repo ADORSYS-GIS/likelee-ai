@@ -17150,11 +17150,11 @@ const RoyaltiesPayoutsView = () => {
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500 mb-12">
           <div className="mb-0">
             <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter mb-2">
-              License Deal Breakdowns
+              Recent License Deal Breakdowns
             </h3>
             <p className="text-sm font-medium text-gray-500 max-w-2xl">
-              Full split transparency for every transaction. View how value is
-              divided between your agency and talent roster.
+              Full transparency on how each license deal is split between talent
+              and agency.
             </p>
           </div>
 
