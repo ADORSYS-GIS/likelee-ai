@@ -16468,7 +16468,7 @@ const RoyaltiesPayoutsView = () => {
               {tiersData?.tiers.map((group: any) => (
                 <div
                   key={group.level}
-                  className={`p-8 rounded-2xl space-y-6 border-2 transition-all hover:shadow-xl group relative overflow-hidden ${
+                  className={`p-4 rounded-none space-y-3 border-2 transition-all hover:shadow-xl group relative overflow-hidden ${
                     group.name === "Premium"
                       ? "bg-[#FAF5FF] border-purple-200"
                       : group.name === "Core"
@@ -16488,18 +16488,8 @@ const RoyaltiesPayoutsView = () => {
                       <div
                         className={`w-3 h-3 rounded-full ${group.name === "Premium" ? "bg-purple-500" : group.name === "Core" ? "bg-blue-500" : group.name === "Growth" ? "bg-green-500" : "bg-gray-400"}`}
                       />
-                      <span
-                        className={`text-lg font-black uppercase tracking-tighter ${
-                          group.name === "Premium"
-                            ? "text-purple-900"
-                            : group.name === "Core"
-                              ? "text-blue-900"
-                              : group.name === "Growth"
-                                ? "text-green-900"
-                                : "text-gray-900"
-                        }`}
-                      >
-                        {group.name}
+                      <span className="text-lg font-black tracking-tight text-gray-900">
+                        {group.name} Tier
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -16520,24 +16510,14 @@ const RoyaltiesPayoutsView = () => {
                                     : Number(e.target.value),
                               }))
                             }
-                            className="h-9 pr-6 text-right font-black bg-white border-2 rounded-xl"
+                            className="h-9 pr-6 text-right font-black text-gray-900 bg-white border-2 rounded-xl [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:opacity-100 [&::-webkit-outer-spin-button]:opacity-100"
                           />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm font-black text-gray-500 pointer-events-none">
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm font-black text-gray-900 pointer-events-none">
                             %
                           </span>
                         </div>
                       ) : (
-                        <span
-                          className={`px-4 py-1.5 bg-white border-2 rounded-xl text-lg font-black ${
-                            group.name === "Premium"
-                              ? "text-purple-600 border-purple-100"
-                              : group.name === "Core"
-                                ? "text-blue-600 border-blue-100"
-                                : group.name === "Growth"
-                                  ? "text-green-600 border-green-100"
-                                  : "text-gray-600 border-gray-100"
-                          }`}
-                        >
+                        <span className="px-4 py-1.5 bg-white border-2 border-gray-200 rounded-xl text-lg font-black text-gray-900">
                           {group.commission_rate}%
                         </span>
                       )}
@@ -16545,7 +16525,7 @@ const RoyaltiesPayoutsView = () => {
                   </div>
 
                   <div className="relative z-10">
-                    <div className="w-full bg-white/50 h-3 rounded-full overflow-hidden border border-gray-100 shadow-inner">
+                    <div className="w-full bg-white/50 h-2 rounded-full overflow-hidden border border-gray-100 shadow-inner">
                       <div
                         className={`h-full rounded-full transition-all duration-1000 ${group.name === "Premium" ? "bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.4)]" : group.name === "Core" ? "bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]" : group.name === "Growth" ? "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.4)]" : "bg-gray-400"}`}
                         style={{
