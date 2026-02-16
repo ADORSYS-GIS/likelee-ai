@@ -16115,6 +16115,7 @@ const RoyaltiesPayoutsView = () => {
     "Payout Preferences",
     "Commission Breakdown",
     "Royalties & Payouts",
+    "Payment History",
   ];
 
   const queryClient = useQueryClient();
@@ -16230,6 +16231,17 @@ const RoyaltiesPayoutsView = () => {
       return resp;
     },
     enabled: showHistory,
+  });
+
+  const { data: paymentHistoryTopEarners } = useQuery({
+    queryKey: ["payment-history-top-earners"],
+    queryFn: async () => {
+      const resp = await base44.get<any>(
+        "/agency/dashboard/payment-history/top-earners",
+      );
+      return resp;
+    },
+    enabled: activeTab === "Payment History",
   });
 
   const allTalents = tiersData?.tiers.flatMap((t: any) => t.talents) || [];
@@ -16914,7 +16926,11 @@ const RoyaltiesPayoutsView = () => {
               </p>
             </Card>
           </div>
+        </div>
+      )}
 
+      {activeTab === "Payment History" && (
+        <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
           <Card className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
             <div className="p-8 border-b border-gray-100">
               <h3 className="text-lg font-bold text-gray-900">
@@ -16922,46 +16938,39 @@ const RoyaltiesPayoutsView = () => {
               </h3>
             </div>
             <div>
-              {topEarners.length > 0 ? (
-                topEarners.map((talent, i) => (
+              {paymentHistoryTopEarners &&
+              paymentHistoryTopEarners.length > 0 ? (
+                paymentHistoryTopEarners.map((row: any) => (
                   <div
-                    key={talent.id}
+                    key={row.id}
                     className="flex items-center justify-between p-6 border-b border-gray-100 last:border-0 hover:bg-gray-50/50 transition-colors"
                   >
                     <div className="flex items-center gap-4">
                       <img
-                        src={talent.photo_url || ""}
-                        alt={talent.name}
+                        src={row.photo_url || ""}
+                        alt={row.name}
                         className="w-10 h-10 rounded-full object-cover border border-gray-200 bg-gray-50"
                       />
                       <div>
                         <h4 className="text-sm font-bold text-gray-900">
-                          {talent.name}
+                          {row.name}
                         </h4>
                         <p className="text-xs text-gray-500 font-medium">
-                          {talent.bookings_this_month} campaigns this month
+                          {row.campaigns_count || 0} campaigns
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
                       <h4 className="text-base font-bold text-gray-900">
-                        {currencyFormatter.format(talent.earnings_30d)}
+                        {row.total_gross_formatted}
                       </h4>
-                      <p className="text-[10px] font-black text-gray-500 uppercase tracking-tight">
+                      <p className="text-[10px] font-black uppercase tracking-tight">
                         <span className="text-green-600">
-                          Est. Talent Share:{" "}
-                          {currencyFormatter.format(
-                            talent.earnings_30d *
-                              (1 - talent.commission_rate / 100),
-                          )}
+                          Talent: {row.talent_formatted}
                         </span>{" "}
                         •{" "}
                         <span className="text-indigo-600">
-                          Agency:{" "}
-                          {currencyFormatter.format(
-                            talent.earnings_30d *
-                              (talent.commission_rate / 100),
-                          )}
+                          Agency: {row.agency_formatted}
                         </span>
                       </p>
                     </div>
@@ -16970,10 +16979,10 @@ const RoyaltiesPayoutsView = () => {
               ) : (
                 <div className="p-20 text-center bg-gray-50 flex flex-col items-center">
                   <div className="p-4 bg-white rounded-full mb-4 shadow-sm border border-gray-100">
-                    <TrendingUp className="w-8 h-8 text-gray-100" />
+                    <Receipt className="w-8 h-8 text-gray-100" />
                   </div>
                   <p className="text-gray-400 font-bold">
-                    No earning data available yet.
+                    No successful payments found in the last 30 days.
                   </p>
                 </div>
               )}
@@ -17149,7 +17158,7 @@ const RoyaltiesPayoutsView = () => {
       {activeTab === "Commission Breakdown" && (
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500 mb-12">
           <div className="mb-0">
-            <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter mb-2">
+            <h3 className="text-2xl font-black text-gray-900 tracking-tighter mb-2">
               Recent License Deal Breakdowns
             </h3>
             <p className="text-sm font-medium text-gray-500 max-w-2xl">

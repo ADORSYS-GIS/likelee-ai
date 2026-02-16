@@ -68,6 +68,147 @@ pub struct ActiveTalent {
 }
 
 #[derive(Debug, Serialize)]
+pub struct PaymentHistoryTopEarner {
+    pub id: String,
+    pub name: String,
+    pub photo_url: Option<String>,
+    pub campaigns_count: usize,
+    pub total_gross_cents: i64,
+    pub total_gross_formatted: String,
+    pub talent_cents: i64,
+    pub talent_formatted: String,
+    pub agency_cents: i64,
+    pub agency_formatted: String,
+}
+
+pub async fn get_payment_history_top_earners(
+    State(state): State<AppState>,
+    auth_user: AuthUser,
+) -> Result<Json<Vec<PaymentHistoryTopEarner>>, (StatusCode, String)> {
+    let agency_id = &auth_user.id;
+    let now = chrono::Utc::now();
+    let thirty_days_ago = (now - chrono::Duration::days(30)).to_rfc3339();
+    let paid_at_or_created_at = format!(
+        "paid_at.gte.{},and(paid_at.is.null,created_at.gte.{})",
+        thirty_days_ago, thirty_days_ago
+    );
+
+    let resp = state
+        .pg
+        .from("payments")
+        .select("talent_id,gross_cents,talent_earnings_cents,campaign_id,created_at,paid_at,agency_users(stage_name, full_legal_name, profile_photo_url)")
+        .eq("agency_id", agency_id)
+        .eq("status", "succeeded")
+        .or(paid_at_or_created_at)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        let err = resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+
+    let text = resp.text().await.unwrap_or_else(|_| "[]".to_string());
+    let data: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
+    let empty_vec = vec![];
+    let items = data.as_array().unwrap_or(&empty_vec);
+
+    #[derive(Default)]
+    struct Agg {
+        name: String,
+        photo_url: Option<String>,
+        gross_cents: i64,
+        talent_cents: i64,
+        campaign_ids: HashSet<String>,
+    }
+
+    let empty_obj = json!({});
+    let mut by_talent: HashMap<String, Agg> = HashMap::new();
+
+    for item in items {
+        let talent_id = match item.get("talent_id").and_then(|v| v.as_str()) {
+            Some(v) if !v.trim().is_empty() => v.to_string(),
+            _ => continue,
+        };
+
+        let gross = item
+            .get("gross_cents")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+        let talent = item
+            .get("talent_earnings_cents")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+
+        let user = item.get("agency_users").unwrap_or(&empty_obj);
+        let stage_name = user
+            .get("stage_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let legal_name = user
+            .get("full_legal_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Unknown")
+            .to_string();
+        let name = if !stage_name.trim().is_empty() {
+            stage_name
+        } else {
+            legal_name
+        };
+        let photo = user
+            .get("profile_photo_url")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+
+        let entry = by_talent.entry(talent_id).or_insert_with(Agg::default);
+        if entry.name.trim().is_empty() {
+            entry.name = name;
+        }
+        if entry.photo_url.is_none() {
+            entry.photo_url = photo;
+        }
+        entry.gross_cents += gross;
+        entry.talent_cents += talent;
+
+        if let Some(cid) = item.get("campaign_id").and_then(|v| v.as_str()) {
+            if !cid.trim().is_empty() {
+                entry.campaign_ids.insert(cid.to_string());
+            }
+        }
+    }
+
+    let mut rows: Vec<PaymentHistoryTopEarner> = by_talent
+        .into_iter()
+        .map(|(id, agg)| {
+            let agency_cents = agg.gross_cents - agg.talent_cents;
+            PaymentHistoryTopEarner {
+                id,
+                name: if agg.name.trim().is_empty() {
+                    "Unknown".to_string()
+                } else {
+                    agg.name
+                },
+                photo_url: agg.photo_url,
+                campaigns_count: agg.campaign_ids.len(),
+                total_gross_cents: agg.gross_cents,
+                total_gross_formatted: format!("${:.0}", agg.gross_cents as f64 / 100.0),
+                talent_cents: agg.talent_cents,
+                talent_formatted: format!("${:.0}", agg.talent_cents as f64 / 100.0),
+                agency_cents,
+                agency_formatted: format!("${:.0}", agency_cents as f64 / 100.0),
+            }
+        })
+        .collect();
+
+    rows.sort_by(|a, b| b.total_gross_cents.cmp(&a.total_gross_cents));
+    rows.truncate(10);
+
+    Ok(Json(rows))
+}
+
+#[derive(Debug, Serialize)]
 pub struct NewTalent {
     pub id: String,
     pub name: String,
