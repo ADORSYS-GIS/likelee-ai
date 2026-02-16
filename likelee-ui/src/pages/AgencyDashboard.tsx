@@ -16098,8 +16098,17 @@ const RoyaltiesPayoutsView = () => {
   const [selectedTier, setSelectedTier] = useState("All Tiers");
   const [showHistory, setShowHistory] = useState(false);
   const [isEditingTierCommission, setIsEditingTierCommission] = useState(false);
-  const [tierCommissionForm, setTierCommissionForm] = useState<
-    Record<string, { commission_rate: number | "" }>
+  const [tierCommissionDraft, setTierCommissionDraft] = useState<
+    Record<string, number | "">
+  >({});
+  const [initialTierCommissionDraft, setInitialTierCommissionDraft] = useState<
+    Record<string, number | "">
+  >({});
+  const [talentCustomRateDrafts, setTalentCustomRateDrafts] = useState<
+    Record<string, string>
+  >({});
+  const [lastSavedTalentDraft, setLastSavedTalentDraft] = useState<
+    Record<string, string>
   >({});
   const subTabs = [
     "Commission Structure",
@@ -16134,12 +16143,38 @@ const RoyaltiesPayoutsView = () => {
     { min_earnings?: number; min_bookings?: number; commission_rate?: number }
   >;
 
+  useEffect(() => {
+    if (isEditingTierCommission) return;
+    const tierNames = ["Premium", "Core", "Growth", "Inactive"];
+    const next: Record<string, number | ""> = {};
+    for (const name of tierNames) {
+      const cfgRate = tierConfig?.[name]?.commission_rate;
+      const fallbackTierRate = (tiersData?.tiers || []).find((t: any) => t.name === name)
+        ?.commission_rate;
+      const rate =
+        typeof cfgRate === "number" && Number.isFinite(cfgRate)
+          ? cfgRate
+          : typeof fallbackTierRate === "number" && Number.isFinite(fallbackTierRate)
+            ? fallbackTierRate
+            : "";
+      next[name] = rate;
+    }
+    setTierCommissionDraft(next);
+  }, [tiersData?.config, tiersData?.tiers, isEditingTierCommission]);
+
+  useEffect(() => {
+    const all = tiersData?.tiers?.flatMap((t: any) => t.talents) || [];
+    const next: Record<string, string> = {};
+    for (const t of all) {
+      next[t.id] = t.is_custom_rate ? String(t.commission_rate ?? "") : "";
+    }
+    setTalentCustomRateDrafts(next);
+    setLastSavedTalentDraft(next);
+  }, [tiersData?.tiers]);
+
   const tierCommissionMutation = useMutation({
     mutationFn: async (payload: { config: any }) => {
-      await base44.post(
-        "/agency/dashboard/performance-tiers/configure",
-        payload,
-      );
+      await base44.post("/agency/dashboard/performance-tiers/configure", payload);
       return true;
     },
     onSuccess: () => {
@@ -16148,13 +16183,25 @@ const RoyaltiesPayoutsView = () => {
     },
   });
 
+  const talentCommissionMutation = useMutation({
+    mutationFn: async ({ talentId, rate }: { talentId: string; rate: number | null }) => {
+      await base44.post("/agency/dashboard/talent-commissions/update", {
+        talent_id: talentId,
+        custom_rate: rate,
+      });
+      return true;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["performance-tiers"] });
+      queryClient.invalidateQueries({ queryKey: ["commission-history"] });
+    },
+  });
+
   // Fetch Commission Breakdown Data
   const { data: breakdownData } = useQuery({
     queryKey: ["commission-breakdowns"],
     queryFn: async () => {
-      const resp = await base44.get<any>(
-        "/api/agency/analytics/commission-breakdowns",
-      );
+      const resp = await base44.get<any>("/api/agency/analytics/commission-breakdowns");
       return resp;
     },
     enabled: activeTab === "Commission Breakdown",
@@ -16164,9 +16211,7 @@ const RoyaltiesPayoutsView = () => {
   const { data: historyData } = useQuery({
     queryKey: ["commission-history"],
     queryFn: async () => {
-      const resp = await base44.get<any>(
-        "/agency/dashboard/talent-commissions/history",
-      );
+      const resp = await base44.get<any>("/agency/dashboard/talent-commissions/history");
       return resp;
     },
     enabled: showHistory,
@@ -16199,29 +16244,13 @@ const RoyaltiesPayoutsView = () => {
     return sum / total;
   })();
 
-  const openTierCommissionEditor = () => {
-    const tierNames = ["Premium", "Core", "Growth", "Inactive"];
-    const initial: Record<string, { commission_rate: number | "" }> = {};
-    for (const name of tierNames) {
-      const current = tierConfig?.[name]?.commission_rate;
-      initial[name] = {
-        commission_rate:
-          typeof current === "number" && Number.isFinite(current)
-            ? current
-            : "",
-      };
-    }
-    setTierCommissionForm(initial);
-    setIsEditingTierCommission(true);
-  };
-
   const saveTierCommissionRates = () => {
     const tierNames = ["Premium", "Core", "Growth", "Inactive"];
     const merged: any = { ...tierConfig };
 
     for (const name of tierNames) {
       const existing = merged[name] || {};
-      const nextRateRaw = tierCommissionForm?.[name]?.commission_rate;
+      const nextRateRaw = tierCommissionDraft?.[name];
       const nextRate =
         nextRateRaw === "" || nextRateRaw === null || nextRateRaw === undefined
           ? undefined
@@ -16238,6 +16267,40 @@ const RoyaltiesPayoutsView = () => {
     }
 
     tierCommissionMutation.mutate({ config: merged });
+  };
+
+  const startEditingTierCommissions = () => {
+    setInitialTierCommissionDraft(tierCommissionDraft);
+    setIsEditingTierCommission(true);
+  };
+
+  const cancelEditingTierCommissions = () => {
+    setTierCommissionDraft(initialTierCommissionDraft);
+    setIsEditingTierCommission(false);
+  };
+
+  const isTierCommissionDirty = (() => {
+    const tierNames = ["Premium", "Core", "Growth", "Inactive"];
+    for (const name of tierNames) {
+      const draft = tierCommissionDraft?.[name];
+      const current = tierConfig?.[name]?.commission_rate;
+      if (draft === "" && (current === undefined || current === null)) continue;
+      if (draft === "" && typeof current === "number") return true;
+      if (typeof draft === "number" && draft !== current) return true;
+    }
+    return false;
+  })();
+
+  const commitTalentCustomRate = (talentId: string) => {
+    const draft = (talentCustomRateDrafts?.[talentId] ?? "").trim();
+    const lastSaved = lastSavedTalentDraft?.[talentId];
+    if (lastSaved === draft) return;
+
+    const rate = draft === "" ? null : Number(draft);
+    if (draft !== "" && (!Number.isFinite(rate) || rate < 0 || rate > 100)) return;
+
+    setLastSavedTalentDraft((prev) => ({ ...(prev || {}), [talentId]: draft }));
+    talentCommissionMutation.mutate({ talentId, rate });
   };
 
   return (
@@ -16350,14 +16413,36 @@ const RoyaltiesPayoutsView = () => {
                   as an incentive.
                 </p>
               </div>
-              <Button
-                variant="default"
-                onClick={openTierCommissionEditor}
-                className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 px-6 text-sm rounded-xl shadow-lg transition-all active:scale-95"
-              >
-                <Settings className="w-5 h-5" />
-                Edit
-              </Button>
+              {isEditingTierCommission ? (
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={cancelEditingTierCommissions}
+                    className="gap-2 font-bold h-11 px-6 text-sm rounded-xl"
+                  >
+                    <X className="w-5 h-5" />
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="default"
+                    onClick={saveTierCommissionRates}
+                    disabled={!isTierCommissionDirty || tierCommissionMutation.isPending}
+                    className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 px-6 text-sm rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-70"
+                  >
+                    <Save className="w-5 h-5" />
+                    {tierCommissionMutation.isPending ? "Saving..." : "Save Changes"}
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="default"
+                  onClick={startEditingTierCommissions}
+                  className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 px-6 text-sm rounded-xl shadow-lg transition-all active:scale-95"
+                >
+                  <Settings className="w-5 h-5" />
+                  Edit
+                </Button>
+              )}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {tiersData?.tiers.map((group: any) => (
@@ -16397,29 +16482,49 @@ const RoyaltiesPayoutsView = () => {
                         {group.name}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className={`px-4 py-1.5 bg-white border-2 rounded-xl text-lg font-black ${
-                          group.name === "Premium"
-                            ? "text-purple-600 border-purple-100"
-                            : group.name === "Core"
-                              ? "text-blue-600 border-blue-100"
-                              : group.name === "Growth"
-                                ? "text-green-600 border-green-100"
-                                : "text-gray-600 border-gray-100"
-                        }`}
-                      >
-                        {group.commission_rate}%
-                      </span>
+                    <div className="flex items-center gap-2">
+                      {isEditingTierCommission ? (
+                        <div className="relative w-20">
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="1"
+                            value={tierCommissionDraft?.[group.name] ?? ""}
+                            onChange={(e) =>
+                              setTierCommissionDraft((prev) => ({
+                                ...(prev || {}),
+                                [group.name]:
+                                  e.target.value === "" ? "" : Number(e.target.value),
+                              }))
+                            }
+                            className="h-9 pr-6 text-right font-black bg-white border-2 rounded-xl"
+                          />
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm font-black text-gray-500 pointer-events-none">
+                            %
+                          </span>
+                        </div>
+                      ) : (
+                        <span
+                          className={`px-4 py-1.5 bg-white border-2 rounded-xl text-lg font-black ${
+                            group.name === "Premium"
+                              ? "text-purple-600 border-purple-100"
+                              : group.name === "Core"
+                                ? "text-blue-600 border-blue-100"
+                                : group.name === "Growth"
+                                  ? "text-green-600 border-green-100"
+                                  : "text-gray-600 border-gray-100"
+                          }`}
+                        >
+                          {group.commission_rate}%
+                        </span>
+                      )}
                     </div>
                   </div>
 
                   <div className="space-y-4 relative z-10">
                     <div className="flex justify-between items-end">
                       <div className="space-y-1">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
-                          Requirement
-                        </p>
                         <p className="text-sm font-bold text-gray-700">
                           {currencyFormatter.format(group.min_monthly_earnings)}
                           +{" "}
@@ -16429,9 +16534,6 @@ const RoyaltiesPayoutsView = () => {
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">
-                          Population
-                        </p>
                         <p className="text-sm font-bold text-gray-700">
                           {group.talents.length}{" "}
                           <span className="text-gray-400 font-medium">
@@ -16453,77 +16555,6 @@ const RoyaltiesPayoutsView = () => {
               ))}
             </div>
           </Card>
-
-          <Dialog
-            open={isEditingTierCommission}
-            onOpenChange={setIsEditingTierCommission}
-          >
-            <DialogContent className="sm:max-w-[620px]">
-              <DialogHeader>
-                <DialogTitle className="text-lg font-bold">
-                  Edit Tier Commission Rates
-                </DialogTitle>
-                <DialogDescription>
-                  Set the commission percentage for each performance tier.
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-4">
-                {["Premium", "Core", "Growth", "Inactive"].map((tier) => (
-                  <div
-                    key={tier}
-                    className="flex items-center justify-between gap-4"
-                  >
-                    <Label className="text-sm font-bold text-gray-700">
-                      {tier}
-                    </Label>
-                    <div className="relative w-40">
-                      <Input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={
-                          tierCommissionForm?.[tier]?.commission_rate ?? ""
-                        }
-                        onChange={(e) =>
-                          setTierCommissionForm((prev) => ({
-                            ...(prev || {}),
-                            [tier]: {
-                              commission_rate:
-                                e.target.value === ""
-                                  ? ""
-                                  : Number(e.target.value),
-                            },
-                          }))
-                        }
-                        className="h-11 pr-8"
-                      />
-                      <span className="absolute right-3 top-2.5 text-gray-500 font-bold text-sm pointer-events-none">
-                        %
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsEditingTierCommission(false)}
-                  className="font-bold"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={saveTierCommissionRates}
-                  disabled={tierCommissionMutation.isPending}
-                  className="bg-indigo-600 hover:bg-indigo-700 font-bold"
-                >
-                  {tierCommissionMutation.isPending ? "Saving..." : "Save"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
 
           <Card className="bg-white border border-gray-900 shadow-sm overflow-hidden rounded-xl">
             <div className="p-10 border-b border-gray-100 flex justify-between items-center">
@@ -16769,10 +16800,25 @@ const RoyaltiesPayoutsView = () => {
                           <td className="px-8 py-5">
                             <div className="relative w-24">
                               <input
-                                type="text"
-                                readOnly
-                                value={talent.commission_rate}
-                                className="w-full h-10 bg-gray-50/50 border border-gray-100 rounded-lg pl-3 pr-8 text-sm font-bold text-gray-400 focus:outline-none focus:bg-white focus:border-indigo-500/30 transition-all"
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="1"
+                                value={talentCustomRateDrafts?.[talent.id] ?? ""}
+                                onChange={(e) =>
+                                  setTalentCustomRateDrafts((prev) => ({
+                                    ...(prev || {}),
+                                    [talent.id]: e.target.value,
+                                  }))
+                                }
+                                onBlur={() => commitTalentCustomRate(talent.id)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    (e.target as HTMLInputElement).blur();
+                                  }
+                                }}
+                                placeholder={talent.is_custom_rate ? "" : "Default"}
+                                className="w-full h-10 bg-white border border-gray-200 rounded-lg pl-3 pr-8 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/30 transition-all"
                               />
                               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-gray-300">
                                 %
@@ -16786,11 +16832,7 @@ const RoyaltiesPayoutsView = () => {
                                 : "Using Tier Default"}
                             </span>
                           </td>
-                          <td className="px-8 py-5 text-right opacity-0 group-hover:opacity-100 transition-opacity">
-                            <span className="text-[10px] font-bold text-gray-400 uppercase italic">
-                              Edit in Talent Settings
-                            </span>
-                          </td>
+                          <td className="px-8 py-5 text-right"></td>
                         </tr>
                       ))}
                     </tbody>
