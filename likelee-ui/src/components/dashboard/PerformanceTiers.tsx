@@ -31,7 +31,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { format } from "date-fns";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -175,13 +181,12 @@ export const PerformanceTiers: React.FC = () => {
   const queryClient = useQueryClient();
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [selectedTalentIdForHistory, setSelectedTalentIdForHistory] = useState<string | null>(null);
+  const [selectedTalentIdForHistory, setSelectedTalentIdForHistory] = useState<
+    string | null
+  >(null);
 
   const [configForm, setConfigForm] = useState<
-    Record<
-      string,
-      { min_earnings: number; min_bookings: number }
-    >
+    Record<string, { min_earnings: number; min_bookings: number }>
   >({});
 
   const { data, isLoading, error } = useQuery<PerformanceTiersResponse>({
@@ -208,7 +213,10 @@ export const PerformanceTiers: React.FC = () => {
 
   useEffect(() => {
     if (data?.config) {
-      const next: Record<string, { min_earnings: number; min_bookings: number }> = {};
+      const next: Record<
+        string,
+        { min_earnings: number; min_bookings: number }
+      > = {};
       for (const tier of ["Premium", "Core", "Growth"]) {
         next[tier] = {
           min_earnings: data.config?.[tier]?.min_earnings ?? 0,
@@ -237,7 +245,13 @@ export const PerformanceTiers: React.FC = () => {
   });
 
   const updateCommissionMutation = useMutation({
-    mutationFn: async ({ talentId, rate }: { talentId: string; rate: number | null }) => {
+    mutationFn: async ({
+      talentId,
+      rate,
+    }: {
+      talentId: string;
+      rate: number | null;
+    }) => {
       await base44.post("/agency/dashboard/talent-commissions/update", {
         talent_id: talentId,
         custom_rate: rate,
@@ -258,7 +272,7 @@ export const PerformanceTiers: React.FC = () => {
     queryKey: ["commission-history"],
     queryFn: async () => {
       const resp = await base44.get<CommissionHistoryLog[]>(
-        "/agency/dashboard/talent-commissions/history"
+        "/agency/dashboard/talent-commissions/history",
       );
       return resp;
     },
@@ -273,9 +287,11 @@ export const PerformanceTiers: React.FC = () => {
     if (!historyData) return [];
     if (!selectedTalentIdForHistory) return historyData;
     if (selectedTalentIdForHistory) {
-      const talentName = allTalents.find(t => t.id === selectedTalentIdForHistory)?.name;
+      const talentName = allTalents.find(
+        (t) => t.id === selectedTalentIdForHistory,
+      )?.name;
       if (talentName) {
-        return historyData.filter(log => log.talent_name === talentName);
+        return historyData.filter((log) => log.talent_name === talentName);
       }
     }
     return historyData;
@@ -332,8 +348,10 @@ export const PerformanceTiers: React.FC = () => {
 
     for (const tier of ["Premium", "Core", "Growth"]) {
       merged[tier] = {
-        min_earnings: configForm?.[tier]?.min_earnings ?? existing?.[tier]?.min_earnings,
-        min_bookings: configForm?.[tier]?.min_bookings ?? existing?.[tier]?.min_bookings,
+        min_earnings:
+          configForm?.[tier]?.min_earnings ?? existing?.[tier]?.min_earnings,
+        min_bookings:
+          configForm?.[tier]?.min_bookings ?? existing?.[tier]?.min_bookings,
         commission_rate: existing?.[tier]?.commission_rate,
       };
     }
@@ -401,14 +419,14 @@ export const PerformanceTiers: React.FC = () => {
           const avgEarnings =
             group.talents.length > 0
               ? group.talents.reduce((acc, t) => acc + t.earnings_30d, 0) /
-              group.talents.length
+                group.talents.length
               : 0;
           const avgBookings =
             group.talents.length > 0
               ? group.talents.reduce(
-                (acc, t) => acc + t.bookings_this_month,
-                0,
-              ) / group.talents.length
+                  (acc, t) => acc + t.bookings_this_month,
+                  0,
+                ) / group.talents.length
               : 0;
           const percentOfRoster =
             totalTalents > 0
@@ -764,7 +782,9 @@ export const PerformanceTiers: React.FC = () => {
             }}
             className={cn(
               "flex items-center gap-2 border-gray-200 font-bold transition-colors rounded-xl h-10 shadow-sm",
-              isHistoryOpen ? "bg-gray-100 text-gray-900 border-gray-300" : "bg-white text-gray-700 hover:bg-gray-50"
+              isHistoryOpen
+                ? "bg-gray-100 text-gray-900 border-gray-300"
+                : "bg-white text-gray-700 hover:bg-gray-50",
             )}
           >
             {isHistoryOpen ? (
@@ -841,7 +861,8 @@ export const PerformanceTiers: React.FC = () => {
             <div className="p-8 pb-6 border-b border-gray-100 flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <History className="w-5 h-5 text-indigo-500" /> Commission History
+                  <History className="w-5 h-5 text-indigo-500" /> Commission
+                  History
                 </h3>
                 <p className="text-sm text-gray-500 font-medium">
                   Running log of all commission rate changes
@@ -849,7 +870,12 @@ export const PerformanceTiers: React.FC = () => {
                     allTalents.find((t) => t.id === selectedTalentIdForHistory)
                       ?.name && (
                       <span className="ml-2 px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-md text-xs font-bold">
-                        Filter: {allTalents.find((t) => t.id === selectedTalentIdForHistory)?.name}
+                        Filter:{" "}
+                        {
+                          allTalents.find(
+                            (t) => t.id === selectedTalentIdForHistory,
+                          )?.name
+                        }
                       </span>
                     )}
                 </p>
@@ -880,13 +906,18 @@ export const PerformanceTiers: React.FC = () => {
                             {log.talent_name}
                           </p>
                           <span className="text-xs text-gray-400 font-medium">
-                            {format(new Date(log.changed_at), "MMM d, yyyy h:mm a")}
+                            {format(
+                              new Date(log.changed_at),
+                              "MMM d, yyyy h:mm a",
+                            )}
                           </span>
                         </div>
                         <p className="text-[13px] text-gray-600">
                           Rate changed from{" "}
                           <span className="font-bold text-gray-900">
-                            {log.old_rate !== null ? `${log.old_rate}%` : "Tier Default"}
+                            {log.old_rate !== null
+                              ? `${log.old_rate}%`
+                              : "Tier Default"}
                           </span>{" "}
                           to{" "}
                           <span className="font-bold text-indigo-600">
@@ -938,11 +969,14 @@ const TalentCommissionRow: React.FC<{
 
   // Sync with prop updates
   useEffect(() => {
-    setCustomRate(talent.is_custom_rate ? talent.commission_rate.toString() : "");
+    setCustomRate(
+      talent.is_custom_rate ? talent.commission_rate.toString() : "",
+    );
   }, [talent.is_custom_rate, talent.commission_rate]);
 
   const hasChanged =
-    (talent.is_custom_rate && customRate !== talent.commission_rate.toString()) ||
+    (talent.is_custom_rate &&
+      customRate !== talent.commission_rate.toString()) ||
     (!talent.is_custom_rate && customRate !== "");
 
   const handleSave = () => {
@@ -973,9 +1007,7 @@ const TalentCommissionRow: React.FC<{
               {talent.name.substring(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <span className="font-bold text-gray-900 text-sm">
-            {talent.name}
-          </span>
+          <span className="font-bold text-gray-900 text-sm">{talent.name}</span>
         </div>
       </TableCell>
       <TableCell className="py-4">

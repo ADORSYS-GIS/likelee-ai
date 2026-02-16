@@ -167,8 +167,6 @@ import {
 import ClientCRMView from "@/components/crm/ClientCRMView";
 import * as crmApi from "@/api/crm";
 
-
-
 const STATUS_MAP: { [key: string]: string } = {
   new_lead: "New Lead",
   in_contact: "In Contact",
@@ -674,10 +672,11 @@ const ProspectModal = ({
                     selectedCategories.includes(cat) ? "default" : "secondary"
                   }
                   onClick={() => toggleCategory(cat)}
-                  className={`${selectedCategories.includes(cat)
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "bg-gray-100 hover:bg-gray-200 text-gray-900"
-                    } font-medium`}
+                  className={`${
+                    selectedCategories.includes(cat)
+                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                  } font-medium`}
                 >
                   {cat}
                 </Button>
@@ -1390,10 +1389,11 @@ const ProspectModalAlt = ({
                     selectedCategories.includes(cat) ? "default" : "secondary"
                   }
                   onClick={() => toggleCategory(cat)}
-                  className={`${selectedCategories.includes(cat)
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "bg-gray-100 hover:bg-gray-200 text-gray-900"
-                    } font-medium`}
+                  className={`${
+                    selectedCategories.includes(cat)
+                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                  } font-medium`}
                 >
                   {cat}
                 </Button>
@@ -3660,9 +3660,9 @@ const PaymentTrackingView = () => {
     return invoiceRows.map((inv) => {
       const statusRaw = String(
         (inv as any)?.status ??
-        (inv as any)?.invoice_status ??
-        (inv as any)?.invoice?.status ??
-        "draft",
+          (inv as any)?.invoice_status ??
+          (inv as any)?.invoice?.status ??
+          "draft",
       );
       const dueDateStr = String((inv as any)?.due_date || "");
       const due = dueDateStr ? new Date(dueDateStr) : null;
@@ -4107,9 +4107,9 @@ const FinancialReportsView = () => {
     return invoiceRows.map((inv) => {
       const statusRaw = String(
         (inv as any)?.status ??
-        (inv as any)?.invoice_status ??
-        (inv as any)?.invoice?.status ??
-        "draft",
+          (inv as any)?.invoice_status ??
+          (inv as any)?.invoice?.status ??
+          "draft",
       );
       const dueDateStr = String((inv as any)?.due_date || "");
       const due = dueDateStr ? new Date(dueDateStr) : null;
@@ -4207,7 +4207,7 @@ const FinancialReportsView = () => {
         payablesTotals.set(
           "USD",
           (payablesTotals.get("USD") || 0) +
-          (Number((l as any)?.net_cents || 0) || 0),
+            (Number((l as any)?.net_cents || 0) || 0),
         );
       }
     }
@@ -4802,14 +4802,14 @@ const FinancialReportsView = () => {
       <thead><tr><th>Metric</th><th style="text-align:right;">Value</th></tr></thead>
       <tbody>
         ${tableRows([
-      ["Total Revenue", moneyTotals(summary.revenueTotals)],
-      ["Pending", moneyTotals(summary.pendingTotals)],
-      ["Outstanding Receivables", moneyTotals(summary.receivablesTotals)],
-      ["Expenses", moneyTotals(expensesTotals)],
-      ["Net Income", moneyTotals(netIncomeTotals)],
-      ["Commission", moneyTotals(summary.commissionTotals)],
-      ["Sales Tax", moneyTotals(taxTotals)],
-    ])}
+          ["Total Revenue", moneyTotals(summary.revenueTotals)],
+          ["Pending", moneyTotals(summary.pendingTotals)],
+          ["Outstanding Receivables", moneyTotals(summary.receivablesTotals)],
+          ["Expenses", moneyTotals(expensesTotals)],
+          ["Net Income", moneyTotals(netIncomeTotals)],
+          ["Commission", moneyTotals(summary.commissionTotals)],
+          ["Sales Tax", moneyTotals(taxTotals)],
+        ])}
       </tbody>
     </table>
 
@@ -4818,11 +4818,11 @@ const FinancialReportsView = () => {
       <thead><tr><th>Client</th><th style="text-align:right;">Revenue</th></tr></thead>
       <tbody>
         ${topClientsByRevenue
-        .map(
-          (c) =>
-            `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${c.clientName}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${moneyTotals(c.totals)}</td></tr>`,
-        )
-        .join("")}
+          .map(
+            (c) =>
+              `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${c.clientName}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${moneyTotals(c.totals)}</td></tr>`,
+          )
+          .join("")}
       </tbody>
     </table>
 
@@ -4831,11 +4831,11 @@ const FinancialReportsView = () => {
       <thead><tr><th>Talent</th><th style="text-align:right;">Gross</th></tr></thead>
       <tbody>
         ${topTalentByRevenue
-        .map(
-          (t) =>
-            `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${t.talentName}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${money(t.grossCents, "USD")}</td></tr>`,
-        )
-        .join("")}
+          .map(
+            (t) =>
+              `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${t.talentName}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${money(t.grossCents, "USD")}</td></tr>`,
+          )
+          .join("")}
       </tbody>
     </table>
 
@@ -4844,11 +4844,11 @@ const FinancialReportsView = () => {
       <thead><tr><th>Aging Bucket</th><th style="text-align:right;">Amount</th><th style="text-align:right;">Invoices</th></tr></thead>
       <tbody>
         ${receivables.bucketDefs
-        .map(
-          (b) =>
-            `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${b.label}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${moneyTotals(receivables.bucketTotals.get(b.key) || new Map())}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${receivables.bucketCounts.get(b.key) || 0}</td></tr>`,
-        )
-        .join("")}
+          .map(
+            (b) =>
+              `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${b.label}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${moneyTotals(receivables.bucketTotals.get(b.key) || new Map())}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${receivables.bucketCounts.get(b.key) || 0}</td></tr>`,
+          )
+          .join("")}
       </tbody>
     </table>
 
@@ -5029,10 +5029,11 @@ const FinancialReportsView = () => {
             <button
               key={tab.id}
               onClick={() => setActiveReportTab(tab.id)}
-              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${activeReportTab === tab.id
-                ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
-                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                }`}
+              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${
+                activeReportTab === tab.id
+                  ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+              }`}
             >
               {tab.label}
             </button>
@@ -6207,11 +6208,11 @@ const GenerateInvoiceView = () => {
                 (t) =>
                   String((t as any)?.id || "") === String(it.talent_id || ""),
               )?.name ||
-              talents.find(
-                (t) =>
-                  String((t as any)?.id || "") === String(it.talent_id || ""),
-              )?.full_name ||
-              "",
+                talents.find(
+                  (t) =>
+                    String((t as any)?.id || "") === String(it.talent_id || ""),
+                )?.full_name ||
+                "",
             ).trim();
             const date = String(it.date_of_service || "").trim();
             const rate = String(it.rate_type || "").trim();
@@ -6740,10 +6741,11 @@ const GenerateInvoiceView = () => {
             <div className="flex gap-3">
               <Button
                 variant={createFrom === "booking" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "booking"
-                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                  : "border-gray-200 text-gray-700"
-                  }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
+                  createFrom === "booking"
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "border-gray-200 text-gray-700"
+                }`}
                 onClick={() => setCreateFrom("booking")}
               >
                 <Calendar className="w-5 h-5" />
@@ -6751,10 +6753,11 @@ const GenerateInvoiceView = () => {
               </Button>
               <Button
                 variant={createFrom === "manual" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "manual"
-                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                  : "border-gray-200 text-gray-700"
-                  }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
+                  createFrom === "manual"
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "border-gray-200 text-gray-700"
+                }`}
                 onClick={() => setCreateFrom("manual")}
               >
                 <FileText className="w-5 h-5" />
@@ -7499,9 +7502,9 @@ const InvoiceManagementView = ({
       const invoiceId = String((inv as any)?.id || "");
       const statusRaw = String(
         (inv as any)?.status ??
-        (inv as any)?.invoice_status ??
-        (inv as any)?.invoice?.status ??
-        "draft",
+          (inv as any)?.invoice_status ??
+          (inv as any)?.invoice?.status ??
+          "draft",
       );
       const sentAt = (inv as any)?.sent_at ?? (inv as any)?.sentAt;
       const paidAt = (inv as any)?.paid_at ?? (inv as any)?.paidAt;
@@ -7680,10 +7683,11 @@ const InvoiceManagementView = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveSubTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${isActive
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "text-gray-700 hover:bg-gray-50"
-                  }`}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                  isActive
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
               >
                 <Icon className="w-4 h-4" />
                 {tab.label}
@@ -8111,11 +8115,11 @@ const InvoiceManagementView = ({
                       0,
                       (Number((selectedInvoice as any)?.amountCents || 0) ||
                         0) -
-                      ((selectedInvoice as any)?.paidAt
-                        ? Number(
-                          (selectedInvoice as any)?.amountCents || 0,
-                        ) || 0
-                        : 0),
+                        ((selectedInvoice as any)?.paidAt
+                          ? Number(
+                              (selectedInvoice as any)?.amountCents || 0,
+                            ) || 0
+                          : 0),
                     ),
                     String((selectedInvoice as any)?.currency || "USD"),
                   )}
@@ -8893,10 +8897,11 @@ const ScoutingHubView = ({
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab
-              ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
-              : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
-              }`}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+              activeTab === tab
+                ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+                : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
+            }`}
           >
             {tab}
           </button>
@@ -9125,8 +9130,8 @@ const ProspectDetailsSheet = ({
                       Send Offer
                     </Button>
                   ) : ["offer_sent", "opened", "signed", "declined"].includes(
-                    prospect.status,
-                  ) ? (
+                      prospect.status,
+                    ) ? (
                     <div className="flex items-center gap-3">
                       <Button
                         onClick={() =>
@@ -10011,18 +10016,19 @@ const OpenCallsTab = ({
               <div className="p-4">
                 <div className="flex justify-between items-start mb-3">
                   <Badge
-                    className={`rounded-md font-bold px-2 py-0.5 text-[10px] border shadow-sm ${String((event as any).status) === "published"
-                      ? "bg-green-50 text-green-700 border-green-100"
-                      : String((event as any).status) === "draft"
-                        ? "bg-gray-50 text-gray-600 border-gray-100"
-                        : String((event as any).status) === "scheduled"
-                          ? "bg-blue-50 text-blue-700 border-blue-100"
-                          : String((event as any).status) === "completed"
-                            ? "bg-indigo-50 text-indigo-700 border-indigo-100"
-                            : String((event as any).status) === "cancelled"
-                              ? "bg-red-50 text-red-700 border-red-100"
-                              : "bg-gray-50 text-gray-600 border-gray-100"
-                      }`}
+                    className={`rounded-md font-bold px-2 py-0.5 text-[10px] border shadow-sm ${
+                      String((event as any).status) === "published"
+                        ? "bg-green-50 text-green-700 border-green-100"
+                        : String((event as any).status) === "draft"
+                          ? "bg-gray-50 text-gray-600 border-gray-100"
+                          : String((event as any).status) === "scheduled"
+                            ? "bg-blue-50 text-blue-700 border-blue-100"
+                            : String((event as any).status) === "completed"
+                              ? "bg-indigo-50 text-indigo-700 border-indigo-100"
+                              : String((event as any).status) === "cancelled"
+                                ? "bg-red-50 text-red-700 border-red-100"
+                                : "bg-gray-50 text-gray-600 border-gray-100"
+                    }`}
                   >
                     {String((event as any).status || "").toUpperCase()}
                   </Badge>
@@ -11159,13 +11165,13 @@ export const RosterView = ({
                   statusFilter !== "All Status" ||
                   consentFilter !== "All Consent" ||
                   sortConfig) && (
-                    <button
-                      onClick={clearFilters}
-                      className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
-                    >
-                      <X className="w-4 h-4" /> Clear Filters
-                    </button>
-                  )}
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
+                  >
+                    <X className="w-4 h-4" /> Clear Filters
+                  </button>
+                )}
               </div>
             </div>
 
@@ -11284,15 +11290,16 @@ export const RosterView = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${talent.consent === "complete"
-                            ? "bg-green-50 text-green-600"
-                            : talent.consent === "missing"
-                              ? "bg-red-50 text-red-600"
-                              : "bg-orange-50 text-orange-600"
-                            }`}
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${
+                            talent.consent === "complete"
+                              ? "bg-green-50 text-green-600"
+                              : talent.consent === "missing"
+                                ? "bg-red-50 text-red-600"
+                                : "bg-orange-50 text-orange-600"
+                          }`}
                         >
                           {talent.consent === "complete" ||
-                            talent.consent === "active" ? (
+                          talent.consent === "active" ? (
                             <svg
                               className="w-3 h-3"
                               fill="none"
@@ -11524,9 +11531,9 @@ const LicensingRequestsView = () => {
   const formatMoney = (n: number) =>
     Number.isFinite(n)
       ? n.toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
       : "--";
 
   const statusStyle = (status: string) => {
@@ -12525,9 +12532,9 @@ const LicenseTemplatesView = () => {
     const updatedTemplates = templates.map((t) =>
       t.id === editingTemplate.id
         ? {
-          ...editingTemplate,
-          pricing: editingTemplate.pricingRange,
-        }
+            ...editingTemplate,
+            pricing: editingTemplate.pricingRange,
+          }
         : t,
     );
     setTemplates(updatedTemplates);
@@ -13339,10 +13346,11 @@ const ProtectionUsageView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === tab
-                ? "border-indigo-600 text-indigo-600"
-                : "border-transparent text-gray-500 hover:text-gray-900"
-                }`}
+              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${
+                activeTab === tab
+                  ? "border-indigo-600 text-indigo-600"
+                  : "border-transparent text-gray-500 hover:text-gray-900"
+              }`}
             >
               {tab}
             </button>
@@ -15513,7 +15521,7 @@ const ComplianceHubView = () => {
       title: "Action Required",
       description: message,
       action: (
-        <ToastAction altText="Try again" onClick={() => { }}>
+        <ToastAction altText="Try again" onClick={() => {}}>
           OK
         </ToastAction>
       ),
@@ -15676,10 +15684,11 @@ const ComplianceHubView = () => {
             <Button
               disabled={selectedTalentIds.length === 0}
               variant="outline"
-              className={`text-xs font-bold h-8 gap-2 ${selectedTalentIds.length === 0
-                ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
-                : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
-                }`}
+              className={`text-xs font-bold h-8 gap-2 ${
+                selectedTalentIds.length === 0
+                  ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
+                  : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
+              }`}
               onClick={handleSendRenewalRequests}
             >
               <RefreshCw
@@ -16078,8 +16087,6 @@ const ComplianceHubView = () => {
   );
 };
 
-
-
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
@@ -16087,7 +16094,6 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
 });
 
 const RoyaltiesPayoutsView = () => {
-
   const [activeTab, setActiveTab] = useState("Commission Structure");
   const [selectedTier, setSelectedTier] = useState("All Tiers");
   const [showHistory, setShowHistory] = useState(false);
@@ -16103,8 +16109,6 @@ const RoyaltiesPayoutsView = () => {
   ];
 
   const queryClient = useQueryClient();
-
-
 
   // Fetch Royalties & Payouts Overview
   const { data: royaltiesData } = useQuery({
@@ -16132,7 +16136,10 @@ const RoyaltiesPayoutsView = () => {
 
   const tierCommissionMutation = useMutation({
     mutationFn: async (payload: { config: any }) => {
-      await base44.post("/agency/dashboard/performance-tiers/configure", payload);
+      await base44.post(
+        "/agency/dashboard/performance-tiers/configure",
+        payload,
+      );
       return true;
     },
     onSuccess: () => {
@@ -16145,7 +16152,9 @@ const RoyaltiesPayoutsView = () => {
   const { data: breakdownData } = useQuery({
     queryKey: ["commission-breakdowns"],
     queryFn: async () => {
-      const resp = await base44.get<any>("/api/agency/analytics/commission-breakdowns");
+      const resp = await base44.get<any>(
+        "/api/agency/analytics/commission-breakdowns",
+      );
       return resp;
     },
     enabled: activeTab === "Commission Breakdown",
@@ -16155,7 +16164,9 @@ const RoyaltiesPayoutsView = () => {
   const { data: historyData } = useQuery({
     queryKey: ["commission-history"],
     queryFn: async () => {
-      const resp = await base44.get<any>("/agency/dashboard/talent-commissions/history");
+      const resp = await base44.get<any>(
+        "/agency/dashboard/talent-commissions/history",
+      );
       return resp;
     },
     enabled: showHistory,
@@ -16181,7 +16192,8 @@ const RoyaltiesPayoutsView = () => {
     const total = tiers.reduce((acc, t) => acc + (t.talents?.length || 0), 0);
     if (!total) return null;
     const sum = tiers.reduce(
-      (acc, t) => acc + (Number(t.commission_rate || 0) * (t.talents?.length || 0)),
+      (acc, t) =>
+        acc + Number(t.commission_rate || 0) * (t.talents?.length || 0),
       0,
     );
     return sum / total;
@@ -16194,7 +16206,9 @@ const RoyaltiesPayoutsView = () => {
       const current = tierConfig?.[name]?.commission_rate;
       initial[name] = {
         commission_rate:
-          typeof current === "number" && Number.isFinite(current) ? current : "",
+          typeof current === "number" && Number.isFinite(current)
+            ? current
+            : "",
       };
     }
     setTierCommissionForm(initial);
@@ -16311,10 +16325,11 @@ const RoyaltiesPayoutsView = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-              }`}
+            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
+              activeTab === tab
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+            }`}
           >
             {tab}
           </button>
@@ -16330,9 +16345,9 @@ const RoyaltiesPayoutsView = () => {
                   Commission by Performance Tier
                 </h3>
                 <p className="text-sm font-medium text-gray-500 max-w-2xl">
-                  Set different commission rates based on talent performance tier.
-                  Higher-performing talent can earn lower commission rates as an
-                  incentive.
+                  Set different commission rates based on talent performance
+                  tier. Higher-performing talent can earn lower commission rates
+                  as an incentive.
                 </p>
               </div>
               <Button
@@ -16348,44 +16363,51 @@ const RoyaltiesPayoutsView = () => {
               {tiersData?.tiers.map((group: any) => (
                 <div
                   key={group.level}
-                  className={`p-8 rounded-2xl space-y-6 border-2 transition-all hover:shadow-xl group relative overflow-hidden ${group.name === "Premium"
-                    ? "bg-[#FAF5FF] border-purple-200"
-                    : group.name === "Core"
-                      ? "bg-[#F0F9FF] border-blue-200"
-                      : group.name === "Growth"
-                        ? "bg-[#F0FDF4] border-green-200"
-                        : "bg-gray-50 border-gray-200"
-                    }`}
+                  className={`p-8 rounded-2xl space-y-6 border-2 transition-all hover:shadow-xl group relative overflow-hidden ${
+                    group.name === "Premium"
+                      ? "bg-[#FAF5FF] border-purple-200"
+                      : group.name === "Core"
+                        ? "bg-[#F0F9FF] border-blue-200"
+                        : group.name === "Growth"
+                          ? "bg-[#F0FDF4] border-green-200"
+                          : "bg-gray-50 border-gray-200"
+                  }`}
                 >
                   {/* Decorative background circle */}
-                  <div className={`absolute -right-10 -top-10 w-40 h-40 rounded-full opacity-5 ${group.name === "Premium" ? "bg-purple-600" : group.name === "Core" ? "bg-blue-600" : group.name === "Growth" ? "bg-green-600" : "bg-gray-600"}`} />
+                  <div
+                    className={`absolute -right-10 -top-10 w-40 h-40 rounded-full opacity-5 ${group.name === "Premium" ? "bg-purple-600" : group.name === "Core" ? "bg-blue-600" : group.name === "Growth" ? "bg-green-600" : "bg-gray-600"}`}
+                  />
 
                   <div className="flex justify-between items-center relative z-10">
                     <div className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full ${group.name === "Premium" ? "bg-purple-500" : group.name === "Core" ? "bg-blue-500" : group.name === "Growth" ? "bg-green-500" : "bg-gray-400"}`} />
+                      <div
+                        className={`w-3 h-3 rounded-full ${group.name === "Premium" ? "bg-purple-500" : group.name === "Core" ? "bg-blue-500" : group.name === "Growth" ? "bg-green-500" : "bg-gray-400"}`}
+                      />
                       <span
-                        className={`text-lg font-black uppercase tracking-tighter ${group.name === "Premium"
-                          ? "text-purple-900"
-                          : group.name === "Core"
-                            ? "text-blue-900"
-                            : group.name === "Growth"
-                              ? "text-green-900"
-                              : "text-gray-900"
-                          }`}
+                        className={`text-lg font-black uppercase tracking-tighter ${
+                          group.name === "Premium"
+                            ? "text-purple-900"
+                            : group.name === "Core"
+                              ? "text-blue-900"
+                              : group.name === "Growth"
+                                ? "text-green-900"
+                                : "text-gray-900"
+                        }`}
                       >
                         {group.name}
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <span
-                        className={`px-4 py-1.5 bg-white border-2 rounded-xl text-lg font-black ${group.name === "Premium"
-                          ? "text-purple-600 border-purple-100"
-                          : group.name === "Core"
-                            ? "text-blue-600 border-blue-100"
-                            : group.name === "Growth"
-                              ? "text-green-600 border-green-100"
-                              : "text-gray-600 border-gray-100"
-                          }`}
+                        className={`px-4 py-1.5 bg-white border-2 rounded-xl text-lg font-black ${
+                          group.name === "Premium"
+                            ? "text-purple-600 border-purple-100"
+                            : group.name === "Core"
+                              ? "text-blue-600 border-blue-100"
+                              : group.name === "Growth"
+                                ? "text-green-600 border-green-100"
+                                : "text-gray-600 border-gray-100"
+                        }`}
                       >
                         {group.commission_rate}%
                       </span>
@@ -16399,7 +16421,11 @@ const RoyaltiesPayoutsView = () => {
                           Requirement
                         </p>
                         <p className="text-sm font-bold text-gray-700">
-                          {currencyFormatter.format(group.min_monthly_earnings)}+ <span className="text-gray-400 font-medium">monthly</span>
+                          {currencyFormatter.format(group.min_monthly_earnings)}
+                          +{" "}
+                          <span className="text-gray-400 font-medium">
+                            monthly
+                          </span>
                         </p>
                       </div>
                       <div className="text-right">
@@ -16407,14 +16433,19 @@ const RoyaltiesPayoutsView = () => {
                           Population
                         </p>
                         <p className="text-sm font-bold text-gray-700">
-                          {group.talents.length} <span className="text-gray-400 font-medium">Talent</span>
+                          {group.talents.length}{" "}
+                          <span className="text-gray-400 font-medium">
+                            Talent
+                          </span>
                         </p>
                       </div>
                     </div>
                     <div className="w-full bg-white/50 h-3 rounded-full overflow-hidden border border-gray-100 shadow-inner">
                       <div
                         className={`h-full rounded-full transition-all duration-1000 ${group.name === "Premium" ? "bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.4)]" : group.name === "Core" ? "bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]" : group.name === "Growth" ? "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.4)]" : "bg-gray-400"}`}
-                        style={{ width: `${Math.min(100, (group.talents.length / 20) * 100)}%` }}
+                        style={{
+                          width: `${Math.min(100, (group.talents.length / 20) * 100)}%`,
+                        }}
                       />
                     </div>
                   </div>
@@ -16451,7 +16482,9 @@ const RoyaltiesPayoutsView = () => {
                         type="number"
                         min="0"
                         max="100"
-                        value={tierCommissionForm?.[tier]?.commission_rate ?? ""}
+                        value={
+                          tierCommissionForm?.[tier]?.commission_rate ?? ""
+                        }
                         onChange={(e) =>
                           setTierCommissionForm((prev) => ({
                             ...(prev || {}),
@@ -16509,241 +16542,262 @@ const RoyaltiesPayoutsView = () => {
                   className={`font-black uppercase tracking-tight text-[10px] gap-2 h-10 px-5 border-gray-200 shadow-sm transition-all ${showHistory ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-gray-600"}`}
                   onClick={() => setShowHistory(!showHistory)}
                 >
-                  <History className={`w-4 h-4 ${showHistory ? "text-white" : "text-gray-400"}`} />
+                  <History
+                    className={`w-4 h-4 ${showHistory ? "text-white" : "text-gray-400"}`}
+                  />
                   {showHistory ? "Hide History" : "View History"}
                 </Button>
               </div>
             </div>
 
-            {
-              showHistory ? (
-                <div className="p-10 bg-gray-50/50">
-                  <div className="bg-white border-2 border-gray-900 rounded-3xl shadow-xl overflow-hidden">
-                    <div className="p-6 border-b border-gray-100 bg-white flex justify-between items-center">
-                      <div className="flex items-center gap-4">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setShowHistory(false)}
-                          className="rounded-full hover:bg-gray-100 h-10 w-10"
-                        >
-                          <ArrowLeft className="w-5 h-5" />
-                        </Button>
-                        <div>
-                          <h4 className="text-base font-black text-gray-900 uppercase tracking-tight">
-                            Commission Changes History
-                          </h4>
-                          <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">
-                            Audit log for rate adjustments
-                          </p>
-                        </div>
-                      </div>
-                      <Badge variant="outline" className="border-gray-200 text-gray-500 font-bold px-3 py-1">
-                        {historyData?.length || 0} RECORDS
-                      </Badge>
-                    </div>
-                    <div className="divide-y divide-gray-100 font-sans max-h-[500px] overflow-y-auto">
-                      {historyData && historyData.length > 0 ? (
-                        historyData.map((item, i) => (
-                          <div
-                            key={item.id || i}
-                            className="flex items-center justify-between p-6 hover:bg-indigo-50/20 transition-all group"
-                          >
-                            <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-indigo-600 border border-gray-100 group-hover:border-indigo-100 group-hover:bg-white transition-all shadow-sm">
-                                <History className="w-5 h-5" />
-                              </div>
-                              <div>
-                                <p className="text-sm font-bold text-gray-900">
-                                  {item.talent_name || "Unknown Talent"}
-                                </p>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                  <span className="text-[10px] text-gray-400 font-medium">
-                                    {item.changed_at
-                                      ? format(new Date(item.changed_at), "MMM d, yyyy • HH:mm")
-                                      : "N/A"}
-                                  </span>
-                                  <span className="w-1 h-1 rounded-full bg-gray-200" />
-                                  <span className="text-[9px] font-black text-indigo-600 uppercase tracking-tighter">
-                                    ADMIN: {item.changed_by_name || "Agency Admin"}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-6">
-                              <div className="text-right">
-                                <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 opacity-60">
-                                  PREVIOUS
-                                </p>
-                                <span className="text-sm font-bold text-gray-300 line-through decoration-1">
-                                  {item.old_rate ? `${item.old_rate}%` : "0%"}
-                                </span>
-                              </div>
-                              <ArrowRight className="w-4 h-4 text-gray-200 group-hover:text-indigo-300 transition-colors" />
-                              <div className="text-right">
-                                <p className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">
-                                  NEW RATE
-                                </p>
-                                <span className="px-3 py-1 rounded-lg bg-indigo-600 text-white text-sm font-black shadow-md shadow-indigo-100 block">
-                                  {item.new_rate}%
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="p-24 text-center bg-white flex flex-col items-center">
-                          <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mb-6">
-                            <History className="w-8 h-8 text-indigo-200" />
-                          </div>
-                          <p className="text-base font-bold text-gray-900 mb-1">No history yet</p>
-                          <p className="text-xs text-gray-400">All commission adjustments will appear here.</p>
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-6 bg-gray-50/50 border-t border-gray-100 text-center">
+            {showHistory ? (
+              <div className="p-10 bg-gray-50/50">
+                <div className="bg-white border-2 border-gray-900 rounded-3xl shadow-xl overflow-hidden">
+                  <div className="p-6 border-b border-gray-100 bg-white flex justify-between items-center">
+                    <div className="flex items-center gap-4">
                       <Button
                         variant="ghost"
+                        size="icon"
                         onClick={() => setShowHistory(false)}
-                        className="font-black uppercase tracking-widest text-[9px] h-9 px-6 text-gray-500 hover:text-indigo-600 hover:bg-white rounded-xl transition-all"
+                        className="rounded-full hover:bg-gray-100 h-10 w-10"
                       >
-                        Return to Talent List
+                        <ArrowLeft className="w-5 h-5" />
                       </Button>
+                      <div>
+                        <h4 className="text-base font-black text-gray-900 uppercase tracking-tight">
+                          Commission Changes History
+                        </h4>
+                        <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">
+                          Audit log for rate adjustments
+                        </p>
+                      </div>
                     </div>
+                    <Badge
+                      variant="outline"
+                      className="border-gray-200 text-gray-500 font-bold px-3 py-1"
+                    >
+                      {historyData?.length || 0} RECORDS
+                    </Badge>
+                  </div>
+                  <div className="divide-y divide-gray-100 font-sans max-h-[500px] overflow-y-auto">
+                    {historyData && historyData.length > 0 ? (
+                      historyData.map((item, i) => (
+                        <div
+                          key={item.id || i}
+                          className="flex items-center justify-between p-6 hover:bg-indigo-50/20 transition-all group"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-indigo-600 border border-gray-100 group-hover:border-indigo-100 group-hover:bg-white transition-all shadow-sm">
+                              <History className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-gray-900">
+                                {item.talent_name || "Unknown Talent"}
+                              </p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-[10px] text-gray-400 font-medium">
+                                  {item.changed_at
+                                    ? format(
+                                        new Date(item.changed_at),
+                                        "MMM d, yyyy • HH:mm",
+                                      )
+                                    : "N/A"}
+                                </span>
+                                <span className="w-1 h-1 rounded-full bg-gray-200" />
+                                <span className="text-[9px] font-black text-indigo-600 uppercase tracking-tighter">
+                                  ADMIN:{" "}
+                                  {item.changed_by_name || "Agency Admin"}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-6">
+                            <div className="text-right">
+                              <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 opacity-60">
+                                PREVIOUS
+                              </p>
+                              <span className="text-sm font-bold text-gray-300 line-through decoration-1">
+                                {item.old_rate ? `${item.old_rate}%` : "0%"}
+                              </span>
+                            </div>
+                            <ArrowRight className="w-4 h-4 text-gray-200 group-hover:text-indigo-300 transition-colors" />
+                            <div className="text-right">
+                              <p className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">
+                                NEW RATE
+                              </p>
+                              <span className="px-3 py-1 rounded-lg bg-indigo-600 text-white text-sm font-black shadow-md shadow-indigo-100 block">
+                                {item.new_rate}%
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-24 text-center bg-white flex flex-col items-center">
+                        <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mb-6">
+                          <History className="w-8 h-8 text-indigo-200" />
+                        </div>
+                        <p className="text-base font-bold text-gray-900 mb-1">
+                          No history yet
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          All commission adjustments will appear here.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-6 bg-gray-50/50 border-t border-gray-100 text-center">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setShowHistory(false)}
+                      className="font-black uppercase tracking-widest text-[9px] h-9 px-6 text-gray-500 hover:text-indigo-600 hover:bg-white rounded-xl transition-all"
+                    >
+                      Return to Talent List
+                    </Button>
                   </div>
                 </div>
-              ) : (
-                <>
-                  <div className="px-10 py-6 border-b border-gray-100 bg-gray-50/30 flex items-center justify-between">
-                    <div className="flex items-center gap-6">
-                      <div className="flex items-center gap-3">
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                          Tier Filter:
-                        </span>
-                        <select
-                          value={selectedTier}
-                          onChange={(e) => setSelectedTier(e.target.value)}
-                          className="h-9 px-4 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all cursor-pointer hover:border-indigo-200 shadow-sm"
-                        >
-                          <option value="All Tiers">All Tiers</option>
-                          <option value="Premium">Premium</option>
-                          <option value="Core">Core</option>
-                          <option value="Growth">Growth</option>
-                          <option value="Inactive">Inactive</option>
-                        </select>
-                      </div>
-                      <div className="h-4 w-[1px] bg-gray-200" />
-                      <span className="text-xs font-bold text-gray-500">
-                        Total: <span className="text-indigo-600 font-black">{filteredTalent.length}</span> candidates
+              </div>
+            ) : (
+              <>
+                <div className="px-10 py-6 border-b border-gray-100 bg-gray-50/30 flex items-center justify-between">
+                  <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-3">
+                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                        Tier Filter:
                       </span>
+                      <select
+                        value={selectedTier}
+                        onChange={(e) => setSelectedTier(e.target.value)}
+                        className="h-9 px-4 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all cursor-pointer hover:border-indigo-200 shadow-sm"
+                      >
+                        <option value="All Tiers">All Tiers</option>
+                        <option value="Premium">Premium</option>
+                        <option value="Core">Core</option>
+                        <option value="Growth">Growth</option>
+                        <option value="Inactive">Inactive</option>
+                      </select>
                     </div>
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="sm" className="h-8 text-[10px] font-bold text-gray-400 uppercase tracking-tight gap-1.5 hover:text-indigo-600">
-                        <Download className="w-3.5 h-3.5" /> Export Rates
-                      </Button>
-                    </div>
+                    <div className="h-4 w-[1px] bg-gray-200" />
+                    <span className="text-xs font-bold text-gray-500">
+                      Total:{" "}
+                      <span className="text-indigo-600 font-black">
+                        {filteredTalent.length}
+                      </span>{" "}
+                      candidates
+                    </span>
                   </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 text-[10px] font-bold text-gray-400 uppercase tracking-tight gap-1.5 hover:text-indigo-600"
+                    >
+                      <Download className="w-3.5 h-3.5" /> Export Rates
+                    </Button>
+                  </div>
+                </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                      <thead>
-                        <tr className="bg-gray-50/50">
-                          <th className="px-8 py-5 w-12 text-center">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="bg-gray-50/50">
+                        <th className="px-8 py-5 w-12 text-center">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                          />
+                        </th>
+                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                          Talent
+                        </th>
+                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                          Tier
+                        </th>
+                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                          30D Earnings
+                        </th>
+                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                          Current Rate
+                        </th>
+                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                          Custom Rate
+                        </th>
+                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                          Last Changed
+                        </th>
+                        <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50 font-sans">
+                      {filteredTalent.map((talent) => (
+                        <tr
+                          key={talent.id}
+                          className="hover:bg-gray-50/30 transition-colors group"
+                        >
+                          <td className="px-8 py-5 text-center">
                             <input
                               type="checkbox"
                               className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                             />
-                          </th>
-                          <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                            Talent
-                          </th>
-                          <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                            Tier
-                          </th>
-                          <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                            30D Earnings
-                          </th>
-                          <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                            Current Rate
-                          </th>
-                          <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                            Custom Rate
-                          </th>
-                          <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                            Last Changed
-                          </th>
-                          <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-50 font-sans">
-                        {filteredTalent.map((talent) => (
-                          <tr
-                            key={talent.id}
-                            className="hover:bg-gray-50/30 transition-colors group"
-                          >
-                            <td className="px-8 py-5 text-center">
-                              <input
-                                type="checkbox"
-                                className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                          </td>
+                          <td className="px-8 py-5">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={talent.photo_url || ""}
+                                className="w-10 h-10 rounded-lg object-cover shadow-sm bg-gray-100"
                               />
-                            </td>
-                            <td className="px-8 py-5">
-                              <div className="flex items-center gap-3">
-                                <img
-                                  src={talent.photo_url || ""}
-                                  className="w-10 h-10 rounded-lg object-cover shadow-sm bg-gray-100"
-                                />
-                                <span className="text-sm font-medium text-gray-900 group-hover:text-indigo-600 transition-colors">
-                                  {talent.name}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="px-8 py-5">
-                              <Badge
-                                className={`px-2 py-0.5 font-bold text-[10px] uppercase shadow-sm ${talent.tier?.tier_name === "Premium" ? "bg-purple-50 text-purple-600" : talent.tier?.tier_name === "Core" ? "bg-blue-50 text-blue-600" : talent.tier?.tier_name === "Growth" ? "bg-green-50 text-green-600" : "bg-gray-50 text-gray-500"}`}
-                              >
-                                {talent.tier?.tier_name}
-                              </Badge>
-                            </td>
-                            <td className="px-8 py-5 text-sm font-bold text-gray-900">
-                              {currencyFormatter.format(talent.earnings_30d)}
-                            </td>
-                            <td className="px-8 py-5 text-sm font-bold text-gray-900">
-                              {talent.commission_rate}%
-                            </td>
-                            <td className="px-8 py-5">
-                              <div className="relative w-24">
-                                <input
-                                  type="text"
-                                  readOnly
-                                  value={talent.commission_rate}
-                                  className="w-full h-10 bg-gray-50/50 border border-gray-100 rounded-lg pl-3 pr-8 text-sm font-bold text-gray-400 focus:outline-none focus:bg-white focus:border-indigo-500/30 transition-all"
-                                />
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-gray-300">
-                                  %
-                                </span>
-                              </div>
-                            </td>
-                            <td className="px-8 py-5">
-                              <span className="text-[10px] font-bold text-gray-400 uppercase italic">
-                                {talent.is_custom_rate ? "Custom Rate Applied" : "Using Tier Default"}
+                              <span className="text-sm font-medium text-gray-900 group-hover:text-indigo-600 transition-colors">
+                                {talent.name}
                               </span>
-                            </td>
-                            <td className="px-8 py-5 text-right opacity-0 group-hover:opacity-100 transition-opacity">
-                              <span className="text-[10px] font-bold text-gray-400 uppercase italic">
-                                Edit in Talent Settings
+                            </div>
+                          </td>
+                          <td className="px-8 py-5">
+                            <Badge
+                              className={`px-2 py-0.5 font-bold text-[10px] uppercase shadow-sm ${talent.tier?.tier_name === "Premium" ? "bg-purple-50 text-purple-600" : talent.tier?.tier_name === "Core" ? "bg-blue-50 text-blue-600" : talent.tier?.tier_name === "Growth" ? "bg-green-50 text-green-600" : "bg-gray-50 text-gray-500"}`}
+                            >
+                              {talent.tier?.tier_name}
+                            </Badge>
+                          </td>
+                          <td className="px-8 py-5 text-sm font-bold text-gray-900">
+                            {currencyFormatter.format(talent.earnings_30d)}
+                          </td>
+                          <td className="px-8 py-5 text-sm font-bold text-gray-900">
+                            {talent.commission_rate}%
+                          </td>
+                          <td className="px-8 py-5">
+                            <div className="relative w-24">
+                              <input
+                                type="text"
+                                readOnly
+                                value={talent.commission_rate}
+                                className="w-full h-10 bg-gray-50/50 border border-gray-100 rounded-lg pl-3 pr-8 text-sm font-bold text-gray-400 focus:outline-none focus:bg-white focus:border-indigo-500/30 transition-all"
+                              />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-gray-300">
+                                %
                               </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              )
-            }
+                            </div>
+                          </td>
+                          <td className="px-8 py-5">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase italic">
+                              {talent.is_custom_rate
+                                ? "Custom Rate Applied"
+                                : "Using Tier Default"}
+                            </span>
+                          </td>
+                          <td className="px-8 py-5 text-right opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase italic">
+                              Edit in Talent Settings
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
 
             <div className="p-8 bg-[#F0F7FF] flex items-center justify-between border-t border-indigo-100">
               <div className="flex items-center gap-3">
@@ -16762,8 +16816,8 @@ const RoyaltiesPayoutsView = () => {
                 <Download className="w-4 h-4" /> Export Settings
               </Button>
             </div>
-          </Card >
-        </div >
+          </Card>
+        </div>
       )}
 
       {activeTab === "Royalties & Payouts" && (
@@ -16866,11 +16920,19 @@ const RoyaltiesPayoutsView = () => {
                       </h4>
                       <p className="text-[10px] font-black text-gray-500 uppercase tracking-tight">
                         <span className="text-green-600">
-                          Est. Talent Share: {currencyFormatter.format(talent.earnings_30d * (1 - talent.commission_rate / 100))}
+                          Est. Talent Share:{" "}
+                          {currencyFormatter.format(
+                            talent.earnings_30d *
+                              (1 - talent.commission_rate / 100),
+                          )}
                         </span>{" "}
                         •{" "}
                         <span className="text-indigo-600">
-                          Agency: {currencyFormatter.format(talent.earnings_30d * (talent.commission_rate / 100))}
+                          Agency:{" "}
+                          {currencyFormatter.format(
+                            talent.earnings_30d *
+                              (talent.commission_rate / 100),
+                          )}
                         </span>
                       </p>
                     </div>
@@ -16881,361 +16943,384 @@ const RoyaltiesPayoutsView = () => {
                   <div className="p-4 bg-white rounded-full mb-4 shadow-sm border border-gray-100">
                     <TrendingUp className="w-8 h-8 text-gray-100" />
                   </div>
-                  <p className="text-gray-400 font-bold">No earning data available yet.</p>
+                  <p className="text-gray-400 font-bold">
+                    No earning data available yet.
+                  </p>
                 </div>
               )}
             </div>
-          </Card >
-        </div >
+          </Card>
+        </div>
       )}
 
-      {
-        activeTab === "Payout Preferences" && (
-          <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
-            <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
-              <h3 className="text-lg font-bold text-gray-900 mb-6">
-                Payout Schedule Settings
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-2">
-                  <Label className="text-sm font-bold text-gray-700">
-                    Payout Frequency
-                  </Label>
-                  <Select defaultValue="Monthly">
-                    <SelectTrigger className="h-12 bg-white border-gray-200">
-                      <SelectValue placeholder="Select Frequency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Weekly">Weekly</SelectItem>
-                      <SelectItem value="Bi-Weekly">Bi-Weekly</SelectItem>
-                      <SelectItem value="Monthly">Monthly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-gray-500">
-                    How often talent receives payouts
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-bold text-gray-700">
-                    Minimum Payout Threshold
-                  </Label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">
-                      $
-                    </span>
-                    <Input
-                      defaultValue="50"
-                      className="h-12 pl-8 border-gray-200"
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    Don't pay if balance is under this amount
-                  </p>
-                </div>
+      {activeTab === "Payout Preferences" && (
+        <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
+          <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
+            <h3 className="text-lg font-bold text-gray-900 mb-6">
+              Payout Schedule Settings
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-700">
+                  Payout Frequency
+                </Label>
+                <Select defaultValue="Monthly">
+                  <SelectTrigger className="h-12 bg-white border-gray-200">
+                    <SelectValue placeholder="Select Frequency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Weekly">Weekly</SelectItem>
+                    <SelectItem value="Bi-Weekly">Bi-Weekly</SelectItem>
+                    <SelectItem value="Monthly">Monthly</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500">
+                  How often talent receives payouts
+                </p>
               </div>
-            </Card>
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-700">
+                  Minimum Payout Threshold
+                </Label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">
+                    $
+                  </span>
+                  <Input
+                    defaultValue="50"
+                    className="h-12 pl-8 border-gray-200"
+                  />
+                </div>
+                <p className="text-xs text-gray-500">
+                  Don't pay if balance is under this amount
+                </p>
+              </div>
+            </div>
+          </Card>
 
-            <Card className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
-              <div className="p-8 space-y-6">
-                <h3 className="text-lg font-bold text-gray-900">Payout Method</h3>
-                <div className="flex items-center justify-between p-6 bg-green-50/50 border border-green-200 rounded-xl">
+          <Card className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+            <div className="p-8 space-y-6">
+              <h3 className="text-lg font-bold text-gray-900">Payout Method</h3>
+              <div className="flex items-center justify-between p-6 bg-green-50/50 border border-green-200 rounded-xl">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-white border border-green-200 flex items-center justify-center text-green-600">
+                    <CheckCircle2 className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-base font-bold text-gray-900">
+                      Stripe Connected Account
+                    </h4>
+                    <p className="text-sm text-gray-500">
+                      Auto-deduct commission, transfer net to talent
+                    </p>
+                  </div>
+                </div>
+                <Badge className="bg-green-500 hover:bg-green-600 text-white border-none px-3 py-1 text-xs font-bold">
+                  Active
+                </Badge>
+              </div>
+
+              <div className="p-6 bg-blue-50/50 border border-blue-100 rounded-xl">
+                <h4 className="text-sm font-bold text-blue-900 mb-2">
+                  How it works:
+                </h4>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>1. Brand pays license fee to agency Stripe account</li>
+                  <li>2. Agency commission (14%) auto-deducted</li>
+                  <li>
+                    3. Net amount transferred to talent's connected account
+                  </li>
+                  <li>4. Automatic payout on schedule (monthly)</li>
+                </ul>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
+            <div className="p-8">
+              <h3 className="text-lg font-bold text-gray-900 mb-6">
+                Upcoming Payout Schedule
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-white border border-green-200 flex items-center justify-center text-green-600">
-                      <CheckCircle2 className="w-6 h-6" />
+                    <div className="w-10 h-10 rounded-lg bg-white border border-indigo-100 flex items-center justify-center text-indigo-600">
+                      <Calendar className="w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className="text-base font-bold text-gray-900">
-                        Stripe Connected Account
+                      <h4 className="text-sm font-bold text-gray-900">
+                        Feb 1, 2025
                       </h4>
-                      <p className="text-sm text-gray-500">
-                        Auto-deduct commission, transfer net to talent
+                      <p className="text-xs text-gray-500">Scheduled payout</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <h4 className="text-sm font-bold text-gray-900">$8,450</h4>
+                    <Badge className="bg-indigo-500 hover:bg-indigo-600 text-white border-none text-[10px] font-bold">
+                      scheduled
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-xl">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400">
+                      <Calendar className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-gray-900">
+                        Mar 1, 2025
+                      </h4>
+                      <p className="text-xs text-gray-500">
+                        Future payout date
                       </p>
                     </div>
                   </div>
-                  <Badge className="bg-green-500 hover:bg-green-600 text-white border-none px-3 py-1 text-xs font-bold">
-                    Active
-                  </Badge>
+                  <div className="text-right">
+                    <h4 className="text-sm font-bold text-gray-900">$0</h4>
+                    <Badge
+                      variant="secondary"
+                      className="bg-gray-100 text-gray-500 border-none text-[10px] font-bold"
+                    >
+                      upcoming
+                    </Badge>
+                  </div>
                 </div>
 
-                <div className="p-6 bg-blue-50/50 border border-blue-100 rounded-xl">
-                  <h4 className="text-sm font-bold text-blue-900 mb-2">
-                    How it works:
-                  </h4>
-                  <ul className="text-sm text-blue-800 space-y-1">
-                    <li>1. Brand pays license fee to agency Stripe account</li>
-                    <li>2. Agency commission (14%) auto-deducted</li>
-                    <li>
-                      3. Net amount transferred to talent's connected account
-                    </li>
-                    <li>4. Automatic payout on schedule (monthly)</li>
-                  </ul>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
-              <div className="p-8">
-                <h3 className="text-lg font-bold text-gray-900 mb-6">
-                  Upcoming Payout Schedule
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-white border border-indigo-100 flex items-center justify-center text-indigo-600">
-                        <Calendar className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-bold text-gray-900">
-                          Feb 1, 2025
-                        </h4>
-                        <p className="text-xs text-gray-500">Scheduled payout</p>
-                      </div>
+                <div className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-xl">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400">
+                      <Calendar className="w-5 h-5" />
                     </div>
-                    <div className="text-right">
-                      <h4 className="text-sm font-bold text-gray-900">$8,450</h4>
-                      <Badge className="bg-indigo-500 hover:bg-indigo-600 text-white border-none text-[10px] font-bold">
-                        scheduled
-                      </Badge>
+                    <div>
+                      <h4 className="text-sm font-bold text-gray-900">
+                        Apr 1, 2025
+                      </h4>
+                      <p className="text-xs text-gray-500">
+                        Future payout date
+                      </p>
                     </div>
                   </div>
-
-                  <div className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-xl">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400">
-                        <Calendar className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-bold text-gray-900">
-                          Mar 1, 2025
-                        </h4>
-                        <p className="text-xs text-gray-500">
-                          Future payout date
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <h4 className="text-sm font-bold text-gray-900">$0</h4>
-                      <Badge
-                        variant="secondary"
-                        className="bg-gray-100 text-gray-500 border-none text-[10px] font-bold"
-                      >
-                        upcoming
-                      </Badge>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-xl">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400">
-                        <Calendar className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-bold text-gray-900">
-                          Apr 1, 2025
-                        </h4>
-                        <p className="text-xs text-gray-500">
-                          Future payout date
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <h4 className="text-sm font-bold text-gray-900">$0</h4>
-                      <Badge
-                        variant="secondary"
-                        className="bg-gray-100 text-gray-500 border-none text-[10px] font-bold"
-                      >
-                        upcoming
-                      </Badge>
-                    </div>
+                  <div className="text-right">
+                    <h4 className="text-sm font-bold text-gray-900">$0</h4>
+                    <Badge
+                      variant="secondary"
+                      className="bg-gray-100 text-gray-500 border-none text-[10px] font-bold"
+                    >
+                      upcoming
+                    </Badge>
                   </div>
                 </div>
               </div>
-            </Card>
-          </div>
-        )
-      }
-
-      {
-        activeTab === "Commission Breakdown" && (
-          <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500 mb-12">
-            <div className="mb-0">
-              <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter mb-2">
-                License Deal Breakdowns
-              </h3>
-              <p className="text-sm font-medium text-gray-500 max-w-2xl">
-                Full split transparency for every transaction. View how value is
-                divided between your agency and talent roster.
-              </p>
             </div>
+          </Card>
+        </div>
+      )}
 
-            {breakdownData && breakdownData.length > 0 && (
-              <Card className="p-6 bg-gray-50/50 border border-gray-200 rounded-2xl flex flex-wrap items-center gap-8 mb-6">
-                <div className="flex-1 min-w-[200px]">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
-                    Total Volume (Last 30 Days)
-                  </p>
-                  <p className="text-2xl font-black text-gray-900">
-                    {currencyFormatter.format(breakdownData.reduce((acc: number, deal: any) => acc + (deal.total_value || 0), 0))}
-                  </p>
-                </div>
-                <div className="w-[1px] h-10 bg-gray-200 hidden md:block" />
-                <div className="flex-1 min-w-[200px]">
-                  <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mb-1">
-                    Talent Total Share
-                  </p>
-                  <p className="text-2xl font-black text-green-600">
-                    {currencyFormatter.format(breakdownData.reduce((acc: number, deal: any) => acc + (deal.talent_share || 0), 0))}
-                  </p>
-                </div>
-                <div className="w-[1px] h-10 bg-gray-200 hidden md:block" />
-                <div className="flex-1 min-w-[200px]">
-                  <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">
-                    Agency Total Revenue
-                  </p>
-                  <p className="text-2xl font-black text-indigo-600">
-                    {currencyFormatter.format(breakdownData.reduce((acc: number, deal: any) => acc + (deal.agency_share || 0), 0))}
-                  </p>
-                </div>
-                <Button className="bg-white border-2 border-gray-900 text-gray-900 font-black text-[10px] uppercase h-10 tracking-widest px-6 shadow-[4px_4px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all">
-                  <Download className="w-3.5 h-3.5 mr-2" /> Export Report
-                </Button>
-              </Card>
-            )}
+      {activeTab === "Commission Breakdown" && (
+        <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500 mb-12">
+          <div className="mb-0">
+            <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter mb-2">
+              License Deal Breakdowns
+            </h3>
+            <p className="text-sm font-medium text-gray-500 max-w-2xl">
+              Full split transparency for every transaction. View how value is
+              divided between your agency and talent roster.
+            </p>
+          </div>
 
-            {breakdownData && breakdownData.length > 0 ? (
-              <div className="grid grid-cols-1 gap-6">
-                {breakdownData.map((deal: any, i: number) => (
-                  <Card
-                    key={deal.id || i}
-                    className="p-8 bg-white border-2 border-gray-900 shadow-[8px_8px_0px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden hover:shadow-lg transition-all"
-                  >
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100">
-                          <Package className="w-6 h-6" />
+          {breakdownData && breakdownData.length > 0 && (
+            <Card className="p-6 bg-gray-50/50 border border-gray-200 rounded-2xl flex flex-wrap items-center gap-8 mb-6">
+              <div className="flex-1 min-w-[200px]">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                  Total Volume (Last 30 Days)
+                </p>
+                <p className="text-2xl font-black text-gray-900">
+                  {currencyFormatter.format(
+                    breakdownData.reduce(
+                      (acc: number, deal: any) => acc + (deal.total_value || 0),
+                      0,
+                    ),
+                  )}
+                </p>
+              </div>
+              <div className="w-[1px] h-10 bg-gray-200 hidden md:block" />
+              <div className="flex-1 min-w-[200px]">
+                <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mb-1">
+                  Talent Total Share
+                </p>
+                <p className="text-2xl font-black text-green-600">
+                  {currencyFormatter.format(
+                    breakdownData.reduce(
+                      (acc: number, deal: any) =>
+                        acc + (deal.talent_share || 0),
+                      0,
+                    ),
+                  )}
+                </p>
+              </div>
+              <div className="w-[1px] h-10 bg-gray-200 hidden md:block" />
+              <div className="flex-1 min-w-[200px]">
+                <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">
+                  Agency Total Revenue
+                </p>
+                <p className="text-2xl font-black text-indigo-600">
+                  {currencyFormatter.format(
+                    breakdownData.reduce(
+                      (acc: number, deal: any) =>
+                        acc + (deal.agency_share || 0),
+                      0,
+                    ),
+                  )}
+                </p>
+              </div>
+              <Button className="bg-white border-2 border-gray-900 text-gray-900 font-black text-[10px] uppercase h-10 tracking-widest px-6 shadow-[4px_4px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all">
+                <Download className="w-3.5 h-3.5 mr-2" /> Export Report
+              </Button>
+            </Card>
+          )}
+
+          {breakdownData && breakdownData.length > 0 ? (
+            <div className="grid grid-cols-1 gap-6">
+              {breakdownData.map((deal: any, i: number) => (
+                <Card
+                  key={deal.id || i}
+                  className="p-8 bg-white border-2 border-gray-900 shadow-[8px_8px_0px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden hover:shadow-lg transition-all"
+                >
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100">
+                        <Package className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="text-xl font-black text-gray-900 uppercase tracking-tighter">
+                            {deal.talent_name}
+                          </span>
+                          <ArrowRight className="w-4 h-4 text-gray-300" />
+                          <span className="text-lg font-bold text-gray-500 uppercase tracking-tighter">
+                            {deal.brand_name}
+                          </span>
                         </div>
+                        <p className="text-xs font-black text-indigo-500 uppercase tracking-widest">
+                          {format(new Date(deal.date), "MMMM d, yyyy")}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="px-6 py-3 bg-gray-900 text-white rounded-2xl text-center min-w-[160px]">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-0.5 text-gray-400">
+                        Total Gross
+                      </p>
+                      <p className="text-2xl font-black font-sans tracking-tight">
+                        {currencyFormatter.format(deal.total_value)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    <div className="p-6 bg-green-50/50 border-2 border-green-100 rounded-2xl group hover:bg-green-50 transition-colors">
+                      <div className="flex justify-between items-start mb-4">
                         <div>
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <span className="text-xl font-black text-gray-900 uppercase tracking-tighter">
-                              {deal.talent_name}
-                            </span>
-                            <ArrowRight className="w-4 h-4 text-gray-300" />
-                            <span className="text-lg font-bold text-gray-500 uppercase tracking-tighter">
-                              {deal.brand_name}
-                            </span>
-                          </div>
-                          <p className="text-xs font-black text-indigo-500 uppercase tracking-widest">
-                            {format(new Date(deal.date), "MMMM d, yyyy")}
+                          <p className="text-[10px] font-black text-green-700 uppercase tracking-widest mb-1">
+                            Talent Earnings
+                          </p>
+                          <p className="text-3xl font-black text-green-600 transition-transform group-hover:scale-105 origin-left">
+                            {currencyFormatter.format(deal.talent_share)}
                           </p>
                         </div>
+                        <Badge className="bg-green-600 text-white font-black px-3 py-1 rounded-lg">
+                          {100 - Math.round(deal.commission_percentage)}%
+                        </Badge>
                       </div>
-                      <div className="px-6 py-3 bg-gray-900 text-white rounded-2xl text-center min-w-[160px]">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-0.5 text-gray-400">
-                          Total Gross
-                        </p>
-                        <p className="text-2xl font-black font-sans tracking-tight">
-                          {currencyFormatter.format(deal.total_value)}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                      <div className="p-6 bg-green-50/50 border-2 border-green-100 rounded-2xl group hover:bg-green-50 transition-colors">
-                        <div className="flex justify-between items-start mb-4">
-                          <div>
-                            <p className="text-[10px] font-black text-green-700 uppercase tracking-widest mb-1">
-                              Talent Earnings
-                            </p>
-                            <p className="text-3xl font-black text-green-600 transition-transform group-hover:scale-105 origin-left">
-                              {currencyFormatter.format(deal.talent_share)}
-                            </p>
-                          </div>
-                          <Badge className="bg-green-600 text-white font-black px-3 py-1 rounded-lg">
-                            {100 - Math.round(deal.commission_percentage)}%
-                          </Badge>
-                        </div>
-                        <div className="w-full bg-white h-2.5 rounded-full overflow-hidden border border-green-100 p-0.5 shadow-inner">
-                          <div
-                            className="h-full bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.3)] transition-all duration-1000"
-                            style={{ width: `${100 - deal.commission_percentage}%` }}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="p-6 bg-indigo-50/50 border-2 border-indigo-100 rounded-2xl group hover:bg-indigo-50 transition-colors">
-                        <div className="flex justify-between items-start mb-4">
-                          <div>
-                            <p className="text-[10px] font-black text-indigo-700 uppercase tracking-widest mb-1">
-                              Agency Commission
-                            </p>
-                            <p className="text-3xl font-black text-indigo-600 transition-transform group-hover:scale-105 origin-left">
-                              {currencyFormatter.format(deal.agency_share)}
-                            </p>
-                          </div>
-                          <Badge className="bg-indigo-600 text-white font-black px-3 py-1 rounded-lg">
-                            {Math.round(deal.commission_percentage)}%
-                          </Badge>
-                        </div>
-                        <div className="w-full bg-white h-2.5 rounded-full overflow-hidden border border-indigo-100 p-0.5 shadow-inner">
-                          <div
-                            className="h-full bg-indigo-500 rounded-full shadow-[0_0_8px_rgba(79,70,229,0.3)] transition-all duration-1000"
-                            style={{ width: `${deal.commission_percentage}%` }}
-                          />
-                        </div>
+                      <div className="w-full bg-white h-2.5 rounded-full overflow-hidden border border-green-100 p-0.5 shadow-inner">
+                        <div
+                          className="h-full bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.3)] transition-all duration-1000"
+                          style={{
+                            width: `${100 - deal.commission_percentage}%`,
+                          }}
+                        />
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] px-2">
-                      <span>TALENT POOL</span>
-                      <span className="flex-1 border-b-2 border-dashed border-gray-100 mx-4" />
-                      <span>AGENCY FEE</span>
+                    <div className="p-6 bg-indigo-50/50 border-2 border-indigo-100 rounded-2xl group hover:bg-indigo-50 transition-colors">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <p className="text-[10px] font-black text-indigo-700 uppercase tracking-widest mb-1">
+                            Agency Commission
+                          </p>
+                          <p className="text-3xl font-black text-indigo-600 transition-transform group-hover:scale-105 origin-left">
+                            {currencyFormatter.format(deal.agency_share)}
+                          </p>
+                        </div>
+                        <Badge className="bg-indigo-600 text-white font-black px-3 py-1 rounded-lg">
+                          {Math.round(deal.commission_percentage)}%
+                        </Badge>
+                      </div>
+                      <div className="w-full bg-white h-2.5 rounded-full overflow-hidden border border-indigo-100 p-0.5 shadow-inner">
+                        <div
+                          className="h-full bg-indigo-500 rounded-full shadow-[0_0_8px_rgba(79,70,229,0.3)] transition-all duration-1000"
+                          style={{ width: `${deal.commission_percentage}%` }}
+                        />
+                      </div>
                     </div>
-                  </Card>
-                ))}
+                  </div>
+
+                  <div className="flex items-center justify-between text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] px-2">
+                    <span>TALENT POOL</span>
+                    <span className="flex-1 border-b-2 border-dashed border-gray-100 mx-4" />
+                    <span>AGENCY FEE</span>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="p-24 text-center bg-gray-50 rounded-3xl border-4 border-dashed border-gray-100 flex flex-col items-center">
+              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-6 shadow-sm">
+                <Calculator className="w-10 h-10 text-gray-200" />
               </div>
-            ) : (
-              <div className="p-24 text-center bg-gray-50 rounded-3xl border-4 border-dashed border-gray-100 flex flex-col items-center">
-                <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-6 shadow-sm">
-                  <Calculator className="w-10 h-10 text-gray-200" />
+              <p className="text-xl font-bold text-gray-900 mb-2">
+                No license deals found
+              </p>
+              <p className="text-sm text-gray-500 max-w-xs">
+                Recent licensing transactions will automatically generate
+                detailed split breakdowns here.
+              </p>
+            </div>
+          )}
+
+          {breakdownData && breakdownData.length > 0 && (
+            <div className="p-8 bg-blue-50 border-2 border-blue-900 rounded-2xl shadow-[8px_8px_0px_rgba(30,58,138,0.1)]">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div>
+                  <h3 className="text-lg font-black text-blue-900 uppercase tracking-tight mb-2">
+                    Commission Transparency
+                  </h3>
+                  <p className="text-sm font-medium text-blue-700 max-w-xl">
+                    This breakdown is visible to talent in their payment
+                    history. Full transparency ensures accurate accounting and
+                    builds long-term trust.
+                  </p>
                 </div>
-                <p className="text-xl font-bold text-gray-900 mb-2">No license deals found</p>
-                <p className="text-sm text-gray-500 max-w-xs">Recent licensing transactions will automatically generate detailed split breakdowns here.</p>
-              </div>
-            )}
-
-            {breakdownData && breakdownData.length > 0 && (
-              <div className="p-8 bg-blue-50 border-2 border-blue-900 rounded-2xl shadow-[8px_8px_0px_rgba(30,58,138,0.1)]">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                  <div>
-                    <h3 className="text-lg font-black text-blue-900 uppercase tracking-tight mb-2">
-                      Commission Transparency
-                    </h3>
-                    <p className="text-sm font-medium text-blue-700 max-w-xl">
-                      This breakdown is visible to talent in their payment history.
-                      Full transparency ensures accurate accounting and builds long-term trust.
-                    </p>
-                  </div>
-                  <div className="flex gap-3">
-                    <Button
-                      variant="outline"
-                      className="bg-white border-blue-200 text-blue-900 font-bold text-xs gap-2 h-11 px-5 shadow-sm hover:bg-blue-100 transition-all"
-                    >
-                      <Settings className="w-4 h-4" /> Configure
-                    </Button>
-                    <Button
-                      variant="default"
-                      className="bg-blue-900 hover:bg-blue-950 text-white font-bold text-xs gap-2 h-11 px-5 shadow-sm transition-all shadow-blue-200"
-                    >
-                      <Download className="w-4 h-4" /> Export All
-                    </Button>
-                  </div>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    className="bg-white border-blue-200 text-blue-900 font-bold text-xs gap-2 h-11 px-5 shadow-sm hover:bg-blue-100 transition-all"
+                  >
+                    <Settings className="w-4 h-4" /> Configure
+                  </Button>
+                  <Button
+                    variant="default"
+                    className="bg-blue-900 hover:bg-blue-950 text-white font-bold text-xs gap-2 h-11 px-5 shadow-sm transition-all shadow-blue-200"
+                  >
+                    <Download className="w-4 h-4" /> Export All
+                  </Button>
                 </div>
               </div>
-            )}
-          </div>
-        )
-      }
-    </div >
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -17357,10 +17442,11 @@ const AnalyticsDashboardView = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                  }`}
+                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
+                  activeTab === tab
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+                }`}
               >
                 {tab}
               </button>
@@ -17395,10 +17481,11 @@ const AnalyticsDashboardView = () => {
                   {analytics.overview.total_earnings_formatted}
                 </h3>
                 <p
-                  className={`text-xs font-bold flex items-center gap-1.5 ${analytics.overview.earnings_growth_percentage >= 0
-                    ? "text-green-600"
-                    : "text-red-600"
-                    }`}
+                  className={`text-xs font-bold flex items-center gap-1.5 ${
+                    analytics.overview.earnings_growth_percentage >= 0
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }`}
                 >
                   <TrendingUp className="w-3.5 h-3.5" />{" "}
                   {analytics.overview.earnings_growth_percentage >= 0
@@ -18755,8 +18842,8 @@ export default function AgencyDashboard() {
   const seatsLimit = useMemo(() => {
     return Number(
       agencyProfileQuery.data?.seats_limit ||
-      (profile as any)?.seats_limit ||
-      0,
+        (profile as any)?.seats_limit ||
+        0,
     );
   }, [agencyProfileQuery.data, profile]);
 
@@ -19300,96 +19387,96 @@ export default function AgencyDashboard() {
   const sidebarItems: SidebarItem[] =
     agencyMode === "AI"
       ? [
-        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-        {
-          id: "roster",
-          label: "Roster",
-          icon: Users,
-          subItems: ["All Talent", "Performance Tiers"],
-        },
-        {
-          id: "licensing",
-          label: "Licensing",
-          icon: FileText,
-          subItems: [
-            "Licensing Requests",
-            "License Submissions",
-            "Active Licenses",
-            "License Templates",
-          ],
-        },
-        {
-          id: "protection",
-          label: "Protection & Usage",
-          icon: Shield,
-          subItems: ["Protect & Usage", "Compliance Hub"],
-          badges: { "Compliance Hub": "NEW" },
-        },
-        {
-          id: "analytics",
-          label: "Analytics",
-          icon: BarChart2,
-          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-        },
-        { id: "packages", label: "Talent Packages", icon: Package },
-        {
-          id: "settings",
-          label: "Settings",
-          icon: Settings,
-          subItems: ["General Settings", "File Storage"],
-        },
-      ]
+          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          {
+            id: "roster",
+            label: "Roster",
+            icon: Users,
+            subItems: ["All Talent", "Performance Tiers"],
+          },
+          {
+            id: "licensing",
+            label: "Licensing",
+            icon: FileText,
+            subItems: [
+              "Licensing Requests",
+              "License Submissions",
+              "Active Licenses",
+              "License Templates",
+            ],
+          },
+          {
+            id: "protection",
+            label: "Protection & Usage",
+            icon: Shield,
+            subItems: ["Protect & Usage", "Compliance Hub"],
+            badges: { "Compliance Hub": "NEW" },
+          },
+          {
+            id: "analytics",
+            label: "Analytics",
+            icon: BarChart2,
+            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+          },
+          { id: "packages", label: "Talent Packages", icon: Package },
+          {
+            id: "settings",
+            label: "Settings",
+            icon: Settings,
+            subItems: ["General Settings", "File Storage"],
+          },
+        ]
       : [
-        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-        {
-          id: "roster",
-          label: "Roster",
-          icon: Users,
-          subItems: ["All Talent", "Performance Tiers"],
-        },
-        { id: "scouting", label: "Scouting", icon: Target },
-        { id: "client-crm", label: "Client CRM", icon: Building2 },
-        {
-          id: "bookings",
-          label: "Bookings",
-          icon: Calendar,
-          subItems: [
-            "Calendar & Schedule",
-            "Booking Requests",
-            "Client Database",
-            "Talent Availability",
-            "Notifications",
-            "Management & Analytics",
-          ],
-        },
-        {
-          id: "accounting",
-          label: "Accounting & Invoicing",
-          icon: CreditCard,
-          subItems: [
-            "Invoice Generation",
-            "Invoice Management",
-            "Payment Tracking",
-            "Talent Statements",
-            "Financial Reports",
-            "Expense Tracking",
-            "Connect Bank",
-          ],
-        },
-        {
-          id: "analytics",
-          label: "Analytics",
-          icon: BarChart2,
-          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-        },
-        { id: "packages", label: "Talent Packages", icon: Package },
-        {
-          id: "settings",
-          label: "Settings",
-          icon: Settings,
-          subItems: ["General Settings", "File Storage"],
-        },
-      ];
+          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          {
+            id: "roster",
+            label: "Roster",
+            icon: Users,
+            subItems: ["All Talent", "Performance Tiers"],
+          },
+          { id: "scouting", label: "Scouting", icon: Target },
+          { id: "client-crm", label: "Client CRM", icon: Building2 },
+          {
+            id: "bookings",
+            label: "Bookings",
+            icon: Calendar,
+            subItems: [
+              "Calendar & Schedule",
+              "Booking Requests",
+              "Client Database",
+              "Talent Availability",
+              "Notifications",
+              "Management & Analytics",
+            ],
+          },
+          {
+            id: "accounting",
+            label: "Accounting & Invoicing",
+            icon: CreditCard,
+            subItems: [
+              "Invoice Generation",
+              "Invoice Management",
+              "Payment Tracking",
+              "Talent Statements",
+              "Financial Reports",
+              "Expense Tracking",
+              "Connect Bank",
+            ],
+          },
+          {
+            id: "analytics",
+            label: "Analytics",
+            icon: BarChart2,
+            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+          },
+          { id: "packages", label: "Talent Packages", icon: Package },
+          {
+            id: "settings",
+            label: "Settings",
+            icon: Settings,
+            subItems: ["General Settings", "File Storage"],
+          },
+        ];
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
@@ -19462,14 +19549,16 @@ export default function AgencyDashboard() {
                     setSidebarOpen(false);
                   }
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
-                  ? "bg-indigo-50 text-indigo-700"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === item.id && !item.subItems
+                    ? "bg-indigo-50 text-indigo-700"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                    }`}
+                  className={`w-5 h-5 ${
+                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
+                  }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.subItems && (
@@ -19490,10 +19579,11 @@ export default function AgencyDashboard() {
                         setActiveSubTab(subItem);
                         setSidebarOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
-                        ? "text-indigo-700 bg-indigo-50 font-bold"
-                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                        }`}
+                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                        activeTab === item.id && activeSubTab === subItem
+                          ? "text-indigo-700 bg-indigo-50 font-bold"
+                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                      }`}
                     >
                       <span className="truncate">{subItem}</span>
                       {item.badges && item.badges[subItem] && (
