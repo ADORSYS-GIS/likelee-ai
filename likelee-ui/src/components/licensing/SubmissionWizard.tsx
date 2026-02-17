@@ -28,9 +28,21 @@ import {
 import { getAgencyTalents } from "@/api/functions";
 import { ContractEditor } from "./ContractEditor";
 import { DocuSealBuilderModal } from "./DocuSealBuilderModal";
-import { ArrowRight, ArrowLeft, Check, FileText, Layout, ChevronsUpDown, X } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowLeft,
+  Check,
+  FileText,
+  Layout,
+  ChevronsUpDown,
+  X,
+} from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Command,
   CommandEmpty,
@@ -301,19 +313,21 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         requires_agency_signature: requiresAgencySignature,
       });
 
-      const embedUrl = (finalizeResult as any)?.agency_embed_src
-        || ((finalizeResult as any)?.agency_submitter_slug
+      const embedUrl =
+        (finalizeResult as any)?.agency_embed_src ||
+        ((finalizeResult as any)?.agency_submitter_slug
           ? `https://docuseal.co/s/${(finalizeResult as any).agency_submitter_slug}`
           : (finalizeResult as any)?.docuseal_slug
             ? `https://docuseal.co/s/${(finalizeResult as any).docuseal_slug}`
-          : null);
+            : null);
       if (requiresAgencySignature && embedUrl) {
         setCurrentSubmissionId((finalizeResult as any)?.id || submissionId);
         setAgencySignUrl(embedUrl);
         setAgencySignOpen(true);
         toast({
           title: "Agency signature required",
-          description: "Complete your signature to release this contract to the client.",
+          description:
+            "Complete your signature to release this contract to the client.",
         });
         return;
       }
@@ -402,12 +416,13 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
               {[1, 2, 3].map((s) => (
                 <div key={s} className="flex-1 flex items-center gap-3">
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all ${step === s
-                      ? "bg-indigo-500 text-white shadow-lg shadow-indigo-200 scale-110"
-                      : step > s
-                        ? "bg-green-500 text-white"
-                        : "bg-slate-100 text-slate-400"
-                      }`}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all ${
+                      step === s
+                        ? "bg-indigo-500 text-white shadow-lg shadow-indigo-200 scale-110"
+                        : step > s
+                          ? "bg-green-500 text-white"
+                          : "bg-slate-100 text-slate-400"
+                    }`}
                   >
                     {step > s ? <Check className="w-4 h-4" /> : s}
                   </div>
@@ -460,70 +475,97 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                             >
                               <div className="flex flex-wrap gap-1.5 items-center">
                                 {formData.talent_name ? (
-                                  formData.talent_name.split(", ").map((name) => (
-                                    <Badge
-                                      key={name}
-                                      variant="secondary"
-                                      className="bg-white text-indigo-600 border-indigo-100 rounded-lg px-2 py-0.5 flex items-center gap-1 group/badge"
-                                    >
-                                      {name}
-                                      <X
-                                        className="h-3 w-3 cursor-pointer hover:text-indigo-800"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          const selected = formData.talent_name
-                                            .split(", ")
-                                            .filter((n) => n !== name)
-                                            .join(", ");
-                                          setValue("talent_name", selected);
-                                        }}
-                                      />
-                                    </Badge>
-                                  ))
+                                  formData.talent_name
+                                    .split(", ")
+                                    .map((name) => (
+                                      <Badge
+                                        key={name}
+                                        variant="secondary"
+                                        className="bg-white text-indigo-600 border-indigo-100 rounded-lg px-2 py-0.5 flex items-center gap-1 group/badge"
+                                      >
+                                        {name}
+                                        <X
+                                          className="h-3 w-3 cursor-pointer hover:text-indigo-800"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            const selected =
+                                              formData.talent_name
+                                                .split(", ")
+                                                .filter((n) => n !== name)
+                                                .join(", ");
+                                            setValue("talent_name", selected);
+                                          }}
+                                        />
+                                      </Badge>
+                                    ))
                                 ) : (
-                                  <span className="text-slate-400">Select talents...</span>
+                                  <span className="text-slate-400">
+                                    Select talents...
+                                  </span>
                                 )}
                               </div>
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50 text-slate-500" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-[400px] p-0 rounded-2xl border-slate-200 shadow-2xl overflow-hidden" align="start">
+                          <PopoverContent
+                            className="w-[400px] p-0 rounded-2xl border-slate-200 shadow-2xl overflow-hidden"
+                            align="start"
+                          >
                             <Command className="border-none">
-                              <CommandInput placeholder="Search talent..." className="border-none focus:ring-0 h-12" />
+                              <CommandInput
+                                placeholder="Search talent..."
+                                className="border-none focus:ring-0 h-12"
+                              />
                               <CommandList className="max-h-[300px]">
-                                <CommandEmpty className="py-6 text-center text-sm text-slate-500 font-medium">No talent found.</CommandEmpty>
+                                <CommandEmpty className="py-6 text-center text-sm text-slate-500 font-medium">
+                                  No talent found.
+                                </CommandEmpty>
                                 <CommandGroup>
                                   {talents.map((t) => {
                                     const isSelected = formData.talent_name
-                                      ? formData.talent_name.split(", ").includes(t.full_name)
+                                      ? formData.talent_name
+                                          .split(", ")
+                                          .includes(t.full_name)
                                       : false;
                                     return (
                                       <CommandItem
                                         key={t.id}
                                         value={t.full_name}
                                         onSelect={() => {
-                                          const currentNames = formData.talent_name
-                                            ? formData.talent_name.split(", ")
-                                            : [];
+                                          const currentNames =
+                                            formData.talent_name
+                                              ? formData.talent_name.split(", ")
+                                              : [];
                                           let updatedNames;
                                           if (isSelected) {
-                                            updatedNames = currentNames.filter((n) => n !== t.full_name);
+                                            updatedNames = currentNames.filter(
+                                              (n) => n !== t.full_name,
+                                            );
                                           } else {
                                             if (t.full_name) {
-                                              updatedNames = [...currentNames, t.full_name];
+                                              updatedNames = [
+                                                ...currentNames,
+                                                t.full_name,
+                                              ];
                                             } else {
                                               updatedNames = currentNames;
                                             }
                                           }
-                                          setValue("talent_name", updatedNames.join(", "));
+                                          setValue(
+                                            "talent_name",
+                                            updatedNames.join(", "),
+                                          );
                                         }}
                                         className="flex items-center gap-3 p-3 cursor-pointer hover:bg-slate-50 transition-colors rounded-lg m-1"
                                       >
                                         <div className="relative">
                                           <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
-                                            <AvatarImage src={t.profile_photo_url} />
+                                            <AvatarImage
+                                              src={t.profile_photo_url}
+                                            />
                                             <AvatarFallback className="bg-indigo-50 text-indigo-600 font-bold text-xs uppercase">
-                                              {t.full_name?.substring(0, 2) || "UT"}
+                                              {t.full_name?.substring(0, 2) ||
+                                                "UT"}
                                             </AvatarFallback>
                                           </Avatar>
                                           {isSelected && (
@@ -533,7 +575,12 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                           )}
                                         </div>
                                         <div className="flex flex-col">
-                                          <span className={cn("font-bold text-slate-900", isSelected && "text-indigo-600")}>
+                                          <span
+                                            className={cn(
+                                              "font-bold text-slate-900",
+                                              isSelected && "text-indigo-600",
+                                            )}
+                                          >
                                             {t.full_name || "Unknown Talent"}
                                           </span>
                                           <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
@@ -576,7 +623,8 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                           />
                         </div>
                         <p className="text-xs text-slate-500 mt-1">
-                          Client receives the contract only after agency signature.
+                          Client receives the contract only after agency
+                          signature.
                         </p>
                       </div>
                       <div className="space-y-2">
@@ -694,7 +742,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                       (template.contract_body_format as any) || "markdown"
                     }
                     onChangeBody={(val) => setValue("contract_body", val)}
-                    onChangeFormat={() => { }} // Format locked in submission
+                    onChangeFormat={() => {}} // Format locked in submission
                     variables={AVAILABLE_CONTRACT_VARIABLES}
                     placeholder="The contract content will appear here..."
                   />

@@ -1035,7 +1035,8 @@ export default function PostJob() {
                     className="border-2 border-gray-300 rounded-none"
                   />
                   <p className="text-xs text-gray-500 mt-2">
-                    Enter the total fixed budget or base payment for this project.
+                    Enter the total fixed budget or base payment for this
+                    project.
                   </p>
                 </div>
               </div>
@@ -1104,10 +1105,7 @@ export default function PostJob() {
                 </Button>
                 <Button
                   onClick={handleNext}
-                  disabled={
-                    !formData.budget ||
-                    !formData.payment_type
-                  }
+                  disabled={!formData.budget || !formData.payment_type}
                   className="bg-blue-600 hover:bg-blue-700 text-white rounded-none"
                 >
                   Next: Collaboration
@@ -1301,8 +1299,8 @@ export default function PostJob() {
                     </div>
                     <div className="flex items-center gap-4 text-sm text-gray-600">
                       <div className="flex items-center gap-1 text-gray-900 font-bold">
-                        <DollarSign className="w-4 h-4" />{formData.budget}{" "}
-                        {formData.currency}
+                        <DollarSign className="w-4 h-4" />
+                        {formData.budget} {formData.currency}
                       </div>
                       {formData.start_date && (
                         <span className="flex items-center gap-1">

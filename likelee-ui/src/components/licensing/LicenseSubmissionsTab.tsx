@@ -296,8 +296,7 @@ export const LicenseSubmissionsTab = () => {
                                 } catch {
                                   toast({
                                     title: "Copy failed",
-                                    description:
-                                      "Could not copy client link.",
+                                    description: "Could not copy client link.",
                                     variant: "destructive",
                                   });
                                 }

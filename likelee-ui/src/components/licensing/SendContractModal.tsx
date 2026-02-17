@@ -173,18 +173,20 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
     onSuccess: (res) => {
       setCurrentSubmissionId((res as any)?.id || null);
       queryClient.invalidateQueries({ queryKey: ["license-submissions"] });
-      const embedUrl = (res as any)?.agency_embed_src
-        || ((res as any)?.agency_submitter_slug
+      const embedUrl =
+        (res as any)?.agency_embed_src ||
+        ((res as any)?.agency_submitter_slug
           ? `https://docuseal.co/s/${(res as any).agency_submitter_slug}`
           : (res as any)?.docuseal_slug
             ? `https://docuseal.co/s/${(res as any).docuseal_slug}`
-          : null);
+            : null);
       if (requiresAgencySignature && embedUrl) {
         setAgencySignUrl(embedUrl);
         setAgencySignOpen(true);
         toast({
           title: "Agency signature required",
-          description: "Please complete your signature now. Client will receive it after you sign.",
+          description:
+            "Please complete your signature now. Client will receive it after you sign.",
         });
       } else {
         toast({
@@ -297,7 +299,8 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                When enabled, the client receives the signing request only after the agency signs.
+                When enabled, the client receives the signing request only after
+                the agency signs.
               </p>
             </div>
 
