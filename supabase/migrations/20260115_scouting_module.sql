@@ -59,6 +59,42 @@ CREATE TABLE IF NOT EXISTS public.scouting_trips (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
+ALTER TABLE public.scouting_trips
+  ADD COLUMN IF NOT EXISTS trip_type text;
+
+ALTER TABLE public.scouting_trips
+  ADD COLUMN IF NOT EXISTS start_time text;
+
+ALTER TABLE public.scouting_trips
+  ADD COLUMN IF NOT EXISTS end_time text;
+
+ALTER TABLE public.scouting_trips
+  ADD COLUMN IF NOT EXISTS scout_names text[];
+
+ALTER TABLE public.scouting_trips
+  ADD COLUMN IF NOT EXISTS photos text[];
+
+ALTER TABLE public.scouting_trips
+  ADD COLUMN IF NOT EXISTS latitude numeric(10,7);
+
+ALTER TABLE public.scouting_trips
+  ADD COLUMN IF NOT EXISTS longitude numeric(10,7);
+
+ALTER TABLE public.scouting_trips
+  ADD COLUMN IF NOT EXISTS prospects_approached integer DEFAULT 0;
+
+ALTER TABLE public.scouting_trips
+  ADD COLUMN IF NOT EXISTS prospects_added integer DEFAULT 0;
+
+ALTER TABLE public.scouting_trips
+  ADD COLUMN IF NOT EXISTS prospects_agreed integer DEFAULT 0;
+
+ALTER TABLE public.scouting_trips
+  ADD COLUMN IF NOT EXISTS conversion_rate numeric(5,2) DEFAULT 0;
+
+ALTER TABLE public.scouting_trips
+  ADD COLUMN IF NOT EXISTS total_cost numeric(12,2) DEFAULT 0;
+
 CREATE INDEX IF NOT EXISTS idx_scouting_trips_agency_id ON public.scouting_trips(agency_id);
 
 -- 3. Scouting Events (Open Calls)
@@ -75,6 +111,87 @@ CREATE TABLE IF NOT EXISTS public.scouting_events (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE public.scouting_events
+  ADD COLUMN IF NOT EXISTS event_type text;
+
+ALTER TABLE public.scouting_events
+  ADD COLUMN IF NOT EXISTS casting_for text;
+
+ALTER TABLE public.scouting_events
+  ADD COLUMN IF NOT EXISTS start_time text;
+
+ALTER TABLE public.scouting_events
+  ADD COLUMN IF NOT EXISTS end_time text;
+
+ALTER TABLE public.scouting_events
+  ADD COLUMN IF NOT EXISTS looking_for text[];
+
+ALTER TABLE public.scouting_events
+  ADD COLUMN IF NOT EXISTS min_age integer DEFAULT 18;
+
+ALTER TABLE public.scouting_events
+  ADD COLUMN IF NOT EXISTS max_age integer DEFAULT 30;
+
+ALTER TABLE public.scouting_events
+  ADD COLUMN IF NOT EXISTS gender_preference text DEFAULT 'all';
+
+ALTER TABLE public.scouting_events
+  ADD COLUMN IF NOT EXISTS special_skills text;
+
+ALTER TABLE public.scouting_events
+  ADD COLUMN IF NOT EXISTS what_to_bring text;
+
+ALTER TABLE public.scouting_events
+  ADD COLUMN IF NOT EXISTS dress_code text;
+
+ALTER TABLE public.scouting_events
+  ADD COLUMN IF NOT EXISTS location_details text;
+
+ALTER TABLE public.scouting_events
+  ADD COLUMN IF NOT EXISTS virtual_link text;
+
+ALTER TABLE public.scouting_events
+  ADD COLUMN IF NOT EXISTS max_attendees integer;
+
+ALTER TABLE public.scouting_events
+  ADD COLUMN IF NOT EXISTS registration_required boolean DEFAULT false;
+
+ALTER TABLE public.scouting_events
+  ADD COLUMN IF NOT EXISTS internal_notes text;
+
+ALTER TABLE public.scouting_events
+  ADD COLUMN IF NOT EXISTS contact_name text;
+
+ALTER TABLE public.scouting_events
+  ADD COLUMN IF NOT EXISTS contact_email text;
+
+ALTER TABLE public.scouting_events
+  ADD COLUMN IF NOT EXISTS contact_phone text;
+
+ALTER TABLE public.scouting_events
+  ADD COLUMN IF NOT EXISTS targeted_talent_goal integer;
+
+ALTER TABLE public.scouting_events
+  ADD COLUMN IF NOT EXISTS registration_fee numeric(10,2);
+
+ALTER TABLE public.scouting_events
+  ADD COLUMN IF NOT EXISTS expected_attendance integer;
+
+ALTER TABLE public.scouting_events
+  ADD COLUMN IF NOT EXISTS is_attending boolean;
+
+ALTER TABLE public.scouting_events
+  ADD COLUMN IF NOT EXISTS prospects_to_meet text[];
+
+ALTER TABLE public.scouting_events
+  ADD COLUMN IF NOT EXISTS past_success_rate numeric(5,2);
+
+ALTER TABLE public.scouting_events
+  ADD COLUMN IF NOT EXISTS calendar_event_id text;
+
+ALTER TABLE public.scouting_events
+  ADD COLUMN IF NOT EXISTS sync_with_calendar boolean;
 
 CREATE INDEX IF NOT EXISTS idx_scouting_events_agency_id ON public.scouting_events(agency_id);
 

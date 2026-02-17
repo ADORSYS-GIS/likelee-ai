@@ -5,6 +5,7 @@ import { Menu, X, Sparkles, LogIn, LogOut } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useAuth } from "@/auth/AuthProvider";
+import { CONTACT_EMAIL, CONTACT_EMAIL_MAILTO } from "@/config/public";
 
 export default function Layout({ children, currentPageName }) {
   const { t, i18n } = useTranslation();
@@ -488,7 +489,7 @@ export default function Layout({ children, currentPageName }) {
                   {t("questionsContactUs")}
                 </p>
                 <a
-                  href="mailto:operations@likelee.ai"
+                  href={CONTACT_EMAIL_MAILTO}
                   style={{
                     color: "#32C8D1",
                     fontSize: "16px",
@@ -496,7 +497,7 @@ export default function Layout({ children, currentPageName }) {
                     textDecoration: "none",
                   }}
                 >
-                  operations@likelee.ai
+                  {CONTACT_EMAIL}
                 </a>
               </div>
             </div>

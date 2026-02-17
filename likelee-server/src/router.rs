@@ -436,6 +436,10 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::packages::get_public_package),
         )
         .route(
+            "/api/public/packages/:token/full-assets-request",
+            post(crate::packages::create_public_package_full_assets_request),
+        )
+        .route(
             "/api/public/packages/:token/interactions",
             post(crate::packages::create_interaction).delete(crate::packages::delete_interaction),
         )
@@ -491,6 +495,10 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/reference-images",
             get(crate::reference_images::list_reference_images),
+        )
+        .route(
+            "/api/reference-images/:section_id",
+            delete(crate::reference_images::delete_reference_image),
         )
         // Voice
         .route(
@@ -576,6 +584,18 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/agency/payouts/account_status",
             get(crate::payouts::get_agency_account_status),
+        )
+        .route(
+            "/api/agency/payouts/balance",
+            get(crate::payouts::get_agency_balance),
+        )
+        .route(
+            "/api/agency/payouts/request",
+            post(crate::payouts::request_agency_payout),
+        )
+        .route(
+            "/api/agency/payouts/history",
+            get(crate::payouts::get_agency_payout_history),
         )
         .route(
             "/api/agency/billing/checkout",

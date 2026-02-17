@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { CONTACT_EMAIL, CONTACT_EMAIL_MAILTO } from "@/config/public";
 import { Card } from "@/components/ui/card";
 import CinematicGlobe from "@/components/CinematicGlobe";
 
@@ -254,10 +255,10 @@ export default function Impact() {
           <p className="text-lg text-gray-300 leading-relaxed">
             Reach out with ideas, concerns, or partnership opportunities at{" "}
             <a
-              href="mailto:operations@likelee.ai"
+              href={CONTACT_EMAIL_MAILTO}
               className="text-emerald-400 hover:text-emerald-300 underline"
             >
-              operations@likelee.ai
+              {CONTACT_EMAIL}
             </a>
           </p>
         </div>

@@ -2,7 +2,7 @@ use crate::auth::AuthUser;
 use crate::config::AppState;
 use axum::{
     body::Bytes,
-    extract::{Query, State},
+    extract::{Path, Query, State},
     http::{HeaderMap, StatusCode},
     Json,
 };
@@ -34,9 +34,114 @@ pub async fn list_reference_images(
         (StatusCode::BAD_GATEWAY, m)
     })?;
 
+    let status = resp.status();
     let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+
+    if !status.is_success() {
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
+
     let json: serde_json::Value = serde_json::from_str(&text).unwrap_or(serde_json::json!([]));
     Ok(Json(json))
+}
+
+#[derive(Serialize)]
+pub struct DeleteResponse {
+    pub deleted: bool,
+}
+
+pub async fn delete_reference_image(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(section_id): Path<String>,
+) -> Result<Json<DeleteResponse>, (StatusCode, String)> {
+    // 1) Find all rows for user + section
+    let rows_resp = state
+        .pg
+        .from("reference_images")
+        .select("id,storage_bucket,storage_path")
+        .eq("user_id", &user.id)
+        .eq("section_id", &section_id)
+        .order("created_at.desc")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    let rows_status = rows_resp.status();
+    let rows_text = rows_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    if !rows_status.is_success() {
+        return Err(crate::errors::sanitize_db_error(
+            rows_status.as_u16(),
+            rows_text,
+        ));
+    }
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&rows_text).unwrap_or_else(|_| vec![]);
+    if rows.is_empty() {
+        return Err((StatusCode::NOT_FOUND, "reference image not found".into()));
+    }
+
+    // 2) Delete storage objects (STRICT)
+    // If any storage deletion fails, do not delete DB rows.
+    let http = reqwest::Client::new();
+    for r in rows.iter() {
+        let bucket = r
+            .get("storage_bucket")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let path = r.get("storage_path").and_then(|v| v.as_str()).unwrap_or("");
+        if bucket.is_empty() || path.is_empty() {
+            return Err((
+                StatusCode::BAD_GATEWAY,
+                "missing storage metadata for reference image".into(),
+            ));
+        }
+        let del_url = format!("{}/storage/v1/object/{}/{path}", state.supabase_url, bucket);
+        let del = http
+            .delete(&del_url)
+            .header(
+                "Authorization",
+                format!("Bearer {}", state.supabase_service_key),
+            )
+            .header("apikey", state.supabase_service_key.clone())
+            .send()
+            .await
+            .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+        let del_status = del.status();
+        if !del_status.is_success() {
+            let txt = del.text().await.unwrap_or_default();
+            error!(status=?del_status, body=%txt, "reference image storage delete failed");
+            return Err((
+                StatusCode::BAD_GATEWAY,
+                "failed to delete reference image from storage".into(),
+            ));
+        }
+    }
+
+    // 3) Delete all DB rows for this section (strict: storage already removed)
+    let del_resp = state
+        .pg
+        .from("reference_images")
+        .delete()
+        .eq("user_id", &user.id)
+        .eq("section_id", &section_id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    let del_status = del_resp.status();
+    let del_text = del_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    if !del_status.is_success() {
+        return Err(crate::errors::sanitize_db_error(
+            del_status.as_u16(),
+            del_text,
+        ));
+    }
+
+    Ok(Json(DeleteResponse { deleted: true }))
 }
 
 #[derive(Serialize)]

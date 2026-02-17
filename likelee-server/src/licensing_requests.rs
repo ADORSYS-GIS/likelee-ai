@@ -131,16 +131,15 @@ pub async fn list_for_agency(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    if !resp.status().is_success() {
-        let err = resp.text().await.unwrap_or_default();
-        tracing::error!(agency_id = %user.id, error = %err, "licensing_requests database error");
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
-    }
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let text = resp.text().await.map_err(|e| {
-        tracing::error!(agency_id = %user.id, error = %e, "licensing_requests text fetch error");
-        (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
-    })?;
+    if !status.is_success() {
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
 
     let rows: serde_json::Value = serde_json::from_str(&text).map_err(|e| {
         tracing::error!(agency_id = %user.id, error = %e, "licensing_requests JSON parse error");

@@ -1,4 +1,5 @@
 use crate::config::AppState;
+use crate::errors::sanitize_db_error;
 use axum::{
     extract::{Query, State},
     http::StatusCode,
@@ -132,10 +133,15 @@ pub async fn search_faces(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    let status = resp.status();
     let text = resp
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
 
     let rows: serde_json::Value = serde_json::from_str(&text).unwrap_or(serde_json::json!([]));
 

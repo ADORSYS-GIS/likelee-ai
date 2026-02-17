@@ -1,4 +1,4 @@
-use crate::{auth::AuthUser, config::AppState};
+use crate::{auth::AuthUser, config::AppState, errors::sanitize_db_error};
 use axum::extract::Multipart;
 use axum::extract::Query;
 use axum::{extract::Path, extract::State, http::StatusCode, Json};
@@ -142,6 +142,8 @@ pub async fn register(
         "email": payload.email,
         "website": payload.website,
         "phone_number": payload.phone_number,
+        "plan_tier": "free",
+        "seats_limit": 1,
         "status": "waitlist",
         "onboarding_step": "email_verification"
     });
@@ -154,12 +156,14 @@ pub async fn register(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    if !resp.status().is_success() {
-        let txt = resp
-            .text()
-            .await
-            .unwrap_or_else(|_| "failed to create agency profile".to_string());
-        return Err((StatusCode::BAD_REQUEST, txt));
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
     }
 
     Ok(Json(json!({
@@ -203,10 +207,16 @@ pub async fn update(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    let status = resp.status();
     let text = resp
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
+
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -233,9 +243,7 @@ pub async fn get_profile(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !status.is_success() {
-        let code =
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err((code, txt));
+        return Err(sanitize_db_error(status.as_u16(), txt));
     }
     let v: serde_json::Value = serde_json::from_str(&txt)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -300,7 +308,7 @@ async fn ensure_storage_settings_row(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err(crate::errors::sanitize_db_error(code, text));
+        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
     }
 
     let v: serde_json::Value = serde_json::from_str(&text)
@@ -334,7 +342,7 @@ async fn ensure_storage_settings_row(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err(crate::errors::sanitize_db_error(code, text));
+        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
     }
 
     // Fetch again to return limit
@@ -390,7 +398,7 @@ async fn get_agency_used_storage_bytes(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err(crate::errors::sanitize_db_error(code, text));
+        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
     }
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -446,7 +454,7 @@ pub async fn list_agency_folders(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err(crate::errors::sanitize_db_error(code, text));
+        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
     }
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -478,7 +486,7 @@ pub async fn create_agency_folder(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err(crate::errors::sanitize_db_error(code, text));
+        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
     }
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -517,7 +525,7 @@ pub async fn list_agency_files(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err(crate::errors::sanitize_db_error(code, text));
+        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
     }
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -841,7 +849,7 @@ pub async fn delete_agency_storage_file(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err(crate::errors::sanitize_db_error(code, text));
+        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
     }
 
     Ok(Json(serde_json::json!({ "ok": true })))
@@ -1887,7 +1895,7 @@ pub async fn list_clients(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err(crate::errors::sanitize_db_error(code, text));
+        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
     }
     let mut clients: Vec<serde_json::Value> = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -1909,7 +1917,10 @@ pub async fn list_clients(
     if !bookings_status.is_success() {
         let code = StatusCode::from_u16(bookings_status.as_u16())
             .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err(crate::errors::sanitize_db_error(code, bookings_text));
+        return Err(crate::errors::sanitize_db_error(
+            code.as_u16(),
+            bookings_text,
+        ));
     }
     let bookings: Vec<serde_json::Value> = serde_json::from_str(&bookings_text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -1930,7 +1941,10 @@ pub async fn list_clients(
     if !contacts_status.is_success() {
         let code = StatusCode::from_u16(contacts_status.as_u16())
             .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err(crate::errors::sanitize_db_error(code, contacts_text));
+        return Err(crate::errors::sanitize_db_error(
+            code.as_u16(),
+            contacts_text,
+        ));
     }
     let contacts: Vec<serde_json::Value> = serde_json::from_str(&contacts_text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -2046,7 +2060,7 @@ pub async fn create_client(
     if !status.is_success() {
         let code =
             StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-        return Err(crate::errors::sanitize_db_error(code, text));
+        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
     }
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;

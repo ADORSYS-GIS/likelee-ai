@@ -1,3 +1,4 @@
+use crate::errors::sanitize_db_error;
 use axum::{
     extract::{Query, State},
     http::StatusCode,
@@ -27,11 +28,17 @@ async fn resolve_talent_creator_id(
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !resp.status().is_success() {
-        let txt = resp.text().await.unwrap_or_default();
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, txt));
+
+    let status = resp.status();
+    let txt = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), txt));
     }
-    let txt = resp.text().await.unwrap_or("[]".into());
+
     let rows: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
     let first = rows.first().cloned().unwrap_or(json!({}));
     let cid = first
@@ -144,6 +151,15 @@ pub async fn create_onboarding_link(
     if account_id.is_empty() {
         let mut params = stripe_sdk::CreateAccount::new();
         params.type_ = Some(stripe_sdk::AccountType::Express);
+        params.capabilities = Some(stripe_sdk::CreateAccountCapabilities {
+            card_payments: Some(stripe_sdk::CreateAccountCapabilitiesCardPayments {
+                requested: Some(true),
+            }),
+            transfers: Some(stripe_sdk::CreateAccountCapabilitiesTransfers {
+                requested: Some(true),
+            }),
+            ..Default::default()
+        });
         // Optional: set default currency/country if you want to constrain onboarding
         match stripe_sdk::Account::create(&client, params).await {
             Ok(acct) => {
@@ -472,6 +488,15 @@ pub async fn create_agency_onboarding_link(
     if account_id.is_empty() {
         let mut params = stripe_sdk::CreateAccount::new();
         params.type_ = Some(stripe_sdk::AccountType::Express);
+        params.capabilities = Some(stripe_sdk::CreateAccountCapabilities {
+            card_payments: Some(stripe_sdk::CreateAccountCapabilitiesCardPayments {
+                requested: Some(true),
+            }),
+            transfers: Some(stripe_sdk::CreateAccountCapabilitiesTransfers {
+                requested: Some(true),
+            }),
+            ..Default::default()
+        });
         match stripe_sdk::Account::create(&client, params).await {
             Ok(acct) => {
                 account_id = acct.id.to_string();
@@ -1369,6 +1394,18 @@ pub async fn stripe_webhook(
                 .cloned()
                 .unwrap_or(json!({}));
 
+            let billing_domain = obj
+                .get("metadata")
+                .and_then(|m| m.get("billing_domain"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+
+            if billing_domain == "licensing" {
+                let _ = handle_licensing_checkout_session_completed(&state, &obj).await;
+                return (StatusCode::OK, Json(json!({"status":"ok"})));
+            }
+
             let agency_id = obj
                 .get("client_reference_id")
                 .and_then(|v| v.as_str())
@@ -1413,6 +1450,18 @@ pub async fn stripe_webhook(
                 .and_then(|d| d.get("object"))
                 .cloned()
                 .unwrap_or(json!({}));
+
+            let billing_domain = obj
+                .get("metadata")
+                .and_then(|m| m.get("billing_domain"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+
+            if billing_domain == "licensing" {
+                let _ = sync_licensing_access_grant_from_stripe_subscription(&state, &obj).await;
+                return (StatusCode::OK, Json(json!({"status":"ok"})));
+            }
 
             let subscription_id = obj.get("id").and_then(|v| v.as_str()).unwrap_or("");
             let customer_id = obj
@@ -1594,6 +1643,225 @@ pub async fn stripe_webhook(
     (StatusCode::OK, Json(json!({"status":"ok"})))
 }
 
+async fn handle_licensing_checkout_session_completed(
+    state: &AppState,
+    obj: &serde_json::Value,
+) -> Result<(), String> {
+    let subscription_id = obj
+        .get("subscription")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let customer_id = obj
+        .get("customer")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let session_id = obj
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+
+    let md = obj.get("metadata").cloned().unwrap_or(json!({}));
+    let agency_id = md
+        .get("agency_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let package_id = md
+        .get("package_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let package_access_token = md
+        .get("package_access_token")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let client_email = md
+        .get("client_email")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
+
+    if agency_id.is_empty() || package_id.is_empty() || package_access_token.is_empty() {
+        return Ok(());
+    }
+
+    if !session_id.is_empty() {
+        let update = json!({
+            "status": "completed",
+            "stripe_subscription_id": if subscription_id.is_empty() { serde_json::Value::Null } else { json!(subscription_id) },
+            "stripe_customer_id": if customer_id.is_empty() { serde_json::Value::Null } else { json!(customer_id) },
+        });
+        let _ = state
+            .pg
+            .from("licensing_checkout_sessions")
+            .update(update.to_string())
+            .eq("stripe_checkout_session_id", session_id)
+            .execute()
+            .await;
+    }
+
+    if subscription_id.is_empty() {
+        return Ok(());
+    }
+
+    // Fetch subscription for authoritative status/period end.
+    let sub = fetch_subscription(state, &subscription_id)
+        .await
+        .map_err(|e| e.to_string())?;
+    upsert_licensing_access_grant_from_subscription(
+        state,
+        &agency_id,
+        &package_id,
+        &package_access_token,
+        client_email.as_deref(),
+        &subscription_id,
+        if customer_id.is_empty() {
+            None
+        } else {
+            Some(customer_id.as_str())
+        },
+        &sub,
+    )
+    .await;
+
+    Ok(())
+}
+
+async fn sync_licensing_access_grant_from_stripe_subscription(
+    state: &AppState,
+    obj: &serde_json::Value,
+) -> Result<(), String> {
+    let subscription_id = obj.get("id").and_then(|v| v.as_str()).unwrap_or("").trim();
+    if subscription_id.is_empty() {
+        return Ok(());
+    }
+
+    let customer_id = obj
+        .get("customer")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+
+    let md = obj.get("metadata").cloned().unwrap_or(json!({}));
+    let agency_id = md
+        .get("agency_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let package_id = md
+        .get("package_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let package_access_token = md
+        .get("package_access_token")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let client_email = md
+        .get("client_email")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
+
+    if agency_id.is_empty() || package_id.is_empty() || package_access_token.is_empty() {
+        return Ok(());
+    }
+
+    let sub = fetch_subscription(state, subscription_id).await?;
+    upsert_licensing_access_grant_from_subscription(
+        state,
+        &agency_id,
+        &package_id,
+        &package_access_token,
+        client_email.as_deref(),
+        subscription_id,
+        if customer_id.is_empty() {
+            None
+        } else {
+            Some(customer_id.as_str())
+        },
+        &sub,
+    )
+    .await;
+
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn upsert_licensing_access_grant_from_subscription(
+    state: &AppState,
+    agency_id: &str,
+    package_id: &str,
+    package_access_token: &str,
+    client_email: Option<&str>,
+    subscription_id: &str,
+    customer_id: Option<&str>,
+    sub: &stripe_sdk::Subscription,
+) {
+    let stripe_status = sub.status.to_string();
+    let cancel_at_period_end = sub.cancel_at_period_end;
+    let current_period_end =
+        chrono::DateTime::<chrono::Utc>::from_timestamp(sub.current_period_end, 0)
+            .map(|dt| dt.to_rfc3339());
+
+    let active = matches!(stripe_status.as_str(), "active" | "trialing");
+    let status = if active { "active" } else { "inactive" };
+
+    let mut row = serde_json::Map::new();
+    row.insert("agency_id".into(), json!(agency_id));
+    row.insert("package_id".into(), json!(package_id));
+    row.insert("package_access_token".into(), json!(package_access_token));
+    row.insert("scope".into(), json!("package_assets"));
+    row.insert("stripe_subscription_id".into(), json!(subscription_id));
+    row.insert("stripe_status".into(), json!(stripe_status));
+    row.insert("cancel_at_period_end".into(), json!(cancel_at_period_end));
+    row.insert("status".into(), json!(status));
+    row.insert("updated_at".into(), json!(chrono::Utc::now().to_rfc3339()));
+    if let Some(cpe) = current_period_end {
+        row.insert("current_period_end".into(), json!(cpe));
+    }
+    if let Some(email) = client_email {
+        if !email.trim().is_empty() {
+            row.insert("client_email".into(), json!(email.trim()));
+        }
+    }
+    if let Some(cust) = customer_id {
+        if !cust.trim().is_empty() {
+            row.insert("stripe_customer_id".into(), json!(cust.trim()));
+        }
+    }
+
+    let _ = state
+        .pg
+        .from("licensing_access_grants")
+        .upsert(serde_json::Value::Object(row).to_string())
+        .execute()
+        .await;
+
+    info!(
+        agency_id = %agency_id,
+        package_id = %package_id,
+        subscription_id = %subscription_id,
+        active = active,
+        "synced licensing access grant from stripe subscription"
+    );
+}
+
 fn verify_stripe_signature(payload: &str, sig_header: &str, secret: &str) -> Result<(), String> {
     if secret.trim().is_empty() {
         return Err("stripe_webhook_secret_not_configured".to_string());
@@ -1633,12 +1901,62 @@ fn verify_stripe_signature(payload: &str, sig_header: &str, secret: &str) -> Res
     Ok(())
 }
 
-fn stripe_subscription_to_plan_tier(state: &AppState, price_id: &str) -> Option<&'static str> {
+fn stripe_subscription_to_plan_tier_from_price_id(
+    state: &AppState,
+    price_id: &str,
+) -> Option<&'static str> {
+    // New tiers (Basic/Pro) - package pricing (all-inclusive)
+    if !state.stripe_agency_pro_package_price_id.trim().is_empty()
+        && price_id == state.stripe_agency_pro_package_price_id
+    {
+        return Some("pro");
+    }
+    if !state.stripe_agency_basic_package_price_id.trim().is_empty()
+        && price_id == state.stripe_agency_basic_package_price_id
+    {
+        return Some("basic");
+    }
+
+    // Legacy: base-plan pricing
+    if !state.stripe_agency_pro_base_price_id.trim().is_empty()
+        && price_id == state.stripe_agency_pro_base_price_id
+    {
+        return Some("pro");
+    }
+    if !state.stripe_agency_basic_base_price_id.trim().is_empty()
+        && price_id == state.stripe_agency_basic_base_price_id
+    {
+        return Some("basic");
+    }
+
+    // Backward compatibility
     if !state.stripe_scale_price_id.trim().is_empty() && price_id == state.stripe_scale_price_id {
-        return Some("scale");
+        return Some("pro");
     }
     if !state.stripe_agency_price_id.trim().is_empty() && price_id == state.stripe_agency_price_id {
-        return Some("agency");
+        return Some("basic");
+    }
+    None
+}
+
+fn stripe_subscription_to_plan_tier(
+    state: &AppState,
+    sub: &stripe_sdk::Subscription,
+) -> Option<&'static str> {
+    // Subscriptions may contain multiple line items (roster + add-ons). Determine the tier by
+    // scanning for a known base-plan price ID.
+    for item in sub.items.data.iter() {
+        let price_id = item
+            .price
+            .as_ref()
+            .map(|p| p.id.to_string())
+            .unwrap_or_default();
+        if price_id.trim().is_empty() {
+            continue;
+        }
+        if let Some(tier) = stripe_subscription_to_plan_tier_from_price_id(state, price_id.trim()) {
+            return Some(tier);
+        }
     }
     None
 }
@@ -1678,6 +1996,7 @@ async fn sync_agency_subscription_from_stripe(
 ) -> Result<(), String> {
     let sub = fetch_subscription(state, subscription_id).await?;
 
+    // For audit/debug we still store the first item price ID (if any), but tier mapping scans all items.
     let price_id = sub
         .items
         .data
@@ -1692,16 +2011,28 @@ async fn sync_agency_subscription_from_stripe(
         chrono::DateTime::<chrono::Utc>::from_timestamp(sub.current_period_end, 0)
             .map(|dt| dt.to_rfc3339());
 
-    let tier = stripe_subscription_to_plan_tier(state, &price_id);
+    let tier = stripe_subscription_to_plan_tier(state, &sub);
     let plan_tier = match (tier, status.as_str()) {
         (Some(t), "active") | (Some(t), "trialing") => t,
         // When canceled/unpaid/etc, fall back to free.
         _ => "free",
     };
 
+    let seats_limit: i64 = match plan_tier {
+        "basic" | "pro" | "enterprise" => 186,
+        _ => 1,
+    };
+
+    let storage_limit_bytes: i64 = match plan_tier {
+        "basic" => 500_i64 * 1024 * 1024 * 1024,
+        "pro" => 1024_i64 * 1024 * 1024 * 1024,
+        _ => 5_i64 * 1024 * 1024 * 1024,
+    };
+
     // Update agency profile
     let mut update = serde_json::Map::new();
     update.insert("plan_tier".into(), json!(plan_tier));
+    update.insert("seats_limit".into(), json!(seats_limit));
     update.insert("stripe_subscription_id".into(), json!(subscription_id));
     update.insert(
         "plan_updated_at".into(),
@@ -1717,6 +2048,26 @@ async fn sync_agency_subscription_from_stripe(
         .from("agencies")
         .eq("id", agency_id)
         .update(serde_json::Value::Object(update).to_string())
+        .execute()
+        .await;
+
+    let _ = state
+        .pg
+        .from("agency_storage_settings")
+        .insert(
+            json!({
+                "agency_id": agency_id,
+                "storage_limit_bytes": storage_limit_bytes,
+            })
+            .to_string(),
+        )
+        .execute()
+        .await;
+    let _ = state
+        .pg
+        .from("agency_storage_settings")
+        .eq("agency_id", agency_id)
+        .update(json!({"storage_limit_bytes": storage_limit_bytes}).to_string())
         .execute()
         .await;
 
@@ -1744,4 +2095,533 @@ async fn sync_agency_subscription_from_stripe(
 
     info!(agency_id = %agency_id, plan_tier = %plan_tier, subscription_id = %subscription_id, "synced agency plan tier from stripe subscription");
     Ok(())
+}
+
+// ============================================================================
+// Agency Payout Functions
+// ============================================================================
+
+#[derive(Deserialize)]
+pub struct AgencyPayoutRequestPayload {
+    pub amount_cents: i64,
+    pub currency: Option<String>,
+    pub payout_method: Option<String>, // "standard" | "instant"
+}
+
+pub async fn get_agency_balance(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> (StatusCode, Json<serde_json::Value>) {
+    // Get available balance from agency_balances table
+    let balance_resp = match state
+        .pg
+        .from("agency_balances")
+        .select("available_cents,currency,updated_at")
+        .eq("agency_id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+    {
+        Ok(r) => r,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status":"error","error":e.to_string()})),
+            )
+        }
+    };
+
+    let balance_text = match balance_resp.text().await {
+        Ok(t) => t,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status":"error","error":e.to_string()})),
+            )
+        }
+    };
+
+    let balance_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&balance_text).unwrap_or_default();
+    let balance_row = balance_rows.first().cloned().unwrap_or(json!({
+        "available_cents": 0,
+        "currency": "USD"
+    }));
+
+    let currency = balance_row
+        .get("currency")
+        .and_then(|v| v.as_str())
+        .unwrap_or("USD")
+        .to_string();
+
+    (
+        StatusCode::OK,
+        Json(json!({
+            "available_balance": {
+                "amount_cents": balance_row.get("available_cents").and_then(|v| v.as_i64()).unwrap_or(0),
+                "currency": currency.clone()
+            }
+        })),
+    )
+}
+
+pub async fn request_agency_payout(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<AgencyPayoutRequestPayload>,
+) -> (StatusCode, Json<serde_json::Value>) {
+    if !state.payouts_enabled {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"status":"error","error":"payouts_disabled"})),
+        );
+    }
+
+    if payload.amount_cents <= 0 {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"status":"error","error":"invalid_amount"})),
+        );
+    }
+
+    let currency = payload
+        .currency
+        .unwrap_or_else(|| state.payout_currency.clone())
+        .to_uppercase();
+
+    // Validate currency
+    if !state
+        .payout_allowed_currencies
+        .iter()
+        .any(|c| c == &currency)
+    {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "status":"error",
+                "error":"unsupported_currency",
+                "allowed": state.payout_allowed_currencies
+            })),
+        );
+    }
+
+    // Check minimum payout amount
+    if (payload.amount_cents as u32) < state.min_payout_amount_cents {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "status":"error",
+                "error":"below_minimum",
+                "min_cents": state.min_payout_amount_cents
+            })),
+        );
+    }
+
+    // Validate payout method
+    let method = payload
+        .payout_method
+        .unwrap_or_else(|| {
+            if state.instant_payouts_enabled {
+                "instant".to_string()
+            } else {
+                "standard".to_string()
+            }
+        })
+        .to_lowercase();
+
+    if method != "standard" && method != "instant" {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "status":"error",
+                "error":"invalid_payout_method",
+                "allowed":["standard","instant"]
+            })),
+        );
+    }
+
+    if method == "instant" && !state.instant_payouts_enabled {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"status":"error","error":"instant_payouts_disabled"})),
+        );
+    }
+
+    // Get agency's available balance
+    let balance_resp = match state
+        .pg
+        .from("agency_balances")
+        .select("available_cents")
+        .eq("agency_id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+    {
+        Ok(r) => r,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status":"error","error":e.to_string()})),
+            )
+        }
+    };
+
+    let balance_text = balance_resp.text().await.unwrap_or("[]".to_string());
+    let balance_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&balance_text).unwrap_or_default();
+    let available = balance_rows
+        .first()
+        .and_then(|r| r.get("available_cents").and_then(|x| x.as_i64()))
+        .unwrap_or(0);
+
+    if available < payload.amount_cents {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "status":"error",
+                "error":"insufficient_funds",
+                "available_cents": available
+            })),
+        );
+    }
+
+    // Get agency's Stripe Connect account
+    let agency_resp = match state
+        .pg
+        .from("agencies")
+        .select("stripe_connect_account_id")
+        .eq("id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+    {
+        Ok(r) => r,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status":"error","error":e.to_string()})),
+            )
+        }
+    };
+
+    let agency_text = agency_resp.text().await.unwrap_or("[]".to_string());
+    let agency_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&agency_text).unwrap_or_default();
+    let stripe_account_id = agency_rows
+        .first()
+        .and_then(|r| r.get("stripe_connect_account_id").and_then(|v| v.as_str()))
+        .unwrap_or("")
+        .to_string();
+
+    if stripe_account_id.is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "status":"error",
+                "error":"stripe_account_not_connected",
+                "message":"Please complete Stripe onboarding first"
+            })),
+        );
+    }
+
+    // Compute fee
+    let fee_cents = (payload.amount_cents * (state.payout_fee_bps as i64) + 9999) / 10000;
+
+    // Auto-approve based on threshold
+    let status = if (payload.amount_cents as u32) <= state.payout_auto_approve_threshold_cents {
+        "approved"
+    } else {
+        "pending"
+    };
+
+    // Create payout request
+    let body = json!({
+        "agency_id": user.id,
+        "amount_cents": payload.amount_cents,
+        "currency": currency,
+        "payout_method": method,
+        "status": status,
+        "requested_at": chrono::Utc::now().to_rfc3339(),
+    });
+
+    let ins = match state
+        .pg
+        .from("agency_payout_requests")
+        .insert(body.to_string())
+        .execute()
+        .await
+    {
+        Ok(r) => r,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status":"error","error":e.to_string()})),
+            )
+        }
+    };
+
+    let ins_text = ins.text().await.unwrap_or("[]".into());
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&ins_text).unwrap_or_default();
+    let created = rows.first().cloned().unwrap_or(json!({"status":"ok"}));
+
+    let created_id = created
+        .get("id")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+
+    // If auto-approved, execute the payout
+    if status == "approved" {
+        if let Some(req_id) = created_id.as_deref() {
+            let _ = execute_agency_payout(
+                &state,
+                req_id,
+                &user.id,
+                &stripe_account_id,
+                payload.amount_cents,
+                fee_cents,
+                &currency,
+                &method,
+            )
+            .await;
+        }
+    }
+
+    // Re-fetch the row to return the latest status/failure_reason.
+    // This is especially important for instant payouts, where the Stripe call can fail
+    // after we created the row but before the client refreshes history.
+    let payout_request = if let Some(req_id) = created_id.as_deref() {
+        match state
+            .pg
+            .from("agency_payout_requests")
+            .select("id,agency_id,amount_cents,currency,payout_method,status,requested_at,processed_at,stripe_transfer_id,stripe_payout_id,failure_reason")
+            .eq("id", req_id)
+            .limit(1)
+            .execute()
+            .await
+        {
+            Ok(r) => {
+                let st = r.status();
+                let txt = r.text().await.unwrap_or("[]".into());
+                if !st.is_success() {
+                    created.clone()
+                } else {
+                    let v: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+                    v.first().cloned().unwrap_or_else(|| created.clone())
+                }
+            }
+            Err(_) => created.clone(),
+        }
+    } else {
+        created.clone()
+    };
+
+    (
+        StatusCode::OK,
+        Json(json!({"status":"ok","payout_request": payout_request})),
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn execute_agency_payout(
+    state: &AppState,
+    payout_request_id: &str,
+    _agency_id: &str,
+    stripe_account_id: &str,
+    amount_cents: i64,
+    fee_cents: i64,
+    currency: &str,
+    method: &str,
+) -> Result<(), ()> {
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let net_cents = amount_cents - fee_cents;
+
+    if net_cents <= 0 {
+        let _ = state
+            .pg
+            .from("agency_payout_requests")
+            .eq("id", payout_request_id)
+            .update(json!({"status":"failed","failure_reason":"non_positive_net"}).to_string())
+            .execute()
+            .await;
+        return Err(());
+    }
+
+    // Mark as processing
+    let _ = state
+        .pg
+        .from("agency_payout_requests")
+        .eq("id", payout_request_id)
+        .update(json!({"status":"processing"}).to_string())
+        .execute()
+        .await;
+
+    // Create transfer to connected account
+    let currency_enum = match stripe_sdk::Currency::from_str(&currency.to_lowercase()) {
+        Ok(c) => c,
+        Err(_) => {
+            let _ = state
+                .pg
+                .from("agency_payout_requests")
+                .eq("id", payout_request_id)
+                .update(json!({"status":"failed","failure_reason":"invalid_currency"}).to_string())
+                .execute()
+                .await;
+            return Err(());
+        }
+    };
+
+    let mut params = stripe_sdk::CreateTransfer::new(currency_enum, stripe_account_id.to_string());
+    params.amount = Some(net_cents);
+
+    match stripe_sdk::Transfer::create(&client, params).await {
+        Ok(t) => {
+            let _ = state
+                .pg
+                .from("agency_payout_requests")
+                .eq("id", payout_request_id)
+                .update(json!({"stripe_transfer_id": t.id.to_string()}).to_string())
+                .execute()
+                .await;
+
+            // If instant payout requested, create payout on connected account
+            if method == "instant" && state.instant_payouts_enabled {
+                let payout_currency = match stripe_sdk::Currency::from_str(&currency.to_lowercase())
+                {
+                    Ok(c) => c,
+                    Err(_) => {
+                        let _ = state
+                            .pg
+                            .from("agency_payout_requests")
+                            .eq("id", payout_request_id)
+                            .update(
+                                json!({"status":"failed","failure_reason":"invalid_currency"})
+                                    .to_string(),
+                            )
+                            .execute()
+                            .await;
+                        return Err(());
+                    }
+                };
+
+                let mut payout_params = stripe_sdk::CreatePayout::new(net_cents, payout_currency);
+                payout_params.method = Some(stripe_sdk::PayoutMethod::Instant);
+
+                let connected_client = match stripe_account_id.parse::<stripe_sdk::AccountId>() {
+                    Ok(id) => client.with_stripe_account(id),
+                    Err(_) => {
+                        let _ = state
+                            .pg
+                            .from("agency_payout_requests")
+                            .eq("id", payout_request_id)
+                            .update(
+                                json!({"status":"failed","failure_reason":"invalid_account_id"})
+                                    .to_string(),
+                            )
+                            .execute()
+                            .await;
+                        return Err(());
+                    }
+                };
+
+                match stripe_sdk::Payout::create(&connected_client, payout_params).await {
+                    Ok(p) => {
+                        let _ = state
+                            .pg
+                            .from("agency_payout_requests")
+                            .eq("id", payout_request_id)
+                            .update(json!({"stripe_payout_id": p.id.to_string()}).to_string())
+                            .execute()
+                            .await;
+
+                        let _ = state
+                            .pg
+                            .from("agency_payout_requests")
+                            .eq("id", payout_request_id)
+                            .update(json!({"status":"paid","processed_at": chrono::Utc::now().to_rfc3339()}).to_string())
+                            .execute()
+                            .await;
+                    }
+                    Err(e) => {
+                        let _ = state
+                            .pg
+                            .from("agency_payout_requests")
+                            .eq("id", payout_request_id)
+                            .update(
+                                json!({"status":"failed","failure_reason": e.to_string()})
+                                    .to_string(),
+                            )
+                            .execute()
+                            .await;
+                        return Err(());
+                    }
+                }
+            } else {
+                // Standard payout - mark as processing, will be updated by webhooks
+                let _ = state
+                    .pg
+                    .from("agency_payout_requests")
+                    .eq("id", payout_request_id)
+                    .update(json!({"status":"processing"}).to_string())
+                    .execute()
+                    .await;
+            }
+
+            Ok(())
+        }
+        Err(e) => {
+            let _ = state
+                .pg
+                .from("agency_payout_requests")
+                .eq("id", payout_request_id)
+                .update(json!({"status":"failed","failure_reason": e.to_string()}).to_string())
+                .execute()
+                .await;
+            Err(())
+        }
+    }
+}
+
+pub async fn get_agency_payout_history(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> (StatusCode, Json<serde_json::Value>) {
+    let resp = match state
+        .pg
+        .from("agency_payout_requests")
+        .select("id,amount_cents,currency,payout_method,status,requested_at,processed_at,stripe_transfer_id,stripe_payout_id,failure_reason")
+        .eq("agency_id", &user.id)
+        .order("requested_at.desc")
+        .execute()
+        .await
+    {
+        Ok(r) => r,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status":"error","error":e.to_string()})),
+            )
+        }
+    };
+
+    let status = resp.status();
+
+    let text = match resp.text().await {
+        Ok(t) => t,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status":"error","error":e.to_string()})),
+            )
+        }
+    };
+
+    if !status.is_success() {
+        return (
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            Json(json!({"status":"error","error":text})),
+        );
+    }
+
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    (StatusCode::OK, Json(json!({"items": rows})))
 }

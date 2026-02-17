@@ -223,7 +223,7 @@ pub async fn create_session(
             if !status.is_success() {
                 let code = StatusCode::from_u16(status.as_u16())
                     .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-                return Err(crate::errors::sanitize_db_error(code, text));
+                return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
             }
             let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
             if rows.len() >= limit {

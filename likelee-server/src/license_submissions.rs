@@ -818,16 +818,16 @@ pub async fn list(
         (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
     })?;
 
-    if !resp.status().is_success() {
-        let err = resp.text().await.unwrap_or_default();
-        tracing::error!(error = %err, "license_submissions query error");
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
-    }
-
+    let status = resp.status();
     let text = resp.text().await.map_err(|e| {
         tracing::error!(error = %e, "Failed to read response");
         (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
     })?;
+
+    if !status.is_success() {
+        tracing::error!(error = %text, "license_submissions query error");
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
+    }
 
     // The select embeds license_templates as an object; flatten template_name for UI.
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();

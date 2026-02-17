@@ -34,7 +34,7 @@ async fn enforce_voice_clone_limit_for_agency(
     let text = resp.text().await.unwrap_or_else(|_| "[]".into());
     if !status.is_success() {
         let code = StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY);
-        return Err(crate::errors::sanitize_db_error(code, text));
+        return Err(crate::errors::sanitize_db_error(code.as_u16(), text));
     }
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
     if rows.len() >= limit {
@@ -237,7 +237,7 @@ pub async fn signed_url_for_recording(
     let resp = state
         .pg
         .from("voice_recordings")
-        .select("storage_bucket,storage_path,user_id")
+        .select("storage_bucket,storage_path,user_id,accessible")
         .eq("id", &q.recording_id)
         .limit(1)
         .execute()
@@ -272,6 +272,14 @@ pub async fn signed_url_for_recording(
         .and_then(|v| v.as_str())
         .ok_or((StatusCode::NOT_FOUND, "recording not found".into()))?;
 
+    if !row
+        .get("accessible")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true)
+    {
+        return Err((StatusCode::NOT_FOUND, "recording not found".into()));
+    }
+
     // Request signed URL via Storage API
     let url = format!(
         "{}/storage/v1/object/sign/{}/{}",
@@ -292,6 +300,26 @@ pub async fn signed_url_for_recording(
         .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
     if !sign.status().is_success() {
         let msg = sign.text().await.unwrap_or_default();
+
+        let is_object_not_found = msg.contains("Object not found")
+            || msg.contains("\"error\":\"not_found\"")
+            || msg.contains("\"error\": \"not_found\"")
+            || msg.contains("\"statusCode\":404")
+            || msg.contains("\"statusCode\": 404");
+
+        if is_object_not_found {
+            let _ = state
+                .pg
+                .from("voice_recordings")
+                .update("{\"accessible\": false}")
+                .eq("id", &q.recording_id)
+                .eq("user_id", &user.id)
+                .execute()
+                .await;
+
+            return Err((StatusCode::NOT_FOUND, "recording not found".into()));
+        }
+
         return Err((StatusCode::BAD_GATEWAY, format!("sign url failed: {msg}")));
     }
     let signed_json: serde_json::Value = sign
@@ -602,8 +630,32 @@ pub async fn delete_voice_recording(
         .execute()
         .await;
 
+    // If a voice model references this recording, clear it first.
+    // Some PostgREST deployments surface this as a 409/validation error on delete,
+    // even though the FK is configured as ON DELETE SET NULL.
+    let vm_upd = state
+        .pg
+        .from("voice_models")
+        .update("{\"source_recording_id\": null}")
+        .eq("source_recording_id", &id)
+        .eq("user_id", &user.id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    let vm_status = vm_upd.status();
+    let vm_text = vm_upd
+        .text()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    if !vm_status.is_success() {
+        return Err(crate::errors::sanitize_db_error(
+            vm_status.as_u16(),
+            vm_text,
+        ));
+    }
+
     // Delete DB row
-    state
+    let del_resp = state
         .pg
         .from("voice_recordings")
         .delete()
@@ -611,6 +663,50 @@ pub async fn delete_voice_recording(
         .execute()
         .await
         .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    let del_status = del_resp.status();
+    let del_text = del_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    if !del_status.is_success() {
+        return Err(crate::errors::sanitize_db_error(
+            del_status.as_u16(),
+            del_text,
+        ));
+    }
+
+    // Confirm the row is actually gone (PostgREST may return 2xx even if nothing was deleted,
+    // and some deployments don't support returning deleted rows from DELETE)
+    let check = state
+        .pg
+        .from("voice_recordings")
+        .select("id")
+        .eq("id", &id)
+        .eq("user_id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    let check_status = check.status();
+    let check_text = check
+        .text()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    if !check_status.is_success() {
+        return Err(crate::errors::sanitize_db_error(
+            check_status.as_u16(),
+            check_text,
+        ));
+    }
+    let remaining: serde_json::Value =
+        serde_json::from_str(&check_text).unwrap_or(serde_json::json!([]));
+    if remaining.as_array().map(|a| !a.is_empty()).unwrap_or(false) {
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            format!("delete did not remove row: {del_text}"),
+        ));
+    }
 
     Ok(Json(DeleteVoiceOut { deleted: true }))
 }

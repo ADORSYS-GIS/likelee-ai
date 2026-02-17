@@ -184,10 +184,56 @@
   - Stripe Price ID for the Agency subscription tier.
 - `STRIPE_SCALE_PRICE_ID`
   - Stripe Price ID for the Scale subscription tier.
+- `STRIPE_AGENCY_BASIC_PACKAGE_PRICE_ID`
+  - Stripe Price ID for the Basic all-inclusive package (recurring).
+- `STRIPE_AGENCY_PRO_PACKAGE_PRICE_ID`
+  - Stripe Price ID for the Pro all-inclusive package (recurring).
+- `STRIPE_AGENCY_BASIC_BASE_PRICE_ID`
+  - Legacy (not used for Basic/Pro package checkout).
+- `STRIPE_AGENCY_PRO_BASE_PRICE_ID`
+  - Legacy (not used for Basic/Pro package checkout).
+- `STRIPE_AGENCY_ROSTER_5_10_PRICE_ID`
+  - Legacy (not used for Basic/Pro package checkout).
+- `STRIPE_AGENCY_ROSTER_11_50_PRICE_ID`
+  - Legacy (not used for Basic/Pro package checkout).
+- `STRIPE_AGENCY_ROSTER_51_100_PRICE_ID`
+  - Legacy (not used for Basic/Pro package checkout).
+- `STRIPE_AGENCY_ROSTER_100_PLUS_PRICE_ID`
+  - Legacy (not used for Basic/Pro package checkout).
+- `STRIPE_AGENCY_ADDON_IRL_BOOKING_PRICE_ID`
+  - Legacy (not used for Basic/Pro package checkout).
+- `STRIPE_AGENCY_ADDON_DEEPFAKE_5_10_PRICE_ID`
+  - Legacy (not used for Basic/Pro package checkout).
+- `STRIPE_AGENCY_ADDON_DEEPFAKE_11_50_PRICE_ID`
+  - Legacy (not used for Basic/Pro package checkout).
+- `STRIPE_AGENCY_ADDON_DEEPFAKE_51_100_PRICE_ID`
+  - Legacy (not used for Basic/Pro package checkout).
+- `STRIPE_AGENCY_ADDON_DEEPFAKE_100_PLUS_PRICE_ID`
+  - Legacy (not used for Basic/Pro package checkout).
+- `STRIPE_AGENCY_ADDON_TEAM_1_5_PRICE_ID`
+  - Legacy (not used for Basic/Pro package checkout).
+- `STRIPE_AGENCY_ADDON_TEAM_6_10_PRICE_ID`
+  - Legacy (not used for Basic/Pro package checkout).
+- `STRIPE_AGENCY_ADDON_TEAM_11_30_PRICE_ID`
+  - Legacy (not used for Basic/Pro package checkout).
 - `STRIPE_CHECKOUT_SUCCESS_URL`
   - URL Stripe redirects to after successful checkout.
 - `STRIPE_CHECKOUT_CANCEL_URL`
   - URL Stripe redirects to after checkout is canceled.
+
+### Stripe Subscriptions (Client Licensing / Package Paywall)
+
+- `STRIPE_LICENSING_BASIC_PRICE_ID`
+  - Stripe Price ID for Basic licensing tier.
+- `STRIPE_LICENSING_PRO_PRICE_ID`
+  - Stripe Price ID for Pro licensing tier.
+- `STRIPE_LICENSING_ENTERPRISE_PRICE_ID`
+  - Stripe Price ID for Enterprise licensing tier.
+- `STRIPE_LICENSING_SUCCESS_URL`
+  - URL Stripe redirects to after successful licensing checkout (should route back to `/share/package/:token`).
+  - Should include Stripe's `{CHECKOUT_SESSION_ID}` placeholder.
+- `STRIPE_LICENSING_CANCEL_URL`
+  - URL Stripe redirects to after licensing checkout is canceled.
 
 ### Stripe Connect (Agency Bank Connection)
 
@@ -210,3 +256,56 @@
   - Enables the background job that schedules agency payouts based on payout settings.
 - `AGENCY_PAYOUT_SCHEDULER_INTERVAL_SECS` (u64, default `3600`)
   - The interval at which the scheduler wakes up to check due payouts.
+
+## Supabase ER Diagram (Migrations 0035-0037)
+
+```mermaid
+erDiagram
+  AGENCIES {
+    uuid id PK
+  }
+  AGENCY_TALENT_PACKAGES {
+    uuid id PK
+  }
+  LICENSING_CHECKOUT_SESSIONS {
+    uuid id PK
+    uuid agency_id FK
+    uuid package_id FK
+    text stripe_checkout_session_id
+    text stripe_subscription_id
+  }
+  LICENSING_ACCESS_GRANTS {
+    uuid id PK
+    uuid agency_id FK
+    uuid package_id FK
+    text stripe_subscription_id
+  }
+  AGENCY_BALANCES {
+    uuid agency_id PK
+    bigint available_cents
+    text currency
+  }
+  AGENCY_PAYOUT_REQUESTS {
+    uuid id PK
+    uuid agency_id FK
+    bigint amount_cents
+    text currency
+    text payout_method
+    text status
+  }
+  LICENSING_PAYOUTS {
+    uuid id PK
+    uuid agency_id FK
+    bigint amount_cents
+    text currency
+  }
+
+  AGENCIES ||--o{ LICENSING_CHECKOUT_SESSIONS : "has"
+  AGENCY_TALENT_PACKAGES ||--o{ LICENSING_CHECKOUT_SESSIONS : "has"
+
+  AGENCIES ||--o{ LICENSING_ACCESS_GRANTS : "has"
+  AGENCY_TALENT_PACKAGES ||--o{ LICENSING_ACCESS_GRANTS : "has"
+
+  AGENCIES ||--|| AGENCY_BALANCES : "has"
+  AGENCIES ||--o{ AGENCY_PAYOUT_REQUESTS : "requests"
+  AGENCIES ||--o{ LICENSING_PAYOUTS : "earns"

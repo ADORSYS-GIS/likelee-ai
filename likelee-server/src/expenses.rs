@@ -1,4 +1,4 @@
-use crate::{auth::AuthUser, config::AppState};
+use crate::{auth::AuthUser, config::AppState, errors::sanitize_db_error};
 use axum::{
     extract::{Query, State},
     http::StatusCode,
@@ -44,10 +44,17 @@ pub async fn list(
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
     let text = resp
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
+
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(v))
@@ -88,10 +95,16 @@ pub async fn create(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
+    let status = resp.status();
     let text = resp
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
+
     let v: serde_json::Value = serde_json::from_str(&text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     Ok(Json(v))

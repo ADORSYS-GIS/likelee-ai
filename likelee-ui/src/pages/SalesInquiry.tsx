@@ -14,10 +14,13 @@ import { CheckCircle2 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useTranslation } from "react-i18next";
+import { CONTACT_EMAIL, CONTACT_EMAIL_MAILTO } from "@/config/public";
+import { toast } from "@/components/ui/use-toast";
 
 export default function SalesInquiry() {
   const { t } = useTranslation();
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
   const [formData, setFormData] = useState({
     company_name: "",
     contact_name: "",
@@ -36,7 +39,7 @@ export default function SalesInquiry() {
       console.log("Sales Inquiry Submitted:", data);
 
       return base44.post("/integrations/core/send-email", {
-        to: "admin@likelee.ai",
+        to: CONTACT_EMAIL,
         subject: `Sales Inquiry from ${data.company_name}`,
         body: `
 New Sales Inquiry:
@@ -57,10 +60,24 @@ ${data.message}
     onSuccess: () => {
       setSubmitted(true);
     },
+    onError: (e) => {
+      toast({
+        title: "Failed to send",
+        description:
+          e instanceof Error
+            ? e.message
+            : "Something went wrong sending your inquiry.",
+      });
+    },
+    onSettled: () => {
+      setSending(false);
+    },
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (sending) return;
+    setSending(true);
     submitInquiry.mutate(formData);
   };
 
@@ -297,12 +314,10 @@ ${data.message}
 
             <Button
               type="submit"
-              disabled={submitInquiry.isPending}
-              className="w-full h-12 text-lg font-medium bg-[#F7B750] hover:bg-[#FAD54C] text-gray-900 rounded-md transition-all"
+              disabled={sending}
+              className="w-full h-12 bg-gradient-to-r from-[#F7B750] to-[#FAD54C] hover:from-[#E6A640] hover:to-[#EBC340] text-black font-bold border-2 border-black rounded-md"
             >
-              {submitInquiry.isPending
-                ? t("salesInquiry.submitting")
-                : t("salesInquiry.submit")}
+              {sending ? "Sending..." : t("salesInquiry.submit")}
             </Button>
           </form>
         </Card>
@@ -310,10 +325,10 @@ ${data.message}
         <p className="text-center text-sm text-gray-600 mt-6">
           {t("salesInquiry.assistance")}{" "}
           <a
-            href="mailto:operations@likelee.ai"
+            href={CONTACT_EMAIL_MAILTO}
             className="text-[#F7B750] hover:text-[#FAD54C] font-medium"
           >
-            operations@likelee.ai
+            {CONTACT_EMAIL}
           </a>
         </p>
       </div>
