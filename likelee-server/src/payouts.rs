@@ -940,6 +940,154 @@ pub async fn request_payout(
     )
 }
 
+pub async fn execute_agency_payout(
+    state: &AppState,
+    agency_payout_request_id: &str,
+    agency_id: &str,
+    amount_cents: i64,
+    currency: &str,
+) -> Result<(), ()> {
+    // Get connected account id
+    let resp = state
+        .pg
+        .from("agencies")
+        .select("stripe_connect_account_id")
+        .eq("id", agency_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|_| ())?;
+    let text = resp.text().await.unwrap_or("[]".into());
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let account_id = rows
+        .first()
+        .and_then(|r| r.get("stripe_connect_account_id").and_then(|v| v.as_str()))
+        .unwrap_or("")
+        .to_string();
+
+    if account_id.is_empty() {
+        let _ = state
+            .pg
+            .from("agency_payout_requests")
+            .eq("id", agency_payout_request_id)
+            .update(
+                json!({"status":"failed","failure_reason":"missing_connected_account"})
+                    .to_string(),
+            )
+            .execute()
+            .await;
+        return Err(());
+    }
+
+    if amount_cents <= 0 {
+        let _ = state
+            .pg
+            .from("agency_payout_requests")
+            .eq("id", agency_payout_request_id)
+            .update(json!({"status":"failed","failure_reason":"non_positive_amount"}).to_string())
+            .execute()
+            .await;
+        return Err(());
+    }
+
+    // Mark processing
+    let _ = state
+        .pg
+        .from("agency_payout_requests")
+        .eq("id", agency_payout_request_id)
+        .update(json!({"status":"processing"}).to_string())
+        .execute()
+        .await;
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let currency_enum = match stripe_sdk::Currency::from_str(&currency.to_lowercase()) {
+        Ok(c) => c,
+        Err(_) => {
+            let _ = state
+                .pg
+                .from("agency_payout_requests")
+                .eq("id", agency_payout_request_id)
+                .update(json!({"status":"failed","failure_reason":"invalid_currency"}).to_string())
+                .execute()
+                .await;
+            return Err(());
+        }
+    };
+
+    // 1) Transfer platform -> connected account
+    let mut params = stripe_sdk::CreateTransfer::new(currency_enum, account_id.clone());
+    params.amount = Some(amount_cents);
+    let transfer = match stripe_sdk::Transfer::create(&client, params).await {
+        Ok(t) => t,
+        Err(e) => {
+            let _ = state
+                .pg
+                .from("agency_payout_requests")
+                .eq("id", agency_payout_request_id)
+                .update(json!({"status":"failed","failure_reason": e.to_string()}).to_string())
+                .execute()
+                .await;
+            return Err(());
+        }
+    };
+
+    let _ = state
+        .pg
+        .from("agency_payout_requests")
+        .eq("id", agency_payout_request_id)
+        .update(json!({"stripe_transfer_id": transfer.id.to_string()}).to_string())
+        .execute()
+        .await;
+
+    // 2) Payout connected account -> bank (standard)
+    let connected_client = match account_id.parse::<stripe_sdk::AccountId>() {
+        Ok(id) => client.with_stripe_account(id),
+        Err(_) => {
+            let _ = state
+                .pg
+                .from("agency_payout_requests")
+                .eq("id", agency_payout_request_id)
+                .update(json!({"status":"failed","failure_reason":"invalid_account_id"}).to_string())
+                .execute()
+                .await;
+            return Err(());
+        }
+    };
+
+    let mut payout_params = stripe_sdk::CreatePayout::new(amount_cents, currency_enum);
+    payout_params.method = Some(stripe_sdk::PayoutMethod::Standard);
+    let payout = match stripe_sdk::Payout::create(&connected_client, payout_params).await {
+        Ok(p) => p,
+        Err(e) => {
+            let _ = state
+                .pg
+                .from("agency_payout_requests")
+                .eq("id", agency_payout_request_id)
+                .update(json!({"status":"failed","failure_reason": e.to_string()}).to_string())
+                .execute()
+                .await;
+            return Err(());
+        }
+    };
+
+    let _ = state
+        .pg
+        .from("agency_payout_requests")
+        .eq("id", agency_payout_request_id)
+        .update(
+            json!({
+                "stripe_payout_id": payout.id.to_string(),
+                "status": "paid",
+                "paid_at": chrono::Utc::now().to_rfc3339()
+            })
+            .to_string(),
+        )
+        .execute()
+        .await;
+
+    Ok(())
+}
+
 async fn execute_payout(
     state: &AppState,
     payout_request_id: &str,

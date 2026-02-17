@@ -2,6 +2,7 @@ use crate::{auth::AuthUser, config::AppState};
 use axum::{extract::State, http::StatusCode, Json};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use serde_json::Value;
 use std::collections::HashMap;
 use std::time::Instant;
 
@@ -94,12 +95,46 @@ pub async fn configure_performance_tiers(
     State(state): State<AppState>,
     auth_user: AuthUser,
     Json(payload): Json<ConfigurePerformanceRequest>,
-) -> Result<StatusCode, (StatusCode, String)> {
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let mut thresholds_config = serde_json::Map::new();
+    let mut commission_config = serde_json::Map::new();
+
+    if let Some(obj) = payload.config.as_object() {
+        for (tier_name, tier_cfg) in obj {
+            if let Some(tier_obj) = tier_cfg.as_object() {
+                let mut next_thresholds = serde_json::Map::new();
+                if let Some(v) = tier_obj.get("min_earnings") {
+                    next_thresholds.insert("min_earnings".to_string(), v.clone());
+                }
+                if let Some(v) = tier_obj.get("min_bookings") {
+                    next_thresholds.insert("min_bookings".to_string(), v.clone());
+                }
+                if !next_thresholds.is_empty() {
+                    thresholds_config.insert(
+                        tier_name.clone(),
+                        Value::Object(next_thresholds),
+                    );
+                }
+
+                if let Some(v) = tier_obj.get("commission_rate") {
+                    let mut next_commission = serde_json::Map::new();
+                    next_commission.insert("commission_rate".to_string(), v.clone());
+                    commission_config.insert(tier_name.clone(), Value::Object(next_commission));
+                }
+            }
+        }
+    }
+
+    let update_payload = json!({
+        "performance_config": Value::Object(thresholds_config),
+        "performance_commission_config": Value::Object(commission_config)
+    });
+
     let resp = state
         .pg
         .from("agencies")
         .eq("id", &auth_user.id)
-        .update(json!({"performance_config": payload.config}).to_string())
+        .update(update_payload.to_string())
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -122,7 +157,7 @@ pub async fn configure_performance_tiers(
         ));
     }
 
-    Ok(StatusCode::OK)
+    Ok(Json(json!({ "ok": true })))
 }
 
 pub async fn get_performance_tiers(
@@ -144,7 +179,7 @@ pub async fn get_performance_tiers(
         state
             .pg
             .from("agencies")
-            .select("performance_config")
+            .select("performance_config,performance_commission_config")
             .eq("id", agency_id)
             .execute(),
         // 3. Fetch Talents (Limit increased to 500 to avoid 10-talent cap)
@@ -230,7 +265,12 @@ pub async fn get_performance_tiers(
         .and_then(|r| r.get("performance_config"))
         .cloned();
 
-    // Apply configuration from agency's performance_config
+    let performance_commission_config = agency_data
+        .first()
+        .and_then(|r| r.get("performance_commission_config"))
+        .cloned();
+
+    // Apply thresholds configuration from agency's performance_config
     if let Some(config) = performance_config.as_ref().and_then(|v| v.as_object()) {
         for rule in &mut tiers_json {
             if let Some(c) = config.get(&rule.tier_name) {
@@ -240,12 +280,53 @@ pub async fn get_performance_tiers(
                 if let Some(b) = c.get("min_bookings").and_then(|v| v.as_i64()) {
                     rule.min_monthly_bookings = b as i32;
                 }
+            }
+        }
+    }
+
+    // Apply commission defaults from agency's performance_commission_config
+    if let Some(config) = performance_commission_config
+        .as_ref()
+        .and_then(|v| v.as_object())
+    {
+        for rule in &mut tiers_json {
+            if let Some(c) = config.get(&rule.tier_name) {
                 if let Some(r) = c.get("commission_rate").and_then(|v| v.as_f64()) {
                     rule.commission_rate = r;
                 }
             }
         }
     }
+
+    let merged_config = {
+        let mut out = serde_json::Map::new();
+        let thresholds = performance_config.as_ref().and_then(|v| v.as_object());
+        let commissions = performance_commission_config
+            .as_ref()
+            .and_then(|v| v.as_object());
+
+        for tier_name in ["Premium", "Core", "Growth", "Inactive"] {
+            let mut tier_obj = serde_json::Map::new();
+            if let Some(t) = thresholds.and_then(|m| m.get(tier_name)).and_then(|v| v.as_object()) {
+                if let Some(v) = t.get("min_earnings") {
+                    tier_obj.insert("min_earnings".to_string(), v.clone());
+                }
+                if let Some(v) = t.get("min_bookings") {
+                    tier_obj.insert("min_bookings".to_string(), v.clone());
+                }
+            }
+            if let Some(c) = commissions.and_then(|m| m.get(tier_name)).and_then(|v| v.as_object()) {
+                if let Some(v) = c.get("commission_rate") {
+                    tier_obj.insert("commission_rate".to_string(), v.clone());
+                }
+            }
+            if !tier_obj.is_empty() {
+                out.insert(tier_name.to_string(), Value::Object(tier_obj));
+            }
+        }
+
+        Value::Object(out)
+    };
 
     // 3. Process Talents
     let talents_status = resp_talents.status();
@@ -377,7 +458,7 @@ pub async fn get_performance_tiers(
 
     Ok(Json(PerformanceTiersResponse {
         tiers: result_tiers,
-        config: performance_config,
+        config: Some(merged_config),
     }))
 }
 

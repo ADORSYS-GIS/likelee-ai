@@ -1050,11 +1050,108 @@ pub async fn update_payout_settings(
 }
 
 pub async fn get_upcoming_payout_schedule(
-    State(_state): State<AppState>,
-    _user: AuthUser,
+    State(state): State<AppState>,
+    user: AuthUser,
 ) -> Result<Json<Vec<serde_json::Value>>, (StatusCode, String)> {
-    // Return empty list as per plan
-    Ok(Json(vec![]))
+    let resp = state
+        .pg
+        .from("agency_payout_settings")
+        .select("payout_frequency,min_payout_threshold_cents,last_payout_at")
+        .eq("agency_id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
+    if !status.is_success() {
+        let txt = resp.text().await.unwrap_or_else(|_| "failed".into());
+        return Err((
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            txt,
+        ));
+    }
+
+    let txt = resp.text().await.unwrap_or_else(|_| "[]".into());
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
+    let first = rows.first().cloned().unwrap_or(json!({}));
+
+    let payout_frequency = first
+        .get("payout_frequency")
+        .and_then(|v| v.as_str())
+        .unwrap_or("Monthly")
+        .to_string();
+    let threshold = first
+        .get("min_payout_threshold_cents")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(5000);
+    let last_payout_at = first.get("last_payout_at").and_then(|v| v.as_str());
+
+    let last = last_payout_at
+        .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&chrono::Utc))
+        .unwrap_or_else(chrono::Utc::now);
+
+    let days = match payout_frequency.as_str() {
+        "Weekly" => 7,
+        "Bi-Weekly" => 14,
+        "Monthly" => 30,
+        _ => 30,
+    };
+    let next_due_at = last + chrono::Duration::days(days);
+
+    // Available = agency share from succeeded payments not yet linked to an agency payout request
+    let pay_resp = state
+        .pg
+        .from("payments")
+        .select("agency_earnings_cents")
+        .eq("agency_id", &user.id)
+        .eq("status", "succeeded")
+        .is("agency_payout_request_id", "null")
+        .limit(2000)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let pay_txt = pay_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let pay_rows: Vec<serde_json::Value> = serde_json::from_str(&pay_txt).unwrap_or_default();
+    let mut earned: i64 = 0;
+    for r in pay_rows {
+        earned += r
+            .get("agency_earnings_cents")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+    }
+
+    let available = earned.max(0);
+
+    let now = chrono::Utc::now();
+    let (status, projected_cents, description) = if now < next_due_at {
+        (
+            "not_scheduled_not_due",
+            0,
+            "Next payout date not reached".to_string(),
+        )
+    } else if available > threshold {
+        (
+            "scheduled",
+            available,
+            "Payout will be initiated on schedule".to_string(),
+        )
+    } else {
+        (
+            "not_scheduled_below_threshold",
+            0,
+            "Below minimum payout threshold".to_string(),
+        )
+    };
+
+    Ok(Json(vec![json!({
+        "date": next_due_at.to_rfc3339(),
+        "amount_cents": projected_cents,
+        "currency": "USD",
+        "status": status,
+        "description": description
+    })]))
 }
 
 pub async fn list_client_files(

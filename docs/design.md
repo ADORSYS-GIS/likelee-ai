@@ -203,3 +203,10 @@
   - URL Stripe redirects to if the user abandons or needs to restart onboarding.
 - `STRIPE_WEBHOOK_SECRET`
   - Used to validate Stripe webhook signatures.
+
+### Agency Payout Scheduler
+
+- `AGENCY_PAYOUT_SCHEDULER_ENABLED` (bool, default `false`)
+  - Enables the background job that schedules agency payouts based on payout settings.
+- `AGENCY_PAYOUT_SCHEDULER_INTERVAL_SECS` (u64, default `3600`)
+  - The interval at which the scheduler wakes up to check due payouts.

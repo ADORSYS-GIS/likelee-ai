@@ -837,7 +837,7 @@ pub async fn set_pay_split(
             let (resp_comm, resp_tiers, resp_config, resp_stats) = tokio::try_join!(
                 state.pg.from("talent_commissions").select("commission_rate").eq("talent_id", talent_id).eq("agency_id", &user.id).limit(1).execute(),
                 state.pg.from("performance_tiers").order("tier_level.asc").execute(),
-                state.pg.from("agencies").select("performance_config").eq("id", &user.id).execute(),
+                state.pg.from("agencies").select("performance_config,performance_commission_config").eq("id", &user.id).execute(),
                 async {
                     let now = chrono::Utc::now();
                     let month_start = now.format("%Y-%m-01").to_string();
@@ -878,22 +878,29 @@ pub async fn set_pay_split(
                 let config_data: Vec<serde_json::Value> =
                     serde_json::from_str(&resp_config.text().await.unwrap_or_default())
                         .unwrap_or_default();
-                if let Some(config) = config_data
+                let thresholds_cfg = config_data
                     .first()
                     .and_then(|r| r.get("performance_config"))
-                    .and_then(|v| v.as_object())
-                {
-                    for t in &mut tiers {
-                        if let Some(c) = config.get(&t.tier_name) {
-                            if let Some(r) = c.get("commission_rate").and_then(|v| v.as_f64()) {
-                                t.commission_rate = r;
-                            }
-                            if let Some(e) = c.get("min_earnings").and_then(|v| v.as_f64()) {
-                                t.min_monthly_earnings = e;
-                            }
-                            if let Some(b) = c.get("min_bookings").and_then(|v| v.as_i64()) {
-                                t.min_monthly_bookings = b as i32;
-                            }
+                    .and_then(|v| v.as_object());
+
+                let commission_cfg = config_data
+                    .first()
+                    .and_then(|r| r.get("performance_commission_config"))
+                    .and_then(|v| v.as_object());
+
+                for t in &mut tiers {
+                    if let Some(c) = thresholds_cfg.and_then(|m| m.get(&t.tier_name)) {
+                        if let Some(e) = c.get("min_earnings").and_then(|v| v.as_f64()) {
+                            t.min_monthly_earnings = e;
+                        }
+                        if let Some(b) = c.get("min_bookings").and_then(|v| v.as_i64()) {
+                            t.min_monthly_bookings = b as i32;
+                        }
+                    }
+
+                    if let Some(c) = commission_cfg.and_then(|m| m.get(&t.tier_name)) {
+                        if let Some(r) = c.get("commission_rate").and_then(|v| v.as_f64()) {
+                            t.commission_rate = r;
                         }
                     }
                 }
@@ -919,6 +926,27 @@ pub async fn set_pay_split(
                 effective_rate = assigned_tier.commission_rate;
             }
 
+            let agency_percent = effective_rate;
+            let talent_percent = 100.0 - agency_percent;
+            let agency_cents = ((gross_cents as f64) * (agency_percent / 100.0)).round() as i64;
+            let talent_cents = gross_cents - agency_cents;
+
+            let _ = state
+                .pg
+                .from("campaigns")
+                .eq("id", &cid)
+                .update(
+                    json!({
+                        "agency_percent": agency_percent,
+                        "talent_percent": talent_percent,
+                        "agency_earnings_cents": agency_cents,
+                        "talent_earnings_cents": talent_cents
+                    })
+                    .to_string(),
+                )
+                .execute()
+                .await;
+
             // Create or update payment record with commission_rate
             let payment_row = json!({
                 "agency_id": user.id,
@@ -927,6 +955,7 @@ pub async fn set_pay_split(
                 "licensing_request_id": lrid,
                 "brand_id": if brand_id.is_empty() { serde_json::Value::Null } else { json!(brand_id) },
                 "gross_cents": gross_cents,
+                "agency_earnings_cents": agency_cents,
                 "talent_earnings_cents": talent_cents,
                 "status": "pending",
                 "currency_code": "USD",

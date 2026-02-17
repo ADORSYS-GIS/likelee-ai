@@ -16142,6 +16142,7 @@ const RoyaltiesPayoutsView = () => {
   ];
 
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // Fetch Agency Payout Settings
   const { data: payoutSettings, refetch: refetchPayoutSettings } = useQuery({
@@ -16224,6 +16225,19 @@ const RoyaltiesPayoutsView = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["performance-tiers"] });
       setIsEditingTierCommission(false);
+      setInitialTierCommissionDraft({});
+      toast({
+        title: "Saved",
+        description: "Tier commission rates updated successfully.",
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Save failed",
+        description:
+          err?.response?.data || err?.message || "Failed to update tier rates.",
+        variant: "destructive",
+      });
     },
   });
 

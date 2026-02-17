@@ -114,6 +114,9 @@ async fn main() {
             .filter(|s| !s.is_empty())
             .collect(),
 
+        agency_payout_scheduler_enabled: cfg.agency_payout_scheduler_enabled,
+        agency_payout_scheduler_interval_secs: cfg.agency_payout_scheduler_interval_secs,
+
         smtp_host: cfg.smtp_host.clone(),
         smtp_port: cfg.smtp_port,
         smtp_user: cfg.smtp_user.clone(),
@@ -137,6 +140,9 @@ async fn main() {
 
     // Start background jobs
     tokio::spawn(likelee_server::jobs::start_payment_reminders(state.clone()));
+    tokio::spawn(likelee_server::jobs::start_agency_payout_scheduler(
+        state.clone(),
+    ));
 
     let app = likelee_server::router::build_router(state);
 
