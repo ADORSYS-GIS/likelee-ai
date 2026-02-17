@@ -489,6 +489,7 @@ pub struct BuilderTokenRequest {
     pub docuseal_template_id: Option<i32>,
     pub external_id: Option<String>,
     pub contract_body: Option<String>,
+    pub builder_roles: Option<Vec<String>>,
 }
 
 pub async fn create_builder_token(
@@ -678,7 +679,12 @@ pub async fn create_builder_token(
             Some(docuseal_template_id),
             req.external_id,
             None, // No values - we pre-fill in the PDF itself
-            None, // No submitters - we pre-fill in the PDF itself
+            req.builder_roles.clone().map(|roles| {
+                json!(roles
+                    .into_iter()
+                    .map(|role| json!({ "role": role }))
+                    .collect::<Vec<_>>())
+            }),
         )
         .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
