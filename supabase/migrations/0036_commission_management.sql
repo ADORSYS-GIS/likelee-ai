@@ -1,28 +1,37 @@
--- Migration: Commission Management
+-- Migration: Commission Management Refactored (v3)
 BEGIN;
 
--- 1. Add custom_commission_rate to agency_users
-ALTER TABLE public.agency_users
-ADD COLUMN IF NOT EXISTS custom_commission_rate NUMERIC(10, 2);
-
--- 2. Create talent_commission_history table
-CREATE TABLE IF NOT EXISTS public.talent_commission_history (
+-- 1. Create talent_commissions table for CURRENT custom rates
+CREATE TABLE public.talent_commissions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    agency_user_id UUID NOT NULL REFERENCES public.agency_users(id) ON DELETE CASCADE,
-    old_rate NUMERIC(10, 2),
-    new_rate NUMERIC(10, 2) NOT NULL,
-    changed_by UUID REFERENCES auth.users(id),
-    changed_at TIMESTAMPTZ DEFAULT NOW(),
-    agency_id UUID NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE
+    talent_id UUID NOT NULL REFERENCES public.agency_users(id) ON DELETE CASCADE,
+    agency_id UUID NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
+    commission_rate NUMERIC(10, 2) NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    -- Ensure only one custom rate record per talent per agency
+    CONSTRAINT unique_talent_agency_commission UNIQUE (talent_id, agency_id)
 );
 
--- Enable RLS
-ALTER TABLE public.talent_commission_history ENABLE ROW LEVEL SECURITY;
+-- 2. Add commission_rate to licensing_payouts for transaction history
+ALTER TABLE public.licensing_payouts 
+ADD COLUMN IF NOT EXISTS commission_rate NUMERIC(10, 2);
 
--- Policies for history
--- Agency owners can view history for their agency
-CREATE POLICY "Agency owners can view history" ON public.talent_commission_history
-    FOR SELECT
-    USING (auth.uid() = agency_id);
+COMMENT ON COLUMN public.licensing_payouts.commission_rate IS 'The commission rate percentage used for this specific payout record.';
+
+-- Enable RLS
+ALTER TABLE public.talent_commissions ENABLE ROW LEVEL SECURITY;
+
+-- Policies
+CREATE POLICY "Agency owners can view talent commissions" ON public.talent_commissions
+    FOR SELECT USING (agency_id = auth.uid());
+
+CREATE POLICY "Agency owners can insert talent commissions" ON public.talent_commissions
+    FOR INSERT WITH CHECK (agency_id = auth.uid());
+
+CREATE POLICY "Agency owners can update talent commissions" ON public.talent_commissions
+    FOR UPDATE USING (agency_id = auth.uid()) WITH CHECK (agency_id = auth.uid());
+
+CREATE POLICY "Agency owners can delete talent commissions" ON public.talent_commissions
+    FOR DELETE USING (agency_id = auth.uid());
 
 COMMIT;

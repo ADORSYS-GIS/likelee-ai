@@ -188,16 +188,16 @@ const MANUAL_STATUSES = [
   "offer_sent",
 ];
 
-const STATUS_COLORS: { [key: string]: string } = {
+const STATUS_COLORS: Record<string, string> = {
   new_lead: "bg-blue-50 text-blue-700 border-blue-200",
-  in_contact: "bg-yellow-50 text-yellow-700 border-yellow-200",
-  test_shoot_pending: "bg-orange-50 text-orange-700 border-orange-200",
-  test_shoot_success: "bg-teal-50 text-teal-700 border-teal-200",
-  test_shoot_failed: "bg-rose-50 text-rose-700 border-rose-200",
-  offer_sent: "bg-purple-50 text-purple-700 border-purple-200",
-  opened: "bg-yellow-50 text-yellow-700 border-yellow-200",
-  signed: "bg-green-50 text-green-700 border-green-200",
-  declined: "bg-red-50 text-red-700 border-red-200",
+  in_contact: "bg-amber-50 text-amber-700 border-amber-200",
+  test_shoot_pending: "bg-purple-50 text-purple-700 border-purple-200",
+  test_shoot_success: "bg-green-50 text-green-700 border-green-200",
+  test_shoot_failed: "bg-red-50 text-red-700 border-red-200",
+  offer_sent: "bg-indigo-50 text-indigo-700 border-indigo-200",
+  opened: "bg-sky-50 text-sky-700 border-sky-200",
+  signed: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  declined: "bg-gray-50 text-gray-700 border-gray-200",
 };
 
 const STATUS_DOT_COLORS: { [key: string]: string } = {
@@ -8831,15 +8831,30 @@ const PerformanceTiersView = ({ onBack }: { onBack: () => void }) => {
 const ScoutingHubView = ({
   activeTab,
   setActiveTab,
+  isEventModalOpen,
+  setIsEventModalOpen,
+  eventToEdit,
+  setEventToEdit,
+  isPlanTripModalOpen,
+  setIsPlanTripModalOpen,
+  isProspectModalOpen,
+  setIsProspectModalOpen,
+  prospectToEdit,
+  setProspectToEdit,
 }: {
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  isEventModalOpen: boolean;
+  setIsEventModalOpen: (open: boolean) => void;
+  eventToEdit: ScoutingEvent | null;
+  setEventToEdit: (event: ScoutingEvent | null) => void;
+  isPlanTripModalOpen: boolean;
+  setIsPlanTripModalOpen: (open: boolean) => void;
+  isProspectModalOpen: boolean;
+  setIsProspectModalOpen: (open: boolean) => void;
+  prospectToEdit: ScoutingProspect | null;
+  setProspectToEdit: (prospect: ScoutingProspect | null) => void;
 }) => {
-  const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
-  const [prospectToEdit, setProspectToEdit] = useState<ScoutingProspect | null>(
-    null,
-  );
-
   const tabs = [
     "Prospect Pipeline",
     "Social Discovery",
@@ -8988,13 +9003,14 @@ const ProspectDetailsSheet = ({
         status: newStatus as any,
       });
       await queryClient.invalidateQueries({ queryKey: ["prospects"] });
-      toast({
+      (toast as any)({
         title: "Status Updated",
         description: `Prospect status changed to ${STATUS_MAP[newStatus as keyof typeof STATUS_MAP] || newStatus}.`,
       });
     } catch (error) {
       console.error("Error updating status:", error);
-      toast({
+      const errorToast = toast as any;
+      errorToast({
         title: "Error",
         description: "Failed to update status. Please try again.",
         variant: "destructive",
@@ -9130,7 +9146,7 @@ const ProspectDetailsSheet = ({
                       Send Offer
                     </Button>
                   ) : ["offer_sent", "opened", "signed", "declined"].includes(
-                      prospect.status,
+                      prospect.status as string,
                     ) ? (
                     <div className="flex items-center gap-3">
                       <Button
@@ -9381,22 +9397,35 @@ const ProspectPipelineTab = ({
   const stats = [
     {
       label: "New Leads",
-      count: prospects?.filter((p) => p.status === "new").length || 0,
+      count:
+        prospects?.filter(
+          (p: any) => p.status === "new" || p.status === "new_lead",
+        ).length || 0,
       color: "border-blue-200 bg-blue-50/30",
     },
     {
       label: "In Contact",
-      count: prospects?.filter((p) => p.status === "contacted").length || 0,
-      color: "border-yellow-200 bg-yellow-50/30",
+      count:
+        prospects?.filter(
+          (p: any) => p.status === "contacted" || p.status === "in_contact",
+        ).length || 0,
+      color: "border-amber-200 bg-amber-50/30",
     },
     {
-      label: "Test Shoots",
-      count: prospects?.filter((p) => p.status === "test_shoot").length || 0,
+      label: "Test Shoot",
+      count:
+        prospects?.filter(
+          (p: any) =>
+            p.status === "test_shoot" || p.status === "test_shoot_pending",
+        ).length || 0,
       color: "border-purple-200 bg-purple-50/30",
     },
     {
       label: "Offers Sent",
-      count: prospects?.filter((p) => p.status === "offer_sent").length || 0,
+      count:
+        prospects?.filter(
+          (p: any) => p.status === "offer_sent" || p.status === "opened",
+        ).length || 0,
       color: "border-green-200 bg-green-50/30",
     },
   ];
@@ -9668,13 +9697,13 @@ const ProspectPipelineTab = ({
                         >
                           {STATUS_MAP.declined}
                         </Badge>
-                      ) : p.status === "opened" ? (
+                      ) : (p.status as string) === "opened" ? (
                         <Badge
                           className={`capitalize border ${STATUS_COLORS.opened}`}
                         >
                           Opened
                         </Badge>
-                      ) : p.status === "offer_sent" ? (
+                      ) : (p.status as string) === "offer_sent" ? (
                         <Badge className="capitalize border bg-gray-100 text-gray-700 border-gray-200">
                           Awaiting
                         </Badge>
@@ -9893,6 +9922,9 @@ const MarketplaceTab = () => (
   </Card>
 );
 
+type ScoutingEvent = any;
+type ScoutingProspect = any;
+
 const ScoutingMapTab = ({
   onEditEvent,
   onViewProspect,
@@ -9904,12 +9936,14 @@ const ScoutingMapTab = ({
   onAddEvent: () => void;
   isVisible?: boolean;
 }) => (
-  <ScoutingMap
-    onEditEvent={onEditEvent}
-    onViewProspect={onViewProspect}
-    onAddEvent={onAddEvent}
-    isVisible={isVisible}
-  />
+  <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
+    <ScoutingMap
+      onEditEvent={onEditEvent}
+      onViewProspect={onViewProspect}
+      onAddEvent={onAddEvent}
+      isVisible={isVisible}
+    />
+  </Card>
 );
 
 const SubmissionsTab = () => (
@@ -9971,73 +10005,59 @@ const OpenCallsTab = ({
   });
 
   return (
-    <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+    <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <h2 className="text-lg font-bold text-gray-900">
-            Open Calls & Casting Events
+          <h2 className="text-xl font-bold text-gray-900">
+            Open Calls & Events
           </h2>
-          <p className="text-xs text-gray-500 font-medium">
-            Manage your upcoming talent search events
+          <p className="text-sm text-gray-500 font-medium">
+            Organize open calls and virtual castings to find new talent
           </p>
         </div>
+        <Button
+          onClick={onCreateEvent}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 h-10 px-6 rounded-xl shadow-sm"
+        >
+          <Plus className="w-4 h-4" /> Create Event
+        </Button>
       </div>
 
       {isLoading ? (
-        <div className="text-center py-12 text-xs text-gray-500">
-          Loading events...
-        </div>
+        <div className="text-center py-12">Loading events...</div>
       ) : !events || events.length === 0 ? (
-        <div className="border border-dashed border-gray-200 rounded-xl p-16 flex flex-col items-center justify-center text-center">
-          <div className="p-6 bg-gray-50 rounded-full mb-4">
-            <Calendar className="w-8 h-8 text-gray-400" />
-          </div>
+        <div className="text-center py-20 border-2 border-dashed border-gray-100 rounded-3xl">
+          <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-bold text-gray-900 mb-1">
-            No upcoming events
+            No events scheduled
           </h3>
-          <p className="text-xs text-gray-500 max-w-sm font-medium mb-4">
-            Organize open calls and virtual castings to find new talent
+          <p className="text-gray-500 mb-6 text-sm">
+            Create your first open call or scouting event
           </p>
           <Button
             onClick={onCreateEvent}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 h-9 px-6 rounded-lg shadow-sm text-xs"
+            variant="outline"
+            className="font-bold rounded-xl"
           >
-            <Plus className="w-3.5 h-3.5" /> Create First Event
+            Create First Event
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {events.map((event) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {events.map((event: any) => (
             <Card
               key={event.id}
-              className="overflow-hidden border border-gray-100 hover:shadow-xl hover:border-indigo-200 transition-all duration-300 group cursor-pointer rounded-xl bg-slate-50/30 hover:bg-white hover:-translate-y-1"
+              className="overflow-hidden border border-gray-100 hover:shadow-xl hover:border-indigo-200 transition-all duration-300 group cursor-pointer rounded-2xl bg-slate-50/30 hover:bg-white"
               onClick={() => onEditEvent(event)}
             >
-              <div className="p-4">
-                <div className="flex justify-between items-start mb-3">
-                  <Badge
-                    className={`rounded-md font-bold px-2 py-0.5 text-[10px] border shadow-sm ${
-                      String((event as any).status) === "published"
-                        ? "bg-green-50 text-green-700 border-green-100"
-                        : String((event as any).status) === "draft"
-                          ? "bg-gray-50 text-gray-600 border-gray-100"
-                          : String((event as any).status) === "scheduled"
-                            ? "bg-blue-50 text-blue-700 border-blue-100"
-                            : String((event as any).status) === "completed"
-                              ? "bg-indigo-50 text-indigo-700 border-indigo-100"
-                              : String((event as any).status) === "cancelled"
-                                ? "bg-red-50 text-red-700 border-red-100"
-                                : "bg-gray-50 text-gray-600 border-gray-100"
-                    }`}
-                  >
-                    {String((event as any).status || "").toUpperCase()}
-                  </Badge>
-                  <div className="flex items-center gap-1 text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">
-                    <Clock className="w-3 h-3" />
-                    <span className="text-[10px] font-bold">
-                      {event.start_time || "TBD"}
-                    </span>
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="p-3 bg-white rounded-xl shadow-sm border border-gray-100 group-hover:border-indigo-100 transition-colors">
+                    <Calendar className="w-6 h-6 text-indigo-600" />
                   </div>
+                  <Badge className="bg-green-50 text-green-700 border-green-100">
+                    Active
+                  </Badge>
                 </div>
                 <h3 className="text-sm font-bold text-gray-900 mb-1.5 group-hover:text-indigo-600 transition-colors line-clamp-1">
                   {event.name}
@@ -10047,13 +10067,16 @@ const OpenCallsTab = ({
                 </p>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-gray-600 bg-gray-50/80 p-2 rounded-lg border border-gray-100/50 group-hover:bg-indigo-50/30 transition-colors">
-                    <Calendar className="w-3.5 h-3.5 text-indigo-500" />
-                    <span className="text-[11px] font-bold">
-                      {new Date(event.event_date).toLocaleDateString(
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-400">
+                      <Calendar className="w-3 h-3" />
+                      {new Date(event.start_date).toLocaleDateString(
                         undefined,
-                        { month: "short", day: "numeric", year: "numeric" },
+                        {
+                          month: "short",
+                          day: "numeric",
+                        },
                       )}
-                    </span>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 text-gray-600 bg-gray-50/80 p-2 rounded-lg border border-gray-100/50 group-hover:bg-indigo-50/30 transition-colors">
                     <MapPin className="w-3.5 h-3.5 text-indigo-500" />
@@ -10065,7 +10088,7 @@ const OpenCallsTab = ({
               </div>
               <div className="px-4 py-3 bg-gray-50/30 border-t border-gray-100 flex justify-between items-center group-hover:bg-gray-50/80 transition-colors">
                 <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest bg-white px-2 py-0.5 rounded border border-gray-100">
-                  {event.event_type || "EVENT"}
+                  {(event as any).event_type || "EVENT"}
                 </span>
                 <Button
                   variant="ghost"
@@ -11594,11 +11617,7 @@ const LicensingRequestsView = () => {
     }
   };
 
-  const updateGroupStatus = async (
-    group: any,
-    status: "pending" | "approved" | "rejected" | "negotiating" | "archived",
-    notes?: string,
-  ) => {
+  const updateGroupStatus = async (group: any, status: any, notes?: string) => {
     const ids = (group?.talents || [])
       .map((t: any) => t.licensing_request_id)
       .filter(Boolean);
@@ -16095,8 +16114,13 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
 
 const RoyaltiesPayoutsView = () => {
   const [activeTab, setActiveTab] = useState("Commission Structure");
-  const [selectedTier, setSelectedTier] = useState("All Tiers");
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+  const [eventToEdit, setEventToEdit] = useState<any>(null);
+  const [isPlanTripModalOpen, setIsPlanTripModalOpen] = useState(false);
+  const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
+  const [prospectToEdit, setProspectToEdit] = useState<any>(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [selectedTier, setSelectedTier] = useState("All Tiers");
   const [isEditingTierCommission, setIsEditingTierCommission] = useState(false);
   const [tierCommissionDraft, setTierCommissionDraft] = useState<
     Record<string, number | "">
@@ -16114,20 +16138,34 @@ const RoyaltiesPayoutsView = () => {
     "Commission Structure",
     "Payout Preferences",
     "Commission Breakdown",
-    "Royalties & Payouts",
     "Payment History",
   ];
 
   const queryClient = useQueryClient();
 
-  // Fetch Royalties & Payouts Overview
-  const { data: royaltiesData } = useQuery({
-    queryKey: ["agency-royalties-payouts"],
+  // Fetch Agency Payout Settings
+  const { data: payoutSettings, refetch: refetchPayoutSettings } = useQuery({
+    queryKey: ["agency-payout-settings"],
     queryFn: async () => {
-      const resp = await base44.get<any>("/agency/analytics/royalties");
-      return resp;
+      return await base44.get<any>("/api/agency/payout-settings");
     },
-    enabled: activeTab === "Royalties & Payouts",
+  });
+
+  const { data: upcomingSchedule } = useQuery({
+    queryKey: ["agency-payout-schedule-upcoming"],
+    queryFn: async () => {
+      return await base44.get<any[]>("/api/agency/payout-schedule/upcoming");
+    },
+    enabled: activeTab === "Payout Preferences",
+  });
+
+  const updatePayoutSettingsMutation = useMutation({
+    mutationFn: async (payload: any) => {
+      await base44.post("/api/agency/payout-settings", payload);
+    },
+    onSuccess: () => {
+      refetchPayoutSettings();
+    },
   });
 
   // Fetch Performance Tiers Data
@@ -16244,6 +16282,14 @@ const RoyaltiesPayoutsView = () => {
     enabled: activeTab === "Payment History",
   });
 
+  // Fetch Royalties & Payouts Summary Metrics
+  const { data: royaltiesData } = useQuery({
+    queryKey: ["royalties-payouts-summary"],
+    queryFn: async () => {
+      return await base44.get<any>("/api/agency/analytics/royalties");
+    },
+  });
+
   const allTalents = tiersData?.tiers.flatMap((t: any) => t.talents) || [];
 
   const filteredTalent =
@@ -16256,7 +16302,7 @@ const RoyaltiesPayoutsView = () => {
     .sort((a, b) => b.earnings_30d - a.earnings_30d)
     .slice(0, 10);
 
-  const avgTierCommissionRate = (() => {
+  const avgTierCommissionRate = useMemo(() => {
     const tiers = (tiersData?.tiers || []) as Array<{
       commission_rate?: number;
       talents?: any[];
@@ -16269,7 +16315,7 @@ const RoyaltiesPayoutsView = () => {
       0,
     );
     return sum / total;
-  })();
+  }, [tiersData?.tiers]);
 
   const saveTierCommissionRates = () => {
     const tierNames = ["Premium", "Core", "Growth", "Inactive"];
@@ -16284,8 +16330,24 @@ const RoyaltiesPayoutsView = () => {
           : Number(nextRateRaw);
 
       merged[name] = {
-        min_earnings: existing.min_earnings,
-        min_bookings: existing.min_bookings,
+        min_earnings:
+          existing.min_earnings ??
+          (name === "Premium"
+            ? 5000
+            : name === "Core"
+              ? 2500
+              : name === "Growth"
+                ? 500
+                : 0),
+        min_bookings:
+          existing.min_bookings ??
+          (name === "Premium"
+            ? 8
+            : name === "Core"
+              ? 5
+              : name === "Growth"
+                ? 1
+                : 0),
         commission_rate:
           typeof nextRate === "number" && Number.isFinite(nextRate)
             ? nextRate
@@ -16441,113 +16503,121 @@ const RoyaltiesPayoutsView = () => {
                   as an incentive.
                 </p>
               </div>
-              {isEditingTierCommission ? (
-                <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3">
+                {!isEditingTierCommission ? (
                   <Button
                     variant="outline"
-                    onClick={cancelEditingTierCommissions}
+                    onClick={startEditingTierCommissions}
                     className="gap-2 font-bold h-11 px-6 text-sm rounded-xl"
                   >
-                    <X className="w-5 h-5" />
-                    Cancel
+                    <Settings className="w-5 h-5" />
+                    Edit Rates
                   </Button>
-                  <Button
-                    variant="default"
-                    onClick={saveTierCommissionRates}
-                    disabled={
-                      !isTierCommissionDirty || tierCommissionMutation.isPending
-                    }
-                    className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 px-6 text-sm rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-70"
-                  >
-                    <Save className="w-5 h-5" />
-                    {tierCommissionMutation.isPending
-                      ? "Saving..."
-                      : "Save Changes"}
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  variant="default"
-                  onClick={startEditingTierCommissions}
-                  className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 px-6 text-sm rounded-xl shadow-lg transition-all active:scale-95"
-                >
-                  <Settings className="w-5 h-5" />
-                  Edit
-                </Button>
-              )}
+                ) : (
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={cancelEditingTierCommissions}
+                      className="gap-2 font-bold h-11 px-6 text-sm rounded-xl"
+                    >
+                      <X className="w-5 h-5" />
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="default"
+                      onClick={saveTierCommissionRates}
+                      disabled={
+                        !isTierCommissionDirty ||
+                        tierCommissionMutation.isPending
+                      }
+                      className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 px-6 text-sm rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-70"
+                    >
+                      {tierCommissionMutation.isPending
+                        ? "Saving..."
+                        : "Save Changes"}
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {tiersData?.tiers.map((group: any) => (
-                <div
-                  key={group.level}
-                  className={`p-4 rounded-none space-y-3 border-2 transition-all hover:shadow-xl group relative overflow-hidden ${
-                    group.name === "Premium"
-                      ? "bg-[#FAF5FF] border-purple-200"
-                      : group.name === "Core"
-                        ? "bg-[#F0F9FF] border-blue-200"
-                        : group.name === "Growth"
-                          ? "bg-[#F0FDF4] border-green-200"
-                          : "bg-gray-50 border-gray-200"
-                  }`}
-                >
-                  {/* Decorative background circle */}
+              {tiersData?.tiers && tiersData.tiers.length > 0 ? (
+                tiersData.tiers.map((group: any) => (
                   <div
-                    className={`absolute -right-10 -top-10 w-40 h-40 rounded-full opacity-5 ${group.name === "Premium" ? "bg-purple-600" : group.name === "Core" ? "bg-blue-600" : group.name === "Growth" ? "bg-green-600" : "bg-gray-600"}`}
-                  />
+                    key={group.level}
+                    className={`p-4 rounded-none space-y-3 border-2 transition-all hover:shadow-xl group relative overflow-hidden ${
+                      group.name === "Premium"
+                        ? "bg-[#FAF5FF] border-purple-200"
+                        : group.name === "Core"
+                          ? "bg-[#F0F9FF] border-blue-200"
+                          : group.name === "Growth"
+                            ? "bg-[#F0FDF4] border-green-200"
+                            : "bg-gray-50 border-gray-200"
+                    }`}
+                  >
+                    {/* Decorative background circle */}
+                    <div
+                      className={`absolute -right-10 -top-10 w-40 h-40 rounded-full opacity-5 ${group.name === "Premium" ? "bg-purple-600" : group.name === "Core" ? "bg-blue-600" : group.name === "Growth" ? "bg-green-600" : "bg-gray-600"}`}
+                    />
 
-                  <div className="flex justify-between items-center relative z-10">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-3 h-3 rounded-full ${group.name === "Premium" ? "bg-purple-500" : group.name === "Core" ? "bg-blue-500" : group.name === "Growth" ? "bg-green-500" : "bg-gray-400"}`}
-                      />
-                      <span className="text-lg font-black tracking-tight text-gray-900">
-                        {group.name} Tier
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {isEditingTierCommission ? (
-                        <div className="relative w-20">
-                          <Input
-                            type="number"
-                            min="0"
-                            max="100"
-                            step="1"
-                            value={tierCommissionDraft?.[group.name] ?? ""}
-                            onChange={(e) =>
-                              setTierCommissionDraft((prev) => ({
-                                ...(prev || {}),
-                                [group.name]:
-                                  e.target.value === ""
-                                    ? ""
-                                    : Number(e.target.value),
-                              }))
-                            }
-                            className="h-9 pr-6 text-right font-black text-gray-900 bg-white border-2 rounded-xl [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:opacity-100 [&::-webkit-outer-spin-button]:opacity-100"
-                          />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm font-black text-gray-900 pointer-events-none">
-                            %
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="px-4 py-1.5 bg-white border-2 border-gray-200 rounded-xl text-lg font-black text-gray-900">
-                          {group.commission_rate}%
+                    <div className="flex justify-between items-center relative z-10">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-3 h-3 rounded-full ${group.name === "Premium" ? "bg-purple-500" : group.name === "Core" ? "bg-blue-500" : group.name === "Growth" ? "bg-green-500" : "bg-gray-400"}`}
+                        />
+                        <span className="text-lg font-black tracking-tight text-gray-900">
+                          {group.name} Tier
                         </span>
-                      )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {isEditingTierCommission ? (
+                          <div className="relative w-20">
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="1"
+                              value={tierCommissionDraft?.[group.name] ?? ""}
+                              onChange={(e) =>
+                                setTierCommissionDraft((prev) => ({
+                                  ...(prev || {}),
+                                  [group.name]:
+                                    e.target.value === ""
+                                      ? ""
+                                      : Number(e.target.value),
+                                }))
+                              }
+                              className="h-9 pr-6 text-right font-black text-gray-900 bg-white border-2 rounded-xl [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:opacity-100 [&::-webkit-outer-spin-button]:opacity-100"
+                            />
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm font-black text-gray-900 pointer-events-none">
+                              %
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="px-4 py-1.5 bg-white border-2 border-gray-200 rounded-xl text-lg font-black text-gray-900">
+                            {group.commission_rate}%
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="relative z-10">
-                    <div className="w-full bg-white/50 h-2 rounded-full overflow-hidden border border-gray-100 shadow-inner">
-                      <div
-                        className={`h-full rounded-full transition-all duration-1000 ${group.name === "Premium" ? "bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.4)]" : group.name === "Core" ? "bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]" : group.name === "Growth" ? "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.4)]" : "bg-gray-400"}`}
-                        style={{
-                          width: `${Math.min(100, (group.talents.length / 20) * 100)}%`,
-                        }}
-                      />
+                    <div className="relative z-10">
+                      <div className="w-full bg-white/50 h-2 rounded-full overflow-hidden border border-gray-100 shadow-inner">
+                        <div
+                          className={`h-full rounded-full transition-all duration-1000 ${group.name === "Premium" ? "bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.4)]" : group.name === "Core" ? "bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]" : group.name === "Growth" ? "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.4)]" : "bg-gray-400"}`}
+                          style={{
+                            width: `${Math.min(100, ((group.talents?.length || 0) / 20) * 100)}%`,
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
+                ))
+              ) : (
+                <div className="col-span-2 py-10 text-center text-gray-500 font-medium border-2 border-dashed rounded-xl">
+                  No performance tiers defined.
                 </div>
-              ))}
+              )}
             </div>
           </Card>
 
@@ -17002,7 +17072,17 @@ const RoyaltiesPayoutsView = () => {
                 <Label className="text-sm font-bold text-gray-700">
                   Payout Frequency
                 </Label>
-                <Select defaultValue="Monthly">
+                <Select
+                  value={payoutSettings?.payout_frequency || "Monthly"}
+                  onValueChange={(val) =>
+                    updatePayoutSettingsMutation.mutate({
+                      ...payoutSettings,
+                      payout_frequency: val,
+                      min_payout_threshold_cents:
+                        payoutSettings?.min_payout_threshold_cents || 5000,
+                    })
+                  }
+                >
                   <SelectTrigger className="h-12 bg-white border-gray-200">
                     <SelectValue placeholder="Select Frequency" />
                   </SelectTrigger>
@@ -17025,7 +17105,19 @@ const RoyaltiesPayoutsView = () => {
                     $
                   </span>
                   <Input
-                    defaultValue="50"
+                    type="number"
+                    value={(
+                      (payoutSettings?.min_payout_threshold_cents || 5000) / 100
+                    ).toString()}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val)) {
+                        updatePayoutSettingsMutation.mutate({
+                          ...payoutSettings,
+                          min_payout_threshold_cents: Math.round(val * 100),
+                        });
+                      }
+                    }}
                     className="h-12 pl-8 border-gray-200"
                   />
                 </div>
@@ -17046,7 +17138,8 @@ const RoyaltiesPayoutsView = () => {
                   </div>
                   <div>
                     <h4 className="text-base font-bold text-gray-900">
-                      Stripe Connected Account
+                      {payoutSettings?.payout_method ||
+                        "Stripe Connected Account"}
                     </h4>
                     <p className="text-sm text-gray-500">
                       Auto-deduct commission, transfer net to talent
@@ -17063,12 +17156,20 @@ const RoyaltiesPayoutsView = () => {
                   How it works:
                 </h4>
                 <ul className="text-sm text-blue-800 space-y-1">
-                  <li>1. Brand pays license fee to agency Stripe account</li>
-                  <li>2. Agency commission (14%) auto-deducted</li>
-                  <li>
-                    3. Net amount transferred to talent's connected account
-                  </li>
-                  <li>4. Automatic payout on schedule (monthly)</li>
+                  {(
+                    payoutSettings?.how_it_works_json || [
+                      "1. Brand pays license fee to agency Stripe account",
+                      "2. Agency commission (14%) auto-deducted",
+                      "3. Net amount transferred to talent's connected account",
+                      "4. Automatic payout on schedule (monthly)",
+                    ]
+                  ).map((step: string, idx: number) => (
+                    <li key={idx}>
+                      {step.startsWith(String(idx + 1))
+                        ? step
+                        : `${idx + 1}. ${step}`}
+                    </li>
+                  ))}
                 </ul>
               </div>
             </div>
@@ -17080,75 +17181,48 @@ const RoyaltiesPayoutsView = () => {
                 Upcoming Payout Schedule
               </h3>
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-white border border-indigo-100 flex items-center justify-center text-indigo-600">
-                      <Calendar className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-gray-900">
-                        Feb 1, 2025
-                      </h4>
-                      <p className="text-xs text-gray-500">Scheduled payout</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <h4 className="text-sm font-bold text-gray-900">$8,450</h4>
-                    <Badge className="bg-indigo-500 hover:bg-indigo-600 text-white border-none text-[10px] font-bold">
-                      scheduled
-                    </Badge>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-xl">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400">
-                      <Calendar className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-gray-900">
-                        Mar 1, 2025
-                      </h4>
-                      <p className="text-xs text-gray-500">
-                        Future payout date
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <h4 className="text-sm font-bold text-gray-900">$0</h4>
-                    <Badge
-                      variant="secondary"
-                      className="bg-gray-100 text-gray-500 border-none text-[10px] font-bold"
+                {upcomingSchedule && upcomingSchedule.length > 0 ? (
+                  upcomingSchedule.map((item: any, idx: number) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl"
                     >
-                      upcoming
-                    </Badge>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-xl">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400">
-                      <Calendar className="w-5 h-5" />
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-lg bg-white border border-indigo-100 flex items-center justify-center text-indigo-600">
+                          <Calendar className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-gray-900">
+                            {format(new Date(item.date), "MMM d, yyyy")}
+                          </h4>
+                          <p className="text-xs text-gray-500">
+                            {item.description || "Scheduled payout"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <h4 className="text-sm font-bold text-gray-900">
+                          {currencyFormatter.format(item.amount_cents / 100)}
+                        </h4>
+                        <Badge className="bg-indigo-500 hover:bg-indigo-600 text-white border-none text-[10px] font-bold">
+                          {item.status || "scheduled"}
+                        </Badge>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-gray-900">
-                        Apr 1, 2025
-                      </h4>
-                      <p className="text-xs text-gray-500">
-                        Future payout date
-                      </p>
+                  ))
+                ) : (
+                  <div className="p-12 text-center bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                      <Calendar className="w-6 h-6 text-gray-200" />
                     </div>
+                    <p className="text-sm font-bold text-gray-900 mb-1">
+                      No upcoming payouts
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Your next payout will appear here when scheduled.
+                    </p>
                   </div>
-                  <div className="text-right">
-                    <h4 className="text-sm font-bold text-gray-900">$0</h4>
-                    <Badge
-                      variant="secondary"
-                      className="bg-gray-100 text-gray-500 border-none text-[10px] font-bold"
-                    >
-                      upcoming
-                    </Badge>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           </Card>
@@ -17158,7 +17232,7 @@ const RoyaltiesPayoutsView = () => {
       {activeTab === "Commission Breakdown" && (
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500 mb-12">
           <div className="mb-0">
-            <h3 className="text-2xl font-black text-gray-900 tracking-tighter mb-2">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
               Recent License Deal Breakdowns
             </h3>
             <p className="text-sm font-medium text-gray-500 max-w-2xl">
@@ -18896,6 +18970,11 @@ export default function AgencyDashboard() {
   const [activeScoutingTab, setActiveScoutingTabState] = useState(
     searchParams.get("scoutingTab") || "Prospect Pipeline",
   );
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+  const [eventToEdit, setEventToEdit] = useState<any>(null);
+  const [isPlanTripModalOpen, setIsPlanTripModalOpen] = useState(false);
+  const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
+  const [prospectToEdit, setProspectToEdit] = useState<any>(null);
   const [expandedItems, setExpandedItems] = useState<string[]>([
     "roster",
     "licensing",
@@ -20098,6 +20177,16 @@ export default function AgencyDashboard() {
             <ScoutingHubView
               activeTab={activeScoutingTab}
               setActiveTab={setActiveScoutingTab}
+              isEventModalOpen={isEventModalOpen}
+              setIsEventModalOpen={setIsEventModalOpen}
+              eventToEdit={eventToEdit}
+              setEventToEdit={setEventToEdit}
+              isPlanTripModalOpen={isPlanTripModalOpen}
+              setIsPlanTripModalOpen={setIsPlanTripModalOpen}
+              isProspectModalOpen={isProspectModalOpen}
+              setIsProspectModalOpen={setIsProspectModalOpen}
+              prospectToEdit={prospectToEdit}
+              setProspectToEdit={setProspectToEdit}
             />
           )}
           {activeTab === "client-crm" && <ClientCRMView />}

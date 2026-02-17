@@ -162,7 +162,7 @@ pub async fn get_payment_history_top_earners(
             .and_then(|v| v.as_str())
             .map(|s| s.to_string());
 
-        let entry = by_talent.entry(talent_id).or_insert_with(Agg::default);
+        let entry = by_talent.entry(talent_id).or_default();
         if entry.name.trim().is_empty() {
             entry.name = name;
         }

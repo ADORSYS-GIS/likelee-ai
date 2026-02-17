@@ -818,21 +818,108 @@ pub async fn set_pay_split(
                 .pg
                 .from("campaigns")
                 .insert(campaign_row.to_string())
+                .select("id")
+                .single()
                 .execute()
                 .await
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-            let c_text = c_resp.text().await.unwrap_or_else(|_| "[]".into());
-            let c_rows: serde_json::Value = serde_json::from_str(&c_text).unwrap_or(json!([]));
-            c_rows
-                .get(0)
-                .and_then(|v| v.get("id"))
+            let c_text = c_resp.text().await.unwrap_or_else(|_| "{}".into());
+            let c_obj: serde_json::Value = serde_json::from_str(&c_text).unwrap_or(json!({}));
+            c_obj
+                .get("id")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string()
         };
 
         if !cid.is_empty() {
-            // Create or update payment record - Aligning with existing schema (gross_cents)
+            // Fetch the effective commission rate for this talent
+            let (resp_comm, resp_tiers, resp_config, resp_stats) = tokio::try_join!(
+                state.pg.from("talent_commissions").select("commission_rate").eq("talent_id", talent_id).eq("agency_id", &user.id).limit(1).execute(),
+                state.pg.from("performance_tiers").order("tier_level.asc").execute(),
+                state.pg.from("agencies").select("performance_config").eq("id", &user.id).execute(),
+                async {
+                    let now = chrono::Utc::now();
+                    let month_start = now.format("%Y-%m-01").to_string();
+                    let thirty_days_ago = (now - chrono::Duration::days(30)).format("%Y-%m-%d").to_string();
+                    state.pg.rpc("get_agency_performance_stats", json!({"p_agency_id": &user.id, "p_earnings_start_date": thirty_days_ago, "p_bookings_start_date": month_start}).to_string()).execute().await
+                }
+            ).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+            let effective_rate: f64;
+
+            // 1. Check for custom rate
+            let comm_text = resp_comm.text().await.unwrap_or_else(|_| "[]".to_string());
+            let comm_data: Vec<serde_json::Value> =
+                serde_json::from_str(&comm_text).unwrap_or_default();
+            if let Some(custom) = comm_data
+                .first()
+                .and_then(|v| v.get("commission_rate"))
+                .and_then(|v| v.as_f64())
+            {
+                effective_rate = custom;
+            } else {
+                // 2. Fallback to Tier rate
+                let tiers_db: Vec<crate::performance_tiers::TierRuleDb> =
+                    serde_json::from_str(&resp_tiers.text().await.unwrap_or_default())
+                        .unwrap_or_default();
+                let mut tiers: Vec<crate::performance_tiers::TierRule> = tiers_db
+                    .into_iter()
+                    .map(|t| crate::performance_tiers::TierRule {
+                        tier_name: t.tier_name,
+                        tier_level: t.tier_level,
+                        min_monthly_earnings: 0.0,
+                        min_monthly_bookings: 0,
+                        commission_rate: 0.0,
+                        description: t.description,
+                    })
+                    .collect();
+
+                let config_data: Vec<serde_json::Value> =
+                    serde_json::from_str(&resp_config.text().await.unwrap_or_default())
+                        .unwrap_or_default();
+                if let Some(config) = config_data
+                    .first()
+                    .and_then(|r| r.get("performance_config"))
+                    .and_then(|v| v.as_object())
+                {
+                    for t in &mut tiers {
+                        if let Some(c) = config.get(&t.tier_name) {
+                            if let Some(r) = c.get("commission_rate").and_then(|v| v.as_f64()) {
+                                t.commission_rate = r;
+                            }
+                            if let Some(e) = c.get("min_earnings").and_then(|v| v.as_f64()) {
+                                t.min_monthly_earnings = e;
+                            }
+                            if let Some(b) = c.get("min_bookings").and_then(|v| v.as_i64()) {
+                                t.min_monthly_bookings = b as i32;
+                            }
+                        }
+                    }
+                }
+
+                let stats_all: Vec<crate::performance_tiers::PerformanceStats> =
+                    serde_json::from_str(&resp_stats.text().await.unwrap_or_default())
+                        .unwrap_or_default();
+                let talent_stats = stats_all.iter().find(|s| s.talent_id == talent_id);
+                let earnings = talent_stats
+                    .map(|s| s.earnings_cents as f64 / 100.0)
+                    .unwrap_or(0.0);
+                let bookings = talent_stats.map(|s| s.booking_count).unwrap_or(0);
+
+                let mut assigned_tier = &tiers[tiers.len() - 1];
+                for rule in &tiers {
+                    if earnings >= rule.min_monthly_earnings
+                        && bookings >= rule.min_monthly_bookings as i64
+                    {
+                        assigned_tier = rule;
+                        break;
+                    }
+                }
+                effective_rate = assigned_tier.commission_rate;
+            }
+
+            // Create or update payment record with commission_rate
             let payment_row = json!({
                 "agency_id": user.id,
                 "talent_id": talent_id,
@@ -844,6 +931,7 @@ pub async fn set_pay_split(
                 "status": "pending",
                 "currency_code": "USD",
                 "due_date": if date.is_empty() { serde_json::Value::Null } else { json!(date) },
+                "commission_rate": effective_rate,
             });
 
             let _ = state

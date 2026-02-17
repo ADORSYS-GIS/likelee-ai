@@ -965,6 +965,98 @@ pub async fn upload_agency_file(
     }))
 }
 
+// Agency Payout Settings
+pub async fn get_payout_settings(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("agency_payout_settings")
+        .select("*")
+        .eq("agency_id", &user.id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
+    if !status.is_success() {
+        let txt = resp.text().await.unwrap_or_else(|_| "failed".into());
+        return Err((
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            txt,
+        ));
+    }
+
+    let status = resp.status();
+    let txt = resp.text().await.unwrap_or_else(|_| "[]".into());
+    if status == 404 {
+        // Return default settings if not found
+        return Ok(Json(json!({
+            "payout_frequency": "Monthly",
+            "min_payout_threshold_cents": 5000,
+            "payout_method": "Stripe Connected Account",
+            "how_it_works_json": [
+                "Brand pays license fee to agency Stripe account",
+                "Agency commission (14%) auto-deducted",
+                "Net amount transferred to talent's connected account",
+                "Automatic payout on schedule (monthly)"
+            ]
+        })));
+    }
+
+    let v: serde_json::Value = serde_json::from_str(&txt).unwrap_or(json!({}));
+    Ok(Json(v))
+}
+
+#[derive(Deserialize)]
+pub struct UpdatePayoutSettingsPayload {
+    pub payout_frequency: String,
+    pub min_payout_threshold_cents: i64,
+}
+
+pub async fn update_payout_settings(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<UpdatePayoutSettingsPayload>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let body = json!({
+        "agency_id": user.id,
+        "payout_frequency": payload.payout_frequency,
+        "min_payout_threshold_cents": payload.min_payout_threshold_cents,
+    });
+
+    let resp = state
+        .pg
+        .from("agency_payout_settings")
+        .upsert(body.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
+    if !status.is_success() {
+        let txt = resp.text().await.unwrap_or_else(|_| "failed".into());
+        return Err((
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            txt,
+        ));
+    }
+
+    let txt = resp.text().await.unwrap_or_else(|_| "{}".into());
+    let v: serde_json::Value = serde_json::from_str(&txt).unwrap_or(json!({}));
+    Ok(Json(v))
+}
+
+pub async fn get_upcoming_payout_schedule(
+    State(_state): State<AppState>,
+    _user: AuthUser,
+) -> Result<Json<Vec<serde_json::Value>>, (StatusCode, String)> {
+    // Return empty list as per plan
+    Ok(Json(vec![]))
+}
+
 pub async fn list_client_files(
     State(state): State<AppState>,
     user: AuthUser,
@@ -1176,14 +1268,14 @@ pub async fn upload_client_file(
         .first()
         .cloned()
         .unwrap_or(serde_json::json!({"id": ""}));
-    let id = rec
+    let file_id_res = rec
         .get("id")
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
 
     Ok(Json(AgencyFileUploadResponse {
-        id,
+        id: file_id_res,
         file_name: fname,
         public_url,
         storage_bucket: bucket,
@@ -1193,14 +1285,16 @@ pub async fn upload_client_file(
     }))
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+// ... (rest of the code remains the same)
+
+// List talents associated to the agency's organization via agency_users
+#[derive(Serialize)]
 pub struct TalentItem {
     pub id: String,
     pub full_name: Option<String>,
     pub profile_photo_url: Option<String>,
 }
 
-// List talents associated to the agency's organization via agency_users
 #[derive(Deserialize)]
 pub struct TalentQuery {
     pub q: Option<String>,

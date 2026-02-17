@@ -60,8 +60,7 @@ pub struct ConfigurePerformanceRequest {
 pub struct CommissionHistoryLog {
     pub id: String,
     pub talent_name: String,
-    pub old_rate: Option<f64>,
-    pub new_rate: f64,
+    pub commission_rate: f64,
     pub changed_by_name: Option<String>,
     pub changed_at: String,
 }
@@ -155,7 +154,9 @@ pub async fn get_performance_tiers(
             .eq("agency_id", agency_id)
             .eq("role", "talent")
             .limit(500)
-            .select("id, full_legal_name, profile_photo_url, custom_commission_rate")
+            .select(
+                "id, full_legal_name, profile_photo_url, talent_commissions!left(commission_rate)"
+            )
             .execute(),
         // 4. Calculate Real-Time Metrics via RPC
         async {
@@ -217,25 +218,13 @@ pub async fn get_performance_tiers(
         })
         .collect();
 
-    // 2. Process Agency Config
-    if !resp_config.status().is_success() {
-        return Err((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Config Error: {}", resp_config.status()),
-        ));
-    }
-    let text_config = resp_config.text().await.map_err(|e| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Read config: {}", e),
-        )
-    })?;
-    let agency_data: Vec<serde_json::Value> = serde_json::from_str(&text_config).map_err(|e| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Parse config: {}", e),
-        )
-    })?;
+    // 3. Process Agency Config
+    let text_config = resp_config
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
+    let agency_data: Vec<serde_json::Value> =
+        serde_json::from_str(&text_config).unwrap_or_default();
     let performance_config = agency_data
         .first()
         .and_then(|r| r.get("performance_config"))
@@ -259,25 +248,27 @@ pub async fn get_performance_tiers(
     }
 
     // 3. Process Talents
-    if !resp_talents.status().is_success() {
-        return Err((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Talents Error: {}", resp_talents.status()),
-        ));
-    }
+    let talents_status = resp_talents.status();
     let text_talents = resp_talents.text().await.map_err(|e| {
+        tracing::error!("Read talents text error: {}", e);
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("Read talents: {}", e),
         )
     })?;
-    let talents_json: Vec<serde_json::Value> =
-        serde_json::from_str(&text_talents).map_err(|e| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Parse talents: {}", e),
-            )
-        })?;
+    tracing::info!("Raw talents JSON: {}", text_talents);
+
+    let talents_json: Vec<serde_json::Value> = if talents_status.is_success() {
+        serde_json::from_str(&text_talents).unwrap_or_default()
+    } else {
+        tracing::error!(
+            "Talents Fetch Error: {}. Returning empty list.",
+            talents_status
+        );
+        vec![]
+    };
+
+    tracing::info!("Number of talents fetched: {}", talents_json.len());
 
     // 4. Process Stats
     if !resp_stats.status().is_success() {
@@ -352,7 +343,14 @@ pub async fn get_performance_tiers(
             }
         }
         if let Some(group) = groups.get_mut(&assigned_tier.tier_level) {
-            let custom_rate = t.get("custom_commission_rate").and_then(|v| v.as_f64());
+            let custom_rate = t.get("talent_commissions").and_then(|v| {
+                // Check if it's an array (Supabase sometimes returns arrays for 1-to-1) or single object
+                if v.is_array() {
+                    v.as_array()?.first()?.get("commission_rate")?.as_f64()
+                } else {
+                    v.get("commission_rate")?.as_f64()
+                }
+            });
             let final_rate = custom_rate.unwrap_or(assigned_tier.commission_rate);
 
             group.talents.push(TalentPerformance {
@@ -394,11 +392,11 @@ pub async fn update_talent_commission(
     let (resp_user, resp_tiers, resp_config, resp_stats) = tokio::try_join!(
         state
             .pg
-            .from("agency_users")
-            .select("custom_commission_rate")
-            .eq("id", &payload.talent_id)
+            .from("talent_commissions")
+            .select("commission_rate")
+            .eq("talent_id", &payload.talent_id)
             .eq("agency_id", agency_id)
-            .single()
+            .limit(1)
             .execute(),
         state
             .pg
@@ -435,10 +433,11 @@ pub async fn update_talent_commission(
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     // Current custom rate
-    let current_user_json: serde_json::Value =
-        serde_json::from_str(&resp_user.text().await.unwrap_or_default()).unwrap_or(json!({}));
-    let old_custom_rate = current_user_json
-        .get("custom_commission_rate")
+    let text_user = resp_user.text().await.unwrap_or_else(|_| "[]".to_string());
+    let user_data: Vec<serde_json::Value> = serde_json::from_str(&text_user).unwrap_or_default();
+    let old_custom_rate = user_data
+        .first()
+        .and_then(|v| v.get("commission_rate"))
         .and_then(|v| v.as_f64());
 
     // Parse Tiers
@@ -499,29 +498,32 @@ pub async fn update_talent_commission(
         }
     }
     let default_tier_rate = assigned_tier.commission_rate;
-    let old_effective_rate = old_custom_rate.unwrap_or(default_tier_rate);
+    let _old_effective_rate = old_custom_rate.unwrap_or(default_tier_rate);
 
     // 2. Determine new rate to store in history (NOT NULL requirement)
     let new_rate_to_log = payload.custom_rate.unwrap_or(default_tier_rate);
 
     // 3. Check if actually changed from CURRENT EFFECTIVE rate OR custom state changed
+    // Let's remove this check so it ALWAYS persists if the user clicks save
+    /*
     if old_effective_rate == new_rate_to_log && old_custom_rate == payload.custom_rate {
         return Ok(StatusCode::OK);
     }
+    */
 
     // 4. Update Database
-    let update_body = if let Some(rate) = payload.custom_rate {
-        json!({ "custom_commission_rate": rate })
-    } else {
-        json!({ "custom_commission_rate": serde_json::Value::Null })
-    };
+    let upsert_body = json!({
+        "talent_id": payload.talent_id,
+        "agency_id": agency_id,
+        "commission_rate": new_rate_to_log,
+        "updated_at": chrono::Utc::now().to_rfc3339()
+    });
 
     let update_resp = state
         .pg
-        .from("agency_users")
-        .eq("id", &payload.talent_id)
-        .eq("agency_id", agency_id)
-        .update(update_body.to_string())
+        .from("talent_commissions")
+        .upsert(upsert_body.to_string())
+        .on_conflict("talent_id, agency_id")
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -533,12 +535,10 @@ pub async fn update_talent_commission(
         ));
     }
 
-    // 5. Log History (Always log if we got here, as we checked for changes above)
+    // 5. Log History (Always log if we got here)
     let history_entry = json!({
-        "agency_user_id": payload.talent_id,
-        "old_rate": old_effective_rate, // Use effective rate for history clarity
-        "new_rate": new_rate_to_log,
-        "changed_by": auth_user.id,
+        "talent_id": payload.talent_id,
+        "commission_rate": new_rate_to_log,
         "agency_id": agency_id
     });
 
@@ -556,12 +556,13 @@ pub async fn get_commission_history(
     State(state): State<AppState>,
     auth_user: AuthUser,
 ) -> Result<Json<Vec<CommissionHistoryLog>>, (StatusCode, String)> {
+    // History is now tracked via licensing_payouts table
     let resp = state
         .pg
-        .from("talent_commission_history")
-        .select("id, old_rate, new_rate, changed_at, agency_users!talent_commission_history_agency_user_id_fkey(full_legal_name)")
+        .from("licensing_payouts")
+        .select("id, commission_rate, paid_at, agency_users:talent_id(full_legal_name)")
         .eq("agency_id", &auth_user.id)
-        .order("changed_at.desc")
+        .order("paid_at.desc")
         .limit(50)
         .execute()
         .await
@@ -588,11 +589,13 @@ pub async fn get_commission_history(
                     .unwrap_or("")
                     .to_string(),
                 talent_name,
-                old_rate: r.get("old_rate").and_then(|v| v.as_f64()),
-                new_rate: r.get("new_rate").and_then(|v| v.as_f64()).unwrap_or(0.0),
-                changed_by_name: Some("Agency Admin".to_string()),
+                commission_rate: r
+                    .get("commission_rate")
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(0.0),
+                changed_by_name: Some("System (Payout)".to_string()),
                 changed_at: r
-                    .get("changed_at")
+                    .get("paid_at")
                     .and_then(|v| v.as_str())
                     .unwrap_or("")
                     .to_string(),

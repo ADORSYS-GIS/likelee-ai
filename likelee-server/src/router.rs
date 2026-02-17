@@ -122,6 +122,14 @@ pub fn build_router(state: AppState) -> Router {
             "/api/talent/portfolio-items/upload",
             post(crate::talent::upload_portfolio_item),
         )
+        .route(
+            "/api/agency/payout-settings",
+            get(crate::agencies::get_payout_settings).post(crate::agencies::update_payout_settings),
+        )
+        .route(
+            "/api/agency/payout-schedule/upcoming",
+            get(crate::agencies::get_upcoming_payout_schedule),
+        )
         // Invoices (Agency Dashboard)
         .route(
             "/api/invoices",
