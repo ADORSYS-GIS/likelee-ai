@@ -22,6 +22,7 @@ import { getLicenseTemplates, LicenseTemplate } from "@/api/licenseTemplates";
 import { useToast } from "@/components/ui/use-toast";
 import { DocusealForm } from "@docuseal/react";
 import { Switch } from "@/components/ui/switch";
+import { getUserFriendlyError } from "@/utils/error-utils";
 
 interface SendContractModalProps {
   isOpen: boolean;
@@ -116,7 +117,9 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
     onError: (error: any) => {
       toast({
         title: "Draft Failed",
-        description: error.message || "Could not create a draft submission.",
+        description:
+          getUserFriendlyError(error) ||
+          "We couldn't prepare this contract draft. Please try again.",
         variant: "destructive",
       });
     },
@@ -143,7 +146,9 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
     onError: (error: any) => {
       toast({
         title: "Preview Failed",
-        description: error.message || "Could not load preview.",
+        description:
+          getUserFriendlyError(error) ||
+          "We couldn't load the preview right now. Please try again.",
         variant: "destructive",
       });
     },
@@ -200,7 +205,9 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
     onError: (error: any) => {
       toast({
         title: "Sending Failed",
-        description: error.message || "Could not send the contract.",
+        description:
+          getUserFriendlyError(error) ||
+          "We couldn't send the contract right now. Please try again.",
         variant: "destructive",
       });
     },

@@ -44,6 +44,14 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
   );
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const hasSecondPartyRole = React.useMemo(
+    () =>
+      Array.isArray(builderRoles) &&
+      builderRoles.some(
+        (role) => role.toLowerCase().trim() === "second party",
+      ),
+    [builderRoles],
+  );
 
   const prefillFields = React.useMemo(() => {
     if (!prefillValues || typeof prefillValues !== "object") return undefined;
@@ -186,7 +194,22 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
           </div>
         </div>
 
-        <div className="flex-1 w-full relative bg-slate-50 flex overflow-hidden">
+        <div className="flex-1 w-full relative bg-slate-50 flex overflow-hidden flex-col">
+          {hasSecondPartyRole && (
+            <div className="px-8 py-3 border-b border-slate-200 bg-white">
+              <div className="text-xs sm:text-sm text-slate-700 font-medium">
+                Party mapping:
+                <span className="ml-2 inline-flex items-center rounded-full bg-red-50 text-red-700 border border-red-100 px-2 py-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 mr-1.5" />
+                  First Party = Agency
+                </span>
+                <span className="ml-2 inline-flex items-center rounded-full bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-1.5" />
+                  Second Party = Client
+                </span>
+              </div>
+            </div>
+          )}
           <div className="flex-1 relative h-full">
             {loading ? (
               <div className="absolute inset-0 flex items-center justify-center">

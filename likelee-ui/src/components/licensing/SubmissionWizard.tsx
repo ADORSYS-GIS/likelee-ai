@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getFriendlyErrorMessage } from "@/utils/errorUtils";
+import { getUserFriendlyError } from "@/utils/error-utils";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -239,7 +239,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
       } catch (err: any) {
         toast({
           title: "Preparation Failed",
-          description: getFriendlyErrorMessage(err),
+          description:
+            getUserFriendlyError(err) ||
+            "We couldn't prepare this submission. Please try again.",
           variant: "destructive",
         });
       } finally {
@@ -270,7 +272,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
     } catch (err: any) {
       toast({
         title: "Sync Failed",
-        description: getFriendlyErrorMessage(err),
+        description:
+          getUserFriendlyError(err) ||
+          "We couldn't continue to document setup. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -342,7 +346,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
     } catch (err: any) {
       toast({
         title: "Send Failed",
-        description: getFriendlyErrorMessage(err),
+        description:
+          getUserFriendlyError(err) ||
+          "We couldn't send this contract right now. Please try again.",
         variant: "destructive",
       });
     } finally {
