@@ -85,6 +85,7 @@ export const createBuilderToken = async (
   docusealTemplateId?: number,
   externalId?: string,
   contractBody?: string,
+  builderRoles?: string[],
 ) => {
   return base44.post<{
     token: string;
@@ -95,5 +96,6 @@ export const createBuilderToken = async (
     docuseal_template_id: docusealTemplateId,
     external_id: externalId,
     contract_body: contractBody,
+    builder_roles: builderRoles,
   });
 };

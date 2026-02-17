@@ -19,6 +19,7 @@ interface DocuSealBuilderModalProps {
   docusealTemplateId?: number;
   externalId?: string;
   contractBody?: string;
+  builderRoles?: string[];
   onSave: (docusealTemplateId: number) => void;
   onSend?: () => void;
   isSending?: boolean;
@@ -31,6 +32,7 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
   docusealTemplateId,
   externalId,
   contractBody,
+  builderRoles,
   onSave,
   onSend,
   isSending,
@@ -97,7 +99,13 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
     if (open) {
       setLoading(true);
       const name = templateName || "License Contract";
-      createBuilderToken(name, docusealTemplateId, externalId, contractBody)
+      createBuilderToken(
+        name,
+        docusealTemplateId,
+        externalId,
+        contractBody,
+        builderRoles,
+      )
         .then((res) => {
           console.log("DocuSeal Token Response:", res);
           setToken(res.token);
@@ -124,6 +132,7 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
     docusealTemplateId,
     externalId,
     contractBody,
+    builderRoles,
     onClose,
     toast,
   ]);
@@ -187,7 +196,11 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
               <DocusealBuilder
                 token={token}
                 fields={prefillFields}
-                roles={["First Party"]}
+                roles={
+                  builderRoles && builderRoles.length
+                    ? builderRoles
+                    : ["First Party"]
+                }
                 withFieldPlaceholder={true}
                 withSendButton={false}
                 withSignYourselfButton={false}

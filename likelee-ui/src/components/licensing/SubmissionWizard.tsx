@@ -23,6 +23,7 @@ import {
   getLicenseSubmissions,
   createLicenseSubmissionDraft,
   finalizeLicenseSubmission,
+  syncLicenseSubmissionStatus,
 } from "@/api/licenseSubmissions";
 import { getAgencyTalents } from "@/api/functions";
 import { ContractEditor } from "./ContractEditor";
@@ -41,6 +42,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
+import { DocusealForm } from "@docuseal/react";
 
 interface SubmissionWizardProps {
   isOpen: boolean;
@@ -96,6 +99,12 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
   const [draftId, setDraftId] = useState<string | null>(null);
   const [currentTemplate, setCurrentTemplate] =
     useState<LicenseTemplate>(template);
+  const [requiresAgencySignature, setRequiresAgencySignature] = useState(false);
+  const [agencySignOpen, setAgencySignOpen] = useState(false);
+  const [agencySignUrl, setAgencySignUrl] = useState<string | null>(null);
+  const [currentSubmissionId, setCurrentSubmissionId] = useState<string | null>(
+    null,
+  );
   const [talents, setTalents] = useState<any[]>([]);
   const { toast } = useToast();
 
@@ -128,6 +137,10 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
   useEffect(() => {
     if (isOpen) {
       setStep(1);
+      setRequiresAgencySignature(false);
+      setAgencySignOpen(false);
+      setAgencySignUrl(null);
+      setCurrentSubmissionId(null);
       reset({
         client_name: "",
         talent_name: "",
@@ -191,6 +204,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
           start_date: currentData.start_date,
           custom_terms: currentData.custom_terms,
           docuseal_template_id: currentTemplate.docuseal_template_id,
+          requires_agency_signature: requiresAgencySignature,
         });
 
         if (draft?.id) {
@@ -269,6 +283,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
           start_date: currentData.start_date,
           custom_terms: currentData.custom_terms,
           docuseal_template_id: currentTemplate.docuseal_template_id,
+          requires_agency_signature: requiresAgencySignature,
         });
         submissionId = draft?.id;
         if (!submissionId) {
@@ -278,12 +293,30 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
       }
 
       // Step 2: Finalize the submission (this creates the licensing_request)
-      await finalizeLicenseSubmission(submissionId, {
+      const finalizeResult = await finalizeLicenseSubmission(submissionId, {
         docuseal_template_id: currentTemplate.docuseal_template_id,
         client_name: currentData.client_name,
         client_email: currentData.client_email,
         talent_names: currentData.talent_name,
+        requires_agency_signature: requiresAgencySignature,
       });
+
+      const embedUrl = (finalizeResult as any)?.agency_embed_src
+        || ((finalizeResult as any)?.agency_submitter_slug
+          ? `https://docuseal.co/s/${(finalizeResult as any).agency_submitter_slug}`
+          : (finalizeResult as any)?.docuseal_slug
+            ? `https://docuseal.co/s/${(finalizeResult as any).docuseal_slug}`
+          : null);
+      if (requiresAgencySignature && embedUrl) {
+        setCurrentSubmissionId((finalizeResult as any)?.id || submissionId);
+        setAgencySignUrl(embedUrl);
+        setAgencySignOpen(true);
+        toast({
+          title: "Agency signature required",
+          description: "Complete your signature to release this contract to the client.",
+        });
+        return;
+      }
 
       toast({
         title: "Success",
@@ -532,6 +565,20 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                           className="h-12 bg-slate-50 border-slate-200 rounded-xl font-medium focus:ring-4 focus:ring-indigo-50 transition-all"
                         />
                       </div>
+                      <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-bold text-slate-800">
+                            Agency signs first (on platform)
+                          </Label>
+                          <Switch
+                            checked={requiresAgencySignature}
+                            onCheckedChange={setRequiresAgencySignature}
+                          />
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Client receives the contract only after agency signature.
+                        </p>
+                      </div>
                       <div className="space-y-2">
                         <Label className="text-sm font-bold text-slate-800 ml-1">
                           Start Date
@@ -682,6 +729,11 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
           docusealTemplateId={currentTemplate.docuseal_template_id}
           externalId={`temp-${currentTemplate.id}-${Date.now()}`}
           contractBody={formData.contract_body} // Pass the deal-specific body!
+          builderRoles={
+            requiresAgencySignature
+              ? ["First Party", "Second Party"]
+              : ["First Party"]
+          }
           onSend={handleFinalSend}
           isSending={isSyncing}
           onSave={() => {
@@ -689,6 +741,45 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
           }}
         />
       )}
+
+      <Dialog
+        open={agencySignOpen}
+        onOpenChange={(v) => {
+          if (!v) {
+            setAgencySignOpen(false);
+            onComplete();
+            onClose();
+          }
+        }}
+      >
+        <DialogContent className="fixed !inset-0 bg-background w-screen h-screen !max-w-none !translate-x-0 !translate-y-0 !rounded-none border-none p-0 flex flex-col outline-none">
+          <DialogHeader className="p-4 border-b">
+            <DialogTitle>Agency Signature</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 w-full bg-gray-50 overflow-auto">
+            {agencySignUrl ? <DocusealForm src={agencySignUrl} /> : null}
+          </div>
+          <div className="p-4 border-t flex justify-end">
+            <Button
+              variant="outline"
+              onClick={async () => {
+                if (currentSubmissionId) {
+                  try {
+                    await syncLicenseSubmissionStatus(currentSubmissionId);
+                  } catch {
+                    // ignore transient sync issues
+                  }
+                }
+                setAgencySignOpen(false);
+                onComplete();
+                onClose();
+              }}
+            >
+              Done
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 };

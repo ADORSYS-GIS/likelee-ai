@@ -37,6 +37,8 @@ import {
   Eye,
   Download,
   Info,
+  Link2,
+  Copy,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -153,6 +155,16 @@ export const LicenseSubmissionsTab = () => {
 
   const [activeTab, setActiveTab] = useState<"Active" | "Archive">("Active");
 
+  const getClientSigningUrl = (sub: LicenseSubmission) => {
+    const appBase =
+      ((import.meta as any)?.env?.VITE_DOCUSEAL_APP_URL as string) ||
+      "https://docuseal.co";
+    const base = appBase.endsWith("/") ? appBase.slice(0, -1) : appBase;
+    const slug = sub.client_submitter_slug || sub.docuseal_slug;
+    if (!slug) return null;
+    return `${base}/s/${slug}`;
+  };
+
   const filteredSubmissions = submissions.filter((sub) => {
     if (sub.status === "draft") return false;
     const isArchived = sub.status === "archived";
@@ -255,6 +267,46 @@ export const LicenseSubmissionsTab = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
+                        {getClientSigningUrl(sub) && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Open Client Signing Link"
+                              onClick={() =>
+                                window.open(getClientSigningUrl(sub)!, "_blank")
+                              }
+                            >
+                              <Link2 className="h-4 w-4 text-gray-500 hover:text-indigo-600" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Copy Client Signing Link"
+                              onClick={async () => {
+                                try {
+                                  await navigator.clipboard.writeText(
+                                    getClientSigningUrl(sub)!,
+                                  );
+                                  toast({
+                                    title: "Client link copied",
+                                    description:
+                                      "Share this link with the client for testing.",
+                                  });
+                                } catch {
+                                  toast({
+                                    title: "Copy failed",
+                                    description:
+                                      "Could not copy client link.",
+                                    variant: "destructive",
+                                  });
+                                }
+                              }}
+                            >
+                              <Copy className="h-4 w-4 text-gray-500 hover:text-indigo-600" />
+                            </Button>
+                          </>
+                        )}
                         {sub.signed_document_url && (
                           <Button
                             variant="ghost"
