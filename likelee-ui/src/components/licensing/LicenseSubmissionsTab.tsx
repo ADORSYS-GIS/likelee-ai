@@ -318,7 +318,10 @@ export const LicenseSubmissionsTab = () => {
                                 className="h-8 px-3 text-xs font-semibold text-blue-700 border-blue-200 hover:bg-blue-50"
                                 title="Open Agency Signing Link"
                                 onClick={() =>
-                                  window.open(getAgencySigningUrl(sub)!, "_blank")
+                                  window.open(
+                                    getAgencySigningUrl(sub)!,
+                                    "_blank",
+                                  )
                                 }
                               >
                                 Sign here

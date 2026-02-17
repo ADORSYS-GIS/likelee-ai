@@ -47,9 +47,7 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
   const hasSecondPartyRole = React.useMemo(
     () =>
       Array.isArray(builderRoles) &&
-      builderRoles.some(
-        (role) => role.toLowerCase().trim() === "second party",
-      ),
+      builderRoles.some((role) => role.toLowerCase().trim() === "second party"),
     [builderRoles],
   );
 
