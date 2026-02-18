@@ -282,6 +282,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::license_submissions::resend),
         )
         .route(
+            "/api/license-submissions/:id/sync-status",
+            post(crate::license_submissions::sync_status),
+        )
+        .route(
             "/api/agency/licensing-requests/status",
             post(crate::licensing_requests::update_status_bulk),
         )

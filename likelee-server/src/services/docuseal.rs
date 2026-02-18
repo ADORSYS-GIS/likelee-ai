@@ -6,6 +6,8 @@ use tracing::{error, info};
 pub struct CreateSubmissionRequest {
     pub template_id: i32,
     pub send_email: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub order: Option<String>,
     pub submitters: Vec<Submitter>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub values: Option<serde_json::Value>,
@@ -13,17 +15,21 @@ pub struct CreateSubmissionRequest {
 
 #[derive(Debug, Serialize)]
 pub struct Submitter {
-    pub name: String,
-    pub email: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub role: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub order: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub fields: Option<Vec<SubmitterField>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub values: Option<serde_json::Value>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct SubmitterField {
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -37,6 +43,10 @@ pub struct DocuSealSubmitter {
     pub id: i32,
     pub submission_id: i32,
     pub slug: String,
+    pub role: Option<String>,
+    pub email: Option<String>,
+    pub status: Option<String>,
+    pub embed_src: Option<String>,
 }
 
 // This remains our internal representation, which we will construct manually
@@ -53,6 +63,8 @@ pub struct SubmitterResponse {
     pub slug: String,
     pub email: String,
     pub status: String,
+    pub role: Option<String>,
+    pub embed_src: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -85,6 +97,33 @@ impl DocuSealClient {
             api_key,
             base_url,
         }
+    }
+
+    fn map_submitters_response(
+        body_text: &str,
+    ) -> Result<CreateSubmissionResponse, Box<dyn std::error::Error>> {
+        let submitters: Vec<DocuSealSubmitter> = serde_json::from_str(body_text)?;
+        let first = submitters
+            .first()
+            .ok_or_else(|| "DocuSeal response was an empty array".to_string())?;
+        let first_submission_id = first.submission_id;
+        let first_slug = first.slug.clone();
+        let mapped = submitters
+            .into_iter()
+            .map(|s| SubmitterResponse {
+                id: s.id,
+                slug: s.slug,
+                email: s.email.unwrap_or_default(),
+                status: s.status.unwrap_or_else(|| "pending".to_string()),
+                role: s.role,
+                embed_src: s.embed_src,
+            })
+            .collect();
+        Ok(CreateSubmissionResponse {
+            id: first_submission_id,
+            slug: first_slug,
+            submitters: mapped,
+        })
     }
 
     /// Create a new submission (send document for signing)
@@ -173,15 +212,19 @@ impl DocuSealClient {
         let request_body = CreateSubmissionRequest {
             template_id,
             send_email,
+            order: None,
             submitters: vec![Submitter {
-                name: submitter_name,
-                email: submitter_email,
+                name: Some(submitter_name).filter(|s| !s.is_empty()),
+                email: Some(submitter_email).filter(|s| !s.is_empty()),
                 role: Some(role),
+                order: None,
                 fields: Some(fields),
                 values: None,
             }],
             values: None,
         };
+
+        tracing::info!("DocuSeal request body: {:?}", request_body);
 
         info!(
             template_id,
@@ -210,27 +253,14 @@ impl DocuSealClient {
             return Err(format!("DocuSeal API error: {} - {}", status, body_text).into());
         }
 
-        // The API returns an array of submitters. We need to parse it as such.
-        match serde_json::from_str::<Vec<DocuSealSubmitter>>(&body_text) {
-            Ok(submitters) => {
-                if let Some(first_submitter) = submitters.first() {
-                    // Construct our internal response type from the API response.
-                    let submission = CreateSubmissionResponse {
-                        id: first_submitter.submission_id,
-                        slug: first_submitter.slug.clone(),
-                        submitters: vec![], // Not needed for this step
-                    };
-                    info!(submission_id = submission.id, "DocuSeal submission created");
-                    Ok(submission)
-                } else {
-                    let err_msg = "DocuSeal response was an empty array";
-                    error!(body = %body_text, err_msg);
-                    Err(err_msg.into())
-                }
+        match Self::map_submitters_response(&body_text) {
+            Ok(submission) => {
+                info!(submission_id = submission.id, "DocuSeal submission created");
+                Ok(submission)
             }
             Err(e) => {
                 error!(error = %e, body = %body_text, "Failed to decode DocuSeal response");
-                Err(Box::new(e))
+                Err(e)
             }
         }
     }
@@ -287,10 +317,12 @@ impl DocuSealClient {
         let request_body = CreateSubmissionRequest {
             template_id,
             send_email,
+            order: None,
             submitters: vec![Submitter {
-                name: submitter_name,
-                email: submitter_email,
+                name: Some(submitter_name).filter(|s| !s.is_empty()),
+                email: Some(submitter_email).filter(|s| !s.is_empty()),
                 role: Some(role.unwrap_or_else(|| "Signer".to_string())),
+                order: None,
                 fields: submitter_fields,
                 values: submitter_values,
             }],
@@ -325,29 +357,49 @@ impl DocuSealClient {
             return Err(format!("DocuSeal API error: {} - {}", status, body_text).into());
         }
 
-        // The API returns an array of submitters. We need to parse it as such.
-        match serde_json::from_str::<Vec<DocuSealSubmitter>>(&body_text) {
-            Ok(submitters) => {
-                if let Some(first_submitter) = submitters.first() {
-                    // Construct our internal response type from the API response.
-                    let submission = CreateSubmissionResponse {
-                        id: first_submitter.submission_id,
-                        slug: first_submitter.slug.clone(),
-                        submitters: vec![], // Not needed for this step
-                    };
-                    info!(submission_id = submission.id, "DocuSeal submission created");
-                    Ok(submission)
-                } else {
-                    let err_msg = "DocuSeal response was an empty array";
-                    error!(body = %body_text, err_msg);
-                    Err(err_msg.into())
-                }
+        match Self::map_submitters_response(&body_text) {
+            Ok(submission) => {
+                info!(submission_id = submission.id, "DocuSeal submission created");
+                Ok(submission)
             }
             Err(e) => {
                 error!(error = %e, body = %body_text, "Failed to decode DocuSeal response");
-                Err(Box::new(e))
+                Err(e)
             }
         }
+    }
+
+    pub async fn create_submission_with_submitters(
+        &self,
+        template_id: i32,
+        submitters: Vec<Submitter>,
+        send_email: bool,
+    ) -> Result<CreateSubmissionResponse, Box<dyn std::error::Error>> {
+        let url = format!("{}/submissions", self.base_url);
+        let request_body = CreateSubmissionRequest {
+            template_id,
+            send_email,
+            order: Some("preserved".to_string()),
+            submitters,
+            values: None,
+        };
+
+        let response = self
+            .client
+            .post(&url)
+            .header("X-Auth-Token", &self.api_key)
+            .header("Content-Type", "application/json")
+            .json(&request_body)
+            .send()
+            .await?;
+
+        let status = response.status();
+        let body_text = response.text().await?;
+        if !status.is_success() {
+            return Err(format!("DocuSeal API error: {} - {}", status, body_text).into());
+        }
+
+        Self::map_submitters_response(&body_text)
     }
 
     /// Get submission status
@@ -616,9 +668,13 @@ impl DocuSealClient {
             return Err(format!("DocuSeal API error: {} - {}", status, error_text).into());
         }
 
-        let template = response.json::<TemplateDetails>().await?;
+        let text = response.text().await?;
+        let template: TemplateDetails = serde_json::from_str(&text).map_err(|e| {
+            error!(error = %e, body = %text, "Failed to decode DocuSeal template details");
+            format!("DocuSeal Template Fetch Error: {} - body: {}", e, text)
+        })?;
         info!(
-            template_id = template.id,
+            template_id = template.id.unwrap_or(0),
             "DocuSeal template details fetched"
         );
 
@@ -755,15 +811,19 @@ pub struct Template {
 
 #[derive(Debug, Deserialize)]
 pub struct TemplateDetails {
-    pub id: i32,
-    pub name: String,
-    pub documents: Vec<TemplateDocumentDetails>,
+    pub id: Option<i32>,
+    pub name: Option<String>,
+    pub documents: Option<Vec<TemplateDocumentDetails>>,
+    #[serde(default)]
+    pub schema: Vec<serde_json::Value>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct TemplateDocumentDetails {
-    pub id: i32,
-    pub name: String,
+    pub id: Option<i32>,
+    pub name: Option<String>,
+    #[serde(default)]
+    pub schema: Vec<serde_json::Value>,
 }
 
 #[derive(Debug, Serialize)]
@@ -778,9 +838,120 @@ pub struct TemplateDocument {
     pub file: String,
 }
 
+#[derive(Debug, Serialize)]
+pub struct UpdateTemplateFromHtmlRequest {
+    pub documents: Vec<UpdateTemplateDocument>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct UpdateTemplateDocument {
+    pub html: String,
+    pub position: i32,
+    pub replace: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CreateTemplateFromHtmlRequest {
+    pub name: String,
+    pub html: String,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct CreateTemplateResponse {
     pub id: i32,
     pub slug: String,
     pub name: String,
+}
+
+impl DocuSealClient {
+    /// Create a new template from HTML
+    pub async fn create_template_from_html(
+        &self,
+        name: String,
+        html: String,
+    ) -> Result<CreateTemplateResponse, Box<dyn std::error::Error>> {
+        let url = format!("{}/templates/html", self.base_url);
+
+        let request_body = CreateTemplateFromHtmlRequest { name, html };
+
+        info!(url = %url, "Creating DocuSeal template from HTML");
+
+        let response = self
+            .client
+            .post(&url)
+            .header("X-Auth-Token", &self.api_key)
+            .header("Content-Type", "application/json")
+            .json(&request_body)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response.text().await.unwrap_or_default();
+            error!(
+                status = %status,
+                error = %error_text,
+                "DocuSeal API error"
+            );
+            return Err(format!("DocuSeal API error: {} - {}", status, error_text).into());
+        }
+
+        let template = response.json::<CreateTemplateResponse>().await?;
+        info!(
+            template_id = template.id,
+            "DocuSeal template created from HTML"
+        );
+
+        Ok(template)
+    }
+
+    /// Update an existing template using HTML
+    pub async fn update_template_from_html(
+        &self,
+        template_id: i32,
+        _name: String,
+        html: String,
+    ) -> Result<CreateTemplateResponse, Box<dyn std::error::Error>> {
+        let url = format!("{}/templates/{}/documents", self.base_url, template_id);
+
+        let request_body = UpdateTemplateFromHtmlRequest {
+            documents: vec![UpdateTemplateDocument {
+                html,
+                position: 0,
+                replace: true,
+            }],
+        };
+
+        info!(template_id, url = %url, "Updating DocuSeal template from HTML via documents endpoint");
+
+        let response = self
+            .client
+            .put(&url)
+            .header("X-Auth-Token", &self.api_key)
+            .header("Content-Type", "application/json")
+            .json(&request_body)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response.text().await.unwrap_or_default();
+            error!(
+                status = %status,
+                error = %error_text,
+                "DocuSeal API error"
+            );
+            return Err(format!("DocuSeal API error: {} - {}", status, error_text).into());
+        }
+
+        // The documents update endpoint usually returns the template object or a simple success.
+        // We'll try to parse it as CreateTemplateResponse for consistency.
+        let template = response.json::<CreateTemplateResponse>().await?;
+        info!(
+            template_id = template.id,
+            "DocuSeal template updated from HTML"
+        );
+
+        Ok(template)
+    }
 }

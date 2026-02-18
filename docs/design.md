@@ -304,3 +304,13 @@ erDiagram
   AGENCIES ||--o{ LICENSING_PAYOUTS : "earns"
 ```
 
+## Licensing Fees
+
+### Unified Fee Structure
+The licensing flow has been simplified to use a single "License Fee" source of truth.
+
+- **Primary Source**: `public.license_submissions.license_fee` (stored as `BIGINT` in cents).
+- **Redundancy Removal**: The `budget_min` and `budget_max` columns in `public.licensing_requests` have been removed.
+- **Backend Resolution**: All licensing-related views (Licensing Requests, Active Licenses, Talent View) now fetch the fee directly from the linked `license_submissions` table.
+- **UI Representation**: The frontend displays a single `License Fee` instead of a `Budget Range`.
+

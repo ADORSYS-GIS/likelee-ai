@@ -72,8 +72,8 @@ struct LicensingRequestRow {
     license_start_date: Option<String>,
     license_end_date: Option<String>,
     deadline: Option<String>,
-    budget_min: Option<f64>,
     usage_scope: Option<String>,
+    license_submissions: Option<serde_json::Value>,
 
     // Embedded resources
     brands: Option<BrandEmbed>,
@@ -97,7 +97,7 @@ pub async fn list(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
 
-    let select = "id,talent_id,talent_name,campaign_title,client_name,brand_id,license_start_date,license_end_date,deadline,usage_scope,budget_min,budget_max,brands(company_name),agency_users(full_legal_name,stage_name,profile_photo_url),campaigns(payment_amount)";
+    let select = "id,talent_id,talent_name,campaign_title,client_name,brand_id,license_start_date,license_end_date,deadline,usage_scope,brands(company_name),agency_users(full_legal_name,stage_name,profile_photo_url),campaigns(payment_amount),license_submissions!licensing_requests_submission_id_fkey(license_fee)";
 
     let mut query = state
         .pg
@@ -200,7 +200,13 @@ pub async fn list(
             .as_ref()
             .and_then(|c| c.first())
             .and_then(|c| c.payment_amount)
-            .or(r.budget_min) // Fallback to template fee / budget_min if no campaign yet
+            .or_else(|| {
+                r.license_submissions
+                    .as_ref()
+                    .and_then(|ls| ls.get("license_fee"))
+                    .and_then(|v| v.as_f64())
+                    .map(|v| v / 100.0)
+            })
             .unwrap_or(0.0);
 
         let mut status = "Active".to_string();

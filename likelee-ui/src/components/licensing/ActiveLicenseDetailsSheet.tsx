@@ -174,7 +174,7 @@ export const ActiveLicenseDetailsSheet: React.FC<
         <SheetFooter className="mt-8">
           {onRenew && (
             <Button
-              className="w-full bg-indigo-600 hover:bg-indigo-700"
+              className="w-full bg-indigo-500 hover:bg-indigo-700"
               onClick={() => onRenew(license)}
             >
               <RefreshCw className="mr-2 h-4 w-4" /> Renew License

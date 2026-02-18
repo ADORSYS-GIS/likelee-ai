@@ -449,7 +449,7 @@ export const getAgencyActiveLicensesStats = () =>
 
 export const updateAgencyLicensingRequestsStatus = (data: {
   licensing_request_ids: string[];
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "negotiating" | "archived";
   notes?: string;
 }) => base44Client.post(`/agency/licensing-requests/status`, data);
 

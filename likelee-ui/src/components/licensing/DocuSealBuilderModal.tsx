@@ -10,6 +10,7 @@ import { createBuilderToken } from "@/api/licenseTemplates";
 import { Loader2, X } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
+import { getFriendlyErrorMessage } from "@/utils/errorUtils";
 
 interface DocuSealBuilderModalProps {
   open: boolean;
@@ -17,7 +18,11 @@ interface DocuSealBuilderModalProps {
   templateName: string;
   docusealTemplateId?: number;
   externalId?: string;
+  contractBody?: string;
+  builderRoles?: string[];
   onSave: (docusealTemplateId: number) => void;
+  onSend?: () => void;
+  isSending?: boolean;
 }
 
 export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
@@ -26,7 +31,11 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
   templateName,
   docusealTemplateId,
   externalId,
+  contractBody,
+  builderRoles,
   onSave,
+  onSend,
+  isSending,
 }) => {
   const [token, setToken] = useState<string | null>(null);
   const [prefillValues, setPrefillValues] = useState<any>(null);
@@ -35,6 +44,12 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
   );
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const hasSecondPartyRole = React.useMemo(
+    () =>
+      Array.isArray(builderRoles) &&
+      builderRoles.some((role) => role.toLowerCase().trim() === "second party"),
+    [builderRoles],
+  );
 
   const prefillFields = React.useMemo(() => {
     if (!prefillValues || typeof prefillValues !== "object") return undefined;
@@ -90,7 +105,13 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
     if (open) {
       setLoading(true);
       const name = templateName || "License Contract";
-      createBuilderToken(name, docusealTemplateId, externalId)
+      createBuilderToken(
+        name,
+        docusealTemplateId,
+        externalId,
+        contractBody,
+        builderRoles,
+      )
         .then((res) => {
           console.log("DocuSeal Token Response:", res);
           setToken(res.token);
@@ -100,8 +121,7 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
         .catch((err) => {
           toast({
             title: "Error",
-            description:
-              "Failed to initialize DocuSeal builder: " + err.message,
+            description: getFriendlyErrorMessage(err),
             variant: "destructive",
           });
           onClose();
@@ -112,25 +132,83 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
       setPrefillValues(null);
       setDocusealUserEmail(null);
     }
-  }, [open, templateName, docusealTemplateId, externalId, onClose, toast]);
+  }, [
+    open,
+    templateName,
+    docusealTemplateId,
+    externalId,
+    contractBody,
+    builderRoles,
+    onClose,
+    toast,
+  ]);
 
   return (
     <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
-      <DialogContent className="fixed !inset-0 !z-[9999] bg-background w-screen h-screen !max-w-none !translate-x-0 !translate-y-0 !rounded-none border-none !pt-20 p-0 flex flex-col outline-none">
+      <DialogContent className="max-w-7xl h-[92vh] p-0 border-none bg-white rounded-3xl overflow-hidden flex flex-col shadow-2xl transition-all duration-300">
         <DialogTitle className="sr-only">Document Designer</DialogTitle>
         <DialogDescription className="sr-only">
           Design your contract template by uploading a PDF and adding signature
           fields
         </DialogDescription>
-        <div className="flex-1 w-full h-full relative bg-gray-50 flex overflow-hidden">
-          <div className="flex-1 relative h-full">
-            {/* Floating Close Button for mobile/tablet where sidebar is hidden */}
-            <div className="absolute top-4 right-4 z-50 lg:hidden">
-              <Button variant="destructive" size="sm" onClick={onClose}>
-                Close Designer
-              </Button>
-            </div>
 
+        {/* Modal Header */}
+        <div className="bg-white px-8 py-6 border-b border-slate-100 flex items-center justify-between shrink-0">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900 leading-tight">
+              Edit Template
+            </h2>
+            <p className="text-slate-500 font-medium">
+              {templateName || "License Contract"}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            {onSend && (
+              <Button
+                onClick={() => {
+                  onSend();
+                }}
+                disabled={isSending || !token}
+                className="bg-indigo-500 hover:bg-indigo-700 text-white font-bold h-11 px-6 rounded-xl shadow-lg shadow-indigo-200"
+              >
+                {isSending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  "Finalize & Send"
+                )}
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="rounded-full hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex-1 w-full relative bg-slate-50 flex overflow-hidden flex-col">
+          {hasSecondPartyRole && (
+            <div className="px-8 py-3 border-b border-slate-200 bg-white">
+              <div className="text-xs sm:text-sm text-slate-700 font-medium">
+                Party mapping:
+                <span className="ml-2 inline-flex items-center rounded-full bg-red-50 text-red-700 border border-red-100 px-2 py-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 mr-1.5" />
+                  First Party = Agency
+                </span>
+                <span className="ml-2 inline-flex items-center rounded-full bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mr-1.5" />
+                  Second Party = Client
+                </span>
+              </div>
+            </div>
+          )}
+          <div className="flex-1 relative h-full">
             {loading ? (
               <div className="absolute inset-0 flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
@@ -139,30 +217,14 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
               <DocusealBuilder
                 token={token}
                 fields={prefillFields}
-                roles={["First Party"]}
-                inputMode={true}
+                roles={
+                  builderRoles && builderRoles.length
+                    ? builderRoles
+                    : ["First Party"]
+                }
                 withFieldPlaceholder={true}
-                onSave={(data: any) => {
-                  console.log("Designer Save Clicked:", data);
-
-                  // Check if there are any fields defined
-                  const hasFields = data?.documents?.some(
-                    (doc: any) => doc.fields && doc.fields.length > 0,
-                  );
-
-                  if (data?.id && hasFields) {
-                    onSave(data.id);
-                    toast({
-                      title: "Layout Saved",
-                      description:
-                        "The document layout has been updated and sent.",
-                    });
-                  } else if (data?.id && !hasFields) {
-                    console.log(
-                      "ignoring save with no fields (likely just upload)",
-                    );
-                  }
-                }}
+                withSendButton={false}
+                withSignYourselfButton={false}
                 className="w-full h-full"
               />
             ) : null}
