@@ -1731,10 +1731,7 @@ pub async fn get_earnings_by_agency(
                 if let Some(arr) = a_rows.as_array() {
                     for r in arr {
                         let id = r.get("id").and_then(|v| v.as_str()).unwrap_or("");
-                        let name = r
-                            .get("agency_name")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("");
+                        let name = r.get("agency_name").and_then(|v| v.as_str()).unwrap_or("");
                         if !id.is_empty() {
                             agency_name_by_id.insert(id.to_string(), name.to_string());
                         }

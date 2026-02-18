@@ -11,6 +11,8 @@ use std::collections::HashMap;
 use std::str::FromStr;
 use tracing::{error, info, warn};
 
+use crate::entitlements::{get_agency_plan_tier, PlanTier};
+
 // ============================================================================
 // Request/Response Types
 // ============================================================================
@@ -18,7 +20,7 @@ use tracing::{error, info, warn};
 #[derive(Deserialize)]
 pub struct GeneratePaymentLinkRequest {
     pub licensing_request_ids: Vec<String>,
-    pub total_amount_cents: i64,
+    pub total_amount_cents: Option<i64>,
     pub currency: Option<String>,
     pub expires_in_hours: Option<i64>,
     pub client_email: Option<String>,
@@ -84,10 +86,39 @@ pub async fn generate_payment_link(
         ));
     }
 
-    if payload.total_amount_cents <= 0 {
+    // Agency must have a Stripe Connect account since we distribute funds immediately on payment.
+    let agency_acct_resp = state
+        .pg
+        .from("agencies")
+        .select("stripe_connect_account_id")
+        .eq("id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !agency_acct_resp.status().is_success() {
+        let err = agency_acct_resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+
+    let agency_acct_text = agency_acct_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let agency_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&agency_acct_text).unwrap_or_default();
+    let agency_stripe_account_id = agency_rows
+        .first()
+        .and_then(|r| r.get("stripe_connect_account_id").and_then(|v| v.as_str()))
+        .unwrap_or("")
+        .trim()
+        .to_string();
+
+    if agency_stripe_account_id.is_empty() {
         return Err((
             StatusCode::BAD_REQUEST,
-            "total_amount_cents must be positive".to_string(),
+            "Agency must connect a Stripe account before generating a payment link".to_string(),
         ));
     }
 
@@ -104,7 +135,7 @@ pub async fn generate_payment_link(
     let lr_resp = state
         .pg
         .from("licensing_requests")
-        .select("id,agency_id,talent_id,brand_id,status,campaign_title,client_name,talent_name,brands(email,company_name)")
+        .select("id,agency_id,brand_id,talent_id,status,campaign_title,client_name,talent_name,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name),campaigns(id,payment_amount,agency_percent,talent_percent,agency_earnings_cents,talent_earnings_cents)")
         .eq("agency_id", &user.id)
         .in_("id", ids.clone())
         .execute()
@@ -123,7 +154,10 @@ pub async fn generate_payment_link(
     let lr_rows: Vec<serde_json::Value> = serde_json::from_str(&lr_text).unwrap_or_default();
 
     if lr_rows.len() != payload.licensing_request_ids.len() {
-        return Err((StatusCode::FORBIDDEN, "Invalid licensing request IDs".to_string()));
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Invalid licensing request IDs".to_string(),
+        ));
     }
 
     // Verify all requests are approved
@@ -132,16 +166,215 @@ pub async fn generate_payment_link(
         if status != "approved" && status != "confirmed" {
             return Err((
                 StatusCode::BAD_REQUEST,
-                "All licensing requests must be approved before generating payment link".to_string(),
+                "All licensing requests must be approved before generating payment link"
+                    .to_string(),
             ));
         }
+    }
+
+    // Derive total amount from license_submissions.license_fee (stored in cents)
+    let mut fee_by_lr_id: HashMap<String, i64> = HashMap::new();
+
+    // First: try direct mapping license_submissions.licensing_request_id -> license_fee
+    let ls_resp = state
+        .pg
+        .from("license_submissions")
+        .select("licensing_request_id,license_fee")
+        .eq("agency_id", &user.id)
+        .in_("licensing_request_id", ids.clone())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !ls_resp.status().is_success() {
+        let err = ls_resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+
+    let ls_text = ls_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let ls_rows: Vec<serde_json::Value> = serde_json::from_str(&ls_text).unwrap_or_default();
+    for r in &ls_rows {
+        let lrid = r
+            .get("licensing_request_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        if lrid.is_empty() {
+            continue;
+        }
+        let fee = r
+            .get("license_fee")
+            .and_then(|v| {
+                v.as_i64()
+                    .or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok()))
+            })
+            .unwrap_or(0);
+        if fee > 0 {
+            fee_by_lr_id.insert(lrid, fee);
+        }
+    }
+
+    // Second: fallback via licensing_requests.submission_id -> license_submissions.id
+    // (some rows may not have license_submissions.licensing_request_id set)
+    let mut missing_lr_ids: Vec<String> = payload
+        .licensing_request_ids
+        .iter()
+        .filter(|id| !fee_by_lr_id.contains_key(*id))
+        .cloned()
+        .collect();
+    missing_lr_ids.sort();
+    missing_lr_ids.dedup();
+
+    if !missing_lr_ids.is_empty() {
+        let missing_refs: Vec<&str> = missing_lr_ids.iter().map(|s| s.as_str()).collect();
+        let lr2_resp = state
+            .pg
+            .from("licensing_requests")
+            .select("id,submission_id")
+            .eq("agency_id", &user.id)
+            .in_("id", missing_refs)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        if !lr2_resp.status().is_success() {
+            let err = lr2_resp.text().await.unwrap_or_default();
+            return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+        }
+
+        let lr2_text = lr2_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let lr2_rows: Vec<serde_json::Value> = serde_json::from_str(&lr2_text).unwrap_or_default();
+
+        let mut submission_id_by_lr_id: HashMap<String, String> = HashMap::new();
+        let mut submission_ids: Vec<String> = vec![];
+        for r in &lr2_rows {
+            let id = r.get("id").and_then(|v| v.as_str()).unwrap_or("");
+            let sid = r
+                .get("submission_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            if !id.is_empty() && !sid.is_empty() {
+                submission_id_by_lr_id.insert(id.to_string(), sid.to_string());
+                submission_ids.push(sid.to_string());
+            }
+        }
+
+        submission_ids.sort();
+        submission_ids.dedup();
+
+        if !submission_ids.is_empty() {
+            let s_refs: Vec<&str> = submission_ids.iter().map(|s| s.as_str()).collect();
+            let ls2_resp = state
+                .pg
+                .from("license_submissions")
+                .select("id,license_fee")
+                .eq("agency_id", &user.id)
+                .in_("id", s_refs)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+            if !ls2_resp.status().is_success() {
+                let err = ls2_resp.text().await.unwrap_or_default();
+                return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+            }
+
+            let ls2_text = ls2_resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let ls2_rows: Vec<serde_json::Value> =
+                serde_json::from_str(&ls2_text).unwrap_or_default();
+
+            let mut fee_by_submission_id: HashMap<String, i64> = HashMap::new();
+            for r in &ls2_rows {
+                let id = r.get("id").and_then(|v| v.as_str()).unwrap_or("");
+                let fee = r
+                    .get("license_fee")
+                    .and_then(|v| {
+                        v.as_i64()
+                            .or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok()))
+                    })
+                    .unwrap_or(0);
+                if !id.is_empty() && fee > 0 {
+                    fee_by_submission_id.insert(id.to_string(), fee);
+                }
+            }
+
+            for (lrid, sid) in &submission_id_by_lr_id {
+                if fee_by_lr_id.contains_key(lrid) {
+                    continue;
+                }
+                if let Some(fee) = fee_by_submission_id.get(sid) {
+                    fee_by_lr_id.insert(lrid.clone(), *fee);
+                }
+            }
+        }
+    }
+
+    let mut missing_fee_lr_ids: Vec<String> = payload
+        .licensing_request_ids
+        .iter()
+        .filter(|id| !fee_by_lr_id.contains_key(*id))
+        .cloned()
+        .collect();
+    missing_fee_lr_ids.sort();
+    missing_fee_lr_ids.dedup();
+
+    if !missing_fee_lr_ids.is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!(
+                "Missing license fee for licensing requests: {}. Please complete the license submission and set the license fee.",
+                missing_fee_lr_ids.join(", ")
+            ),
+        ));
+    }
+
+    let total_cents: i64 = payload
+        .licensing_request_ids
+        .iter()
+        .filter_map(|id| fee_by_lr_id.get(id).copied())
+        .sum();
+
+    if total_cents <= 0 {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "License fee must be positive".to_string(),
+        ));
+    }
+
+    // Platform fee based on agency plan tier
+    let tier = get_agency_plan_tier(&state, &user.id).await?;
+    let fee_pct: f64 = match tier {
+        PlanTier::Free => 0.08,
+        PlanTier::Basic => 0.05,
+        PlanTier::Pro => 0.03,
+        PlanTier::Enterprise => 0.03,
+    };
+    let platform_fee_cents = ((total_cents as f64) * fee_pct).round() as i64;
+    let net_amount_cents = (total_cents - platform_fee_cents).max(0);
+
+    if net_amount_cents <= 0 {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "Net amount must be positive".to_string(),
+        ));
     }
 
     // Fetch pay split from campaigns table
     let c_resp = state
         .pg
         .from("campaigns")
-        .select("talent_id,agency_percent,talent_percent,agency_earnings_cents,talent_earnings_cents")
+        .select(
+            "talent_id,agency_percent,talent_percent,agency_earnings_cents,talent_earnings_cents",
+        )
         .in_("licensing_request_id", ids)
         .execute()
         .await
@@ -187,10 +420,9 @@ pub async fn generate_payment_link(
     talent_ids.sort();
     talent_ids.dedup();
 
-    // Calculate amounts
-    let total_cents = payload.total_amount_cents;
-    let agency_amount_cents = ((total_cents as f64) * (agency_percent / 100.0)).round() as i64;
-    let talent_amount_cents = total_cents - agency_amount_cents;
+    // Calculate amounts (splits are based on net after platform fee)
+    let agency_amount_cents = ((net_amount_cents as f64) * (agency_percent / 100.0)).round() as i64;
+    let talent_amount_cents = net_amount_cents - agency_amount_cents;
 
     // Fetch talent details and Stripe Connect account IDs
     let mut talent_splits: Vec<TalentSplit> = vec![];
@@ -276,7 +508,10 @@ pub async fn generate_payment_link(
         let mut missing_stripe: Vec<String> = vec![];
         for (talent_id, creator_id) in &talent_creator_map {
             if !stripe_account_map.contains_key(creator_id) {
-                let name = talent_name_map.get(talent_id).cloned().unwrap_or_else(|| "Unknown".to_string());
+                let name = talent_name_map
+                    .get(talent_id)
+                    .cloned()
+                    .unwrap_or_else(|| "Unknown".to_string());
                 missing_stripe.push(format!("{} ({})", name, talent_id));
             }
         }
@@ -317,8 +552,14 @@ pub async fn generate_payment_link(
                 amount_cents,
             });
 
-            let creator_id = talent_creator_map.get(talent_id).cloned().unwrap_or_default();
-            let stripe_account_id = stripe_account_map.get(&creator_id).cloned().unwrap_or_default();
+            let creator_id = talent_creator_map
+                .get(talent_id)
+                .cloned()
+                .unwrap_or_default();
+            let stripe_account_id = stripe_account_map
+                .get(&creator_id)
+                .cloned()
+                .unwrap_or_default();
 
             talent_splits_json.push(json!({
                 "talent_id": talent_id,
@@ -338,30 +579,85 @@ pub async fn generate_payment_link(
         .map(|s| s.to_string());
 
     // Get client info from licensing request
+    // Priority: payload > license_submissions > brands > direct fields
+    let license_submission = first_lr.get("license_submissions");
+
     let client_email = payload
         .client_email
         .or_else(|| {
+            // Try license_submissions first
+            license_submission
+                .and_then(|ls| ls.get("client_email"))
+                .and_then(|v| v.as_str())
+                .filter(|s| !s.trim().is_empty())
+                .map(|s| s.to_string())
+        })
+        .or_else(|| {
+            // Try brands as object: brands: { email: "..." }
             first_lr
                 .get("brands")
                 .and_then(|b| b.get("email").and_then(|v| v.as_str()))
                 .map(|s| s.to_string())
         })
-        .or_else(|| first_lr.get("client_email").and_then(|v| v.as_str()).map(|s| s.to_string()));
+        .or_else(|| {
+            // Try brands as array: brands: [{ email: "..." }]
+            first_lr
+                .get("brands")
+                .and_then(|b| b.as_array())
+                .and_then(|arr| arr.first())
+                .and_then(|b| b.get("email").and_then(|v| v.as_str()))
+                .map(|s| s.to_string())
+        })
+        .or_else(|| {
+            // Try direct client_email field on licensing_requests
+            first_lr
+                .get("client_email")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        });
 
     let client_name = payload
         .client_name
         .or_else(|| {
+            // Try license_submissions first
+            license_submission
+                .and_then(|ls| ls.get("client_name"))
+                .and_then(|v| v.as_str())
+                .filter(|s| !s.trim().is_empty())
+                .map(|s| s.to_string())
+        })
+        .or_else(|| {
+            // Try brands as object: brands: { company_name: "..." }
             first_lr
                 .get("brands")
                 .and_then(|b| b.get("company_name").and_then(|v| v.as_str()))
                 .map(|s| s.to_string())
         })
         .or_else(|| {
+            // Try brands as array: brands: [{ company_name: "..." }]
+            first_lr
+                .get("brands")
+                .and_then(|b| b.as_array())
+                .and_then(|arr| arr.first())
+                .and_then(|b| b.get("company_name").and_then(|v| v.as_str()))
+                .map(|s| s.to_string())
+        })
+        .or_else(|| {
+            // Try direct client_name field on licensing_requests
             first_lr
                 .get("client_name")
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string())
         });
+
+    // Log warning if client_email is missing
+    if client_email.is_none() {
+        warn!(
+            agency_id = %user.id,
+            licensing_request_id = %payload.licensing_request_ids.first().unwrap_or(&String::new()),
+            "No client email found for payment link - email sending will fail"
+        );
+    }
 
     // Create Stripe Payment Link
     let stripe_client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
@@ -431,9 +727,33 @@ pub async fn generate_payment_link(
         "licensing_request_ids".to_string(),
         payload.licensing_request_ids.join(","),
     );
-    metadata.insert("campaign_id".to_string(), campaign_id.clone().unwrap_or_default());
-    metadata.insert("agency_amount_cents".to_string(), agency_amount_cents.to_string());
-    metadata.insert("talent_amount_cents".to_string(), talent_amount_cents.to_string());
+    metadata.insert(
+        "campaign_id".to_string(),
+        campaign_id.clone().unwrap_or_default(),
+    );
+    metadata.insert(
+        "platform_fee_cents".to_string(),
+        platform_fee_cents.to_string(),
+    );
+    metadata.insert("net_amount_cents".to_string(), net_amount_cents.to_string());
+    metadata.insert(
+        "plan_tier".to_string(),
+        match tier {
+            PlanTier::Free => "free",
+            PlanTier::Basic => "basic",
+            PlanTier::Pro => "pro",
+            PlanTier::Enterprise => "enterprise",
+        }
+        .to_string(),
+    );
+    metadata.insert(
+        "agency_amount_cents".to_string(),
+        agency_amount_cents.to_string(),
+    );
+    metadata.insert(
+        "talent_amount_cents".to_string(),
+        talent_amount_cents.to_string(),
+    );
     metadata.insert("currency".to_string(), currency.clone());
 
     let mut link_params = stripe_sdk::CreatePaymentLink::new(line_items);
@@ -462,6 +782,8 @@ pub async fn generate_payment_link(
         "stripe_payment_link_url": stripe_payment_link_url,
         "stripe_price_id": price.id.to_string(),
         "total_amount_cents": total_cents,
+        "platform_fee_cents": platform_fee_cents,
+        "net_amount_cents": net_amount_cents,
         "agency_amount_cents": agency_amount_cents,
         "talent_amount_cents": talent_amount_cents,
         "currency": currency,
@@ -557,7 +879,12 @@ pub async fn send_payment_link_email(
         .get("client_email")
         .and_then(|v| v.as_str())
         .filter(|s| !s.is_empty())
-        .ok_or_else(|| (StatusCode::BAD_REQUEST, "No client email on payment link".to_string()))?;
+        .ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                "No client email on payment link".to_string(),
+            )
+        })?;
 
     let client_name = pl_row
         .get("client_name")
@@ -581,7 +908,10 @@ pub async fn send_payment_link_email(
         .and_then(|v| v.as_str())
         .unwrap_or("");
 
-    let lr = pl_row.get("licensing_requests").cloned().unwrap_or(json!({}));
+    let lr = pl_row
+        .get("licensing_requests")
+        .cloned()
+        .unwrap_or(json!({}));
     let campaign_title = lr
         .get("campaign_title")
         .and_then(|v| v.as_str())
@@ -746,10 +1076,7 @@ pub async fn cancel_payment_link(
     let pl_row: serde_json::Value = serde_json::from_str(&pl_text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let current_status = pl_row
-        .get("status")
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
+    let current_status = pl_row.get("status").and_then(|v| v.as_str()).unwrap_or("");
 
     if current_status == "paid" {
         return Err((
@@ -773,7 +1100,8 @@ pub async fn cancel_payment_link(
             Ok(pl_id) => {
                 let update_params = stripe_sdk::UpdatePaymentLink::default();
                 // Note: Stripe SDK may not support direct deactivation, but we can try
-                let _ = stripe_sdk::PaymentLink::update(&stripe_client, &pl_id, update_params).await;
+                let _ =
+                    stripe_sdk::PaymentLink::update(&stripe_client, &pl_id, update_params).await;
             }
             Err(_) => {
                 warn!("Invalid Stripe payment link ID: {}", stripe_payment_link_id);
@@ -949,10 +1277,15 @@ pub async fn request_creator_payout(
         ));
     }
 
-    let currency = payload.currency.unwrap_or_else(|| state.payout_currency.clone());
+    let currency = payload
+        .currency
+        .unwrap_or_else(|| state.payout_currency.clone());
 
     // Verify currency is allowed
-    if !state.payout_allowed_currencies.contains(&currency.to_uppercase()) {
+    if !state
+        .payout_allowed_currencies
+        .contains(&currency.to_uppercase())
+    {
         return Err((
             StatusCode::BAD_REQUEST,
             format!("Currency {} is not supported for payouts", currency),
@@ -1030,12 +1363,15 @@ pub async fn request_creator_payout(
         .ok_or_else(|| {
             (
                 StatusCode::BAD_REQUEST,
-                "Stripe Connect account not connected. Please complete onboarding first.".to_string(),
+                "Stripe Connect account not connected. Please complete onboarding first."
+                    .to_string(),
             )
         })?;
 
     // Determine payout method and status
-    let payout_method = payload.payout_method.unwrap_or_else(|| "standard".to_string());
+    let payout_method = payload
+        .payout_method
+        .unwrap_or_else(|| "standard".to_string());
     let instant_enabled = state.instant_payouts_enabled && payout_method == "instant";
 
     // Auto-approve if under threshold
@@ -1178,7 +1514,10 @@ pub async fn get_creator_payout_history(
 // Helper Functions
 // ============================================================================
 
-async fn resolve_creator_id(state: &AppState, user_id: &str) -> Result<String, (StatusCode, String)> {
+async fn resolve_creator_id(
+    state: &AppState,
+    user_id: &str,
+) -> Result<String, (StatusCode, String)> {
     // Try direct creator lookup first
     let resp = state
         .pg
@@ -1267,7 +1606,10 @@ async fn execute_creator_stripe_transfer(
     params.amount = Some(amount_cents);
     params.metadata = Some(HashMap::from([
         ("creator_id".to_string(), creator_id.to_string()),
-        ("payout_request_id".to_string(), payout_request_id.to_string()),
+        (
+            "payout_request_id".to_string(),
+            payout_request_id.to_string(),
+        ),
     ]));
 
     match stripe_sdk::Transfer::create(&client, params).await {

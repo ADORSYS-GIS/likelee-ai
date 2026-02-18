@@ -70,6 +70,10 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
   });
 
   useEffect(() => {
+    register("exclusivity", { required: true });
+  }, [register]);
+
+  useEffect(() => {
     if (isOpen) {
       setSelectedFile(null); // Reset file on open
       if (initialData) {
@@ -271,10 +275,13 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
             <Label htmlFor="exclusivity">Exclusivity *</Label>
             <Select
               value={exclusivityValue}
-              onValueChange={(val) => setValue("exclusivity", val)}
+              onValueChange={(val) => {
+                setValue("exclusivity", val, { shouldValidate: true });
+              }}
             >
-              <SelectTrigger>
+              <SelectTrigger className={errors.exclusivity ? "border-red-500" : ""}>
                 <SelectValue placeholder="Select exclusivity" />
+
               </SelectTrigger>
               <SelectContent>
                 {EXCLUSIVITY_OPTIONS.map((opt) => (
@@ -284,6 +291,9 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
                 ))}
               </SelectContent>
             </Select>
+            {errors.exclusivity && (
+              <span className="text-red-500 text-sm">Required</span>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

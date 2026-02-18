@@ -12034,6 +12034,8 @@ const LicensingRequestsView = () => {
     "Active" | "Archive"
   >("Active");
   const [sendPaymentBusyKey, setSendPaymentBusyKey] = useState<string>("");
+  const [shouldSendPaymentLinkAfterSave, setShouldSendPaymentLinkAfterSave] =
+    useState(false);
 
   const talentCount = (selectedGroup?.talents || []).length || 0;
   const totalNum = Number(totalPaymentAmount);
@@ -12087,14 +12089,8 @@ const LicensingRequestsView = () => {
   const openPayModal = async (group: any) => {
     setSelectedGroup(group);
     setPayModalOpen(true);
-    if (!group?.pay_set) {
-      setTotalPaymentAmount("");
-      setAgencyPercent("");
-      setPayModalLoading(false);
-      return;
-    }
-
     setPayModalLoading(true);
+
     try {
       const ids = (group?.talents || [])
         .map((t: any) => t.licensing_request_id)
@@ -12103,17 +12099,22 @@ const LicensingRequestsView = () => {
       const resp = await getAgencyLicensingRequestsPaySplit(ids);
       const total = (resp as any)?.total_payment_amount;
       const ap = (resp as any)?.agency_percent;
+
+      // Pre-fill total amount from license_submissions (backend fetches this when campaigns don't exist)
       setTotalPaymentAmount(
         typeof total === "number" && Number.isFinite(total)
           ? String(total)
           : "",
       );
+
+      // Set default agency percent to 80% if not already set
       setAgencyPercent(
-        typeof ap === "number" && Number.isFinite(ap) ? String(ap) : "",
+        typeof ap === "number" && Number.isFinite(ap) ? String(ap) : "80",
       );
     } catch {
+      // On error, set sensible defaults
       setTotalPaymentAmount("");
-      setAgencyPercent("");
+      setAgencyPercent("80");
     } finally {
       setPayModalLoading(false);
     }
@@ -12162,14 +12163,11 @@ const LicensingRequestsView = () => {
       .filter(Boolean);
     if (!ids.length) return;
 
+    // If pay split is not set, open the modal with pre-filled defaults
+    // and flag that we should send the payment link after saving
     if (!group?.pay_set) {
+      setShouldSendPaymentLinkAfterSave(true);
       await openPayModal(group);
-      toast({
-        title: "Set pay split first",
-        description:
-          "Please set the total amount and agency percent before sending the payment link.",
-        variant: "destructive" as any,
-      });
       return;
     }
 
@@ -12189,9 +12187,16 @@ const LicensingRequestsView = () => {
       }
       const totalCents = Math.round(total * 100);
 
+      // Extract client email and name from group data if available
+      const clientEmail =
+        group?.client_email || group?.brand_email || undefined;
+      const clientName = group?.client_name || group?.brand_name || undefined;
+
       const pl: any = await generateAgencyPaymentLink({
         licensing_request_ids: ids,
         total_amount_cents: totalCents,
+        client_email: clientEmail,
+        client_name: clientName,
       });
       const paymentLinkId = String(pl?.payment_link_id || "");
       const paymentLinkUrl = String(pl?.payment_link_url || "");
@@ -12262,11 +12267,71 @@ const LicensingRequestsView = () => {
         agency_percent: ap,
       });
       toast({ title: "Pay updated" });
+
+      // Close modal and clear selection
       setPayModalOpen(false);
+      const groupToSend = selectedGroup;
       setSelectedGroup(null);
+
       await queryClient.invalidateQueries({
         queryKey: ["agency", "licensing-requests"],
       });
+
+      // If we should auto-send payment link after saving, do it now
+      if (shouldSendPaymentLinkAfterSave) {
+        setShouldSendPaymentLinkAfterSave(false);
+
+        // Generate and send payment link
+        const groupKey = String(groupToSend?.group_key || "");
+        setSendPaymentBusyKey(groupKey);
+        try {
+          // Approve the licensing requests
+          await updateAgencyLicensingRequestsStatus({
+            licensing_request_ids: ids,
+            status: "approved",
+          });
+
+          const totalCents = Math.round(total * 100);
+          // Extract client email and name from group data if available
+          const clientEmail =
+            groupToSend?.client_email || groupToSend?.brand_email || undefined;
+          const clientName =
+            groupToSend?.client_name || groupToSend?.brand_name || undefined;
+
+          const pl: any = await generateAgencyPaymentLink({
+            licensing_request_ids: ids,
+            total_amount_cents: totalCents,
+            client_email: clientEmail,
+            client_name: clientName,
+          });
+          const paymentLinkId = String(pl?.payment_link_id || "");
+          const paymentLinkUrl = String(pl?.payment_link_url || "");
+          if (!paymentLinkId) {
+            throw new Error("Payment link generation failed");
+          }
+
+          await sendAgencyPaymentLinkEmail({ payment_link_id: paymentLinkId });
+
+          await queryClient.invalidateQueries({
+            queryKey: ["agency", "licensing-requests"],
+          });
+
+          toast({
+            title: "Payment link sent",
+            description: paymentLinkUrl
+              ? `Payment link emailed successfully. URL: ${paymentLinkUrl}`
+              : "Payment link emailed successfully.",
+          });
+        } catch (e: any) {
+          toast({
+            title: "Send payment link failed",
+            description: e?.message || "Could not generate/send payment link",
+            variant: "destructive" as any,
+          });
+        } finally {
+          setSendPaymentBusyKey("");
+        }
+      }
     } catch (e: any) {
       toast({
         title: "Save failed",

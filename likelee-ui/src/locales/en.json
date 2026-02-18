@@ -2447,7 +2447,13 @@
       "contracts": "Licenses & Contracts",
       "earnings": "Earnings",
       "payouts": "Payouts",
-      "settings": "Settings"
+      "settings": "Settings",
+      "profile": {
+        "edit": "Edit Profile",
+        "viewPublic": "View Public Profile",
+        "help": "Support & Help",
+        "logout": "Logout"
+      }
     }
   },
   "dashboard": {

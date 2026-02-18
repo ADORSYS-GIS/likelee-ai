@@ -27,6 +27,7 @@ pub struct LicensingRequestGroup {
     pub group_key: String,
     pub brand_id: Option<String>,
     pub brand_name: Option<String>,
+    pub brand_email: Option<String>,
     pub campaign_title: Option<String>,
     pub budget_min: Option<f64>,
     pub budget_max: Option<f64>,
@@ -123,7 +124,7 @@ pub async fn list_for_agency(
     let resp = state
         .pg
         .from("licensing_requests")
-        .select("id,brand_id,talent_id,status,created_at,campaign_title,client_name,talent_name,budget_min,budget_max,usage_scope,regions,deadline,license_start_date,license_end_date,notes,negotiation_reason,brands(company_name),agency_users(full_legal_name,stage_name),campaigns(id,payment_amount,agency_percent,talent_percent,agency_earnings_cents,talent_earnings_cents)")
+        .select("id,brand_id,talent_id,status,created_at,campaign_title,client_name,talent_name,budget_min,budget_max,usage_scope,regions,deadline,license_start_date,license_end_date,notes,negotiation_reason,submission_id,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name),agency_users(full_legal_name,stage_name),campaigns(id,payment_amount,agency_percent,talent_percent,agency_earnings_cents,talent_earnings_cents)")
         .eq("agency_id", &user.id)
         .order("created_at.desc")
         .limit(250)
@@ -191,11 +192,33 @@ pub async fn list_for_agency(
         let license_end_date = value_to_non_empty_string(r.get("license_end_date"));
         let notes = value_to_non_empty_string(r.get("notes"));
 
-        let brand_name = r
-            .get("brands")
-            .and_then(|b| b.get("company_name"))
+        // Try to get client info from license_submissions first, then brands, then direct fields
+        let license_submission = r.get("license_submissions");
+
+        let brand_email = license_submission
+            .and_then(|ls| ls.get("client_email"))
             .and_then(|v| v.as_str())
+            .filter(|s| !s.trim().is_empty())
             .map(|s| s.to_string())
+            .or_else(|| {
+                r.get("brands")
+                    .and_then(|b| b.get("email"))
+                    .and_then(|v| v.as_str())
+                    .filter(|s| !s.trim().is_empty())
+                    .map(|s| s.to_string())
+            });
+
+        let brand_name = license_submission
+            .and_then(|ls| ls.get("client_name"))
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.trim().is_empty())
+            .map(|s| s.to_string())
+            .or_else(|| {
+                r.get("brands")
+                    .and_then(|b| b.get("company_name"))
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+            })
             .or_else(|| {
                 r.get("client_name")
                     .and_then(|v| v.as_str())
@@ -232,6 +255,7 @@ pub async fn list_for_agency(
                 brand_name: brand_name
                     .clone()
                     .or_else(|| Some("Direct Client".to_string())),
+                brand_email: brand_email.clone(),
                 campaign_title: campaign_title.clone(),
                 budget_min,
                 budget_max,
@@ -554,7 +578,7 @@ pub async fn get_pay_split(
         .pg
         .from("campaigns")
         .select("id,talent_id,licensing_request_id,payment_amount,agency_percent,talent_percent,agency_earnings_cents,talent_earnings_cents")
-        .in_("licensing_request_id", id_refs)
+        .in_("licensing_request_id", id_refs.clone())
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -640,10 +664,41 @@ pub async fn get_pay_split(
         }
     }
 
+    // If campaigns are not created yet (pay split not set), derive the total from license_submissions.
+    // In this schema, license_submissions links back to licensing_requests via license_submissions.licensing_request_id.
+    if total <= 0.0 {
+        let ls_resp = state
+            .pg
+            .from("license_submissions")
+            .select("id,agency_id,licensing_request_id,license_fee")
+            .eq("agency_id", &user.id)
+            .in_("licensing_request_id", id_refs)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        if ls_resp.status().is_success() {
+            let ls_text = ls_resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let ls_rows: serde_json::Value = serde_json::from_str(&ls_text).unwrap_or(json!([]));
+            if let Some(arr) = ls_rows.as_array() {
+                for r in arr {
+                    let fee = r
+                        .get("license_fee")
+                        .and_then(|v| v.as_f64().or_else(|| v.as_i64().map(|n| n as f64)))
+                        .unwrap_or(0.0);
+                    total += fee;
+                }
+            }
+        }
+    }
+
     Ok(Json(json!({
         "total_payment_amount": total,
-        "agency_percent": agency_percent,
-        "talent_percent": talent_percent,
+        "agency_percent": agency_percent.or(Some(80.0)),
+        "talent_percent": talent_percent.or(Some(20.0)),
         "campaigns": out_rows,
     })))
 }
@@ -721,18 +776,17 @@ pub async fn set_pay_split(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
 
-    for r in &reqs {
-        let st = r
-            .get("status")
-            .and_then(|v| v.as_str())
-            .unwrap_or("pending");
-        if st != "approved" && st != "confirmed" {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                "All licensing requests must be approved before setting pay".to_string(),
-            ));
-        }
-    }
+    // Setting pay split implicitly approves the licensing requests for this agency.
+    // This keeps the UX simple: agencies set pay, which moves the requests forward.
+    let approve_body = json!({"status": "approved"});
+    let _ = state
+        .pg
+        .from("licensing_requests")
+        .eq("agency_id", &user.id)
+        .in_("id", ids.clone())
+        .update(approve_body.to_string())
+        .execute()
+        .await;
 
     // Find existing campaign rows
     let c_resp = state

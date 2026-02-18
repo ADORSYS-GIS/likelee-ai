@@ -6,7 +6,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tracing::{info, warn};
+use tracing::{error, info, warn};
 
 use crate::auth::AuthUser;
 use crate::auth::RoleGuard;
@@ -1265,7 +1265,7 @@ pub async fn stripe_webhook(
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
-            let payment_intent_id = obj
+            let _payment_intent_id = obj
                 .get("payment_intent")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
@@ -1668,8 +1668,15 @@ async fn handle_payment_link_checkout_completed(
         return Ok(());
     };
 
-    let payment_link_id = pl.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let campaign_id = pl.get("campaign_id").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let payment_link_id = pl
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let _campaign_id = pl
+        .get("campaign_id")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     let agency_amount_cents = pl
         .get("agency_amount_cents")
         .and_then(|v| v.as_i64())
@@ -1758,7 +1765,241 @@ async fn handle_payment_link_checkout_completed(
         "Payment link checkout completed and balances updated"
     );
 
+    // Create Stripe transfers to connected accounts
+    match create_payment_link_transfers(
+        state,
+        &agency_id,
+        agency_amount_cents,
+        &talent_splits,
+        &currency,
+        &payment_link_id,
+    )
+    .await
+    {
+        Ok(transfers) => {
+            info!(
+                payment_link_id = %payment_link_id,
+                agency_transfer = ?transfers.agency_transfer_id,
+                talent_transfers = transfers.talent_count,
+                "Stripe transfers created successfully"
+            );
+        }
+        Err(e) => {
+            error!(
+                payment_link_id = %payment_link_id,
+                error = %e,
+                "Failed to create Stripe transfers - balances updated but funds not transferred"
+            );
+        }
+    }
+
     Ok(())
+}
+
+// ============================================================================
+// Payment Link Transfer Creation
+// ============================================================================
+
+#[derive(Debug)]
+struct TransferResults {
+    agency_transfer_id: Option<String>,
+    talent_transfer_ids: Vec<String>,
+    talent_count: usize,
+}
+
+async fn create_payment_link_transfers(
+    state: &AppState,
+    agency_id: &str,
+    agency_amount_cents: i64,
+    talent_splits: &serde_json::Value,
+    currency: &str,
+    payment_link_id: &str,
+) -> Result<TransferResults, String> {
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let currency_enum = stripe_sdk::Currency::from_str(&currency.to_lowercase())
+        .map_err(|_| "invalid_currency".to_string())?;
+
+    let mut results = TransferResults {
+        agency_transfer_id: None,
+        talent_transfer_ids: Vec::new(),
+        talent_count: 0,
+    };
+
+    // 1. Transfer to agency connected account
+    if agency_amount_cents > 0 {
+        match get_agency_stripe_account(state, agency_id).await {
+            Ok(agency_account_id) => {
+                let mut params = stripe_sdk::CreateTransfer::new(
+                    currency_enum,
+                    agency_account_id.clone(),
+                );
+                params.amount = Some(agency_amount_cents);
+                params.metadata = Some(std::collections::HashMap::from([
+                    ("payment_link_id".to_string(), payment_link_id.to_string()),
+                    ("agency_id".to_string(), agency_id.to_string()),
+                    ("type".to_string(), "agency_commission".to_string()),
+                ]));
+
+                match stripe_sdk::Transfer::create(&client, params).await {
+                    Ok(transfer) => {
+                        results.agency_transfer_id = Some(transfer.id.to_string());
+
+                        // Update payment link with transfer ID
+                        let _ = state
+                            .pg
+                            .from("agency_payment_links")
+                            .eq("id", payment_link_id)
+                            .update(
+                                json!({"agency_stripe_transfer_id": transfer.id.to_string()})
+                                    .to_string(),
+                            )
+                            .execute()
+                            .await;
+
+                        info!(
+                            agency_id = %agency_id,
+                            transfer_id = %transfer.id,
+                            amount = agency_amount_cents,
+                            "Agency transfer created successfully"
+                        );
+                    }
+                    Err(e) => {
+                        error!(
+                            agency_id = %agency_id,
+                            amount = agency_amount_cents,
+                            error = ?e,
+                            "Failed to create agency transfer"
+                        );
+                        return Err(format!("Agency transfer failed: {}", e));
+                    }
+                }
+            }
+            Err(e) => {
+                error!(
+                    agency_id = %agency_id,
+                    error = %e,
+                    "Failed to get agency Stripe account"
+                );
+                return Err(format!("Agency account lookup failed: {}", e));
+            }
+        }
+    }
+
+    // 2. Transfer to each talent connected account
+    if let Some(splits) = talent_splits.as_array() {
+        results.talent_count = splits.len();
+
+        for split in splits {
+            let talent_id = match split.get("talent_id").and_then(|v| v.as_str()) {
+                Some(id) => id,
+                None => {
+                    warn!("Missing talent_id in split: {:?}", split);
+                    continue;
+                }
+            };
+
+            let amount_cents = match split.get("amount_cents").and_then(|v| v.as_i64()) {
+                Some(amt) => amt,
+                None => {
+                    warn!(talent_id = %talent_id, "Missing amount_cents in split");
+                    continue;
+                }
+            };
+
+            if amount_cents <= 0 {
+                continue;
+            }
+
+            match get_creator_stripe_account(state, talent_id).await {
+                Ok(talent_account_id) => {
+                    let mut params = stripe_sdk::CreateTransfer::new(
+                        currency_enum,
+                        talent_account_id.clone(),
+                    );
+                    params.amount = Some(amount_cents);
+                    params.metadata = Some(std::collections::HashMap::from([
+                        ("payment_link_id".to_string(), payment_link_id.to_string()),
+                        ("talent_id".to_string(), talent_id.to_string()),
+                        ("type".to_string(), "talent_earnings".to_string()),
+                    ]));
+
+                    match stripe_sdk::Transfer::create(&client, params).await {
+                        Ok(transfer) => {
+                            results.talent_transfer_ids.push(transfer.id.to_string());
+
+                            info!(
+                                talent_id = %talent_id,
+                                transfer_id = %transfer.id,
+                                amount = amount_cents,
+                                "Talent transfer created successfully"
+                            );
+                        }
+                        Err(e) => {
+                            error!(
+                                talent_id = %talent_id,
+                                amount = amount_cents,
+                                error = ?e,
+                                "Failed to create talent transfer - continuing with other talents"
+                            );
+                            // Continue with other talents even if one fails
+                        }
+                    }
+                }
+                Err(e) => {
+                    error!(
+                        talent_id = %talent_id,
+                        error = %e,
+                        "Failed to get talent Stripe account - skipping transfer"
+                    );
+                    // Continue with other talents
+                }
+            }
+        }
+    }
+
+    Ok(results)
+}
+
+async fn get_agency_stripe_account(state: &AppState, agency_id: &str) -> Result<String, String> {
+    let resp = state
+        .pg
+        .from("agencies")
+        .select("stripe_connect_account_id")
+        .eq("id", agency_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let text = resp.text().await.map_err(|e| e.to_string())?;
+    let row: serde_json::Value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
+
+    row.get("stripe_connect_account_id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
+        .ok_or_else(|| "Agency has no connected Stripe account".to_string())
+}
+
+async fn get_creator_stripe_account(state: &AppState, creator_id: &str) -> Result<String, String> {
+    let resp = state
+        .pg
+        .from("creators")
+        .select("stripe_connect_account_id")
+        .eq("id", creator_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let text = resp.text().await.map_err(|e| e.to_string())?;
+    let row: serde_json::Value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
+
+    row.get("stripe_connect_account_id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
+        .ok_or_else(|| "Creator has no connected Stripe account".to_string())
 }
 
 async fn sync_licensing_access_grant_from_stripe_subscription(

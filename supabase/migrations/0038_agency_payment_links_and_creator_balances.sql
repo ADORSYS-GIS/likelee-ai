@@ -96,18 +96,21 @@ DROP POLICY IF EXISTS "Agencies can update their own payment links" ON public.ag
 CREATE POLICY "Agencies can update their own payment links" ON public.agency_payment_links
     FOR UPDATE USING (agency_id = auth.uid());
 
-DROP POLICY IF EXISTS "Admins can view all payment links" ON public.agency_payment_links;
-CREATE POLICY "Admins can view all payment links" ON public.agency_payment_links
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM public.profiles p
-            WHERE p.id = auth.uid() AND p.role = 'admin'
-        )
-    );
-
 -- ============================================
 -- 3. Create creator_balances table
 -- ============================================
+
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.views
+        WHERE table_schema = 'public' AND table_name = 'creator_balances'
+    ) THEN
+        EXECUTE 'DROP VIEW public.creator_balances';
+    END IF;
+END
+$$;
 
 CREATE TABLE IF NOT EXISTS public.creator_balances (
     creator_id uuid PRIMARY KEY REFERENCES public.creators(id) ON DELETE CASCADE,
@@ -123,15 +126,6 @@ ALTER TABLE public.creator_balances ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Creators can view their own balance" ON public.creator_balances;
 CREATE POLICY "Creators can view their own balance" ON public.creator_balances
     FOR SELECT USING (creator_id = auth.uid());
-
-DROP POLICY IF EXISTS "Admins can view all creator balances" ON public.creator_balances;
-CREATE POLICY "Admins can view all creator balances" ON public.creator_balances
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM public.profiles p
-            WHERE p.id = auth.uid() AND p.role = 'admin'
-        )
-    );
 
 -- ============================================
 -- 4. Create creator_payout_requests table
@@ -184,14 +178,14 @@ CREATE POLICY "Talents can view their licensing payouts via talent_splits" ON pu
             SELECT 1
             FROM jsonb_array_elements(talent_splits) AS split
             WHERE (split->>'talent_id')::uuid IN (
-                SELECT creator_id FROM public.creators WHERE profile_id = auth.uid()
+                SELECT id FROM public.creators WHERE id = auth.uid()
             )
         )
         OR
         EXISTS (
             SELECT 1
             FROM public.creators c
-            WHERE c.id = talent_id AND c.profile_id = auth.uid()
+            WHERE c.id = talent_id AND c.id = auth.uid()
         )
     );
 
