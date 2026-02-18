@@ -110,10 +110,7 @@ pub async fn configure_performance_tiers(
                     next_thresholds.insert("min_bookings".to_string(), v.clone());
                 }
                 if !next_thresholds.is_empty() {
-                    thresholds_config.insert(
-                        tier_name.clone(),
-                        Value::Object(next_thresholds),
-                    );
+                    thresholds_config.insert(tier_name.clone(), Value::Object(next_thresholds));
                 }
 
                 if let Some(v) = tier_obj.get("commission_rate") {
@@ -307,7 +304,10 @@ pub async fn get_performance_tiers(
 
         for tier_name in ["Premium", "Core", "Growth", "Inactive"] {
             let mut tier_obj = serde_json::Map::new();
-            if let Some(t) = thresholds.and_then(|m| m.get(tier_name)).and_then(|v| v.as_object()) {
+            if let Some(t) = thresholds
+                .and_then(|m| m.get(tier_name))
+                .and_then(|v| v.as_object())
+            {
                 if let Some(v) = t.get("min_earnings") {
                     tier_obj.insert("min_earnings".to_string(), v.clone());
                 }
@@ -315,7 +315,10 @@ pub async fn get_performance_tiers(
                     tier_obj.insert("min_bookings".to_string(), v.clone());
                 }
             }
-            if let Some(c) = commissions.and_then(|m| m.get(tier_name)).and_then(|v| v.as_object()) {
+            if let Some(c) = commissions
+                .and_then(|m| m.get(tier_name))
+                .and_then(|v| v.as_object())
+            {
                 if let Some(v) = c.get("commission_rate") {
                     tier_obj.insert("commission_rate".to_string(), v.clone());
                 }

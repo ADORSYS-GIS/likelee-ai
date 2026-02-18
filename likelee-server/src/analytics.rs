@@ -1159,59 +1159,29 @@ pub async fn get_royalties_payouts(
         .sum();
 
     // 2. PENDING APPROVAL
-    // Sum from bookings with status in ('pending', 'submitted', 'awaiting_confirmation')
-    let pending_bookings_resp = state
+    // Pending approval is computed from payment rows that are still pending.
+    // We use gross_cents here because talent_earnings/agency_earnings may not be finalized until Stripe success.
+    let pending_resp = state
         .pg
-        .from("bookings")
-        .select("talent_fee_cents")
+        .from("payments")
+        .select("gross_cents")
         .eq("agency_id", agency_id)
-        .in_(
-            "status",
-            vec!["pending", "submitted", "awaiting_confirmation"],
-        )
+        .eq("status", "pending")
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let pending_bookings_text = pending_bookings_resp
+    let pending_text = pending_resp
         .text()
         .await
         .unwrap_or_else(|_| "[]".to_string());
-    let pending_bookings_data: Vec<serde_json::Value> =
-        serde_json::from_str(&pending_bookings_text).unwrap_or(vec![]);
+    let pending_data: Vec<serde_json::Value> =
+        serde_json::from_str(&pending_text).unwrap_or(vec![]);
 
-    let pending_bookings_cents: i64 = pending_bookings_data
+    let pending_approval_cents: i64 = pending_data
         .iter()
-        .filter_map(|b| b.get("talent_fee_cents").and_then(|v| v.as_i64()))
+        .filter_map(|p| p.get("gross_cents").and_then(|v| v.as_i64()))
         .sum();
-
-    // Sum from licensing_requests with status in ('pending', 'submitted', 'awaiting_confirmation')
-    let pending_licensing_resp = state
-        .pg
-        .from("licensing_requests")
-        .select("talent_fee_cents")
-        .eq("agency_id", agency_id)
-        .in_(
-            "status",
-            vec!["pending", "submitted", "awaiting_confirmation"],
-        )
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    let pending_licensing_text = pending_licensing_resp
-        .text()
-        .await
-        .unwrap_or_else(|_| "[]".to_string());
-    let pending_licensing_data: Vec<serde_json::Value> =
-        serde_json::from_str(&pending_licensing_text).unwrap_or(vec![]);
-
-    let pending_licensing_cents: i64 = pending_licensing_data
-        .iter()
-        .filter_map(|l| l.get("talent_fee_cents").and_then(|v| v.as_i64()))
-        .sum();
-
-    let pending_approval_cents = pending_bookings_cents + pending_licensing_cents;
 
     // 3. PAID YTD (Year to Date)
     // Sum talent_earnings_cents from payments where status='succeeded' and paid_at >= year start
@@ -1239,11 +1209,11 @@ pub async fn get_royalties_payouts(
         .sum();
 
     // 4. AGENCY COMMISSION YTD
-    // Sum agency_commission_cents from payments where status='succeeded' and paid_at >= year start
+    // Sum agency_earnings_cents from payments where status='succeeded' and paid_at >= year start
     let commission_ytd_resp = state
         .pg
         .from("payments")
-        .select("agency_commission_cents")
+        .select("agency_earnings_cents")
         .eq("agency_id", agency_id)
         .eq("status", "succeeded")
         .gte("paid_at", &year_start)
@@ -1260,7 +1230,7 @@ pub async fn get_royalties_payouts(
 
     let agency_commission_ytd_cents: i64 = commission_ytd_data
         .iter()
-        .filter_map(|p| p.get("agency_commission_cents").and_then(|v| v.as_i64()))
+        .filter_map(|p| p.get("agency_earnings_cents").and_then(|v| v.as_i64()))
         .sum();
 
     // Format values

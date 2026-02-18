@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Search, Copy, Edit, Trash2, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -49,7 +49,23 @@ const CATEGORIES = [
   "Custom",
 ];
 
-export const LicenseTemplatesTab: React.FC = () => {
+export interface RenewalLaunchContext {
+  templateId: string;
+  sourceLicenseId?: string;
+  clientName?: string;
+  clientEmail?: string;
+  talentName?: string;
+}
+
+interface LicenseTemplatesTabProps {
+  renewalLaunchContext?: RenewalLaunchContext | null;
+  onRenewalLaunchHandled?: () => void;
+}
+
+export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
+  renewalLaunchContext,
+  onRenewalLaunchHandled,
+}) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -63,6 +79,11 @@ export const LicenseTemplatesTab: React.FC = () => {
   const [sendDocusealTemplateId, setSendDocusealTemplateId] = useState<
     number | null
   >(null);
+  const [sendInitialValues, setSendInitialValues] = useState<{
+    client_name?: string;
+    client_email?: string;
+    talent_names?: string;
+  }>({});
 
   const [templateToDelete, setTemplateToDelete] = useState<{
     id: string;
@@ -72,6 +93,7 @@ export const LicenseTemplatesTab: React.FC = () => {
     id: string;
     docuseal_template_id: number;
     template_name: string;
+    license_fee?: number;
     external_id?: string;
   } | null>(null);
 
@@ -185,6 +207,7 @@ export const LicenseTemplatesTab: React.FC = () => {
     setSendTemplateId(template.id);
     setSendDocusealTemplateId(template.docuseal_template_id ?? null);
     setSendLicenseFee(template.license_fee);
+    setSendInitialValues({});
     setIsSendModalOpen(true);
   };
 
@@ -193,10 +216,47 @@ export const LicenseTemplatesTab: React.FC = () => {
     setSendTemplateId(null);
     setSendDocusealTemplateId(null);
     setSendLicenseFee(undefined);
+    setSendInitialValues({});
     queryClient.invalidateQueries({ queryKey: ["license-submissions"] });
     queryClient.invalidateQueries({ queryKey: ["license-templates"] });
     toast({ title: "Sent", description: "Contract sent successfully!" });
   };
+
+  useEffect(() => {
+    if (!renewalLaunchContext) return;
+    if (loadingTemplates) return;
+
+    const linkedTemplate = templates.find(
+      (t) => t.id === renewalLaunchContext.templateId,
+    );
+    if (!linkedTemplate) {
+      toast({
+        title: "Linked template not found",
+        description:
+          "The expired license is not linked to an available template.",
+        variant: "destructive",
+      });
+      onRenewalLaunchHandled?.();
+      return;
+    }
+
+    setSendTemplateId(linkedTemplate.id);
+    setSendDocusealTemplateId(linkedTemplate.docuseal_template_id ?? null);
+    setSendLicenseFee(linkedTemplate.license_fee);
+    setSendInitialValues({
+      client_name: renewalLaunchContext.clientName,
+      client_email: renewalLaunchContext.clientEmail,
+      talent_names: renewalLaunchContext.talentName,
+    });
+    setIsSendModalOpen(true);
+    onRenewalLaunchHandled?.();
+  }, [
+    renewalLaunchContext,
+    loadingTemplates,
+    templates,
+    toast,
+    onRenewalLaunchHandled,
+  ]);
 
   // Handlers
   const handleCreate = async (data: CreateTemplateRequest) => {
@@ -484,6 +544,7 @@ export const LicenseTemplatesTab: React.FC = () => {
           templateId={sendTemplateId}
           docusealTemplateId={sendDocusealTemplateId ?? undefined}
           licenseFee={sendLicenseFee}
+          initialValues={sendInitialValues}
           onSuccess={handleUseSuccess}
         />
       )}

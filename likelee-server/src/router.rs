@@ -318,11 +318,6 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::license_submissions::handle_webhook),
         )
         .route(
-            "/api/agency/licensing-requests/pay-split",
-            get(crate::licensing_requests::get_pay_split)
-                .post(crate::licensing_requests::set_pay_split),
-        )
-        .route(
             "/api/agency/digitals",
             get(crate::digitals::list_agency_digitals),
         )

@@ -43,7 +43,7 @@ const toastVariants = cva(
   },
 );
 
- const Toast = React.forwardRef<
+const Toast = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & { variant?: "default" | "destructive" }
 >(({ className, variant, ...props }, ref) => {

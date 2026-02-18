@@ -453,19 +453,6 @@ export const updateAgencyLicensingRequestsStatus = (data: {
   notes?: string;
 }) => base44Client.post(`/agency/licensing-requests/status`, data);
 
-export const getAgencyLicensingRequestsPaySplit = (
-  licensing_request_ids: string,
-) =>
-  base44Client.get(`/agency/licensing-requests/pay-split`, {
-    params: { licensing_request_ids },
-  });
-
-export const setAgencyLicensingRequestsPaySplit = (data: {
-  licensing_request_ids: string[];
-  total_payment_amount: number;
-  agency_percent: number;
-}) => base44Client.post(`/agency/licensing-requests/pay-split`, data);
-
 export const createTalentDigitals = (talentId: string, data: any) =>
   base44Client.post(`/agency/talent/${talentId}/digitals`, data);
 

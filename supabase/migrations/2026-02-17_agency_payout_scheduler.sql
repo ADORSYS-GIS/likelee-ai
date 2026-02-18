@@ -9,25 +9,16 @@ CREATE TABLE IF NOT EXISTS public.agency_payout_settings (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-ALTER TABLE public.payments
-  ADD COLUMN IF NOT EXISTS agency_payout_request_id uuid REFERENCES public.agency_payout_requests(id) ON DELETE SET NULL;
-
-ALTER TABLE public.payments
-  ADD COLUMN IF NOT EXISTS agency_earnings_cents bigint NOT NULL DEFAULT 0 CHECK (agency_earnings_cents >= 0);
-
--- Backfill for legacy rows (best-effort)
-UPDATE public.payments
-SET agency_earnings_cents = GREATEST((gross_cents::bigint - talent_earnings_cents::bigint), 0)
-WHERE agency_earnings_cents = 0;
-
-CREATE INDEX IF NOT EXISTS idx_payments_agency_payout_request_id
-  ON public.payments (agency_payout_request_id);
-
 CREATE INDEX IF NOT EXISTS idx_agency_payout_requests_agency_id
   ON public.agency_payout_requests (agency_id);
 
 CREATE INDEX IF NOT EXISTS idx_agency_payout_requests_created_at
   ON public.agency_payout_requests (created_at DESC);
+
+DROP INDEX IF EXISTS public.idx_payments_agency_payout_request_id;
+
+ALTER TABLE IF EXISTS public.payments
+  DROP COLUMN IF EXISTS agency_payout_request_id;
 
 ALTER TABLE public.agency_payout_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.agency_payout_requests ENABLE ROW LEVEL SECURITY;

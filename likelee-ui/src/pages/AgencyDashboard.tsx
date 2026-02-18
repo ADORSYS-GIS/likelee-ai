@@ -98,6 +98,24 @@ import {
 } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { Button } from "@/components/ui/button";
+
+interface RenewalLaunchContext {
+  templateId: string;
+  clientName: string;
+  clientEmail: string;
+  talentName: string;
+}
+
+interface ComplianceRenewableLicense {
+  id: string;
+  template_id?: string | null;
+  talent_name?: string;
+  talent_avatar?: string;
+  client_name?: string | null;
+  client_email?: string | null;
+  brand?: string;
+  end_date?: string;
+}
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
@@ -139,8 +157,6 @@ import {
   getAgencyRecentActivity,
   getAgencyLicensingRequests,
   updateAgencyLicensingRequestsStatus,
-  getAgencyLicensingRequestsPaySplit,
-  setAgencyLicensingRequestsPaySplit,
   listBookings,
   createBooking as apiCreateBooking,
   updateBooking as apiUpdateBooking,
@@ -11984,11 +12000,7 @@ const LicensingRequestsView = () => {
     },
   });
 
-  const [payModalOpen, setPayModalOpen] = useState(false);
-  const [payModalLoading, setPayModalLoading] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<any | null>(null);
-  const [totalPaymentAmount, setTotalPaymentAmount] = useState<string>("");
-  const [agencyPercent, setAgencyPercent] = useState<string>("");
 
   const [counterOfferModalOpen, setCounterOfferModalOpen] = useState(false);
   const [counterOfferMessage, setCounterOfferMessage] = useState("");
@@ -11996,32 +12008,6 @@ const LicensingRequestsView = () => {
   const [activeRequestTab, setActiveRequestTab] = useState<
     "Active" | "Archive"
   >("Active");
-
-  const talentCount = (selectedGroup?.talents || []).length || 0;
-  const totalNum = Number(totalPaymentAmount);
-  const agencyPercentNum = Number(agencyPercent);
-  const agencyTotal =
-    Number.isFinite(totalNum) && Number.isFinite(agencyPercentNum)
-      ? (totalNum * agencyPercentNum) / 100
-      : 0;
-  const talentTotal =
-    Number.isFinite(totalNum) && Number.isFinite(agencyTotal)
-      ? totalNum - agencyTotal
-      : 0;
-  const perTalentTalent =
-    talentCount > 0 && Number.isFinite(talentTotal)
-      ? talentTotal / talentCount
-      : 0;
-  const hasMissingTalentNames = (selectedGroup?.talents || []).some(
-    (t: any) => !(t?.talent_name || "").trim(),
-  );
-  const formatMoney = (n: number) =>
-    Number.isFinite(n)
-      ? n.toLocaleString(undefined, {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })
-      : "--";
 
   const statusStyle = (status: string) => {
     if (status === "approved") return "bg-green-100 text-green-700";
@@ -12044,41 +12030,6 @@ const LicensingRequestsView = () => {
     if (minOk) return fmt(min!);
     if (maxOk) return fmt(max!);
     return "—";
-  };
-
-  const openPayModal = async (group: any) => {
-    setSelectedGroup(group);
-    setPayModalOpen(true);
-    if (!group?.pay_set) {
-      setTotalPaymentAmount("");
-      setAgencyPercent("");
-      setPayModalLoading(false);
-      return;
-    }
-
-    setPayModalLoading(true);
-    try {
-      const ids = (group?.talents || [])
-        .map((t: any) => t.licensing_request_id)
-        .filter(Boolean)
-        .join(",");
-      const resp = await getAgencyLicensingRequestsPaySplit(ids);
-      const total = (resp as any)?.total_payment_amount;
-      const ap = (resp as any)?.agency_percent;
-      setTotalPaymentAmount(
-        typeof total === "number" && Number.isFinite(total)
-          ? String(total)
-          : "",
-      );
-      setAgencyPercent(
-        typeof ap === "number" && Number.isFinite(ap) ? String(ap) : "",
-      );
-    } catch {
-      setTotalPaymentAmount("");
-      setAgencyPercent("");
-    } finally {
-      setPayModalLoading(false);
-    }
   };
 
   const updateGroupStatus = async (group: any, status: any, notes?: string) => {
@@ -12120,55 +12071,6 @@ const LicensingRequestsView = () => {
     );
     return activeRequestTab === "Active" ? !isArchived : isArchived;
   });
-
-  const savePaySplit = async () => {
-    if (!selectedGroup) return;
-    const ids = (selectedGroup?.talents || [])
-      .map((t: any) => t.licensing_request_id)
-      .filter(Boolean);
-    if (!ids.length) return;
-
-    const total = Number(totalPaymentAmount);
-    const ap = Number(agencyPercent);
-    if (!Number.isFinite(total) || total < 0) {
-      toast({ title: "Invalid total amount", variant: "destructive" as any });
-      return;
-    }
-    if (!agencyPercent.trim()) {
-      toast({
-        title: "Agency percent is required",
-        variant: "destructive" as any,
-      });
-      return;
-    }
-    if (!Number.isFinite(ap) || ap < 0 || ap > 100) {
-      toast({ title: "Invalid agency percent", variant: "destructive" as any });
-      return;
-    }
-
-    setPayModalLoading(true);
-    try {
-      await setAgencyLicensingRequestsPaySplit({
-        licensing_request_ids: ids,
-        total_payment_amount: total,
-        agency_percent: ap,
-      });
-      toast({ title: "Pay updated" });
-      setPayModalOpen(false);
-      setSelectedGroup(null);
-      await queryClient.invalidateQueries({
-        queryKey: ["agency", "licensing-requests"],
-      });
-    } catch (e: any) {
-      toast({
-        title: "Save failed",
-        description: e?.message || "Could not save pay split",
-        variant: "destructive" as any,
-      });
-    } finally {
-      setPayModalLoading(false);
-    }
-  };
 
   return (
     <>
@@ -12307,21 +12209,10 @@ const LicensingRequestsView = () => {
               </div>
 
               {group.status === "approved" ? (
-                <div>
-                  <Button
-                    onClick={() => openPayModal(group)}
-                    className={`w-full font-bold h-11 rounded-md flex items-center justify-center gap-2 ${group.pay_set ? "bg-white text-gray-900 border border-gray-300 hover:bg-gray-50" : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 animate-pulse"}`}
-                  >
-                    {group.pay_set ? (
-                      <>
-                        <Eye className="w-4 h-4" /> View Pay
-                      </>
-                    ) : (
-                      <>
-                        <DollarSign className="w-4 h-4" /> Set Pay
-                      </>
-                    )}
-                  </Button>
+                <div className="flex items-center justify-center h-11 bg-green-50 rounded-md border border-green-200">
+                  <p className="text-xs font-black text-green-700 uppercase tracking-widest flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" /> Approved
+                  </p>
                 </div>
               ) : activeRequestTab === "Archive" ? (
                 <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
@@ -12370,78 +12261,6 @@ const LicensingRequestsView = () => {
             </Card>
           ))}
         </div>
-
-        <Dialog open={payModalOpen} onOpenChange={setPayModalOpen}>
-          <DialogContent className="max-w-xl">
-            <DialogHeader>
-              <DialogTitle>Pay split</DialogTitle>
-              <DialogDescription>
-                Set total campaign pay and agency percent. The system will split
-                total evenly across talents.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Total payment amount</Label>
-                <Input
-                  value={totalPaymentAmount}
-                  onChange={(e) => setTotalPaymentAmount(e.target.value)}
-                  placeholder="e.g. 10000"
-                  inputMode="decimal"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Agency percent</Label>
-                <Input
-                  value={agencyPercent}
-                  onChange={(e) => setAgencyPercent(e.target.value)}
-                  placeholder="e.g. 20"
-                  inputMode="decimal"
-                />
-              </div>
-
-              <Card className="p-4 bg-gray-50 border border-gray-200">
-                <div className="grid grid-cols-1 gap-2 text-sm font-medium text-gray-700">
-                  <div className="flex justify-between">
-                    <span>Agency total</span>
-                    <span>${formatMoney(agencyTotal)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Talent total</span>
-                    <span>${formatMoney(talentTotal)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Per talent</span>
-                    <span>${formatMoney(perTalentTalent)}</span>
-                  </div>
-                  {hasMissingTalentNames && (
-                    <div className="text-xs text-amber-700 font-bold">
-                      Some talents are missing names in this request.
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </div>
-
-            <DialogFooter className="pt-6 border-t">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setPayModalOpen(false);
-                  setSelectedGroup(null);
-                }}
-                disabled={payModalLoading}
-              >
-                Cancel
-              </Button>
-              <Button onClick={savePaySplit} disabled={payModalLoading}>
-                {payModalLoading ? "Saving..." : "Save"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
 
         <Dialog
           open={counterOfferModalOpen}
@@ -12509,8 +12328,30 @@ const ActiveLicensesView = () => {
     setIsDetailsOpen(true);
   };
 
-  const handleRenew = (license: any) => {
-    // renewal logic
+  const handleRenew = (license: ComplianceRenewableLicense) => {
+    if (!license.template_id) {
+      toast({
+        title: "Missing template",
+        description: "This license is not linked to a template for renewal.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setRenewalLaunchContext({
+      templateId: license.template_id,
+      clientName: license.client_name || license.brand || "",
+      clientEmail: license.client_email || "",
+      talentName: license.talent_name || "",
+    });
+
+    setActiveTabState("licensing");
+    setActiveSubTab("License Templates");
+
+    toast({
+      title: "Redirecting...",
+      description: `Opening template for ${license.talent_name} renewal.`,
+    });
   };
 
   const { data: licenses = [], isLoading: isLicensesLoading } = useQuery<any[]>(
@@ -15767,6 +15608,7 @@ const LICENSE_COMPLIANCE_DATA = [
     auto: false,
     image:
       "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150",
+    template_id: "77777777-7777-7777-7777-777777777777",
   },
   {
     talent: "Sergine",
@@ -15779,6 +15621,7 @@ const LICENSE_COMPLIANCE_DATA = [
     auto: true,
     image:
       "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150",
+    template_id: "88888888-8888-8888-8888-888888888888",
   },
   {
     talent: "Milan",
@@ -15791,6 +15634,7 @@ const LICENSE_COMPLIANCE_DATA = [
     auto: false,
     image:
       "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150",
+    template_id: "99999999-9999-9999-9999-999999999999",
   },
   {
     talent: "Julia",
@@ -17914,11 +17758,17 @@ const RoyaltiesPayoutsView = () => {
   );
 };
 
-const AnalyticsDashboardView = () => {
+const AnalyticsDashboardView = ({
+  onRenewLicense,
+}: {
+  onRenewLicense?: (license: ComplianceRenewableLicense) => void;
+}) => {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("Overview");
   const [analytics, setAnalytics] = useState<any>(null);
   const [rosterInsights, setRosterInsights] = useState<any>(null);
   const [clientsAnalytics, setClientsAnalytics] = useState<any>(null);
+  const [expiredLicenses] = useState<ComplianceRenewableLicense[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const subTabs = [
@@ -19131,25 +18981,74 @@ const AnalyticsDashboardView = () => {
                 <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest mb-6">
                   License Expiry Pipeline
                 </h3>
-                <div className="bg-[#FFF7ED] border border-orange-100 p-4 rounded-xl flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <img
-                      src={pipelineTalent?.img}
-                      alt={pipelineTalentName}
-                      className="w-12 h-12 rounded-lg object-cover"
-                    />
-                    <div>
-                      <p className="text-sm font-black text-gray-900">
-                        {pipelineTalentName}
-                      </p>
-                      <p className="text-xs font-bold text-gray-500">
-                        License expires {pipelineExpiryText}
-                      </p>
-                    </div>
-                  </div>
-                  <Button className="bg-[#EA580C] hover:bg-[#C2410C] text-white font-black text-xs px-8 h-10 rounded-lg uppercase tracking-widest gap-2">
-                    <RefreshCw className="w-4 h-4" /> Renew
-                  </Button>
+                <div className="space-y-3">
+                  {(() => {
+                    // Fallback to mock data if API results are empty
+                    const effectiveExpired =
+                      expiredLicenses.length > 0
+                        ? expiredLicenses
+                        : (LICENSE_COMPLIANCE_DATA as any[])
+                            .filter((x) => x.level === "EXPIRED")
+                            .map((x, idx) => ({
+                              id: `mock-${idx}`,
+                              template_id: x.template_id,
+                              talent_name: x.talent,
+                              talent_avatar: x.image,
+                              brand: x.brand,
+                              end_date: new Date(x.expiry).toISOString(),
+                              client_name: x.brand,
+                            }));
+
+                    if (effectiveExpired.length === 0) {
+                      return (
+                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 text-center">
+                          <p className="text-sm font-bold text-gray-900">
+                            No expired licenses
+                          </p>
+                          <p className="text-xs font-medium text-gray-500 mt-1">
+                            Expired contracts will appear here for renewal.
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    return (effectiveExpired as any[]).map((license) => (
+                      <div
+                        key={license.id}
+                        className="bg-[#FFF7ED] border border-orange-100 p-4 rounded-xl flex items-center justify-between gap-4"
+                      >
+                        <div className="flex items-center gap-4 min-w-0">
+                          <div className="w-12 h-12 rounded-lg overflow-hidden bg-white border border-orange-100 shrink-0">
+                            {license.talent_avatar ? (
+                              <img
+                                src={license.talent_avatar}
+                                alt={license.talent_name || "Talent"}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-orange-400">
+                                <Users className="w-5 h-5" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-black text-gray-900 truncate">
+                              {license.talent_name || "Assigned Talent"}
+                            </p>
+                            <p className="text-xs font-bold text-gray-500 truncate">
+                              Expired on {formatLicenseDate(license.end_date)}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          className="bg-[#EA580C] hover:bg-[#C2410C] text-white font-black text-xs px-6 h-10 rounded-lg uppercase tracking-widest gap-2"
+                          onClick={() => onRenewLicense?.(license)}
+                        >
+                          <RefreshCw className="w-4 h-4" /> Renew
+                        </Button>
+                      </div>
+                    ));
+                  })()}
                 </div>
               </Card>
 
@@ -19273,12 +19172,22 @@ const PlaceholderView = ({ title }: { title: string }) => (
   </div>
 );
 
+const formatLicenseDate = (dateStr?: string) => {
+  if (!dateStr) return "N/A";
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return "N/A";
+  return format(d, "MMM d, yyyy");
+};
+
 export default function AgencyDashboard() {
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user, profile, authenticated, logout } = useAuth();
+
+  const [renewalLaunchContext, setRenewalLaunchContext] =
+    useState<RenewalLaunchContext | null>(null);
 
   // Initialize state from URL params
   const [agencyMode, setAgencyModeState] = useState<"AI" | "IRL">(
@@ -19290,6 +19199,32 @@ export default function AgencyDashboard() {
   const [activeSubTab, setActiveSubTab] = useState(
     searchParams.get("subTab") || "All Talent",
   );
+
+  const handleRenew = (license: ComplianceRenewableLicense) => {
+    if (!license.template_id) {
+      toast({
+        title: "Missing template",
+        description: "This license is not linked to a template for renewal.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setRenewalLaunchContext({
+      templateId: license.template_id,
+      clientName: license.client_name || license.brand || "",
+      clientEmail: license.client_email || "",
+      talentName: license.talent_name || "",
+    });
+
+    setActiveTabState("licensing");
+    setActiveSubTab("License Templates");
+
+    toast({
+      title: "Redirecting...",
+      description: `Opening template for ${license.talent_name} renewal.`,
+    });
+  };
 
   const rosterQuery = useQuery({
     queryKey: ["agency-roster", user?.id],
@@ -20745,7 +20680,7 @@ export default function AgencyDashboard() {
           {activeTab === "analytics" &&
             activeSubTab === "Analytics Dashboard" &&
             (hasProAccess ? (
-              <AnalyticsDashboardView />
+              <AnalyticsDashboardView onRenewLicense={handleRenew} />
             ) : (
               <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
                 <div className="text-lg font-black text-gray-900">

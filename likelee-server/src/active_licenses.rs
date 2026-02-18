@@ -13,6 +13,10 @@ pub struct ActiveLicense {
     pub talent_id: String,
     pub talent_name: String,
     pub talent_avatar: Option<String>,
+    pub submission_id: Option<String>,
+    pub template_id: Option<String>,
+    pub client_name: Option<String>,
+    pub client_email: Option<String>,
     pub license_type: String,
     pub brand: String,
     pub start_date: Option<String>,
@@ -65,6 +69,7 @@ struct CampaignEmbed {
 #[derive(Deserialize)]
 struct LicensingRequestRow {
     id: String,
+    submission_id: Option<String>,
     talent_id: Option<String>,
     talent_name: Option<String>,
     campaign_title: Option<String>,
@@ -79,6 +84,7 @@ struct LicensingRequestRow {
     brands: Option<BrandEmbed>,
     agency_users: Option<AgencyUserEmbed>,
     campaigns: Option<Vec<CampaignEmbed>>, // Reverse relation might be array
+    license_submissions: Option<SubmissionEmbed>,
 }
 
 #[derive(Deserialize)]
@@ -86,6 +92,13 @@ struct StatRow {
     license_end_date: Option<String>,
     deadline: Option<String>,
     campaigns: Option<Vec<CampaignEmbed>>,
+}
+
+#[derive(Deserialize)]
+struct SubmissionEmbed {
+    template_id: Option<String>,
+    client_name: Option<String>,
+    client_email: Option<String>,
 }
 
 pub async fn list(
@@ -97,7 +110,7 @@ pub async fn list(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
 
-    let select = "id,talent_id,talent_name,campaign_title,client_name,brand_id,license_start_date,license_end_date,deadline,usage_scope,budget_min,budget_max,brands(company_name),agency_users(full_legal_name,stage_name,profile_photo_url),campaigns(payment_amount)";
+    let select = "id,submission_id,talent_id,talent_name,campaign_title,client_name,brand_id,license_start_date,license_end_date,deadline,usage_scope,budget_min,budget_max,brands(company_name),agency_users(full_legal_name,stage_name,profile_photo_url),campaigns(payment_amount),license_submissions!licensing_requests_submission_id_fkey(template_id,client_name,client_email)";
 
     let mut query = state
         .pg
@@ -237,6 +250,20 @@ pub async fn list(
             talent_id: r.talent_id.unwrap_or_default(),
             talent_name,
             talent_avatar,
+            submission_id: r.submission_id,
+            template_id: r
+                .license_submissions
+                .as_ref()
+                .and_then(|s| s.template_id.clone()),
+            client_name: r
+                .license_submissions
+                .as_ref()
+                .and_then(|s| s.client_name.clone())
+                .or(r.client_name.clone()),
+            client_email: r
+                .license_submissions
+                .as_ref()
+                .and_then(|s| s.client_email.clone()),
             license_type,
             brand: brand_name,
             start_date: r.license_start_date,

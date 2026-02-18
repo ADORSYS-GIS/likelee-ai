@@ -989,15 +989,6 @@ pub async fn get_payout_settings(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let status = resp.status();
-    if !status.is_success() {
-        let txt = resp.text().await.unwrap_or_else(|_| "failed".into());
-        return Err((
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
-            txt,
-        ));
-    }
-
-    let status = resp.status();
     let txt = resp.text().await.unwrap_or_else(|_| "[]".into());
     if status == 404 {
         // Return default settings if not found
@@ -1012,6 +1003,12 @@ pub async fn get_payout_settings(
                 "Automatic payout on schedule (monthly)"
             ]
         })));
+    }
+    if !status.is_success() {
+        return Err((
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            txt,
+        ));
     }
 
     let v: serde_json::Value = serde_json::from_str(&txt).unwrap_or(json!({}));
@@ -1032,7 +1029,7 @@ pub async fn update_payout_settings(
     let body = json!({
         "agency_id": user.id,
         "payout_frequency": payload.payout_frequency,
-        "min_payout_threshold_cents": payload.min_payout_threshold_cents,
+        "min_payout_threshold_cents": payload.min_payout_threshold_cents.max(0),
     });
 
     let resp = state
@@ -1089,10 +1086,11 @@ pub async fn get_upcoming_payout_schedule(
         .and_then(|v| v.as_str())
         .unwrap_or("Monthly")
         .to_string();
-    let threshold = first
+    let min_payout_threshold_cents = first
         .get("min_payout_threshold_cents")
         .and_then(|v| v.as_i64())
-        .unwrap_or(5000);
+        .unwrap_or(5000)
+        .max(0);
     let last_payout_at = first.get("last_payout_at").and_then(|v| v.as_str());
 
     let last = last_payout_at
@@ -1108,41 +1106,41 @@ pub async fn get_upcoming_payout_schedule(
     };
     let next_due_at = last + chrono::Duration::days(days);
 
-    // Available = agency share from succeeded payments not yet linked to an agency payout request
-    let pay_resp = state
+    // Available balance from agency_balances ledger
+    let bal_resp = state
         .pg
-        .from("payments")
-        .select("agency_earnings_cents")
+        .from("agency_balances")
+        .select("available_cents,currency")
         .eq("agency_id", &user.id)
-        .eq("status", "succeeded")
-        .is("agency_payout_request_id", "null")
-        .limit(2000)
+        .limit(1)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let pay_txt = pay_resp.text().await.unwrap_or_else(|_| "[]".into());
-    let pay_rows: Vec<serde_json::Value> = serde_json::from_str(&pay_txt).unwrap_or_default();
-    let mut earned: i64 = 0;
-    for r in pay_rows {
-        earned += r
-            .get("agency_earnings_cents")
-            .and_then(|v| v.as_i64())
-            .unwrap_or(0);
-    }
-
-    let available = earned.max(0);
+    let bal_txt = bal_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let bal_rows: Vec<serde_json::Value> = serde_json::from_str(&bal_txt).unwrap_or_default();
+    let bal = bal_rows.first().cloned().unwrap_or(json!({}));
+    let available = bal
+        .get("available_cents")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0)
+        .max(0);
+    let currency = bal
+        .get("currency")
+        .and_then(|v| v.as_str())
+        .unwrap_or("USD");
 
     let now = chrono::Utc::now();
+    let payoutable_cents = (available - min_payout_threshold_cents).max(0);
     let (status, projected_cents, description) = if now < next_due_at {
         (
             "not_scheduled_not_due",
             0,
             "Next payout date not reached".to_string(),
         )
-    } else if available > threshold {
+    } else if payoutable_cents > 0 {
         (
             "scheduled",
-            available,
+            payoutable_cents,
             "Payout will be initiated on schedule".to_string(),
         )
     } else {
@@ -1156,7 +1154,7 @@ pub async fn get_upcoming_payout_schedule(
     Ok(Json(vec![json!({
         "date": next_due_at.to_rfc3339(),
         "amount_cents": projected_cents,
-        "currency": "USD",
+        "currency": currency,
         "status": status,
         "description": description
     })]))
