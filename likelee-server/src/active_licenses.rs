@@ -78,13 +78,12 @@ struct LicensingRequestRow {
     license_end_date: Option<String>,
     deadline: Option<String>,
     usage_scope: Option<String>,
-    license_submissions: Option<serde_json::Value>,
+    license_submissions: Option<SubmissionEmbed>,
 
     // Embedded resources
     brands: Option<BrandEmbed>,
     agency_users: Option<AgencyUserEmbed>,
     campaigns: Option<Vec<CampaignEmbed>>, // Reverse relation might be array
-    license_submissions: Option<SubmissionEmbed>,
 }
 
 #[derive(Deserialize)]
@@ -99,6 +98,7 @@ struct SubmissionEmbed {
     template_id: Option<String>,
     client_name: Option<String>,
     client_email: Option<String>,
+    license_fee: Option<f64>,
 }
 
 pub async fn list(
@@ -110,7 +110,6 @@ pub async fn list(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
 
-    let select = "id,submission_id,talent_id,talent_name,campaign_title,client_name,brand_id,license_start_date,license_end_date,deadline,usage_scope,budget_min,budget_max,brands(company_name),agency_users(full_legal_name,stage_name,profile_photo_url),campaigns(payment_amount),license_submissions!licensing_requests_submission_id_fkey(template_id,client_name,client_email)";
     let select = "id,talent_id,talent_name,campaign_title,client_name,brand_id,license_start_date,license_end_date,deadline,usage_scope,brands(company_name),agency_users(full_legal_name,stage_name,profile_photo_url),campaigns(payment_amount),license_submissions!licensing_requests_submission_id_fkey(license_fee)";
 
     let mut query = state
@@ -217,8 +216,7 @@ pub async fn list(
             .or_else(|| {
                 r.license_submissions
                     .as_ref()
-                    .and_then(|ls| ls.get("license_fee"))
-                    .and_then(|v| v.as_f64())
+                    .and_then(|ls| ls.license_fee)
                     .map(|v| v / 100.0)
             })
             .unwrap_or(0.0);

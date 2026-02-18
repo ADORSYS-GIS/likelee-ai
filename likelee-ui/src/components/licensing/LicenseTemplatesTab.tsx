@@ -80,7 +80,6 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
   renewalLaunchContext,
   onRenewalLaunchHandled,
 }) => {
-export const LicenseTemplatesTab: React.FC = () => {
   const [topTab, setTopTab] = useState<
     "requests" | "templates" | "submissions"
   >("templates");
@@ -566,6 +565,8 @@ export const LicenseTemplatesTab: React.FC = () => {
           licenseFee={sendLicenseFee}
           initialValues={sendInitialValues}
           onSuccess={handleUseSuccess}
+        />
+      )}
       {wizardTemplate && (
         <SubmissionWizard
           isOpen={!!wizardTemplate}

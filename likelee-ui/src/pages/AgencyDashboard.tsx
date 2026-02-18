@@ -9154,14 +9154,8 @@ const ScoutingHubView = ({
   prospectToEdit: ScoutingProspect | null;
   setProspectToEdit: (prospect: ScoutingProspect | null) => void;
 }) => {
-  const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
-  const [prospectToEdit, setProspectToEdit] = useState<ScoutingProspect | null>(
-    null,
-  );
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
-  const [eventToEdit, setEventToEdit] = useState<ScoutingEvent | null>(null);
 
   const tabs = [
     "Prospect Pipeline",
@@ -9723,7 +9717,6 @@ const ProspectPipelineTab = ({
         prospects?.filter(
           (p: any) => p.status === "new" || p.status === "new_lead",
         ).length || 0,
-      count: prospects?.filter((p) => p.status === "new_lead").length || 0,
       color: "border-blue-200 bg-blue-50/30",
     },
     {
@@ -9736,12 +9729,7 @@ const ProspectPipelineTab = ({
     },
     {
       label: "Test Shoot",
-      count:
-        prospects?.filter(
-          (p: any) =>
-            p.status === "test_shoot" || p.status === "test_shoot_pending",
-        ).length || 0,
-      count: prospects?.filter((p) => p.status === "in_contact").length || 0,
+      count: prospects?.filter((p) => p.status === "test_shoot").length || 0,
       color: "border-yellow-200 bg-yellow-50/30",
     },
     {
@@ -9754,8 +9742,6 @@ const ProspectPipelineTab = ({
     {
       label: "Offers Sent",
       count:
-        prospects?.filter(
-          (p: any) => p.status === "offer_sent" || p.status === "opened",
         prospects?.filter((p) =>
           ["offer_sent", "opened", "signed", "declined"].includes(p.status),
         ).length || 0,
