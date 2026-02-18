@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { LicenseTemplatesTab } from "@/components/licensing/LicenseTemplatesTab";
 import { LicenseSubmissionsTab } from "@/components/licensing/LicenseSubmissionsTab";
+import { LicensingRequestsTab } from "@/components/licensing/LicensingRequestsTab";
 import { ActiveLicenseDetailsSheet } from "@/components/licensing/ActiveLicenseDetailsSheet";
 import { scoutingService } from "@/services/scoutingService";
 import { ScoutingEvent, ScoutingProspect } from "@/types/scouting";
 import { ScoutingMap } from "@/components/scouting/map/ScoutingMap";
 import { ScoutingTrips } from "@/components/scouting/ScoutingTrips";
+import { ScoutingEventModal } from "@/components/scouting/ScoutingEventModal";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -9152,6 +9154,15 @@ const ScoutingHubView = ({
   prospectToEdit: ScoutingProspect | null;
   setProspectToEdit: (prospect: ScoutingProspect | null) => void;
 }) => {
+  const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
+  const [prospectToEdit, setProspectToEdit] = useState<ScoutingProspect | null>(
+    null,
+  );
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+  const [eventToEdit, setEventToEdit] = useState<ScoutingEvent | null>(null);
+
   const tabs = [
     "Prospect Pipeline",
     "Social Discovery",
@@ -9276,187 +9287,19 @@ const ScoutingHubView = ({
         prospect={prospectToEdit}
       />
 
-      <Dialog
+      <ScoutingEventModal
         open={isEventModalOpen}
         onOpenChange={(open) => {
           setIsEventModalOpen(open);
           if (!open) setEventToEdit(null);
         }}
-      >
-        <DialogContent className="sm:max-w-[600px] rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-gray-900">
-              {eventToEdit ? "Edit Event" : "Create Event"}
-            </DialogTitle>
-            <DialogDescription className="text-gray-500 font-medium">
-              Manage open calls and casting events for your scouting pipeline.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label className="text-sm font-bold text-gray-700">Name</Label>
-              <Input
-                value={eventForm.name}
-                onChange={(e) =>
-                  setEventForm((p) => ({ ...p, name: e.target.value }))
-                }
-                placeholder="Event name"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">Date</Label>
-                <Input
-                  type="date"
-                  value={eventForm.event_date}
-                  onChange={(e) =>
-                    setEventForm((p) => ({ ...p, event_date: e.target.value }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">
-                  Status
-                </Label>
-                <Input
-                  value={eventForm.status}
-                  onChange={(e) =>
-                    setEventForm((p) => ({
-                      ...p,
-                      status: e.target.value as ScoutingEvent["status"],
-                    }))
-                  }
-                  placeholder="scheduled"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">
-                  Start time
-                </Label>
-                <Input
-                  value={eventForm.start_time}
-                  onChange={(e) =>
-                    setEventForm((p) => ({ ...p, start_time: e.target.value }))
-                  }
-                  placeholder="09:00"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-bold text-gray-700">
-                  End time
-                </Label>
-                <Input
-                  value={eventForm.end_time}
-                  onChange={(e) =>
-                    setEventForm((p) => ({ ...p, end_time: e.target.value }))
-                  }
-                  placeholder="18:00"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-bold text-gray-700">
-                Location
-              </Label>
-              <Input
-                value={eventForm.location}
-                onChange={(e) =>
-                  setEventForm((p) => ({ ...p, location: e.target.value }))
-                }
-                placeholder="Location"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-bold text-gray-700">
-                Description
-              </Label>
-              <Textarea
-                value={eventForm.description}
-                onChange={(e) =>
-                  setEventForm((p) => ({ ...p, description: e.target.value }))
-                }
-                placeholder="Optional details"
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsEventModalOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
-              onClick={async () => {
-                try {
-                  const agencyId = await scoutingService.getUserAgencyId();
-                  if (!agencyId) {
-                    toast({
-                      title: "Error",
-                      description: "Could not determine agency.",
-                      variant: "destructive",
-                    });
-                    return;
-                  }
-                  if (
-                    !eventForm.name ||
-                    !eventForm.event_date ||
-                    !eventForm.location
-                  ) {
-                    toast({
-                      title: "Missing fields",
-                      description: "Name, date, and location are required.",
-                      variant: "destructive",
-                    });
-                    return;
-                  }
-
-                  const payload = {
-                    agency_id: agencyId,
-                    name: eventForm.name,
-                    event_date: new Date(eventForm.event_date).toISOString(),
-                    location: eventForm.location,
-                    description: eventForm.description || null,
-                    status: eventForm.status,
-                    start_time: eventForm.start_time || null,
-                    end_time: eventForm.end_time || null,
-                  } as any;
-
-                  if (eventToEdit?.id) {
-                    await scoutingService.updateEvent(eventToEdit.id, payload);
-                    toast({ title: "Event updated" });
-                  } else {
-                    await scoutingService.createEvent(payload);
-                    toast({ title: "Event created" });
-                  }
-
-                  await queryClient.invalidateQueries({
-                    queryKey: ["scouting-events"],
-                  });
-                  setIsEventModalOpen(false);
-                } catch (e: any) {
-                  toast({
-                    title: "Error",
-                    description: e?.message || "Failed to save event.",
-                    variant: "destructive",
-                  });
-                }
-              }}
-            >
-              Save
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        eventToEdit={eventToEdit}
+        onSaved={async () => {
+          await queryClient.invalidateQueries({
+            queryKey: ["scouting-events"],
+          });
+        }}
+      />
     </div>
   );
 };
@@ -9880,6 +9723,7 @@ const ProspectPipelineTab = ({
         prospects?.filter(
           (p: any) => p.status === "new" || p.status === "new_lead",
         ).length || 0,
+      count: prospects?.filter((p) => p.status === "new_lead").length || 0,
       color: "border-blue-200 bg-blue-50/30",
     },
     {
@@ -9897,6 +9741,14 @@ const ProspectPipelineTab = ({
           (p: any) =>
             p.status === "test_shoot" || p.status === "test_shoot_pending",
         ).length || 0,
+      count: prospects?.filter((p) => p.status === "in_contact").length || 0,
+      color: "border-yellow-200 bg-yellow-50/30",
+    },
+    {
+      label: "Test Shoots",
+      count:
+        prospects?.filter((p) => p.status.startsWith("test_shoot_")).length ||
+        0,
       color: "border-purple-200 bg-purple-50/30",
     },
     {
@@ -9904,6 +9756,8 @@ const ProspectPipelineTab = ({
       count:
         prospects?.filter(
           (p: any) => p.status === "offer_sent" || p.status === "opened",
+        prospects?.filter((p) =>
+          ["offer_sent", "opened", "signed", "declined"].includes(p.status),
         ).length || 0,
       color: "border-green-200 bg-green-50/30",
     },
@@ -12316,6 +12170,10 @@ const LicensingRequestsView = () => {
     </>
   );
 };
+// Assuming LicensingRequestsView is now imported from another file.
+// If it was defined here, its definition has been removed as per the instruction.
+// Add the import statement for LicensingRequestsView here if it's used in this file.
+// For example: import { LicensingRequestsView } from './LicensingRequestsView';
 
 const ActiveLicensesView = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -19783,6 +19641,18 @@ export default function AgencyDashboard() {
     setActiveTab("dashboard");
   }, [agencyMode, activeTab]);
 
+  useEffect(() => {
+    const handleSwitchTab = (e: any) => {
+      const { tab, subTab, scoutingTab } = e.detail;
+      if (tab) setActiveTab(tab);
+      if (subTab) setActiveSubTab(subTab);
+      if (scoutingTab) setActiveScoutingTab(scoutingTab);
+    };
+
+    window.addEventListener("switchTab", handleSwitchTab);
+    return () => window.removeEventListener("switchTab", handleSwitchTab);
+  }, []);
+
   const setActiveTab = (tab: string) => {
     setActiveTabState(tab);
     setSearchParams((prev) => {
@@ -20625,7 +20495,7 @@ export default function AgencyDashboard() {
             <PerformanceTiers />
           )}
           {activeTab === "licensing" &&
-            activeSubTab === "Licensing Requests" && <LicensingRequestsView />}
+            activeSubTab === "Licensing Requests" && <LicensingRequestsTab />}
           {activeTab === "licensing" &&
             activeSubTab === "License Submissions" && <LicenseSubmissionsTab />}
           {activeTab === "licensing" && activeSubTab === "Active Licenses" && (

@@ -906,8 +906,7 @@ pub struct TalentLicensingRequestItem {
     pub brand_id: Option<String>,
     pub brand_name: Option<String>,
     pub campaign_title: Option<String>,
-    pub budget_min: Option<f64>,
-    pub budget_max: Option<f64>,
+    pub license_fee: Option<f64>,
     pub usage_scope: Option<String>,
     pub regions: Option<String>,
     pub deadline: Option<String>,
@@ -927,7 +926,7 @@ pub async fn list_licensing_requests(
     let resp = state
         .pg
         .from("licensing_requests")
-        .select("id,brand_id,talent_id,status,created_at,campaign_title,budget_min,budget_max,usage_scope,regions,deadline,license_start_date,license_end_date")
+        .select("id,brand_id,talent_id,status,created_at,campaign_title,usage_scope,regions,deadline,license_start_date,license_end_date,license_submissions!licensing_requests_submission_id_fkey(license_fee)")
         .eq("agency_id", &resolved.agency_id)
         .eq("talent_id", &resolved.talent_id)
         .order("created_at.desc")
@@ -1066,8 +1065,11 @@ pub async fn list_licensing_requests(
                     .and_then(|v| v.as_str())
                     .map(|s| s.to_string())
                     .filter(|s| !s.is_empty()),
-                budget_min: r.get("budget_min").and_then(|v| v.as_f64()),
-                budget_max: r.get("budget_max").and_then(|v| v.as_f64()),
+                license_fee: r
+                    .get("license_submissions")
+                    .and_then(|ls| ls.get("license_fee"))
+                    .and_then(|v| v.as_f64())
+                    .map(|v| v / 100.0),
                 usage_scope: r
                     .get("usage_scope")
                     .and_then(|v| v.as_str())

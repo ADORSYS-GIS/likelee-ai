@@ -11,7 +11,7 @@ ALTER TABLE public.license_submissions ADD COLUMN IF NOT EXISTS client_id UUID R
 ALTER TABLE public.license_submissions ALTER COLUMN client_id DROP NOT NULL;
 ALTER TABLE public.license_submissions ADD COLUMN IF NOT EXISTS template_id UUID NOT NULL REFERENCES public.license_templates(id) ON DELETE CASCADE;
 ALTER TABLE public.license_submissions ADD COLUMN IF NOT EXISTS licensing_request_id UUID REFERENCES public.licensing_requests(id) ON DELETE SET NULL;
-ALTER TABLE public.license_submissions ADD COLUMN IF NOT EXISTS docuseal_submission_id INTEGER;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ALTER TABLE public.license_submissions ADD COLUMN IF NOT EXISTS docuseal_submission_id INTEGER;
 ALTER TABLE public.license_submissions ADD COLUMN IF NOT EXISTS docuseal_slug TEXT;
 ALTER TABLE public.license_submissions ADD COLUMN IF NOT EXISTS docuseal_template_id INTEGER;
 ALTER TABLE public.license_submissions ADD COLUMN IF NOT EXISTS client_name TEXT;

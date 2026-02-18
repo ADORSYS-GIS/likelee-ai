@@ -24,8 +24,7 @@ pub struct LicensingRequestGroup {
     pub brand_id: Option<String>,
     pub brand_name: Option<String>,
     pub campaign_title: Option<String>,
-    pub budget_min: Option<f64>,
-    pub budget_max: Option<f64>,
+    pub license_fee: Option<f64>,
     pub usage_scope: Option<String>,
     pub regions: Option<String>,
     pub deadline: Option<String>,
@@ -107,7 +106,7 @@ pub async fn list_for_agency(
     let resp = state
         .pg
         .from("licensing_requests")
-        .select("id,brand_id,talent_id,status,created_at,campaign_title,client_name,talent_name,budget_min,budget_max,usage_scope,regions,deadline,license_start_date,license_end_date,notes,negotiation_reason,brands(company_name),agency_users(full_legal_name,stage_name),campaigns(id,payment_amount,agency_percent,talent_percent,agency_earnings_cents,talent_earnings_cents)")
+        .select("id,brand_id,talent_id,status,created_at,campaign_title,client_name,talent_name,usage_scope,regions,deadline,license_start_date,license_end_date,notes,negotiation_reason,brands(company_name),agency_users(full_legal_name,stage_name),campaigns(id,payment_amount,agency_percent,talent_percent,agency_earnings_cents,talent_earnings_cents),license_submissions!licensing_requests_submission_id_fkey(license_fee)")
         .eq("agency_id", &user.id)
         .order("created_at.desc")
         .limit(250)
@@ -166,8 +165,11 @@ pub async fn list_for_agency(
             .to_string();
 
         let campaign_title = value_to_non_empty_string(r.get("campaign_title"));
-        let budget_min = r.get("budget_min").and_then(value_to_f64);
-        let budget_max = r.get("budget_max").and_then(value_to_f64);
+        let license_fee = r
+            .get("license_submissions")
+            .and_then(|ls| ls.get("license_fee"))
+            .and_then(value_to_f64)
+            .map(|v| v / 100.0); // Convert cents to dollars for UI
         let usage_scope = value_to_non_empty_string(r.get("usage_scope"));
         let regions = value_to_non_empty_string(r.get("regions"));
         let deadline = value_to_non_empty_string(r.get("deadline"));
@@ -217,8 +219,7 @@ pub async fn list_for_agency(
                     .clone()
                     .or_else(|| Some("Direct Client".to_string())),
                 campaign_title: campaign_title.clone(),
-                budget_min,
-                budget_max,
+                license_fee,
                 usage_scope: usage_scope.clone(),
                 regions: regions.clone(),
                 deadline: deadline.clone(),
@@ -240,11 +241,8 @@ pub async fn list_for_agency(
         {
             entry.campaign_title = campaign_title;
         }
-        if entry.budget_min.is_none() {
-            entry.budget_min = budget_min;
-        }
-        if entry.budget_max.is_none() {
-            entry.budget_max = budget_max;
+        if entry.license_fee.is_none() {
+            entry.license_fee = license_fee;
         }
         if entry
             .usage_scope
