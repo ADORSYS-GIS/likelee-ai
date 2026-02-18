@@ -17607,7 +17607,7 @@ const AnalyticsDashboardView = ({
 }: {
   onRenewLicense?: (license: ComplianceRenewableLicense) => void;
 }) => {
-  const ANALYTICS_CACHE_TTL_MS = 2 * 60 * 1000;
+  const ANALYTICS_CACHE_TTL_MS = 10 * 60 * 1000;
   const initialHasWarmCache = useMemo(() => {
     const cache = (globalThis as any).__agencyAnalyticsDashboardCache;
     return cache && Date.now() - cache.fetchedAt < ANALYTICS_CACHE_TTL_MS;
@@ -17662,10 +17662,23 @@ const AnalyticsDashboardView = ({
         }
 
         const overviewData = await overviewRes.json();
-        if (!isMounted) return;
-        setAnalytics(overviewData);
-        setError(null);
-        if (shouldBlockUI) setLoading(false); // Unblock UI immediately on first load
+        const existingCache =
+          (globalThis as any).__agencyAnalyticsDashboardCache || {};
+
+        // Cache critical overview immediately so switching tabs does not force
+        // another full blocking load while background requests are still running.
+        (globalThis as any).__agencyAnalyticsDashboardCache = {
+          analytics: overviewData,
+          rosterInsights: existingCache.rosterInsights ?? null,
+          clientsAnalytics: existingCache.clientsAnalytics ?? null,
+          fetchedAt: Date.now(),
+        };
+
+        if (isMounted) {
+          setAnalytics(overviewData);
+          setError(null);
+          if (shouldBlockUI) setLoading(false); // Unblock UI immediately on first load
+        }
 
         // 2. Fetch non-critical data in background
         const [rosterRes, clientsRes] = await Promise.allSettled([
@@ -17683,9 +17696,8 @@ const AnalyticsDashboardView = ({
           null;
         if (rosterRes.status === "fulfilled" && rosterRes.value.ok) {
           const data = await rosterRes.value.json();
-          if (!isMounted) return;
-          setRosterInsights(data);
           nextRosterInsights = data;
+          if (isMounted) setRosterInsights(data);
         }
 
         // Handle Clients Data
@@ -17694,9 +17706,8 @@ const AnalyticsDashboardView = ({
             ?.clientsAnalytics ?? null;
         if (clientsRes.status === "fulfilled" && clientsRes.value.ok) {
           const data = await clientsRes.value.json();
-          if (!isMounted) return;
-          setClientsAnalytics(data);
           nextClientsAnalytics = data;
+          if (isMounted) setClientsAnalytics(data);
         }
 
         (globalThis as any).__agencyAnalyticsDashboardCache = {

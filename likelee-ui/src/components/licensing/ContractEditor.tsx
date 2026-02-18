@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
+import "quilljs/dist/quill.snow.css";
 
 interface ContractEditorProps {
   body: string;
