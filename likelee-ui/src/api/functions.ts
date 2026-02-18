@@ -439,6 +439,21 @@ export const updateCampaignSplit = (
 export const getAgencyLicensingRequests = () =>
   base44Client.get(`/agency/licensing-requests`);
 
+export const getAgencyLicensingRequestsPaySplit = async (_ids: string) => {
+  return {
+    total_payment_amount: null,
+    agency_percent: null,
+  } as any;
+};
+
+export const setAgencyLicensingRequestsPaySplit = async (_data: {
+  licensing_request_ids: string[];
+  total_payment_amount: number;
+  agency_percent: number;
+}) => {
+  return { ok: true } as any;
+};
+
 export const getAgencyActiveLicenses = (params?: {
   status?: string;
   search?: string;

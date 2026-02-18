@@ -38,7 +38,8 @@ export const LicensingRequestsTab = () => {
     queryKey: ["agency", "licensing-requests"],
     queryFn: async () => {
       const resp = await getAgencyLicensingRequests();
-      return resp as any[];
+      // Ensure we always return an array even if backend returns an object or null
+      return Array.isArray(resp) ? resp : (resp as any)?.data || [];
     },
   });
 
