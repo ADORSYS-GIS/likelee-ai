@@ -17607,13 +17607,31 @@ const AnalyticsDashboardView = ({
 }: {
   onRenewLicense?: (license: ComplianceRenewableLicense) => void;
 }) => {
+  const ANALYTICS_CACHE_TTL_MS = 2 * 60 * 1000;
+  const initialHasWarmCache = useMemo(() => {
+    const cache = (globalThis as any).__agencyAnalyticsDashboardCache;
+    return cache && Date.now() - cache.fetchedAt < ANALYTICS_CACHE_TTL_MS;
+  }, []);
+
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("Overview");
-  const [analytics, setAnalytics] = useState<any>(null);
-  const [rosterInsights, setRosterInsights] = useState<any>(null);
-  const [clientsAnalytics, setClientsAnalytics] = useState<any>(null);
+  const [analytics, setAnalytics] = useState<any>(
+    initialHasWarmCache
+      ? (globalThis as any).__agencyAnalyticsDashboardCache.analytics
+      : null,
+  );
+  const [rosterInsights, setRosterInsights] = useState<any>(
+    initialHasWarmCache
+      ? (globalThis as any).__agencyAnalyticsDashboardCache.rosterInsights
+      : null,
+  );
+  const [clientsAnalytics, setClientsAnalytics] = useState<any>(
+    initialHasWarmCache
+      ? (globalThis as any).__agencyAnalyticsDashboardCache.clientsAnalytics
+      : null,
+  );
   const [expiredLicenses] = useState<ComplianceRenewableLicense[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialHasWarmCache);
   const [error, setError] = useState<string | null>(null);
   const subTabs = [
     "Overview",
@@ -17623,7 +17641,12 @@ const AnalyticsDashboardView = ({
   ];
 
   useEffect(() => {
+    let isMounted = true;
+
     async function fetchAllAnalytics() {
+      const shouldBlockUI = !initialHasWarmCache;
+      if (shouldBlockUI) setLoading(true);
+
       try {
         const session = (await supabase?.auth.getSession())?.data?.session;
         const token = session?.access_token;
@@ -17639,8 +17662,10 @@ const AnalyticsDashboardView = ({
         }
 
         const overviewData = await overviewRes.json();
+        if (!isMounted) return;
         setAnalytics(overviewData);
-        setLoading(false); // Unblock UI immediately!
+        setError(null);
+        if (shouldBlockUI) setLoading(false); // Unblock UI immediately on first load
 
         // 2. Fetch non-critical data in background
         const [rosterRes, clientsRes] = await Promise.allSettled([
@@ -17653,26 +17678,48 @@ const AnalyticsDashboardView = ({
         ]);
 
         // Handle Roster Data
+        let nextRosterInsights =
+          (globalThis as any).__agencyAnalyticsDashboardCache?.rosterInsights ??
+          null;
         if (rosterRes.status === "fulfilled" && rosterRes.value.ok) {
           const data = await rosterRes.value.json();
+          if (!isMounted) return;
           setRosterInsights(data);
+          nextRosterInsights = data;
         }
 
         // Handle Clients Data
+        let nextClientsAnalytics =
+          (globalThis as any).__agencyAnalyticsDashboardCache
+            ?.clientsAnalytics ?? null;
         if (clientsRes.status === "fulfilled" && clientsRes.value.ok) {
           const data = await clientsRes.value.json();
+          if (!isMounted) return;
           setClientsAnalytics(data);
+          nextClientsAnalytics = data;
         }
+
+        (globalThis as any).__agencyAnalyticsDashboardCache = {
+          analytics: overviewData,
+          rosterInsights: nextRosterInsights,
+          clientsAnalytics: nextClientsAnalytics,
+          fetchedAt: Date.now(),
+        };
       } catch (err: any) {
+        if (!isMounted) return;
         console.error(err);
         setError(err.message);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     }
 
     fetchAllAnalytics();
-  }, []);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [initialHasWarmCache]);
 
   if (loading) {
     return (
