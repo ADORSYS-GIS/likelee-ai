@@ -16,10 +16,13 @@ import {
   createLicenseSubmissionDraft,
   finalizeLicenseSubmission,
   previewLicenseSubmission,
+  syncLicenseSubmissionStatus,
 } from "@/api/licenseSubmissions";
 import { getLicenseTemplates, LicenseTemplate } from "@/api/licenseTemplates";
 import { useToast } from "@/components/ui/use-toast";
 import { DocusealForm } from "@docuseal/react";
+import { Switch } from "@/components/ui/switch";
+import { getUserFriendlyError } from "@/utils/error-utils";
 
 interface SendContractModalProps {
   isOpen: boolean;
@@ -56,6 +59,12 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
   const [draftId, setDraftId] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [requiresAgencySignature, setRequiresAgencySignature] = useState(false);
+  const [agencySignOpen, setAgencySignOpen] = useState(false);
+  const [agencySignUrl, setAgencySignUrl] = useState<string | null>(null);
+  const [currentSubmissionId, setCurrentSubmissionId] = useState<string | null>(
+    null,
+  );
 
   // Fetch the template to get default values
   const { data: templates } = useQuery({
@@ -83,6 +92,10 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
       setDraftId(null);
       setPreviewUrl(null);
       setPreviewOpen(false);
+      setRequiresAgencySignature(false);
+      setAgencySignOpen(false);
+      setAgencySignUrl(null);
+      setCurrentSubmissionId(null);
     }
   }, [isOpen]);
 
@@ -98,12 +111,15 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
         duration_days: template?.duration_days,
         start_date: template?.start_date,
         custom_terms: template?.custom_terms,
+        requires_agency_signature: requiresAgencySignature,
       });
     },
     onError: (error: any) => {
       toast({
         title: "Draft Failed",
-        description: error.message || "Could not create a draft submission.",
+        description:
+          getUserFriendlyError(error) ||
+          "We couldn't prepare this contract draft. Please try again.",
         variant: "destructive",
       });
     },
@@ -120,6 +136,7 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
         duration_days: template?.duration_days,
         start_date: template?.start_date,
         custom_terms: template?.custom_terms,
+        requires_agency_signature: requiresAgencySignature,
       });
     },
     onSuccess: (res) => {
@@ -129,7 +146,9 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
     onError: (error: any) => {
       toast({
         title: "Preview Failed",
-        description: error.message || "Could not load preview.",
+        description:
+          getUserFriendlyError(error) ||
+          "We couldn't load the preview right now. Please try again.",
         variant: "destructive",
       });
     },
@@ -153,21 +172,42 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
         client_name: data.client_name,
         client_email: data.client_email,
         talent_names: data.talent_names || template?.talent_name,
+        requires_agency_signature: requiresAgencySignature,
       });
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
+      setCurrentSubmissionId((res as any)?.id || null);
       queryClient.invalidateQueries({ queryKey: ["license-submissions"] });
-      toast({
-        title: "Contract Sent!",
-        description: "The contract has been emailed to the client.",
-      });
-      if (onSuccess) onSuccess();
-      onClose();
+      const embedUrl =
+        (res as any)?.agency_embed_src ||
+        ((res as any)?.agency_submitter_slug
+          ? `https://docuseal.co/s/${(res as any).agency_submitter_slug}`
+          : (res as any)?.docuseal_slug
+            ? `https://docuseal.co/s/${(res as any).docuseal_slug}`
+            : null);
+      if (requiresAgencySignature && embedUrl) {
+        setAgencySignUrl(embedUrl);
+        setAgencySignOpen(true);
+        toast({
+          title: "Agency signature required",
+          description:
+            "Please complete your signature now. Client will receive it after you sign.",
+        });
+      } else {
+        toast({
+          title: "Contract Sent!",
+          description: "The contract has been emailed to the client.",
+        });
+        if (onSuccess) onSuccess();
+        onClose();
+      }
     },
     onError: (error: any) => {
       toast({
         title: "Sending Failed",
-        description: error.message || "Could not send the contract.",
+        description:
+          getUserFriendlyError(error) ||
+          "We couldn't send the contract right now. Please try again.",
         variant: "destructive",
       });
     },
@@ -254,6 +294,23 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
               </p>
             </div>
 
+            <div className="space-y-2 rounded-md border p-3">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="requiresAgencySignature">
+                  Agency signs first (on platform)
+                </Label>
+                <Switch
+                  id="requiresAgencySignature"
+                  checked={requiresAgencySignature}
+                  onCheckedChange={setRequiresAgencySignature}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                When enabled, the client receives the signing request only after
+                the agency signs.
+              </p>
+            </div>
+
             <DialogFooter className="pt-4">
               <Button
                 variant="outline"
@@ -279,7 +336,7 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
               </Button>
               <Button
                 type="submit"
-                className="bg-indigo-600 hover:bg-indigo-700"
+                className="bg-indigo-500 hover:bg-indigo-700"
                 disabled={finalizeMutation.isPending}
               >
                 {finalizeMutation.isPending ? "Sending..." : "Send Now"}
@@ -312,6 +369,52 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
               onClick={() => setPreviewOpen(false)}
             >
               Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={agencySignOpen}
+        onOpenChange={(v) => {
+          if (!v) {
+            setAgencySignOpen(false);
+            if (onSuccess) onSuccess();
+            onClose();
+          }
+        }}
+      >
+        <DialogContent className="fixed !inset-0 bg-background w-screen h-screen !max-w-none !translate-x-0 !translate-y-0 !rounded-none border-none p-0 flex flex-col outline-none">
+          <DialogHeader className="p-4 border-b">
+            <DialogTitle>Agency Signature</DialogTitle>
+            <DialogDescription>
+              Complete your signature to release this contract to the client.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 w-full bg-gray-50 overflow-auto">
+            {agencySignUrl ? <DocusealForm src={agencySignUrl} /> : null}
+          </div>
+          <DialogFooter className="p-4 border-t">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={async () => {
+                if (currentSubmissionId) {
+                  try {
+                    await syncLicenseSubmissionStatus(currentSubmissionId);
+                    await queryClient.invalidateQueries({
+                      queryKey: ["license-submissions"],
+                    });
+                  } catch {
+                    // ignore transient sync issues
+                  }
+                }
+                setAgencySignOpen(false);
+                if (onSuccess) onSuccess();
+                onClose();
+              }}
+            >
+              Done
             </Button>
           </DialogFooter>
         </DialogContent>

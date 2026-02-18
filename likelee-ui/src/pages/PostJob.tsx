@@ -131,8 +131,7 @@ export default function PostJob() {
     royalty_option: false,
 
     // Budget
-    budget_min: "",
-    budget_max: "",
+    budget: "",
     payment_type: "",
     currency: "USD",
 
@@ -1021,34 +1020,24 @@ export default function PostJob() {
                 </h2>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div>
                   <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                    Budget Min *
+                    Budget *
                   </Label>
                   <Input
                     type="number"
-                    value={formData.budget_min}
+                    value={formData.budget}
                     onChange={(e) =>
-                      setFormData({ ...formData, budget_min: e.target.value })
-                    }
-                    placeholder="500"
-                    className="border-2 border-gray-300 rounded-none"
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                    Budget Max *
-                  </Label>
-                  <Input
-                    type="number"
-                    value={formData.budget_max}
-                    onChange={(e) =>
-                      setFormData({ ...formData, budget_max: e.target.value })
+                      setFormData({ ...formData, budget: e.target.value })
                     }
                     placeholder="2000"
                     className="border-2 border-gray-300 rounded-none"
                   />
+                  <p className="text-xs text-gray-500 mt-2">
+                    Enter the total fixed budget or base payment for this
+                    project.
+                  </p>
                 </div>
               </div>
 
@@ -1116,11 +1105,7 @@ export default function PostJob() {
                 </Button>
                 <Button
                   onClick={handleNext}
-                  disabled={
-                    !formData.budget_min ||
-                    !formData.budget_max ||
-                    !formData.payment_type
-                  }
+                  disabled={!formData.budget || !formData.payment_type}
                   className="bg-blue-600 hover:bg-blue-700 text-white rounded-none"
                 >
                   Next: Collaboration
@@ -1313,10 +1298,10 @@ export default function PostJob() {
                       ))}
                     </div>
                     <div className="flex items-center gap-4 text-sm text-gray-600">
-                      <span className="flex items-center gap-1">
-                        <DollarSign className="w-4 h-4" />${formData.budget_min}{" "}
-                        - ${formData.budget_max}
-                      </span>
+                      <div className="flex items-center gap-1 text-gray-900 font-bold">
+                        <DollarSign className="w-4 h-4" />
+                        {formData.budget} {formData.currency}
+                      </div>
                       {formData.start_date && (
                         <span className="flex items-center gap-1">
                           <Calendar className="w-4 h-4" />

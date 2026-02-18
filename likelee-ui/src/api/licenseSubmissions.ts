@@ -15,6 +15,13 @@ export interface LicenseSubmission {
   duration_days?: number;
   start_date?: string;
   custom_terms?: string;
+  requires_agency_signature?: boolean;
+  agency_submitter_id?: number;
+  agency_submitter_slug?: string;
+  agency_embed_src?: string;
+  agency_signed_at?: string;
+  client_submitter_id?: number;
+  client_submitter_slug?: string;
   status: string; // 'sent', 'opened', 'completed', 'declined', 'expired'
   sent_at?: string;
   opened_at?: string;
@@ -34,11 +41,11 @@ export interface CreateSubmissionRequest {
   client_name: string;
   docuseal_template_id?: number;
   talent_names?: string;
-  document_base64?: string;
   license_fee?: number;
   duration_days?: number;
   start_date?: string;
   custom_terms?: string;
+  requires_agency_signature?: boolean;
 }
 
 export const getLicenseSubmissions = async (): Promise<LicenseSubmission[]> => {
@@ -61,6 +68,7 @@ export const createAndSendLicenseSubmission = async (data: {
   duration_days?: number;
   start_date?: string;
   custom_terms?: string;
+  requires_agency_signature?: boolean;
 }): Promise<LicenseSubmission> => {
   return await base44.post<LicenseSubmission>(
     "/license-submissions/create-and-send",
@@ -75,6 +83,7 @@ export const finalizeLicenseSubmission = async (
     client_name?: string;
     client_email?: string;
     talent_names?: string;
+    requires_agency_signature?: boolean;
   },
 ): Promise<LicenseSubmission> => {
   return await base44.post<LicenseSubmission>(
@@ -122,4 +131,13 @@ export const archiveLicenseSubmission = async (id: string): Promise<void> => {
 };
 export const recoverLicenseSubmission = async (id: string): Promise<void> => {
   await base44.post(`/license-submissions/${id}/recover`);
+};
+
+export const syncLicenseSubmissionStatus = async (
+  id: string,
+): Promise<LicenseSubmission> => {
+  return await base44.post<LicenseSubmission>(
+    `/license-submissions/${id}/sync-status`,
+    {},
+  );
 };

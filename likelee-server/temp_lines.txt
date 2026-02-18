@@ -1,0 +1,19 @@
+    if let Some(scope) = &license_template.usage_scope {
+        fields.push(SubmitterField {
+            name: "Usage Scope".to_string(),
+            default_value: Some(scope.clone()),
+            readonly: Some(true),
+        });
+    }
+
+    fields.push(SubmitterField {
+        name: "Territory".to_string(),
+        default_value: Some(license_template.territory.clone()),
+        readonly: Some(true),
+    });
+
+    fields.push(SubmitterField {
+        name: "Exclusivity".to_string(),
+        default_value: Some(license_template.exclusivity.clone()),
+        readonly: Some(true),
+    });

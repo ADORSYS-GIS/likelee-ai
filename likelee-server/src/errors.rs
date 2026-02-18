@@ -5,6 +5,13 @@ pub fn sanitize_db_error(status_code: u16, text: String) -> (StatusCode, String)
     let axum_status =
         StatusCode::from_u16(status_code).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
 
+    // Log the original error for debugging
+    tracing::error!(
+        status = %axum_status,
+        error = %text,
+        "Database error occurred"
+    );
+
     // If it's a 4xx error that looks like a PostgREST error, try to extract a user-friendly message
     // but default to a generic one if it contains schema info.
     if axum_status.is_client_error() {
@@ -22,6 +29,7 @@ pub fn sanitize_db_error(status_code: u16, text: String) -> (StatusCode, String)
                     "cache",
                     "null constraint",
                     "violates",
+                    "foreign key",
                     "fk_",
                     "pk_",
                     "idx_",
@@ -35,7 +43,7 @@ pub fn sanitize_db_error(status_code: u16, text: String) -> (StatusCode, String)
                 match code {
                     "23505" => {
                         return (
-                            axum_status,
+                            StatusCode::CONFLICT,
                             json!({
                                 "error": "This record already exists.",
                                 "code": code
@@ -76,7 +84,7 @@ pub fn sanitize_db_error(status_code: u16, text: String) -> (StatusCode, String)
                     }
                     _ if contains_sensitive => {
                         return (
-                            axum_status,
+                            StatusCode::INTERNAL_SERVER_ERROR,
                             json!({
                                 "error": "Invalid data provided. Please check your input.",
                                 "details": "A validation error occurred on the server.",
@@ -102,11 +110,22 @@ pub fn sanitize_db_error(status_code: u16, text: String) -> (StatusCode, String)
 
     // For 5xx or unknown 4xx, return generic error
     (
-        axum_status,
+        StatusCode::INTERNAL_SERVER_ERROR,
         json!({
             "error": "An internal error occurred. Our team has been notified.",
             "details": "Please try again later or contact support if the issue persists."
         })
         .to_string(),
     )
+}
+
+/// Helper to sanitize any error and log it
+pub fn handle_error<E: std::fmt::Display>(err: E, context: &str) -> (StatusCode, String) {
+    let err_str = err.to_string();
+    tracing::error!(
+        context = context,
+        error = %err_str,
+        "Error occurred"
+    );
+    sanitize_db_error(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), err_str)
 }

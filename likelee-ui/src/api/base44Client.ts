@@ -86,7 +86,14 @@ export const base44 = {
     const res = await fetch(full, { headers });
     if (!res.ok) {
       const txt = await res.text();
-      throw new Error(`GET ${full} failed: ${res.status} ${txt}`);
+      // Try to parse as JSON for structured errors
+      try {
+        const errorData = JSON.parse(txt);
+        throw new Error(JSON.stringify(errorData));
+      } catch {
+        // If not JSON, throw with status and text
+        throw new Error(`GET ${url} failed: ${res.status} ${txt}`);
+      }
     }
     return (await res.json()) as T;
   },
@@ -120,7 +127,12 @@ export const base44 = {
     const res = await fetch(full, { method: "POST", headers, body });
     if (!res.ok) {
       const txt = await res.text();
-      throw new Error(`POST ${full} failed: ${res.status} ${txt}`);
+      try {
+        const errorData = JSON.parse(txt);
+        throw new Error(JSON.stringify(errorData));
+      } catch {
+        throw new Error(`POST ${url} failed: ${res.status} ${txt}`);
+      }
     }
     return (await res.json()) as T;
   },
@@ -154,7 +166,12 @@ export const base44 = {
     const res = await fetch(full, { method: "PUT", headers, body });
     if (!res.ok) {
       const txt = await res.text();
-      throw new Error(`PUT ${full} failed: ${res.status} ${txt}`);
+      try {
+        const errorData = JSON.parse(txt);
+        throw new Error(JSON.stringify(errorData));
+      } catch {
+        throw new Error(`PUT ${url} failed: ${res.status} ${txt}`);
+      }
     }
     return (await res.json()) as T;
   },
@@ -184,7 +201,12 @@ export const base44 = {
     const res = await fetch(full, { method: "DELETE", headers, body });
     if (!res.ok) {
       const txt = await res.text();
-      throw new Error(`DELETE ${full} failed: ${res.status} ${txt}`);
+      try {
+        const errorData = JSON.parse(txt);
+        throw new Error(JSON.stringify(errorData));
+      } catch {
+        throw new Error(`DELETE ${url} failed: ${res.status} ${txt}`);
+      }
     }
 
     if (res.status === 204) {
