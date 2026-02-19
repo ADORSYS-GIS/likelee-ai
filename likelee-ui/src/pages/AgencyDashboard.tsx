@@ -10122,6 +10122,7 @@ type MarketplaceProfile = {
   skills?: string[] | null;
   followers?: number | null;
   engagement_rate?: number | null;
+  is_connected?: boolean;
   updated_at?: string | null;
 };
 
@@ -10146,14 +10147,19 @@ const MarketplaceTab = () => {
   const { toast } = useToast();
   const [searchInput, setSearchInput] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const [profileType, setProfileType] = useState<"all" | "creator" | "talent">(
-    "all",
-  );
+  const [categoryFilter, setCategoryFilter] = useState<
+    "all" | "models" | "actors" | "influencers" | "athletes"
+  >("all");
+  const [profileType, setProfileType] = useState<
+    "all" | "creator" | "talent" | "connected"
+  >("all");
   const [sortBy, setSortBy] = useState<"recent" | "name" | "followers">(
-    "recent",
+    "followers",
   );
   const activeFilterCount =
-    Number(profileType !== "all") + Number(sortBy !== "recent");
+    Number(categoryFilter !== "all") +
+    Number(profileType !== "all") +
+    Number(sortBy !== "followers");
   const hasActiveFilters = activeFilterCount > 0;
   const marketplaceSelectItemClass =
     "rounded-lg py-2.5 pl-3 pr-8 text-[15px] font-medium text-slate-700 hover:bg-slate-50 focus:bg-slate-50 focus:text-slate-700 data-[state=checked]:bg-blue-50 data-[state=checked]:text-blue-700";
@@ -10168,7 +10174,7 @@ const MarketplaceTab = () => {
     queryFn: async () =>
       await base44.get<MarketplaceProfile[]>("marketplace/search", {
         params: {
-          profile_type: profileType,
+          profile_type: profileType === "connected" ? "all" : profileType,
           query: debouncedSearch.trim() || undefined,
           limit: 120,
         },
@@ -10212,25 +10218,43 @@ const MarketplaceTab = () => {
         typeof row?.engagement_rate === "number"
           ? row.engagement_rate
           : Number(row?.engagement_rate || 0),
+      is_connected: !!row?.is_connected,
       updated_at: row?.updated_at ?? null,
     })) as MarketplaceProfile[];
 
+    const matchesCategory = (profile: MarketplaceProfile) => {
+      if (categoryFilter === "all") return true;
+      if (profile.profile_type !== "creator") return false;
+      const creatorType = String(profile.creator_type || "").toLowerCase();
+      if (categoryFilter === "models") return creatorType.includes("model");
+      if (categoryFilter === "actors") return creatorType.includes("actor");
+      if (categoryFilter === "influencers")
+        return creatorType.includes("influencer");
+      if (categoryFilter === "athletes") return creatorType.includes("athlete");
+      return true;
+    };
+
+    const filtered = normalized.filter(matchesCategory).filter((profile) => {
+      if (profileType === "connected") return !!profile.is_connected;
+      return true;
+    });
+
     if (sortBy === "name") {
-      return [...normalized].sort((a, b) =>
+      return [...filtered].sort((a, b) =>
         a.display_name.localeCompare(b.display_name),
       );
     }
 
     if (sortBy === "followers") {
-      return [...normalized].sort(
+      return [...filtered].sort(
         (a, b) => Number(b.followers || 0) - Number(a.followers || 0),
       );
     }
 
-    return [...normalized].sort((a, b) =>
+    return [...filtered].sort((a, b) =>
       String(b.updated_at || "").localeCompare(String(a.updated_at || "")),
     );
-  }, [marketplaceQuery.data, sortBy]);
+  }, [marketplaceQuery.data, categoryFilter, profileType, sortBy]);
 
   return (
     <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
@@ -10292,8 +10316,9 @@ const MarketplaceTab = () => {
                   e.preventDefault();
                   e.stopPropagation();
                   setSearchInput("");
+                  setCategoryFilter("all");
                   setProfileType("all");
-                  setSortBy("recent");
+                  setSortBy("followers");
                 }}
               >
                 <X className="h-3 w-3" />
@@ -10313,27 +10338,66 @@ const MarketplaceTab = () => {
                   type="button"
                   className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
                   onClick={() => {
+                    setCategoryFilter("all");
                     setProfileType("all");
-                    setSortBy("recent");
+                    setSortBy("followers");
                   }}
                 >
                   Reset filters
                 </button>
               )}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex flex-wrap gap-3">
+            <Select
+              value={categoryFilter}
+              onValueChange={(v) =>
+                setCategoryFilter(
+                  (v as "all" | "models" | "actors" | "influencers" | "athletes") ||
+                    "all",
+                )
+              }
+            >
+              <SelectTrigger className="h-10 w-[190px] border-blue-300 bg-white rounded-lg text-sm font-medium text-slate-800 focus:ring-blue-300 focus:border-blue-400">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border border-blue-100 bg-white p-1 shadow-xl">
+                <SelectItem className={marketplaceSelectItemClass} value="all">
+                  All Categories
+                </SelectItem>
+                <SelectItem className={marketplaceSelectItemClass} value="models">
+                  Models
+                </SelectItem>
+                <SelectItem className={marketplaceSelectItemClass} value="actors">
+                  Actors
+                </SelectItem>
+                <SelectItem
+                  className={marketplaceSelectItemClass}
+                  value="influencers"
+                >
+                  Influencers
+                </SelectItem>
+                <SelectItem
+                  className={marketplaceSelectItemClass}
+                  value="athletes"
+                >
+                  Athletes
+                </SelectItem>
+              </SelectContent>
+            </Select>
             <Select
               value={profileType}
               onValueChange={(v) =>
-                setProfileType((v as "all" | "creator" | "talent") || "all")
+                setProfileType(
+                  (v as "all" | "creator" | "talent" | "connected") || "all",
+                )
               }
             >
-              <SelectTrigger className="h-11 border-blue-300 bg-white rounded-2xl font-semibold text-slate-800 focus:ring-blue-300 focus:border-blue-400">
-                <SelectValue placeholder="Profile Type" />
+              <SelectTrigger className="h-10 w-[190px] border-blue-300 bg-white rounded-lg text-sm font-medium text-slate-800 focus:ring-blue-300 focus:border-blue-400">
+                <SelectValue placeholder="All" />
               </SelectTrigger>
-              <SelectContent className="rounded-2xl border border-blue-100 bg-white p-1 shadow-xl">
+              <SelectContent className="rounded-xl border border-blue-100 bg-white p-1 shadow-xl">
                 <SelectItem className={marketplaceSelectItemClass} value="all">
-                  All Verified Profiles
+                  All
                 </SelectItem>
                 <SelectItem
                   className={marketplaceSelectItemClass}
@@ -10347,32 +10411,40 @@ const MarketplaceTab = () => {
                 >
                   Verified Talent
                 </SelectItem>
+                <SelectItem
+                  className={marketplaceSelectItemClass}
+                  value="connected"
+                >
+                  Connected
+                </SelectItem>
               </SelectContent>
             </Select>
             <Select
               value={sortBy}
               onValueChange={(v) =>
-                setSortBy((v as "recent" | "name" | "followers") || "recent")
+                setSortBy(
+                  (v as "recent" | "name" | "followers") || "followers",
+                )
               }
             >
-              <SelectTrigger className="h-11 border-blue-300 bg-white rounded-2xl font-semibold text-slate-800 focus:ring-blue-300 focus:border-blue-400">
-                <SelectValue placeholder="Sort" />
+              <SelectTrigger className="h-10 w-[190px] border-blue-300 bg-white rounded-lg text-sm font-medium text-slate-800 focus:ring-blue-300 focus:border-blue-400">
+                <SelectValue placeholder="Followers" />
               </SelectTrigger>
-              <SelectContent className="rounded-2xl border border-blue-100 bg-white p-1 shadow-xl">
-                <SelectItem
-                  className={marketplaceSelectItemClass}
-                  value="recent"
-                >
-                  Recently Updated
-                </SelectItem>
-                <SelectItem className={marketplaceSelectItemClass} value="name">
-                  Name
-                </SelectItem>
+              <SelectContent className="rounded-xl border border-blue-100 bg-white p-1 shadow-xl">
                 <SelectItem
                   className={marketplaceSelectItemClass}
                   value="followers"
                 >
                   Followers
+                </SelectItem>
+                <SelectItem
+                  className={marketplaceSelectItemClass}
+                  value="name"
+                >
+                  Name
+                </SelectItem>
+                <SelectItem className={marketplaceSelectItemClass} value="recent">
+                  Recently Updated
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -10426,6 +10498,11 @@ const MarketplaceTab = () => {
                         <h3 className="text-sm font-bold text-gray-900 truncate">
                           {profile.display_name}
                         </h3>
+                        {profile.is_connected && (
+                          <Badge className="h-5 px-2 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold tracking-wide">
+                            Connected
+                          </Badge>
+                        )}
                         <ShieldCheck className="w-4 h-4 text-green-600 flex-shrink-0" />
                       </div>
                       <p className="text-xs text-gray-500 font-medium mt-1 truncate">

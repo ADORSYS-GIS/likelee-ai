@@ -7,6 +7,7 @@ use axum::{
     Json,
 };
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use tracing::info;
 use uuid::Uuid;
 
@@ -185,6 +186,107 @@ pub async fn search_marketplace_profiles(
 
     let mut creators_rows: Vec<serde_json::Value> = Vec::new();
     let mut talents_rows: Vec<serde_json::Value> = Vec::new();
+    let mut connected_creator_ids: HashSet<String> = HashSet::new();
+    let mut connected_talent_ids: HashSet<String> = HashSet::new();
+    let mut connected_talent_name_keys: HashSet<String> = HashSet::new();
+    let mut effective_agency_id = user.id.clone();
+
+    if user.role == "agency" {
+        let by_id_resp = state
+            .pg
+            .from("agencies")
+            .select("id")
+            .eq("id", &user.id)
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let by_id_status = by_id_resp.status();
+        let by_id_text = by_id_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !by_id_status.is_success() {
+            return Err(sanitize_db_error(by_id_status.as_u16(), by_id_text));
+        }
+        let by_id_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&by_id_text).unwrap_or_default();
+
+        if by_id_rows.is_empty() {
+            // Older schemas may key agency profile by user_id.
+            if let Ok(by_user_resp) = state
+                .pg
+                .from("agencies")
+                .select("id")
+                .eq("user_id", &user.id)
+                .limit(1)
+                .execute()
+                .await
+            {
+                if by_user_resp.status().is_success() {
+                    if let Ok(by_user_text) = by_user_resp.text().await {
+                        let rows: Vec<serde_json::Value> =
+                            serde_json::from_str(&by_user_text).unwrap_or_default();
+                        if let Some(org_id) = rows
+                            .first()
+                            .and_then(|r| r.get("id"))
+                            .and_then(|v| v.as_str())
+                        {
+                            if !org_id.is_empty() {
+                                effective_agency_id = org_id.to_string();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if user.role == "agency" {
+        let resp = state
+            .pg
+            .from("agency_users")
+            .select("id,creator_id,full_legal_name,stage_name")
+            .eq("agency_id", &effective_agency_id)
+            .eq("status", "active")
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let status = resp.status();
+        let text = resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !status.is_success() {
+            return Err(sanitize_db_error(status.as_u16(), text));
+        }
+
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+        for row in rows {
+            if let Some(id) = row.get("id").and_then(|v| v.as_str()) {
+                if !id.is_empty() {
+                    connected_talent_ids.insert(id.to_string());
+                }
+            }
+            if let Some(creator_id) = row.get("creator_id").and_then(|v| v.as_str()) {
+                if !creator_id.is_empty() {
+                    connected_creator_ids.insert(creator_id.to_string());
+                }
+            }
+            if let Some(full_legal_name) = row.get("full_legal_name").and_then(|v| v.as_str()) {
+                let key = full_legal_name.trim().to_lowercase();
+                if !key.is_empty() {
+                    connected_talent_name_keys.insert(key);
+                }
+            }
+            if let Some(stage_name) = row.get("stage_name").and_then(|v| v.as_str()) {
+                let key = stage_name.trim().to_lowercase();
+                if !key.is_empty() {
+                    connected_talent_name_keys.insert(key);
+                }
+            }
+        }
+    }
 
     if profile_type == "all" || profile_type == "creator" {
         let mut request = state
@@ -222,7 +324,7 @@ pub async fn search_marketplace_profiles(
         let mut request = state
             .pg
             .from("agency_users")
-            .select("id,full_legal_name,stage_name,city,state_province,country,bio_notes,profile_photo_url,special_skills,instagram_followers,engagement_rate,is_verified_talent,status,updated_at")
+            .select("id,agency_id,creator_id,full_legal_name,stage_name,city,state_province,country,bio_notes,profile_photo_url,special_skills,instagram_followers,engagement_rate,is_verified_talent,status,updated_at")
             .eq("role", "talent")
             .eq("status", "active")
             .eq("is_verified_talent", "true")
@@ -253,6 +355,7 @@ pub async fn search_marketplace_profiles(
     let mut results: Vec<serde_json::Value> = Vec::new();
 
     for row in creators_rows {
+        let creator_id = row.get("id").and_then(|v| v.as_str()).unwrap_or("");
         let full_name = row
             .get("full_name")
             .and_then(|v| v.as_str())
@@ -287,6 +390,7 @@ pub async fn search_marketplace_profiles(
             "followers": serde_json::Value::Null,
             "engagement_rate": serde_json::Value::Null,
             "is_verified": true,
+            "is_connected": !creator_id.is_empty() && connected_creator_ids.contains(creator_id),
             "verification_source": "kyc",
             "kyc_status": row.get("kyc_status").cloned().unwrap_or(serde_json::Value::Null),
             "updated_at": row.get("updated_at").cloned().unwrap_or(serde_json::Value::Null),
@@ -294,6 +398,9 @@ pub async fn search_marketplace_profiles(
     }
 
     for row in talents_rows {
+        let talent_id = row.get("id").and_then(|v| v.as_str()).unwrap_or("");
+        let agency_id = row.get("agency_id").and_then(|v| v.as_str()).unwrap_or("");
+        let creator_id = row.get("creator_id").and_then(|v| v.as_str()).unwrap_or("");
         let display_name = row
             .get("stage_name")
             .and_then(|v| v.as_str())
@@ -318,6 +425,22 @@ pub async fn search_marketplace_profiles(
                 .join(", ")
         };
 
+        let name_key_full = row
+            .get("full_legal_name")
+            .and_then(|v| v.as_str())
+            .map(|s| s.trim().to_lowercase())
+            .unwrap_or_default();
+        let name_key_stage = row
+            .get("stage_name")
+            .and_then(|v| v.as_str())
+            .map(|s| s.trim().to_lowercase())
+            .unwrap_or_default();
+        let is_connected = (!talent_id.is_empty() && connected_talent_ids.contains(talent_id))
+            || (!creator_id.is_empty() && connected_creator_ids.contains(creator_id))
+            || (!agency_id.is_empty() && agency_id == effective_agency_id)
+            || (!name_key_full.is_empty() && connected_talent_name_keys.contains(&name_key_full))
+            || (!name_key_stage.is_empty() && connected_talent_name_keys.contains(&name_key_stage));
+
         results.push(serde_json::json!({
             "id": row.get("id").cloned().unwrap_or(serde_json::Value::Null),
             "profile_type": "talent",
@@ -336,6 +459,7 @@ pub async fn search_marketplace_profiles(
             "followers": row.get("instagram_followers").cloned().unwrap_or(serde_json::Value::Null),
             "engagement_rate": row.get("engagement_rate").cloned().unwrap_or(serde_json::Value::Null),
             "is_verified": true,
+            "is_connected": is_connected,
             "verification_source": "agency",
             "kyc_status": serde_json::Value::Null,
             "updated_at": row.get("updated_at").cloned().unwrap_or(serde_json::Value::Null),
