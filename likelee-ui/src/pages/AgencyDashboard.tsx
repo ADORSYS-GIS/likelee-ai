@@ -10109,105 +10109,377 @@ const SocialDiscoveryTab = () => (
   </Card>
 );
 
-const MarketplaceTab = () => (
-  <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-      <div>
-        <h2 className="text-xl font-bold text-gray-900">Likelee Marketplace</h2>
-        <p className="text-sm text-gray-500 font-medium">
-          Browse verified creators on the Likelee platform
-        </p>
-      </div>
-      <Button
-        variant="outline"
-        className="flex items-center gap-2 border-gray-300 font-bold text-gray-700 px-6 h-10 rounded-lg shadow-sm"
-      >
-        <Filter className="w-4 h-4 text-gray-400" /> Filters
-      </Button>
-    </div>
+type MarketplaceProfile = {
+  id: string;
+  profile_type: "creator" | "talent";
+  display_name: string;
+  full_name?: string | null;
+  location?: string | null;
+  bio?: string | null;
+  tagline?: string | null;
+  profile_photo_url?: string | null;
+  creator_type?: string | null;
+  skills?: string[] | null;
+  followers?: number | null;
+  engagement_rate?: number | null;
+  updated_at?: string | null;
+};
 
-    <div className="flex flex-col gap-6">
-      <div className="flex gap-2 w-full">
-        <div className="relative flex-1">
-          <Input
-            placeholder="Search by name, category, or skills..."
-            className="h-10 border-gray-200 bg-white rounded-lg"
-          />
+const MARKETPLACE_FALLBACK_IMAGE =
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/5d413193e_Screenshot2025-10-29at63349PM.png";
+
+const parseApiErrorMessage = (error: any, fallback: string) => {
+  const raw = String(error?.message || "");
+  try {
+    const parsed = JSON.parse(raw);
+    if (typeof parsed?.error === "string" && parsed.error.trim()) {
+      return parsed.error;
+    }
+    if (typeof parsed?.details === "string" && parsed.details.trim()) {
+      return parsed.details;
+    }
+  } catch {}
+  return raw || fallback;
+};
+
+const MarketplaceTab = () => {
+  const { toast } = useToast();
+  const [searchInput, setSearchInput] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [profileType, setProfileType] = useState<"all" | "creator" | "talent">(
+    "all",
+  );
+  const [sortBy, setSortBy] = useState<"recent" | "name" | "followers">(
+    "recent",
+  );
+  const activeFilterCount =
+    Number(profileType !== "all") + Number(sortBy !== "recent");
+  const hasActiveFilters = activeFilterCount > 0;
+  const marketplaceSelectItemClass =
+    "rounded-lg py-2.5 pl-3 pr-8 text-[15px] font-medium text-slate-700 hover:bg-slate-50 focus:bg-slate-50 focus:text-slate-700 data-[state=checked]:bg-blue-50 data-[state=checked]:text-blue-700";
+  const debouncedSearch = useDebounce(searchInput, 300);
+
+  const marketplaceQuery = useQuery({
+    queryKey: [
+      "scouting-marketplace",
+      profileType,
+      debouncedSearch.trim().toLowerCase(),
+    ],
+    queryFn: async () =>
+      await base44.get<MarketplaceProfile[]>("marketplace/search", {
+        params: {
+          profile_type: profileType,
+          query: debouncedSearch.trim() || undefined,
+          limit: 120,
+        },
+      }),
+    staleTime: 60_000,
+  });
+
+  useEffect(() => {
+    if (!marketplaceQuery.error) return;
+    toast({
+      title: "Failed to load marketplace profiles",
+      description: parseApiErrorMessage(
+        marketplaceQuery.error,
+        "Please try again.",
+      ),
+      variant: "destructive" as any,
+    });
+  }, [marketplaceQuery.error, toast]);
+
+  const profiles = useMemo(() => {
+    const rows = Array.isArray(marketplaceQuery.data)
+      ? marketplaceQuery.data
+      : [];
+
+    const normalized = rows.map((row: any) => ({
+      id: String(row?.id || Math.random().toString(36).slice(2)),
+      profile_type: row?.profile_type === "talent" ? "talent" : "creator",
+      display_name: String(row?.display_name || row?.full_name || "Unknown"),
+      full_name: row?.full_name ?? null,
+      location: row?.location ?? null,
+      bio: row?.bio ?? null,
+      tagline: row?.tagline ?? null,
+      profile_photo_url: row?.profile_photo_url ?? null,
+      creator_type: row?.creator_type ?? null,
+      skills: Array.isArray(row?.skills) ? row.skills : [],
+      followers:
+        typeof row?.followers === "number"
+          ? row.followers
+          : Number(row?.followers || 0),
+      engagement_rate:
+        typeof row?.engagement_rate === "number"
+          ? row.engagement_rate
+          : Number(row?.engagement_rate || 0),
+      updated_at: row?.updated_at ?? null,
+    })) as MarketplaceProfile[];
+
+    if (sortBy === "name") {
+      return [...normalized].sort((a, b) =>
+        a.display_name.localeCompare(b.display_name),
+      );
+    }
+
+    if (sortBy === "followers") {
+      return [...normalized].sort(
+        (a, b) => Number(b.followers || 0) - Number(a.followers || 0),
+      );
+    }
+
+    return [...normalized].sort((a, b) =>
+      String(b.updated_at || "").localeCompare(String(a.updated_at || "")),
+    );
+  }, [marketplaceQuery.data, sortBy]);
+
+  return (
+    <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">Likelee Marketplace</h2>
+          <p className="text-sm text-gray-500 font-medium">
+            Verified creators and verified talent only
+          </p>
         </div>
-        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-8 rounded-lg shadow-sm">
-          Search
-        </Button>
+        <Badge className="h-10 px-4 rounded-lg bg-green-50 text-green-700 border border-green-200">
+          <ShieldCheck className="w-4 h-4 mr-2" />
+          Verified Profiles
+        </Badge>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Select defaultValue="all">
-          <SelectTrigger className="h-11 border-gray-200">
-            <SelectValue placeholder="All Categories" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            <SelectItem value="model">Models</SelectItem>
-            <SelectItem value="actor">Actors</SelectItem>
-            <SelectItem value="influencer">Influencers</SelectItem>
-            <SelectItem value="athlete">Athletes</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select defaultValue="all">
-          <SelectTrigger className="h-11 border-gray-200">
-            <SelectValue placeholder="All" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="unsigned">Unsigned</SelectItem>
-            <SelectItem value="signed">Signed</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select defaultValue="followers">
-          <SelectTrigger className="h-11 border-gray-200">
-            <SelectValue placeholder="Followers" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="followers">Followers</SelectItem>
-            <SelectItem value="engagement">Engagement</SelectItem>
-            <SelectItem value="recent">Recently Added</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="border border-dashed border-gray-200 rounded-2xl p-24 flex flex-col items-center justify-center text-center mt-4">
-        <div className="p-6 bg-gray-50 rounded-full mb-6">
-          <Globe className="w-12 h-12 text-gray-200" />
-        </div>
-        <h3 className="text-xl font-bold text-gray-900 mb-2">
-          Marketplace Integration Coming Soon
-        </h3>
-        <p className="text-gray-500 max-w-sm font-medium mb-8">
-          Browse and connect with verified creators from the Likelee network
-        </p>
-
-        <div className="bg-[#FAFAFA] border border-gray-100 p-8 rounded-2xl text-left max-w-md w-full">
-          <h4 className="font-bold text-gray-900 mb-4">Benefits:</h4>
-          <ul className="space-y-3">
-            {[
-              "Access verified, vetted talent profiles",
-              "See availability and booking rates",
-              "Send connection requests directly",
-              "Review portfolios and past campaigns",
-            ].map((benefit) => (
-              <li
-                key={benefit}
-                className="flex items-start gap-3 text-sm text-gray-600 font-medium"
+      <div className="flex flex-col gap-6">
+        <div className="flex gap-2 w-full">
+          <div className="relative w-full md:max-w-4xl">
+            <Search className="w-4 h-4 text-blue-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Input
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search by name, role, bio, or skills..."
+              className="h-9 border-blue-200 bg-white rounded-lg pl-9 focus-visible:ring-blue-300"
+            />
+          </div>
+          <Button
+            className={`h-9 px-3 rounded-lg text-sm font-medium shadow-sm transition-colors ${
+              hasActiveFilters
+                ? "bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100"
+                : "bg-white text-slate-600 border border-slate-300 hover:bg-slate-50"
+            } ${showFilters ? "border-indigo-500" : ""} ${
+              showFilters ? "ring-1 ring-indigo-200" : ""
+            }`}
+            onClick={() => setShowFilters((prev) => !prev)}
+          >
+            <Filter
+              className={`w-3.5 h-3.5 mr-1.5 ${
+                showFilters
+                  ? "text-indigo-600"
+                  : hasActiveFilters
+                    ? "text-indigo-600"
+                    : "text-slate-500"
+              }`}
+            />
+            Filters
+            {hasActiveFilters && (
+              <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1 text-[11px] font-semibold text-white">
+                {activeFilterCount}
+              </span>
+            )}
+            {hasActiveFilters && (
+              <span
+                role="button"
+                aria-label="Reset all filters"
+                className="ml-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/90 text-red-600 hover:bg-red-50 hover:text-red-700"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setSearchInput("");
+                  setProfileType("all");
+                  setSortBy("recent");
+                }}
               >
-                <div className="w-1.5 h-1.5 bg-gray-900 rounded-full mt-1.5 flex-shrink-0" />
-                {benefit}
-              </li>
-            ))}
-          </ul>
+                <X className="h-3 w-3" />
+              </span>
+            )}
+          </Button>
         </div>
+
+        {showFilters && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                Filter Options
+              </p>
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
+                  onClick={() => {
+                    setProfileType("all");
+                    setSortBy("recent");
+                  }}
+                >
+                  Reset filters
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Select
+              value={profileType}
+              onValueChange={(v) =>
+                setProfileType((v as "all" | "creator" | "talent") || "all")
+              }
+            >
+              <SelectTrigger className="h-11 border-blue-300 bg-white rounded-2xl font-semibold text-slate-800 focus:ring-blue-300 focus:border-blue-400">
+                <SelectValue placeholder="Profile Type" />
+              </SelectTrigger>
+              <SelectContent className="rounded-2xl border border-blue-100 bg-white p-1 shadow-xl">
+                <SelectItem className={marketplaceSelectItemClass} value="all">
+                  All Verified Profiles
+                </SelectItem>
+                <SelectItem
+                  className={marketplaceSelectItemClass}
+                  value="creator"
+                >
+                  Verified Creators
+                </SelectItem>
+                <SelectItem
+                  className={marketplaceSelectItemClass}
+                  value="talent"
+                >
+                  Verified Talent
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              value={sortBy}
+              onValueChange={(v) =>
+                setSortBy((v as "recent" | "name" | "followers") || "recent")
+              }
+            >
+              <SelectTrigger className="h-11 border-blue-300 bg-white rounded-2xl font-semibold text-slate-800 focus:ring-blue-300 focus:border-blue-400">
+                <SelectValue placeholder="Sort" />
+              </SelectTrigger>
+              <SelectContent className="rounded-2xl border border-blue-100 bg-white p-1 shadow-xl">
+                <SelectItem
+                  className={marketplaceSelectItemClass}
+                  value="recent"
+                >
+                  Recently Updated
+                </SelectItem>
+                <SelectItem className={marketplaceSelectItemClass} value="name">
+                  Name
+                </SelectItem>
+                <SelectItem
+                  className={marketplaceSelectItemClass}
+                  value="followers"
+                >
+                  Followers
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            </div>
+          </div>
+        )}
+
+        {marketplaceQuery.isLoading ? (
+          <div className="border border-dashed border-gray-200 rounded-2xl p-16 flex flex-col items-center justify-center text-center mt-4">
+            <Loader2 className="w-6 h-6 text-gray-400 animate-spin mb-4" />
+            <p className="text-sm text-gray-500 font-medium">
+              Loading verified marketplace profiles...
+            </p>
+          </div>
+        ) : profiles.length === 0 ? (
+          <div className="border border-dashed border-gray-200 rounded-2xl p-20 flex flex-col items-center justify-center text-center mt-4">
+            <div className="p-5 bg-gray-50 rounded-full mb-5">
+              <Globe className="w-10 h-10 text-gray-300" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              No verified profiles found
+            </h3>
+            <p className="text-gray-500 max-w-md font-medium">
+              Try adjusting your search terms or filters to discover more
+              creators and talent.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-2">
+            {profiles.map((profile) => {
+              const isTalent = profile.profile_type === "talent";
+              const followers = Number(profile.followers || 0);
+              const engagement = Number(profile.engagement_rate || 0);
+              const roleLabel = isTalent
+                ? "Verified Talent"
+                : `Verified Creator${profile.creator_type ? ` • ${profile.creator_type}` : ""}`;
+
+              return (
+                <Card
+                  key={profile.id}
+                  className="p-5 border border-gray-200 rounded-2xl bg-white hover:border-indigo-200 hover:shadow-sm transition-all"
+                >
+                  <div className="flex items-start gap-4">
+                    <img
+                      src={profile.profile_photo_url || MARKETPLACE_FALLBACK_IMAGE}
+                      alt={profile.display_name}
+                      className="w-14 h-14 rounded-xl object-cover bg-gray-100 border border-gray-100"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-bold text-gray-900 truncate">
+                          {profile.display_name}
+                        </h3>
+                        <ShieldCheck className="w-4 h-4 text-green-600 flex-shrink-0" />
+                      </div>
+                      <p className="text-xs text-gray-500 font-medium mt-1 truncate">
+                        {roleLabel}
+                      </p>
+                      {profile.location && (
+                        <p className="text-xs text-gray-500 mt-1 truncate">
+                          {profile.location}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {(profile.tagline || profile.bio) && (
+                    <p className="text-sm text-gray-600 mt-4 line-clamp-2">
+                      {profile.tagline || profile.bio}
+                    </p>
+                  )}
+
+                  <div className="flex flex-wrap items-center gap-2 mt-4">
+                    {(profile.skills || []).slice(0, 2).map((skill) => (
+                      <Badge
+                        key={skill}
+                        variant="secondary"
+                        className="text-[11px] bg-gray-100 text-gray-700 border-0"
+                      >
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 mt-4 text-xs">
+                    <div className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+                      <p className="text-gray-500 font-medium">Followers</p>
+                      <p className="text-gray-900 font-bold mt-0.5">
+                        {followers > 0 ? followers.toLocaleString() : "N/A"}
+                      </p>
+                    </div>
+                    <div className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+                      <p className="text-gray-500 font-medium">Engagement</p>
+                      <p className="text-gray-900 font-bold mt-0.5">
+                        {engagement > 0 ? `${engagement.toFixed(1)}%` : "N/A"}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </div>
-    </div>
-  </Card>
-);
+    </Card>
+  );
+};
 
 const ScoutingMapTab = ({
   onEditEvent,
