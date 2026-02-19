@@ -9173,6 +9173,7 @@ const ScoutingHubView = ({
             variant="default"
             className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 shadow-sm rounded-lg h-9 text-sm"
             onClick={() => {
+              setActiveTab("Open Calls");
               setEventToEdit(null);
               setIsEventModalOpen(true);
             }}
