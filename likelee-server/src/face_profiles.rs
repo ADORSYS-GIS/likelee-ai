@@ -189,6 +189,7 @@ pub async fn search_marketplace_profiles(
     let mut connected_creator_ids: HashSet<String> = HashSet::new();
     let mut connected_talent_ids: HashSet<String> = HashSet::new();
     let mut connected_talent_name_keys: HashSet<String> = HashSet::new();
+    let mut connected_talent_emails: HashSet<String> = HashSet::new();
     let mut effective_agency_id = user.id.clone();
 
     if user.role == "agency" {
@@ -246,7 +247,7 @@ pub async fn search_marketplace_profiles(
         let resp = state
             .pg
             .from("agency_users")
-            .select("id,creator_id,full_legal_name,stage_name")
+            .select("id,creator_id,full_legal_name,stage_name,email")
             .eq("agency_id", &effective_agency_id)
             .eq("status", "active")
             .execute()
@@ -283,6 +284,12 @@ pub async fn search_marketplace_profiles(
                 let key = stage_name.trim().to_lowercase();
                 if !key.is_empty() {
                     connected_talent_name_keys.insert(key);
+                }
+            }
+            if let Some(email) = row.get("email").and_then(|v| v.as_str()) {
+                let key = email.trim().to_lowercase();
+                if !key.is_empty() {
+                    connected_talent_emails.insert(key);
                 }
             }
         }
@@ -324,7 +331,7 @@ pub async fn search_marketplace_profiles(
         let mut request = state
             .pg
             .from("agency_users")
-            .select("id,agency_id,creator_id,full_legal_name,stage_name,city,state_province,country,bio_notes,profile_photo_url,special_skills,instagram_followers,engagement_rate,is_verified_talent,status,updated_at")
+            .select("id,agency_id,creator_id,full_legal_name,stage_name,email,city,state_province,country,bio_notes,profile_photo_url,special_skills,instagram_followers,engagement_rate,is_verified_talent,status,updated_at")
             .eq("role", "talent")
             .eq("status", "active")
             .eq("is_verified_talent", "true")
@@ -401,6 +408,11 @@ pub async fn search_marketplace_profiles(
         let talent_id = row.get("id").and_then(|v| v.as_str()).unwrap_or("");
         let agency_id = row.get("agency_id").and_then(|v| v.as_str()).unwrap_or("");
         let creator_id = row.get("creator_id").and_then(|v| v.as_str()).unwrap_or("");
+        let email_key = row
+            .get("email")
+            .and_then(|v| v.as_str())
+            .map(|s| s.trim().to_lowercase())
+            .unwrap_or_default();
         let display_name = row
             .get("stage_name")
             .and_then(|v| v.as_str())
@@ -439,7 +451,8 @@ pub async fn search_marketplace_profiles(
             || (!creator_id.is_empty() && connected_creator_ids.contains(creator_id))
             || (!agency_id.is_empty() && agency_id == effective_agency_id)
             || (!name_key_full.is_empty() && connected_talent_name_keys.contains(&name_key_full))
-            || (!name_key_stage.is_empty() && connected_talent_name_keys.contains(&name_key_stage));
+            || (!name_key_stage.is_empty() && connected_talent_name_keys.contains(&name_key_stage))
+            || (!email_key.is_empty() && connected_talent_emails.contains(&email_key));
 
         results.push(serde_json::json!({
             "id": row.get("id").cloned().unwrap_or(serde_json::Value::Null),
