@@ -1,5 +1,6 @@
 use crate::config::AppState;
 use crate::errors::sanitize_db_error;
+use crate::{auth::AuthUser, auth::RoleGuard};
 use axum::{
     extract::{Query, State},
     http::StatusCode,
@@ -42,6 +43,13 @@ pub struct SearchFacesQuery {
     pub height_max: Option<i32>,
     pub weight_min: Option<i32>,
     pub weight_max: Option<i32>,
+}
+
+#[derive(Deserialize)]
+pub struct MarketplaceSearchQuery {
+    pub query: Option<String>,
+    pub profile_type: Option<String>, // all | creator | talent
+    pub limit: Option<usize>,
 }
 
 pub async fn search_faces(
@@ -146,6 +154,213 @@ pub async fn search_faces(
     let rows: serde_json::Value = serde_json::from_str(&text).unwrap_or(serde_json::json!([]));
 
     Ok(Json(rows))
+}
+
+pub async fn search_marketplace_profiles(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Query(q): Query<MarketplaceSearchQuery>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    RoleGuard::new(vec!["agency", "brand"]).check(&user.role)?;
+
+    let mut limit = q.limit.unwrap_or(60);
+    if limit == 0 {
+        limit = 1;
+    }
+    if limit > 120 {
+        limit = 120;
+    }
+
+    let query_text = q
+        .query
+        .as_ref()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
+
+    let profile_type = q
+        .profile_type
+        .as_ref()
+        .map(|s| s.trim().to_lowercase())
+        .unwrap_or_else(|| "all".to_string());
+
+    let mut creators_rows: Vec<serde_json::Value> = Vec::new();
+    let mut talents_rows: Vec<serde_json::Value> = Vec::new();
+
+    if profile_type == "all" || profile_type == "creator" {
+        let mut request = state
+            .pg
+            .from("creators")
+            .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,updated_at")
+            .eq("role", "creator")
+            .eq("public_profile_visible", "true")
+            .eq("kyc_status", "approved")
+            .limit(limit);
+
+        if let Some(search) = query_text.as_ref() {
+            let search_val = format!("*{search}*");
+            request = request.or(format!(
+                "full_name.ilike.{search_val},tagline.ilike.{search_val},bio.ilike.{search_val},creator_type.ilike.{search_val}"
+            ));
+        }
+
+        let resp = request
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let status = resp.status();
+        let text = resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !status.is_success() {
+            return Err(sanitize_db_error(status.as_u16(), text));
+        }
+        creators_rows = serde_json::from_str(&text).unwrap_or_default();
+    }
+
+    if profile_type == "all" || profile_type == "talent" {
+        let mut request = state
+            .pg
+            .from("agency_users")
+            .select("id,full_legal_name,stage_name,city,state_province,country,bio_notes,profile_photo_url,special_skills,instagram_followers,engagement_rate,is_verified_talent,status,updated_at")
+            .eq("role", "talent")
+            .eq("status", "active")
+            .eq("is_verified_talent", "true")
+            .limit(limit);
+
+        if let Some(search) = query_text.as_ref() {
+            let search_val = format!("*{search}*");
+            request = request.or(format!(
+                "full_legal_name.ilike.{search_val},stage_name.ilike.{search_val},bio_notes.ilike.{search_val}"
+            ));
+        }
+
+        let resp = request
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let status = resp.status();
+        let text = resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !status.is_success() {
+            return Err(sanitize_db_error(status.as_u16(), text));
+        }
+        talents_rows = serde_json::from_str(&text).unwrap_or_default();
+    }
+
+    let mut results: Vec<serde_json::Value> = Vec::new();
+
+    for row in creators_rows {
+        let full_name = row
+            .get("full_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Unknown Creator")
+            .to_string();
+        let city = row.get("city").and_then(|v| v.as_str()).unwrap_or("");
+        let state = row.get("state").and_then(|v| v.as_str()).unwrap_or("");
+        let location = if city.is_empty() && state.is_empty() {
+            String::new()
+        } else if state.is_empty() {
+            city.to_string()
+        } else if city.is_empty() {
+            state.to_string()
+        } else {
+            format!("{city}, {state}")
+        };
+
+        results.push(serde_json::json!({
+            "id": row.get("id").cloned().unwrap_or(serde_json::Value::Null),
+            "profile_type": "creator",
+            "display_name": full_name,
+            "full_name": row.get("full_name").cloned().unwrap_or(serde_json::Value::Null),
+            "location": location,
+            "city": row.get("city").cloned().unwrap_or(serde_json::Value::Null),
+            "state": row.get("state").cloned().unwrap_or(serde_json::Value::Null),
+            "country": serde_json::Value::Null,
+            "tagline": row.get("tagline").cloned().unwrap_or(serde_json::Value::Null),
+            "bio": row.get("bio").cloned().unwrap_or(serde_json::Value::Null),
+            "profile_photo_url": row.get("profile_photo_url").cloned().unwrap_or(serde_json::Value::Null),
+            "creator_type": row.get("creator_type").cloned().unwrap_or(serde_json::Value::Null),
+            "skills": row.get("facial_features").cloned().unwrap_or(serde_json::json!([])),
+            "followers": serde_json::Value::Null,
+            "engagement_rate": serde_json::Value::Null,
+            "is_verified": true,
+            "verification_source": "kyc",
+            "kyc_status": row.get("kyc_status").cloned().unwrap_or(serde_json::Value::Null),
+            "updated_at": row.get("updated_at").cloned().unwrap_or(serde_json::Value::Null),
+        }));
+    }
+
+    for row in talents_rows {
+        let display_name = row
+            .get("stage_name")
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.trim().is_empty())
+            .or_else(|| row.get("full_legal_name").and_then(|v| v.as_str()))
+            .unwrap_or("Unknown Talent")
+            .to_string();
+        let city = row.get("city").and_then(|v| v.as_str()).unwrap_or("");
+        let state = row
+            .get("state_province")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let country = row.get("country").and_then(|v| v.as_str()).unwrap_or("");
+        let location = if city.is_empty() && state.is_empty() && country.is_empty() {
+            String::new()
+        } else {
+            [city, state, country]
+                .iter()
+                .filter(|s| !s.is_empty())
+                .cloned()
+                .collect::<Vec<_>>()
+                .join(", ")
+        };
+
+        results.push(serde_json::json!({
+            "id": row.get("id").cloned().unwrap_or(serde_json::Value::Null),
+            "profile_type": "talent",
+            "display_name": display_name,
+            "full_name": row.get("full_legal_name").cloned().unwrap_or(serde_json::Value::Null),
+            "stage_name": row.get("stage_name").cloned().unwrap_or(serde_json::Value::Null),
+            "location": location,
+            "city": row.get("city").cloned().unwrap_or(serde_json::Value::Null),
+            "state": row.get("state_province").cloned().unwrap_or(serde_json::Value::Null),
+            "country": row.get("country").cloned().unwrap_or(serde_json::Value::Null),
+            "tagline": serde_json::Value::Null,
+            "bio": row.get("bio_notes").cloned().unwrap_or(serde_json::Value::Null),
+            "profile_photo_url": row.get("profile_photo_url").cloned().unwrap_or(serde_json::Value::Null),
+            "creator_type": serde_json::Value::Null,
+            "skills": row.get("special_skills").cloned().unwrap_or(serde_json::json!([])),
+            "followers": row.get("instagram_followers").cloned().unwrap_or(serde_json::Value::Null),
+            "engagement_rate": row.get("engagement_rate").cloned().unwrap_or(serde_json::Value::Null),
+            "is_verified": true,
+            "verification_source": "agency",
+            "kyc_status": serde_json::Value::Null,
+            "updated_at": row.get("updated_at").cloned().unwrap_or(serde_json::Value::Null),
+        }));
+    }
+
+    results.sort_by(|a, b| {
+        let au = a
+            .get("updated_at")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let bu = b
+            .get("updated_at")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        bu.cmp(&au)
+    });
+
+    if results.len() > limit {
+        results.truncate(limit);
+    }
+
+    Ok(Json(serde_json::Value::Array(results)))
 }
 
 pub async fn create_face_profile(
