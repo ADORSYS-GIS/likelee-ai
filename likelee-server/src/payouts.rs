@@ -132,12 +132,40 @@ pub async fn create_onboarding_link(
         }
     };
     let text = prof_resp.text().await.unwrap_or("[]".into());
-    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let mut rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
     if rows.is_empty() {
-        return (
-            StatusCode::NOT_FOUND,
-            Json(json!({"status":"error","error":"profile_not_found"})),
-        );
+        // Auto-create a minimal creators row so any authenticated user can connect a creator bank account
+        let minimal_creator = json!({
+            "id": q.profile_id,
+            "payouts_enabled": false
+        });
+        let _ = state
+            .pg
+            .from("creators")
+            .auth(state.supabase_service_key.clone())
+            .insert(minimal_creator.to_string())
+            .execute()
+            .await;
+        // Re-fetch after insertion
+        if let Ok(r) = state
+            .pg
+            .from("creators")
+            .select("id,stripe_connect_account_id")
+            .eq("id", &q.profile_id)
+            .limit(1)
+            .execute()
+            .await
+        {
+            if let Ok(t) = r.text().await {
+                rows = serde_json::from_str(&t).unwrap_or_default();
+            }
+        }
+        if rows.is_empty() {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status":"error","error":"profile_create_failed"})),
+            );
+        }
     }
     let mut account_id = rows[0]
         .get("stripe_connect_account_id")
@@ -218,9 +246,7 @@ pub struct BalanceRow {
     pub creator_id: String,
     pub currency: String,
     pub available_cents: i64,
-    pub total_credits_cents: i64,
-    pub total_debits_cents: i64,
-    pub reserved_cents: i64,
+    pub earned_cents: i64,
 }
 
 pub async fn get_account_status(
@@ -261,12 +287,16 @@ pub async fn get_account_status(
     };
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
     if rows.is_empty() {
+        // No creators row yet — return a clean "not connected" state instead of an error
         return (
-            StatusCode::NOT_FOUND,
+            StatusCode::OK,
             Json(json!({
-                "status":"error",
-                "error":"profile_not_found",
-                "message":"No creator profile row found for this profile_id. Use the agency endpoints (/api/agency/payouts/*) for agency bank connection."
+                "connected": false,
+                "payouts_enabled": false,
+                "transfers_enabled": false,
+                "details_submitted": false,
+                "last_error": "",
+                "bank_last4": null
             })),
         );
     }
@@ -288,6 +318,7 @@ pub async fn get_account_status(
 
     // If connected, fetch live status from Stripe
     let mut transfers_enabled = false;
+    let mut details_submitted = false;
     let mut bank_last4: Option<String> = None;
     if connected {
         if let Some(acct_id) = row
@@ -301,6 +332,7 @@ pub async fn get_account_status(
                 {
                     Ok(acct) => {
                         payouts_enabled = payouts_enabled || acct.payouts_enabled.unwrap_or(false);
+                        details_submitted = acct.details_submitted.unwrap_or(false);
                         if let Some(ref caps) = acct.capabilities {
                             if let Some(tr) = caps.transfers {
                                 transfers_enabled = tr == stripe_sdk::CapabilityStatus::Active;
@@ -321,6 +353,7 @@ pub async fn get_account_status(
             "connected": connected,
             "payouts_enabled": payouts_enabled,
             "transfers_enabled": transfers_enabled,
+            "details_submitted": details_submitted,
             "last_error": last_error,
             "bank_last4": bank_last4
         })),
@@ -722,7 +755,7 @@ pub async fn get_balance(
     let resp = match state
         .pg
         .from("creator_balances")
-        .select("creator_id,currency,available_cents,total_credits_cents,total_debits_cents,reserved_cents")
+        .select("creator_id,currency,available_cents,earned_cents")
         .eq("creator_id", &q.profile_id)
         .execute()
         .await
@@ -1773,6 +1806,7 @@ async fn handle_payment_link_checkout_completed(
         &talent_splits,
         &currency,
         &payment_link_id,
+        &lr_ids,
     )
     .await
     {
@@ -1780,18 +1814,76 @@ async fn handle_payment_link_checkout_completed(
             info!(
                 payment_link_id = %payment_link_id,
                 agency_transfer = ?transfers.agency_transfer_id,
-                talent_transfers = transfers.talent_count,
-                "Stripe transfers created successfully"
+                talent_transfers = transfers.talent_transfer_ids.len(),
+                "Stripe transfers created and balances adjusted successfully"
             );
         }
         Err(e) => {
             error!(
                 payment_link_id = %payment_link_id,
                 error = %e,
-                "Failed to create Stripe transfers - balances updated but funds not transferred"
+                "Failed to create Stripe transfers or adjust balances"
             );
         }
     }
+
+    // Delete associated license_submissions and licensing_requests after successful payment.
+    // We do this best-effort so a deletion failure doesn't block the payment confirmation.
+    for lr_id in &lr_ids {
+        // First fetch the submission_id linked to this licensing request
+        if let Ok(sub_resp) = state
+            .pg
+            .from("licensing_requests")
+            .select("id,submission_id")
+            .eq("id", *lr_id)
+            .limit(1)
+            .execute()
+            .await
+        {
+            if sub_resp.status().is_success() {
+                let sub_text = sub_resp.text().await.unwrap_or_else(|_| "[]".into());
+                let sub_rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&sub_text).unwrap_or_default();
+                if let Some(row) = sub_rows.first() {
+                    if let Some(submission_id) =
+                        row.get("submission_id").and_then(|v| v.as_str())
+                    {
+                        // Delete the license_submission
+                        let _ = state
+                            .pg
+                            .from("license_submissions")
+                            .eq("id", submission_id)
+                            .delete()
+                            .execute()
+                            .await;
+                        info!(
+                            submission_id = %submission_id,
+                            "Deleted license_submission after payment"
+                        );
+                    }
+                }
+            }
+        }
+
+        // Delete the licensing_request itself
+        let _ = state
+            .pg
+            .from("licensing_requests")
+            .eq("id", *lr_id)
+            .delete()
+            .execute()
+            .await;
+        info!(
+            licensing_request_id = %lr_id,
+            "Deleted licensing_request after payment"
+        );
+    }
+
+    info!(
+        payment_link_id = %payment_link_id,
+        agency_id = %agency_id,
+        "Licensing requests and submissions deleted after payment"
+    );
 
     Ok(())
 }
@@ -1800,11 +1892,10 @@ async fn handle_payment_link_checkout_completed(
 // Payment Link Transfer Creation
 // ============================================================================
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct TransferResults {
     agency_transfer_id: Option<String>,
     talent_transfer_ids: Vec<String>,
-    talent_count: usize,
 }
 
 async fn create_payment_link_transfers(
@@ -1814,25 +1905,20 @@ async fn create_payment_link_transfers(
     talent_splits: &serde_json::Value,
     currency: &str,
     payment_link_id: &str,
+    _lr_ids: &[&str],
 ) -> Result<TransferResults, String> {
     let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
     let currency_enum = stripe_sdk::Currency::from_str(&currency.to_lowercase())
         .map_err(|_| "invalid_currency".to_string())?;
 
-    let mut results = TransferResults {
-        agency_transfer_id: None,
-        talent_transfer_ids: Vec::new(),
-        talent_count: 0,
-    };
+    let mut results = TransferResults::default();
 
     // 1. Transfer to agency connected account
     if agency_amount_cents > 0 {
         match get_agency_stripe_account(state, agency_id).await {
             Ok(agency_account_id) => {
-                let mut params = stripe_sdk::CreateTransfer::new(
-                    currency_enum,
-                    agency_account_id.clone(),
-                );
+                let mut params =
+                    stripe_sdk::CreateTransfer::new(currency_enum, agency_account_id.clone());
                 params.amount = Some(agency_amount_cents);
                 params.metadata = Some(std::collections::HashMap::from([
                     ("payment_link_id".to_string(), payment_link_id.to_string()),
@@ -1844,14 +1930,22 @@ async fn create_payment_link_transfers(
                     Ok(transfer) => {
                         results.agency_transfer_id = Some(transfer.id.to_string());
 
-                        // Update payment link with transfer ID
+                        // Record transfer in DB via RPC
                         let _ = state
                             .pg
-                            .from("agency_payment_links")
-                            .eq("id", payment_link_id)
-                            .update(
-                                json!({"agency_stripe_transfer_id": transfer.id.to_string()})
-                                    .to_string(),
+                            .rpc(
+                                "record_stripe_transfer",
+                                json!({
+                                    "p_payment_link_id": payment_link_id,
+                                    "p_recipient_type": "agency",
+                                    "p_recipient_id": agency_id,
+                                    "p_stripe_connect_account_id": agency_account_id,
+                                    "p_amount_cents": agency_amount_cents,
+                                    "p_currency": currency,
+                                    "p_stripe_transfer_id": transfer.id,
+                                    "p_status": "created"
+                                })
+                                .to_string(),
                             )
                             .execute()
                             .await;
@@ -1860,66 +1954,81 @@ async fn create_payment_link_transfers(
                             agency_id = %agency_id,
                             transfer_id = %transfer.id,
                             amount = agency_amount_cents,
-                            "Agency transfer created successfully"
+                            "Agency transfer recorded successfully"
                         );
                     }
                     Err(e) => {
-                        error!(
-                            agency_id = %agency_id,
-                            amount = agency_amount_cents,
-                            error = ?e,
-                            "Failed to create agency transfer"
-                        );
-                        return Err(format!("Agency transfer failed: {}", e));
+                        error!(agency_id = %agency_id, error = ?e, "Failed to create agency transfer");
+                        let _ = state
+                            .pg
+                            .rpc(
+                                "record_stripe_transfer",
+                                json!({
+                                    "p_payment_link_id": payment_link_id,
+                                    "p_recipient_type": "agency",
+                                    "p_recipient_id": agency_id,
+                                    "p_stripe_connect_account_id": agency_account_id,
+                                    "p_amount_cents": agency_amount_cents,
+                                    "p_currency": currency,
+                                    "p_status": "failed",
+                                    "p_failure_reason": format!("{:?}", e)
+                                })
+                                .to_string(),
+                            )
+                            .execute()
+                            .await;
                     }
                 }
             }
             Err(e) => {
-                error!(
-                    agency_id = %agency_id,
-                    error = %e,
-                    "Failed to get agency Stripe account"
-                );
-                return Err(format!("Agency account lookup failed: {}", e));
+                error!(agency_id = %agency_id, error = %e, "Agency has no connected Stripe account - skipping transfer");
             }
         }
     }
 
     // 2. Transfer to each talent connected account
     if let Some(splits) = talent_splits.as_array() {
-        results.talent_count = splits.len();
-
         for split in splits {
-            let talent_id = match split.get("talent_id").and_then(|v| v.as_str()) {
-                Some(id) => id,
-                None => {
-                    warn!("Missing talent_id in split: {:?}", split);
-                    continue;
-                }
-            };
-
-            let amount_cents = match split.get("amount_cents").and_then(|v| v.as_i64()) {
-                Some(amt) => amt,
-                None => {
-                    warn!(talent_id = %talent_id, "Missing amount_cents in split");
-                    continue;
-                }
-            };
+            let talent_id = split.get("talent_id").and_then(|v| v.as_str()).unwrap_or("");
+            let creator_id = split.get("creator_id").and_then(|v| v.as_str()).unwrap_or("");
+            let amount_cents = split.get("amount_cents").and_then(|v| v.as_i64()).unwrap_or(0);
 
             if amount_cents <= 0 {
                 continue;
             }
 
-            match get_creator_stripe_account(state, talent_id).await {
+            let talent_account_id_result = {
+                let stored = split
+                    .get("stripe_connect_account_id")
+                    .and_then(|v| v.as_str())
+                    .filter(|s| !s.is_empty())
+                    .map(|s| s.to_string());
+
+                if let Some(id) = stored {
+                    Ok(id)
+                } else {
+                    let resolved_creator_id_result = if !creator_id.is_empty() {
+                        Ok(creator_id.to_string())
+                    } else {
+                        get_creator_id_from_talent_id(state, talent_id).await
+                    };
+
+                    match resolved_creator_id_result {
+                        Ok(cid) => get_creator_stripe_account(state, &cid).await,
+                        Err(e) => Err(format!("Failed to resolve creator: {}", e)),
+                    }
+                }
+            };
+
+            match talent_account_id_result {
                 Ok(talent_account_id) => {
-                    let mut params = stripe_sdk::CreateTransfer::new(
-                        currency_enum,
-                        talent_account_id.clone(),
-                    );
+                    let mut params =
+                        stripe_sdk::CreateTransfer::new(currency_enum, talent_account_id.clone());
                     params.amount = Some(amount_cents);
                     params.metadata = Some(std::collections::HashMap::from([
                         ("payment_link_id".to_string(), payment_link_id.to_string()),
                         ("talent_id".to_string(), talent_id.to_string()),
+                        ("creator_id".to_string(), creator_id.to_string()),
                         ("type".to_string(), "talent_earnings".to_string()),
                     ]));
 
@@ -1927,31 +2036,59 @@ async fn create_payment_link_transfers(
                         Ok(transfer) => {
                             results.talent_transfer_ids.push(transfer.id.to_string());
 
+                            // Record transfer in DB via RPC
+                            let _ = state
+                                .pg
+                                .rpc(
+                                    "record_stripe_transfer",
+                                    json!({
+                                        "p_payment_link_id": payment_link_id,
+                                        "p_recipient_type": "creator",
+                                        "p_recipient_id": talent_id,
+                                        "p_stripe_connect_account_id": talent_account_id,
+                                        "p_amount_cents": amount_cents,
+                                        "p_currency": currency,
+                                        "p_stripe_transfer_id": transfer.id,
+                                        "p_status": "created"
+                                    })
+                                    .to_string(),
+                                )
+                                .execute()
+                                .await;
+
                             info!(
                                 talent_id = %talent_id,
+                                creator_id = %creator_id,
                                 transfer_id = %transfer.id,
                                 amount = amount_cents,
-                                "Talent transfer created successfully"
+                                "Talent transfer recorded successfully"
                             );
                         }
                         Err(e) => {
-                            error!(
-                                talent_id = %talent_id,
-                                amount = amount_cents,
-                                error = ?e,
-                                "Failed to create talent transfer - continuing with other talents"
-                            );
-                            // Continue with other talents even if one fails
+                            error!(talent_id = %talent_id, error = ?e, "Failed to create talent transfer");
+                            let _ = state
+                                .pg
+                                .rpc(
+                                    "record_stripe_transfer",
+                                    json!({
+                                        "p_payment_link_id": payment_link_id,
+                                        "p_recipient_type": "creator",
+                                        "p_recipient_id": talent_id,
+                                        "p_stripe_connect_account_id": talent_account_id,
+                                        "p_amount_cents": amount_cents,
+                                        "p_currency": currency,
+                                        "p_status": "failed",
+                                        "p_failure_reason": format!("{:?}", e)
+                                    })
+                                    .to_string(),
+                                )
+                                .execute()
+                                .await;
                         }
                     }
                 }
                 Err(e) => {
-                    error!(
-                        talent_id = %talent_id,
-                        error = %e,
-                        "Failed to get talent Stripe account - skipping transfer"
-                    );
-                    // Continue with other talents
+                    error!(talent_id = %talent_id, error = %e, "Skipping talent transfer");
                 }
             }
         }
@@ -1979,6 +2116,33 @@ async fn get_agency_stripe_account(state: &AppState, agency_id: &str) -> Result<
         .filter(|s| !s.is_empty())
         .map(|s| s.to_string())
         .ok_or_else(|| "Agency has no connected Stripe account".to_string())
+}
+
+/// Resolve the `creator_id` for a talent ID (agency_users.id).
+async fn get_creator_id_from_talent_id(
+    state: &AppState,
+    talent_id: &str,
+) -> Result<String, String> {
+    let resp = state
+        .pg
+        .from("agency_users")
+        .select("creator_id")
+        .eq("id", talent_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let text = resp.text().await.map_err(|e| e.to_string())?;
+    
+    // Check if the response is actually an object (single() returns an object, not array)
+    let row: serde_json::Value = serde_json::from_str(&text).map_err(|e| e.to_string())?;
+
+    row.get("creator_id")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
+        .ok_or_else(|| format!("Talent {} has no creator profile", talent_id))
 }
 
 async fn get_creator_stripe_account(state: &AppState, creator_id: &str) -> Result<String, String> {
@@ -2424,6 +2588,7 @@ pub async fn get_agency_balance(
         Json(json!({
             "available_balance": {
                 "amount_cents": balance_row.get("available_cents").and_then(|v| v.as_i64()).unwrap_or(0),
+                "earned_cents": balance_row.get("earned_cents").and_then(|v| v.as_i64()).unwrap_or(0),
                 "currency": currency.clone()
             }
         })),

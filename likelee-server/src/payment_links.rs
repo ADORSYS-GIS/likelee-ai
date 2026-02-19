@@ -431,17 +431,18 @@ pub async fn generate_payment_link(
     if !talent_ids.is_empty() {
         let t_refs: Vec<&str> = talent_ids.iter().map(|s| s.as_str()).collect();
 
-        // Fetch agency_users (talents)
+        // Fetch agency_users (talents) — include cached performance_tier_name
         let au_resp = state
             .pg
             .from("agency_users")
-            .select("id,creator_id,full_legal_name,stage_name")
+            .select("id,creator_id,full_legal_name,stage_name,performance_tier_name")
             .in_("id", t_refs)
             .execute()
             .await;
 
         let mut talent_name_map: HashMap<String, String> = HashMap::new();
         let mut talent_creator_map: HashMap<String, String> = HashMap::new();
+        let mut talent_tier_name_map: HashMap<String, String> = HashMap::new();
 
         if let Ok(au_resp) = au_resp {
             if au_resp.status().is_success() {
@@ -466,6 +467,10 @@ pub async fn generate_payment_link(
 
                     if let Some(cid) = r.get("creator_id").and_then(|v| v.as_str()) {
                         talent_creator_map.insert(id.to_string(), cid.to_string());
+                    }
+
+                    if let Some(tn) = r.get("performance_tier_name").and_then(|v| v.as_str()) {
+                        talent_tier_name_map.insert(id.to_string(), tn.to_string());
                     }
                 }
             }
@@ -504,6 +509,37 @@ pub async fn generate_payment_link(
             }
         }
 
+        // Fetch payout_percent per tier name from performance_tiers table
+        let tier_names: Vec<String> = talent_tier_name_map.values().cloned().collect();
+        let mut tier_payout_percent_map: HashMap<String, f64> = HashMap::new();
+        if !tier_names.is_empty() {
+            let tn_refs: Vec<&str> = tier_names.iter().map(|s| s.as_str()).collect();
+            let pt_resp = state
+                .pg
+                .from("performance_tiers")
+                .select("tier_name,payout_percent")
+                .in_("tier_name", tn_refs)
+                .execute()
+                .await;
+            if let Ok(pt_resp) = pt_resp {
+                if pt_resp.status().is_success() {
+                    let pt_text = pt_resp.text().await.unwrap_or_else(|_| "[]".into());
+                    let pt_rows: Vec<serde_json::Value> =
+                        serde_json::from_str(&pt_text).unwrap_or_default();
+                    for r in &pt_rows {
+                        let tn = r.get("tier_name").and_then(|v| v.as_str()).unwrap_or("");
+                        let pct = r
+                            .get("payout_percent")
+                            .and_then(|v| v.as_f64())
+                            .unwrap_or(25.0);
+                        if !tn.is_empty() {
+                            tier_payout_percent_map.insert(tn.to_string(), pct);
+                        }
+                    }
+                }
+            }
+        }
+
         // Check that all talents have Stripe Connect accounts
         let mut missing_stripe: Vec<String> = vec![];
         for (talent_id, creator_id) in &talent_creator_map {
@@ -526,25 +562,40 @@ pub async fn generate_payment_link(
             ));
         }
 
-        // Build talent splits
-        // Distribute talent_amount_cents proportionally based on talent_earnings_cents from campaigns
-        let total_campaign_talent_cents: i64 = talent_earnings_map.values().sum();
+        // Build talent splits weighted by performance tier payout_percent
+        // Each talent gets (their tier payout_percent / total payout_percent of all talents) * talent_amount_cents
+        let total_payout_weight: f64 = talent_ids.iter().map(|tid| {
+            let tier_name = talent_tier_name_map.get(tid).map(|s| s.as_str()).unwrap_or("Inactive");
+            tier_payout_percent_map.get(tier_name).copied().unwrap_or(25.0)
+        }).sum::<f64>();
 
-        for talent_id in &talent_ids {
+        let mut distributed_cents: i64 = 0;
+
+        for (i, talent_id) in talent_ids.iter().enumerate() {
             let talent_name = talent_name_map
                 .get(talent_id)
                 .cloned()
                 .unwrap_or_else(|| "Unknown".to_string());
 
-            // Calculate proportional amount
-            let proportion = if total_campaign_talent_cents > 0 {
-                let individual = talent_earnings_map.get(talent_id).copied().unwrap_or(0);
-                individual as f64 / total_campaign_talent_cents as f64
+            let tier_name = talent_tier_name_map
+                .get(talent_id)
+                .map(|s| s.as_str())
+                .unwrap_or("Inactive");
+            let payout_pct = tier_payout_percent_map
+                .get(tier_name)
+                .copied()
+                .unwrap_or(25.0);
+
+            // Proportional share; give remainder to last talent to avoid rounding loss
+            let amount_cents = if i == talent_ids.len() - 1 {
+                talent_amount_cents - distributed_cents
+            } else if total_payout_weight > 0.0 {
+                (talent_amount_cents as f64 * (payout_pct / total_payout_weight)).round() as i64
             } else {
-                1.0 / talent_ids.len() as f64
+                (talent_amount_cents as f64 / talent_ids.len() as f64).round() as i64
             };
 
-            let amount_cents = (talent_amount_cents as f64 * proportion).round() as i64;
+            distributed_cents += amount_cents;
 
             talent_splits.push(TalentSplit {
                 talent_id: talent_id.clone(),
@@ -567,6 +618,8 @@ pub async fn generate_payment_link(
                 "creator_id": creator_id,
                 "amount_cents": amount_cents,
                 "stripe_connect_account_id": stripe_account_id,
+                "tier_name": tier_name,
+                "payout_percent": payout_pct,
             }));
         }
     }

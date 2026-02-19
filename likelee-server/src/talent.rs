@@ -926,9 +926,10 @@ pub async fn list_licensing_requests(
     let resp = state
         .pg
         .from("licensing_requests")
-        .select("id,brand_id,talent_id,status,created_at,campaign_title,usage_scope,regions,deadline,license_start_date,license_end_date,license_submissions!licensing_requests_submission_id_fkey(license_fee)")
+        .select("id,brand_id,talent_id,status,created_at,campaign_title,usage_scope,regions,deadline,license_start_date,license_end_date,archived_at,license_submissions!licensing_requests_submission_id_fkey(license_fee)")
         .eq("agency_id", &resolved.agency_id)
         .eq("talent_id", &resolved.talent_id)
+        .is("archived_at", "null")  // Only show non-archived records
         .order("created_at.desc")
         .limit(250)
         .execute()
@@ -1990,13 +1991,14 @@ pub async fn get_analytics(
             * 100.0
     };
 
-    // Active campaigns derived from licensing_requests
+    // Active campaigns derived from licensing_requests (excluding archived)
     let lr_resp = state
         .pg
         .from("licensing_requests")
         .select("id,status")
         .eq("agency_id", &resolved.agency_id)
         .eq("talent_id", &resolved.talent_id)
+        .is("archived_at", "null")  // Only count non-archived records
         .limit(500)
         .execute()
         .await

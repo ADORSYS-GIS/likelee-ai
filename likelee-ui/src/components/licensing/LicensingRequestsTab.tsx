@@ -7,6 +7,10 @@ import {
   RefreshCw,
   FileText,
   Search,
+  Link,
+  Send,
+  Copy,
+  CheckCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -28,6 +32,7 @@ import {
   updateAgencyLicensingRequestsStatus,
   getAgencyLicensingRequestsPaySplit,
   setAgencyLicensingRequestsPaySplit,
+  sendLicensingRequestPaymentLink,
 } from "@/api/functions";
 
 export const LicensingRequestsTab = () => {
@@ -47,6 +52,10 @@ export const LicensingRequestsTab = () => {
   const [selectedGroup, setSelectedGroup] = useState<any | null>(null);
   const [totalPaymentAmount, setTotalPaymentAmount] = useState<string>("");
   const [agencyPercent, setAgencyPercent] = useState<string>("");
+
+  const [sendingPaymentLink, setSendingPaymentLink] = useState<Record<string, boolean>>({});
+  const [paymentLinkUrls, setPaymentLinkUrls] = useState<Record<string, string>>({});
+  const [copiedGroupKey, setCopiedGroupKey] = useState<string | null>(null);
 
   const [counterOfferModalOpen, setCounterOfferModalOpen] = useState(false);
   const [counterOfferMessage, setCounterOfferMessage] = useState("");
@@ -76,9 +85,9 @@ export const LicensingRequestsTab = () => {
   const formatMoney = (n: number) =>
     Number.isFinite(n)
       ? n.toLocaleString(undefined, {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
       : "--";
 
   const statusStyle = (status: string) => {
@@ -169,8 +178,51 @@ export const LicensingRequestsTab = () => {
     }
   };
 
+  const handleSendPaymentLink = async (group: any) => {
+    const firstTalent = (group?.talents || [])[0];
+    const licensingRequestId = firstTalent?.licensing_request_id;
+    if (!licensingRequestId) {
+      toast({ title: "No licensing request ID found", variant: "destructive" as any });
+      return;
+    }
+
+    setSendingPaymentLink((prev) => ({ ...prev, [group.group_key]: true }));
+    try {
+      const resp = await sendLicensingRequestPaymentLink(licensingRequestId);
+      const url = (resp as any)?.payment_link_url;
+      const emailSent = (resp as any)?.email_sent;
+      if (url) {
+        setPaymentLinkUrls((prev) => ({ ...prev, [group.group_key]: url }));
+      }
+      await queryClient.invalidateQueries({
+        queryKey: ["agency", "licensing-requests"],
+      });
+      toast({
+        title: "Payment link sent!",
+        description: emailSent
+          ? "The payment link has been emailed to the client."
+          : "Payment link generated. No client email found — please share the link manually.",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Failed to send payment link",
+        description: e?.message || "Could not generate payment link",
+        variant: "destructive" as any,
+      });
+    } finally {
+      setSendingPaymentLink((prev) => ({ ...prev, [group.group_key]: false }));
+    }
+  };
+
+  const copyToClipboard = (text: string, groupKey: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedGroupKey(groupKey);
+      setTimeout(() => setCopiedGroupKey(null), 2000);
+    });
+  };
+
   const filteredData = (data || []).filter((group: any) => {
-    const isArchived = ["rejected", "declined", "archived"].includes(
+    const isArchived = ["rejected", "declined", "archived", "approved"].includes(
       group.status,
     );
     return activeRequestTab === "Active" ? !isArchived : isArchived;
@@ -362,21 +414,43 @@ export const LicensingRequestsTab = () => {
               </div>
 
               {group.status === "approved" ? (
-                <div>
-                  <Button
-                    onClick={() => openPayModal(group)}
-                    className={`w-full font-bold h-10 rounded-md flex items-center justify-center gap-2 ${group.pay_set ? "bg-white text-gray-900 border border-gray-300 hover:bg-gray-50" : "bg-indigo-500 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-200 animate-pulse"}`}
-                  >
-                    {group.pay_set ? (
-                      <>
-                        <Eye className="w-4 h-4" /> View Pay
-                      </>
-                    ) : (
-                      <>
-                        <DollarSign className="w-4 h-4" /> Set Pay
-                      </>
-                    )}
-                  </Button>
+                <div className="space-y-3">
+                  {paymentLinkUrls[group.group_key] ? (
+                    <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md">
+                      <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                      <a
+                        href={paymentLinkUrls[group.group_key]}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-green-700 font-medium truncate flex-1 hover:underline"
+                      >
+                        {paymentLinkUrls[group.group_key]}
+                      </a>
+                      <button
+                        onClick={() => copyToClipboard(paymentLinkUrls[group.group_key], group.group_key)}
+                        className="flex-shrink-0 text-green-600 hover:text-green-800"
+                        title="Copy link"
+                      >
+                        {copiedGroupKey === group.group_key ? (
+                          <CheckCircle className="w-4 h-4" />
+                        ) : (
+                          <Copy className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={() => handleSendPaymentLink(group)}
+                      disabled={sendingPaymentLink[group.group_key]}
+                      className="w-full font-bold h-10 rounded-md flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white shadow-lg shadow-indigo-200"
+                    >
+                      {sendingPaymentLink[group.group_key] ? (
+                        <><RefreshCw className="w-4 h-4 animate-spin" /> Generating...</>
+                      ) : (
+                        <><Send className="w-4 h-4" /> Send Payment Link</>
+                      )}
+                    </Button>
+                  )}
                 </div>
               ) : activeRequestTab === "Archive" ? (
                 <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
@@ -392,13 +466,15 @@ export const LicensingRequestsTab = () => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Button
-                    onClick={() => updateGroupStatus(group, "approved")}
-                    className="bg-green-600 hover:bg-green-700 text-white font-bold h-10 rounded-md flex items-center justify-center gap-2"
+                    onClick={() => handleSendPaymentLink(group)}
+                    disabled={sendingPaymentLink[group.group_key]}
+                    className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-10 rounded-md flex items-center justify-center gap-2"
                   >
-                    <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
-                      <span className="text-[10px]">✓</span>
-                    </div>
-                    Approve
+                    {sendingPaymentLink[group.group_key] ? (
+                      <><RefreshCw className="w-4 h-4 animate-spin" /> Sending...</>
+                    ) : (
+                      <><Send className="w-4 h-4" /> Send Payment Link</>
+                    )}
                   </Button>
                   <Button
                     variant="outline"

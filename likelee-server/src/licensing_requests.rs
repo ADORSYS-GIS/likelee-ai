@@ -1,6 +1,6 @@
 use crate::{auth::AuthUser, config::AppState};
 use axum::{
-    extract::{Query, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     Json,
 };
@@ -120,11 +120,13 @@ pub async fn list_for_agency(
     }
 
     // Optimization: Single query with resource embedding to fetch everything at once
+    // Filter out archived records (archived_at IS NULL means not archived)
     let resp = state
         .pg
         .from("licensing_requests")
-        .select("id,brand_id,talent_id,status,created_at,campaign_title,client_name,talent_name,budget_min,budget_max,usage_scope,regions,deadline,license_start_date,license_end_date,notes,negotiation_reason,submission_id,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name),agency_users(full_legal_name,stage_name),campaigns(id,payment_amount,agency_percent,talent_percent,agency_earnings_cents,talent_earnings_cents)")
+        .select("id,brand_id,talent_id,status,created_at,campaign_title,client_name,talent_name,usage_scope,regions,deadline,license_start_date,license_end_date,notes,negotiation_reason,submission_id,archived_at,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name,license_fee),agency_users(full_legal_name,stage_name),campaigns(id,payment_amount,agency_percent,talent_percent,agency_earnings_cents,talent_earnings_cents)")
         .eq("agency_id", &user.id)
+        .is("archived_at", "null")  // Only show non-archived records
         .order("created_at.desc")
         .limit(250)
         .execute()
@@ -998,4 +1000,593 @@ pub async fn create(
     }
 
     Ok(Json(json!({ "id": request_id, "ok": true })))
+}
+
+// ============================================================================
+// Send Payment Link (approve + generate Stripe link + email client)
+// ============================================================================
+
+#[derive(serde::Serialize)]
+pub struct SendPaymentLinkResponse {
+    pub payment_link_url: String,
+    pub payment_link_id: String,
+    pub total_amount_cents: i64,
+    pub platform_fee_cents: i64,
+    pub agency_amount_cents: i64,
+    pub talent_amount_cents: i64,
+    pub client_email: Option<String>,
+    pub email_sent: bool,
+}
+
+pub async fn send_payment_link(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(id): Path<String>,
+) -> Result<Json<SendPaymentLinkResponse>, (StatusCode, String)> {
+    use crate::entitlements::{get_agency_plan_tier, PlanTier};
+    use chrono::Duration;
+    use std::str::FromStr;
+    use tracing::{error, warn};
+
+    if user.role != "agency" {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+
+    // 1. Fetch the licensing request (must belong to this agency)
+    let lr_resp = state
+        .pg
+        .from("licensing_requests")
+        .select("id,agency_id,brand_id,talent_id,talent_ids,status,campaign_title,client_name,talent_name,submission_id,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name,license_fee),agency_users(full_legal_name,stage_name,creator_id),campaigns(id,payment_amount,agency_percent,talent_percent,agency_earnings_cents,talent_earnings_cents)")
+        .eq("id", &id)
+        .eq("agency_id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !lr_resp.status().is_success() {
+        let err = lr_resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+
+    let lr_text = lr_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let lr_rows: Vec<serde_json::Value> = serde_json::from_str(&lr_text).unwrap_or_default();
+    let lr = lr_rows
+        .into_iter()
+        .next()
+        .ok_or_else(|| (StatusCode::NOT_FOUND, "Licensing request not found".to_string()))?;
+
+    // 2. Auto-approve the request
+    let update_body = json!({
+        "status": "approved",
+        "decided_at": Utc::now().to_rfc3339(),
+    });
+    let upd_resp = state
+        .pg
+        .from("licensing_requests")
+        .eq("id", &id)
+        .eq("agency_id", &user.id)
+        .update(update_body.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !upd_resp.status().is_success() {
+        let err = upd_resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to approve request: {}", err)));
+    }
+
+    // 3. Resolve license fee (from license_submissions join)
+    let license_submission = lr.get("license_submissions");
+    let total_cents: i64 = license_submission
+        .and_then(|ls| ls.get("license_fee"))
+        .and_then(|v| {
+            v.as_i64()
+                .or_else(|| v.as_f64().map(|f| f.round() as i64))
+                .or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok()))
+        })
+        .unwrap_or(0);
+
+    if total_cents <= 0 {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "License fee is not set or is zero. Please complete the license submission first.".to_string(),
+        ));
+    }
+
+    // 4. Resolve agency Stripe Connect account
+    let agency_acct_resp = state
+        .pg
+        .from("agencies")
+        .select("stripe_connect_account_id")
+        .eq("id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let agency_acct_text = agency_acct_resp.text().await.unwrap_or_default();
+    let agency_rows: Vec<serde_json::Value> = serde_json::from_str(&agency_acct_text).unwrap_or_default();
+    let agency_stripe_account_id = agency_rows
+        .first()
+        .and_then(|r| r.get("stripe_connect_account_id").and_then(|v| v.as_str()))
+        .unwrap_or("")
+        .trim()
+        .to_string();
+
+    if agency_stripe_account_id.is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "Agency must connect a Stripe account before sending a payment link".to_string(),
+        ));
+    }
+
+    // 5. Platform fee based on subscription plan
+    let tier = get_agency_plan_tier(&state, &user.id).await?;
+    let fee_pct: f64 = match tier {
+        PlanTier::Free => 0.08,
+        PlanTier::Basic => 0.05,
+        PlanTier::Pro => 0.03,
+        PlanTier::Enterprise => 0.03,
+    };
+    let platform_fee_cents = ((total_cents as f64) * fee_pct).round() as i64;
+    let net_amount_cents = (total_cents - platform_fee_cents).max(0);
+
+    if net_amount_cents <= 0 {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "Net amount after platform fee must be positive".to_string(),
+        ));
+    }
+
+    // 6. Resolve pay split from campaigns
+    let campaign = lr.get("campaigns");
+    let agency_percent = campaign
+        .and_then(|c| c.get("agency_percent"))
+        .and_then(|v| v.as_f64())
+        .unwrap_or(20.0);
+    let talent_percent = 100.0 - agency_percent;
+    let agency_amount_cents = ((net_amount_cents as f64) * (agency_percent / 100.0)).round() as i64;
+    let talent_amount_cents = net_amount_cents - agency_amount_cents;
+
+    let campaign_id = campaign
+        .and_then(|c| c.get("id"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+
+    // 7. Resolve client info
+    let client_email = license_submission
+        .and_then(|ls| ls.get("client_email"))
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.trim().is_empty())
+        .map(|s| s.to_string())
+        .or_else(|| {
+            lr.get("brands")
+                .and_then(|b| b.get("email"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        });
+
+    let client_name = license_submission
+        .and_then(|ls| ls.get("client_name"))
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.trim().is_empty())
+        .map(|s| s.to_string())
+        .or_else(|| {
+            lr.get("brands")
+                .and_then(|b| b.get("company_name"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        });
+
+    if client_email.is_none() {
+        warn!(
+            agency_id = %user.id,
+            licensing_request_id = %id,
+            "No client email found for payment link - email sending will be skipped"
+        );
+    }
+
+    // 8. Build talent splits JSON for storage
+    // Collect all talent IDs: prefer talent_ids array, fall back to single talent_id
+    let mut all_talent_ids: Vec<String> = lr
+        .get("talent_ids")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                .collect()
+        })
+        .unwrap_or_default();
+
+    if all_talent_ids.is_empty() {
+        // Fall back to the single talent_id
+        let single = lr
+            .get("talent_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        if !single.is_empty() {
+            all_talent_ids.push(single);
+        }
+    }
+
+    all_talent_ids.sort();
+    all_talent_ids.dedup();
+
+    // Fetch agency_users details (name + creator_id + performance_tier_name) for all talent IDs
+    let t_refs: Vec<&str> = all_talent_ids.iter().map(|s| s.as_str()).collect();
+    let mut talent_name_map: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+    let mut talent_creator_map: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+    let mut talent_tier_name_map: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+
+    if !t_refs.is_empty() {
+        let au_resp = state
+            .pg
+            .from("agency_users")
+            .select("id,creator_id,full_legal_name,stage_name,performance_tier_name")
+            .in_("id", t_refs)
+            .execute()
+            .await;
+        if let Ok(au_resp) = au_resp {
+            if au_resp.status().is_success() {
+                let au_text = au_resp.text().await.unwrap_or_else(|_| "[]".into());
+                let au_rows: Vec<serde_json::Value> = serde_json::from_str(&au_text).unwrap_or_default();
+                for r in &au_rows {
+                    let tid = r.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                    if tid.is_empty() {
+                        continue;
+                    }
+                    let name = r
+                        .get("full_legal_name")
+                        .or_else(|| r.get("stage_name"))
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("Unknown")
+                        .to_string();
+                    talent_name_map.insert(tid.clone(), name);
+                    if let Some(cid) = r.get("creator_id").and_then(|v| v.as_str()) {
+                        talent_creator_map.insert(tid.clone(), cid.to_string());
+                    }
+                    if let Some(tn) = r.get("performance_tier_name").and_then(|v| v.as_str()) {
+                        talent_tier_name_map.insert(tid, tn.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    // If map is still empty (e.g. talent_ids populated but AU lookup failed), fall back to embedded agency_users join
+    if talent_name_map.is_empty() && all_talent_ids.len() == 1 {
+        let tid = all_talent_ids[0].clone();
+        let name = lr
+            .get("agency_users")
+            .and_then(|au| au.get("full_legal_name").or_else(|| au.get("stage_name")))
+            .and_then(|v| v.as_str())
+            .unwrap_or("Unknown")
+            .to_string();
+        let cid = lr
+            .get("agency_users")
+            .and_then(|au| au.get("creator_id"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let tn = lr
+            .get("agency_users")
+            .and_then(|au| au.get("performance_tier_name"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+
+        talent_name_map.insert(tid.clone(), name);
+        if !cid.is_empty() {
+            talent_creator_map.insert(tid.clone(), cid);
+        }
+        if !tn.is_empty() {
+            talent_tier_name_map.insert(tid, tn);
+        }
+    }
+
+    // Fetch creator Stripe Connect account IDs
+    let creator_ids_vec: Vec<String> = talent_creator_map.values().cloned().collect();
+    let cr_refs: Vec<&str> = creator_ids_vec.iter().map(|s| s.as_str()).collect();
+    let mut stripe_account_map: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+
+    if !cr_refs.is_empty() {
+        let cr_resp = state
+            .pg
+            .from("creators")
+            .select("id,stripe_connect_account_id")
+            .in_("id", cr_refs)
+            .execute()
+            .await;
+        if let Ok(cr_resp) = cr_resp {
+            if cr_resp.status().is_success() {
+                let cr_text = cr_resp.text().await.unwrap_or_else(|_| "[]".into());
+                let cr_rows: Vec<serde_json::Value> = serde_json::from_str(&cr_text).unwrap_or_default();
+                for r in &cr_rows {
+                    let cid = r.get("id").and_then(|v| v.as_str()).unwrap_or("");
+                    let acct = r
+                        .get("stripe_connect_account_id")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    if !cid.is_empty() && !acct.is_empty() {
+                        stripe_account_map.insert(cid.to_string(), acct.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    // Check that all talents have connected their creator profiles and Stripe Connect accounts
+    let mut missing_stripe: Vec<String> = vec![];
+    for tid in &all_talent_ids {
+        let name = talent_name_map.get(tid).cloned().unwrap_or_else(|| "Unknown".to_string());
+        let cid = talent_creator_map.get(tid).cloned().unwrap_or_default();
+        if cid.is_empty() {
+            missing_stripe.push(format!("{} (No creator profile linked)", name));
+            continue;
+        }
+        if !stripe_account_map.contains_key(&cid) {
+            missing_stripe.push(format!("{} (No Stripe account connected)", name));
+        }
+    }
+
+    if !missing_stripe.is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!(
+                "The following talents must connect their creator profile and Stripe account before a payment link can be generated: {}",
+                missing_stripe.join(", ")
+            ),
+        ));
+    }
+
+    // Fetch payout_percent per tier name from performance_tiers table
+    let tier_names: Vec<String> = talent_tier_name_map.values().cloned().collect();
+    let mut tier_payout_percent_map: std::collections::HashMap<String, f64> = std::collections::HashMap::new();
+    if !tier_names.is_empty() {
+        let tn_refs: Vec<&str> = tier_names.iter().map(|s| s.as_str()).collect();
+        let pt_resp = state
+            .pg
+            .from("performance_tiers")
+            .select("tier_name,payout_percent")
+            .in_("tier_name", tn_refs)
+            .execute()
+            .await;
+        if let Ok(pt_resp) = pt_resp {
+            if pt_resp.status().is_success() {
+                let pt_text = pt_resp.text().await.unwrap_or_else(|_| "[]".into());
+                let pt_rows: Vec<serde_json::Value> = serde_json::from_str(&pt_text).unwrap_or_default();
+                for r in &pt_rows {
+                    let tn = r.get("tier_name").and_then(|v| v.as_str()).unwrap_or("");
+                    let pct = r.get("payout_percent").and_then(|v| v.as_f64()).unwrap_or(25.0);
+                    if !tn.is_empty() {
+                        tier_payout_percent_map.insert(tn.to_string(), pct);
+                    }
+                }
+            }
+        }
+    }
+
+    // Build talent splits weighted by performance tier payout_percent
+    // Each talent gets (their tier payout_percent / total payout_percent of all talents) * talent_amount_cents
+    let total_payout_weight: f64 = all_talent_ids.iter().map(|tid| {
+        let tier_name = talent_tier_name_map.get(tid).map(|s| s.as_str()).unwrap_or("Inactive");
+        tier_payout_percent_map.get(tier_name).copied().unwrap_or(25.0)
+    }).sum::<f64>();
+
+    let mut talent_splits_json: Vec<serde_json::Value> = Vec::new();
+    let mut distributed_cents: i64 = 0;
+
+    for (i, tid) in all_talent_ids.iter().enumerate() {
+        let name = talent_name_map
+            .get(tid)
+            .cloned()
+            .unwrap_or_else(|| "Unknown".to_string());
+        let cid = talent_creator_map.get(tid).cloned().unwrap_or_default();
+        let stripe_acct = stripe_account_map.get(&cid).cloned().unwrap_or_default();
+        
+        let tier_name = talent_tier_name_map.get(tid).map(|s| s.as_str()).unwrap_or("Inactive");
+        let payout_pct = tier_payout_percent_map.get(tier_name).copied().unwrap_or(25.0);
+
+        let amount = if i == all_talent_ids.len() - 1 {
+            talent_amount_cents - distributed_cents
+        } else if total_payout_weight > 0.0 {
+            (talent_amount_cents as f64 * (payout_pct / total_payout_weight)).round() as i64
+        } else {
+            (talent_amount_cents as f64 / all_talent_ids.len() as f64).round() as i64
+        };
+        
+        distributed_cents += amount;
+
+        talent_splits_json.push(json!({
+            "talent_id": tid,
+            "talent_name": name,
+            "creator_id": cid,
+            "amount_cents": amount,
+            "stripe_connect_account_id": stripe_acct,
+            "tier_name": tier_name,
+            "payout_percent": payout_pct,
+        }));
+    }
+
+    // Ensure at least one entry so downstream code always has splits
+    if talent_splits_json.is_empty() {
+        talent_splits_json.push(json!({
+            "talent_id": "",
+            "talent_name": "Unknown",
+            "creator_id": "",
+            "amount_cents": talent_amount_cents,
+            "stripe_connect_account_id": "",
+        }));
+    }
+
+    // 9. Create Stripe product + price + payment link
+    let stripe_client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+    let currency = "USD";
+    let expires_in_hours = 168i64; // 7 days
+
+    let product_name = format!(
+        "License - {}",
+        lr.get("campaign_title")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Campaign")
+    );
+    let product_params = stripe_sdk::CreateProduct::new(&product_name);
+    let product = stripe_sdk::Product::create(&stripe_client, product_params)
+        .await
+        .map_err(|e| {
+            error!("Failed to create Stripe product: {}", e);
+            (StatusCode::BAD_GATEWAY, format!("Stripe product creation failed: {}", e))
+        })?;
+
+    let currency_enum = stripe_sdk::Currency::from_str(&currency.to_lowercase())
+        .map_err(|_| (StatusCode::BAD_REQUEST, format!("Invalid currency: {}", currency)))?;
+
+    let mut price_params = stripe_sdk::CreatePrice::new(currency_enum);
+    let product_id_str = product.id.to_string();
+    price_params.product = Some(stripe_sdk::IdOrCreate::Id(&product_id_str));
+    price_params.unit_amount = Some(total_cents);
+    let price = stripe_sdk::Price::create(&stripe_client, price_params)
+        .await
+        .map_err(|e| {
+            error!("Failed to create Stripe price: {}", e);
+            (StatusCode::BAD_GATEWAY, format!("Stripe price creation failed: {}", e))
+        })?;
+
+    let line_items = vec![stripe_sdk::CreatePaymentLinkLineItems {
+        price: price.id.to_string(),
+        quantity: 1,
+        ..Default::default()
+    }];
+
+    let expires_at = Utc::now() + Duration::hours(expires_in_hours);
+
+    let mut metadata = std::collections::HashMap::new();
+    metadata.insert("agency_id".to_string(), user.id.clone());
+    metadata.insert("licensing_request_ids".to_string(), id.clone());
+    metadata.insert("campaign_id".to_string(), campaign_id.clone().unwrap_or_default());
+    metadata.insert("platform_fee_cents".to_string(), platform_fee_cents.to_string());
+    metadata.insert("net_amount_cents".to_string(), net_amount_cents.to_string());
+    metadata.insert("plan_tier".to_string(), match tier {
+        PlanTier::Free => "free",
+        PlanTier::Basic => "basic",
+        PlanTier::Pro => "pro",
+        PlanTier::Enterprise => "enterprise",
+    }.to_string());
+    metadata.insert("agency_amount_cents".to_string(), agency_amount_cents.to_string());
+    metadata.insert("talent_amount_cents".to_string(), talent_amount_cents.to_string());
+    metadata.insert("currency".to_string(), currency.to_string());
+
+    let mut link_params = stripe_sdk::CreatePaymentLink::new(line_items);
+    link_params.metadata = Some(metadata);
+    let payment_link = stripe_sdk::PaymentLink::create(&stripe_client, link_params)
+        .await
+        .map_err(|e| {
+            error!("Failed to create Stripe payment link: {}", e);
+            (StatusCode::BAD_GATEWAY, format!("Stripe payment link creation failed: {}", e))
+        })?;
+
+    let stripe_payment_link_url = payment_link.url.clone();
+    let stripe_payment_link_id = payment_link.id.to_string();
+
+    // 10. Store in agency_payment_links
+    let db_record = json!({
+        "agency_id": user.id,
+        "licensing_request_id": id,
+        "campaign_id": campaign_id,
+        "stripe_payment_link_id": stripe_payment_link_id,
+        "stripe_payment_link_url": stripe_payment_link_url,
+        "stripe_price_id": price.id.to_string(),
+        "total_amount_cents": total_cents,
+        "platform_fee_cents": platform_fee_cents,
+        "net_amount_cents": net_amount_cents,
+        "agency_amount_cents": agency_amount_cents,
+        "talent_amount_cents": talent_amount_cents,
+        "currency": currency,
+        "agency_percent": agency_percent,
+        "talent_percent": talent_percent,
+        "talent_splits": talent_splits_json,
+        "client_email": client_email,
+        "client_name": client_name,
+        "status": "active",
+        "expires_at": expires_at.to_rfc3339(),
+    });
+
+    let insert_resp = state
+        .pg
+        .from("agency_payment_links")
+        .insert(db_record.to_string())
+        .select("id")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let insert_text = insert_resp.text().await.unwrap_or_default();
+    let inserted: Vec<serde_json::Value> = serde_json::from_str(&insert_text).unwrap_or_default();
+    let our_payment_link_id = inserted
+        .first()
+        .and_then(|r| r.get("id").and_then(|v| v.as_str()))
+        .unwrap_or("")
+        .to_string();
+
+    info!(
+        agency_id = %user.id,
+        licensing_request_id = %id,
+        payment_link_id = %our_payment_link_id,
+        "Payment link generated via send_payment_link"
+    );
+
+    // 11. Send email to client
+    let mut email_sent = false;
+    if let Some(ref email) = db_record.get("client_email").and_then(|v| v.as_str()).map(|s| s.to_string()) {
+        if !email.is_empty() {
+            let name = db_record
+                .get("client_name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("Client");
+            let campaign_title = lr
+                .get("campaign_title")
+                .and_then(|v| v.as_str())
+                .unwrap_or("Campaign");
+            let amount_dollars = total_cents as f64 / 100.0;
+            let formatted_amount = format!("${:.2}", amount_dollars);
+            let subject = format!("Payment Request for {} - Likelee", campaign_title);
+            let body = format!(
+                "Dear {},\n\nYour licensing request has been approved.\n\nCampaign: {}\nTotal Amount: {}\n\nPlease complete your payment using the secure link below:\n{}\n\nThis link will expire on {}.\n\nBest regards,\nLikelee",
+                name,
+                campaign_title,
+                formatted_amount,
+                stripe_payment_link_url,
+                expires_at.format("%Y-%m-%d %H:%M UTC"),
+            );
+            match crate::email::send_plain_email(&state, email, &subject, &body) {
+                Ok(_) => {
+                    email_sent = true;
+                    info!(licensing_request_id = %id, email = %email, "Payment link email sent");
+                }
+                Err(e) => {
+                    warn!(licensing_request_id = %id, email = %email, error = ?e, "Failed to send payment link email");
+                }
+            }
+        }
+    }
+
+    let resolved_client_email = db_record
+        .get("client_email")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string());
+
+    Ok(Json(SendPaymentLinkResponse {
+        payment_link_url: stripe_payment_link_url,
+        payment_link_id: our_payment_link_id,
+        total_amount_cents: total_cents,
+        platform_fee_cents,
+        agency_amount_cents,
+        talent_amount_cents,
+        client_email: resolved_client_email,
+        email_sent,
+    }))
 }

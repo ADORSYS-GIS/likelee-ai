@@ -294,6 +294,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::licensing_requests::update_status_bulk),
         )
         .route(
+            "/api/agency/licensing-requests/:id/send-payment-link",
+            post(crate::licensing_requests::send_payment_link),
+        )
+        .route(
             "/api/webhooks/licenseContract",
             post(crate::license_submissions::handle_webhook),
         )

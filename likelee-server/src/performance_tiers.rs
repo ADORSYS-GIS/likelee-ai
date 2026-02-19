@@ -12,6 +12,7 @@ pub struct TierRule {
     pub min_monthly_earnings: f64,
     pub min_monthly_bookings: i32,
     pub description: Option<String>,
+    pub payout_percent: f64,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -19,6 +20,7 @@ pub struct TierRuleDb {
     pub tier_name: String,
     pub tier_level: i32,
     pub description: Option<String>,
+    pub payout_percent: Option<f64>,
 }
 
 #[derive(Serialize)]
@@ -42,6 +44,7 @@ pub struct TierGroup {
     pub name: String,
     pub level: i32,
     pub description: String,
+    pub payout_percent: f64,
     pub talents: Vec<TalentPerformance>,
 }
 
@@ -105,6 +108,7 @@ pub async fn get_performance_tiers(
         state
             .pg
             .from("performance_tiers")
+            .select("tier_name,tier_level,description,payout_percent")
             .order("tier_level.asc")
             .execute(),
         // 2. Fetch Agency Custom Config
@@ -171,11 +175,11 @@ pub async fn get_performance_tiers(
     let mut tiers_json: Vec<TierRule> = tiers_db
         .into_iter()
         .map(|t| {
-            let (def_e, def_b) = match t.tier_name.as_str() {
-                "Premium" => (5000.0, 8),
-                "Core" => (2500.0, 5),
-                "Growth" => (500.0, 1),
-                _ => (0.0, 0),
+            let (def_e, def_b, def_pct) = match t.tier_name.as_str() {
+                "Premium"  => (5000.0, 8,  40.0),
+                "Core"     => (2500.0, 5,  30.0),
+                "Growth"   => (500.0,  1,  20.0),
+                _          => (0.0,    0,  10.0),
             };
             TierRule {
                 tier_name: t.tier_name,
@@ -183,6 +187,7 @@ pub async fn get_performance_tiers(
                 min_monthly_earnings: def_e,
                 min_monthly_bookings: def_b,
                 description: t.description,
+                payout_percent: t.payout_percent.unwrap_or(def_pct),
             }
         })
         .collect();
@@ -219,6 +224,9 @@ pub async fn get_performance_tiers(
                 }
                 if let Some(b) = c.get("min_bookings").and_then(|v| v.as_i64()) {
                     rule.min_monthly_bookings = b as i32;
+                }
+                if let Some(p) = c.get("payout_percent").and_then(|v| v.as_f64()) {
+                    rule.payout_percent = p;
                 }
             }
         }
@@ -281,6 +289,7 @@ pub async fn get_performance_tiers(
                 name: rule.tier_name.clone(),
                 level: rule.tier_level,
                 description: rule.description.clone().unwrap_or_default(),
+                payout_percent: rule.payout_percent,
                 talents: vec![],
             },
         );
@@ -316,7 +325,7 @@ pub async fn get_performance_tiers(
         }
         if let Some(group) = groups.get_mut(&assigned_tier.tier_level) {
             group.talents.push(TalentPerformance {
-                id,
+                id: id.clone(),
                 name,
                 photo_url: photo,
                 earnings_30d: earnings,
@@ -324,6 +333,17 @@ pub async fn get_performance_tiers(
                 tier: assigned_tier.clone(),
             });
         }
+
+        // Persist the talent's current tier name back to agency_users for payout lookups
+        let tier_body = serde_json::json!({ "performance_tier_name": assigned_tier.tier_name });
+        let _ = state
+            .pg
+            .from("agency_users")
+            .eq("id", &id)
+            .eq("agency_id", agency_id)
+            .update(tier_body.to_string())
+            .execute()
+            .await;
     }
 
     let mut result_tiers: Vec<TierGroup> = groups.into_values().collect();

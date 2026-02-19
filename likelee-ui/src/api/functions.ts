@@ -471,6 +471,9 @@ export const setAgencyLicensingRequestsPaySplit = (data: {
   agency_percent: number;
 }) => base44Client.post(`/agency/licensing-requests/pay-split`, data);
 
+export const sendLicensingRequestPaymentLink = (id: string) =>
+  base44Client.post(`/agency/licensing-requests/${id}/send-payment-link`, {});
+
 // Payment Links (Agency)
 export const generateAgencyPaymentLink = (data: {
   licensing_request_ids: string[];
