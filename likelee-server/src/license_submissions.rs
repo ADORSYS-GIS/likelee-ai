@@ -953,16 +953,12 @@ pub async fn finalize(
             from_submission
         } else {
             // Fall back to single talent_id
-            let single = req
-                .talent_id
-                .clone()
-                .filter(|s| !s.is_empty())
-                .or_else(|| {
-                    submission_data["talent_id"]
-                        .as_str()
-                        .filter(|s| !s.is_empty())
-                        .map(|s| s.to_string())
-                });
+            let single = req.talent_id.clone().filter(|s| !s.is_empty()).or_else(|| {
+                submission_data["talent_id"]
+                    .as_str()
+                    .filter(|s| !s.is_empty())
+                    .map(|s| s.to_string())
+            });
             match single {
                 Some(id) => vec![id],
                 None => vec![],
@@ -1255,14 +1251,12 @@ pub async fn resend(
                 .as_i64()
                 .map(|v| v as i32),
             talent_id: existing_data["talent_id"].as_str().map(|s| s.to_string()),
-            talent_ids: existing_data["talent_ids"]
-                .as_array()
-                .map(|arr| {
-                    arr.iter()
-                        .filter_map(|v| v.as_str())
-                        .map(|s| s.to_string())
-                        .collect()
-                }),
+            talent_ids: existing_data["talent_ids"].as_array().map(|arr| {
+                arr.iter()
+                    .filter_map(|v| v.as_str())
+                    .map(|s| s.to_string())
+                    .collect()
+            }),
             talent_names: existing_data["talent_names"]
                 .as_str()
                 .map(|s| s.to_string()),

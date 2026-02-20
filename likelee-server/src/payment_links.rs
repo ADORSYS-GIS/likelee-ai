@@ -564,10 +564,19 @@ pub async fn generate_payment_link(
 
         // Build talent splits weighted by performance tier payout_percent
         // Each talent gets (their tier payout_percent / total payout_percent of all talents) * talent_amount_cents
-        let total_payout_weight: f64 = talent_ids.iter().map(|tid| {
-            let tier_name = talent_tier_name_map.get(tid).map(|s| s.as_str()).unwrap_or("Inactive");
-            tier_payout_percent_map.get(tier_name).copied().unwrap_or(25.0)
-        }).sum::<f64>();
+        let total_payout_weight: f64 = talent_ids
+            .iter()
+            .map(|tid| {
+                let tier_name = talent_tier_name_map
+                    .get(tid)
+                    .map(|s| s.as_str())
+                    .unwrap_or("Inactive");
+                tier_payout_percent_map
+                    .get(tier_name)
+                    .copied()
+                    .unwrap_or(25.0)
+            })
+            .sum::<f64>();
 
         let mut distributed_cents: i64 = 0;
 

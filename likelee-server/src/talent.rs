@@ -1998,7 +1998,7 @@ pub async fn get_analytics(
         .select("id,status")
         .eq("agency_id", &resolved.agency_id)
         .eq("talent_id", &resolved.talent_id)
-        .is("archived_at", "null")  // Only count non-archived records
+        .is("archived_at", "null") // Only count non-archived records
         .limit(500)
         .execute()
         .await

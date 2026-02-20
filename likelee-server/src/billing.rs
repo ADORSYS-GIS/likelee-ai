@@ -30,16 +30,16 @@ pub struct AgencyCheckoutResponse {
 
 fn plan_to_price_id(state: &AppState, plan: &str) -> Option<String> {
     match plan.trim().to_lowercase().as_str() {
-        "basic" => Some(state.stripe_agency_basic_package_price_id.clone()),
-        "pro" => Some(state.stripe_agency_pro_package_price_id.clone()),
+        "basic" => Some(state.stripe_agency_basic_base_price_id.clone()),
+        "pro" => Some(state.stripe_agency_pro_base_price_id.clone()),
         _ => None,
     }
 }
 
 fn plan_to_price_env_var(plan: &str) -> Option<&'static str> {
     match plan.trim().to_lowercase().as_str() {
-        "basic" => Some("STRIPE_AGENCY_BASIC_PACKAGE_PRICE_ID"),
-        "pro" => Some("STRIPE_AGENCY_PRO_PACKAGE_PRICE_ID"),
+        "basic" => Some("STRIPE_AGENCY_BASIC_BASE_PRICE_ID"),
+        "pro" => Some("STRIPE_AGENCY_PRO_BASE_PRICE_ID"),
         _ => None,
     }
 }
@@ -99,15 +99,14 @@ pub async fn create_agency_subscription_checkout(
     let base_price_id = plan_to_price_id(&state, &payload.plan)
         .ok_or((StatusCode::BAD_REQUEST, "invalid_plan".to_string()))?;
     if base_price_id.trim().is_empty() {
-        let ev = plan_to_price_env_var(&payload.plan).unwrap_or("STRIPE_AGENCY_*_PACKAGE_PRICE_ID");
+        let ev = plan_to_price_env_var(&payload.plan).unwrap_or("STRIPE_AGENCY_*_BASE_PRICE_ID");
         return Err((
             StatusCode::PRECONDITION_FAILED,
             format!("stripe_price_not_configured:{}", ev),
         ));
     }
 
-    // Note: roster_models / addons are currently accepted for backwards compatibility,
-    // but Basic/Pro are treated as all-inclusive packages (single Stripe Price ID).
+    // Note: roster_models / addons are currently accepted for backwards compatibility.
     if state.stripe_checkout_success_url.trim().is_empty()
         || state.stripe_checkout_cancel_url.trim().is_empty()
     {

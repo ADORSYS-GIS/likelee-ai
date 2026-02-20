@@ -416,7 +416,7 @@ pub async fn get_recent_activity(
         .from("licensing_requests")
         .select("id, created_at")
         .eq("agency_id", agency_id)
-        .is("archived_at", "null")  // Only show non-archived records
+        .is("archived_at", "null") // Only show non-archived records
         .order("created_at.desc")
         .limit(5)
         .execute()
@@ -587,7 +587,7 @@ async fn get_pending_actions(
         .select("id")
         .eq("agency_id", agency_id)
         .eq("status", "pending")
-        .is("archived_at", "null")  // Only count non-archived records
+        .is("archived_at", "null") // Only count non-archived records
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;

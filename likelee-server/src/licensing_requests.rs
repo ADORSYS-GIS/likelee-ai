@@ -1054,10 +1054,12 @@ pub async fn send_payment_link(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let lr_rows: Vec<serde_json::Value> = serde_json::from_str(&lr_text).unwrap_or_default();
-    let lr = lr_rows
-        .into_iter()
-        .next()
-        .ok_or_else(|| (StatusCode::NOT_FOUND, "Licensing request not found".to_string()))?;
+    let lr = lr_rows.into_iter().next().ok_or_else(|| {
+        (
+            StatusCode::NOT_FOUND,
+            "Licensing request not found".to_string(),
+        )
+    })?;
 
     // 2. Auto-approve the request
     let update_body = json!({
@@ -1075,7 +1077,10 @@ pub async fn send_payment_link(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     if !upd_resp.status().is_success() {
         let err = upd_resp.text().await.unwrap_or_default();
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to approve request: {}", err)));
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to approve request: {}", err),
+        ));
     }
 
     // 3. Resolve license fee (from license_submissions join)
@@ -1092,7 +1097,8 @@ pub async fn send_payment_link(
     if total_cents <= 0 {
         return Err((
             StatusCode::BAD_REQUEST,
-            "License fee is not set or is zero. Please complete the license submission first.".to_string(),
+            "License fee is not set or is zero. Please complete the license submission first."
+                .to_string(),
         ));
     }
 
@@ -1107,7 +1113,8 @@ pub async fn send_payment_link(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let agency_acct_text = agency_acct_resp.text().await.unwrap_or_default();
-    let agency_rows: Vec<serde_json::Value> = serde_json::from_str(&agency_acct_text).unwrap_or_default();
+    let agency_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&agency_acct_text).unwrap_or_default();
     let agency_stripe_account_id = agency_rows
         .first()
         .and_then(|r| r.get("stripe_connect_account_id").and_then(|v| v.as_str()))
@@ -1217,9 +1224,12 @@ pub async fn send_payment_link(
 
     // Fetch agency_users details (name + creator_id + performance_tier_name) for all talent IDs
     let t_refs: Vec<&str> = all_talent_ids.iter().map(|s| s.as_str()).collect();
-    let mut talent_name_map: std::collections::HashMap<String, String> = std::collections::HashMap::new();
-    let mut talent_creator_map: std::collections::HashMap<String, String> = std::collections::HashMap::new();
-    let mut talent_tier_name_map: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+    let mut talent_name_map: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    let mut talent_creator_map: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    let mut talent_tier_name_map: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
 
     if !t_refs.is_empty() {
         let au_resp = state
@@ -1232,9 +1242,14 @@ pub async fn send_payment_link(
         if let Ok(au_resp) = au_resp {
             if au_resp.status().is_success() {
                 let au_text = au_resp.text().await.unwrap_or_else(|_| "[]".into());
-                let au_rows: Vec<serde_json::Value> = serde_json::from_str(&au_text).unwrap_or_default();
+                let au_rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&au_text).unwrap_or_default();
                 for r in &au_rows {
-                    let tid = r.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                    let tid = r
+                        .get("id")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string();
                     if tid.is_empty() {
                         continue;
                     }
@@ -1290,7 +1305,8 @@ pub async fn send_payment_link(
     // Fetch creator Stripe Connect account IDs
     let creator_ids_vec: Vec<String> = talent_creator_map.values().cloned().collect();
     let cr_refs: Vec<&str> = creator_ids_vec.iter().map(|s| s.as_str()).collect();
-    let mut stripe_account_map: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+    let mut stripe_account_map: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
 
     if !cr_refs.is_empty() {
         let cr_resp = state
@@ -1303,7 +1319,8 @@ pub async fn send_payment_link(
         if let Ok(cr_resp) = cr_resp {
             if cr_resp.status().is_success() {
                 let cr_text = cr_resp.text().await.unwrap_or_else(|_| "[]".into());
-                let cr_rows: Vec<serde_json::Value> = serde_json::from_str(&cr_text).unwrap_or_default();
+                let cr_rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&cr_text).unwrap_or_default();
                 for r in &cr_rows {
                     let cid = r.get("id").and_then(|v| v.as_str()).unwrap_or("");
                     let acct = r
@@ -1321,7 +1338,10 @@ pub async fn send_payment_link(
     // Check that all talents have connected their creator profiles and Stripe Connect accounts
     let mut missing_stripe: Vec<String> = vec![];
     for tid in &all_talent_ids {
-        let name = talent_name_map.get(tid).cloned().unwrap_or_else(|| "Unknown".to_string());
+        let name = talent_name_map
+            .get(tid)
+            .cloned()
+            .unwrap_or_else(|| "Unknown".to_string());
         let cid = talent_creator_map.get(tid).cloned().unwrap_or_default();
         if cid.is_empty() {
             missing_stripe.push(format!("{} (No creator profile linked)", name));
@@ -1344,7 +1364,8 @@ pub async fn send_payment_link(
 
     // Fetch payout_percent per tier name from performance_tiers table
     let tier_names: Vec<String> = talent_tier_name_map.values().cloned().collect();
-    let mut tier_payout_percent_map: std::collections::HashMap<String, f64> = std::collections::HashMap::new();
+    let mut tier_payout_percent_map: std::collections::HashMap<String, f64> =
+        std::collections::HashMap::new();
     if !tier_names.is_empty() {
         let tn_refs: Vec<&str> = tier_names.iter().map(|s| s.as_str()).collect();
         let pt_resp = state
@@ -1357,10 +1378,14 @@ pub async fn send_payment_link(
         if let Ok(pt_resp) = pt_resp {
             if pt_resp.status().is_success() {
                 let pt_text = pt_resp.text().await.unwrap_or_else(|_| "[]".into());
-                let pt_rows: Vec<serde_json::Value> = serde_json::from_str(&pt_text).unwrap_or_default();
+                let pt_rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&pt_text).unwrap_or_default();
                 for r in &pt_rows {
                     let tn = r.get("tier_name").and_then(|v| v.as_str()).unwrap_or("");
-                    let pct = r.get("payout_percent").and_then(|v| v.as_f64()).unwrap_or(25.0);
+                    let pct = r
+                        .get("payout_percent")
+                        .and_then(|v| v.as_f64())
+                        .unwrap_or(25.0);
                     if !tn.is_empty() {
                         tier_payout_percent_map.insert(tn.to_string(), pct);
                     }
@@ -1371,10 +1396,19 @@ pub async fn send_payment_link(
 
     // Build talent splits weighted by performance tier payout_percent
     // Each talent gets (their tier payout_percent / total payout_percent of all talents) * talent_amount_cents
-    let total_payout_weight: f64 = all_talent_ids.iter().map(|tid| {
-        let tier_name = talent_tier_name_map.get(tid).map(|s| s.as_str()).unwrap_or("Inactive");
-        tier_payout_percent_map.get(tier_name).copied().unwrap_or(25.0)
-    }).sum::<f64>();
+    let total_payout_weight: f64 = all_talent_ids
+        .iter()
+        .map(|tid| {
+            let tier_name = talent_tier_name_map
+                .get(tid)
+                .map(|s| s.as_str())
+                .unwrap_or("Inactive");
+            tier_payout_percent_map
+                .get(tier_name)
+                .copied()
+                .unwrap_or(25.0)
+        })
+        .sum::<f64>();
 
     let mut talent_splits_json: Vec<serde_json::Value> = Vec::new();
     let mut distributed_cents: i64 = 0;
@@ -1386,9 +1420,15 @@ pub async fn send_payment_link(
             .unwrap_or_else(|| "Unknown".to_string());
         let cid = talent_creator_map.get(tid).cloned().unwrap_or_default();
         let stripe_acct = stripe_account_map.get(&cid).cloned().unwrap_or_default();
-        
-        let tier_name = talent_tier_name_map.get(tid).map(|s| s.as_str()).unwrap_or("Inactive");
-        let payout_pct = tier_payout_percent_map.get(tier_name).copied().unwrap_or(25.0);
+
+        let tier_name = talent_tier_name_map
+            .get(tid)
+            .map(|s| s.as_str())
+            .unwrap_or("Inactive");
+        let payout_pct = tier_payout_percent_map
+            .get(tier_name)
+            .copied()
+            .unwrap_or(25.0);
 
         let amount = if i == all_talent_ids.len() - 1 {
             talent_amount_cents - distributed_cents
@@ -1397,7 +1437,7 @@ pub async fn send_payment_link(
         } else {
             (talent_amount_cents as f64 / all_talent_ids.len() as f64).round() as i64
         };
-        
+
         distributed_cents += amount;
 
         talent_splits_json.push(json!({
@@ -1438,11 +1478,18 @@ pub async fn send_payment_link(
         .await
         .map_err(|e| {
             error!("Failed to create Stripe product: {}", e);
-            (StatusCode::BAD_GATEWAY, format!("Stripe product creation failed: {}", e))
+            (
+                StatusCode::BAD_GATEWAY,
+                format!("Stripe product creation failed: {}", e),
+            )
         })?;
 
-    let currency_enum = stripe_sdk::Currency::from_str(&currency.to_lowercase())
-        .map_err(|_| (StatusCode::BAD_REQUEST, format!("Invalid currency: {}", currency)))?;
+    let currency_enum = stripe_sdk::Currency::from_str(&currency.to_lowercase()).map_err(|_| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("Invalid currency: {}", currency),
+        )
+    })?;
 
     let mut price_params = stripe_sdk::CreatePrice::new(currency_enum);
     let product_id_str = product.id.to_string();
@@ -1452,7 +1499,10 @@ pub async fn send_payment_link(
         .await
         .map_err(|e| {
             error!("Failed to create Stripe price: {}", e);
-            (StatusCode::BAD_GATEWAY, format!("Stripe price creation failed: {}", e))
+            (
+                StatusCode::BAD_GATEWAY,
+                format!("Stripe price creation failed: {}", e),
+            )
         })?;
 
     let line_items = vec![stripe_sdk::CreatePaymentLinkLineItems {
@@ -1466,17 +1516,33 @@ pub async fn send_payment_link(
     let mut metadata = std::collections::HashMap::new();
     metadata.insert("agency_id".to_string(), user.id.clone());
     metadata.insert("licensing_request_ids".to_string(), id.clone());
-    metadata.insert("campaign_id".to_string(), campaign_id.clone().unwrap_or_default());
-    metadata.insert("platform_fee_cents".to_string(), platform_fee_cents.to_string());
+    metadata.insert(
+        "campaign_id".to_string(),
+        campaign_id.clone().unwrap_or_default(),
+    );
+    metadata.insert(
+        "platform_fee_cents".to_string(),
+        platform_fee_cents.to_string(),
+    );
     metadata.insert("net_amount_cents".to_string(), net_amount_cents.to_string());
-    metadata.insert("plan_tier".to_string(), match tier {
-        PlanTier::Free => "free",
-        PlanTier::Basic => "basic",
-        PlanTier::Pro => "pro",
-        PlanTier::Enterprise => "enterprise",
-    }.to_string());
-    metadata.insert("agency_amount_cents".to_string(), agency_amount_cents.to_string());
-    metadata.insert("talent_amount_cents".to_string(), talent_amount_cents.to_string());
+    metadata.insert(
+        "plan_tier".to_string(),
+        match tier {
+            PlanTier::Free => "free",
+            PlanTier::Basic => "basic",
+            PlanTier::Pro => "pro",
+            PlanTier::Enterprise => "enterprise",
+        }
+        .to_string(),
+    );
+    metadata.insert(
+        "agency_amount_cents".to_string(),
+        agency_amount_cents.to_string(),
+    );
+    metadata.insert(
+        "talent_amount_cents".to_string(),
+        talent_amount_cents.to_string(),
+    );
     metadata.insert("currency".to_string(), currency.to_string());
 
     let mut link_params = stripe_sdk::CreatePaymentLink::new(line_items);
@@ -1485,7 +1551,10 @@ pub async fn send_payment_link(
         .await
         .map_err(|e| {
             error!("Failed to create Stripe payment link: {}", e);
-            (StatusCode::BAD_GATEWAY, format!("Stripe payment link creation failed: {}", e))
+            (
+                StatusCode::BAD_GATEWAY,
+                format!("Stripe payment link creation failed: {}", e),
+            )
         })?;
 
     let stripe_payment_link_url = payment_link.url.clone();
@@ -1540,7 +1609,11 @@ pub async fn send_payment_link(
 
     // 11. Send email to client
     let mut email_sent = false;
-    if let Some(ref email) = db_record.get("client_email").and_then(|v| v.as_str()).map(|s| s.to_string()) {
+    if let Some(ref email) = db_record
+        .get("client_email")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+    {
         if !email.is_empty() {
             let name = db_record
                 .get("client_name")

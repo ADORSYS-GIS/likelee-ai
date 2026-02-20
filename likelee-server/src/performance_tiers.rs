@@ -176,10 +176,10 @@ pub async fn get_performance_tiers(
         .into_iter()
         .map(|t| {
             let (def_e, def_b, def_pct) = match t.tier_name.as_str() {
-                "Premium"  => (5000.0, 8,  40.0),
-                "Core"     => (2500.0, 5,  30.0),
-                "Growth"   => (500.0,  1,  20.0),
-                _          => (0.0,    0,  10.0),
+                "Premium" => (5000.0, 8, 40.0),
+                "Core" => (2500.0, 5, 30.0),
+                "Growth" => (500.0, 1, 20.0),
+                _ => (0.0, 0, 10.0),
             };
             TierRule {
                 tier_name: t.tier_name,

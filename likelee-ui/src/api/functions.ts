@@ -319,6 +319,13 @@ export const getPayoutBalance = async (profileId: string) => {
   return { data: resp } as any;
 };
 
+export const getHistory = async (params: { profile_id: string; limit?: number }) => {
+  const resp = await base44Client.get(`/api/payouts/history`, {
+    params: params || {},
+  });
+  return { data: resp } as any;
+};
+
 export const getStripeOAuthUrl = async (profileId: string) => {
   const resp = await base44Client.post(
     `/payouts/onboarding_link`,

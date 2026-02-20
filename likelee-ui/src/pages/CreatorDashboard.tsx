@@ -1174,20 +1174,23 @@ export default function CreatorDashboard() {
   const [showShoutOut, setShowShoutOut] = useState(true);
   const [payoutAccountStatus, setPayoutAccountStatus] = useState<any>(null);
   const [balances, setBalances] = useState<any[]>([]);
+  const [payoutHistory, setPayoutHistory] = useState<any[]>([]);
   const [showRequestPayoutModal, setShowRequestPayoutModal] = useState(false);
   const [requestPayoutAmount, setRequestPayoutAmount] = useState("");
 
   const fetchPayoutStatus = async () => {
     if (!initialized || !authenticated || !user?.id) return;
     try {
-      const { getPayoutsAccountStatus, getPayoutBalance } =
+      const { getPayoutsAccountStatus, getPayoutBalance, getHistory } =
         await import("@/api/functions");
-      const [statusRes, balanceRes] = await Promise.all([
+      const [statusRes, balanceRes, historyRes] = await Promise.all([
         getPayoutsAccountStatus(user.id),
         getPayoutBalance(user.id),
+        getHistory({ profile_id: user.id, limit: 5 }),
       ]);
       setPayoutAccountStatus(statusRes.data);
       setBalances(balanceRes.data.balances || []);
+      setPayoutHistory(historyRes.data.items || historyRes.items || []);
     } catch (e) {
       console.error("Failed to fetch payout status", e);
     }
@@ -6393,15 +6396,59 @@ export default function CreatorDashboard() {
           <h3 className="text-lg font-bold text-gray-900 mb-4">
             {t("creatorDashboard.earnings.history.title")}
           </h3>
-          <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
-            <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <div className="font-semibold text-gray-900">
-              {t("creatorDashboard.earnings.history.placeholderTitle")}
+          {payoutHistory.length === 0 ? (
+            <div className="p-12 bg-gray-50 border border-gray-200 rounded-lg text-center text-gray-600">
+              <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+              <div className="font-semibold text-gray-900">
+                {t("creatorDashboard.earnings.history.placeholderTitle")}
+              </div>
+              <div className="text-sm text-gray-500 mt-1">
+                {t("creatorDashboard.earnings.history.placeholderMessage")}
+              </div>
             </div>
-            <div className="text-sm text-gray-500 mt-1">
-              {t("creatorDashboard.earnings.history.placeholderMessage")}
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="pb-3 font-semibold text-gray-600">Date</th>
+                    <th className="pb-3 font-semibold text-gray-600">Amount</th>
+                    <th className="pb-3 font-semibold text-gray-600">Method</th>
+                    <th className="pb-3 font-semibold text-gray-600 text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {payoutHistory.slice(0, 5).map((item) => (
+                    <tr key={item.id} className="group">
+                      <td className="py-4 text-gray-600">
+                        {new Date(item.created_at || item.requested_at).toLocaleDateString()}
+                      </td>
+                      <td className="py-4 font-medium text-gray-900">
+                        ${(item.amount_cents / 100).toFixed(2)}
+                      </td>
+                      <td className="py-4 capitalize text-gray-600">
+                        {item.payout_method || "standard"}
+                      </td>
+                      <td className="py-4 text-right">
+                        <Badge
+                          variant="outline"
+                          className={
+                            item.status === "paid" || item.status === "approved"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                              : item.status === "failed" || item.status === "cancelled"
+                                ? "bg-rose-50 text-rose-700 border-rose-100"
+                                : "bg-blue-50 text-blue-700 border-blue-100"
+                          }
+                        >
+                          {item.status}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </div>
+          )}
         </Card>
         <Button
           variant="outline"
@@ -9136,15 +9183,20 @@ export default function CreatorDashboard() {
               onClick={async () => {
                 try {
                   setIsLoadingPayout(true);
-                  const { requestPayout } = await import("@/api/functions");
-                  const res = await requestPayout({
-                    profile_id: user?.id!,
-                    amount_cents: Math.round(
-                      parseFloat(requestPayoutAmount) * 100,
-                    ),
+                  const { requestTalentPayout } = await import("@/api/functions");
+                  const amountCents = Math.round(
+                    parseFloat(requestPayoutAmount) * 100,
+                  );
+                  const res = await requestTalentPayout({
+                    amount_cents: amountCents,
+                    currency: "USD",
                   });
 
-                  if (res.data?.status === "ok") {
+                  const ok =
+                    (res as any)?.status === "ok" ||
+                    (res as any)?.payout_request?.status === "ok";
+
+                  if (ok) {
                     toast({
                       title: "Success",
                       description: "Payout request submitted successfully!",
@@ -9154,7 +9206,7 @@ export default function CreatorDashboard() {
                     fetchPayoutStatus();
                   } else {
                     throw new Error(
-                      res.data?.error || "Failed to request payout",
+                      (res as any)?.error || "Failed to request payout",
                     );
                   }
                 } catch (e: any) {
