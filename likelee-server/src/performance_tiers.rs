@@ -61,7 +61,7 @@ pub async fn configure_performance_tiers(
     State(state): State<AppState>,
     auth_user: AuthUser,
     Json(payload): Json<ConfigurePerformanceRequest>,
-) -> Result<StatusCode, (StatusCode, String)> {
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let config = payload.config.as_object().ok_or((
         StatusCode::BAD_REQUEST,
         "Invalid config payload".to_string(),
@@ -184,7 +184,7 @@ pub async fn configure_performance_tiers(
         ));
     }
 
-    Ok(StatusCode::OK)
+    Ok(Json(json!({ "ok": true })))
 }
 
 pub async fn get_performance_tiers(
