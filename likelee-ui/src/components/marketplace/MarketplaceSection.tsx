@@ -493,7 +493,7 @@ export function MarketplaceSection({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 mt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 mt-2">
             {profiles.map((profile) => {
               const profileKey = `${profile.profile_type}:${profile.id}`;
               const isPendingConnect = pendingConnectKeys.has(profileKey);
@@ -517,7 +517,7 @@ export function MarketplaceSection({
               return (
                 <Card
                   key={profile.id}
-                  className="group overflow-hidden border border-slate-200 rounded-xl bg-white hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer"
+                  className="group w-full overflow-hidden border border-slate-200 rounded-lg bg-white hover:border-indigo-200 hover:shadow-sm transition-all cursor-pointer"
                   onClick={() => setSelectedProfile(profile)}
                 >
                   <div className="relative">
@@ -529,52 +529,52 @@ export function MarketplaceSection({
                       />
                     ) : (
                       <div className="w-full aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
-                        <User className="w-10 h-10 text-slate-400" />
+                        <User className="w-9 h-9 text-slate-400" />
                       </div>
                     )}
-                    <div className="absolute inset-x-0 top-0 p-2.5 flex items-center justify-between">
-                      <Badge className="h-6 px-2.5 rounded-md bg-white/90 text-slate-700 border border-slate-200 text-[11px] font-semibold shadow-sm">
+                    <div className="absolute inset-x-0 top-0 p-1.5 flex items-center justify-between">
+                      <Badge className="h-5 px-2 rounded-md bg-white/90 text-slate-700 border border-slate-200 text-[10px] font-semibold shadow-sm">
                         Creator
                       </Badge>
                       <div className="flex items-center gap-1.5">
                         {profile.is_connected && (
-                          <Badge className="h-6 px-2.5 rounded-md bg-emerald-50/95 text-emerald-700 border border-emerald-200 text-[11px] font-semibold shadow-sm">
+                          <Badge className="h-5 px-2 rounded-md bg-emerald-50/95 text-emerald-700 border border-emerald-200 text-[10px] font-semibold shadow-sm">
                             Connected
                           </Badge>
                         )}
                         {!profile.is_connected && connectionStatus === "pending" && (
-                          <Badge className="h-6 px-2.5 rounded-md bg-amber-50/95 text-amber-700 border border-amber-200 text-[11px] font-semibold shadow-sm">
+                          <Badge className="h-5 px-2 rounded-md bg-amber-50/95 text-amber-700 border border-amber-200 text-[10px] font-semibold shadow-sm">
                             Waiting
                           </Badge>
                         )}
                         <div className="h-5 w-5 rounded-md bg-white/90 border border-slate-200 shadow-sm flex items-center justify-center">
-                          <ShieldCheck className="w-3 h-3 text-green-600" />
+                          <ShieldCheck className="w-3.5 h-3.5 text-green-600" />
                         </div>
                       </div>
                     </div>
-                    <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-slate-950/65 via-slate-900/20 to-transparent">
-                      <h3 className="text-base font-bold text-white truncate">
+                    <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-slate-950/65 via-slate-900/20 to-transparent">
+                      <h3 className="text-sm font-bold text-white truncate">
                         {profile.display_name}
                       </h3>
-                      <p className="text-xs text-white/90 font-medium mt-0.5 truncate">
+                      <p className="text-[11px] text-white/90 font-medium mt-0.5 truncate">
                         {roleLabel}
                       </p>
                       {profile.location && (
-                        <p className="text-xs text-white/80 mt-0.5 truncate">
+                        <p className="text-[11px] text-white/80 mt-0.5 truncate">
                           {profile.location}
                         </p>
                       )}
                     </div>
                   </div>
 
-                  <div className="p-3.5">
+                  <div className="p-2.5">
                     {(profile.tagline || profile.bio) && (
-                      <p className="text-sm text-slate-600 line-clamp-2 min-h-[40px]">
+                      <p className="text-xs text-slate-600 line-clamp-2 min-h-[32px]">
                         {profile.tagline || profile.bio}
                       </p>
                     )}
                     {!(profile.tagline || profile.bio) && (
-                      <p className="text-sm text-slate-400 min-h-[40px]">No bio available yet.</p>
+                      <p className="text-xs text-slate-400 min-h-[32px]">No bio available yet.</p>
                     )}
 
                     <div className="flex flex-wrap items-center gap-2 mt-3">
@@ -589,24 +589,24 @@ export function MarketplaceSection({
                       ))}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2.5 mt-3">
-                      <div className="rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-2">
-                        <p className="text-slate-500 text-sm font-medium">Followers</p>
-                        <p className="text-slate-900 text-lg font-bold mt-0.5 leading-none">
+                    <div className="grid grid-cols-2 gap-1.5 mt-2">
+                      <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1">
+                        <p className="text-slate-500 text-[11px] font-medium">Followers</p>
+                        <p className="text-slate-900 text-sm font-bold mt-0.5 leading-none">
                           {followers > 0 ? followers.toLocaleString() : "N/A"}
                         </p>
                       </div>
-                      <div className="rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-2">
-                        <p className="text-slate-500 text-sm font-medium">Engagement</p>
-                        <p className="text-slate-900 text-lg font-bold mt-0.5 leading-none">
+                      <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1">
+                        <p className="text-slate-500 text-[11px] font-medium">Engagement</p>
+                        <p className="text-slate-900 text-sm font-bold mt-0.5 leading-none">
                           {engagement > 0 ? `${engagement.toFixed(1)}%` : "N/A"}
                         </p>
                       </div>
                     </div>
 
-                    <div className="mt-3.5 flex items-center gap-2">
+                    <div className="mt-2.5 flex items-center gap-2">
                       <Button
-                        className={`h-7 px-2.5 text-sm rounded-lg ${
+                        className={`h-6 px-2 text-xs rounded-md ${
                           connectionStatus === "connected"
                             ? "bg-indigo-300 text-white hover:bg-indigo-300"
                             : connectionStatus === "pending"
