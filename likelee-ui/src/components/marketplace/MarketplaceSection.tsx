@@ -148,7 +148,7 @@ export function MarketplaceSection({
     "all" | "models" | "actors" | "influencers" | "athletes"
   >("all");
   const [profileType, setProfileType] = useState<
-    "all" | "creator" | "connected"
+    "all" | "creator" | "connected" | "waiting"
   >("all");
   const [sortBy, setSortBy] = useState<"recent" | "name" | "followers">(
     "followers",
@@ -185,7 +185,10 @@ export function MarketplaceSection({
     queryFn: async () =>
       await base44.get<MarketplaceProfile[]>(searchEndpoint, {
         params: {
-          profile_type: profileType === "connected" ? "all" : profileType,
+          profile_type:
+            profileType === "connected" || profileType === "waiting"
+              ? "all"
+              : profileType,
           query: debouncedSearch.trim() || undefined,
           limit: 120,
         },
@@ -275,6 +278,11 @@ export function MarketplaceSection({
 
     const filtered = normalized.filter(matchesCategory).filter((profile) => {
       if (profileType === "connected") return !!profile.is_connected;
+      if (profileType === "waiting")
+        return (
+          profile.connection_status === "pending" ||
+          profile.is_pending === true
+        );
       return true;
     });
 
@@ -429,7 +437,8 @@ export function MarketplaceSection({
                 value={profileType}
                 onValueChange={(v) =>
                   setProfileType(
-                    (v as "all" | "creator" | "connected") || "all",
+                    (v as "all" | "creator" | "connected" | "waiting") ||
+                      "all",
                   )
                 }
               >
@@ -445,6 +454,9 @@ export function MarketplaceSection({
                   </SelectItem>
                   <SelectItem className={marketplaceSelectItemClass} value="connected">
                     Connected
+                  </SelectItem>
+                  <SelectItem className={marketplaceSelectItemClass} value="waiting">
+                    Waiting
                   </SelectItem>
                 </SelectContent>
               </Select>
