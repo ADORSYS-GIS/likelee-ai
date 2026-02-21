@@ -1,6 +1,15 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search, Filter, X, Loader2, Globe, ShieldCheck } from "lucide-react";
+import {
+  Search,
+  Filter,
+  X,
+  Loader2,
+  Globe,
+  ShieldCheck,
+  User,
+  Image as ImageIcon,
+} from "lucide-react";
 
 import { base44 } from "@/api/base44Client";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -63,9 +72,6 @@ type MarketplaceSectionProps = {
   detailsEndpointBuilder?: (profileType: "creator", id: string) => string;
   queryScope?: string;
 };
-
-const MARKETPLACE_FALLBACK_IMAGE =
-  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/5d413193e_Screenshot2025-10-29at63349PM.png";
 
 const parseApiErrorPayload = (error: any) => {
   const raw = String(error?.message || "");
@@ -514,11 +520,17 @@ export function MarketplaceSection({
                   className="group overflow-hidden border border-slate-200 rounded-xl bg-white hover:border-indigo-200 hover:shadow-md transition-all"
                 >
                   <div className="relative">
-                    <img
-                      src={profile.profile_photo_url || MARKETPLACE_FALLBACK_IMAGE}
-                      alt={profile.display_name}
-                      className="w-full aspect-[4/3] object-cover bg-slate-100"
-                    />
+                    {profile.profile_photo_url ? (
+                      <img
+                        src={profile.profile_photo_url}
+                        alt={profile.display_name}
+                        className="w-full aspect-[4/3] object-cover bg-slate-100"
+                      />
+                    ) : (
+                      <div className="w-full aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+                        <User className="w-10 h-10 text-slate-400" />
+                      </div>
+                    )}
                     <div className="absolute inset-x-0 top-0 p-2.5 flex items-center justify-between">
                       <Badge className="h-5 px-2 rounded-md bg-white/90 text-slate-700 border border-slate-200 text-[9px] font-semibold shadow-sm">
                         Creator
@@ -747,14 +759,17 @@ export function MarketplaceSection({
                       </div>
                     </div>
                     <div className="md:col-span-5 relative min-h-[260px]">
-                      <img
-                        src={
-                          selectedProfile?.profile_photo_url ||
-                          MARKETPLACE_FALLBACK_IMAGE
-                        }
-                        alt={selectedProfile?.display_name || "Profile image"}
-                        className="absolute inset-0 h-full w-full object-cover"
-                      />
+                      {selectedProfile?.profile_photo_url ? (
+                        <img
+                          src={selectedProfile.profile_photo_url}
+                          alt={selectedProfile?.display_name || "Profile image"}
+                          className="absolute inset-0 h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+                          <User className="w-14 h-14 text-slate-400" />
+                        </div>
+                      )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/20 to-transparent" />
                       <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-cyan-100/45 to-transparent" />
                     </div>
@@ -816,11 +831,17 @@ export function MarketplaceSection({
                         className="rounded-lg border border-gray-100 p-2 bg-white hover:border-indigo-200 transition-colors"
                       >
                         <div className="aspect-square rounded-md bg-gray-100 overflow-hidden">
-                          <img
-                            src={String(item?.media_url || MARKETPLACE_FALLBACK_IMAGE)}
-                            alt={String(item?.title || "Portfolio item")}
-                            className="w-full h-full object-cover"
-                          />
+                          {item?.media_url ? (
+                            <img
+                              src={String(item.media_url)}
+                              alt={String(item?.title || "Portfolio item")}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-slate-100 flex items-center justify-center">
+                              <ImageIcon className="w-8 h-8 text-slate-400" />
+                            </div>
+                          )}
                         </div>
                         <p className="text-xs font-medium text-gray-700 mt-2 truncate">
                           {String(item?.title || "Portfolio")}
