@@ -708,6 +708,59 @@ export function MarketplaceSection({
               </div>
             ) : (
               <>
+                <Card className="overflow-hidden border border-slate-200 rounded-xl">
+                  <div className="grid grid-cols-1 md:grid-cols-12">
+                    <div className="md:col-span-7 p-5 bg-gradient-to-br from-cyan-50 via-white to-indigo-50/50">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h4 className="text-lg font-bold text-slate-900 truncate">
+                          {selectedProfile?.display_name || "Profile"}
+                        </h4>
+                        <Badge className="h-5 px-2 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold">
+                          Verified
+                        </Badge>
+                      </div>
+                      <p className="text-xs font-medium text-slate-500">
+                        {selectedProfile?.location || "Location not specified"}
+                      </p>
+                      <p className="text-sm text-slate-600 mt-3 line-clamp-3 min-h-[60px]">
+                        {selectedProfile?.tagline ||
+                          selectedProfile?.bio ||
+                          "No profile summary available yet."}
+                      </p>
+                      <div className="grid grid-cols-2 gap-3 mt-4 text-xs">
+                        <div className="rounded-lg border border-slate-100 bg-white/80 px-3 py-2">
+                          <p className="text-slate-500 font-medium">Followers</p>
+                          <p className="text-slate-900 font-bold mt-0.5">
+                            {Number(selectedProfile?.followers || 0) > 0
+                              ? Number(selectedProfile?.followers || 0).toLocaleString()
+                              : "N/A"}
+                          </p>
+                        </div>
+                        <div className="rounded-lg border border-slate-100 bg-white/80 px-3 py-2">
+                          <p className="text-slate-500 font-medium">Engagement</p>
+                          <p className="text-slate-900 font-bold mt-0.5">
+                            {Number(selectedProfile?.engagement_rate || 0) > 0
+                              ? `${Number(selectedProfile?.engagement_rate || 0).toFixed(1)}%`
+                              : "N/A"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="md:col-span-5 relative min-h-[260px]">
+                      <img
+                        src={
+                          selectedProfile?.profile_photo_url ||
+                          MARKETPLACE_FALLBACK_IMAGE
+                        }
+                        alt={selectedProfile?.display_name || "Profile image"}
+                        className="absolute inset-0 h-full w-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/20 to-transparent" />
+                      <div className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-cyan-100/45 to-transparent" />
+                    </div>
+                  </div>
+                </Card>
+
                 <Card className="p-4 border border-gray-200 rounded-xl">
                   <h4 className="text-sm font-bold text-gray-900 mb-3">
                     Availability & Rates
