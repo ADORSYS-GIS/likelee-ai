@@ -517,7 +517,8 @@ export function MarketplaceSection({
               return (
                 <Card
                   key={profile.id}
-                  className="group overflow-hidden border border-slate-200 rounded-xl bg-white hover:border-indigo-200 hover:shadow-md transition-all"
+                  className="group overflow-hidden border border-slate-200 rounded-xl bg-white hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer"
+                  onClick={() => setSelectedProfile(profile)}
                 >
                   <div className="relative">
                     {profile.profile_photo_url ? (
@@ -532,17 +533,17 @@ export function MarketplaceSection({
                       </div>
                     )}
                     <div className="absolute inset-x-0 top-0 p-2.5 flex items-center justify-between">
-                      <Badge className="h-5 px-2 rounded-md bg-white/90 text-slate-700 border border-slate-200 text-[9px] font-semibold shadow-sm">
+                      <Badge className="h-6 px-2.5 rounded-md bg-white/90 text-slate-700 border border-slate-200 text-[11px] font-semibold shadow-sm">
                         Creator
                       </Badge>
                       <div className="flex items-center gap-1.5">
                         {profile.is_connected && (
-                          <Badge className="h-5 px-2 rounded-md bg-emerald-50/95 text-emerald-700 border border-emerald-200 text-[9px] font-semibold shadow-sm">
+                          <Badge className="h-6 px-2.5 rounded-md bg-emerald-50/95 text-emerald-700 border border-emerald-200 text-[11px] font-semibold shadow-sm">
                             Connected
                           </Badge>
                         )}
                         {!profile.is_connected && connectionStatus === "pending" && (
-                          <Badge className="h-5 px-2 rounded-md bg-amber-50/95 text-amber-700 border border-amber-200 text-[9px] font-semibold shadow-sm">
+                          <Badge className="h-6 px-2.5 rounded-md bg-amber-50/95 text-amber-700 border border-amber-200 text-[11px] font-semibold shadow-sm">
                             Waiting
                           </Badge>
                         )}
@@ -552,14 +553,14 @@ export function MarketplaceSection({
                       </div>
                     </div>
                     <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-slate-950/65 via-slate-900/20 to-transparent">
-                      <h3 className="text-sm font-bold text-white truncate">
+                      <h3 className="text-base font-bold text-white truncate">
                         {profile.display_name}
                       </h3>
-                      <p className="text-[11px] text-white/90 font-medium mt-0.5 truncate">
+                      <p className="text-xs text-white/90 font-medium mt-0.5 truncate">
                         {roleLabel}
                       </p>
                       {profile.location && (
-                        <p className="text-[11px] text-white/80 mt-0.5 truncate">
+                        <p className="text-xs text-white/80 mt-0.5 truncate">
                           {profile.location}
                         </p>
                       )}
@@ -568,12 +569,12 @@ export function MarketplaceSection({
 
                   <div className="p-3.5">
                     {(profile.tagline || profile.bio) && (
-                      <p className="text-xs text-slate-600 line-clamp-2 min-h-[34px]">
+                      <p className="text-sm text-slate-600 line-clamp-2 min-h-[40px]">
                         {profile.tagline || profile.bio}
                       </p>
                     )}
                     {!(profile.tagline || profile.bio) && (
-                      <p className="text-xs text-slate-400 min-h-[34px]">No bio available yet.</p>
+                      <p className="text-sm text-slate-400 min-h-[40px]">No bio available yet.</p>
                     )}
 
                     <div className="flex flex-wrap items-center gap-2 mt-3">
@@ -588,16 +589,16 @@ export function MarketplaceSection({
                       ))}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2.5 mt-3 text-xs">
+                    <div className="grid grid-cols-2 gap-2.5 mt-3">
                       <div className="rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-2">
-                        <p className="text-slate-500 font-medium">Followers</p>
-                        <p className="text-slate-900 font-bold mt-0.5">
+                        <p className="text-slate-500 text-sm font-medium">Followers</p>
+                        <p className="text-slate-900 text-lg font-bold mt-0.5 leading-none">
                           {followers > 0 ? followers.toLocaleString() : "N/A"}
                         </p>
                       </div>
                       <div className="rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-2">
-                        <p className="text-slate-500 font-medium">Engagement</p>
-                        <p className="text-slate-900 font-bold mt-0.5">
+                        <p className="text-slate-500 text-sm font-medium">Engagement</p>
+                        <p className="text-slate-900 text-lg font-bold mt-0.5 leading-none">
                           {engagement > 0 ? `${engagement.toFixed(1)}%` : "N/A"}
                         </p>
                       </div>
@@ -605,14 +606,7 @@ export function MarketplaceSection({
 
                     <div className="mt-3.5 flex items-center gap-2">
                       <Button
-                        variant="outline"
-                        className="h-7 px-2.5 text-xs rounded-lg border-slate-200"
-                        onClick={() => setSelectedProfile(profile)}
-                      >
-                        View Profile
-                      </Button>
-                      <Button
-                        className={`h-7 px-2.5 text-xs rounded-lg ${
+                        className={`h-7 px-2.5 text-sm rounded-lg ${
                           connectionStatus === "connected"
                             ? "bg-indigo-300 text-white hover:bg-indigo-300"
                             : connectionStatus === "pending"
@@ -622,7 +616,9 @@ export function MarketplaceSection({
                                 : "bg-indigo-600 hover:bg-indigo-700 text-white"
                         }`}
                         disabled={disableConnectAction}
-                        onClick={async () => {
+                        onClick={async (e) => {
+                          // Prevent card click from opening details when pressing connect.
+                          e.stopPropagation();
                           try {
                             const result: any = await base44.post(connectEndpoint, {
                               profile_type: profile.profile_type,
@@ -720,6 +716,103 @@ export function MarketplaceSection({
               </div>
             ) : (
               <>
+                {(() => {
+                  const profile = (detailsQuery.data?.profile || {}) as Record<
+                    string,
+                    any
+                  >;
+                  const openToWork = Array.isArray(profile?.content_types)
+                    ? profile.content_types
+                    : [];
+                  const industries = Array.isArray(profile?.industries)
+                    ? profile.industries
+                    : [];
+                  const baseRateCents = Number(
+                    profile?.base_monthly_price_cents || 0,
+                  );
+                  const rateCurrency = String(profile?.currency_code || "USD");
+                  const openToNegotiations = !!profile?.accept_negotiations;
+
+                  return (
+                    <>
+                      <Card className="p-4 border border-gray-200 rounded-xl">
+                        <div className="space-y-5">
+                          <div>
+                            <h4 className="text-sm font-bold text-gray-900 mb-2">
+                              Open to work
+                            </h4>
+                            {openToWork.length ? (
+                              <div className="flex flex-wrap gap-2">
+                                {openToWork.map((tag: string) => (
+                                  <Badge
+                                    key={tag}
+                                    className="bg-cyan-50 text-cyan-700 border border-cyan-200 hover:bg-cyan-100"
+                                  >
+                                    {String(tag)}
+                                  </Badge>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-gray-500">
+                                No open-work preferences shared yet.
+                              </p>
+                            )}
+                          </div>
+
+                          <div>
+                            <h4 className="text-sm font-bold text-gray-900 mb-2">
+                              Industries
+                            </h4>
+                            {industries.length ? (
+                              <div className="flex flex-wrap gap-2">
+                                {industries.map((tag: string) => (
+                                  <Badge
+                                    key={tag}
+                                    variant="secondary"
+                                    className="bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100"
+                                  >
+                                    {String(tag)}
+                                  </Badge>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-gray-500">
+                                No industries shared yet.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </Card>
+
+                      <Card className="p-4 border border-cyan-100 bg-cyan-50/50 rounded-xl">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <h4 className="text-sm font-bold text-gray-900">
+                              Licensing rate
+                            </h4>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Base rate from public profile
+                            </p>
+                            <p className="text-xs text-emerald-700 mt-2 font-medium">
+                              {openToNegotiations
+                                ? "Open to negotiations"
+                                : "Negotiation preferences not specified"}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-cyan-600">
+                              {baseRateCents > 0
+                                ? formatMoney(baseRateCents, rateCurrency)
+                                : "N/A"}
+                            </p>
+                            <p className="text-xs text-gray-500">/month</p>
+                          </div>
+                        </div>
+                      </Card>
+                    </>
+                  );
+                })()}
+
                 <Card className="overflow-hidden border border-slate-200 rounded-xl">
                   <div className="grid grid-cols-1 md:grid-cols-12">
                     <div className="md:col-span-7 p-5 bg-gradient-to-br from-cyan-50 via-white to-indigo-50/50">
