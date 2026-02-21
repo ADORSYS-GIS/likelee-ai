@@ -1701,6 +1701,10 @@ export default function CreatorDashboard() {
       id: "agency-connection",
       label: "Agency Connection",
       icon: LinkIcon,
+      badge:
+        agencyInvites.filter((i) => i.status === "pending").length > 0
+          ? agencyInvites.filter((i) => i.status === "pending").length
+          : undefined,
     },
   ];
 
@@ -4552,7 +4556,7 @@ export default function CreatorDashboard() {
                         {c.agencies?.agency_name || c.agency_id}
                       </div>
                       <div className="text-xs text-gray-500 truncate">
-                        {c.agency_id}
+                        Connected agency
                       </div>
                     </div>
                   </div>
@@ -4625,7 +4629,7 @@ export default function CreatorDashboard() {
                         {inv?.agencies?.agency_name || "Invitation from agency"}
                       </div>
                       <div className="text-xs text-gray-500 truncate mt-1">
-                        {inv.agency_id}
+                        Review and respond below
                       </div>
                     </div>
                   </div>

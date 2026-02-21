@@ -795,6 +795,9 @@ export default function TalentPortal({
   );
 
   const agencyInvites = ((agencyInvitesResp as any)?.invites as any[]) || [];
+  const pendingAgencyInvitesCount = (agencyInvites as any[]).filter(
+    (i) => String(i?.status || "").toLowerCase() === "pending",
+  ).length;
 
   const { data: agencyConnections = [], isLoading: agencyConnectionsLoading } =
     useQuery({
@@ -1012,6 +1015,7 @@ export default function TalentPortal({
                     id: "agency_connection",
                     label: "Agency Connection",
                     icon: Building2,
+                    badge: pendingAgencyInvitesCount || undefined,
                   },
                 ]
               : [
@@ -2403,13 +2407,13 @@ export default function TalentPortal({
                           className="p-4 border border-gray-200 rounded-lg flex items-center justify-between gap-4"
                         >
                           <div className="min-w-0">
-                            <div className="font-semibold text-gray-900 truncate">
-                              Invitation from agency
-                            </div>
-                            <div className="text-xs text-gray-500 truncate mt-1">
-                              {inv.agency_id}
-                            </div>
+                          <div className="font-semibold text-gray-900 truncate">
+                            Invitation from agency
                           </div>
+                          <div className="text-xs text-gray-500 truncate mt-1">
+                            Review and respond below
+                          </div>
+                        </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
                             <Button
                               variant="outline"
