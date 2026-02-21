@@ -372,18 +372,22 @@ pub async fn search_marketplace_profiles(
             format!("{city}, {state}")
         };
 
-        let connection_status = if !creator_id.is_empty() && connected_creator_ids.contains(creator_id) {
-            "connected"
-        } else if !creator_id.is_empty() {
-            match invite_status_by_creator_id.get(creator_id).map(|s| s.as_str()) {
-                Some("accepted") => "connected",
-                Some("pending") => "pending",
-                Some("declined") => "declined",
-                _ => "none",
-            }
-        } else {
-            "none"
-        };
+        let connection_status =
+            if !creator_id.is_empty() && connected_creator_ids.contains(creator_id) {
+                "connected"
+            } else if !creator_id.is_empty() {
+                match invite_status_by_creator_id
+                    .get(creator_id)
+                    .map(|s| s.as_str())
+                {
+                    Some("accepted") => "connected",
+                    Some("pending") => "pending",
+                    Some("declined") => "declined",
+                    _ => "none",
+                }
+            } else {
+                "none"
+            };
 
         results.push(serde_json::json!({
             "id": row.get("id").cloned().unwrap_or(serde_json::Value::Null),
@@ -501,7 +505,10 @@ pub async fn get_marketplace_profile_details(
     let profile_type = path.profile_type.trim().to_lowercase();
     let profile_id = path.id.trim().to_string();
     if profile_id.is_empty() || profile_type != "creator" {
-        return Err((StatusCode::BAD_REQUEST, "invalid marketplace profile path".to_string()));
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "invalid marketplace profile path".to_string(),
+        ));
     }
 
     let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
@@ -536,10 +543,10 @@ pub async fn get_marketplace_profile_details(
     }
     let creator_rows: Vec<serde_json::Value> =
         serde_json::from_str(&creator_text).unwrap_or_default();
-    let row = creator_rows
-        .first()
-        .cloned()
-        .ok_or((StatusCode::NOT_FOUND, "marketplace profile not found".to_string()))?;
+    let row = creator_rows.first().cloned().ok_or((
+        StatusCode::NOT_FOUND,
+        "marketplace profile not found".to_string(),
+    ))?;
     creator_id_for_connection = Some(profile_id.clone());
     response["profile"] = row;
 
@@ -587,7 +594,10 @@ pub async fn get_marketplace_profile_details(
     }
 
     if !talent_ids_for_assets.is_empty() {
-        let id_refs = talent_ids_for_assets.iter().map(|s| s.as_str()).collect::<Vec<_>>();
+        let id_refs = talent_ids_for_assets
+            .iter()
+            .map(|s| s.as_str())
+            .collect::<Vec<_>>();
         let portfolio_resp = state
             .pg
             .from("talent_portfolio_items")
