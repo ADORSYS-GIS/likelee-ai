@@ -4627,7 +4627,9 @@ export default function CreatorDashboard() {
                       </div>
                       <div className="min-w-0">
                         <div className="font-semibold text-gray-900 truncate">
-                          {inv?.agencies?.agency_name || "Invitation from agency"}
+                          {inv?.agencies?.agency_name
+                            ? `Invitation from ${inv.agencies.agency_name}`
+                            : "Invitation from agency"}
                         </div>
                         <div className="text-xs text-gray-500 truncate mt-1">
                           {inv?.agencies?.email ||
@@ -4719,9 +4721,9 @@ export default function CreatorDashboard() {
                     </div>
                   </div>
                   <div className="rounded-md border border-cyan-100 bg-cyan-50 px-3 py-2 text-xs text-cyan-900">
-                    <span className="font-semibold">Likelee notice:</span>{" "}
-                    This agency found your public profile in marketplace and sent
-                    a connection invitation.
+                    <span className="font-semibold">Likelee notice:</span> This
+                    agency found your public profile in marketplace and sent a
+                    connection invitation.
                   </div>
                 </div>
               ))}
