@@ -30,8 +30,7 @@ export const CampaignsTab = () => {
   const [editingCampaign, setEditingCampaign] = useState<any>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteChecking, setDeleteChecking] = useState(false);
-  const [deleteHasActiveBookings, setDeleteHasActiveBookings] =
-    useState(false);
+  const [deleteHasActiveBookings, setDeleteHasActiveBookings] = useState(false);
   const [deleteTargetCampaign, setDeleteTargetCampaign] = useState<any>(null);
   const queryClient = useQueryClient();
 
@@ -76,7 +75,9 @@ export const CampaignsTab = () => {
     return n;
   };
 
-  const checkHasActiveBookings = async (campaignId: string): Promise<boolean> => {
+  const checkHasActiveBookings = async (
+    campaignId: string,
+  ): Promise<boolean> => {
     const { data, error } = await supabase
       .from("bookings")
       .select("id,created_at,usage_duration")
