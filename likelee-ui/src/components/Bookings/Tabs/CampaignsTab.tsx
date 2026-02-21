@@ -5,6 +5,16 @@ import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -18,6 +28,11 @@ import { toast } from "@/components/ui/use-toast";
 export const CampaignsTab = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<any>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteChecking, setDeleteChecking] = useState(false);
+  const [deleteHasActiveBookings, setDeleteHasActiveBookings] =
+    useState(false);
+  const [deleteTargetCampaign, setDeleteTargetCampaign] = useState<any>(null);
   const queryClient = useQueryClient();
 
   const { data: campaigns, isLoading } = useQuery({
@@ -53,6 +68,46 @@ export const CampaignsTab = () => {
       });
     },
   });
+
+  const usageDurationDaysFromText = (v: any): number | null => {
+    if (v === null || v === undefined) return null;
+    const n = typeof v === "number" ? v : Number(String(v).trim());
+    if (!Number.isFinite(n) || n < 0) return null;
+    return n;
+  };
+
+  const checkHasActiveBookings = async (campaignId: string): Promise<boolean> => {
+    const { data, error } = await supabase
+      .from("bookings")
+      .select("id,created_at,usage_duration")
+      .eq("campaign_id", campaignId);
+
+    if (error) {
+      return true;
+    }
+
+    const rows = Array.isArray(data) ? data : [];
+    const nowMs = Date.now();
+    for (const b of rows) {
+      const createdAt = b?.created_at;
+      if (!createdAt) {
+        return true;
+      }
+      const createdMs = new Date(createdAt).getTime();
+      if (!Number.isFinite(createdMs)) {
+        return true;
+      }
+      const durDays = usageDurationDaysFromText(b?.usage_duration);
+      if (durDays === null) {
+        return true;
+      }
+      const endsMs = createdMs + durDays * 24 * 60 * 60 * 1000;
+      if (nowMs < endsMs) {
+        return true;
+      }
+    }
+    return false;
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -170,13 +225,17 @@ export const CampaignsTab = () => {
                         variant="ghost"
                         size="icon"
                         className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                        onClick={() => {
-                          if (
-                            window.confirm(
-                              "Are you sure you want to delete this campaign?",
-                            )
-                          ) {
-                            deleteMutation.mutate(campaign.id);
+                        onClick={async () => {
+                          setDeleteTargetCampaign(campaign);
+                          setDeleteDialogOpen(true);
+                          setDeleteChecking(true);
+                          try {
+                            const hasActive = await checkHasActiveBookings(
+                              campaign.id,
+                            );
+                            setDeleteHasActiveBookings(hasActive);
+                          } finally {
+                            setDeleteChecking(false);
                           }
                         }}
                       >
@@ -190,6 +249,50 @@ export const CampaignsTab = () => {
           </TableBody>
         </Table>
       </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete campaign</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteChecking
+                ? "Checking linked bookings..."
+                : deleteHasActiveBookings
+                  ? "This campaign has ongoing bookings. Deleting it will also delete those bookings. Do you want to continue?"
+                  : "Are you sure you want to delete this campaign?"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={deleteChecking || deleteMutation.isPending}
+              onClick={() => {
+                setDeleteTargetCampaign(null);
+                setDeleteHasActiveBookings(false);
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={
+                deleteChecking ||
+                deleteMutation.isPending ||
+                !deleteTargetCampaign?.id
+              }
+              onClick={() => {
+                const id = deleteTargetCampaign?.id;
+                setDeleteDialogOpen(false);
+                setDeleteTargetCampaign(null);
+                setDeleteHasActiveBookings(false);
+                if (id) {
+                  deleteMutation.mutate(id);
+                }
+              }}
+            >
+              Yes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {modalOpen && (
         <CampaignModal

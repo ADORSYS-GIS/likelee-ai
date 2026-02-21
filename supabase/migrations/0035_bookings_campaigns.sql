@@ -14,7 +14,7 @@ CREATE TABLE public.bookings_campaigns (
 );
 
 -- Add campaign_id to bookings table to allow grouping
-ALTER TABLE public.bookings ADD COLUMN campaign_id uuid REFERENCES public.bookings_campaigns(id) ON DELETE SET NULL;
+ALTER TABLE public.bookings ADD COLUMN campaign_id uuid REFERENCES public.bookings_campaigns(id) ON DELETE CASCADE;
 
 -- Indices for performance
 CREATE INDEX idx_bookings_campaign_id ON public.bookings(campaign_id);
