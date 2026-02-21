@@ -505,7 +505,7 @@ export function MarketplaceSection({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 mt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-6 gap-x-4 mt-2">
             {profiles.map((profile) => {
               const profileKey = `${profile.profile_type}:${profile.id}`;
               const isPendingConnect = pendingConnectKeys.has(profileKey);
@@ -837,7 +837,7 @@ export function MarketplaceSection({
                       <p className="text-xs font-medium text-slate-500">
                         {selectedProfile?.location || "Location not specified"}
                       </p>
-                      <p className="text-sm text-slate-600 mt-3 line-clamp-3 min-h-[60px]">
+                      <p className="text-sm text-slate-600 mt-3 break-words whitespace-pre-line">
                         {selectedProfile?.tagline ||
                           selectedProfile?.bio ||
                           "No profile summary available yet."}
