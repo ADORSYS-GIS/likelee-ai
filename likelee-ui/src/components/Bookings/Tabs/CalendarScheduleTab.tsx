@@ -62,7 +62,7 @@ export const CalendarScheduleTab = ({
 
   const [talentViewMode, setTalentViewMode] = useState<
     "single" | "all" | "selected"
-  >("single");
+  >("all");
   const [selectedTalentId, setSelectedTalentId] = useState<string>("");
   const [talents, setTalents] = useState<{ id: string; name: string }[]>([]);
 
