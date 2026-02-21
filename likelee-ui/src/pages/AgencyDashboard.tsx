@@ -10113,7 +10113,7 @@ const SocialDiscoveryTab = () => (
 const MarketplaceTab = () => (
   <MarketplaceSection
     title="Likelee Marketplace"
-    subtitle="Verified creators and verified talent only"
+    subtitle="Verified creators only"
     verifiedBadgeLabel="Verified Profiles"
     queryScope="scouting-marketplace"
   />

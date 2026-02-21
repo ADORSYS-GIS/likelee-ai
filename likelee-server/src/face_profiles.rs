@@ -49,19 +49,19 @@ pub struct SearchFacesQuery {
 #[derive(Deserialize)]
 pub struct MarketplaceSearchQuery {
     pub query: Option<String>,
-    pub profile_type: Option<String>, // all | creator | talent
+    pub profile_type: Option<String>, // all | creator | connected
     pub limit: Option<usize>,
 }
 
 #[derive(Deserialize)]
 pub struct MarketplaceDetailsPath {
-    pub profile_type: String, // creator | talent
+    pub profile_type: String, // creator
     pub id: String,
 }
 
 #[derive(Deserialize)]
 pub struct MarketplaceConnectPayload {
-    pub profile_type: String, // creator | talent
+    pub profile_type: String, // creator
     pub target_id: String,
     pub message: Option<String>,
 }
@@ -196,13 +196,12 @@ pub async fn search_marketplace_profiles(
         .as_ref()
         .map(|s| s.trim().to_lowercase())
         .unwrap_or_else(|| "all".to_string());
+    if profile_type != "all" && profile_type != "creator" && profile_type != "connected" {
+        return Err((StatusCode::BAD_REQUEST, "invalid profile_type".to_string()));
+    }
 
     let mut creators_rows: Vec<serde_json::Value> = Vec::new();
-    let mut talents_rows: Vec<serde_json::Value> = Vec::new();
     let mut connected_creator_ids: HashSet<String> = HashSet::new();
-    let mut connected_talent_ids: HashSet<String> = HashSet::new();
-    let mut connected_talent_name_keys: HashSet<String> = HashSet::new();
-    let mut connected_talent_emails: HashSet<String> = HashSet::new();
     let mut invite_status_by_creator_id: HashMap<String, String> = HashMap::new();
     let mut effective_agency_id = user.id.clone();
 
@@ -278,32 +277,9 @@ pub async fn search_marketplace_profiles(
 
         let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
         for row in rows {
-            if let Some(id) = row.get("id").and_then(|v| v.as_str()) {
-                if !id.is_empty() {
-                    connected_talent_ids.insert(id.to_string());
-                }
-            }
             if let Some(creator_id) = row.get("creator_id").and_then(|v| v.as_str()) {
                 if !creator_id.is_empty() {
                     connected_creator_ids.insert(creator_id.to_string());
-                }
-            }
-            if let Some(full_legal_name) = row.get("full_legal_name").and_then(|v| v.as_str()) {
-                let key = full_legal_name.trim().to_lowercase();
-                if !key.is_empty() {
-                    connected_talent_name_keys.insert(key);
-                }
-            }
-            if let Some(stage_name) = row.get("stage_name").and_then(|v| v.as_str()) {
-                let key = stage_name.trim().to_lowercase();
-                if !key.is_empty() {
-                    connected_talent_name_keys.insert(key);
-                }
-            }
-            if let Some(email) = row.get("email").and_then(|v| v.as_str()) {
-                let key = email.trim().to_lowercase();
-                if !key.is_empty() {
-                    connected_talent_emails.insert(key);
                 }
             }
         }
@@ -343,7 +319,7 @@ pub async fn search_marketplace_profiles(
         }
     }
 
-    if profile_type == "all" || profile_type == "creator" {
+    if profile_type == "all" || profile_type == "creator" || profile_type == "connected" {
         let mut request = state
             .pg
             .from("creators")
@@ -373,38 +349,6 @@ pub async fn search_marketplace_profiles(
             return Err(sanitize_db_error(status.as_u16(), text));
         }
         creators_rows = serde_json::from_str(&text).unwrap_or_default();
-    }
-
-    if profile_type == "all" || profile_type == "talent" {
-        let mut request = state
-            .pg
-            .from("agency_users")
-            .select("id,agency_id,creator_id,full_legal_name,stage_name,email,city,state_province,country,bio_notes,profile_photo_url,special_skills,instagram_followers,engagement_rate,is_verified_talent,status,updated_at")
-            .eq("role", "talent")
-            .eq("status", "active")
-            .eq("is_verified_talent", "true")
-            .limit(limit);
-
-        if let Some(search) = query_text.as_ref() {
-            let search_val = format!("*{search}*");
-            request = request.or(format!(
-                "full_legal_name.ilike.{search_val},stage_name.ilike.{search_val},bio_notes.ilike.{search_val}"
-            ));
-        }
-
-        let resp = request
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let status = resp.status();
-        let text = resp
-            .text()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !status.is_success() {
-            return Err(sanitize_db_error(status.as_u16(), text));
-        }
-        talents_rows = serde_json::from_str(&text).unwrap_or_default();
     }
 
     let mut results: Vec<serde_json::Value> = Vec::new();
@@ -463,96 +407,6 @@ pub async fn search_marketplace_profiles(
             "connection_status": connection_status,
             "verification_source": "kyc",
             "kyc_status": row.get("kyc_status").cloned().unwrap_or(serde_json::Value::Null),
-            "updated_at": row.get("updated_at").cloned().unwrap_or(serde_json::Value::Null),
-        }));
-    }
-
-    for row in talents_rows {
-        let talent_id = row.get("id").and_then(|v| v.as_str()).unwrap_or("");
-        let agency_id = row.get("agency_id").and_then(|v| v.as_str()).unwrap_or("");
-        let creator_id = row.get("creator_id").and_then(|v| v.as_str()).unwrap_or("");
-        let email_key = row
-            .get("email")
-            .and_then(|v| v.as_str())
-            .map(|s| s.trim().to_lowercase())
-            .unwrap_or_default();
-        let display_name = row
-            .get("stage_name")
-            .and_then(|v| v.as_str())
-            .filter(|s| !s.trim().is_empty())
-            .or_else(|| row.get("full_legal_name").and_then(|v| v.as_str()))
-            .unwrap_or("Unknown Talent")
-            .to_string();
-        let city = row.get("city").and_then(|v| v.as_str()).unwrap_or("");
-        let state = row
-            .get("state_province")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
-        let country = row.get("country").and_then(|v| v.as_str()).unwrap_or("");
-        let location = if city.is_empty() && state.is_empty() && country.is_empty() {
-            String::new()
-        } else {
-            [city, state, country]
-                .iter()
-                .filter(|s| !s.is_empty())
-                .cloned()
-                .collect::<Vec<_>>()
-                .join(", ")
-        };
-
-        let name_key_full = row
-            .get("full_legal_name")
-            .and_then(|v| v.as_str())
-            .map(|s| s.trim().to_lowercase())
-            .unwrap_or_default();
-        let name_key_stage = row
-            .get("stage_name")
-            .and_then(|v| v.as_str())
-            .map(|s| s.trim().to_lowercase())
-            .unwrap_or_default();
-        let is_connected = (!talent_id.is_empty() && connected_talent_ids.contains(talent_id))
-            || (!creator_id.is_empty() && connected_creator_ids.contains(creator_id))
-            || (!agency_id.is_empty() && agency_id == effective_agency_id)
-            || (!name_key_full.is_empty() && connected_talent_name_keys.contains(&name_key_full))
-            || (!name_key_stage.is_empty() && connected_talent_name_keys.contains(&name_key_stage))
-            || (!email_key.is_empty() && connected_talent_emails.contains(&email_key));
-
-        let connection_status = if is_connected {
-            "connected"
-        } else if !creator_id.is_empty() {
-            match invite_status_by_creator_id.get(creator_id).map(|s| s.as_str()) {
-                Some("accepted") => "connected",
-                Some("pending") => "pending",
-                Some("declined") => "declined",
-                _ => "none",
-            }
-        } else {
-            "none"
-        };
-
-        results.push(serde_json::json!({
-            "id": row.get("id").cloned().unwrap_or(serde_json::Value::Null),
-            "profile_type": "talent",
-            "display_name": display_name,
-            "full_name": row.get("full_legal_name").cloned().unwrap_or(serde_json::Value::Null),
-            "stage_name": row.get("stage_name").cloned().unwrap_or(serde_json::Value::Null),
-            "location": location,
-            "city": row.get("city").cloned().unwrap_or(serde_json::Value::Null),
-            "state": row.get("state_province").cloned().unwrap_or(serde_json::Value::Null),
-            "country": row.get("country").cloned().unwrap_or(serde_json::Value::Null),
-            "tagline": serde_json::Value::Null,
-            "bio": row.get("bio_notes").cloned().unwrap_or(serde_json::Value::Null),
-            "profile_photo_url": row.get("profile_photo_url").cloned().unwrap_or(serde_json::Value::Null),
-            "creator_type": serde_json::Value::Null,
-            "skills": row.get("special_skills").cloned().unwrap_or(serde_json::json!([])),
-            "followers": row.get("instagram_followers").cloned().unwrap_or(serde_json::Value::Null),
-            "engagement_rate": row.get("engagement_rate").cloned().unwrap_or(serde_json::Value::Null),
-            "is_verified": true,
-            "is_connected": connection_status == "connected",
-            "is_pending": connection_status == "pending",
-            "connection_status": connection_status,
-            "verification_source": "agency",
-            "kyc_status": serde_json::Value::Null,
             "updated_at": row.get("updated_at").cloned().unwrap_or(serde_json::Value::Null),
         }));
     }
@@ -646,7 +500,7 @@ pub async fn get_marketplace_profile_details(
 
     let profile_type = path.profile_type.trim().to_lowercase();
     let profile_id = path.id.trim().to_string();
-    if profile_id.is_empty() || (profile_type != "creator" && profile_type != "talent") {
+    if profile_id.is_empty() || profile_type != "creator" {
         return Err((StatusCode::BAD_REQUEST, "invalid marketplace profile path".to_string()));
     }
 
@@ -663,136 +517,73 @@ pub async fn get_marketplace_profile_details(
 
     let creator_id_for_connection: Option<String>;
     let mut talent_ids_for_assets: Vec<String> = Vec::new();
+    let creator_resp = state
+        .pg
+        .from("creators")
+        .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status")
+        .eq("id", &profile_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let creator_status = creator_resp.status();
+    let creator_text = creator_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !creator_status.is_success() {
+        return Err(sanitize_db_error(creator_status.as_u16(), creator_text));
+    }
+    let creator_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&creator_text).unwrap_or_default();
+    let row = creator_rows
+        .first()
+        .cloned()
+        .ok_or((StatusCode::NOT_FOUND, "marketplace profile not found".to_string()))?;
+    creator_id_for_connection = Some(profile_id.clone());
+    response["profile"] = row;
 
-    if profile_type == "talent" {
-        let talent_resp = state
-            .pg
-            .from("agency_users")
-            .select("id,agency_id,creator_id,full_legal_name,stage_name,city,state_province,country,bio_notes,profile_photo_url,special_skills,instagram_followers,engagement_rate,is_verified_talent,status")
-            .eq("id", &profile_id)
-            .eq("role", "talent")
-            .limit(1)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let talent_status = talent_resp.status();
-        let talent_text = talent_resp
-            .text()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !talent_status.is_success() {
-            return Err(sanitize_db_error(talent_status.as_u16(), talent_text));
-        }
-        let talent_rows: Vec<serde_json::Value> =
-            serde_json::from_str(&talent_text).unwrap_or_default();
-        let row = talent_rows
-            .first()
-            .cloned()
-            .ok_or((StatusCode::NOT_FOUND, "marketplace profile not found".to_string()))?;
-        creator_id_for_connection = row
-            .get("creator_id")
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string());
-        talent_ids_for_assets.push(profile_id.clone());
-        response["profile"] = row;
+    let rates_resp = state
+        .pg
+        .from("creator_custom_rates")
+        .select("rate_type,rate_name,price_per_month_cents")
+        .eq("creator_id", &profile_id)
+        .limit(12)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let rates_status = rates_resp.status();
+    let rates_text = rates_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if rates_status.is_success() {
+        response["rates"] = serde_json::from_str(&rates_text).unwrap_or(serde_json::json!([]));
+    }
 
-        let pref_resp = state
-            .pg
-            .from("talent_booking_preferences")
-            .select("willing_to_travel,min_day_rate_cents,currency,updated_at")
-            .eq("talent_id", &profile_id)
-            .limit(1)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let pref_status = pref_resp.status();
-        let pref_text = pref_resp
-            .text()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if pref_status.is_success() {
-            let pref_rows: Vec<serde_json::Value> = serde_json::from_str(&pref_text).unwrap_or_default();
-            if let Some(pref) = pref_rows.first() {
-                response["availability"] = serde_json::json!({
-                    "willing_to_travel": pref.get("willing_to_travel").cloned().unwrap_or(serde_json::json!(false)),
-                    "updated_at": pref.get("updated_at").cloned().unwrap_or(serde_json::Value::Null),
-                });
-                response["rates"] = serde_json::json!([{
-                    "label": "Day Rate",
-                    "amount_cents": pref.get("min_day_rate_cents").cloned().unwrap_or(serde_json::Value::Null),
-                    "currency": pref.get("currency").cloned().unwrap_or(serde_json::json!("USD")),
-                }]);
-            }
-        }
-    } else {
-        let creator_resp = state
-            .pg
-            .from("creators")
-            .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status")
-            .eq("id", &profile_id)
-            .limit(1)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let creator_status = creator_resp.status();
-        let creator_text = creator_resp
-            .text()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !creator_status.is_success() {
-            return Err(sanitize_db_error(creator_status.as_u16(), creator_text));
-        }
-        let creator_rows: Vec<serde_json::Value> =
-            serde_json::from_str(&creator_text).unwrap_or_default();
-        let row = creator_rows
-            .first()
-            .cloned()
-            .ok_or((StatusCode::NOT_FOUND, "marketplace profile not found".to_string()))?;
-        creator_id_for_connection = Some(profile_id.clone());
-        response["profile"] = row;
-
-        let rates_resp = state
-            .pg
-            .from("creator_custom_rates")
-            .select("rate_type,rate_name,price_per_month_cents")
-            .eq("creator_id", &profile_id)
-            .limit(12)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let rates_status = rates_resp.status();
-        let rates_text = rates_resp
-            .text()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if rates_status.is_success() {
-            response["rates"] = serde_json::from_str(&rates_text).unwrap_or(serde_json::json!([]));
-        }
-
-        let talent_ids_resp = state
-            .pg
-            .from("agency_users")
-            .select("id")
-            .eq("creator_id", &profile_id)
-            .eq("role", "talent")
-            .limit(30)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let talent_ids_status = talent_ids_resp.status();
-        let talent_ids_text = talent_ids_resp
-            .text()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if talent_ids_status.is_success() {
-            let rows: Vec<serde_json::Value> =
-                serde_json::from_str(&talent_ids_text).unwrap_or_default();
-            talent_ids_for_assets = rows
-                .iter()
-                .filter_map(|r| r.get("id").and_then(|v| v.as_str()))
-                .map(|s| s.to_string())
-                .collect();
-        }
+    let talent_ids_resp = state
+        .pg
+        .from("agency_users")
+        .select("id")
+        .eq("creator_id", &profile_id)
+        .eq("role", "talent")
+        .limit(30)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let talent_ids_status = talent_ids_resp.status();
+    let talent_ids_text = talent_ids_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if talent_ids_status.is_success() {
+        let rows: Vec<serde_json::Value> =
+            serde_json::from_str(&talent_ids_text).unwrap_or_default();
+        talent_ids_for_assets = rows
+            .iter()
+            .filter_map(|r| r.get("id").and_then(|v| v.as_str()))
+            .map(|s| s.to_string())
+            .collect();
     }
 
     if !talent_ids_for_assets.is_empty() {
@@ -903,7 +694,7 @@ pub async fn create_marketplace_connection_request(
     let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
 
     let profile_type = payload.profile_type.trim().to_lowercase();
-    if profile_type != "creator" && profile_type != "talent" {
+    if profile_type != "creator" {
         return Err((StatusCode::BAD_REQUEST, "invalid profile_type".to_string()));
     }
     let target_id = payload.target_id.trim();
@@ -911,34 +702,7 @@ pub async fn create_marketplace_connection_request(
         return Err((StatusCode::BAD_REQUEST, "missing target_id".to_string()));
     }
 
-    let creator_id = if profile_type == "creator" {
-        target_id.to_string()
-    } else {
-        let resp = state
-            .pg
-            .from("agency_users")
-            .select("creator_id")
-            .eq("id", target_id)
-            .eq("role", "talent")
-            .limit(1)
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let status = resp.status();
-        let text = resp
-            .text()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        if !status.is_success() {
-            return Err(sanitize_db_error(status.as_u16(), text));
-        }
-        let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
-        rows.first()
-            .and_then(|r| r.get("creator_id"))
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string())
-            .ok_or((StatusCode::BAD_REQUEST, "target talent has no linked creator".to_string()))?
-    };
+    let creator_id = target_id.to_string();
 
     let connected_resp = state
         .pg

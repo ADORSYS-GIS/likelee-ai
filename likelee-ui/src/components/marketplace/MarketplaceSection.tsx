@@ -26,7 +26,7 @@ import { useToast } from "@/components/ui/use-toast";
 
 export type MarketplaceProfile = {
   id: string;
-  profile_type: "creator" | "talent";
+  profile_type: "creator";
   display_name: string;
   full_name?: string | null;
   location?: string | null;
@@ -44,7 +44,7 @@ export type MarketplaceProfile = {
 };
 
 type MarketplaceProfileDetails = {
-  profile_type: "creator" | "talent";
+  profile_type: "creator";
   profile: Record<string, any> | null;
   availability: Record<string, any>;
   rates: Array<Record<string, any>>;
@@ -60,7 +60,7 @@ type MarketplaceSectionProps = {
   searchPlaceholder?: string;
   searchEndpoint?: string;
   connectEndpoint?: string;
-  detailsEndpointBuilder?: (profileType: "creator" | "talent", id: string) => string;
+  detailsEndpointBuilder?: (profileType: "creator", id: string) => string;
   queryScope?: string;
 };
 
@@ -119,7 +119,7 @@ const parseApiErrorMessage = (error: any, fallback: string) => {
 
 export function MarketplaceSection({
   title = "Likelee Marketplace",
-  subtitle = "Verified creators and verified talent only",
+  subtitle = "Verified creators only",
   verifiedBadgeLabel = "Verified Profiles",
   searchPlaceholder = "Search by name, role, bio, or skills...",
   searchEndpoint = "marketplace/search",
@@ -142,7 +142,7 @@ export function MarketplaceSection({
     "all" | "models" | "actors" | "influencers" | "athletes"
   >("all");
   const [profileType, setProfileType] = useState<
-    "all" | "creator" | "talent" | "connected"
+    "all" | "creator" | "connected"
   >("all");
   const [sortBy, setSortBy] = useState<"recent" | "name" | "followers">(
     "followers",
@@ -196,7 +196,7 @@ export function MarketplaceSection({
     queryFn: async () =>
       await base44.get<MarketplaceProfileDetails>(
         detailsEndpointBuilder(
-          selectedProfile?.profile_type || "creator",
+          "creator",
           selectedProfile?.id || "",
         ),
       ),
@@ -227,7 +227,7 @@ export function MarketplaceSection({
 
     const normalized = rows.map((row: any) => ({
       id: String(row?.id || Math.random().toString(36).slice(2)),
-      profile_type: row?.profile_type === "talent" ? "talent" : "creator",
+      profile_type: "creator",
       display_name: String(row?.display_name || row?.full_name || "Unknown"),
       full_name: row?.full_name ?? null,
       location: row?.location ?? null,
@@ -423,7 +423,7 @@ export function MarketplaceSection({
                 value={profileType}
                 onValueChange={(v) =>
                   setProfileType(
-                    (v as "all" | "creator" | "talent" | "connected") || "all",
+                    (v as "all" | "creator" | "connected") || "all",
                   )
                 }
               >
@@ -436,9 +436,6 @@ export function MarketplaceSection({
                   </SelectItem>
                   <SelectItem className={marketplaceSelectItemClass} value="creator">
                     Verified Creators
-                  </SelectItem>
-                  <SelectItem className={marketplaceSelectItemClass} value="talent">
-                    Verified Talent
                   </SelectItem>
                   <SelectItem className={marketplaceSelectItemClass} value="connected">
                     Connected
@@ -486,14 +483,12 @@ export function MarketplaceSection({
               No verified profiles found
             </h3>
             <p className="text-gray-500 max-w-md font-medium">
-              Try adjusting your search terms or filters to discover more creators and
-              talent.
+              Try adjusting your search terms or filters to discover more creators.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 mt-2">
             {profiles.map((profile) => {
-              const isTalent = profile.profile_type === "talent";
               const profileKey = `${profile.profile_type}:${profile.id}`;
               const isPendingConnect = pendingConnectKeys.has(profileKey);
               const connectionStatus: "none" | "pending" | "connected" | "declined" =
@@ -511,9 +506,7 @@ export function MarketplaceSection({
               const disableConnectAction = connectionStatus !== "none";
               const followers = Number(profile.followers || 0);
               const engagement = Number(profile.engagement_rate || 0);
-              const roleLabel = isTalent
-                ? "Verified Talent"
-                : `Verified Creator${profile.creator_type ? ` • ${profile.creator_type}` : ""}`;
+              const roleLabel = `Verified Creator${profile.creator_type ? ` • ${profile.creator_type}` : ""}`;
 
               return (
                 <Card
@@ -528,7 +521,7 @@ export function MarketplaceSection({
                     />
                     <div className="absolute inset-x-0 top-0 p-2.5 flex items-center justify-between">
                       <Badge className="h-5 px-2 rounded-md bg-white/90 text-slate-700 border border-slate-200 text-[9px] font-semibold shadow-sm">
-                        {isTalent ? "Talent" : "Creator"}
+                        Creator
                       </Badge>
                       <div className="flex items-center gap-1.5">
                         {profile.is_connected && (
