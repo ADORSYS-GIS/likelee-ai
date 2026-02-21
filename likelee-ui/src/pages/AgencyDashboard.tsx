@@ -10123,30 +10123,85 @@ type MarketplaceProfile = {
   followers?: number | null;
   engagement_rate?: number | null;
   is_connected?: boolean;
+  is_pending?: boolean;
+  connection_status?: "none" | "pending" | "connected" | "declined";
   updated_at?: string | null;
+};
+
+type MarketplaceProfileDetails = {
+  profile_type: "creator" | "talent";
+  profile: Record<string, any> | null;
+  availability: Record<string, any>;
+  rates: Array<Record<string, any>>;
+  portfolio: Array<Record<string, any>>;
+  campaigns: Array<Record<string, any>>;
+  connection_status: "none" | "pending" | "connected";
 };
 
 const MARKETPLACE_FALLBACK_IMAGE =
   "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/5d413193e_Screenshot2025-10-29at63349PM.png";
 
-const parseApiErrorMessage = (error: any, fallback: string) => {
+const parseApiErrorPayload = (error: any) => {
   const raw = String(error?.message || "");
-  try {
-    const parsed = JSON.parse(raw);
-    if (typeof parsed?.error === "string" && parsed.error.trim()) {
-      return parsed.error;
+  const payloads: any[] = [];
+  if (error && typeof error === "object") payloads.push(error);
+  if (error?.response && typeof error.response === "object") {
+    payloads.push(error.response);
+  }
+  if (error?.response?.data) payloads.push(error.response.data);
+
+  let parsedFromMessage: any = null;
+  if (raw) {
+    try {
+      parsedFromMessage = JSON.parse(raw);
+    } catch {
+      const idx = raw.indexOf("{");
+      if (idx >= 0) {
+        try {
+          parsedFromMessage = JSON.parse(raw.slice(idx));
+        } catch {}
+      }
     }
-    if (typeof parsed?.details === "string" && parsed.details.trim()) {
-      return parsed.details;
+  }
+  if (parsedFromMessage) payloads.push(parsedFromMessage);
+
+  for (const p of payloads) {
+    if (!p || typeof p !== "object") continue;
+    const body = p?.data && typeof p.data === "object" ? p.data : p;
+    const code = String(body?.code || "").trim();
+    const errorMsg = String(body?.error || "").trim();
+    const details = String(body?.details || "").trim();
+    const message = errorMsg || details || "";
+    if (message || code) {
+      return { code, message, raw };
     }
-  } catch {}
-  return raw || fallback;
+  }
+  return { code: "", message: "", raw };
+};
+
+const parseApiErrorMessage = (error: any, fallback: string) => {
+  const parsed = parseApiErrorPayload(error);
+  const message = parsed.message || parsed.raw;
+  if (parsed.code === "23505" || /already exists/i.test(message)) {
+    return "Connection request already exists. Waiting for creator response.";
+  }
+  if (/^(GET|POST|PUT|PATCH|DELETE)\s/i.test(message)) {
+    return fallback;
+  }
+  return message || fallback;
 };
 
 const MarketplaceTab = () => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [searchInput, setSearchInput] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [pendingConnectKeys, setPendingConnectKeys] = useState<Set<string>>(
+    new Set(),
+  );
+  const [selectedProfile, setSelectedProfile] = useState<MarketplaceProfile | null>(
+    null,
+  );
   const [categoryFilter, setCategoryFilter] = useState<
     "all" | "models" | "actors" | "influencers" | "athletes"
   >("all");
@@ -10164,6 +10219,23 @@ const MarketplaceTab = () => {
   const marketplaceSelectItemClass =
     "rounded-lg py-2.5 pl-3 pr-8 text-[15px] font-medium text-slate-700 hover:bg-slate-50 focus:bg-slate-50 focus:text-slate-700 data-[state=checked]:bg-blue-50 data-[state=checked]:text-blue-700";
   const debouncedSearch = useDebounce(searchInput, 300);
+  const detailsOpen = !!selectedProfile;
+
+  const formatMoney = (amountCents: any, currency: any = "USD") => {
+    const n = Number(amountCents || 0);
+    if (!isFinite(n) || n <= 0) return "N/A";
+    const value = n / 100;
+    const c = String(currency || "USD").toUpperCase();
+    try {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: c,
+        maximumFractionDigits: 0,
+      }).format(value);
+    } catch {
+      return `$${value.toFixed(0)}`;
+    }
+  };
 
   const marketplaceQuery = useQuery({
     queryKey: [
@@ -10182,6 +10254,20 @@ const MarketplaceTab = () => {
     staleTime: 60_000,
   });
 
+  const detailsQuery = useQuery({
+    queryKey: [
+      "marketplace-profile-details",
+      selectedProfile?.profile_type,
+      selectedProfile?.id,
+    ],
+    queryFn: async () =>
+      await base44.get<MarketplaceProfileDetails>(
+        `marketplace/${selectedProfile?.profile_type}/${selectedProfile?.id}/details`,
+      ),
+    enabled: !!selectedProfile,
+    staleTime: 30_000,
+  });
+
   useEffect(() => {
     if (!marketplaceQuery.error) return;
     toast({
@@ -10193,6 +10279,15 @@ const MarketplaceTab = () => {
       variant: "destructive" as any,
     });
   }, [marketplaceQuery.error, toast]);
+
+  useEffect(() => {
+    if (!detailsQuery.error) return;
+    toast({
+      title: "Failed to load profile details",
+      description: parseApiErrorMessage(detailsQuery.error, "Please try again."),
+      variant: "destructive" as any,
+    });
+  }, [detailsQuery.error, toast]);
 
   const profiles = useMemo(() => {
     const rows = Array.isArray(marketplaceQuery.data)
@@ -10219,6 +10314,13 @@ const MarketplaceTab = () => {
           ? row.engagement_rate
           : Number(row?.engagement_rate || 0),
       is_connected: !!row?.is_connected,
+      is_pending: !!row?.is_pending,
+      connection_status:
+        row?.connection_status === "connected" ||
+        row?.connection_status === "pending" ||
+        row?.connection_status === "declined"
+          ? row.connection_status
+          : "none",
       updated_at: row?.updated_at ?? null,
     })) as MarketplaceProfile[];
 
@@ -10476,6 +10578,21 @@ const MarketplaceTab = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-2">
             {profiles.map((profile) => {
               const isTalent = profile.profile_type === "talent";
+              const profileKey = `${profile.profile_type}:${profile.id}`;
+              const isPendingConnect = pendingConnectKeys.has(profileKey);
+              const connectionStatus: "none" | "pending" | "connected" | "declined" =
+                profile.is_connected
+                  ? "connected"
+                  : isPendingConnect
+                    ? "pending"
+                    : profile.connection_status === "pending" ||
+                        profile.connection_status === "connected" ||
+                        profile.connection_status === "declined"
+                      ? profile.connection_status
+                      : profile.is_pending
+                        ? "pending"
+                        : "none";
+              const disableConnectAction = connectionStatus !== "none";
               const followers = Number(profile.followers || 0);
               const engagement = Number(profile.engagement_rate || 0);
               const roleLabel = isTalent
@@ -10501,6 +10618,11 @@ const MarketplaceTab = () => {
                         {profile.is_connected && (
                           <Badge className="h-5 px-2 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold tracking-wide">
                             Connected
+                          </Badge>
+                        )}
+                        {!profile.is_connected && connectionStatus === "pending" && (
+                          <Badge className="h-5 px-2 rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-semibold tracking-wide">
+                            Waiting
                           </Badge>
                         )}
                         <ShieldCheck className="w-4 h-4 text-green-600 flex-shrink-0" />
@@ -10548,12 +10670,242 @@ const MarketplaceTab = () => {
                       </p>
                     </div>
                   </div>
+                  <div className="mt-4 flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      className="h-8 px-3 text-xs rounded-lg border-gray-200"
+                      onClick={() => setSelectedProfile(profile)}
+                    >
+                      View Profile
+                    </Button>
+                    <Button
+                      className={`h-8 px-3 text-xs rounded-lg ${
+                        connectionStatus === "connected"
+                          ? "bg-indigo-300 text-white hover:bg-indigo-300"
+                          : connectionStatus === "pending"
+                            ? "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-50"
+                            : connectionStatus === "declined"
+                              ? "bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-50"
+                              : "bg-indigo-600 hover:bg-indigo-700 text-white"
+                      }`}
+                      disabled={disableConnectAction}
+                      onClick={async () => {
+                        try {
+                          const result: any = await base44.post(
+                            "marketplace/connect",
+                            {
+                              profile_type: profile.profile_type,
+                              target_id: profile.id,
+                            },
+                          );
+                          const status = String(result?.status || "pending");
+                          if (status === "declined") {
+                            toast({
+                              title: "Request already declined",
+                              description:
+                                "This connection was declined previously. Please contact the creator directly to reconnect.",
+                            });
+                          } else if (status === "connected") {
+                            toast({
+                              title: "Already connected",
+                              description: "This profile is already in your network.",
+                            });
+                          } else {
+                            toast({
+                              title: "Connection request sent",
+                              description:
+                                "Waiting for creator response. You will be notified after they accept or decline.",
+                            });
+                            setPendingConnectKeys(
+                              (prev) => new Set(prev).add(profileKey),
+                            );
+                          }
+                          await queryClient.invalidateQueries({
+                            queryKey: ["scouting-marketplace"],
+                          });
+                          if (selectedProfile?.id === profile.id) {
+                            await detailsQuery.refetch();
+                          }
+                        } catch (e: any) {
+                          const parsed = parseApiErrorPayload(e);
+                          const isDuplicate =
+                            parsed.code === "23505" ||
+                            /already exists/i.test(parsed.message || parsed.raw);
+                          if (isDuplicate) {
+                            setPendingConnectKeys(
+                              (prev) => new Set(prev).add(profileKey),
+                            );
+                            toast({
+                              title: "Request already pending",
+                              description:
+                                "Waiting for creator response. You can track updates in Agency Connection.",
+                            });
+                            await queryClient.invalidateQueries({
+                              queryKey: ["scouting-marketplace"],
+                            });
+                            return;
+                          }
+                          toast({
+                            title: "Failed to send connection request",
+                            description: parseApiErrorMessage(
+                              e,
+                              "Unable to send connection request right now.",
+                            ),
+                            variant: "destructive" as any,
+                          });
+                        }
+                      }}
+                    >
+                      {connectionStatus === "connected"
+                        ? "Connected"
+                        : connectionStatus === "pending"
+                          ? "Waiting for creator response"
+                          : connectionStatus === "declined"
+                            ? "Declined"
+                            : "Connect"}
+                    </Button>
+                  </div>
                 </Card>
               );
             })}
           </div>
         )}
       </div>
+
+      <Sheet
+        open={detailsOpen}
+        onOpenChange={(open) => {
+          if (!open) setSelectedProfile(null);
+        }}
+      >
+        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>
+              {selectedProfile?.display_name || "Marketplace Profile"}
+            </SheetTitle>
+            <SheetDescription>
+              Availability, rates, portfolio, and campaign history
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-6 space-y-6">
+            {detailsQuery.isLoading ? (
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Loading profile details...
+              </div>
+            ) : (
+              <>
+                <Card className="p-4 border border-gray-200 rounded-xl">
+                  <h4 className="text-sm font-bold text-gray-900 mb-3">
+                    Availability & Rates
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                      <p className="text-gray-500">Willing to Travel</p>
+                      <p className="font-semibold text-gray-900 mt-1">
+                        {detailsQuery.data?.availability?.willing_to_travel
+                          ? "Yes"
+                          : "Not specified"}
+                      </p>
+                    </div>
+                    <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                      <p className="text-gray-500">Connection Status</p>
+                      <p className="font-semibold text-gray-900 mt-1 capitalize">
+                        {detailsQuery.data?.connection_status || "none"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {(detailsQuery.data?.rates || []).slice(0, 6).map((r, i) => (
+                      <div
+                        key={`${r?.label || r?.rate_name || "rate"}-${i}`}
+                        className="rounded-lg border border-indigo-100 bg-indigo-50/40 p-3 text-sm"
+                      >
+                        <p className="text-indigo-700 font-semibold">
+                          {String(r?.label || r?.rate_name || "Rate")}
+                        </p>
+                        <p className="text-gray-900 font-bold mt-1">
+                          {formatMoney(
+                            r?.amount_cents ?? r?.price_per_month_cents,
+                            r?.currency || "USD",
+                          )}
+                        </p>
+                      </div>
+                    ))}
+                    {(detailsQuery.data?.rates || []).length === 0 && (
+                      <p className="text-sm text-gray-500">No rates published yet.</p>
+                    )}
+                  </div>
+                </Card>
+
+                <Card className="p-4 border border-gray-200 rounded-xl">
+                  <h4 className="text-sm font-bold text-gray-900 mb-3">
+                    Portfolio
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {(detailsQuery.data?.portfolio || []).slice(0, 9).map((item, i) => (
+                      <a
+                        key={`${item?.id || i}`}
+                        href={String(item?.media_url || "#")}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-lg border border-gray-100 p-2 bg-white hover:border-indigo-200 transition-colors"
+                      >
+                        <div className="aspect-square rounded-md bg-gray-100 overflow-hidden">
+                          <img
+                            src={String(item?.media_url || MARKETPLACE_FALLBACK_IMAGE)}
+                            alt={String(item?.title || "Portfolio item")}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <p className="text-xs font-medium text-gray-700 mt-2 truncate">
+                          {String(item?.title || "Portfolio")}
+                        </p>
+                      </a>
+                    ))}
+                    {(detailsQuery.data?.portfolio || []).length === 0 && (
+                      <p className="text-sm text-gray-500">No portfolio items yet.</p>
+                    )}
+                  </div>
+                </Card>
+
+                <Card className="p-4 border border-gray-200 rounded-xl">
+                  <h4 className="text-sm font-bold text-gray-900 mb-3">
+                    Past Campaigns
+                  </h4>
+                  <div className="space-y-2">
+                    {(detailsQuery.data?.campaigns || []).slice(0, 8).map((c, i) => (
+                      <div
+                        key={`${c?.id || i}`}
+                        className="rounded-lg border border-gray-100 p-3 bg-white"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-sm font-semibold text-gray-900 truncate">
+                            {String(c?.name || "Campaign")}
+                          </p>
+                          <Badge
+                            variant="secondary"
+                            className="text-[10px] bg-gray-100 text-gray-700"
+                          >
+                            {String(c?.status || "Unknown")}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {String(c?.campaign_type || "Type not set")}{" "}
+                          {c?.date ? `• ${String(c?.date)}` : ""}
+                        </p>
+                      </div>
+                    ))}
+                    {(detailsQuery.data?.campaigns || []).length === 0 && (
+                      <p className="text-sm text-gray-500">No campaign history yet.</p>
+                    )}
+                  </div>
+                </Card>
+              </>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </Card>
   );
 };
