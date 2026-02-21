@@ -751,6 +751,11 @@ pub async fn create_marketplace_connection_request(
     let pending_rows: Vec<serde_json::Value> =
         serde_json::from_str(&pending_text).unwrap_or_default();
     if let Some(row) = pending_rows.first() {
+        let invite_id = row
+            .get("id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .unwrap_or_default();
         let invite_status = row
             .get("status")
             .and_then(|v| v.as_str())
@@ -760,7 +765,42 @@ pub async fn create_marketplace_connection_request(
             return Ok(Json(serde_json::json!({"status":"connected"})));
         }
         if invite_status == "declined" {
-            return Ok(Json(serde_json::json!({"status":"declined"})));
+            if invite_id.is_empty() {
+                return Err((
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "invalid invite state: missing id".to_string(),
+                ));
+            }
+
+            // Re-invite by reusing the existing declined row instead of creating duplicates.
+            let reactivate_payload = serde_json::json!({
+                "status": "pending",
+                "responded_at": serde_json::Value::Null,
+                "updated_at": chrono::Utc::now().to_rfc3339(),
+            });
+            let reactivate_resp = state
+                .pg
+                .from("creator_agency_invites")
+                .eq("id", &invite_id)
+                .eq("agency_id", &effective_agency_id)
+                .eq("creator_id", &creator_id)
+                .update(reactivate_payload.to_string())
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let reactivate_status = reactivate_resp.status();
+            let reactivate_text = reactivate_resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            if !reactivate_status.is_success() {
+                return Err(sanitize_db_error(
+                    reactivate_status.as_u16(),
+                    reactivate_text,
+                ));
+            }
+
+            return Ok(Json(serde_json::json!({"status":"pending"})));
         }
         return Ok(Json(serde_json::json!({"status":"pending"})));
     }
