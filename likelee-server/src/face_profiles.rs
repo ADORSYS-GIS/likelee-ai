@@ -7,7 +7,7 @@ use axum::{
     Json,
 };
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use tracing::info;
 use uuid::Uuid;
 
@@ -51,6 +51,19 @@ pub struct MarketplaceSearchQuery {
     pub query: Option<String>,
     pub profile_type: Option<String>, // all | creator | talent
     pub limit: Option<usize>,
+}
+
+#[derive(Deserialize)]
+pub struct MarketplaceDetailsPath {
+    pub profile_type: String, // creator | talent
+    pub id: String,
+}
+
+#[derive(Deserialize)]
+pub struct MarketplaceConnectPayload {
+    pub profile_type: String, // creator | talent
+    pub target_id: String,
+    pub message: Option<String>,
 }
 
 pub async fn search_faces(
@@ -190,6 +203,7 @@ pub async fn search_marketplace_profiles(
     let mut connected_talent_ids: HashSet<String> = HashSet::new();
     let mut connected_talent_name_keys: HashSet<String> = HashSet::new();
     let mut connected_talent_emails: HashSet<String> = HashSet::new();
+    let mut invite_status_by_creator_id: HashMap<String, String> = HashMap::new();
     let mut effective_agency_id = user.id.clone();
 
     if user.role == "agency" {
@@ -293,6 +307,40 @@ pub async fn search_marketplace_profiles(
                 }
             }
         }
+
+        let pending_resp = state
+            .pg
+            .from("creator_agency_invites")
+            .select("creator_id,status")
+            .eq("agency_id", &effective_agency_id)
+            .order("created_at.desc")
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let pending_status = pending_resp.status();
+        let pending_text = pending_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !pending_status.is_success() {
+            return Err(sanitize_db_error(pending_status.as_u16(), pending_text));
+        }
+        let pending_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&pending_text).unwrap_or_default();
+        for row in pending_rows {
+            if let Some(creator_id) = row.get("creator_id").and_then(|v| v.as_str()) {
+                if !creator_id.is_empty() {
+                    let status = row
+                        .get("status")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("pending")
+                        .to_lowercase();
+                    invite_status_by_creator_id
+                        .entry(creator_id.to_string())
+                        .or_insert(status.clone());
+                }
+            }
+        }
     }
 
     if profile_type == "all" || profile_type == "creator" {
@@ -380,6 +428,19 @@ pub async fn search_marketplace_profiles(
             format!("{city}, {state}")
         };
 
+        let connection_status = if !creator_id.is_empty() && connected_creator_ids.contains(creator_id) {
+            "connected"
+        } else if !creator_id.is_empty() {
+            match invite_status_by_creator_id.get(creator_id).map(|s| s.as_str()) {
+                Some("accepted") => "connected",
+                Some("pending") => "pending",
+                Some("declined") => "declined",
+                _ => "none",
+            }
+        } else {
+            "none"
+        };
+
         results.push(serde_json::json!({
             "id": row.get("id").cloned().unwrap_or(serde_json::Value::Null),
             "profile_type": "creator",
@@ -397,7 +458,9 @@ pub async fn search_marketplace_profiles(
             "followers": serde_json::Value::Null,
             "engagement_rate": serde_json::Value::Null,
             "is_verified": true,
-            "is_connected": !creator_id.is_empty() && connected_creator_ids.contains(creator_id),
+            "is_connected": connection_status == "connected",
+            "is_pending": connection_status == "pending",
+            "connection_status": connection_status,
             "verification_source": "kyc",
             "kyc_status": row.get("kyc_status").cloned().unwrap_or(serde_json::Value::Null),
             "updated_at": row.get("updated_at").cloned().unwrap_or(serde_json::Value::Null),
@@ -454,6 +517,19 @@ pub async fn search_marketplace_profiles(
             || (!name_key_stage.is_empty() && connected_talent_name_keys.contains(&name_key_stage))
             || (!email_key.is_empty() && connected_talent_emails.contains(&email_key));
 
+        let connection_status = if is_connected {
+            "connected"
+        } else if !creator_id.is_empty() {
+            match invite_status_by_creator_id.get(creator_id).map(|s| s.as_str()) {
+                Some("accepted") => "connected",
+                Some("pending") => "pending",
+                Some("declined") => "declined",
+                _ => "none",
+            }
+        } else {
+            "none"
+        };
+
         results.push(serde_json::json!({
             "id": row.get("id").cloned().unwrap_or(serde_json::Value::Null),
             "profile_type": "talent",
@@ -472,7 +548,9 @@ pub async fn search_marketplace_profiles(
             "followers": row.get("instagram_followers").cloned().unwrap_or(serde_json::Value::Null),
             "engagement_rate": row.get("engagement_rate").cloned().unwrap_or(serde_json::Value::Null),
             "is_verified": true,
-            "is_connected": is_connected,
+            "is_connected": connection_status == "connected",
+            "is_pending": connection_status == "pending",
+            "connection_status": connection_status,
             "verification_source": "agency",
             "kyc_status": serde_json::Value::Null,
             "updated_at": row.get("updated_at").cloned().unwrap_or(serde_json::Value::Null),
@@ -498,6 +576,470 @@ pub async fn search_marketplace_profiles(
     }
 
     Ok(Json(serde_json::Value::Array(results)))
+}
+
+async fn resolve_effective_agency_id(
+    state: &AppState,
+    user: &AuthUser,
+) -> Result<String, (StatusCode, String)> {
+    if user.role != "agency" {
+        return Ok(user.id.clone());
+    }
+
+    let by_id_resp = state
+        .pg
+        .from("agencies")
+        .select("id")
+        .eq("id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let by_id_status = by_id_resp.status();
+    let by_id_text = by_id_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !by_id_status.is_success() {
+        return Err(sanitize_db_error(by_id_status.as_u16(), by_id_text));
+    }
+    let by_id_rows: Vec<serde_json::Value> = serde_json::from_str(&by_id_text).unwrap_or_default();
+    if !by_id_rows.is_empty() {
+        return Ok(user.id.clone());
+    }
+
+    if let Ok(by_user_resp) = state
+        .pg
+        .from("agencies")
+        .select("id")
+        .eq("user_id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+    {
+        if by_user_resp.status().is_success() {
+            if let Ok(by_user_text) = by_user_resp.text().await {
+                let rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&by_user_text).unwrap_or_default();
+                if let Some(org_id) = rows
+                    .first()
+                    .and_then(|r| r.get("id"))
+                    .and_then(|v| v.as_str())
+                {
+                    if !org_id.is_empty() {
+                        return Ok(org_id.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(user.id.clone())
+}
+
+pub async fn get_marketplace_profile_details(
+    State(state): State<AppState>,
+    user: AuthUser,
+    axum::extract::Path(path): axum::extract::Path<MarketplaceDetailsPath>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    RoleGuard::new(vec!["agency", "brand"]).check(&user.role)?;
+
+    let profile_type = path.profile_type.trim().to_lowercase();
+    let profile_id = path.id.trim().to_string();
+    if profile_id.is_empty() || (profile_type != "creator" && profile_type != "talent") {
+        return Err((StatusCode::BAD_REQUEST, "invalid marketplace profile path".to_string()));
+    }
+
+    let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
+    let mut response = serde_json::json!({
+        "profile_type": profile_type,
+        "profile": serde_json::Value::Null,
+        "availability": serde_json::json!({}),
+        "rates": serde_json::json!([]),
+        "portfolio": serde_json::json!([]),
+        "campaigns": serde_json::json!([]),
+        "connection_status": "none",
+    });
+
+    let creator_id_for_connection: Option<String>;
+    let mut talent_ids_for_assets: Vec<String> = Vec::new();
+
+    if profile_type == "talent" {
+        let talent_resp = state
+            .pg
+            .from("agency_users")
+            .select("id,agency_id,creator_id,full_legal_name,stage_name,city,state_province,country,bio_notes,profile_photo_url,special_skills,instagram_followers,engagement_rate,is_verified_talent,status")
+            .eq("id", &profile_id)
+            .eq("role", "talent")
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let talent_status = talent_resp.status();
+        let talent_text = talent_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !talent_status.is_success() {
+            return Err(sanitize_db_error(talent_status.as_u16(), talent_text));
+        }
+        let talent_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&talent_text).unwrap_or_default();
+        let row = talent_rows
+            .first()
+            .cloned()
+            .ok_or((StatusCode::NOT_FOUND, "marketplace profile not found".to_string()))?;
+        creator_id_for_connection = row
+            .get("creator_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+        talent_ids_for_assets.push(profile_id.clone());
+        response["profile"] = row;
+
+        let pref_resp = state
+            .pg
+            .from("talent_booking_preferences")
+            .select("willing_to_travel,min_day_rate_cents,currency,updated_at")
+            .eq("talent_id", &profile_id)
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let pref_status = pref_resp.status();
+        let pref_text = pref_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if pref_status.is_success() {
+            let pref_rows: Vec<serde_json::Value> = serde_json::from_str(&pref_text).unwrap_or_default();
+            if let Some(pref) = pref_rows.first() {
+                response["availability"] = serde_json::json!({
+                    "willing_to_travel": pref.get("willing_to_travel").cloned().unwrap_or(serde_json::json!(false)),
+                    "updated_at": pref.get("updated_at").cloned().unwrap_or(serde_json::Value::Null),
+                });
+                response["rates"] = serde_json::json!([{
+                    "label": "Day Rate",
+                    "amount_cents": pref.get("min_day_rate_cents").cloned().unwrap_or(serde_json::Value::Null),
+                    "currency": pref.get("currency").cloned().unwrap_or(serde_json::json!("USD")),
+                }]);
+            }
+        }
+    } else {
+        let creator_resp = state
+            .pg
+            .from("creators")
+            .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status")
+            .eq("id", &profile_id)
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let creator_status = creator_resp.status();
+        let creator_text = creator_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !creator_status.is_success() {
+            return Err(sanitize_db_error(creator_status.as_u16(), creator_text));
+        }
+        let creator_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&creator_text).unwrap_or_default();
+        let row = creator_rows
+            .first()
+            .cloned()
+            .ok_or((StatusCode::NOT_FOUND, "marketplace profile not found".to_string()))?;
+        creator_id_for_connection = Some(profile_id.clone());
+        response["profile"] = row;
+
+        let rates_resp = state
+            .pg
+            .from("creator_custom_rates")
+            .select("rate_type,rate_name,price_per_month_cents")
+            .eq("creator_id", &profile_id)
+            .limit(12)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let rates_status = rates_resp.status();
+        let rates_text = rates_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if rates_status.is_success() {
+            response["rates"] = serde_json::from_str(&rates_text).unwrap_or(serde_json::json!([]));
+        }
+
+        let talent_ids_resp = state
+            .pg
+            .from("agency_users")
+            .select("id")
+            .eq("creator_id", &profile_id)
+            .eq("role", "talent")
+            .limit(30)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let talent_ids_status = talent_ids_resp.status();
+        let talent_ids_text = talent_ids_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if talent_ids_status.is_success() {
+            let rows: Vec<serde_json::Value> =
+                serde_json::from_str(&talent_ids_text).unwrap_or_default();
+            talent_ids_for_assets = rows
+                .iter()
+                .filter_map(|r| r.get("id").and_then(|v| v.as_str()))
+                .map(|s| s.to_string())
+                .collect();
+        }
+    }
+
+    if !talent_ids_for_assets.is_empty() {
+        let id_refs = talent_ids_for_assets.iter().map(|s| s.as_str()).collect::<Vec<_>>();
+        let portfolio_resp = state
+            .pg
+            .from("talent_portfolio_items")
+            .select("id,title,media_url,status,created_at,talent_id")
+            .in_("talent_id", id_refs.clone())
+            .eq("status", "live")
+            .order("created_at.desc")
+            .limit(12)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let portfolio_status = portfolio_resp.status();
+        let portfolio_text = portfolio_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if portfolio_status.is_success() {
+            response["portfolio"] =
+                serde_json::from_str(&portfolio_text).unwrap_or(serde_json::json!([]));
+        }
+
+        let campaigns_resp = state
+            .pg
+            .from("campaigns")
+            .select("id,name,campaign_type,status,date,payment_amount,brand_vertical,region")
+            .in_("talent_id", id_refs)
+            .order("date.desc")
+            .limit(10)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let campaigns_status = campaigns_resp.status();
+        let campaigns_text = campaigns_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if campaigns_status.is_success() {
+            response["campaigns"] =
+                serde_json::from_str(&campaigns_text).unwrap_or(serde_json::json!([]));
+        }
+    }
+
+    if let Some(creator_id) = creator_id_for_connection {
+        let connected_resp = state
+            .pg
+            .from("agency_users")
+            .select("id")
+            .eq("agency_id", &effective_agency_id)
+            .eq("creator_id", &creator_id)
+            .eq("status", "active")
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let connected_status = connected_resp.status();
+        let connected_text = connected_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if connected_status.is_success() {
+            let rows: Vec<serde_json::Value> =
+                serde_json::from_str(&connected_text).unwrap_or_default();
+            if !rows.is_empty() {
+                response["connection_status"] = serde_json::json!("connected");
+            }
+        }
+
+        if response["connection_status"] != serde_json::json!("connected") {
+            let pending_resp = state
+                .pg
+                .from("creator_agency_invites")
+                .select("id")
+                .eq("agency_id", &effective_agency_id)
+                .eq("creator_id", &creator_id)
+                .eq("status", "pending")
+                .limit(1)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let pending_status = pending_resp.status();
+            let pending_text = pending_resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            if pending_status.is_success() {
+                let rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&pending_text).unwrap_or_default();
+                if !rows.is_empty() {
+                    response["connection_status"] = serde_json::json!("pending");
+                }
+            }
+        }
+    }
+
+    Ok(Json(response))
+}
+
+pub async fn create_marketplace_connection_request(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<MarketplaceConnectPayload>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    RoleGuard::new(vec!["agency"]).check(&user.role)?;
+    let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
+
+    let profile_type = payload.profile_type.trim().to_lowercase();
+    if profile_type != "creator" && profile_type != "talent" {
+        return Err((StatusCode::BAD_REQUEST, "invalid profile_type".to_string()));
+    }
+    let target_id = payload.target_id.trim();
+    if target_id.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "missing target_id".to_string()));
+    }
+
+    let creator_id = if profile_type == "creator" {
+        target_id.to_string()
+    } else {
+        let resp = state
+            .pg
+            .from("agency_users")
+            .select("creator_id")
+            .eq("id", target_id)
+            .eq("role", "talent")
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let status = resp.status();
+        let text = resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !status.is_success() {
+            return Err(sanitize_db_error(status.as_u16(), text));
+        }
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+        rows.first()
+            .and_then(|r| r.get("creator_id"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .ok_or((StatusCode::BAD_REQUEST, "target talent has no linked creator".to_string()))?
+    };
+
+    let connected_resp = state
+        .pg
+        .from("agency_users")
+        .select("id")
+        .eq("agency_id", &effective_agency_id)
+        .eq("creator_id", &creator_id)
+        .eq("status", "active")
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let connected_status = connected_resp.status();
+    let connected_text = connected_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !connected_status.is_success() {
+        return Err(sanitize_db_error(connected_status.as_u16(), connected_text));
+    }
+    let connected_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&connected_text).unwrap_or_default();
+    if !connected_rows.is_empty() {
+        return Ok(Json(serde_json::json!({"status":"connected"})));
+    }
+
+    let pending_resp = state
+        .pg
+        .from("creator_agency_invites")
+        .select("id,status")
+        .eq("agency_id", &effective_agency_id)
+        .eq("creator_id", &creator_id)
+        .order("created_at.desc")
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let pending_status = pending_resp.status();
+    let pending_text = pending_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !pending_status.is_success() {
+        return Err(sanitize_db_error(pending_status.as_u16(), pending_text));
+    }
+    let pending_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&pending_text).unwrap_or_default();
+    if let Some(row) = pending_rows.first() {
+        let invite_status = row
+            .get("status")
+            .and_then(|v| v.as_str())
+            .unwrap_or("pending")
+            .to_lowercase();
+        if invite_status == "accepted" {
+            return Ok(Json(serde_json::json!({"status":"connected"})));
+        }
+        if invite_status == "declined" {
+            return Ok(Json(serde_json::json!({"status":"declined"})));
+        }
+        return Ok(Json(serde_json::json!({"status":"pending"})));
+    }
+
+    let insert_payload = serde_json::json!({
+        "agency_id": effective_agency_id,
+        "creator_id": creator_id,
+        "status": "pending",
+    });
+    let _message = payload
+        .message
+        .as_ref()
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty());
+
+    let create_resp = state
+        .pg
+        .from("creator_agency_invites")
+        .insert(insert_payload.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let create_status = create_resp.status();
+    let create_text = create_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !create_status.is_success() {
+        if create_status.as_u16() == StatusCode::CONFLICT.as_u16() {
+            if let Ok(v) = serde_json::from_str::<serde_json::Value>(&create_text) {
+                if v.get("code")
+                    .and_then(|c| c.as_str())
+                    .map(|c| c == "23505")
+                    .unwrap_or(false)
+                {
+                    return Ok(Json(serde_json::json!({"status":"pending"})));
+                }
+            }
+        }
+        return Err(sanitize_db_error(create_status.as_u16(), create_text));
+    }
+
+    Ok(Json(serde_json::json!({"status":"pending"})))
 }
 
 pub async fn create_face_profile(
