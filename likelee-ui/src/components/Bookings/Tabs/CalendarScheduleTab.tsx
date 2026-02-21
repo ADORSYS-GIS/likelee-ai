@@ -400,8 +400,8 @@ export const CalendarScheduleTab = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="single">Single View</SelectItem>
                     <SelectItem value="all">All Talent</SelectItem>
+                    <SelectItem value="single">Single View</SelectItem>
                     <SelectItem value="selected">Selected Talent</SelectItem>
                   </SelectContent>
                 </Select>

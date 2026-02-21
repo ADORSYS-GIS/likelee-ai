@@ -632,7 +632,7 @@ pub async fn cancel(
         .from("bookings")
         .eq("id", &id)
         .eq("agency_user_id", &user.id)
-        .update(json!({"status": "cancelled"}).to_string())
+        .update(json!({"status": "cancelled", "campaign_id": null}).to_string())
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
