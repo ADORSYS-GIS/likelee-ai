@@ -141,9 +141,11 @@ export function MarketplaceSection({
   const [pendingConnectKeys, setPendingConnectKeys] = useState<Set<string>>(
     new Set(),
   );
-  const [selectedProfile, setSelectedProfile] = useState<MarketplaceProfile | null>(
-    null,
-  );
+  const [requestingConnectKeys, setRequestingConnectKeys] = useState<
+    Set<string>
+  >(new Set());
+  const [selectedProfile, setSelectedProfile] =
+    useState<MarketplaceProfile | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<
     "all" | "models" | "actors" | "influencers" | "athletes"
   >("all");
@@ -204,10 +206,7 @@ export function MarketplaceSection({
     ],
     queryFn: async () =>
       await base44.get<MarketplaceProfileDetails>(
-        detailsEndpointBuilder(
-          "creator",
-          selectedProfile?.id || "",
-        ),
+        detailsEndpointBuilder("creator", selectedProfile?.id || ""),
       ),
     enabled: !!selectedProfile,
     staleTime: 30_000,
@@ -217,7 +216,10 @@ export function MarketplaceSection({
     if (!marketplaceQuery.error) return;
     toast({
       title: "Failed to load marketplace profiles",
-      description: parseApiErrorMessage(marketplaceQuery.error, "Please try again."),
+      description: parseApiErrorMessage(
+        marketplaceQuery.error,
+        "Please try again.",
+      ),
       variant: "destructive" as any,
     });
   }, [marketplaceQuery.error, toast]);
@@ -226,13 +228,18 @@ export function MarketplaceSection({
     if (!detailsQuery.error) return;
     toast({
       title: "Failed to load profile details",
-      description: parseApiErrorMessage(detailsQuery.error, "Please try again."),
+      description: parseApiErrorMessage(
+        detailsQuery.error,
+        "Please try again.",
+      ),
       variant: "destructive" as any,
     });
   }, [detailsQuery.error, toast]);
 
   const profiles = useMemo(() => {
-    const rows = Array.isArray(marketplaceQuery.data) ? marketplaceQuery.data : [];
+    const rows = Array.isArray(marketplaceQuery.data)
+      ? marketplaceQuery.data
+      : [];
 
     const normalized = rows.map((row: any) => ({
       id: String(row?.id || Math.random().toString(36).slice(2)),
@@ -280,8 +287,7 @@ export function MarketplaceSection({
       if (profileType === "connected") return !!profile.is_connected;
       if (profileType === "waiting")
         return (
-          profile.connection_status === "pending" ||
-          profile.is_pending === true
+          profile.connection_status === "pending" || profile.is_pending === true
         );
       return true;
     });
@@ -410,13 +416,22 @@ export function MarketplaceSection({
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border border-blue-100 bg-white p-1 shadow-xl">
-                  <SelectItem className={marketplaceSelectItemClass} value="all">
+                  <SelectItem
+                    className={marketplaceSelectItemClass}
+                    value="all"
+                  >
                     All Categories
                   </SelectItem>
-                  <SelectItem className={marketplaceSelectItemClass} value="models">
+                  <SelectItem
+                    className={marketplaceSelectItemClass}
+                    value="models"
+                  >
                     Models
                   </SelectItem>
-                  <SelectItem className={marketplaceSelectItemClass} value="actors">
+                  <SelectItem
+                    className={marketplaceSelectItemClass}
+                    value="actors"
+                  >
                     Actors
                   </SelectItem>
                   <SelectItem
@@ -437,8 +452,7 @@ export function MarketplaceSection({
                 value={profileType}
                 onValueChange={(v) =>
                   setProfileType(
-                    (v as "all" | "creator" | "connected" | "waiting") ||
-                      "all",
+                    (v as "all" | "creator" | "connected" | "waiting") || "all",
                   )
                 }
               >
@@ -446,16 +460,28 @@ export function MarketplaceSection({
                   <SelectValue placeholder="All" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border border-blue-100 bg-white p-1 shadow-xl">
-                  <SelectItem className={marketplaceSelectItemClass} value="all">
+                  <SelectItem
+                    className={marketplaceSelectItemClass}
+                    value="all"
+                  >
                     All
                   </SelectItem>
-                  <SelectItem className={marketplaceSelectItemClass} value="creator">
+                  <SelectItem
+                    className={marketplaceSelectItemClass}
+                    value="creator"
+                  >
                     Verified Creators
                   </SelectItem>
-                  <SelectItem className={marketplaceSelectItemClass} value="connected">
+                  <SelectItem
+                    className={marketplaceSelectItemClass}
+                    value="connected"
+                  >
                     Connected
                   </SelectItem>
-                  <SelectItem className={marketplaceSelectItemClass} value="waiting">
+                  <SelectItem
+                    className={marketplaceSelectItemClass}
+                    value="waiting"
+                  >
                     Waiting
                   </SelectItem>
                 </SelectContent>
@@ -463,20 +489,31 @@ export function MarketplaceSection({
               <Select
                 value={sortBy}
                 onValueChange={(v) =>
-                  setSortBy((v as "recent" | "name" | "followers") || "followers")
+                  setSortBy(
+                    (v as "recent" | "name" | "followers") || "followers",
+                  )
                 }
               >
                 <SelectTrigger className="h-10 w-[190px] border-blue-300 bg-white rounded-lg text-sm font-medium text-slate-800 focus:ring-blue-300 focus:border-blue-400">
                   <SelectValue placeholder="Followers" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border border-blue-100 bg-white p-1 shadow-xl">
-                  <SelectItem className={marketplaceSelectItemClass} value="followers">
+                  <SelectItem
+                    className={marketplaceSelectItemClass}
+                    value="followers"
+                  >
                     Followers
                   </SelectItem>
-                  <SelectItem className={marketplaceSelectItemClass} value="name">
+                  <SelectItem
+                    className={marketplaceSelectItemClass}
+                    value="name"
+                  >
                     Name
                   </SelectItem>
-                  <SelectItem className={marketplaceSelectItemClass} value="recent">
+                  <SelectItem
+                    className={marketplaceSelectItemClass}
+                    value="recent"
+                  >
                     Recently Updated
                   </SelectItem>
                 </SelectContent>
@@ -501,7 +538,8 @@ export function MarketplaceSection({
               No verified profiles found
             </h3>
             <p className="text-gray-500 max-w-md font-medium">
-              Try adjusting your search terms or filters to discover more creators.
+              Try adjusting your search terms or filters to discover more
+              creators.
             </p>
           </div>
         ) : (
@@ -509,19 +547,24 @@ export function MarketplaceSection({
             {profiles.map((profile) => {
               const profileKey = `${profile.profile_type}:${profile.id}`;
               const isPendingConnect = pendingConnectKeys.has(profileKey);
-              const connectionStatus: "none" | "pending" | "connected" | "declined" =
-                profile.is_connected
-                  ? "connected"
-                  : isPendingConnect
-                    ? "pending"
-                    : profile.connection_status === "pending" ||
-                        profile.connection_status === "connected" ||
-                        profile.connection_status === "declined"
-                      ? profile.connection_status
-                      : profile.is_pending
-                        ? "pending"
-                        : "none";
-              const disableConnectAction = connectionStatus !== "none";
+              const isRequestingConnect = requestingConnectKeys.has(profileKey);
+              const connectionStatus:
+                | "none"
+                | "pending"
+                | "connected"
+                | "declined" = profile.is_connected
+                ? "connected"
+                : isPendingConnect
+                  ? "pending"
+                  : profile.connection_status === "pending" ||
+                      profile.connection_status === "connected" ||
+                      profile.connection_status === "declined"
+                    ? profile.connection_status
+                    : profile.is_pending
+                      ? "pending"
+                      : "none";
+              const disableConnectAction =
+                connectionStatus === "pending" || isRequestingConnect;
               const followers = Number(profile.followers || 0);
               const engagement = Number(profile.engagement_rate || 0);
               const roleLabel = `Verified Creator${profile.creator_type ? ` • ${profile.creator_type}` : ""}`;
@@ -554,11 +597,18 @@ export function MarketplaceSection({
                             Connected
                           </Badge>
                         )}
-                        {!profile.is_connected && connectionStatus === "pending" && (
-                          <Badge className="h-5 px-2 rounded-md bg-amber-50/95 text-amber-700 border border-amber-200 text-[10px] font-semibold shadow-sm">
-                            Waiting
-                          </Badge>
-                        )}
+                        {!profile.is_connected &&
+                          connectionStatus === "pending" && (
+                            <Badge className="h-5 px-2 rounded-md bg-amber-50/95 text-amber-700 border border-amber-200 text-[10px] font-semibold shadow-sm">
+                              Waiting
+                            </Badge>
+                          )}
+                        {!profile.is_connected &&
+                          connectionStatus === "declined" && (
+                            <Badge className="h-5 px-2 rounded-md bg-rose-50/95 text-rose-700 border border-rose-200 text-[10px] font-semibold shadow-sm">
+                              Declined
+                            </Badge>
+                          )}
                         <div className="h-5 w-5 rounded-md bg-white/90 border border-slate-200 shadow-sm flex items-center justify-center">
                           <ShieldCheck className="w-3.5 h-3.5 text-green-600" />
                         </div>
@@ -586,7 +636,9 @@ export function MarketplaceSection({
                       </p>
                     )}
                     {!(profile.tagline || profile.bio) && (
-                      <p className="text-xs text-slate-400 min-h-[32px]">No bio available yet.</p>
+                      <p className="text-xs text-slate-400 min-h-[32px]">
+                        No bio available yet.
+                      </p>
                     )}
 
                     <div className="flex flex-wrap items-center gap-2 mt-3">
@@ -603,13 +655,17 @@ export function MarketplaceSection({
 
                     <div className="grid grid-cols-2 gap-1.5 mt-2">
                       <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1">
-                        <p className="text-slate-500 text-[11px] font-medium">Followers</p>
+                        <p className="text-slate-500 text-[11px] font-medium">
+                          Followers
+                        </p>
                         <p className="text-slate-900 text-sm font-bold mt-0.5 leading-none">
                           {followers > 0 ? followers.toLocaleString() : "N/A"}
                         </p>
                       </div>
                       <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1">
-                        <p className="text-slate-500 text-[11px] font-medium">Engagement</p>
+                        <p className="text-slate-500 text-[11px] font-medium">
+                          Engagement
+                        </p>
                         <p className="text-slate-900 text-sm font-bold mt-0.5 leading-none">
                           {engagement > 0 ? `${engagement.toFixed(1)}%` : "N/A"}
                         </p>
@@ -622,20 +678,27 @@ export function MarketplaceSection({
                           className={`h-6 px-2 text-xs rounded-md ${
                             connectionStatus === "pending"
                               ? "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-50"
-                              : connectionStatus === "declined"
-                                ? "bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-50"
-                                : "bg-indigo-600 hover:bg-indigo-700 text-white"
+                              : "bg-indigo-600 hover:bg-indigo-700 text-white"
                           }`}
                           disabled={disableConnectAction}
                           onClick={async (e) => {
                             // Prevent card click from opening details when pressing connect.
                             e.stopPropagation();
+                            if (isRequestingConnect) return;
+                            setRequestingConnectKeys((prev) =>
+                              new Set(prev).add(profileKey),
+                            );
                             try {
-                              const result: any = await base44.post(connectEndpoint, {
-                                profile_type: profile.profile_type,
-                                target_id: profile.id,
-                              });
-                              const status = String(result?.status || "pending");
+                              const result: any = await base44.post(
+                                connectEndpoint,
+                                {
+                                  profile_type: profile.profile_type,
+                                  target_id: profile.id,
+                                },
+                              );
+                              const status = String(
+                                result?.status || "pending",
+                              );
                               if (status === "declined") {
                                 toast({
                                   title: "Request already declined",
@@ -645,7 +708,8 @@ export function MarketplaceSection({
                               } else if (status === "connected") {
                                 toast({
                                   title: "Already connected",
-                                  description: "This profile is already in your network.",
+                                  description:
+                                    "This profile is already in your network.",
                                 });
                               } else {
                                 toast({
@@ -653,9 +717,13 @@ export function MarketplaceSection({
                                   description:
                                     "Waiting for creator response. You will be notified after they accept or decline.",
                                 });
-                                setPendingConnectKeys((prev) => new Set(prev).add(profileKey));
+                                setPendingConnectKeys((prev) =>
+                                  new Set(prev).add(profileKey),
+                                );
                               }
-                              await queryClient.invalidateQueries({ queryKey: [queryScope] });
+                              await queryClient.invalidateQueries({
+                                queryKey: [queryScope],
+                              });
                               if (selectedProfile?.id === profile.id) {
                                 await detailsQuery.refetch();
                               }
@@ -663,9 +731,13 @@ export function MarketplaceSection({
                               const parsed = parseApiErrorPayload(e);
                               const isDuplicate =
                                 parsed.code === "23505" ||
-                                /already exists/i.test(parsed.message || parsed.raw);
+                                /already exists/i.test(
+                                  parsed.message || parsed.raw,
+                                );
                               if (isDuplicate) {
-                                setPendingConnectKeys((prev) => new Set(prev).add(profileKey));
+                                setPendingConnectKeys((prev) =>
+                                  new Set(prev).add(profileKey),
+                                );
                                 toast({
                                   title: "Request already pending",
                                   description:
@@ -684,13 +756,19 @@ export function MarketplaceSection({
                                 ),
                                 variant: "destructive" as any,
                               });
+                            } finally {
+                              setRequestingConnectKeys((prev) => {
+                                const next = new Set(prev);
+                                next.delete(profileKey);
+                                return next;
+                              });
                             }
                           }}
                         >
-                          {connectionStatus === "pending"
-                            ? "Waiting for creator response"
-                            : connectionStatus === "declined"
-                              ? "Declined"
+                          {isRequestingConnect
+                            ? "Sending..."
+                            : connectionStatus === "pending"
+                              ? "Waiting for creator response"
                               : "Connect"}
                         </Button>
                       </div>
@@ -844,15 +922,21 @@ export function MarketplaceSection({
                       </p>
                       <div className="grid grid-cols-2 gap-3 mt-4 text-xs">
                         <div className="rounded-lg border border-slate-100 bg-white/80 px-3 py-2">
-                          <p className="text-slate-500 font-medium">Followers</p>
+                          <p className="text-slate-500 font-medium">
+                            Followers
+                          </p>
                           <p className="text-slate-900 font-bold mt-0.5">
                             {Number(selectedProfile?.followers || 0) > 0
-                              ? Number(selectedProfile?.followers || 0).toLocaleString()
+                              ? Number(
+                                  selectedProfile?.followers || 0,
+                                ).toLocaleString()
                               : "N/A"}
                           </p>
                         </div>
                         <div className="rounded-lg border border-slate-100 bg-white/80 px-3 py-2">
-                          <p className="text-slate-500 font-medium">Engagement</p>
+                          <p className="text-slate-500 font-medium">
+                            Engagement
+                          </p>
                           <p className="text-slate-900 font-bold mt-0.5">
                             {Number(selectedProfile?.engagement_rate || 0) > 0
                               ? `${Number(selectedProfile?.engagement_rate || 0).toFixed(1)}%`
@@ -900,59 +984,69 @@ export function MarketplaceSection({
                     </div>
                   </div>
                   <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {(detailsQuery.data?.rates || []).slice(0, 6).map((r, i) => (
-                      <div
-                        key={`${r?.label || r?.rate_name || "rate"}-${i}`}
-                        className="rounded-lg border border-indigo-100 bg-indigo-50/40 p-3 text-sm"
-                      >
-                        <p className="text-indigo-700 font-semibold">
-                          {String(r?.label || r?.rate_name || "Rate")}
-                        </p>
-                        <p className="text-gray-900 font-bold mt-1">
-                          {formatMoney(
-                            r?.amount_cents ?? r?.price_per_month_cents,
-                            r?.currency || "USD",
-                          )}
-                        </p>
-                      </div>
-                    ))}
+                    {(detailsQuery.data?.rates || [])
+                      .slice(0, 6)
+                      .map((r, i) => (
+                        <div
+                          key={`${r?.label || r?.rate_name || "rate"}-${i}`}
+                          className="rounded-lg border border-indigo-100 bg-indigo-50/40 p-3 text-sm"
+                        >
+                          <p className="text-indigo-700 font-semibold">
+                            {String(r?.label || r?.rate_name || "Rate")}
+                          </p>
+                          <p className="text-gray-900 font-bold mt-1">
+                            {formatMoney(
+                              r?.amount_cents ?? r?.price_per_month_cents,
+                              r?.currency || "USD",
+                            )}
+                          </p>
+                        </div>
+                      ))}
                     {(detailsQuery.data?.rates || []).length === 0 && (
-                      <p className="text-sm text-gray-500">No rates published yet.</p>
+                      <p className="text-sm text-gray-500">
+                        No rates published yet.
+                      </p>
                     )}
                   </div>
                 </Card>
 
                 <Card className="p-4 border border-gray-200 rounded-xl">
-                  <h4 className="text-sm font-bold text-gray-900 mb-3">Portfolio</h4>
+                  <h4 className="text-sm font-bold text-gray-900 mb-3">
+                    Portfolio
+                  </h4>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {(detailsQuery.data?.portfolio || []).slice(0, 9).map((item, i) => (
-                      <a
-                        key={`${item?.id || i}`}
-                        href={String(item?.media_url || "#")}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="rounded-lg border border-gray-100 p-2 bg-white hover:border-indigo-200 transition-colors"
-                      >
-                        <div className="aspect-square rounded-md bg-gray-100 overflow-hidden">
-                          {item?.media_url ? (
-                            <img
-                              src={String(item.media_url)}
-                              alt={String(item?.title || "Portfolio item")}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-slate-100 flex items-center justify-center">
-                              <ImageIcon className="w-8 h-8 text-slate-400" />
-                            </div>
-                          )}
-                        </div>
-                        <p className="text-xs font-medium text-gray-700 mt-2 truncate">
-                          {String(item?.title || "Portfolio")}
-                        </p>
-                      </a>
-                    ))}
+                    {(detailsQuery.data?.portfolio || [])
+                      .slice(0, 9)
+                      .map((item, i) => (
+                        <a
+                          key={`${item?.id || i}`}
+                          href={String(item?.media_url || "#")}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="rounded-lg border border-gray-100 p-2 bg-white hover:border-indigo-200 transition-colors"
+                        >
+                          <div className="aspect-square rounded-md bg-gray-100 overflow-hidden">
+                            {item?.media_url ? (
+                              <img
+                                src={String(item.media_url)}
+                                alt={String(item?.title || "Portfolio item")}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-slate-100 flex items-center justify-center">
+                                <ImageIcon className="w-8 h-8 text-slate-400" />
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-xs font-medium text-gray-700 mt-2 truncate">
+                            {String(item?.title || "Portfolio")}
+                          </p>
+                        </a>
+                      ))}
                     {(detailsQuery.data?.portfolio || []).length === 0 && (
-                      <p className="text-sm text-gray-500">No portfolio items yet.</p>
+                      <p className="text-sm text-gray-500">
+                        No portfolio items yet.
+                      </p>
                     )}
                   </div>
                 </Card>
@@ -962,29 +1056,34 @@ export function MarketplaceSection({
                     Past Campaigns
                   </h4>
                   <div className="space-y-2">
-                    {(detailsQuery.data?.campaigns || []).slice(0, 8).map((c, i) => (
-                      <div
-                        key={`${c?.id || i}`}
-                        className="rounded-lg border border-gray-100 p-3 bg-white"
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="text-sm font-semibold text-gray-900 truncate">
-                            {String(c?.name || "Campaign")}
+                    {(detailsQuery.data?.campaigns || [])
+                      .slice(0, 8)
+                      .map((c, i) => (
+                        <div
+                          key={`${c?.id || i}`}
+                          className="rounded-lg border border-gray-100 p-3 bg-white"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm font-semibold text-gray-900 truncate">
+                              {String(c?.name || "Campaign")}
+                            </p>
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] bg-gray-100 text-gray-700"
+                            >
+                              {String(c?.status || "Unknown")}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {String(c?.campaign_type || "Type not set")}{" "}
+                            {c?.date ? `• ${String(c?.date)}` : ""}
                           </p>
-                          <Badge
-                            variant="secondary"
-                            className="text-[10px] bg-gray-100 text-gray-700"
-                          >
-                            {String(c?.status || "Unknown")}
-                          </Badge>
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {String(c?.campaign_type || "Type not set")} {c?.date ? `• ${String(c?.date)}` : ""}
-                        </p>
-                      </div>
-                    ))}
+                      ))}
                     {(detailsQuery.data?.campaigns || []).length === 0 && (
-                      <p className="text-sm text-gray-500">No campaign history yet.</p>
+                      <p className="text-sm text-gray-500">
+                        No campaign history yet.
+                      </p>
                     )}
                   </div>
                 </Card>
