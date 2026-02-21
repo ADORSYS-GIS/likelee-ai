@@ -493,7 +493,7 @@ export function MarketplaceSection({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 mt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 mt-2">
             {profiles.map((profile) => {
               const profileKey = `${profile.profile_type}:${profile.id}`;
               const isPendingConnect = pendingConnectKeys.has(profileKey);
@@ -538,7 +538,7 @@ export function MarketplaceSection({
                       </Badge>
                       <div className="flex items-center gap-1.5">
                         {profile.is_connected && (
-                          <Badge className="h-5 px-2 rounded-md bg-emerald-50/95 text-emerald-700 border border-emerald-200 text-[10px] font-semibold shadow-sm">
+                          <Badge className="h-5 px-2 rounded-md bg-blue-50/95 text-blue-700 border border-blue-200 text-[10px] font-semibold shadow-sm">
                             Connected
                           </Badge>
                         )}
@@ -604,87 +604,85 @@ export function MarketplaceSection({
                       </div>
                     </div>
 
-                    <div className="mt-2.5 flex items-center gap-2">
-                      <Button
-                        className={`h-6 px-2 text-xs rounded-md ${
-                          connectionStatus === "connected"
-                            ? "bg-indigo-300 text-white hover:bg-indigo-300"
-                            : connectionStatus === "pending"
+                    {connectionStatus !== "connected" && (
+                      <div className="mt-2.5 flex items-center gap-2">
+                        <Button
+                          className={`h-6 px-2 text-xs rounded-md ${
+                            connectionStatus === "pending"
                               ? "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-50"
                               : connectionStatus === "declined"
                                 ? "bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-50"
                                 : "bg-indigo-600 hover:bg-indigo-700 text-white"
-                        }`}
-                        disabled={disableConnectAction}
-                        onClick={async (e) => {
-                          // Prevent card click from opening details when pressing connect.
-                          e.stopPropagation();
-                          try {
-                            const result: any = await base44.post(connectEndpoint, {
-                              profile_type: profile.profile_type,
-                              target_id: profile.id,
-                            });
-                            const status = String(result?.status || "pending");
-                            if (status === "declined") {
-                              toast({
-                                title: "Request already declined",
-                                description:
-                                  "This connection was declined previously. Please contact the creator directly to reconnect.",
+                          }`}
+                          disabled={disableConnectAction}
+                          onClick={async (e) => {
+                            // Prevent card click from opening details when pressing connect.
+                            e.stopPropagation();
+                            try {
+                              const result: any = await base44.post(connectEndpoint, {
+                                profile_type: profile.profile_type,
+                                target_id: profile.id,
                               });
-                            } else if (status === "connected") {
+                              const status = String(result?.status || "pending");
+                              if (status === "declined") {
+                                toast({
+                                  title: "Request already declined",
+                                  description:
+                                    "This connection was declined previously. Please contact the creator directly to reconnect.",
+                                });
+                              } else if (status === "connected") {
+                                toast({
+                                  title: "Already connected",
+                                  description: "This profile is already in your network.",
+                                });
+                              } else {
+                                toast({
+                                  title: "Connection request sent",
+                                  description:
+                                    "Waiting for creator response. You will be notified after they accept or decline.",
+                                });
+                                setPendingConnectKeys((prev) => new Set(prev).add(profileKey));
+                              }
+                              await queryClient.invalidateQueries({ queryKey: [queryScope] });
+                              if (selectedProfile?.id === profile.id) {
+                                await detailsQuery.refetch();
+                              }
+                            } catch (e: any) {
+                              const parsed = parseApiErrorPayload(e);
+                              const isDuplicate =
+                                parsed.code === "23505" ||
+                                /already exists/i.test(parsed.message || parsed.raw);
+                              if (isDuplicate) {
+                                setPendingConnectKeys((prev) => new Set(prev).add(profileKey));
+                                toast({
+                                  title: "Request already pending",
+                                  description:
+                                    "Waiting for creator response. You can track updates in Agency Connection.",
+                                });
+                                await queryClient.invalidateQueries({
+                                  queryKey: [queryScope],
+                                });
+                                return;
+                              }
                               toast({
-                                title: "Already connected",
-                                description: "This profile is already in your network.",
+                                title: "Failed to send connection request",
+                                description: parseApiErrorMessage(
+                                  e,
+                                  "Unable to send connection request right now.",
+                                ),
+                                variant: "destructive" as any,
                               });
-                            } else {
-                              toast({
-                                title: "Connection request sent",
-                                description:
-                                  "Waiting for creator response. You will be notified after they accept or decline.",
-                              });
-                              setPendingConnectKeys((prev) => new Set(prev).add(profileKey));
                             }
-                            await queryClient.invalidateQueries({ queryKey: [queryScope] });
-                            if (selectedProfile?.id === profile.id) {
-                              await detailsQuery.refetch();
-                            }
-                          } catch (e: any) {
-                            const parsed = parseApiErrorPayload(e);
-                            const isDuplicate =
-                              parsed.code === "23505" ||
-                              /already exists/i.test(parsed.message || parsed.raw);
-                            if (isDuplicate) {
-                              setPendingConnectKeys((prev) => new Set(prev).add(profileKey));
-                              toast({
-                                title: "Request already pending",
-                                description:
-                                  "Waiting for creator response. You can track updates in Agency Connection.",
-                              });
-                              await queryClient.invalidateQueries({
-                                queryKey: [queryScope],
-                              });
-                              return;
-                            }
-                            toast({
-                              title: "Failed to send connection request",
-                              description: parseApiErrorMessage(
-                                e,
-                                "Unable to send connection request right now.",
-                              ),
-                              variant: "destructive" as any,
-                            });
-                          }
-                        }}
-                      >
-                        {connectionStatus === "connected"
-                          ? "Connected"
-                          : connectionStatus === "pending"
+                          }}
+                        >
+                          {connectionStatus === "pending"
                             ? "Waiting for creator response"
                             : connectionStatus === "declined"
                               ? "Declined"
                               : "Connect"}
-                      </Button>
-                    </div>
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </Card>
               );
