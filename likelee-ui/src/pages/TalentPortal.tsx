@@ -384,7 +384,11 @@ export default function TalentPortal({
   });
 
   const { data: earningsByAgency = [] } = useQuery({
-    queryKey: ["talentEarningsByAgency", currentMonth, effectiveAgencyId || "all"],
+    queryKey: [
+      "talentEarningsByAgency",
+      currentMonth,
+      effectiveAgencyId || "all",
+    ],
     queryFn: async () => {
       const rows = await getTalentEarningsByAgency({
         month: currentMonth,
@@ -1217,8 +1221,9 @@ export default function TalentPortal({
                         <div className="flex items-center gap-3 min-w-0">
                           <div className="h-10 w-10 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-sm font-bold text-gray-700">
                             {(
-                              String(it.agency_name || it.agency_id || "A").trim()[0] ||
-                              "A"
+                              String(
+                                it.agency_name || it.agency_id || "A",
+                              ).trim()[0] || "A"
                             ).toUpperCase()}
                           </div>
                           <div className="min-w-0">

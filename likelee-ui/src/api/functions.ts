@@ -169,15 +169,24 @@ export const declineTalentLicensingRequest = (id: string) =>
 export const listTalentLicenses = () =>
   base44Client.get(`/api/talent/licenses`);
 
-export const getTalentLicensingRevenue = (params?: { month?: string; agency_id?: string }) =>
+export const getTalentLicensingRevenue = (params?: {
+  month?: string;
+  agency_id?: string;
+}) =>
   base44Client.get(`/api/talent/licensing/revenue`, { params: params || {} });
 
-export const getTalentEarningsByCampaign = (params?: { month?: string; agency_id?: string }) =>
+export const getTalentEarningsByCampaign = (params?: {
+  month?: string;
+  agency_id?: string;
+}) =>
   base44Client.get(`/api/talent/licensing/earnings-by-campaign`, {
     params: params || {},
   });
 
-export const getTalentEarningsByAgency = (params?: { month?: string; agency_id?: string }) =>
+export const getTalentEarningsByAgency = (params?: {
+  month?: string;
+  agency_id?: string;
+}) =>
   base44Client.get(`/api/talent/licensing/earnings-by-agency`, {
     params: params || {},
   });
@@ -319,7 +328,10 @@ export const getPayoutBalance = async (profileId: string) => {
   return { data: resp } as any;
 };
 
-export const getHistory = async (params: { profile_id: string; limit?: number }) => {
+export const getHistory = async (params: {
+  profile_id: string;
+  limit?: number;
+}) => {
   const resp = await base44Client.get(`/api/payouts/history`, {
     params: params || {},
   });

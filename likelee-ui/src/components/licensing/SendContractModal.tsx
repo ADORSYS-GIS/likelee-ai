@@ -30,7 +30,6 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-
 } from "@/components/ui/select";
 import {
   Popover,
@@ -142,7 +141,8 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
         docuseal_template_id: docusealTemplateId,
         client_name: data.client_name,
         client_email: data.client_email,
-        talent_ids: selectedTalentIds.length > 0 ? selectedTalentIds : undefined,
+        talent_ids:
+          selectedTalentIds.length > 0 ? selectedTalentIds : undefined,
         talent_id: selectedTalentIds[0] || undefined,
         talent_names: selectedTalentNames.join(", ") || template?.talent_name,
         license_fee: licenseFee || template?.license_fee,
@@ -169,7 +169,8 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
         docuseal_template_id: docusealTemplateId,
         client_name: args.data.client_name,
         client_email: args.data.client_email,
-        talent_ids: selectedTalentIds.length > 0 ? selectedTalentIds : undefined,
+        talent_ids:
+          selectedTalentIds.length > 0 ? selectedTalentIds : undefined,
 
         talent_names: selectedTalentNames.join(", ") || template?.talent_name,
         license_fee: licenseFee || template?.license_fee,
@@ -211,7 +212,8 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
         docuseal_template_id: docusealTemplateId,
         client_name: data.client_name,
         client_email: data.client_email,
-        talent_ids: selectedTalentIds.length > 0 ? selectedTalentIds : undefined,
+        talent_ids:
+          selectedTalentIds.length > 0 ? selectedTalentIds : undefined,
         talent_id: selectedTalentIds[0] || undefined,
         talent_names: selectedTalentNames.join(", ") || template?.talent_name,
         requires_agency_signature: requiresAgencySignature,
@@ -351,9 +353,13 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
                                   newNames.splice(index, 1);
                                   setSelectedTalentNames(newNames);
 
-                                  const t = talents.find(t => t.full_name === name);
+                                  const t = talents.find(
+                                    (t) => t.full_name === name,
+                                  );
                                   if (t) {
-                                    const newIds = selectedTalentIds.filter(id => String(id) !== String(t.id));
+                                    const newIds = selectedTalentIds.filter(
+                                      (id) => String(id) !== String(t.id),
+                                    );
                                     setSelectedTalentIds(newIds);
                                   }
                                 }
@@ -387,7 +393,9 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
                       </CommandEmpty>
                       <CommandGroup>
                         {talents.map((t) => {
-                          const isSelected = selectedTalentIds.includes(String(t.id));
+                          const isSelected = selectedTalentIds.includes(
+                            String(t.id),
+                          );
                           return (
                             <CommandItem
                               key={t.id}
@@ -397,8 +405,12 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
                                 let newNames = [...selectedTalentNames];
 
                                 if (isSelected) {
-                                  newIds = newIds.filter((id) => String(id) !== String(t.id));
-                                  newNames = newNames.filter((name) => name !== t.full_name);
+                                  newIds = newIds.filter(
+                                    (id) => String(id) !== String(t.id),
+                                  );
+                                  newNames = newNames.filter(
+                                    (name) => name !== t.full_name,
+                                  );
                                 } else {
                                   if (!newIds.includes(String(t.id))) {
                                     newIds.push(String(t.id));
@@ -503,7 +515,7 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
             </DialogFooter>
           </form>
         </DialogContent>
-      </Dialog >
+      </Dialog>
 
       <Dialog
         open={previewOpen}

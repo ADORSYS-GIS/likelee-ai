@@ -45,7 +45,9 @@ export const LicensingRequestsTab = () => {
     },
   });
 
-  const [sendingPaymentLink, setSendingPaymentLink] = useState<Record<string, boolean>>({});
+  const [sendingPaymentLink, setSendingPaymentLink] = useState<
+    Record<string, boolean>
+  >({});
 
   const [counterOfferModalOpen, setCounterOfferModalOpen] = useState(false);
   const [counterOfferMessage, setCounterOfferMessage] = useState("");
@@ -111,7 +113,10 @@ export const LicensingRequestsTab = () => {
     const firstTalent = (group?.talents || [])[0];
     const licensingRequestId = firstTalent?.licensing_request_id;
     if (!licensingRequestId) {
-      toast({ title: "No licensing request ID found", variant: "destructive" as any });
+      toast({
+        title: "No licensing request ID found",
+        variant: "destructive" as any,
+      });
       return;
     }
 
@@ -133,9 +138,15 @@ export const LicensingRequestsTab = () => {
       let friendlyDesc = e?.message || "Could not generate payment link";
       try {
         const parsed = JSON.parse(String(e?.message || ""));
-        if (parsed && typeof parsed === "object" && parsed.code === "MISSING_TALENT_STRIPE_CONNECT") {
+        if (
+          parsed &&
+          typeof parsed === "object" &&
+          parsed.code === "MISSING_TALENT_STRIPE_CONNECT"
+        ) {
           friendlyTitle = "Action required: connect talent payouts";
-          const missingList = Array.isArray(parsed.missing) ? parsed.missing : [];
+          const missingList = Array.isArray(parsed.missing)
+            ? parsed.missing
+            : [];
           const missingText = missingList.length
             ? `Missing: ${missingList.join(", ")}`
             : "";
@@ -308,11 +319,18 @@ export const LicensingRequestsTab = () => {
                     className="w-full font-bold h-10 rounded-md flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white shadow-lg shadow-indigo-200"
                   >
                     {sendingPaymentLink[group.group_key] ? (
-                      <><RefreshCw className="w-4 h-4 animate-spin" /> Sending...</>
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />{" "}
+                        Sending...
+                      </>
                     ) : group.payment_link_id || group.payment_link_url ? (
-                      <><Send className="w-4 h-4" /> Resend payment link</>
+                      <>
+                        <Send className="w-4 h-4" /> Resend payment link
+                      </>
                     ) : (
-                      <><Send className="w-4 h-4" /> Send payment link</>
+                      <>
+                        <Send className="w-4 h-4" /> Send payment link
+                      </>
                     )}
                   </Button>
                 </div>
@@ -335,9 +353,14 @@ export const LicensingRequestsTab = () => {
                     className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-10 rounded-md flex items-center justify-center gap-2"
                   >
                     {sendingPaymentLink[group.group_key] ? (
-                      <><RefreshCw className="w-4 h-4 animate-spin" /> Sending...</>
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />{" "}
+                        Sending...
+                      </>
                     ) : (
-                      <><Send className="w-4 h-4" /> Send Payment Link</>
+                      <>
+                        <Send className="w-4 h-4" /> Send Payment Link
+                      </>
                     )}
                   </Button>
                   <Button

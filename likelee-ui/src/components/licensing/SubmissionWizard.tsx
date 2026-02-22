@@ -215,7 +215,8 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
           template_id: currentTemplate.id,
           client_name: currentData.client_name,
           client_email: currentData.client_email,
-          talent_ids: selectedTalentIds.length > 0 ? selectedTalentIds : undefined,
+          talent_ids:
+            selectedTalentIds.length > 0 ? selectedTalentIds : undefined,
           talent_id: selectedTalentIds[0] || undefined,
           talent_names: currentData.talent_name,
           license_fee: Math.round(currentData.license_fee * 100),
@@ -300,7 +301,8 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
           template_id: currentTemplate.id,
           client_name: currentData.client_name,
           client_email: currentData.client_email,
-          talent_ids: selectedTalentIds.length > 0 ? selectedTalentIds : undefined,
+          talent_ids:
+            selectedTalentIds.length > 0 ? selectedTalentIds : undefined,
           talent_id: selectedTalentIds[0] || undefined,
           talent_names: currentData.talent_name,
           license_fee: Math.round(currentData.license_fee * 100),
@@ -322,7 +324,8 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         docuseal_template_id: currentTemplate.docuseal_template_id,
         client_name: currentData.client_name,
         client_email: currentData.client_email,
-        talent_ids: selectedTalentIds.length > 0 ? selectedTalentIds : undefined,
+        talent_ids:
+          selectedTalentIds.length > 0 ? selectedTalentIds : undefined,
         talent_id: selectedTalentIds[0] || undefined,
         talent_names: currentData.talent_name,
         requires_agency_signature: requiresAgencySignature,
@@ -433,12 +436,13 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
               {[1, 2, 3].map((s) => (
                 <div key={s} className="flex-1 flex items-center gap-3">
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all ${step === s
-                      ? "bg-indigo-500 text-white shadow-lg shadow-indigo-200 scale-110"
-                      : step > s
-                        ? "bg-green-500 text-white"
-                        : "bg-slate-100 text-slate-400"
-                      }`}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs transition-all ${
+                      step === s
+                        ? "bg-indigo-500 text-white shadow-lg shadow-indigo-200 scale-110"
+                        : step > s
+                          ? "bg-green-500 text-white"
+                          : "bg-slate-100 text-slate-400"
+                    }`}
                   >
                     {step > s ? <Check className="w-4 h-4" /> : s}
                   </div>
@@ -540,8 +544,8 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                   {talents.map((t) => {
                                     const isSelected = formData.talent_name
                                       ? formData.talent_name
-                                        .split(", ")
-                                        .includes(t.full_name)
+                                          .split(", ")
+                                          .includes(t.full_name)
                                       : false;
                                     return (
                                       <CommandItem
@@ -553,7 +557,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                               ? formData.talent_name.split(", ")
                                               : [];
                                           let updatedNames;
-                                          let updatedIds = [...selectedTalentIds];
+                                          let updatedIds = [
+                                            ...selectedTalentIds,
+                                          ];
 
                                           if (isSelected) {
                                             updatedNames = currentNames.filter(
@@ -561,7 +567,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                             );
                                             // Remove ID
                                             if (t.id) {
-                                              updatedIds = updatedIds.filter((id) => id !== t.id);
+                                              updatedIds = updatedIds.filter(
+                                                (id) => id !== t.id,
+                                              );
                                             }
                                           } else {
                                             if (t.full_name) {
@@ -573,7 +581,10 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                               updatedNames = currentNames;
                                             }
                                             // Add ID
-                                            if (t.id && !updatedIds.includes(t.id)) {
+                                            if (
+                                              t.id &&
+                                              !updatedIds.includes(t.id)
+                                            ) {
                                               updatedIds.push(t.id);
                                             }
                                           }
@@ -769,7 +780,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                       (template.contract_body_format as any) || "markdown"
                     }
                     onChangeBody={(val) => setValue("contract_body", val)}
-                    onChangeFormat={() => { }} // Format locked in submission
+                    onChangeFormat={() => {}} // Format locked in submission
                     variables={AVAILABLE_CONTRACT_VARIABLES}
                     placeholder="The contract content will appear here..."
                   />

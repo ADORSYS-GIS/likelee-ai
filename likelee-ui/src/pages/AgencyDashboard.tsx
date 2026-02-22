@@ -469,7 +469,6 @@ const ConnectBankView = () => {
                     placeholder="e.g. 250.00"
                   />
                 </div>
-
               </div>
 
               <DialogFooter>
@@ -7366,7 +7365,8 @@ const GenerateInvoiceView = () => {
                   <span className="text-sm font-bold text-gray-600">%</span>
                 </div>
                 <p className="text-[10px] text-gray-500 font-medium mt-1">
-                  For licensing requests, platform fees and talent commission will be deducted from the total paid amount.
+                  For licensing requests, platform fees and talent commission
+                  will be deducted from the total paid amount.
                 </p>
               </div>
               <div>
@@ -12074,7 +12074,8 @@ const LicensingRequestsView = () => {
     const groupKey = String(group?.group_key || "");
     setSendPaymentBusyKey(groupKey);
     try {
-      const resp: any = await sendLicensingRequestPaymentLink(licensingRequestId);
+      const resp: any =
+        await sendLicensingRequestPaymentLink(licensingRequestId);
       const paymentLinkUrl = String(resp?.payment_link_url || "");
 
       await queryClient.invalidateQueries({
@@ -12092,9 +12093,15 @@ const LicensingRequestsView = () => {
       let friendlyDesc = e?.message || "Could not generate/send payment link";
       try {
         const parsed = JSON.parse(String(e?.message || ""));
-        if (parsed && typeof parsed === "object" && parsed.code === "MISSING_TALENT_STRIPE_CONNECT") {
+        if (
+          parsed &&
+          typeof parsed === "object" &&
+          parsed.code === "MISSING_TALENT_STRIPE_CONNECT"
+        ) {
           friendlyTitle = "Action required: connect talent payouts";
-          const missingList = Array.isArray(parsed.missing) ? parsed.missing : [];
+          const missingList = Array.isArray(parsed.missing)
+            ? parsed.missing
+            : [];
           const missingText = missingList.length
             ? `Missing: ${missingList.join(", ")}`
             : "";
@@ -16492,11 +16499,10 @@ const RoyaltiesPayoutsView = () => {
       </div>
 
       <Card className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
-        <div className="text-sm font-bold text-gray-900">
-          Payouts and fees
-        </div>
+        <div className="text-sm font-bold text-gray-900">Payouts and fees</div>
         <div className="text-xs text-gray-700 font-medium mt-1">
-          For licensing requests, platform fees and talent commission will be deducted from the total paid amount.
+          For licensing requests, platform fees and talent commission will be
+          deducted from the total paid amount.
         </div>
       </Card>
 
@@ -18431,9 +18437,7 @@ export default function AgencyDashboard() {
   const [agencyMode, setAgencyModeState] = useState<"AI" | "IRL">(
     (searchParams.get("mode") as "AI" | "IRL") || "AI",
   );
-  const [activeTab, setActiveTabState] = useState(
-    "dashboard",
-  );
+  const [activeTab, setActiveTabState] = useState("dashboard");
   const [activeSubTab, setActiveSubTab] = useState(
     searchParams.get("subTab") || "All Talent",
   );
@@ -19899,8 +19903,7 @@ export default function AgencyDashboard() {
               </Card>
             ))}
           {activeTab === "analytics" &&
-            activeSubTab === "Royalties & Payouts" &&
-            <RoyaltiesPayoutsView />}
+            activeSubTab === "Royalties & Payouts" && <RoyaltiesPayoutsView />}
           {activeTab === "packages" && <PackagesView />}
           {activeTab === "payouts" && <ConnectBankView />}
           {activeTab === "settings" && activeSubTab === "General Settings" && (
