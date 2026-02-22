@@ -77,12 +77,12 @@ CREATE OR REPLACE FUNCTION public.record_stripe_transfer(
     p_payment_link_id uuid,
     p_recipient_type text, -- 'agency' or 'creator'
     p_recipient_id uuid,
-    p_source_agency_id uuid DEFAULT NULL,
     p_stripe_connect_account_id text,
     p_amount_cents bigint,
     p_currency text,
     p_stripe_transfer_id text,
     p_status text,
+    p_source_agency_id uuid DEFAULT NULL,
     p_failure_reason text DEFAULT NULL
 )
 RETURNS void AS $$

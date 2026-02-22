@@ -29,7 +29,6 @@ ALTER TABLE public.performance_tiers
 INSERT INTO public.performance_tiers (
   agency_id,
   tier_name,
-  tier_level,
   min_monthly_earnings,
   min_monthly_bookings,
   created_at,
@@ -38,18 +37,17 @@ INSERT INTO public.performance_tiers (
 SELECT
   a.id AS agency_id,
   defaults.tier_name,
-  defaults.tier_level,
-  COALESCE((a.performance_config -> defaults.tier_name ->> 'min_earnings')::NUMERIC, defaults.default_earnings)::NUMERIC(12,2),
-  COALESCE((a.performance_config -> defaults.tier_name ->> 'min_bookings')::INTEGER, defaults.default_bookings),
+  defaults.default_earnings::NUMERIC(12,2),
+  defaults.default_bookings,
   NOW(),
   NOW()
 FROM public.agencies a
 CROSS JOIN (
   VALUES
-    ('Premium'::TEXT, 1::INTEGER, 5000::NUMERIC, 8::INTEGER),
-    ('Core'::TEXT, 2::INTEGER, 2500::NUMERIC, 5::INTEGER),
-    ('Growth'::TEXT, 3::INTEGER, 500::NUMERIC, 1::INTEGER)
-) AS defaults(tier_name, tier_level, default_earnings, default_bookings)
+    ('Premium'::TEXT, 5000::NUMERIC, 8::INTEGER),
+    ('Core'::TEXT, 2500::NUMERIC, 5::INTEGER),
+    ('Growth'::TEXT, 500::NUMERIC, 1::INTEGER)
+) AS defaults(tier_name, default_earnings, default_bookings)
 ON CONFLICT DO NOTHING;
 
 -- Remove legacy global seed rows (they have no agency_id).
@@ -76,10 +74,12 @@ CREATE INDEX IF NOT EXISTS idx_performance_tiers_agency ON public.performance_ti
 -- Replace RLS policies with agency-scoped policies.
 ALTER TABLE public.performance_tiers ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "agency can read own performance tiers" ON public.performance_tiers;
 CREATE POLICY "agency can read own performance tiers" ON public.performance_tiers
   FOR SELECT
   USING (auth.uid() = agency_id);
 
+DROP POLICY IF EXISTS "agency can write own performance tiers" ON public.performance_tiers;
 CREATE POLICY "agency can write own performance tiers" ON public.performance_tiers
   FOR ALL
   USING (auth.uid() = agency_id)
