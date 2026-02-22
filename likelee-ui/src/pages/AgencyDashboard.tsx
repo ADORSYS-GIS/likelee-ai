@@ -65,6 +65,7 @@ import {
   Mail,
   Package,
   Globe,
+  Store,
   Video,
   File,
   Tag,
@@ -17966,8 +17967,7 @@ export default function AgencyDashboard() {
   };
 
   const goToMarketplace = () => {
-    setActiveTab("scouting");
-    setActiveScoutingTab("Marketplace");
+    setActiveTab("marketplace");
     setSidebarOpen(false);
   };
 
@@ -18514,6 +18514,7 @@ export default function AgencyDashboard() {
         ]
       : [
           { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          { id: "marketplace", label: "Marketplace", icon: Store },
           {
             id: "roster",
             label: "Roster",
@@ -19266,6 +19267,7 @@ export default function AgencyDashboard() {
               setActiveTab={setActiveScoutingTab}
             />
           )}
+          {activeTab === "marketplace" && <MarketplaceTab />}
           {activeTab === "client-crm" && <ClientCRMView />}
           {activeTab === "file-storage" && <FileStorageView />}
           {activeTab === "bookings" && (
