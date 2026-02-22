@@ -35,6 +35,7 @@ pub mod licensing_requests;
 pub mod moderation;
 pub mod notifications;
 pub mod packages;
+pub mod payment_links;
 pub mod payouts;
 pub mod performance_tiers;
 pub mod reference_images;

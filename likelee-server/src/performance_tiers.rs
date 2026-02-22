@@ -12,13 +12,15 @@ pub struct TierRule {
     pub min_monthly_earnings: f64,
     pub min_monthly_bookings: i32,
     pub description: Option<String>,
+    pub payout_percent: f64,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct TierRuleDb {
+pub struct TierConfigDb {
     pub tier_name: String,
-    pub tier_level: i32,
-    pub description: Option<String>,
+    pub min_monthly_earnings: f64,
+    pub min_monthly_bookings: i32,
+    pub payout_percent: f64,
 }
 
 #[derive(Serialize)]
@@ -42,6 +44,7 @@ pub struct TierGroup {
     pub name: String,
     pub level: i32,
     pub description: String,
+    pub payout_percent: f64,
     pub talents: Vec<TalentPerformance>,
 }
 
@@ -57,23 +60,114 @@ pub struct PerformanceStats {
     pub booking_count: i64,
 }
 
+#[derive(Serialize)]
+pub struct TalentPayoutWeight {
+    pub talent_id: String,
+    pub name: String,
+    pub photo_url: Option<String>,
+    pub earnings_30d: f64,
+    pub bookings_this_month: i64,
+    pub tier_name: String,
+    pub payout_percent: f64,
+}
+
+#[derive(Serialize)]
+pub struct AgencyPayoutWeightsResponse {
+    pub items: Vec<TalentPayoutWeight>,
+}
+
 pub async fn configure_performance_tiers(
     State(state): State<AppState>,
     auth_user: AuthUser,
     Json(payload): Json<ConfigurePerformanceRequest>,
-) -> Result<StatusCode, (StatusCode, String)> {
-    let resp = state
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let config = payload.config.as_object().ok_or((
+        StatusCode::BAD_REQUEST,
+        "Invalid config payload".to_string(),
+    ))?;
+
+    let defaults = [
+        ("Premium", 5000.0_f64, 8_i32, 40.0_f64),
+        ("Core", 2500.0_f64, 5_i32, 30.0_f64),
+        ("Growth", 500.0_f64, 1_i32, 20.0_f64),
+        ("Inactive", 0.0_f64, 0_i32, 10.0_f64),
+    ];
+
+    let rows: Vec<serde_json::Value> = defaults
+        .iter()
+        .map(|(name, default_e, default_b, default_pct)| {
+            let tier_cfg = config.get(*name).and_then(|v| v.as_object());
+            let min_earnings = tier_cfg
+                .and_then(|v| v.get("min_earnings"))
+                .and_then(|v| v.as_f64())
+                .unwrap_or(*default_e);
+            let min_bookings = tier_cfg
+                .and_then(|v| v.get("min_bookings"))
+                .and_then(|v| v.as_i64())
+                .map(|v| v as i32)
+                .unwrap_or(*default_b);
+            let payout_percent = tier_cfg
+                .and_then(|v| v.get("payout_percent"))
+                .and_then(|v| v.as_f64())
+                .unwrap_or(*default_pct);
+
+            json!({
+                "agency_id": auth_user.id,
+                "tier_name": name,
+                "min_monthly_earnings": min_earnings,
+                "min_monthly_bookings": min_bookings,
+                "payout_percent": payout_percent,
+                "updated_at": chrono::Utc::now().to_rfc3339(),
+            })
+        })
+        .collect();
+
+    // Ensure there is an agencies row for this auth user before writing FK-bound rows.
+    let agency_exists_resp = state
         .pg
         .from("agencies")
+        .select("id")
         .eq("id", &auth_user.id)
-        .update(json!({"performance_config": payload.config}).to_string())
+        .limit(1)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    if !resp.status().is_success() {
-        let status = resp.status();
-        let text = resp.text().await.unwrap_or_default();
+    if !agency_exists_resp.status().is_success() {
+        let status = agency_exists_resp.status();
+        let text = agency_exists_resp.text().await.unwrap_or_default();
+        return Err((
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            format!("Configuration Error: {}", text),
+        ));
+    }
+
+    let agency_rows_text = agency_exists_resp
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
+    let agency_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&agency_rows_text).unwrap_or_default();
+    if agency_rows.is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "Configuration Error: agency profile not found for this account".to_string(),
+        ));
+    }
+
+    // Replace existing rows to avoid relying on upsert conflict inference on composite keys.
+    let delete_resp = state
+        .pg
+        .from("performance_tiers")
+        .eq("agency_id", &auth_user.id)
+        .delete()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !delete_resp.status().is_success() {
+        let status = delete_resp.status();
+        let text = delete_resp.text().await.unwrap_or_default();
         let friendly_msg = serde_json::from_str::<serde_json::Value>(&text)
             .ok()
             .and_then(|v| {
@@ -89,7 +183,33 @@ pub async fn configure_performance_tiers(
         ));
     }
 
-    Ok(StatusCode::OK)
+    let insert_resp = state
+        .pg
+        .from("performance_tiers")
+        .insert(json!(rows).to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !insert_resp.status().is_success() {
+        let status = insert_resp.status();
+        let text = insert_resp.text().await.unwrap_or_default();
+        let friendly_msg = serde_json::from_str::<serde_json::Value>(&text)
+            .ok()
+            .and_then(|v| {
+                v.get("message")
+                    .and_then(|m| m.as_str())
+                    .map(|s| s.to_string())
+            })
+            .unwrap_or_else(|| text.clone());
+
+        return Err((
+            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+            format!("Configuration Error: {}", friendly_msg),
+        ));
+    }
+
+    Ok(Json(json!({ "ok": true })))
 }
 
 pub async fn get_performance_tiers(
@@ -99,22 +219,16 @@ pub async fn get_performance_tiers(
     let start_total = Instant::now();
     let agency_id = &auth_user.id;
 
-    // Parallelize the 4 main database/RPC calls
-    let (resp_tiers, resp_config, resp_talents, resp_stats) = tokio::try_join!(
-        // 1. Fetch Tier Definitions
+    // Parallelize the 3 main database/RPC calls
+    let (resp_config_rows, resp_talents, resp_stats) = tokio::try_join!(
+        // 1. Fetch Agency Tier Config Rows
         state
             .pg
             .from("performance_tiers")
-            .order("tier_level.asc")
+            .eq("agency_id", agency_id)
+            .select("tier_name,min_monthly_earnings,min_monthly_bookings,payout_percent")
             .execute(),
-        // 2. Fetch Agency Custom Config
-        state
-            .pg
-            .from("agencies")
-            .select("performance_config")
-            .eq("id", agency_id)
-            .execute(),
-        // 3. Fetch Talents
+        // 2. Fetch Talents
         state
             .pg
             .from("agency_users")
@@ -122,20 +236,17 @@ pub async fn get_performance_tiers(
             .eq("agency_id", agency_id)
             .eq("role", "talent")
             .execute(),
-        // 4. Calculate Real-Time Metrics via RPC
+        // 3. Calculate Real-Time Metrics via RPC
         async {
             let now = chrono::Utc::now();
             let month_start = now.format("%Y-%m-01").to_string();
-            let thirty_days_ago = (now - chrono::Duration::days(30))
-                .format("%Y-%m-%d")
-                .to_string();
             state
                 .pg
                 .rpc(
                     "get_agency_performance_stats",
                     json!({
                         "p_agency_id": agency_id,
-                        "p_earnings_start_date": thirty_days_ago,
+                        "p_earnings_start_date": month_start,
                         "p_bookings_start_date": month_start,
                     })
                     .to_string(),
@@ -148,83 +259,122 @@ pub async fn get_performance_tiers(
 
     let db_time = start_total.elapsed();
 
-    // 1. Process Tiers
-    if !resp_tiers.status().is_success() {
+    // 1. Process Tier Config rows
+    if !resp_config_rows.status().is_success() {
         return Err((
             StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Tiers Error: {}", resp_tiers.status()),
+            format!("Tiers Error: {}", resp_config_rows.status()),
         ));
     }
-    let text_tiers = resp_tiers.text().await.map_err(|e| {
+    let text_tiers = resp_config_rows.text().await.map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("Read tiers: {}", e),
         )
     })?;
-    let tiers_db: Vec<TierRuleDb> = serde_json::from_str(&text_tiers).map_err(|e| {
+    let tiers_db: Vec<TierConfigDb> = serde_json::from_str(&text_tiers).map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             format!("Parse tiers: {}", e),
         )
     })?;
 
-    let mut tiers_json: Vec<TierRule> = tiers_db
+    let mut config_map: HashMap<String, (f64, i32, f64)> = tiers_db
         .into_iter()
-        .map(|t| {
-            let (def_e, def_b) = match t.tier_name.as_str() {
-                "Premium" => (5000.0, 8),
-                "Core" => (2500.0, 5),
-                "Growth" => (500.0, 1),
-                _ => (0.0, 0),
-            };
-            TierRule {
-                tier_name: t.tier_name,
-                tier_level: t.tier_level,
-                min_monthly_earnings: def_e,
-                min_monthly_bookings: def_b,
-                description: t.description,
-            }
+        .map(|r| {
+            (
+                r.tier_name,
+                (
+                    r.min_monthly_earnings,
+                    r.min_monthly_bookings,
+                    r.payout_percent,
+                ),
+            )
         })
         .collect();
 
-    // 2. Process Agency Config
-    if !resp_config.status().is_success() {
-        return Err((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Config Error: {}", resp_config.status()),
-        ));
-    }
-    let text_config = resp_config.text().await.map_err(|e| {
+    let defaults: [(String, i32, f64, i32, Option<String>, f64); 4] = [
         (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Read config: {}", e),
-        )
-    })?;
-    let agency_data: Vec<serde_json::Value> = serde_json::from_str(&text_config).map_err(|e| {
+            "Premium".to_string(),
+            1,
+            5000.0_f64,
+            8_i32,
+            Some("Top-performing talent with highest earnings and booking frequency".to_string()),
+            40.0_f64,
+        ),
         (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Parse config: {}", e),
-        )
-    })?;
-    let performance_config = agency_data
-        .first()
-        .and_then(|r| r.get("performance_config"))
-        .cloned();
+            "Core".to_string(),
+            2,
+            2500.0_f64,
+            5_i32,
+            Some(
+                "Consistently performing talent with solid earnings and regular bookings"
+                    .to_string(),
+            ),
+            30.0_f64,
+        ),
+        (
+            "Growth".to_string(),
+            3,
+            500.0_f64,
+            1_i32,
+            Some("Developing talent with moderate activity".to_string()),
+            20.0_f64,
+        ),
+        (
+            "Inactive".to_string(),
+            4,
+            0.0_f64,
+            0_i32,
+            Some("Talent requiring attention or inactive".to_string()),
+            10.0_f64,
+        ),
+    ];
 
-    if let Some(config) = performance_config.as_ref().and_then(|v| v.as_object()) {
-        for rule in &mut tiers_json {
-            if let Some(c) = config.get(&rule.tier_name) {
-                if let Some(e) = c.get("min_earnings").and_then(|v| v.as_f64()) {
-                    rule.min_monthly_earnings = e;
+    let tiers_json: Vec<TierRule> = defaults
+        .into_iter()
+        .map(
+            |(tier_name, tier_level, default_e, default_b, description, default_pct)| {
+                let (min_e, min_b, payout_percent) =
+                    config_map
+                        .remove(&tier_name)
+                        .unwrap_or((default_e, default_b, default_pct));
+                TierRule {
+                    tier_name,
+                    tier_level,
+                    min_monthly_earnings: min_e,
+                    min_monthly_bookings: min_b,
+                    description,
+                    payout_percent,
                 }
-                if let Some(b) = c.get("min_bookings").and_then(|v| v.as_i64()) {
-                    rule.min_monthly_bookings = b as i32;
-                }
-            }
+            },
+        )
+        .collect();
+
+    let performance_config = json!({
+        "Premium": {
+            "min_earnings": tiers_json[0].min_monthly_earnings,
+            "min_bookings": tiers_json[0].min_monthly_bookings,
+            "payout_percent": tiers_json[0].payout_percent
+        },
+        "Core": {
+            "min_earnings": tiers_json[1].min_monthly_earnings,
+            "min_bookings": tiers_json[1].min_monthly_bookings,
+            "payout_percent": tiers_json[1].payout_percent
+        },
+        "Growth": {
+            "min_earnings": tiers_json[2].min_monthly_earnings,
+            "min_bookings": tiers_json[2].min_monthly_bookings,
+            "payout_percent": tiers_json[2].payout_percent
+        },
+        "Inactive": {
+            "min_earnings": tiers_json[3].min_monthly_earnings,
+            "min_bookings": tiers_json[3].min_monthly_bookings,
+            "payout_percent": tiers_json[3].payout_percent
         }
-    }
+    });
 
-    // 3. Process Talents
+    // 2. Process Talents
     if !resp_talents.status().is_success() {
         return Err((
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -245,7 +395,7 @@ pub async fn get_performance_tiers(
             )
         })?;
 
-    // 4. Process Stats
+    // 3. Process Stats
     if !resp_stats.status().is_success() {
         return Err((
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -281,6 +431,7 @@ pub async fn get_performance_tiers(
                 name: rule.tier_name.clone(),
                 level: rule.tier_level,
                 description: rule.description.clone().unwrap_or_default(),
+                payout_percent: rule.payout_percent,
                 talents: vec![],
             },
         );
@@ -316,7 +467,7 @@ pub async fn get_performance_tiers(
         }
         if let Some(group) = groups.get_mut(&assigned_tier.tier_level) {
             group.talents.push(TalentPerformance {
-                id,
+                id: id.clone(),
                 name,
                 photo_url: photo,
                 earnings_30d: earnings,
@@ -324,6 +475,17 @@ pub async fn get_performance_tiers(
                 tier: assigned_tier.clone(),
             });
         }
+
+        // Persist the talent's current tier name back to agency_users for payout lookups
+        let tier_body = serde_json::json!({ "performance_tier_name": assigned_tier.tier_name });
+        let _ = state
+            .pg
+            .from("agency_users")
+            .eq("id", &id)
+            .eq("agency_id", agency_id)
+            .update(tier_body.to_string())
+            .execute()
+            .await;
     }
 
     let mut result_tiers: Vec<TierGroup> = groups.into_values().collect();
@@ -337,6 +499,173 @@ pub async fn get_performance_tiers(
 
     Ok(Json(PerformanceTiersResponse {
         tiers: result_tiers,
-        config: performance_config,
+        config: Some(performance_config),
     }))
+}
+
+pub async fn get_agency_payout_weights(
+    State(state): State<AppState>,
+    auth_user: AuthUser,
+) -> Result<Json<AgencyPayoutWeightsResponse>, (StatusCode, String)> {
+    let agency_id = &auth_user.id;
+
+    let (resp_talents, resp_stats, resp_tiers) = tokio::try_join!(
+        state
+            .pg
+            .from("agency_users")
+            .select("id, full_legal_name, stage_name, profile_photo_url, performance_tier_name")
+            .eq("agency_id", agency_id)
+            .eq("role", "talent")
+            .execute(),
+        async {
+            let now = chrono::Utc::now();
+            let month_start = now.format("%Y-%m-01").to_string();
+            state
+                .pg
+                .rpc(
+                    "get_agency_performance_stats",
+                    json!({
+                        "p_agency_id": agency_id,
+                        "p_earnings_start_date": month_start,
+                        "p_bookings_start_date": month_start,
+                    })
+                    .to_string(),
+                )
+                .execute()
+                .await
+        },
+        state
+            .pg
+            .from("performance_tiers")
+            .select("tier_name,payout_percent")
+            .eq("agency_id", agency_id)
+            .execute()
+    )
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp_talents.status().is_success() {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Talents Error: {}", resp_talents.status()),
+        ));
+    }
+    if !resp_stats.status().is_success() {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Stats Error: {}", resp_stats.status()),
+        ));
+    }
+    if !resp_tiers.status().is_success() {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Tiers Error: {}", resp_tiers.status()),
+        ));
+    }
+
+    let talents_text = resp_talents.text().await.map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Read talents: {}", e),
+        )
+    })?;
+    let talents: Vec<serde_json::Value> = serde_json::from_str(&talents_text).map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Parse talents: {}", e),
+        )
+    })?;
+
+    let stats_text = resp_stats.text().await.map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Read stats: {}", e),
+        )
+    })?;
+    let stats: Vec<PerformanceStats> = serde_json::from_str(&stats_text).map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Parse stats: {}", e),
+        )
+    })?;
+
+    let tiers_text = resp_tiers.text().await.map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Read tiers: {}", e),
+        )
+    })?;
+    let tiers_rows: Vec<serde_json::Value> = serde_json::from_str(&tiers_text).unwrap_or_default();
+
+    let mut payout_percent_by_tier: HashMap<String, f64> = HashMap::new();
+    for r in tiers_rows {
+        let name = r.get("tier_name").and_then(|v| v.as_str()).unwrap_or("");
+        if name.is_empty() {
+            continue;
+        }
+        let pct = r
+            .get("payout_percent")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(25.0);
+        payout_percent_by_tier.insert(name.to_string(), pct);
+    }
+
+    let mut earnings_map: HashMap<String, f64> = HashMap::new();
+    let mut bookings_map: HashMap<String, i64> = HashMap::new();
+    for s in stats {
+        earnings_map.insert(s.talent_id.clone(), s.earnings_cents as f64 / 100.0);
+        bookings_map.insert(s.talent_id, s.booking_count);
+    }
+
+    let mut items: Vec<TalentPayoutWeight> = Vec::new();
+    for t in talents {
+        let id = t
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        if id.is_empty() {
+            continue;
+        }
+        let name = t
+            .get("full_legal_name")
+            .or_else(|| t.get("stage_name"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("Unknown")
+            .to_string();
+        let photo_url = t
+            .get("profile_photo_url")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+
+        let earnings = *earnings_map.get(&id).unwrap_or(&0.0);
+        let bookings = *bookings_map.get(&id).unwrap_or(&0);
+        let tier_name = t
+            .get("performance_tier_name")
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.trim().is_empty())
+            .unwrap_or("Inactive")
+            .to_string();
+        let payout_percent = payout_percent_by_tier
+            .get(&tier_name)
+            .copied()
+            .unwrap_or(25.0);
+
+        items.push(TalentPayoutWeight {
+            talent_id: id,
+            name,
+            photo_url,
+            earnings_30d: earnings,
+            bookings_this_month: bookings,
+            tier_name,
+            payout_percent,
+        });
+    }
+
+    items.sort_by(|a, b| {
+        b.payout_percent
+            .partial_cmp(&a.payout_percent)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+
+    Ok(Json(AgencyPayoutWeightsResponse { items }))
 }

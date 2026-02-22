@@ -1,13 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { LicenseTemplatesTab } from "@/components/licensing/LicenseTemplatesTab";
 import { LicenseSubmissionsTab } from "@/components/licensing/LicenseSubmissionsTab";
-import { LicensingRequestsTab } from "@/components/licensing/LicensingRequestsTab";
 import { ActiveLicenseDetailsSheet } from "@/components/licensing/ActiveLicenseDetailsSheet";
 import { scoutingService } from "@/services/scoutingService";
 import { ScoutingEvent, ScoutingProspect } from "@/types/scouting";
 import { ScoutingMap } from "@/components/scouting/map/ScoutingMap";
 import { ScoutingTrips } from "@/components/scouting/ScoutingTrips";
-import { ScoutingEventModal } from "@/components/scouting/ScoutingEventModal";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -94,6 +92,7 @@ import {
   Mic,
   Link as LinkIcon,
   Pencil,
+  Play,
 } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { Button } from "@/components/ui/button";
@@ -138,8 +137,7 @@ import {
   getAgencyRecentActivity,
   getAgencyLicensingRequests,
   updateAgencyLicensingRequestsStatus,
-  getAgencyLicensingRequestsPaySplit,
-  setAgencyLicensingRequestsPaySplit,
+  sendLicensingRequestPaymentLink,
   listBookings,
   createBooking as apiCreateBooking,
   updateBooking as apiUpdateBooking,
@@ -163,6 +161,8 @@ import {
   markInvoicePaid,
   uploadAgencyFile,
   sendEmail,
+  generateAgencyPaymentLink,
+  sendAgencyPaymentLinkEmail,
   getAgencyActiveLicenses,
   getAgencyActiveLicensesStats,
 } from "@/api/functions";
@@ -228,9 +228,6 @@ const ConnectBankView = () => {
   const [payoutHistory, setPayoutHistory] = useState<any[]>([]);
   const [showPayoutDialog, setShowPayoutDialog] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState("");
-  const [payoutMethod, setPayoutMethod] = useState<"standard" | "instant">(
-    "standard",
-  );
   const [requestingPayout, setRequestingPayout] = useState(false);
 
   useEffect(() => {
@@ -322,7 +319,7 @@ const ConnectBankView = () => {
       await requestAgencyPayout({
         amount_cents: amountCents,
         currency: status?.available_balance?.currency || "USD",
-        payout_method: payoutMethod,
+        payout_method: "instant",
       });
 
       const [balanceResp, historyResp] = await Promise.all([
@@ -459,7 +456,7 @@ const ConnectBankView = () => {
               <DialogHeader>
                 <DialogTitle>Request Payout</DialogTitle>
                 <DialogDescription>
-                  Enter an amount (in USD) and choose a payout method.
+                  Enter an amount (in USD) and request an instant payout.
                 </DialogDescription>
               </DialogHeader>
 
@@ -471,30 +468,6 @@ const ConnectBankView = () => {
                     onChange={(e) => setPayoutAmount(e.target.value)}
                     placeholder="e.g. 250.00"
                   />
-                </div>
-
-                <div>
-                  <Label>Method</Label>
-                  <div className="flex gap-2 mt-2">
-                    <Button
-                      type="button"
-                      variant={
-                        payoutMethod === "standard" ? "default" : "outline"
-                      }
-                      onClick={() => setPayoutMethod("standard")}
-                    >
-                      Standard
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={
-                        payoutMethod === "instant" ? "default" : "outline"
-                      }
-                      onClick={() => setPayoutMethod("instant")}
-                    >
-                      Instant
-                    </Button>
-                  </div>
                 </div>
               </div>
 
@@ -530,7 +503,7 @@ const ConnectBankView = () => {
                       {(p.amount_cents || 0) / 100}{" "}
                       {String(p.currency || "USD").toUpperCase()}
                       <span className="text-xs text-gray-500 font-normal ml-2">
-                        ({p.payout_method || "standard"})
+                        ({p.payout_method || "instant"})
                       </span>
                     </div>
                     <Badge
@@ -7392,7 +7365,8 @@ const GenerateInvoiceView = () => {
                   <span className="text-sm font-bold text-gray-600">%</span>
                 </div>
                 <p className="text-[10px] text-gray-500 font-medium mt-1">
-                  Agency fee: $0.00 | Talent net: $0.00
+                  For licensing requests, platform fees and talent commission
+                  will be deducted from the total paid amount.
                 </p>
               </div>
               <div>
@@ -9135,6 +9109,50 @@ const ScoutingHubView = ({
   const { toast } = useToast();
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [eventToEdit, setEventToEdit] = useState<ScoutingEvent | null>(null);
+  const [eventForm, setEventForm] = useState<{
+    name: string;
+    event_date: string;
+    location: string;
+    description: string;
+    status: ScoutingEvent["status"];
+    start_time: string;
+    end_time: string;
+  }>({
+    name: "",
+    event_date: "",
+    location: "",
+    description: "",
+    status: "scheduled",
+    start_time: "",
+    end_time: "",
+  });
+
+  useEffect(() => {
+    if (!isEventModalOpen) return;
+    if (eventToEdit) {
+      setEventForm({
+        name: eventToEdit.name || "",
+        event_date: eventToEdit.event_date
+          ? new Date(eventToEdit.event_date).toISOString().slice(0, 10)
+          : "",
+        location: eventToEdit.location || "",
+        description: eventToEdit.description || "",
+        status: eventToEdit.status || "scheduled",
+        start_time: eventToEdit.start_time || "",
+        end_time: eventToEdit.end_time || "",
+      });
+    } else {
+      setEventForm({
+        name: "",
+        event_date: "",
+        location: "",
+        description: "",
+        status: "scheduled",
+        start_time: "",
+        end_time: "",
+      });
+    }
+  }, [eventToEdit, isEventModalOpen]);
 
   const tabs = [
     "Prospect Pipeline",
@@ -9260,19 +9278,187 @@ const ScoutingHubView = ({
         prospect={prospectToEdit}
       />
 
-      <ScoutingEventModal
+      <Dialog
         open={isEventModalOpen}
         onOpenChange={(open) => {
           setIsEventModalOpen(open);
           if (!open) setEventToEdit(null);
         }}
-        eventToEdit={eventToEdit}
-        onSaved={async () => {
-          await queryClient.invalidateQueries({
-            queryKey: ["scouting-events"],
-          });
-        }}
-      />
+      >
+        <DialogContent className="sm:max-w-[600px] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900">
+              {eventToEdit ? "Edit Event" : "Create Event"}
+            </DialogTitle>
+            <DialogDescription className="text-gray-500 font-medium">
+              Manage open calls and casting events for your scouting pipeline.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-gray-700">Name</Label>
+              <Input
+                value={eventForm.name}
+                onChange={(e) =>
+                  setEventForm((p) => ({ ...p, name: e.target.value }))
+                }
+                placeholder="Event name"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-700">Date</Label>
+                <Input
+                  type="date"
+                  value={eventForm.event_date}
+                  onChange={(e) =>
+                    setEventForm((p) => ({ ...p, event_date: e.target.value }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-700">
+                  Status
+                </Label>
+                <Input
+                  value={eventForm.status}
+                  onChange={(e) =>
+                    setEventForm((p) => ({
+                      ...p,
+                      status: e.target.value as ScoutingEvent["status"],
+                    }))
+                  }
+                  placeholder="scheduled"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-700">
+                  Start time
+                </Label>
+                <Input
+                  value={eventForm.start_time}
+                  onChange={(e) =>
+                    setEventForm((p) => ({ ...p, start_time: e.target.value }))
+                  }
+                  placeholder="09:00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-700">
+                  End time
+                </Label>
+                <Input
+                  value={eventForm.end_time}
+                  onChange={(e) =>
+                    setEventForm((p) => ({ ...p, end_time: e.target.value }))
+                  }
+                  placeholder="18:00"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-gray-700">
+                Location
+              </Label>
+              <Input
+                value={eventForm.location}
+                onChange={(e) =>
+                  setEventForm((p) => ({ ...p, location: e.target.value }))
+                }
+                placeholder="Location"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-gray-700">
+                Description
+              </Label>
+              <Textarea
+                value={eventForm.description}
+                onChange={(e) =>
+                  setEventForm((p) => ({ ...p, description: e.target.value }))
+                }
+                placeholder="Optional details"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsEventModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+              onClick={async () => {
+                try {
+                  const agencyId = await scoutingService.getUserAgencyId();
+                  if (!agencyId) {
+                    toast({
+                      title: "Error",
+                      description: "Could not determine agency.",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  if (
+                    !eventForm.name ||
+                    !eventForm.event_date ||
+                    !eventForm.location
+                  ) {
+                    toast({
+                      title: "Missing fields",
+                      description: "Name, date, and location are required.",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+
+                  const payload = {
+                    agency_id: agencyId,
+                    name: eventForm.name,
+                    event_date: new Date(eventForm.event_date).toISOString(),
+                    location: eventForm.location,
+                    description: eventForm.description || null,
+                    status: eventForm.status,
+                    start_time: eventForm.start_time || null,
+                    end_time: eventForm.end_time || null,
+                  } as any;
+
+                  if (eventToEdit?.id) {
+                    await scoutingService.updateEvent(eventToEdit.id, payload);
+                    toast({ title: "Event updated" });
+                  } else {
+                    await scoutingService.createEvent(payload);
+                    toast({ title: "Event created" });
+                  }
+
+                  await queryClient.invalidateQueries({
+                    queryKey: ["scouting-events"],
+                  });
+                  setIsEventModalOpen(false);
+                } catch (e: any) {
+                  toast({
+                    title: "Error",
+                    description: e?.message || "Failed to save event.",
+                    variant: "destructive",
+                  });
+                }
+              }}
+            >
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -9691,27 +9877,22 @@ const ProspectPipelineTab = ({
   const stats = [
     {
       label: "New Leads",
-      count: prospects?.filter((p) => p.status === "new_lead").length || 0,
+      count: prospects?.filter((p) => p.status === "new").length || 0,
       color: "border-blue-200 bg-blue-50/30",
     },
     {
       label: "In Contact",
-      count: prospects?.filter((p) => p.status === "in_contact").length || 0,
+      count: prospects?.filter((p) => p.status === "contacted").length || 0,
       color: "border-yellow-200 bg-yellow-50/30",
     },
     {
       label: "Test Shoots",
-      count:
-        prospects?.filter((p) => p.status.startsWith("test_shoot_")).length ||
-        0,
+      count: prospects?.filter((p) => p.status === "test_shoot").length || 0,
       color: "border-purple-200 bg-purple-50/30",
     },
     {
       label: "Offers Sent",
-      count:
-        prospects?.filter((p) =>
-          ["offer_sent", "opened", "signed", "declined"].includes(p.status),
-        ).length || 0,
+      count: prospects?.filter((p) => p.status === "offer_sent").length || 0,
       color: "border-green-200 bg-green-50/30",
     },
   ];
@@ -11801,10 +11982,416 @@ export const RosterView = ({
   );
 };
 
-// Assuming LicensingRequestsView is now imported from another file.
-// If it was defined here, its definition has been removed as per the instruction.
-// Add the import statement for LicensingRequestsView here if it's used in this file.
-// For example: import { LicensingRequestsView } from './LicensingRequestsView';
+const LicensingRequestsView = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["agency", "licensing-requests"],
+    queryFn: async () => {
+      const resp = await getAgencyLicensingRequests();
+      return resp as any[];
+    },
+  });
+
+  const [counterOfferModalOpen, setCounterOfferModalOpen] = useState(false);
+  const [counterOfferMessage, setCounterOfferMessage] = useState("");
+  const [groupToCounter, setGroupToCounter] = useState<any>(null);
+  const [activeRequestTab, setActiveRequestTab] = useState<
+    "Active" | "Archive"
+  >("Active");
+  const [sendPaymentBusyKey, setSendPaymentBusyKey] = useState<string>("");
+
+  const statusStyle = (status: string) => {
+    if (status === "approved") return "bg-green-100 text-green-700";
+    if (status === "rejected") return "bg-red-100 text-red-700";
+    return "bg-gray-100 text-gray-700";
+  };
+
+  const formatBudget = (min?: number | null, max?: number | null) => {
+    const minOk = typeof min === "number" && Number.isFinite(min);
+    const maxOk = typeof max === "number" && Number.isFinite(max);
+    const fmt = (n: number) =>
+      n.toLocaleString(undefined, {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      });
+
+    if (minOk && maxOk) return `${fmt(min!)} - ${fmt(max!)}`;
+    if (minOk) return fmt(min!);
+    if (maxOk) return fmt(max!);
+    return "—";
+  };
+
+  const updateGroupStatus = async (
+    group: any,
+    status: "pending" | "approved" | "rejected" | "negotiating" | "archived",
+    notes?: string,
+  ) => {
+    const ids = (group?.talents || [])
+      .map((t: any) => t.licensing_request_id)
+      .filter(Boolean);
+    if (!ids.length) return;
+
+    try {
+      await updateAgencyLicensingRequestsStatus({
+        licensing_request_ids: ids,
+        status,
+        notes,
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["agency", "licensing-requests"],
+      });
+      if (status === "negotiating") {
+        setCounterOfferModalOpen(false);
+        setCounterOfferMessage("");
+        setGroupToCounter(null);
+        toast({
+          title: "Counter offer sent",
+          description: "The client has been notified.",
+        });
+      }
+    } catch (e: any) {
+      toast({
+        title: "Update failed",
+        description: e?.message || "Could not update licensing request",
+        variant: "destructive" as any,
+      });
+    }
+  };
+
+  const sendPaymentLinkForGroup = async (group: any) => {
+    const ids = (group?.talents || [])
+      .map((t: any) => t.licensing_request_id)
+      .filter(Boolean);
+    if (!ids.length) return;
+
+    const licensingRequestId = String(ids[0] || "");
+    if (!licensingRequestId) return;
+
+    const groupKey = String(group?.group_key || "");
+    setSendPaymentBusyKey(groupKey);
+    try {
+      const resp: any =
+        await sendLicensingRequestPaymentLink(licensingRequestId);
+      const paymentLinkUrl = String(resp?.payment_link_url || "");
+
+      await queryClient.invalidateQueries({
+        queryKey: ["agency", "licensing-requests"],
+      });
+
+      toast({
+        title: "Payment link sent",
+        description: paymentLinkUrl
+          ? "Payment link generated and sent."
+          : "Payment link sent.",
+      });
+    } catch (e: any) {
+      let friendlyTitle = "Send payment link failed";
+      let friendlyDesc = e?.message || "Could not generate/send payment link";
+      try {
+        const parsed = JSON.parse(String(e?.message || ""));
+        if (
+          parsed &&
+          typeof parsed === "object" &&
+          parsed.code === "MISSING_TALENT_STRIPE_CONNECT"
+        ) {
+          friendlyTitle = "Action required: connect talent payouts";
+          const missingList = Array.isArray(parsed.missing)
+            ? parsed.missing
+            : [];
+          const missingText = missingList.length
+            ? `Missing: ${missingList.join(", ")}`
+            : "";
+          const actionText = parsed.action ? String(parsed.action) : "";
+          friendlyDesc = [String(parsed.message || ""), actionText, missingText]
+            .filter((s) => Boolean(String(s || "").trim()))
+            .join("\n");
+        }
+      } catch {
+        // ignore parse errors
+      }
+      toast({
+        title: friendlyTitle,
+        description: friendlyDesc,
+        variant: "destructive" as any,
+      });
+    } finally {
+      setSendPaymentBusyKey("");
+    }
+  };
+
+  const filteredData = (data || []).filter((group: any) => {
+    const isArchived = ["rejected", "declined", "archived"].includes(
+      group.status,
+    );
+    return activeRequestTab === "Active" ? !isArchived : isArchived;
+  });
+
+  return (
+    <>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-2xl font-bold text-gray-900">
+              Licensing Requests
+            </h2>
+            <div className="flex bg-gray-100 p-1 rounded-lg w-fit mt-2">
+              {["Active", "Archive"].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveRequestTab(tab as any)}
+                  className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${activeRequestTab === tab ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            className="flex items-center gap-2 border-gray-300 font-bold text-gray-700 bg-white"
+          >
+            <Filter className="w-4 h-4" /> Filter
+          </Button>
+        </div>
+
+        <div className="space-y-6">
+          {isLoading && (
+            <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
+              <div className="text-gray-500 font-medium">Loading...</div>
+            </Card>
+          )}
+
+          {!isLoading && error && (
+            <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
+              <div className="text-red-600 font-medium">
+                Failed to load licensing requests
+              </div>
+            </Card>
+          )}
+
+          {!isLoading && !error && filteredData.length === 0 && (
+            <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
+              <div className="text-gray-500 font-medium">
+                {activeRequestTab === "Active"
+                  ? "No active licensing requests"
+                  : "No archived licensing requests"}
+              </div>
+            </Card>
+          )}
+
+          {filteredData.map((group: any) => (
+            <Card
+              key={group.group_key}
+              className="p-8 bg-white border-2 border-gray-900 rounded-none overflow-hidden relative"
+            >
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">
+                    {group.brand_name || "Unknown brand"}
+                  </h3>
+                  <p className="text-gray-500 font-medium">
+                    {(group.campaign_title || "").trim() || "—"}
+                  </p>
+                </div>
+                <span
+                  className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyle(group.status)}`}
+                >
+                  {group.status}
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-2 mb-8">
+                {(group.talents || []).map((t: any) => {
+                  const names = (t.talent_name || "")
+                    .split(",")
+                    .map((s: string) => s.trim())
+                    .filter(Boolean);
+                  return names.map((name: string, i: number) => (
+                    <span
+                      key={`${t.licensing_request_id}-${i}`}
+                      className="px-3 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded uppercase"
+                    >
+                      {name || "Talent"}
+                    </span>
+                  ));
+                })}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12 mb-8">
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                      Budget Range
+                    </p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {formatBudget(group.budget_min, group.budget_max)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                      Regions
+                    </p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {group.regions || "—"}
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                      Usage Scope
+                    </p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {(group.usage_scope || "").trim() || "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
+                      {group.license_start_date ? "Duration" : "Deadline"}
+                    </p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {group.license_start_date && group.license_end_date
+                        ? `${new Date(group.license_start_date).toLocaleDateString()} - ${new Date(group.license_end_date).toLocaleDateString()}`
+                        : group.license_start_date
+                          ? `From ${new Date(group.license_start_date).toLocaleDateString()}`
+                          : group.deadline
+                            ? new Date(group.deadline).toLocaleDateString()
+                            : "—"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {activeRequestTab === "Archive" ? (
+                <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => updateGroupStatus(group, "pending")}
+                    className="border-gray-300 text-gray-700 font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Recover to Active
+                  </Button>
+                </div>
+              ) : group.payment_link_id || group.payment_link_url ? (
+                <div>
+                  <Button
+                    onClick={() => sendPaymentLinkForGroup(group)}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                    disabled={
+                      !!sendPaymentBusyKey &&
+                      sendPaymentBusyKey === String(group?.group_key || "")
+                    }
+                  >
+                    <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
+                      <span className="text-[10px]">✓</span>
+                    </div>
+                    {sendPaymentBusyKey === String(group?.group_key || "")
+                      ? "Sending..."
+                      : "Resend payment link"}
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Button
+                    onClick={() => sendPaymentLinkForGroup(group)}
+                    className="bg-green-600 hover:bg-green-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                    disabled={
+                      !!sendPaymentBusyKey &&
+                      sendPaymentBusyKey === String(group?.group_key || "")
+                    }
+                  >
+                    <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
+                      <span className="text-[10px]">✓</span>
+                    </div>
+                    {sendPaymentBusyKey === String(group?.group_key || "")
+                      ? "Sending..."
+                      : "Send payment link"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setGroupToCounter(group);
+                      setCounterOfferModalOpen(true);
+                    }}
+                    className="border-gray-300 text-gray-700 font-bold h-11 rounded-md"
+                  >
+                    Counter Offer
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => updateGroupStatus(group, "rejected")}
+                    className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                  >
+                    <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
+                      <span className="text-[10px]">✕</span>
+                    </div>
+                    Decline
+                  </Button>
+                </div>
+              )}
+            </Card>
+          ))}
+        </div>
+
+        <Dialog
+          open={counterOfferModalOpen}
+          onOpenChange={setCounterOfferModalOpen}
+        >
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Send Counter Offer</DialogTitle>
+              <DialogDescription>
+                Explain your proposed terms to the client. They will be notified
+                by email.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label>Message to Client</Label>
+                <Textarea
+                  value={counterOfferMessage}
+                  onChange={(e) => setCounterOfferMessage(e.target.value)}
+                  placeholder="Describe your counter offer terms..."
+                  rows={5}
+                  className="resize-none"
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setCounterOfferModalOpen(false)}
+                className="font-bold"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() =>
+                  updateGroupStatus(
+                    groupToCounter,
+                    "negotiating",
+                    counterOfferMessage,
+                  )
+                }
+                disabled={!counterOfferMessage.trim()}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+              >
+                Send Counter Offer
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </>
+  );
+};
 
 const ActiveLicensesView = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -15911,6 +16498,14 @@ const RoyaltiesPayoutsView = () => {
         </Button>
       </div>
 
+      <Card className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
+        <div className="text-sm font-bold text-gray-900">Payouts and fees</div>
+        <div className="text-xs text-gray-700 font-medium mt-1">
+          For licensing requests, platform fees and talent commission will be
+          deducted from the total paid amount.
+        </div>
+      </Card>
+
       {/* Top Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
@@ -17842,9 +18437,7 @@ export default function AgencyDashboard() {
   const [agencyMode, setAgencyModeState] = useState<"AI" | "IRL">(
     (searchParams.get("mode") as "AI" | "IRL") || "AI",
   );
-  const [activeTab, setActiveTabState] = useState(
-    searchParams.get("tab") || "dashboard",
-  );
+  const [activeTab, setActiveTabState] = useState("dashboard");
   const [activeSubTab, setActiveSubTab] = useState(
     searchParams.get("subTab") || "All Talent",
   );
@@ -18391,18 +18984,6 @@ export default function AgencyDashboard() {
     setActiveTab("dashboard");
   }, [agencyMode, activeTab]);
 
-  useEffect(() => {
-    const handleSwitchTab = (e: any) => {
-      const { tab, subTab, scoutingTab } = e.detail;
-      if (tab) setActiveTab(tab);
-      if (subTab) setActiveSubTab(subTab);
-      if (scoutingTab) setActiveScoutingTab(scoutingTab);
-    };
-
-    window.addEventListener("switchTab", handleSwitchTab);
-    return () => window.removeEventListener("switchTab", handleSwitchTab);
-  }, []);
-
   const setActiveTab = (tab: string) => {
     setActiveTabState(tab);
     setSearchParams((prev) => {
@@ -18590,8 +19171,9 @@ export default function AgencyDashboard() {
             label: "Analytics",
             icon: BarChart2,
             subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-            disabled: !hasProAccess,
-            disabledReason: "Requires Pro",
+            disabledSubItems: {
+              "Analytics Dashboard": !hasProAccess,
+            },
           },
           { id: "packages", label: "Talent Packages", icon: Package },
           {
@@ -18648,8 +19230,9 @@ export default function AgencyDashboard() {
             label: "Analytics",
             icon: BarChart2,
             subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-            disabled: !hasProAccess,
-            disabledReason: "Requires Pro",
+            disabledSubItems: {
+              "Analytics Dashboard": !hasProAccess,
+            },
           },
           { id: "packages", label: "Talent Packages", icon: Package },
           {
@@ -19245,7 +19828,7 @@ export default function AgencyDashboard() {
             <PerformanceTiers />
           )}
           {activeTab === "licensing" &&
-            activeSubTab === "Licensing Requests" && <LicensingRequestsTab />}
+            activeSubTab === "Licensing Requests" && <LicensingRequestsView />}
           {activeTab === "licensing" &&
             activeSubTab === "License Submissions" && <LicenseSubmissionsTab />}
           {activeTab === "licensing" && activeSubTab === "Active Licenses" && (
@@ -19320,27 +19903,7 @@ export default function AgencyDashboard() {
               </Card>
             ))}
           {activeTab === "analytics" &&
-            activeSubTab === "Royalties & Payouts" &&
-            (hasProAccess ? (
-              <RoyaltiesPayoutsView />
-            ) : (
-              <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                <div className="text-lg font-black text-gray-900">
-                  Upgrade required
-                </div>
-                <div className="text-gray-500 font-medium mt-1">
-                  Royalties & Payouts is available on the Pro plan.
-                </div>
-                <div className="mt-4">
-                  <Button
-                    className="rounded-xl font-bold"
-                    onClick={() => navigate("/agencysubscribe")}
-                  >
-                    View plans
-                  </Button>
-                </div>
-              </Card>
-            ))}
+            activeSubTab === "Royalties & Payouts" && <RoyaltiesPayoutsView />}
           {activeTab === "packages" && <PackagesView />}
           {activeTab === "payouts" && <ConnectBankView />}
           {activeTab === "settings" && activeSubTab === "General Settings" && (

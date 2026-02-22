@@ -410,12 +410,13 @@ pub async fn get_recent_activity(
         }
     }
 
-    // 4. Licensing Requests
+    // 4. Licensing Requests (excluding archived)
     let resp_req = state
         .pg
         .from("licensing_requests")
         .select("id, created_at")
         .eq("agency_id", agency_id)
+        .is("archived_at", "null") // Only show non-archived records
         .order("created_at.desc")
         .limit(5)
         .execute()
@@ -579,13 +580,14 @@ async fn get_pending_actions(
     state: &AppState,
     agency_id: &str,
 ) -> Result<PendingActions, (StatusCode, String)> {
-    // 1. Get licensing requests count
+    // 1. Get licensing requests count (excluding archived)
     let resp = state
         .pg
         .from("licensing_requests")
         .select("id")
         .eq("agency_id", agency_id)
         .eq("status", "pending")
+        .is("archived_at", "null") // Only count non-archived records
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;

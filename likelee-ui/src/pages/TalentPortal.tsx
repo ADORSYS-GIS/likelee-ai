@@ -18,6 +18,7 @@ import {
   deleteTalentBookOut,
   getTalentLicensingRevenue,
   getTalentEarningsByCampaign,
+  getTalentEarningsByAgency,
   getTalentPayoutBalance,
   requestTalentPayout,
   getTalentAnalytics,
@@ -363,14 +364,36 @@ export default function TalentPortal({
   const { data: licensingRevenue } = useQuery({
     queryKey: ["talentLicensingRevenue", currentMonth],
     queryFn: async () =>
-      await getTalentLicensingRevenue({ month: currentMonth }),
+      await getTalentLicensingRevenue({
+        month: currentMonth,
+        ...(effectiveAgencyId ? { agency_id: effectiveAgencyId } : {}),
+      }),
     enabled: !!talentId,
   });
 
   const { data: earningsByCampaign = [] } = useQuery({
     queryKey: ["talentEarningsByCampaign", currentMonth],
     queryFn: async () => {
-      const rows = await getTalentEarningsByCampaign({ month: currentMonth });
+      const rows = await getTalentEarningsByCampaign({
+        month: currentMonth,
+        ...(effectiveAgencyId ? { agency_id: effectiveAgencyId } : {}),
+      });
+      return Array.isArray(rows) ? rows : [];
+    },
+    enabled: !!talentId,
+  });
+
+  const { data: earningsByAgency = [] } = useQuery({
+    queryKey: [
+      "talentEarningsByAgency",
+      currentMonth,
+      effectiveAgencyId || "all",
+    ],
+    queryFn: async () => {
+      const rows = await getTalentEarningsByAgency({
+        month: currentMonth,
+        ...(effectiveAgencyId ? { agency_id: effectiveAgencyId } : {}),
+      });
       return Array.isArray(rows) ? rows : [];
     },
     enabled: !!talentId,
@@ -944,7 +967,7 @@ export default function TalentPortal({
                 : "Manage your AI licensing deals and earnings"}
             </div>
           </div>
-          {mode === "irl" && canSelectAgency && (
+          {canSelectAgency && (
             <div className="w-[240px]">
               <Select
                 value={selectedAgencyId}
@@ -1176,6 +1199,44 @@ export default function TalentPortal({
                         </div>
                       ))}
                     </div>
+                  )}
+                </div>
+              </Card>
+
+              <Card className="p-6 rounded-xl shadow-sm">
+                <div className="text-sm font-semibold text-gray-900">
+                  Earnings by Agency
+                </div>
+                <div className="mt-4 space-y-2">
+                  {earningsByAgency.length === 0 ? (
+                    <div className="text-sm text-gray-600 py-6 text-center">
+                      No earnings by agency for this month yet.
+                    </div>
+                  ) : (
+                    earningsByAgency.slice(0, 10).map((it: any) => (
+                      <div
+                        key={String(it.agency_id || "")}
+                        className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="h-10 w-10 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-sm font-bold text-gray-700">
+                            {(
+                              String(
+                                it.agency_name || it.agency_id || "A",
+                              ).trim()[0] || "A"
+                            ).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold text-gray-900 truncate">
+                              {it.agency_name || it.agency_id || "Agency"}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-sm font-semibold text-green-600">
+                          {fmtCents(it.monthly_cents)}/mo
+                        </div>
+                      </div>
+                    ))
                   )}
                 </div>
               </Card>
