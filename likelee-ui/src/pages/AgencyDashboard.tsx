@@ -18467,8 +18467,6 @@ export default function AgencyDashboard() {
         return "All Talent";
     }
   };
-
-  const [activeTab, setActiveTabState] = useState("dashboard");
   const [activeSubTab, setActiveSubTab] = useState(
     searchParams.get("subTab") ||
       getDefaultSubTab(searchParams.get("tab") || "dashboard"),
