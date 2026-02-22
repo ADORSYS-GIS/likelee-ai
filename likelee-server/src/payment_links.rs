@@ -518,6 +518,7 @@ pub async fn generate_payment_link(
                 .pg
                 .from("performance_tiers")
                 .select("tier_name,payout_percent")
+                .eq("agency_id", &user.id)
                 .in_("tier_name", tn_refs)
                 .execute()
                 .await;
