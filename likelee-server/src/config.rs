@@ -141,7 +141,7 @@ pub struct ServerConfig {
     #[envconfig(from = "MIN_PAYOUT_AMOUNT_CENTS", default = "1000")]
     pub min_payout_amount_cents: u32,
 
-    #[envconfig(from = "INSTANT_PAYOUTS_ENABLED", default = "false")]
+    #[envconfig(from = "INSTANT_PAYOUTS_ENABLED", default = "true")]
     pub instant_payouts_enabled: bool,
 
     #[envconfig(from = "PAYOUT_FEE_BPS", default = "100")] // 1%

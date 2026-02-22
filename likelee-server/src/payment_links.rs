@@ -1431,11 +1431,25 @@ pub async fn request_creator_payout(
             )
         })?;
 
-    // Determine payout method and status
-    let payout_method = payload
-        .payout_method
-        .unwrap_or_else(|| "standard".to_string());
-    let instant_enabled = state.instant_payouts_enabled && payout_method == "instant";
+    // Likelee payouts are instant-only.
+    if !state.instant_payouts_enabled {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "instant_payouts_disabled".to_string(),
+        ));
+    }
+    if let Some(m) = payload.payout_method.as_deref() {
+        let m = m.to_lowercase();
+        if m == "standard" {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "standard_payouts_disabled".to_string(),
+            ));
+        }
+        if m != "instant" {
+            return Err((StatusCode::BAD_REQUEST, "invalid_payout_method".to_string()));
+        }
+    }
 
     // Auto-approve if under threshold
     let auto_approve = payload.amount_cents <= state.payout_auto_approve_threshold_cents as i64;
@@ -1446,7 +1460,7 @@ pub async fn request_creator_payout(
         "creator_id": creator_id,
         "amount_cents": payload.amount_cents,
         "currency": currency,
-        "payout_method": if instant_enabled { "instant" } else { "standard" },
+        "payout_method": "instant",
         "status": initial_status,
     });
 

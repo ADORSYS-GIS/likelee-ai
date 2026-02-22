@@ -39,6 +39,9 @@ pub struct LicensingRequestGroup {
     pub created_at: String,
     pub status: String,
     pub pay_set: bool,
+    pub payment_link_url: Option<String>,
+    pub payment_link_id: Option<String>,
+    pub payment_link_status: Option<String>,
     pub talents: Vec<LicensingRequestTalent>,
 }
 
@@ -156,6 +159,46 @@ pub async fn list_for_agency(
         requests = arr.clone();
     }
 
+    // Fetch latest payment link per licensing_request_id so UI can show resend state.
+    let lr_ids: Vec<String> = requests
+        .iter()
+        .filter_map(|r| r.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()))
+        .collect();
+    let mut payment_link_by_lr: HashMap<String, serde_json::Value> = HashMap::new();
+    if !lr_ids.is_empty() {
+        let lr_refs: Vec<&str> = lr_ids.iter().map(|s| s.as_str()).collect();
+        if let Ok(pl_resp) = state
+            .pg
+            .from("agency_payment_links")
+            .select("id,licensing_request_id,stripe_payment_link_url,status,created_at")
+            .eq("agency_id", &user.id)
+            .in_("licensing_request_id", lr_refs)
+            .order("created_at.desc")
+            .execute()
+            .await
+        {
+            if pl_resp.status().is_success() {
+                if let Ok(pl_text) = pl_resp.text().await {
+                    let pl_rows: Vec<serde_json::Value> =
+                        serde_json::from_str(&pl_text).unwrap_or_default();
+                    for row in pl_rows {
+                        let lrid = row
+                            .get("licensing_request_id")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("");
+                        if lrid.is_empty() {
+                            continue;
+                        }
+                        // Rows are ordered by created_at desc; first seen is latest.
+                        if !payment_link_by_lr.contains_key(lrid) {
+                            payment_link_by_lr.insert(lrid.to_string(), row);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     info!(agency_id = %user.id, count = requests.len(), "licensing_requests fetched (optimized)");
 
     let mut groups: BTreeMap<String, LicensingRequestGroup> = BTreeMap::new();
@@ -271,6 +314,9 @@ pub async fn list_for_agency(
                 created_at: created_at.clone(),
                 status: "pending".to_string(),
                 pay_set: false,
+                payment_link_url: None,
+                payment_link_id: None,
+                payment_link_status: None,
                 talents: vec![],
             });
 
@@ -356,6 +402,26 @@ pub async fn list_for_agency(
 
         let statuses: Vec<String> = entry.talents.iter().map(|t| t.status.clone()).collect();
         entry.status = group_status(&statuses);
+
+        if entry.payment_link_id.is_none() {
+            if let Some(pl) = payment_link_by_lr.get(id) {
+                entry.payment_link_id = pl
+                    .get("id")
+                    .and_then(|v| v.as_str())
+                    .filter(|s| !s.trim().is_empty())
+                    .map(|s| s.to_string());
+                entry.payment_link_url = pl
+                    .get("stripe_payment_link_url")
+                    .and_then(|v| v.as_str())
+                    .filter(|s| !s.trim().is_empty())
+                    .map(|s| s.to_string());
+                entry.payment_link_status = pl
+                    .get("status")
+                    .and_then(|v| v.as_str())
+                    .filter(|s| !s.trim().is_empty())
+                    .map(|s| s.to_string());
+            }
+        }
     }
 
     // Final pass for groups to set pay_set accurately
@@ -367,7 +433,10 @@ pub async fn list_for_agency(
                 .all(|t| t.total_agreed_amount.is_some());
     }
 
-    let mut out: Vec<LicensingRequestGroup> = groups.into_values().collect();
+    let mut out: Vec<LicensingRequestGroup> = groups
+        .into_values()
+        .filter(|g| g.payment_link_status.as_deref().unwrap_or("") != "paid")
+        .collect();
     out.sort_by(|a, b| b.created_at.cmp(&a.created_at));
     Ok(Json(out))
 }
@@ -1147,16 +1216,8 @@ pub async fn send_payment_link(
         ));
     }
 
-    // 6. Resolve pay split from campaigns
+    // 6. Resolve campaign id (if any)
     let campaign = lr.get("campaigns");
-    let agency_percent = campaign
-        .and_then(|c| c.get("agency_percent"))
-        .and_then(|v| v.as_f64())
-        .unwrap_or(20.0);
-    let talent_percent = 100.0 - agency_percent;
-    let agency_amount_cents = ((net_amount_cents as f64) * (agency_percent / 100.0)).round() as i64;
-    let talent_amount_cents = net_amount_cents - agency_amount_cents;
-
     let campaign_id = campaign
         .and_then(|c| c.get("id"))
         .and_then(|v| v.as_str())
@@ -1355,10 +1416,13 @@ pub async fn send_payment_link(
     if !missing_stripe.is_empty() {
         return Err((
             StatusCode::BAD_REQUEST,
-            format!(
-                "The following talents must connect their creator profile and Stripe account before a payment link can be generated: {}",
-                missing_stripe.join(", ")
-            ),
+            json!({
+                "code": "MISSING_TALENT_STRIPE_CONNECT",
+                "message": "Some talents are not ready for payments yet.",
+                "action": "Link each talent to a Creator profile and ensure they complete Stripe Connect onboarding. Then try sending the payment link again.",
+                "missing": missing_stripe,
+            })
+            .to_string(),
         ));
     }
 
@@ -1395,26 +1459,41 @@ pub async fn send_payment_link(
         }
     }
 
-    // Build talent splits weighted by performance tier payout_percent
-    // Each talent gets (their tier payout_percent / total payout_percent of all talents) * talent_amount_cents
-    let total_payout_weight: f64 = all_talent_ids
-        .iter()
-        .map(|tid| {
-            let tier_name = talent_tier_name_map
-                .get(tid)
-                .map(|s| s.as_str())
-                .unwrap_or("Inactive");
-            tier_payout_percent_map
-                .get(tier_name)
-                .copied()
-                .unwrap_or(25.0)
-        })
-        .sum::<f64>();
+    // Talent split semantics:
+    // - `performance_tiers.payout_percent` is treated as an absolute percent of `net_amount_cents`
+    //   (net = total - platform fee) per talent.
+    // - The agency receives the remainder.
+    let mut raw_amounts: Vec<(String, i64, String, f64)> = Vec::new();
+    let mut raw_total_cents: i64 = 0;
+
+    for tid in &all_talent_ids {
+        let tier_name = talent_tier_name_map
+            .get(tid)
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .unwrap_or("Inactive");
+        let payout_pct = tier_payout_percent_map
+            .get(tier_name)
+            .copied()
+            .unwrap_or(0.0)
+            .max(0.0);
+
+        let cents = ((net_amount_cents as f64) * (payout_pct / 100.0)).round() as i64;
+        raw_total_cents += cents;
+        raw_amounts.push((tid.clone(), cents.max(0), tier_name.to_string(), payout_pct));
+    }
+
+    // If total talent payout exceeds net (e.g. sum of percents > 100), scale down proportionally.
+    let scale = if raw_total_cents > net_amount_cents && raw_total_cents > 0 {
+        (net_amount_cents as f64) / (raw_total_cents as f64)
+    } else {
+        1.0
+    };
 
     let mut talent_splits_json: Vec<serde_json::Value> = Vec::new();
     let mut distributed_cents: i64 = 0;
 
-    for (i, tid) in all_talent_ids.iter().enumerate() {
+    for (i, (tid, cents, tier_name, payout_pct)) in raw_amounts.iter().enumerate() {
         let name = talent_name_map
             .get(tid)
             .cloned()
@@ -1422,23 +1501,11 @@ pub async fn send_payment_link(
         let cid = talent_creator_map.get(tid).cloned().unwrap_or_default();
         let stripe_acct = stripe_account_map.get(&cid).cloned().unwrap_or_default();
 
-        let tier_name = talent_tier_name_map
-            .get(tid)
-            .map(|s| s.as_str())
-            .unwrap_or("Inactive");
-        let payout_pct = tier_payout_percent_map
-            .get(tier_name)
-            .copied()
-            .unwrap_or(25.0);
-
-        let amount = if i == all_talent_ids.len() - 1 {
-            talent_amount_cents - distributed_cents
-        } else if total_payout_weight > 0.0 {
-            (talent_amount_cents as f64 * (payout_pct / total_payout_weight)).round() as i64
-        } else {
-            (talent_amount_cents as f64 / all_talent_ids.len() as f64).round() as i64
-        };
-
+        let mut amount = ((*cents as f64) * scale).round() as i64;
+        if i == raw_amounts.len() - 1 {
+            // Last talent: clamp so we never exceed net_amount_cents due to rounding.
+            amount = (net_amount_cents - distributed_cents).max(0);
+        }
         distributed_cents += amount;
 
         talent_splits_json.push(json!({
@@ -1452,16 +1519,36 @@ pub async fn send_payment_link(
         }));
     }
 
+    let talent_amount_cents = distributed_cents.max(0);
+    let agency_amount_cents = (net_amount_cents - talent_amount_cents).max(0);
+    let agency_percent = if net_amount_cents > 0 {
+        ((agency_amount_cents as f64) * 100.0) / (net_amount_cents as f64)
+    } else {
+        0.0
+    };
+    let talent_percent = 100.0 - agency_percent;
+
     // Ensure at least one entry so downstream code always has splits
     if talent_splits_json.is_empty() {
         talent_splits_json.push(json!({
             "talent_id": "",
             "talent_name": "Unknown",
             "creator_id": "",
-            "amount_cents": talent_amount_cents,
+            "amount_cents": net_amount_cents,
             "stripe_connect_account_id": "",
         }));
     }
+
+    tracing::info!(
+        agency_id = %user.id,
+        licensing_request_id = %id,
+        net_amount_cents = net_amount_cents,
+        agency_amount_cents = agency_amount_cents,
+        talent_amount_cents = talent_amount_cents,
+        talent_count = all_talent_ids.len(),
+        scale = scale,
+        "Computed payment link split"
+    );
 
     // 9. Create Stripe product + price + payment link
     let stripe_client = stripe_sdk::Client::new(state.stripe_secret_key.clone());

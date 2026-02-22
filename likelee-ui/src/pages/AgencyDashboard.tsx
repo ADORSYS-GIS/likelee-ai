@@ -137,8 +137,7 @@ import {
   getAgencyRecentActivity,
   getAgencyLicensingRequests,
   updateAgencyLicensingRequestsStatus,
-  getAgencyLicensingRequestsPaySplit,
-  setAgencyLicensingRequestsPaySplit,
+  sendLicensingRequestPaymentLink,
   listBookings,
   createBooking as apiCreateBooking,
   updateBooking as apiUpdateBooking,
@@ -229,9 +228,6 @@ const ConnectBankView = () => {
   const [payoutHistory, setPayoutHistory] = useState<any[]>([]);
   const [showPayoutDialog, setShowPayoutDialog] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState("");
-  const [payoutMethod, setPayoutMethod] = useState<"standard" | "instant">(
-    "standard",
-  );
   const [requestingPayout, setRequestingPayout] = useState(false);
 
   useEffect(() => {
@@ -323,7 +319,7 @@ const ConnectBankView = () => {
       await requestAgencyPayout({
         amount_cents: amountCents,
         currency: status?.available_balance?.currency || "USD",
-        payout_method: payoutMethod,
+        payout_method: "instant",
       });
 
       const [balanceResp, historyResp] = await Promise.all([
@@ -460,7 +456,7 @@ const ConnectBankView = () => {
               <DialogHeader>
                 <DialogTitle>Request Payout</DialogTitle>
                 <DialogDescription>
-                  Enter an amount (in USD) and choose a payout method.
+                  Enter an amount (in USD) and request an instant payout.
                 </DialogDescription>
               </DialogHeader>
 
@@ -474,29 +470,6 @@ const ConnectBankView = () => {
                   />
                 </div>
 
-                <div>
-                  <Label>Method</Label>
-                  <div className="flex gap-2 mt-2">
-                    <Button
-                      type="button"
-                      variant={
-                        payoutMethod === "standard" ? "default" : "outline"
-                      }
-                      onClick={() => setPayoutMethod("standard")}
-                    >
-                      Standard
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={
-                        payoutMethod === "instant" ? "default" : "outline"
-                      }
-                      onClick={() => setPayoutMethod("instant")}
-                    >
-                      Instant
-                    </Button>
-                  </div>
-                </div>
               </div>
 
               <DialogFooter>
@@ -531,7 +504,7 @@ const ConnectBankView = () => {
                       {(p.amount_cents || 0) / 100}{" "}
                       {String(p.currency || "USD").toUpperCase()}
                       <span className="text-xs text-gray-500 font-normal ml-2">
-                        ({p.payout_method || "standard"})
+                        ({p.payout_method || "instant"})
                       </span>
                     </div>
                     <Badge
@@ -7393,7 +7366,7 @@ const GenerateInvoiceView = () => {
                   <span className="text-sm font-bold text-gray-600">%</span>
                 </div>
                 <p className="text-[10px] text-gray-500 font-medium mt-1">
-                  Agency fee: $0.00 | Talent net: $0.00
+                  For licensing requests, platform fees and talent commission will be deducted from the total paid amount.
                 </p>
               </div>
               <div>
@@ -12021,12 +11994,6 @@ const LicensingRequestsView = () => {
     },
   });
 
-  const [payModalOpen, setPayModalOpen] = useState(false);
-  const [payModalLoading, setPayModalLoading] = useState(false);
-  const [selectedGroup, setSelectedGroup] = useState<any | null>(null);
-  const [totalPaymentAmount, setTotalPaymentAmount] = useState<string>("");
-  const [agencyPercent, setAgencyPercent] = useState<string>("");
-
   const [counterOfferModalOpen, setCounterOfferModalOpen] = useState(false);
   const [counterOfferMessage, setCounterOfferMessage] = useState("");
   const [groupToCounter, setGroupToCounter] = useState<any>(null);
@@ -12034,32 +12001,6 @@ const LicensingRequestsView = () => {
     "Active" | "Archive"
   >("Active");
   const [sendPaymentBusyKey, setSendPaymentBusyKey] = useState<string>("");
-
-  const talentCount = (selectedGroup?.talents || []).length || 0;
-  const totalNum = Number(totalPaymentAmount);
-  const agencyPercentNum = Number(agencyPercent);
-  const agencyTotal =
-    Number.isFinite(totalNum) && Number.isFinite(agencyPercentNum)
-      ? (totalNum * agencyPercentNum) / 100
-      : 0;
-  const talentTotal =
-    Number.isFinite(totalNum) && Number.isFinite(agencyTotal)
-      ? totalNum - agencyTotal
-      : 0;
-  const perTalentTalent =
-    talentCount > 0 && Number.isFinite(talentTotal)
-      ? talentTotal / talentCount
-      : 0;
-  const hasMissingTalentNames = (selectedGroup?.talents || []).some(
-    (t: any) => !(t?.talent_name || "").trim(),
-  );
-  const formatMoney = (n: number) =>
-    Number.isFinite(n)
-      ? n.toLocaleString(undefined, {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })
-      : "--";
 
   const statusStyle = (status: string) => {
     if (status === "approved") return "bg-green-100 text-green-700";
@@ -12082,41 +12023,6 @@ const LicensingRequestsView = () => {
     if (minOk) return fmt(min!);
     if (maxOk) return fmt(max!);
     return "—";
-  };
-
-  const openPayModal = async (group: any) => {
-    setSelectedGroup(group);
-    setPayModalOpen(true);
-    if (!group?.pay_set) {
-      setTotalPaymentAmount("");
-      setAgencyPercent("");
-      setPayModalLoading(false);
-      return;
-    }
-
-    setPayModalLoading(true);
-    try {
-      const ids = (group?.talents || [])
-        .map((t: any) => t.licensing_request_id)
-        .filter(Boolean)
-        .join(",");
-      const resp = await getAgencyLicensingRequestsPaySplit(ids);
-      const total = (resp as any)?.total_payment_amount;
-      const ap = (resp as any)?.agency_percent;
-      setTotalPaymentAmount(
-        typeof total === "number" && Number.isFinite(total)
-          ? String(total)
-          : "",
-      );
-      setAgencyPercent(
-        typeof ap === "number" && Number.isFinite(ap) ? String(ap) : "",
-      );
-    } catch {
-      setTotalPaymentAmount("");
-      setAgencyPercent("");
-    } finally {
-      setPayModalLoading(false);
-    }
   };
 
   const updateGroupStatus = async (
@@ -12162,44 +12068,14 @@ const LicensingRequestsView = () => {
       .filter(Boolean);
     if (!ids.length) return;
 
-    if (!group?.pay_set) {
-      await openPayModal(group);
-      toast({
-        title: "Set pay split first",
-        description:
-          "Please set the total amount and agency percent before sending the payment link.",
-        variant: "destructive" as any,
-      });
-      return;
-    }
+    const licensingRequestId = String(ids[0] || "");
+    if (!licensingRequestId) return;
 
     const groupKey = String(group?.group_key || "");
     setSendPaymentBusyKey(groupKey);
     try {
-      await updateAgencyLicensingRequestsStatus({
-        licensing_request_ids: ids,
-        status: "approved",
-      });
-
-      const idsCsv = ids.join(",");
-      const payResp: any = await getAgencyLicensingRequestsPaySplit(idsCsv);
-      const total = Number(payResp?.total_payment_amount);
-      if (!Number.isFinite(total) || total <= 0) {
-        throw new Error("Invalid pay split total");
-      }
-      const totalCents = Math.round(total * 100);
-
-      const pl: any = await generateAgencyPaymentLink({
-        licensing_request_ids: ids,
-        total_amount_cents: totalCents,
-      });
-      const paymentLinkId = String(pl?.payment_link_id || "");
-      const paymentLinkUrl = String(pl?.payment_link_url || "");
-      if (!paymentLinkId) {
-        throw new Error("Payment link generation failed");
-      }
-
-      await sendAgencyPaymentLinkEmail({ payment_link_id: paymentLinkId });
+      const resp: any = await sendLicensingRequestPaymentLink(licensingRequestId);
+      const paymentLinkUrl = String(resp?.payment_link_url || "");
 
       await queryClient.invalidateQueries({
         queryKey: ["agency", "licensing-requests"],
@@ -12208,68 +12084,31 @@ const LicensingRequestsView = () => {
       toast({
         title: "Payment link sent",
         description: paymentLinkUrl
-          ? `Payment link emailed successfully. URL: ${paymentLinkUrl}`
-          : "Payment link emailed successfully.",
+          ? "Payment link generated and sent."
+          : "Payment link sent.",
       });
     } catch (e: any) {
-      toast({
-        title: "Send payment link failed",
-        description: e?.message || "Could not generate/send payment link",
-        variant: "destructive" as any,
-      });
-    } finally {
-      setSendPaymentBusyKey("");
-    }
-  };
-
-  const completePaymentLinkSend = async (group: any) => {
-    const ids = (group?.talents || [])
-      .map((t: any) => t.licensing_request_id)
-      .filter(Boolean);
-    if (!ids.length) return;
-
-    const groupKey = String(group?.group_key || "");
-    setSendPaymentBusyKey(groupKey);
-    try {
-      await updateAgencyLicensingRequestsStatus({
-        licensing_request_ids: ids,
-        status: "approved",
-      });
-
-      const idsCsv = ids.join(",");
-      const payResp: any = await getAgencyLicensingRequestsPaySplit(idsCsv);
-      const total = Number(payResp?.total_payment_amount);
-      if (!Number.isFinite(total) || total <= 0) {
-        throw new Error("Invalid pay split total");
+      let friendlyTitle = "Send payment link failed";
+      let friendlyDesc = e?.message || "Could not generate/send payment link";
+      try {
+        const parsed = JSON.parse(String(e?.message || ""));
+        if (parsed && typeof parsed === "object" && parsed.code === "MISSING_TALENT_STRIPE_CONNECT") {
+          friendlyTitle = "Action required: connect talent payouts";
+          const missingList = Array.isArray(parsed.missing) ? parsed.missing : [];
+          const missingText = missingList.length
+            ? `Missing: ${missingList.join(", ")}`
+            : "";
+          const actionText = parsed.action ? String(parsed.action) : "";
+          friendlyDesc = [String(parsed.message || ""), actionText, missingText]
+            .filter((s) => Boolean(String(s || "").trim()))
+            .join("\n");
+        }
+      } catch {
+        // ignore parse errors
       }
-      const totalCents = Math.round(total * 100);
-
-      const pl: any = await generateAgencyPaymentLink({
-        licensing_request_ids: ids,
-        total_amount_cents: totalCents,
-      });
-      const paymentLinkId = String(pl?.payment_link_id || "");
-      const paymentLinkUrl = String(pl?.payment_link_url || "");
-      if (!paymentLinkId) {
-        throw new Error("Payment link generation failed");
-      }
-
-      await sendAgencyPaymentLinkEmail({ payment_link_id: paymentLinkId });
-
-      await queryClient.invalidateQueries({
-        queryKey: ["agency", "licensing-requests"],
-      });
-
       toast({
-        title: "Payment link sent",
-        description: paymentLinkUrl
-          ? `Payment link emailed successfully. URL: ${paymentLinkUrl}`
-          : "Payment link emailed successfully.",
-      });
-    } catch (e: any) {
-      toast({
-        title: "Send payment link failed",
-        description: e?.message || "Could not generate/send payment link",
+        title: friendlyTitle,
+        description: friendlyDesc,
         variant: "destructive" as any,
       });
     } finally {
@@ -12283,55 +12122,6 @@ const LicensingRequestsView = () => {
     );
     return activeRequestTab === "Active" ? !isArchived : isArchived;
   });
-
-  const savePaySplit = async () => {
-    if (!selectedGroup) return;
-    const ids = (selectedGroup?.talents || [])
-      .map((t: any) => t.licensing_request_id)
-      .filter(Boolean);
-    if (!ids.length) return;
-
-    const total = Number(totalPaymentAmount);
-    const ap = Number(agencyPercent);
-    if (!Number.isFinite(total) || total < 0) {
-      toast({ title: "Invalid total amount", variant: "destructive" as any });
-      return;
-    }
-    if (!agencyPercent.trim()) {
-      toast({
-        title: "Agency percent is required",
-        variant: "destructive" as any,
-      });
-      return;
-    }
-    if (!Number.isFinite(ap) || ap < 0 || ap > 100) {
-      toast({ title: "Invalid agency percent", variant: "destructive" as any });
-      return;
-    }
-
-    setPayModalLoading(true);
-    try {
-      await setAgencyLicensingRequestsPaySplit({
-        licensing_request_ids: ids,
-        total_payment_amount: total,
-        agency_percent: ap,
-      });
-      toast({ title: "Pay updated" });
-      setPayModalOpen(false);
-      setSelectedGroup(null);
-      await queryClient.invalidateQueries({
-        queryKey: ["agency", "licensing-requests"],
-      });
-    } catch (e: any) {
-      toast({
-        title: "Save failed",
-        description: e?.message || "Could not save pay split",
-        variant: "destructive" as any,
-      });
-    } finally {
-      setPayModalLoading(false);
-    }
-  };
 
   return (
     <>
@@ -12469,24 +12259,7 @@ const LicensingRequestsView = () => {
                 </div>
               </div>
 
-              {group.status === "approved" ? (
-                <div>
-                  <Button
-                    onClick={() => openPayModal(group)}
-                    className={`w-full font-bold h-11 rounded-md flex items-center justify-center gap-2 ${group.pay_set ? "bg-white text-gray-900 border border-gray-300 hover:bg-gray-50" : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 animate-pulse"}`}
-                  >
-                    {group.pay_set ? (
-                      <>
-                        <Eye className="w-4 h-4" /> View Pay
-                      </>
-                    ) : (
-                      <>
-                        <DollarSign className="w-4 h-4" /> Set Pay
-                      </>
-                    )}
-                  </Button>
-                </div>
-              ) : activeRequestTab === "Archive" ? (
+              {activeRequestTab === "Archive" ? (
                 <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                   <Button
                     variant="outline"
@@ -12495,6 +12268,24 @@ const LicensingRequestsView = () => {
                   >
                     <RefreshCw className="w-4 h-4" />
                     Recover to Active
+                  </Button>
+                </div>
+              ) : group.payment_link_id || group.payment_link_url ? (
+                <div>
+                  <Button
+                    onClick={() => sendPaymentLinkForGroup(group)}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                    disabled={
+                      !!sendPaymentBusyKey &&
+                      sendPaymentBusyKey === String(group?.group_key || "")
+                    }
+                  >
+                    <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
+                      <span className="text-[10px]">✓</span>
+                    </div>
+                    {sendPaymentBusyKey === String(group?.group_key || "")
+                      ? "Sending..."
+                      : "Resend payment link"}
                   </Button>
                 </div>
               ) : (
@@ -12539,78 +12330,6 @@ const LicensingRequestsView = () => {
             </Card>
           ))}
         </div>
-
-        <Dialog open={payModalOpen} onOpenChange={setPayModalOpen}>
-          <DialogContent className="max-w-xl">
-            <DialogHeader>
-              <DialogTitle>Pay split</DialogTitle>
-              <DialogDescription>
-                Set total campaign pay and agency percent. The system will split
-                total evenly across talents.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Total payment amount</Label>
-                <Input
-                  value={totalPaymentAmount}
-                  onChange={(e) => setTotalPaymentAmount(e.target.value)}
-                  placeholder="e.g. 10000"
-                  inputMode="decimal"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Agency percent</Label>
-                <Input
-                  value={agencyPercent}
-                  onChange={(e) => setAgencyPercent(e.target.value)}
-                  placeholder="e.g. 20"
-                  inputMode="decimal"
-                />
-              </div>
-
-              <Card className="p-4 bg-gray-50 border border-gray-200">
-                <div className="grid grid-cols-1 gap-2 text-sm font-medium text-gray-700">
-                  <div className="flex justify-between">
-                    <span>Agency total</span>
-                    <span>${formatMoney(agencyTotal)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Talent total</span>
-                    <span>${formatMoney(talentTotal)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Per talent</span>
-                    <span>${formatMoney(perTalentTalent)}</span>
-                  </div>
-                  {hasMissingTalentNames && (
-                    <div className="text-xs text-amber-700 font-bold">
-                      Some talents are missing names in this request.
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </div>
-
-            <DialogFooter className="pt-6 border-t">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setPayModalOpen(false);
-                  setSelectedGroup(null);
-                }}
-                disabled={payModalLoading}
-              >
-                Cancel
-              </Button>
-              <Button onClick={savePaySplit} disabled={payModalLoading}>
-                {payModalLoading ? "Saving..." : "Save"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
 
         <Dialog
           open={counterOfferModalOpen}
@@ -16772,6 +16491,15 @@ const RoyaltiesPayoutsView = () => {
         </Button>
       </div>
 
+      <Card className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
+        <div className="text-sm font-bold text-gray-900">
+          Payouts and fees
+        </div>
+        <div className="text-xs text-gray-700 font-medium mt-1">
+          For licensing requests, platform fees and talent commission will be deducted from the total paid amount.
+        </div>
+      </Card>
+
       {/* Top Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
@@ -18704,7 +18432,7 @@ export default function AgencyDashboard() {
     (searchParams.get("mode") as "AI" | "IRL") || "AI",
   );
   const [activeTab, setActiveTabState] = useState(
-    searchParams.get("tab") || "dashboard",
+    "dashboard",
   );
   const [activeSubTab, setActiveSubTab] = useState(
     searchParams.get("subTab") || "All Talent",
@@ -19439,8 +19167,9 @@ export default function AgencyDashboard() {
             label: "Analytics",
             icon: BarChart2,
             subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-            disabled: !hasProAccess,
-            disabledReason: "Requires Pro",
+            disabledSubItems: {
+              "Analytics Dashboard": !hasProAccess,
+            },
           },
           { id: "packages", label: "Talent Packages", icon: Package },
           {
@@ -19497,8 +19226,9 @@ export default function AgencyDashboard() {
             label: "Analytics",
             icon: BarChart2,
             subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-            disabled: !hasProAccess,
-            disabledReason: "Requires Pro",
+            disabledSubItems: {
+              "Analytics Dashboard": !hasProAccess,
+            },
           },
           { id: "packages", label: "Talent Packages", icon: Package },
           {
@@ -20170,26 +19900,7 @@ export default function AgencyDashboard() {
             ))}
           {activeTab === "analytics" &&
             activeSubTab === "Royalties & Payouts" &&
-            (hasProAccess ? (
-              <RoyaltiesPayoutsView />
-            ) : (
-              <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                <div className="text-lg font-black text-gray-900">
-                  Upgrade required
-                </div>
-                <div className="text-gray-500 font-medium mt-1">
-                  Royalties & Payouts is available on the Pro plan.
-                </div>
-                <div className="mt-4">
-                  <Button
-                    className="rounded-xl font-bold"
-                    onClick={() => navigate("/agencysubscribe")}
-                  >
-                    View plans
-                  </Button>
-                </div>
-              </Card>
-            ))}
+            <RoyaltiesPayoutsView />}
           {activeTab === "packages" && <PackagesView />}
           {activeTab === "payouts" && <ConnectBankView />}
           {activeTab === "settings" && activeSubTab === "General Settings" && (

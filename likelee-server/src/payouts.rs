@@ -889,31 +889,31 @@ pub async fn request_payout(
         );
     }
 
-    // Validate payout method
-    let method = payload
-        .payout_method
-        .unwrap_or_else(|| {
-            if state.instant_payouts_enabled {
-                "instant".to_string()
-            } else {
-                "standard".to_string()
-            }
-        })
-        .to_lowercase();
-    if method != "standard" && method != "instant" {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(
-                json!({"status":"error","error":"invalid_payout_method","allowed":["standard","instant"]}),
-            ),
-        );
-    }
-    if method == "instant" && !state.instant_payouts_enabled {
+    // Likelee payouts are instant-only.
+    if !state.instant_payouts_enabled {
         return (
             StatusCode::BAD_REQUEST,
             Json(json!({"status":"error","error":"instant_payouts_disabled"})),
         );
     }
+    if let Some(m) = payload.payout_method.as_deref() {
+        let m = m.to_lowercase();
+        if m == "standard" {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({"status":"error","error":"standard_payouts_disabled"})),
+            );
+        }
+        if m != "instant" {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(
+                    json!({"status":"error","error":"invalid_payout_method","allowed":["instant"]}),
+                ),
+            );
+        }
+    }
+    let method = "instant".to_string();
 
     // Read available balance
     let bal_resp = match state
@@ -1168,7 +1168,9 @@ async fn execute_payout(
                 .pg
                 .from("creator_payout_requests")
                 .eq("id", payout_request_id)
-                .update(json!({"status":"failed","failure_reason":"invalid_account_id"}).to_string())
+                .update(
+                    json!({"status":"failed","failure_reason":"invalid_account_id"}).to_string(),
+                )
                 .execute()
                 .await;
             return Err(());
@@ -1176,9 +1178,7 @@ async fn execute_payout(
     };
 
     let mut payout_params = stripe_sdk::CreatePayout::new(net_cents, payout_currency);
-    if method == "instant" {
-        payout_params.method = Some(stripe_sdk::PayoutMethod::Instant);
-    }
+    payout_params.method = Some(stripe_sdk::PayoutMethod::Instant);
 
     match stripe_sdk::Payout::create(&connected_client, payout_params).await {
         Ok(p) => {
@@ -1250,12 +1250,7 @@ pub async fn get_history(
             Json(json!({"status":"error","error":"missing_profile_id"})),
         );
     }
-    let limit_usize: usize = q
-        .limit
-        .unwrap_or(5)
-        .clamp(1, 100)
-        .try_into()
-        .unwrap_or(5);
+    let limit_usize: usize = q.limit.unwrap_or(5).clamp(1, 100).try_into().unwrap_or(5);
 
     let resp = match state
         .pg
@@ -1372,6 +1367,12 @@ pub async fn stripe_webhook(
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
+            let stripe_payment_link_id = obj
+                .get("payment_link")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string();
             let _payment_intent_id = obj
                 .get("payment_intent")
                 .and_then(|v| v.as_str())
@@ -1379,10 +1380,19 @@ pub async fn stripe_webhook(
                 .to_string();
 
             // Try to find matching payment link by metadata
-            if !agency_id_from_meta.is_empty() {
+            if !agency_id_from_meta.is_empty() || !stripe_payment_link_id.is_empty() {
+                tracing::info!(
+                    agency_id_from_meta = %agency_id_from_meta,
+                    stripe_payment_link_id = %stripe_payment_link_id,
+                    "checkout.session.completed detected as payment-link checkout"
+                );
                 let _ = handle_payment_link_checkout_completed(&state, &obj).await;
                 return (StatusCode::OK, Json(json!({"status":"ok"})));
             }
+
+            tracing::info!(
+                "checkout.session.completed detected as subscription/other checkout (no payment_link and no agency_id metadata)"
+            );
 
             let agency_id = obj
                 .get("client_reference_id")
@@ -1542,15 +1552,24 @@ pub async fn stripe_webhook(
                     let mut update = serde_json::Map::new();
                     if is_paid {
                         update.insert("status".into(), json!("paid"));
-                        update.insert("processed_at".into(), json!(chrono::Utc::now().to_rfc3339()));
+                        update.insert(
+                            "processed_at".into(),
+                            json!(chrono::Utc::now().to_rfc3339()),
+                        );
                     }
                     if is_failed {
                         update.insert("status".into(), json!("failed"));
-                        update.insert("processed_at".into(), json!(chrono::Utc::now().to_rfc3339()));
+                        update.insert(
+                            "processed_at".into(),
+                            json!(chrono::Utc::now().to_rfc3339()),
+                        );
                     }
                     if is_canceled {
                         update.insert("status".into(), json!("canceled"));
-                        update.insert("processed_at".into(), json!(chrono::Utc::now().to_rfc3339()));
+                        update.insert(
+                            "processed_at".into(),
+                            json!(chrono::Utc::now().to_rfc3339()),
+                        );
                     }
                     update.insert("stripe_payout_id".into(), json!(pid));
                     if let (Some(btx), Some(acct_id)) = (p.balance_transaction, maybe_account) {
@@ -1691,12 +1710,12 @@ async fn handle_payment_link_checkout_completed(
     obj: &serde_json::Value,
 ) -> Result<(), String> {
     let md = obj.get("metadata").cloned().unwrap_or(json!({}));
-    let agency_id = md
+    let mut agency_id = md
         .get("agency_id")
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
-    let licensing_request_ids_str = md
+    let mut licensing_request_ids_str = md
         .get("licensing_request_ids")
         .and_then(|v| v.as_str())
         .unwrap_or("")
@@ -1711,7 +1730,59 @@ async fn handle_payment_link_checkout_completed(
         .and_then(|v| v.as_i64())
         .unwrap_or(0);
 
-    if agency_id.is_empty() || licensing_request_ids_str.is_empty() {
+    // Payment Links don't always propagate metadata to the Checkout Session.
+    // If metadata is missing, attempt to resolve the payment link record via checkout.session.payment_link.
+    if agency_id.trim().is_empty() || licensing_request_ids_str.trim().is_empty() {
+        let stripe_payment_link_id = obj
+            .get("payment_link")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+
+        if !stripe_payment_link_id.is_empty() {
+            let pl_resp = state
+                .pg
+                .from("agency_payment_links")
+                .select("agency_id,licensing_request_id")
+                .eq("stripe_payment_link_id", &stripe_payment_link_id)
+                .limit(1)
+                .execute()
+                .await;
+
+            if let Ok(pl_resp) = pl_resp {
+                if pl_resp.status().is_success() {
+                    let text = pl_resp.text().await.unwrap_or_else(|_| "[]".into());
+                    let rows: Vec<serde_json::Value> =
+                        serde_json::from_str(&text).unwrap_or_default();
+                    if let Some(row) = rows.first() {
+                        if agency_id.trim().is_empty() {
+                            agency_id = row
+                                .get("agency_id")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("")
+                                .to_string();
+                        }
+                        if licensing_request_ids_str.trim().is_empty() {
+                            licensing_request_ids_str = row
+                                .get("licensing_request_id")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("")
+                                .to_string();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if agency_id.trim().is_empty() || licensing_request_ids_str.trim().is_empty() {
+        warn!(
+            agency_id = %agency_id,
+            licensing_request_ids = %licensing_request_ids_str,
+            payment_intent_id = %payment_intent_id,
+            "Payment link checkout completed but missing identifiers; skipping distribution"
+        );
         return Ok(());
     }
 
@@ -1722,7 +1793,7 @@ async fn handle_payment_link_checkout_completed(
     let pl_resp = state
         .pg
         .from("agency_payment_links")
-        .select("id,agency_id,licensing_request_id,campaign_id,total_amount_cents,agency_amount_cents,talent_amount_cents,currency,talent_splits")
+        .select("id,agency_id,licensing_request_id,campaign_id,total_amount_cents,platform_fee_cents,net_amount_cents,agency_amount_cents,talent_amount_cents,currency,talent_splits")
         .eq("agency_id", &agency_id)
         .eq("licensing_request_id", first_lr_id)
         .eq("status", "active")
@@ -1761,6 +1832,14 @@ async fn handle_payment_link_checkout_completed(
         .unwrap_or(0);
     let talent_amount_cents = pl
         .get("talent_amount_cents")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
+    let platform_fee_cents = pl
+        .get("platform_fee_cents")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
+    let net_amount_cents = pl
+        .get("net_amount_cents")
         .and_then(|v| v.as_i64())
         .unwrap_or(0);
     let currency = pl
@@ -1807,6 +1886,8 @@ async fn handle_payment_link_checkout_completed(
         "amount_cents": agency_amount_cents,  // Agency commission
         "talent_earnings_cents": talent_amount_cents,  // Total talent share
         "talent_splits": talent_splits,
+        "platform_fee_cents": platform_fee_cents,
+        "net_amount_cents": net_amount_cents,
         "currency": currency,
         "payment_link_id": payment_link_id,
         "stripe_payment_intent_id": payment_intent_id,
@@ -2690,35 +2771,33 @@ pub async fn request_agency_payout(
         );
     }
 
-    // Validate payout method
-    let method = payload
-        .payout_method
-        .unwrap_or_else(|| {
-            if state.instant_payouts_enabled {
-                "instant".to_string()
-            } else {
-                "standard".to_string()
-            }
-        })
-        .to_lowercase();
-
-    if method != "standard" && method != "instant" {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(json!({
-                "status":"error",
-                "error":"invalid_payout_method",
-                "allowed":["standard","instant"]
-            })),
-        );
-    }
-
-    if method == "instant" && !state.instant_payouts_enabled {
+    // Likelee payouts are instant-only.
+    if !state.instant_payouts_enabled {
         return (
             StatusCode::BAD_REQUEST,
             Json(json!({"status":"error","error":"instant_payouts_disabled"})),
         );
     }
+    if let Some(m) = payload.payout_method.as_deref() {
+        let m = m.to_lowercase();
+        if m == "standard" {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({"status":"error","error":"standard_payouts_disabled"})),
+            );
+        }
+        if m != "instant" {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "status":"error",
+                    "error":"invalid_payout_method",
+                    "allowed":["instant"]
+                })),
+            );
+        }
+    }
+    let method = "instant".to_string();
 
     // Get agency's available balance
     let balance_resp = match state
@@ -3024,9 +3103,7 @@ async fn execute_agency_payout(
     };
 
     let mut payout_params = stripe_sdk::CreatePayout::new(net_cents, payout_currency);
-    if method == "instant" {
-        payout_params.method = Some(stripe_sdk::PayoutMethod::Instant);
-    }
+    payout_params.method = Some(stripe_sdk::PayoutMethod::Instant);
 
     match stripe_sdk::Payout::create(&connected_client, payout_params).await {
         Ok(p) => {

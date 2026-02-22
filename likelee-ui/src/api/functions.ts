@@ -188,7 +188,7 @@ export const getTalentPayoutBalance = () =>
 export const requestTalentPayout = (data: {
   amount_cents: number;
   currency?: string;
-  payout_method?: "standard" | "instant";
+  payout_method?: "instant";
 }) => base44Client.post(`/api/talent/payouts/request`, data);
 
 export const getTalentPayoutAccountStatus = () =>
@@ -352,7 +352,7 @@ export const getAgencyPayoutBalance = async () => {
 export const requestAgencyPayout = async (data: {
   amount_cents: number;
   currency?: string;
-  payout_method?: "standard" | "instant";
+  payout_method?: "instant";
 }) => {
   const resp = await base44Client.post(`/api/agency/payouts/request`, data);
   return { data: resp } as any;

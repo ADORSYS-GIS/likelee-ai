@@ -255,7 +255,7 @@ pub async fn get_performance_tiers(
                 .await
         }
     )
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let db_time = start_total.elapsed();
 
@@ -284,7 +284,11 @@ pub async fn get_performance_tiers(
         .map(|r| {
             (
                 r.tier_name,
-                (r.min_monthly_earnings, r.min_monthly_bookings, r.payout_percent),
+                (
+                    r.min_monthly_earnings,
+                    r.min_monthly_bookings,
+                    r.payout_percent,
+                ),
             )
         })
         .collect();
@@ -329,19 +333,22 @@ pub async fn get_performance_tiers(
 
     let tiers_json: Vec<TierRule> = defaults
         .into_iter()
-        .map(|(tier_name, tier_level, default_e, default_b, description, default_pct)| {
-            let (min_e, min_b, payout_percent) = config_map
-                .remove(&tier_name)
-                .unwrap_or((default_e, default_b, default_pct));
-            TierRule {
-                tier_name,
-                tier_level,
-                min_monthly_earnings: min_e,
-                min_monthly_bookings: min_b,
-                description,
-                payout_percent,
-            }
-        })
+        .map(
+            |(tier_name, tier_level, default_e, default_b, description, default_pct)| {
+                let (min_e, min_b, payout_percent) =
+                    config_map
+                        .remove(&tier_name)
+                        .unwrap_or((default_e, default_b, default_pct));
+                TierRule {
+                    tier_name,
+                    tier_level,
+                    min_monthly_earnings: min_e,
+                    min_monthly_bookings: min_b,
+                    description,
+                    payout_percent,
+                }
+            },
+        )
         .collect();
 
     let performance_config = json!({
@@ -534,7 +541,7 @@ pub async fn get_agency_payout_weights(
             .eq("agency_id", agency_id)
             .execute()
     )
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     if !resp_talents.status().is_success() {
         return Err((
@@ -555,22 +562,25 @@ pub async fn get_agency_payout_weights(
         ));
     }
 
-    let talents_text = resp_talents
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Read talents: {}", e)))?;
-    let talents: Vec<serde_json::Value> =
-        serde_json::from_str(&talents_text).map_err(|e| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Parse talents: {}", e),
-            )
-        })?;
+    let talents_text = resp_talents.text().await.map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Read talents: {}", e),
+        )
+    })?;
+    let talents: Vec<serde_json::Value> = serde_json::from_str(&talents_text).map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Parse talents: {}", e),
+        )
+    })?;
 
-    let stats_text = resp_stats
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Read stats: {}", e)))?;
+    let stats_text = resp_stats.text().await.map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Read stats: {}", e),
+        )
+    })?;
     let stats: Vec<PerformanceStats> = serde_json::from_str(&stats_text).map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -578,10 +588,12 @@ pub async fn get_agency_payout_weights(
         )
     })?;
 
-    let tiers_text = resp_tiers
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Read tiers: {}", e)))?;
+    let tiers_text = resp_tiers.text().await.map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Read tiers: {}", e),
+        )
+    })?;
     let tiers_rows: Vec<serde_json::Value> = serde_json::from_str(&tiers_text).unwrap_or_default();
 
     let mut payout_percent_by_tier: HashMap<String, f64> = HashMap::new();
@@ -606,7 +618,11 @@ pub async fn get_agency_payout_weights(
 
     let mut items: Vec<TalentPayoutWeight> = Vec::new();
     for t in talents {
-        let id = t.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let id = t
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
         if id.is_empty() {
             continue;
         }

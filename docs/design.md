@@ -202,6 +202,9 @@
 
 - `PAYOUTS_ENABLED` (bool)
   - Enables Stripe Connect onboarding endpoints.
+- `INSTANT_PAYOUTS_ENABLED` (bool)
+  - Enables instant payouts.
+  - Standard payouts are not supported.
 - `STRIPE_SECRET_KEY`
   - Stripe secret key used server-side.
 - `STRIPE_CLIENT_ID`

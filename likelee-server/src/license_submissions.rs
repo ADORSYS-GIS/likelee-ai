@@ -910,13 +910,13 @@ pub async fn finalize(
         "Failed to update submission (empty response)".to_string(),
     ))?;
 
-    // 6. Create linked licensing_request(s) — one per talent.
+    // 6. Create a linked licensing_request — single request for all talents.
     // Resolve the list of talent IDs to use:
     //   1. talent_ids from the finalize request (array, preferred)
     //   2. talent_ids stored in the submission at draft time
     //   3. single talent_id from finalize request (legacy)
     //   4. single talent_id stored in the submission
-    //   5. None — create one request with no talent_id
+    //   5. None — create one request with no talents
     let talent_name = submission_data["talent_names"]
         .as_str()
         .or(req.talent_names.as_deref());
@@ -972,66 +972,65 @@ pub async fn finalize(
         }
     };
 
-    tracing::info!(
-        "Creating {} licensing_request(s) for submission {}: agency_id={}, client_name={}, talent_name={:?}",
-        resolved_talent_ids.len(),
-        submission.id,
-        agency_id,
-        client_name_str,
-        talent_name,
-    );
-
-    let full_talent_ids: Vec<String> = resolved_talent_ids
+    let mut full_talent_ids: Vec<String> = resolved_talent_ids
         .iter()
         .filter_map(|v| v.clone())
         .collect();
+    full_talent_ids.sort();
+    full_talent_ids.dedup();
 
-    for talent_id_opt in &resolved_talent_ids {
-        let lr_data = json!({
-            "agency_id": agency_id,
-            "brand_id": submission.client_id,
-            "client_name": client_name_str,
-            "talent_id": talent_id_opt,
-            "talent_ids": full_talent_ids,
-            "talent_name": talent_name,
-            "submission_id": submission.id,
-            "status": "pending",
-            "campaign_title": license_template.template_name.clone(),
-            "usage_scope": license_template.usage_scope.clone(),
-            "regions": license_template.territory.clone(),
-            "deadline": deadline.map(|d| d.to_string()),
-        });
+    tracing::info!(
+        "Creating 1 licensing_request for submission {}: agency_id={}, client_name={}, talent_count={}, talent_name={:?}",
+        submission.id,
+        agency_id,
+        client_name_str,
+        full_talent_ids.len(),
+        talent_name,
+    );
 
-        tracing::debug!("Licensing request payload: {}", lr_data);
+    let lr_data = json!({
+        "agency_id": agency_id,
+        "brand_id": submission.client_id,
+        "client_name": client_name_str,
+        "talent_id": serde_json::Value::Null,
+        "talent_ids": full_talent_ids,
+        "talent_name": talent_name,
+        "submission_id": submission.id,
+        "status": "pending",
+        "campaign_title": license_template.template_name.clone(),
+        "usage_scope": license_template.usage_scope.clone(),
+        "regions": license_template.territory.clone(),
+        "deadline": deadline.map(|d| d.to_string()),
+    });
 
-        let lr_resp = state
-            .pg
-            .from("licensing_requests")
-            .insert(lr_data.to_string())
-            .execute()
-            .await;
+    tracing::debug!("Licensing request payload: {}", lr_data);
 
-        match lr_resp {
-            Ok(resp) => {
-                let status = resp.status();
-                if status.is_success() {
-                    tracing::info!(
-                        "Created licensing_request for submission {} talent_id={:?}",
-                        submission.id,
-                        talent_id_opt
-                    );
-                } else {
-                    let body = resp.text().await.unwrap_or_default();
-                    tracing::error!(
-                        "Failed to create licensing_request (HTTP {}): {}",
-                        status,
-                        body
-                    );
-                }
+    let lr_resp = state
+        .pg
+        .from("licensing_requests")
+        .insert(lr_data.to_string())
+        .execute()
+        .await;
+
+    match lr_resp {
+        Ok(resp) => {
+            let status = resp.status();
+            if status.is_success() {
+                tracing::info!(
+                    "Created licensing_request for submission {} (multi-talent)",
+                    submission.id
+                );
+            } else {
+                let body = resp.text().await.unwrap_or_default();
+                tracing::error!(
+                    "Failed to create licensing_request (HTTP {}): {}",
+                    status,
+                    body
+                );
             }
-            Err(e) => {
-                tracing::error!("Error creating licensing_request: {}", e);
-            }
+        }
+        Err(e) => {
+            tracing::error!("Error creating licensing_request: {}", e);
         }
     }
 
