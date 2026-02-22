@@ -119,49 +119,6 @@ pub struct ServerConfig {
     #[envconfig(from = "STRIPE_AGENCY_PRO_BASE_PRICE_ID", default = "")]
     pub stripe_agency_pro_base_price_id: String,
 
-    // Agency subscription (all-inclusive package pricing)
-    #[envconfig(from = "STRIPE_AGENCY_BASIC_PACKAGE_PRICE_ID", default = "")]
-    pub stripe_agency_basic_package_price_id: String,
-
-    #[envconfig(from = "STRIPE_AGENCY_PRO_PACKAGE_PRICE_ID", default = "")]
-    pub stripe_agency_pro_package_price_id: String,
-
-    #[envconfig(from = "STRIPE_AGENCY_ROSTER_5_10_PRICE_ID", default = "")]
-    pub stripe_agency_roster_5_10_price_id: String,
-
-    #[envconfig(from = "STRIPE_AGENCY_ROSTER_11_50_PRICE_ID", default = "")]
-    pub stripe_agency_roster_11_50_price_id: String,
-
-    #[envconfig(from = "STRIPE_AGENCY_ROSTER_51_100_PRICE_ID", default = "")]
-    pub stripe_agency_roster_51_100_price_id: String,
-
-    #[envconfig(from = "STRIPE_AGENCY_ROSTER_100_PLUS_PRICE_ID", default = "")]
-    pub stripe_agency_roster_100_plus_price_id: String,
-
-    #[envconfig(from = "STRIPE_AGENCY_ADDON_IRL_BOOKING_PRICE_ID", default = "")]
-    pub stripe_agency_addon_irl_booking_price_id: String,
-
-    #[envconfig(from = "STRIPE_AGENCY_ADDON_DEEPFAKE_5_10_PRICE_ID", default = "")]
-    pub stripe_agency_addon_deepfake_5_10_price_id: String,
-
-    #[envconfig(from = "STRIPE_AGENCY_ADDON_DEEPFAKE_11_50_PRICE_ID", default = "")]
-    pub stripe_agency_addon_deepfake_11_50_price_id: String,
-
-    #[envconfig(from = "STRIPE_AGENCY_ADDON_DEEPFAKE_51_100_PRICE_ID", default = "")]
-    pub stripe_agency_addon_deepfake_51_100_price_id: String,
-
-    #[envconfig(from = "STRIPE_AGENCY_ADDON_DEEPFAKE_100_PLUS_PRICE_ID", default = "")]
-    pub stripe_agency_addon_deepfake_100_plus_price_id: String,
-
-    #[envconfig(from = "STRIPE_AGENCY_ADDON_TEAM_1_5_PRICE_ID", default = "")]
-    pub stripe_agency_addon_team_1_5_price_id: String,
-
-    #[envconfig(from = "STRIPE_AGENCY_ADDON_TEAM_6_10_PRICE_ID", default = "")]
-    pub stripe_agency_addon_team_6_10_price_id: String,
-
-    #[envconfig(from = "STRIPE_AGENCY_ADDON_TEAM_11_30_PRICE_ID", default = "")]
-    pub stripe_agency_addon_team_11_30_price_id: String,
-
     #[envconfig(from = "STRIPE_CHECKOUT_SUCCESS_URL", default = "")]
     pub stripe_checkout_success_url: String,
 
@@ -178,13 +135,13 @@ pub struct ServerConfig {
     #[envconfig(from = "PAYOUTS_ENABLED", default = "false")]
     pub payouts_enabled: bool,
 
-    #[envconfig(from = "PAYOUT_AUTO_APPROVE_THRESHOLD_CENTS", default = "5000")]
+    #[envconfig(from = "PAYOUT_AUTO_APPROVE_THRESHOLD_CENTS", default = "500000")]
     pub payout_auto_approve_threshold_cents: u32,
 
     #[envconfig(from = "MIN_PAYOUT_AMOUNT_CENTS", default = "1000")]
     pub min_payout_amount_cents: u32,
 
-    #[envconfig(from = "INSTANT_PAYOUTS_ENABLED", default = "false")]
+    #[envconfig(from = "INSTANT_PAYOUTS_ENABLED", default = "true")]
     pub instant_payouts_enabled: bool,
 
     #[envconfig(from = "PAYOUT_FEE_BPS", default = "100")] // 1%
@@ -252,20 +209,6 @@ pub struct AppState {
 
     pub stripe_agency_basic_base_price_id: String,
     pub stripe_agency_pro_base_price_id: String,
-    pub stripe_agency_basic_package_price_id: String,
-    pub stripe_agency_pro_package_price_id: String,
-    pub stripe_agency_roster_5_10_price_id: String,
-    pub stripe_agency_roster_11_50_price_id: String,
-    pub stripe_agency_roster_51_100_price_id: String,
-    pub stripe_agency_roster_100_plus_price_id: String,
-    pub stripe_agency_addon_irl_booking_price_id: String,
-    pub stripe_agency_addon_deepfake_5_10_price_id: String,
-    pub stripe_agency_addon_deepfake_11_50_price_id: String,
-    pub stripe_agency_addon_deepfake_51_100_price_id: String,
-    pub stripe_agency_addon_deepfake_100_plus_price_id: String,
-    pub stripe_agency_addon_team_1_5_price_id: String,
-    pub stripe_agency_addon_team_6_10_price_id: String,
-    pub stripe_agency_addon_team_11_30_price_id: String,
     pub stripe_checkout_success_url: String,
     pub stripe_checkout_cancel_url: String,
     pub stripe_licensing_success_url: String,

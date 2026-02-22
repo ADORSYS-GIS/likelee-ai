@@ -51,6 +51,10 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::talent::get_earnings_by_campaign),
         )
         .route(
+            "/api/talent/licensing/earnings-by-agency",
+            get(crate::talent::get_earnings_by_agency),
+        )
+        .route(
             "/api/talent/payouts/balance",
             get(crate::payouts::get_my_balance),
         )
@@ -282,8 +286,16 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::license_submissions::resend),
         )
         .route(
+            "/api/license-submissions/:id/sync-status",
+            post(crate::license_submissions::sync_status),
+        )
+        .route(
             "/api/agency/licensing-requests/status",
             post(crate::licensing_requests::update_status_bulk),
+        )
+        .route(
+            "/api/agency/licensing-requests/:id/send-payment-link",
+            post(crate::licensing_requests::send_payment_link),
         )
         .route(
             "/api/webhooks/licenseContract",
@@ -293,6 +305,34 @@ pub fn build_router(state: AppState) -> Router {
             "/api/agency/licensing-requests/pay-split",
             get(crate::licensing_requests::get_pay_split)
                 .post(crate::licensing_requests::set_pay_split),
+        )
+        // Payment Links (for licensing)
+        .route(
+            "/api/agency/payment-links",
+            get(crate::payment_links::list_payment_links)
+                .post(crate::payment_links::generate_payment_link),
+        )
+        .route(
+            "/api/agency/payment-links/:id",
+            get(crate::payment_links::get_payment_link)
+                .post(crate::payment_links::cancel_payment_link),
+        )
+        .route(
+            "/api/agency/payment-links/send",
+            post(crate::payment_links::send_payment_link_email),
+        )
+        // Creator Balance & Payout
+        .route(
+            "/api/creator/balance",
+            get(crate::payment_links::get_creator_balance),
+        )
+        .route(
+            "/api/creator/payout-request",
+            post(crate::payment_links::request_creator_payout),
+        )
+        .route(
+            "/api/creator/payout-history",
+            get(crate::payment_links::get_creator_payout_history),
         )
         .route(
             "/api/agency/digitals",
@@ -423,6 +463,10 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/agency/dashboard/performance-tiers/configure",
             post(crate::performance_tiers::configure_performance_tiers),
+        )
+        .route(
+            "/api/agency/dashboard/payout-weights",
+            get(crate::performance_tiers::get_agency_payout_weights),
         )
         .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))
         .route("/api/email/available", get(crate::creators::check_email))

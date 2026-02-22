@@ -906,8 +906,7 @@ pub struct TalentLicensingRequestItem {
     pub brand_id: Option<String>,
     pub brand_name: Option<String>,
     pub campaign_title: Option<String>,
-    pub budget_min: Option<f64>,
-    pub budget_max: Option<f64>,
+    pub license_fee: Option<f64>,
     pub usage_scope: Option<String>,
     pub regions: Option<String>,
     pub deadline: Option<String>,
@@ -927,9 +926,10 @@ pub async fn list_licensing_requests(
     let resp = state
         .pg
         .from("licensing_requests")
-        .select("id,brand_id,talent_id,status,created_at,campaign_title,budget_min,budget_max,usage_scope,regions,deadline,license_start_date,license_end_date")
+        .select("id,brand_id,talent_id,status,created_at,campaign_title,usage_scope,regions,deadline,license_start_date,license_end_date,archived_at,license_submissions!licensing_requests_submission_id_fkey(license_fee)")
         .eq("agency_id", &resolved.agency_id)
         .eq("talent_id", &resolved.talent_id)
+        .is("archived_at", "null")  // Only show non-archived records
         .order("created_at.desc")
         .limit(250)
         .execute()
@@ -1066,8 +1066,11 @@ pub async fn list_licensing_requests(
                     .and_then(|v| v.as_str())
                     .map(|s| s.to_string())
                     .filter(|s| !s.is_empty()),
-                budget_min: r.get("budget_min").and_then(|v| v.as_f64()),
-                budget_max: r.get("budget_max").and_then(|v| v.as_f64()),
+                license_fee: r
+                    .get("license_submissions")
+                    .and_then(|ls| ls.get("license_fee"))
+                    .and_then(|v| v.as_f64())
+                    .map(|v| v / 100.0),
                 usage_scope: r
                     .get("usage_scope")
                     .and_then(|v| v.as_str())
@@ -1379,7 +1382,15 @@ pub async fn get_licensing_revenue(
     user: AuthUser,
     Query(params): Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<TalentLicensingRevenueResponse>, (StatusCode, String)> {
-    let resolved = resolve_talent(&state, &user).await?;
+    let requested_agency_id = params
+        .get("agency_id")
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty());
+    let resolved = if let Some(aid) = requested_agency_id {
+        resolve_talent_for_agency(&state, &user, aid).await?
+    } else {
+        resolve_talent(&state, &user).await?
+    };
     let month = params
         .get("month")
         .cloned()
@@ -1448,7 +1459,15 @@ pub async fn get_earnings_by_campaign(
     user: AuthUser,
     Query(params): Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<Vec<TalentEarningsByCampaignItem>>, (StatusCode, String)> {
-    let resolved = resolve_talent(&state, &user).await?;
+    let requested_agency_id = params
+        .get("agency_id")
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty());
+    let resolved = if let Some(aid) = requested_agency_id {
+        resolve_talent_for_agency(&state, &user, aid).await?
+    } else {
+        resolve_talent(&state, &user).await?
+    };
     let month = params
         .get("month")
         .cloned()
@@ -1597,6 +1616,139 @@ pub async fn get_earnings_by_campaign(
         .map(|(brand_id, monthly_cents)| TalentEarningsByCampaignItem {
             brand_name: brand_name_by_id.get(&brand_id).cloned(),
             brand_id,
+            monthly_cents,
+        })
+        .collect();
+    out.sort_by(|a, b| b.monthly_cents.cmp(&a.monthly_cents));
+    Ok(Json(out))
+}
+
+#[derive(Serialize)]
+pub struct TalentEarningsByAgencyItem {
+    pub agency_id: String,
+    pub agency_name: Option<String>,
+    pub monthly_cents: i64,
+}
+
+pub async fn get_earnings_by_agency(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Query(params): Query<std::collections::HashMap<String, String>>,
+) -> Result<Json<Vec<TalentEarningsByAgencyItem>>, (StatusCode, String)> {
+    let requested_agency_id = params
+        .get("agency_id")
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty());
+    let resolved = if let Some(aid) = requested_agency_id {
+        resolve_talent_for_agency(&state, &user, aid).await?
+    } else {
+        resolve_talent(&state, &user).await?
+    };
+
+    let month = params
+        .get("month")
+        .cloned()
+        .unwrap_or_else(|| "".to_string());
+
+    let bounds = if month.trim().is_empty() {
+        None
+    } else {
+        Some(
+            parse_month_bounds(&month)
+                .ok_or((StatusCode::BAD_REQUEST, "Invalid month".to_string()))?,
+        )
+    };
+
+    let mut req = state
+        .pg
+        .from("licensing_payouts")
+        .select("amount_cents,agency_id")
+        .eq("talent_id", &resolved.talent_id)
+        .limit(5000);
+    if !resolved.agency_id.is_empty() {
+        req = req.eq("agency_id", &resolved.agency_id);
+    }
+    if let Some((start_ts, next_ts)) = bounds {
+        req = req.gte("paid_at", &start_ts).lt("paid_at", &next_ts);
+    }
+
+    let resp = req
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        let err = resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let rows: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
+
+    let mut cents_by_agency_id: HashMap<String, i64> = HashMap::new();
+    if let Some(arr) = rows.as_array() {
+        for r in arr {
+            let agency_id = r
+                .get("agency_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            if agency_id.trim().is_empty() {
+                continue;
+            }
+            let cents = r
+                .get("amount_cents")
+                .and_then(|v| {
+                    v.as_i64()
+                        .or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok()))
+                })
+                .unwrap_or(0);
+            if cents <= 0 {
+                continue;
+            }
+            *cents_by_agency_id.entry(agency_id).or_insert(0) += cents;
+        }
+    }
+
+    let mut agency_ids: Vec<String> = cents_by_agency_id.keys().cloned().collect();
+    agency_ids.sort();
+    agency_ids.dedup();
+
+    let mut agency_name_by_id: HashMap<String, String> = HashMap::new();
+    if !agency_ids.is_empty() {
+        let ids: Vec<&str> = agency_ids.iter().map(|s| s.as_str()).collect();
+        let a_resp = state
+            .pg
+            .from("agencies")
+            .select("id,agency_name")
+            .in_("id", ids)
+            .execute()
+            .await;
+        if let Ok(a_resp) = a_resp {
+            if a_resp.status().is_success() {
+                let a_text = a_resp.text().await.unwrap_or_else(|_| "[]".into());
+                let a_rows: serde_json::Value = serde_json::from_str(&a_text).unwrap_or(json!([]));
+                if let Some(arr) = a_rows.as_array() {
+                    for r in arr {
+                        let id = r.get("id").and_then(|v| v.as_str()).unwrap_or("");
+                        let name = r.get("agency_name").and_then(|v| v.as_str()).unwrap_or("");
+                        if !id.is_empty() {
+                            agency_name_by_id.insert(id.to_string(), name.to_string());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let mut out: Vec<TalentEarningsByAgencyItem> = cents_by_agency_id
+        .into_iter()
+        .map(|(agency_id, monthly_cents)| TalentEarningsByAgencyItem {
+            agency_name: agency_name_by_id.get(&agency_id).cloned(),
+            agency_id,
             monthly_cents,
         })
         .collect();
@@ -1839,13 +1991,14 @@ pub async fn get_analytics(
             * 100.0
     };
 
-    // Active campaigns derived from licensing_requests
+    // Active campaigns derived from licensing_requests (excluding archived)
     let lr_resp = state
         .pg
         .from("licensing_requests")
         .select("id,status")
         .eq("agency_id", &resolved.agency_id)
         .eq("talent_id", &resolved.talent_id)
+        .is("archived_at", "null") // Only count non-archived records
         .limit(500)
         .execute()
         .await

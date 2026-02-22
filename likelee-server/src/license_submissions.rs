@@ -24,7 +24,6 @@ pub struct LicenseSubmission {
     pub docuseal_template_id: Option<i32>,
     pub client_name: Option<String>,
     pub client_email: Option<String>,
-    pub talent_names: Option<String>,
     pub license_fee: Option<i64>,
     pub duration_days: Option<i32>,
     pub start_date: Option<String>,
@@ -36,11 +35,19 @@ pub struct LicenseSubmission {
     pub declined_at: Option<String>,
     pub decline_reason: Option<String>,
     pub signed_document_url: Option<String>,
+    pub requires_agency_signature: Option<bool>,
+    pub agency_submitter_id: Option<i64>,
+    pub agency_submitter_slug: Option<String>,
+    pub agency_embed_src: Option<String>,
+    pub agency_signed_at: Option<String>,
+    pub client_submitter_id: Option<i64>,
+    pub client_submitter_slug: Option<String>,
+    pub talent_id: Option<String>,
+    pub talent_names: Option<String>,
     pub template_name: Option<String>, // Added for UI display
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
 }
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CreateSubmissionRequest {
     pub template_id: String,
@@ -48,18 +55,53 @@ pub struct CreateSubmissionRequest {
     pub client_email: String,
     pub client_name: String,
     pub docuseal_template_id: Option<i32>,
+    pub talent_id: Option<String>,
+    pub talent_ids: Option<Vec<String>>,
     pub talent_names: Option<String>,
-    pub document_base64: Option<String>,
     pub license_fee: Option<i64>,
     pub duration_days: Option<i32>,
     pub start_date: Option<String>,
     pub custom_terms: Option<String>,
+    pub requires_agency_signature: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct ListQuery {
     pub status: Option<String>,
     pub client_id: Option<String>,
+}
+
+async fn resolve_agency_signer_email(
+    state: &AppState,
+    agency_id: &str,
+    auth_email: Option<&String>,
+) -> Option<String> {
+    if let Some(email) = auth_email {
+        if !email.trim().is_empty() {
+            return Some(email.trim().to_string());
+        }
+    }
+
+    let resp = state
+        .pg
+        .from("agencies")
+        .select("email")
+        .eq("id", agency_id)
+        .single()
+        .execute()
+        .await
+        .ok()?;
+    let txt = resp.text().await.ok()?;
+    let row: serde_json::Value = serde_json::from_str(&txt).ok()?;
+    row.get("email")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+}
+
+fn is_completed_status(s: &str) -> bool {
+    let v = s.to_lowercase();
+    v == "completed" || v == "signed"
 }
 
 /// POST /api/license-submissions/draft - Create a draft template for a deal
@@ -97,27 +139,10 @@ pub async fn create_draft(
         serde_json::from_str(&template_text)
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    // 2. Setup DocuSeal client
-    let docuseal = DocuSealClient::new(
-        state.docuseal_api_key.clone(),
-        state.docuseal_base_url.clone(),
-    );
-
-    let docuseal_template_id = if let Some(base64) = req.document_base64 {
-        let template_name = format!(
-            "Contract - {} - {}",
-            req.client_name, license_template.template_name
-        );
-        let ds_template = docuseal
-            .create_template(template_name, "contract.pdf".to_string(), base64)
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        Some(ds_template.id)
-    } else {
-        license_template
-            .docuseal_template_id
-            .or_else(|| state.docuseal_master_template_id.parse::<i32>().ok())
-    };
+    // Licensing only: docuseal_template_id is optional in draft stage.
+    let docuseal_template_id = req
+        .docuseal_template_id
+        .or(license_template.docuseal_template_id);
 
     // 3. Create a draft record in Likelee
     let client_name = if !req.client_name.is_empty() {
@@ -142,8 +167,11 @@ pub async fn create_draft(
         "template_id": req.template_id,
         "docuseal_template_id": docuseal_template_id,
         "status": "draft",
+        "requires_agency_signature": req.requires_agency_signature.unwrap_or(false),
         "client_name": client_name,
         "client_email": req.client_email,
+        "talent_id": req.talent_id,
+        "talent_ids": req.talent_ids,
         "talent_names": talent_names,
         "license_fee": req.license_fee,
         "duration_days": req.duration_days,
@@ -315,7 +343,6 @@ pub async fn preview(
                 .map(|i| i as i32)
         })
         .or(license_template.docuseal_template_id)
-        .or_else(|| state.docuseal_master_template_id.parse::<i32>().ok())
         .ok_or((
             StatusCode::INTERNAL_SERVER_ERROR,
             "Invalid DS template id".to_string(),
@@ -452,7 +479,10 @@ pub struct FinalizeSubmissionRequest {
     pub docuseal_template_id: Option<i32>,
     pub client_name: Option<String>,
     pub client_email: Option<String>,
+    pub talent_id: Option<String>,
+    pub talent_ids: Option<Vec<String>>,
     pub talent_names: Option<String>,
+    pub requires_agency_signature: Option<bool>,
 }
 
 /// POST /api/license-submissions/:id/finalize - Finalize and send a draft submission
@@ -643,7 +673,6 @@ pub async fn finalize(
                 .map(|i| i as i32)
         })
         .or(license_template.docuseal_template_id)
-        .or_else(|| state.docuseal_master_template_id.parse::<i32>().ok())
         .ok_or((
             StatusCode::INTERNAL_SERVER_ERROR,
             "Invalid DS template id".to_string(),
@@ -652,14 +681,30 @@ pub async fn finalize(
     let client_name = req
         .client_name
         .clone()
+        .filter(|s| !s.trim().is_empty())
         .or_else(|| submission_data["client_name"].as_str().map(String::from))
         .unwrap_or_else(|| "Client".to_string());
 
     let client_email = req
         .client_email
         .clone()
+        .filter(|s| !s.trim().is_empty())
         .or_else(|| submission_data["client_email"].as_str().map(String::from))
         .unwrap_or_default();
+    let requires_agency_signature = req
+        .requires_agency_signature
+        .or_else(|| {
+            submission_data["requires_agency_signature"]
+                .as_bool()
+                .or(Some(false))
+        })
+        .unwrap_or(false);
+
+    tracing::info!(
+        "Finalize: client_name={}, client_email={}",
+        client_name,
+        client_email
+    );
 
     // If client info was provided in this request, update the record first
     if req.client_name.is_some() || req.client_email.is_some() || req.talent_names.is_some() {
@@ -673,6 +718,10 @@ pub async fn finalize(
         if let Some(t) = &req.talent_names {
             update_json.insert("talent_names".to_string(), json!(t));
         }
+        update_json.insert(
+            "requires_agency_signature".to_string(),
+            json!(requires_agency_signature),
+        );
 
         let _ = state
             .pg
@@ -683,30 +732,145 @@ pub async fn finalize(
             .await;
     }
 
-    // 4. Create DocuSeal Submission with fields-based pre-fill
-    let docuseal_submission = docuseal
-        .create_submission_with_fields(
-            docuseal_template_id,
-            client_name.clone(),
-            client_email.clone(),
-            "First Party".to_string(),
-            fields,
-            true,
-        )
+    // 4. Fetch Template details for field filtering
+    let template_details = docuseal
+        .get_template(docuseal_template_id)
         .await
         .map_err(|e| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("DocuSeal Error: {}", e),
+                format!("DocuSeal Template Fetch Error: {}", e),
             )
         })?;
+
+    // Extract all field names present in the template's schema
+    let mut allowed_field_names = std::collections::HashSet::new();
+    if let Some(documents) = template_details.documents {
+        for doc in documents {
+            for field in doc.schema {
+                if let Some(name) = field.get("name").and_then(|n| n.as_str()) {
+                    allowed_field_names.insert(name.to_string());
+                }
+            }
+        }
+    }
+    for field in template_details.schema {
+        if let Some(name) = field.get("name").and_then(|n| n.as_str()) {
+            allowed_field_names.insert(name.to_string());
+        }
+    }
+
+    // Filter fields to only include those that exist in the template
+    let filtered_fields: Vec<_> = fields
+        .into_iter()
+        .filter(|f| allowed_field_names.contains(&f.name))
+        .collect();
+
+    tracing::info!(
+        allowed_count = allowed_field_names.len(),
+        filtered_count = filtered_fields.len(),
+        "Filtered DocuSeal submission fields for finalize"
+    );
+
+    // 5. Create DocuSeal Submission with fields-based pre-fill
+    let agency_signer_email =
+        resolve_agency_signer_email(&state, &agency_id, auth_user.email.as_ref()).await;
+
+    let docuseal_submission = if requires_agency_signature {
+        let agency_email = agency_signer_email.ok_or((
+            StatusCode::BAD_REQUEST,
+            "Agency signer email not found. Please set agency email in profile.".to_string(),
+        ))?;
+        let submitters = vec![
+            crate::services::docuseal::Submitter {
+                name: Some("Agency".to_string()),
+                email: Some(agency_email),
+                role: Some("First Party".to_string()),
+                order: Some(0),
+                fields: Some(filtered_fields.clone()),
+                values: None,
+            },
+            crate::services::docuseal::Submitter {
+                name: Some(client_name.clone()),
+                email: Some(client_email.clone()),
+                role: Some("Second Party".to_string()),
+                order: Some(1),
+                fields: Some(filtered_fields),
+                values: None,
+            },
+        ];
+        docuseal
+            .create_submission_with_submitters(docuseal_template_id, submitters, true)
+            .await
+            .map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("DocuSeal Error: {}", e),
+                )
+            })?
+    } else {
+        docuseal
+            .create_submission_with_fields(
+                docuseal_template_id,
+                client_name.clone(),
+                client_email.clone(),
+                "First Party".to_string(),
+                filtered_fields,
+                true,
+            )
+            .await
+            .map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("DocuSeal Error: {}", e),
+                )
+            })?
+    };
+
+    let agency_submitter = docuseal_submission
+        .submitters
+        .iter()
+        .find(|s| {
+            s.role
+                .as_ref()
+                .map(|r| r.eq_ignore_ascii_case("first party") || r.eq_ignore_ascii_case("agency"))
+                .unwrap_or(false)
+        })
+        .or_else(|| docuseal_submission.submitters.first());
+    let client_submitter = docuseal_submission
+        .submitters
+        .iter()
+        .find(|s| {
+            s.role
+                .as_ref()
+                .map(|r| r.eq_ignore_ascii_case("second party") || r.eq_ignore_ascii_case("client"))
+                .unwrap_or(false)
+        })
+        .or_else(|| {
+            if docuseal_submission.submitters.len() > 1 {
+                docuseal_submission.submitters.get(1)
+            } else {
+                None
+            }
+        });
 
     // 5. Update Likelee record
     let update_data = json!({
         "docuseal_submission_id": docuseal_submission.id,
         "docuseal_slug": docuseal_submission.slug,
         "docuseal_template_id": docuseal_template_id,
-        "status": "sent",
+        "status": if requires_agency_signature { "agency_pending" } else { "sent" },
+        "requires_agency_signature": requires_agency_signature,
+        "agency_submitter_id": agency_submitter.map(|s| s.id),
+        "agency_submitter_slug": agency_submitter.map(|s| s.slug.clone()),
+        "agency_embed_src": agency_submitter
+            .and_then(|s| s.embed_src.clone())
+            .or_else(|| {
+                agency_submitter
+                    .map(|s| format!("{}/s/{}", state.docuseal_app_url.trim_end_matches('/'), s.slug))
+            }),
+        "client_submitter_id": client_submitter.map(|s| s.id),
+        "client_submitter_slug": client_submitter.map(|s| s.slug.clone()),
         "updated_at": chrono::Utc::now().to_rfc3339(),
     });
 
@@ -746,32 +910,129 @@ pub async fn finalize(
         "Failed to update submission (empty response)".to_string(),
     ))?;
 
-    // 6. Create linked licensing_request (if not already exists)
-    let talent_name = submission_data["talent_names"].as_str();
+    // 6. Create a linked licensing_request — single request for all talents.
+    // Resolve the list of talent IDs to use:
+    //   1. talent_ids from the finalize request (array, preferred)
+    //   2. talent_ids stored in the submission at draft time
+    //   3. single talent_id from finalize request (legacy)
+    //   4. single talent_id stored in the submission
+    //   5. None — create one request with no talents
+    let talent_name = submission_data["talent_names"]
+        .as_str()
+        .or(req.talent_names.as_deref());
+
+    let client_name_str = submission_data["client_name"]
+        .as_str()
+        .unwrap_or(&client_name);
+
+    let resolved_talent_ids: Vec<Option<String>> = {
+        // Try talent_ids array from request
+        let from_req: Vec<String> = req
+            .talent_ids
+            .clone()
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|s| !s.is_empty())
+            .collect();
+
+        // Try talent_ids array from stored submission data
+        let from_submission: Vec<String> = submission_data["talent_ids"]
+            .as_array()
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|v| v.as_str())
+                    .filter(|s| !s.is_empty())
+                    .map(|s| s.to_string())
+                    .collect()
+            })
+            .unwrap_or_default();
+
+        let ids = if !from_req.is_empty() {
+            from_req
+        } else if !from_submission.is_empty() {
+            from_submission
+        } else {
+            // Fall back to single talent_id
+            let single = req.talent_id.clone().filter(|s| !s.is_empty()).or_else(|| {
+                submission_data["talent_id"]
+                    .as_str()
+                    .filter(|s| !s.is_empty())
+                    .map(|s| s.to_string())
+            });
+            match single {
+                Some(id) => vec![id],
+                None => vec![],
+            }
+        };
+
+        if ids.is_empty() {
+            vec![None] // create one request with no talent_id
+        } else {
+            ids.into_iter().map(Some).collect()
+        }
+    };
+
+    let mut full_talent_ids: Vec<String> = resolved_talent_ids
+        .iter()
+        .filter_map(|v| v.clone())
+        .collect();
+    full_talent_ids.sort();
+    full_talent_ids.dedup();
+
+    tracing::info!(
+        "Creating 1 licensing_request for submission {}: agency_id={}, client_name={}, talent_count={}, talent_name={:?}",
+        submission.id,
+        agency_id,
+        client_name_str,
+        full_talent_ids.len(),
+        talent_name,
+    );
 
     let lr_data = json!({
         "agency_id": agency_id,
         "brand_id": submission.client_id,
-        "client_name": submission_data["client_name"],
-        "talent_id": None::<String>,
+        "client_name": client_name_str,
+        "talent_id": serde_json::Value::Null,
+        "talent_ids": full_talent_ids,
         "talent_name": talent_name,
         "submission_id": submission.id,
         "status": "pending",
         "campaign_title": license_template.template_name.clone(),
         "usage_scope": license_template.usage_scope.clone(),
         "regions": license_template.territory.clone(),
-        "budget_min": license_fee.unwrap_or(0) as f64 / 100.0,
-        "budget_max": license_fee.unwrap_or(0) as f64 / 100.0,
         "deadline": deadline.map(|d| d.to_string()),
     });
 
-    state
+    tracing::debug!("Licensing request payload: {}", lr_data);
+
+    let lr_resp = state
         .pg
         .from("licensing_requests")
         .insert(lr_data.to_string())
         .execute()
-        .await
-        .ok();
+        .await;
+
+    match lr_resp {
+        Ok(resp) => {
+            let status = resp.status();
+            if status.is_success() {
+                tracing::info!(
+                    "Created licensing_request for submission {} (multi-talent)",
+                    submission.id
+                );
+            } else {
+                let body = resp.text().await.unwrap_or_default();
+                tracing::error!(
+                    "Failed to create licensing_request (HTTP {}): {}",
+                    status,
+                    body
+                );
+            }
+        }
+        Err(e) => {
+            tracing::error!("Error creating licensing_request: {}", e);
+        }
+    }
 
     Ok(Json(submission))
 }
@@ -988,16 +1249,23 @@ pub async fn resend(
             docuseal_template_id: existing_data["docuseal_template_id"]
                 .as_i64()
                 .map(|v| v as i32),
+            talent_id: existing_data["talent_id"].as_str().map(|s| s.to_string()),
+            talent_ids: existing_data["talent_ids"].as_array().map(|arr| {
+                arr.iter()
+                    .filter_map(|v| v.as_str())
+                    .map(|s| s.to_string())
+                    .collect()
+            }),
             talent_names: existing_data["talent_names"]
                 .as_str()
                 .map(|s| s.to_string()),
-            document_base64: None,
             license_fee: existing_data["license_fee"].as_i64(),
             duration_days: existing_data["duration_days"].as_i64().map(|v| v as i32),
             start_date: existing_data["start_date"].as_str().map(|s| s.to_string()),
             custom_terms: existing_data["custom_terms"]
                 .as_str()
                 .map(|s| s.to_string()),
+            requires_agency_signature: existing_data["requires_agency_signature"].as_bool(),
         }
     };
 
@@ -1068,7 +1336,10 @@ pub async fn resend(
         docuseal_template_id: req.docuseal_template_id,
         client_name: Some(req.client_name),
         client_email: Some(req.client_email),
+        talent_id: None,
+        talent_ids: req.talent_ids,
         talent_names: req.talent_names,
+        requires_agency_signature: req.requires_agency_signature,
     };
 
     finalize(
@@ -1151,6 +1422,122 @@ pub async fn recover(
     Ok(StatusCode::OK)
 }
 
+/// POST /api/license-submissions/:id/sync-status - Pull latest status from DocuSeal
+pub async fn sync_status(
+    State(state): State<AppState>,
+    auth_user: AuthUser,
+    Path(id): Path<String>,
+) -> Result<Json<LicenseSubmission>, (StatusCode, String)> {
+    let agency_id = auth_user.id;
+
+    let sub_resp = state
+        .pg
+        .from("license_submissions")
+        .select("*")
+        .eq("id", &id)
+        .eq("agency_id", &agency_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !sub_resp.status().is_success() {
+        return Err((StatusCode::NOT_FOUND, "Submission not found".to_string()));
+    }
+
+    let sub_text = sub_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let row: serde_json::Value = serde_json::from_str(&sub_text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let docuseal_submission_id = row
+        .get("docuseal_submission_id")
+        .and_then(|v| v.as_i64())
+        .ok_or((
+            StatusCode::BAD_REQUEST,
+            "No docuseal_submission_id on submission".to_string(),
+        ))? as i32;
+
+    let requires_agency_signature = row
+        .get("requires_agency_signature")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+
+    let docuseal = DocuSealClient::new(
+        state.docuseal_api_key.clone(),
+        state.docuseal_base_url.clone(),
+    );
+    let ds_sub = docuseal
+        .get_submission(docuseal_submission_id)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("DocuSeal fetch failed: {e}"),
+            )
+        })?;
+
+    let mut update = serde_json::Map::new();
+    let ds_status = ds_sub.status.to_lowercase();
+    let now = chrono::Utc::now().to_rfc3339();
+
+    if ds_status == "declined" {
+        update.insert("status".to_string(), json!("declined"));
+        update.insert("declined_at".to_string(), json!(now.clone()));
+    } else if ds_status == "completed" {
+        update.insert("status".to_string(), json!("completed"));
+        update.insert("signed_at".to_string(), json!(now.clone()));
+        if let Some(doc) = ds_sub.documents.first() {
+            update.insert("signed_document_url".to_string(), json!(doc.url.clone()));
+        }
+    } else if requires_agency_signature {
+        let agency_signed = ds_sub.submitters.iter().any(|s| {
+            let role = s.role.as_deref().unwrap_or("").to_lowercase();
+            (role == "first party" || role == "agency") && is_completed_status(&s.status)
+        });
+        if agency_signed {
+            update.insert("agency_signed_at".to_string(), json!(now.clone()));
+            update.insert("status".to_string(), json!("client_pending"));
+        } else {
+            update.insert("status".to_string(), json!("agency_pending"));
+        }
+    } else {
+        update.insert("status".to_string(), json!("opened"));
+    }
+
+    update.insert("updated_at".to_string(), json!(now));
+
+    let upd_resp = state
+        .pg
+        .from("license_submissions")
+        .update(serde_json::Value::Object(update).to_string())
+        .eq("id", &id)
+        .eq("agency_id", &agency_id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !upd_resp.status().is_success() {
+        let body = upd_resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, body));
+    }
+
+    let out_text = upd_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let mut out_rows: Vec<LicenseSubmission> = serde_json::from_str(&out_text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let out = out_rows.pop().ok_or((
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "Updated submission missing".to_string(),
+    ))?;
+
+    Ok(Json(out))
+}
+
 #[derive(Debug, Deserialize)]
 pub struct CreateAndSendRequest {
     pub template_id: String,
@@ -1158,10 +1545,12 @@ pub struct CreateAndSendRequest {
     pub client_name: String,
     pub client_email: String,
     pub talent_names: Option<String>,
+    pub talent_ids: Option<Vec<String>>,
     pub license_fee: Option<i64>,
     pub duration_days: Option<i32>,
     pub start_date: Option<String>,
     pub custom_terms: Option<String>,
+    pub requires_agency_signature: Option<bool>,
     pub branding_color: Option<String>, // Optional customization
     pub logo_url: Option<String>,
 }
@@ -1169,7 +1558,7 @@ pub struct CreateAndSendRequest {
 /// POST /api/license-submissions/create-and-send
 pub async fn create_and_send(
     State(state): State<AppState>,
-    _auth_user: AuthUser,
+    auth_user: AuthUser,
     Json(req): Json<CreateAndSendRequest>,
 ) -> Result<Json<LicenseSubmission>, (StatusCode, String)> {
     // 1. Fetch the License Template (to ensure it exists & get agency_id)
@@ -1191,6 +1580,7 @@ pub async fn create_and_send(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let agency_id = license_template.agency_id;
+    let requires_agency_signature = req.requires_agency_signature.unwrap_or(false);
 
     // 2. Initialize DocuSeal
     let docuseal_client = DocuSealClient::new(
@@ -1201,7 +1591,6 @@ pub async fn create_and_send(
     let docuseal_template_id = req
         .docuseal_template_id
         .or(license_template.docuseal_template_id)
-        .or_else(|| state.docuseal_master_template_id.parse::<i32>().ok())
         .ok_or((
             StatusCode::INTERNAL_SERVER_ERROR,
             "Invalid DS template id".to_string(),
@@ -1311,33 +1700,156 @@ pub async fn create_and_send(
         readonly: Some(true),
     });
 
-    // 4. Create DocuSeal Submission with fields-based pre-fill
-    let docuseal_submission = docuseal_client
-        .create_submission_with_fields(
-            docuseal_template_id,
-            req.client_name.clone(),
-            req.client_email.clone(),
-            "First Party".to_string(),
-            fields,
-            true,
-        )
+    if let Some(mod_allowed) = &license_template.modifications_allowed {
+        fields.push(SubmitterField {
+            name: "Modifications Allowed".to_string(),
+            default_value: Some(mod_allowed.clone()),
+            readonly: Some(true),
+        });
+    }
+
+    // 4. Fetch Template Details to get the schema (which fields actually exist on the doc)
+    let template_details = docuseal_client
+        .get_template(docuseal_template_id)
         .await
         .map_err(|e| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                format!("DocuSeal Error: {}", e),
+                format!("DocuSeal Template Fetch Error: {}", e),
             )
         })?;
+
+    // Extract all field names present in any of the documents' schemas
+    let mut allowed_field_names = std::collections::HashSet::new();
+    if let Some(documents) = template_details.documents {
+        for doc in documents {
+            for field in doc.schema {
+                if let Some(name) = field.get("name").and_then(|n| n.as_str()) {
+                    allowed_field_names.insert(name.to_string());
+                }
+            }
+        }
+    }
+    // Also check top-level schema if present
+    for field in template_details.schema {
+        if let Some(name) = field.get("name").and_then(|n| n.as_str()) {
+            allowed_field_names.insert(name.to_string());
+        }
+    }
+
+    // Filter fields list to only include those that exist in the template
+    let filtered_fields: Vec<_> = fields
+        .into_iter()
+        .filter(|f| allowed_field_names.contains(&f.name))
+        .collect();
+
+    info!(
+        allowed_count = allowed_field_names.len(),
+        filtered_count = filtered_fields.len(),
+        "Filtered DocuSeal submission fields based on template schema"
+    );
+
+    // 5. Create DocuSeal Submission with fields-based pre-fill
+    let agency_signer_email =
+        resolve_agency_signer_email(&state, &agency_id, auth_user.email.as_ref()).await;
+    let docuseal_submission = if requires_agency_signature {
+        let agency_email = agency_signer_email.ok_or((
+            StatusCode::BAD_REQUEST,
+            "Agency signer email not found. Please set agency email in profile.".to_string(),
+        ))?;
+        let submitters = vec![
+            crate::services::docuseal::Submitter {
+                name: Some("Agency".to_string()),
+                email: Some(agency_email),
+                role: Some("First Party".to_string()),
+                order: Some(0),
+                fields: Some(filtered_fields.clone()),
+                values: None,
+            },
+            crate::services::docuseal::Submitter {
+                name: Some(req.client_name.clone()),
+                email: Some(req.client_email.clone()),
+                role: Some("Second Party".to_string()),
+                order: Some(1),
+                fields: Some(filtered_fields),
+                values: None,
+            },
+        ];
+        docuseal_client
+            .create_submission_with_submitters(docuseal_template_id, submitters, true)
+            .await
+            .map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("DocuSeal Error: {}", e),
+                )
+            })?
+    } else {
+        docuseal_client
+            .create_submission_with_fields(
+                docuseal_template_id,
+                req.client_name.clone(),
+                req.client_email.clone(),
+                "First Party".to_string(),
+                filtered_fields,
+                true,
+            )
+            .await
+            .map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("DocuSeal Error: {}", e),
+                )
+            })?
+    };
+    let agency_submitter = docuseal_submission
+        .submitters
+        .iter()
+        .find(|s| {
+            s.role
+                .as_ref()
+                .map(|r| r.eq_ignore_ascii_case("first party") || r.eq_ignore_ascii_case("agency"))
+                .unwrap_or(false)
+        })
+        .or_else(|| docuseal_submission.submitters.first());
+    let client_submitter = docuseal_submission
+        .submitters
+        .iter()
+        .find(|s| {
+            s.role
+                .as_ref()
+                .map(|r| r.eq_ignore_ascii_case("second party") || r.eq_ignore_ascii_case("client"))
+                .unwrap_or(false)
+        })
+        .or_else(|| {
+            if docuseal_submission.submitters.len() > 1 {
+                docuseal_submission.submitters.get(1)
+            } else {
+                None
+            }
+        });
 
     // 5. Create the License Submission record in DB (Status = 'sent')
     let submission_data = json!({
         "agency_id": agency_id,
         "template_id": req.template_id,
         "docuseal_template_id": docuseal_template_id,
-        "status": "sent",
+        "status": if requires_agency_signature { "agency_pending" } else { "sent" },
+        "requires_agency_signature": requires_agency_signature,
+        "agency_submitter_id": agency_submitter.map(|s| s.id),
+        "agency_submitter_slug": agency_submitter.map(|s| s.slug.clone()),
+        "agency_embed_src": agency_submitter
+            .and_then(|s| s.embed_src.clone())
+            .or_else(|| {
+                agency_submitter
+                    .map(|s| format!("{}/s/{}", state.docuseal_app_url.trim_end_matches('/'), s.slug))
+            }),
+        "client_submitter_id": client_submitter.map(|s| s.id),
+        "client_submitter_slug": client_submitter.map(|s| s.slug.clone()),
         "client_name": req.client_name.clone(),
         "client_email": req.client_email.clone(),
         "talent_names": talent_names_val.clone(),
+        "talent_ids": req.talent_ids.clone(),
         "license_fee": license_fee_val,
         "duration_days": duration_days,
         "start_date": req.start_date.clone().or(license_template.start_date.clone()),
@@ -1359,8 +1871,18 @@ pub async fn create_and_send(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let new_submission: serde_json::Value = serde_json::from_str(&insert_text)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let created_rows: Vec<serde_json::Value> = serde_json::from_str(&insert_text).map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to parse created row: {} - body: {}", e, insert_text),
+        )
+    })?;
+
+    let new_submission = created_rows.first().ok_or((
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "No row returned after insert".to_string(),
+    ))?;
 
     let new_submission_id = new_submission["id"]
         .as_str()
@@ -1408,8 +1930,6 @@ pub async fn create_and_send(
             "status": "pending",
             "regions": license_template.territory.clone(),
             "payment_amount": license_fee_val.unwrap_or(0),
-            "budget_min": license_fee_val.unwrap_or(0) as f64 / 100.0,
-            "budget_max": license_fee_val.unwrap_or(0) as f64 / 100.0,
             "notes": license_template.template_name.clone(), // Use template name for description/notes
             "created_at": now.clone(),
         });
@@ -1440,13 +1960,35 @@ pub async fn create_and_send(
         duration_days: Some(duration_days),
         start_date: Some(start_date),
         custom_terms: req.custom_terms,
-        status: "sent".to_string(),
+        status: if requires_agency_signature {
+            "agency_pending".to_string()
+        } else {
+            "sent".to_string()
+        },
         sent_at: Some(chrono::Utc::now().to_rfc3339()),
         opened_at: None,
         signed_at: None,
         declined_at: None,
         decline_reason: None,
         signed_document_url: None,
+        requires_agency_signature: Some(requires_agency_signature),
+        agency_submitter_id: agency_submitter.map(|s| s.id as i64),
+        agency_submitter_slug: agency_submitter.map(|s| s.slug.clone()),
+        agency_embed_src: agency_submitter
+            .and_then(|s| s.embed_src.clone())
+            .or_else(|| {
+                agency_submitter.map(|s| {
+                    format!(
+                        "{}/s/{}",
+                        state.docuseal_app_url.trim_end_matches('/'),
+                        s.slug
+                    )
+                })
+            }),
+        agency_signed_at: None,
+        client_submitter_id: client_submitter.map(|s| s.id as i64),
+        client_submitter_slug: client_submitter.map(|s| s.slug.clone()),
+        talent_id: None,
         template_name: Some(license_template.template_name.clone()),
         created_at: Some(chrono::Utc::now().to_rfc3339()),
         updated_at: Some(chrono::Utc::now().to_rfc3339()),
@@ -1470,19 +2012,22 @@ pub async fn handle_webhook(
         "Received DocuSeal licensing webhook"
     );
 
-    let status_update = match payload.event_type.as_str() {
-        "submission.started" | "submission.opened" | "submission.viewed" | "form.started"
-        | "form.viewed" => Some("opened"),
-        "submission.completed" | "form.completed" => Some("completed"),
-        "submission.declined" | "form.declined" => Some("declined"),
-        _ => None,
-    };
-
-    if status_update.is_none() {
+    let tracked_event = matches!(
+        payload.event_type.as_str(),
+        "submission.started"
+            | "submission.opened"
+            | "submission.viewed"
+            | "form.started"
+            | "form.viewed"
+            | "form.completed"
+            | "submission.completed"
+            | "submission.declined"
+            | "form.declined"
+    );
+    if !tracked_event {
         return Ok(axum::http::StatusCode::OK);
     }
 
-    let new_status = status_update.unwrap();
     let submission_id = payload.data["submission_id"]
         .as_i64()
         .or_else(|| payload.data["id"].as_i64())
@@ -1504,7 +2049,7 @@ pub async fn handle_webhook(
     // Update license_submissions
     let sub_response = pg
         .from("license_submissions")
-        .select("id")
+        .select("id,requires_agency_signature,agency_submitter_id,agency_signed_at")
         .eq("docuseal_submission_id", submission_id.to_string())
         .single()
         .execute()
@@ -1520,43 +2065,106 @@ pub async fn handle_webhook(
             .map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
         if let Some(sub_id) = sub["id"].as_str() {
-            let mut update_json = json!({ "status": new_status });
-            if new_status == "completed" {
-                update_json["signed_at"] = json!(chrono::Utc::now().to_rfc3339());
+            let requires_agency_signature =
+                sub["requires_agency_signature"].as_bool().unwrap_or(false);
+            let agency_submitter_id = sub["agency_submitter_id"].as_i64();
+            let agency_already_signed = !sub["agency_signed_at"].is_null();
 
-                // Extract signed document URL if available
-                if let Some(url) = payload.data["documents"]
-                    .as_array()
-                    .and_then(|docs| docs.first())
-                    .and_then(|doc| doc["url"].as_str())
-                {
-                    update_json["signed_document_url"] = json!(url);
+            let submitter_id = payload.data["submitter_id"].as_i64().or_else(|| {
+                payload
+                    .data
+                    .get("submitter")
+                    .and_then(|s| s.get("id"))
+                    .and_then(|v| v.as_i64())
+            });
+            let submitter_role = payload
+                .data
+                .get("submitter")
+                .and_then(|s| s.get("role"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_lowercase())
+                .or_else(|| {
+                    payload
+                        .data
+                        .get("role")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_lowercase())
+                });
+            let is_agency_signer = submitter_role
+                .as_ref()
+                .map(|r| r == "agency" || r == "first party")
+                .unwrap_or(false)
+                || (agency_submitter_id.is_some() && submitter_id == agency_submitter_id);
+
+            let mut update_map = serde_json::Map::new();
+
+            match payload.event_type.as_str() {
+                "form.completed" => {
+                    if requires_agency_signature && (is_agency_signer || !agency_already_signed) {
+                        update_map.insert(
+                            "agency_signed_at".to_string(),
+                            json!(chrono::Utc::now().to_rfc3339()),
+                        );
+                        update_map.insert("status".to_string(), json!("client_pending"));
+                    } else if requires_agency_signature && !agency_already_signed {
+                        update_map.insert("status".to_string(), json!("agency_pending"));
+                    } else {
+                        update_map.insert("status".to_string(), json!("opened"));
+                    }
                 }
-            } else if new_status == "declined" {
-                update_json["declined_at"] = json!(chrono::Utc::now().to_rfc3339());
-                if let Some(reason) = payload.data.get("decline_reason").and_then(|v| v.as_str()) {
-                    update_json["decline_reason"] = json!(reason);
+                "submission.completed" => {
+                    update_map.insert("status".to_string(), json!("completed"));
+                    update_map.insert(
+                        "signed_at".to_string(),
+                        json!(chrono::Utc::now().to_rfc3339()),
+                    );
+                    if let Some(url) = payload.data["documents"]
+                        .as_array()
+                        .and_then(|docs| docs.first())
+                        .and_then(|doc| doc["url"].as_str())
+                    {
+                        update_map.insert("signed_document_url".to_string(), json!(url));
+                    }
+                }
+                "submission.declined" | "form.declined" => {
+                    update_map.insert("status".to_string(), json!("declined"));
+                    update_map.insert(
+                        "declined_at".to_string(),
+                        json!(chrono::Utc::now().to_rfc3339()),
+                    );
+                    if let Some(reason) =
+                        payload.data.get("decline_reason").and_then(|v| v.as_str())
+                    {
+                        update_map.insert("decline_reason".to_string(), json!(reason));
+                    }
+                }
+                _ => {
+                    if requires_agency_signature && !agency_already_signed {
+                        update_map.insert("status".to_string(), json!("agency_pending"));
+                    } else if requires_agency_signature {
+                        update_map.insert("status".to_string(), json!("client_pending"));
+                    } else {
+                        update_map.insert("status".to_string(), json!("opened"));
+                    }
                 }
             }
 
-            let _ = pg
-                .from("license_submissions")
-                .update(update_json.to_string())
-                .eq("id", sub_id)
-                .execute()
-                .await;
+            if !update_map.is_empty() {
+                let _ = pg
+                    .from("license_submissions")
+                    .update(serde_json::Value::Object(update_map).to_string())
+                    .eq("id", sub_id)
+                    .execute()
+                    .await;
+            }
 
-            // Also update licensing_requests if it exists
-            let lr_status = match new_status {
-                "completed" => None, // Stay pending after signature as per user request
-                "declined" => Some("rejected"),
-                _ => None, // Keep as pending if opened/sent
-            };
-
-            if let Some(status) = lr_status {
+            if matches!(
+                payload.event_type.as_str(),
+                "submission.declined" | "form.declined"
+            ) {
                 let _ = pg
                     .from("licensing_requests")
-                    .update(json!({ "status": status }).to_string())
+                    .update(json!({ "status": "rejected" }).to_string())
                     .eq("submission_id", sub_id)
                     .execute()
                     .await;

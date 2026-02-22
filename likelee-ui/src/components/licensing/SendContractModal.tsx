@@ -16,10 +16,38 @@ import {
   createLicenseSubmissionDraft,
   finalizeLicenseSubmission,
   previewLicenseSubmission,
+  syncLicenseSubmissionStatus,
 } from "@/api/licenseSubmissions";
 import { getLicenseTemplates, LicenseTemplate } from "@/api/licenseTemplates";
 import { useToast } from "@/components/ui/use-toast";
 import { DocusealForm } from "@docuseal/react";
+import { Switch } from "@/components/ui/switch";
+import { getUserFriendlyError } from "@/utils/error-utils";
+import { getAgencyTalents } from "@/api/functions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Check, ChevronsUpDown, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface SendContractModalProps {
   isOpen: boolean;
@@ -33,7 +61,6 @@ interface SendContractModalProps {
 interface FormData {
   client_name: string;
   client_email: string;
-  talent_names?: string;
 }
 
 export const SendContractModal: React.FC<SendContractModalProps> = ({
@@ -56,6 +83,15 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
   const [draftId, setDraftId] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [requiresAgencySignature, setRequiresAgencySignature] = useState(false);
+  const [agencySignOpen, setAgencySignOpen] = useState(false);
+  const [agencySignUrl, setAgencySignUrl] = useState<string | null>(null);
+  const [currentSubmissionId, setCurrentSubmissionId] = useState<string | null>(
+    null,
+  );
+  const [talents, setTalents] = useState<any[]>([]);
+  const [selectedTalentIds, setSelectedTalentIds] = useState<string[]>([]);
+  const [selectedTalentNames, setSelectedTalentNames] = useState<string[]>([]);
 
   // Fetch the template to get default values
   const { data: templates } = useQuery({
@@ -72,17 +108,29 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
     if (template.client_name) {
       setValue("client_name", template.client_name);
     }
-
-    if (template.talent_name) {
-      setValue("talent_names", template.talent_name);
-    }
   }, [isOpen, template, setValue]);
+
+  useEffect(() => {
+    if (isOpen) {
+      // Fetch agency talents for the dropdown
+      getAgencyTalents()
+        .then((res) => setTalents(res || []))
+        .catch((err) => console.error("Failed to fetch talents:", err));
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
       setDraftId(null);
       setPreviewUrl(null);
       setPreviewOpen(false);
+      setRequiresAgencySignature(false);
+      setAgencySignOpen(false);
+      setAgencySignUrl(null);
+      setCurrentSubmissionId(null);
+      setCurrentSubmissionId(null);
+      setSelectedTalentIds([]);
+      setSelectedTalentNames([]);
     }
   }, [isOpen]);
 
@@ -93,17 +141,23 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
         docuseal_template_id: docusealTemplateId,
         client_name: data.client_name,
         client_email: data.client_email,
-        talent_names: data.talent_names || template?.talent_name,
+        talent_ids:
+          selectedTalentIds.length > 0 ? selectedTalentIds : undefined,
+        talent_id: selectedTalentIds[0] || undefined,
+        talent_names: selectedTalentNames.join(", ") || template?.talent_name,
         license_fee: licenseFee || template?.license_fee,
         duration_days: template?.duration_days,
         start_date: template?.start_date,
         custom_terms: template?.custom_terms,
+        requires_agency_signature: requiresAgencySignature,
       });
     },
     onError: (error: any) => {
       toast({
         title: "Draft Failed",
-        description: error.message || "Could not create a draft submission.",
+        description:
+          getUserFriendlyError(error) ||
+          "We couldn't prepare this contract draft. Please try again.",
         variant: "destructive",
       });
     },
@@ -115,11 +169,15 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
         docuseal_template_id: docusealTemplateId,
         client_name: args.data.client_name,
         client_email: args.data.client_email,
-        talent_names: args.data.talent_names || template?.talent_name,
+        talent_ids:
+          selectedTalentIds.length > 0 ? selectedTalentIds : undefined,
+
+        talent_names: selectedTalentNames.join(", ") || template?.talent_name,
         license_fee: licenseFee || template?.license_fee,
         duration_days: template?.duration_days,
         start_date: template?.start_date,
         custom_terms: template?.custom_terms,
+        requires_agency_signature: requiresAgencySignature,
       });
     },
     onSuccess: (res) => {
@@ -129,7 +187,9 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
     onError: (error: any) => {
       toast({
         title: "Preview Failed",
-        description: error.message || "Could not load preview.",
+        description:
+          getUserFriendlyError(error) ||
+          "We couldn't load the preview right now. Please try again.",
         variant: "destructive",
       });
     },
@@ -152,22 +212,46 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
         docuseal_template_id: docusealTemplateId,
         client_name: data.client_name,
         client_email: data.client_email,
-        talent_names: data.talent_names || template?.talent_name,
+        talent_ids:
+          selectedTalentIds.length > 0 ? selectedTalentIds : undefined,
+        talent_id: selectedTalentIds[0] || undefined,
+        talent_names: selectedTalentNames.join(", ") || template?.talent_name,
+        requires_agency_signature: requiresAgencySignature,
       });
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
+      setCurrentSubmissionId((res as any)?.id || null);
       queryClient.invalidateQueries({ queryKey: ["license-submissions"] });
-      toast({
-        title: "Contract Sent!",
-        description: "The contract has been emailed to the client.",
-      });
-      if (onSuccess) onSuccess();
-      onClose();
+      const embedUrl =
+        (res as any)?.agency_embed_src ||
+        ((res as any)?.agency_submitter_slug
+          ? `https://docuseal.co/s/${(res as any).agency_submitter_slug}`
+          : (res as any)?.docuseal_slug
+            ? `https://docuseal.co/s/${(res as any).docuseal_slug}`
+            : null);
+      if (requiresAgencySignature && embedUrl) {
+        setAgencySignUrl(embedUrl);
+        setAgencySignOpen(true);
+        toast({
+          title: "Agency signature required",
+          description:
+            "Please complete your signature now. Client will receive it after you sign.",
+        });
+      } else {
+        toast({
+          title: "Contract Sent!",
+          description: "The contract has been emailed to the client.",
+        });
+        if (onSuccess) onSuccess();
+        onClose();
+      }
     },
     onError: (error: any) => {
       toast({
         title: "Sending Failed",
-        description: error.message || "Could not send the contract.",
+        description:
+          getUserFriendlyError(error) ||
+          "We couldn't send the contract right now. Please try again.",
         variant: "destructive",
       });
     },
@@ -242,15 +326,159 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="talent_names">Talent Name (Optional)</Label>
-              <Input
-                id="talent_names"
-                placeholder={template?.talent_name || "e.g. John Doe"}
-                {...register("talent_names")}
-              />
+              <Label htmlFor="talent_select">Talent</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full h-auto min-h-[48px] justify-between bg-slate-50 border-slate-200 rounded-xl hover:bg-slate-100 transition-all font-medium py-2 px-3"
+                  >
+                    <div className="flex flex-wrap gap-1.5 items-center">
+                      {selectedTalentNames.length > 0 ? (
+                        selectedTalentNames.map((name) => (
+                          <Badge
+                            key={name}
+                            variant="secondary"
+                            className="bg-white text-indigo-600 border-indigo-100 rounded-lg px-2 py-0.5 flex items-center gap-1 group/badge"
+                          >
+                            {name}
+                            <X
+                              className="h-3 w-3 cursor-pointer hover:text-indigo-800"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const index = selectedTalentNames.indexOf(name);
+                                if (index > -1) {
+                                  const newNames = [...selectedTalentNames];
+                                  newNames.splice(index, 1);
+                                  setSelectedTalentNames(newNames);
+
+                                  const t = talents.find(
+                                    (t) => t.full_name === name,
+                                  );
+                                  if (t) {
+                                    const newIds = selectedTalentIds.filter(
+                                      (id) => String(id) !== String(t.id),
+                                    );
+                                    setSelectedTalentIds(newIds);
+                                  }
+                                }
+                              }}
+                            />
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-slate-400">
+                          {template?.talent_name
+                            ? `Default: ${template.talent_name}`
+                            : "Select talents..."}
+                        </span>
+                      )}
+                    </div>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50 text-slate-500" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-[400px] p-0 rounded-2xl border-slate-200 shadow-2xl overflow-hidden"
+                  align="start"
+                >
+                  <Command className="border-none">
+                    <CommandInput
+                      placeholder="Search talent..."
+                      className="border-none focus:ring-0 h-12"
+                    />
+                    <CommandList className="max-h-[300px]">
+                      <CommandEmpty className="py-6 text-center text-sm text-slate-500 font-medium">
+                        No talent found.
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {talents.map((t) => {
+                          const isSelected = selectedTalentIds.includes(
+                            String(t.id),
+                          );
+                          return (
+                            <CommandItem
+                              key={t.id}
+                              value={t.full_name}
+                              onSelect={() => {
+                                let newIds = [...selectedTalentIds];
+                                let newNames = [...selectedTalentNames];
+
+                                if (isSelected) {
+                                  newIds = newIds.filter(
+                                    (id) => String(id) !== String(t.id),
+                                  );
+                                  newNames = newNames.filter(
+                                    (name) => name !== t.full_name,
+                                  );
+                                } else {
+                                  if (!newIds.includes(String(t.id))) {
+                                    newIds.push(String(t.id));
+                                  }
+                                  if (!newNames.includes(t.full_name)) {
+                                    newNames.push(t.full_name);
+                                  }
+                                }
+                                setSelectedTalentIds(newIds);
+                                setSelectedTalentNames(newNames);
+                              }}
+                              className="flex items-center gap-3 p-3 cursor-pointer hover:bg-slate-50 transition-colors rounded-lg m-1"
+                            >
+                              <div className="relative">
+                                <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
+                                  <AvatarImage src={t.profile_photo_url} />
+                                  <AvatarFallback className="bg-indigo-50 text-indigo-600 font-bold text-xs uppercase">
+                                    {t.full_name?.substring(0, 2) || "UT"}
+                                  </AvatarFallback>
+                                </Avatar>
+                                {isSelected && (
+                                  <div className="absolute -top-1 -right-1 h-4 w-4 bg-indigo-500 rounded-full flex items-center justify-center border-2 border-white">
+                                    <Check className="h-2.5 w-2.5 text-white" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex flex-col">
+                                <span
+                                  className={cn(
+                                    "font-bold text-slate-900",
+                                    isSelected && "text-indigo-600",
+                                  )}
+                                >
+                                  {t.full_name || "Unknown Talent"}
+                                </span>
+                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                                  ID: {String(t.id).slice(0, 8)}
+                                </span>
+                              </div>
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               <p className="text-xs text-muted-foreground">
-                Leave blank to use template default:{" "}
-                {template?.talent_name || "N/A"}
+                {selectedTalentNames.length > 0
+                  ? `Selected: ${selectedTalentNames.join(", ")}`
+                  : `Template default: ${template?.talent_name || "N/A"}`}
+              </p>
+            </div>
+
+            <div className="space-y-2 rounded-md border p-3">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="requiresAgencySignature">
+                  Agency signs first (on platform)
+                </Label>
+                <Switch
+                  id="requiresAgencySignature"
+                  checked={requiresAgencySignature}
+                  onCheckedChange={setRequiresAgencySignature}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                When enabled, the client receives the signing request only after
+                the agency signs.
               </p>
             </div>
 
@@ -279,7 +507,7 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
               </Button>
               <Button
                 type="submit"
-                className="bg-indigo-600 hover:bg-indigo-700"
+                className="bg-indigo-500 hover:bg-indigo-700"
                 disabled={finalizeMutation.isPending}
               >
                 {finalizeMutation.isPending ? "Sending..." : "Send Now"}
@@ -312,6 +540,52 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
               onClick={() => setPreviewOpen(false)}
             >
               Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={agencySignOpen}
+        onOpenChange={(v) => {
+          if (!v) {
+            setAgencySignOpen(false);
+            if (onSuccess) onSuccess();
+            onClose();
+          }
+        }}
+      >
+        <DialogContent className="fixed !inset-0 bg-background w-screen h-screen !max-w-none !translate-x-0 !translate-y-0 !rounded-none border-none p-0 flex flex-col outline-none">
+          <DialogHeader className="p-4 border-b">
+            <DialogTitle>Agency Signature</DialogTitle>
+            <DialogDescription>
+              Complete your signature to release this contract to the client.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 w-full bg-gray-50 overflow-auto">
+            {agencySignUrl ? <DocusealForm src={agencySignUrl} /> : null}
+          </div>
+          <DialogFooter className="p-4 border-t">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={async () => {
+                if (currentSubmissionId) {
+                  try {
+                    await syncLicenseSubmissionStatus(currentSubmissionId);
+                    await queryClient.invalidateQueries({
+                      queryKey: ["license-submissions"],
+                    });
+                  } catch {
+                    // ignore transient sync issues
+                  }
+                }
+                setAgencySignOpen(false);
+                if (onSuccess) onSuccess();
+                onClose();
+              }}
+            >
+              Done
             </Button>
           </DialogFooter>
         </DialogContent>

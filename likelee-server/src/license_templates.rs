@@ -28,6 +28,8 @@ pub struct LicenseTemplate {
     pub client_name: Option<String>,
     pub talent_name: Option<String>,
     pub start_date: Option<String>,
+    pub contract_body: Option<String>,
+    pub contract_body_format: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -43,10 +45,76 @@ pub struct CreateTemplateRequest {
     pub license_fee: Option<i64>,
     pub custom_terms: Option<String>,
     pub docuseal_template_id: Option<i32>,
-    pub document_base64: Option<String>,
     pub client_name: Option<String>,
     pub talent_name: Option<String>,
     pub start_date: Option<String>,
+    pub contract_body: Option<String>,
+    pub contract_body_format: Option<String>,
+}
+
+/// Render contract body (MD or HTML) into a clean, styled HTML document for DocuSeal
+fn render_contract_to_html(body: &str, format: &str) -> String {
+    let content_html = if format == "markdown" {
+        use pulldown_cmark::{html, Parser};
+        let parser = Parser::new(body);
+        let mut html_output = String::new();
+        html::push_html(&mut html_output, parser);
+        html_output
+    } else {
+        body.to_string() // Already HTML
+    };
+
+    format!(
+        r#"
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                body {{
+                    font-family: 'Helvetica', 'Arial', sans-serif;
+                    line-height: 1.6;
+                    color: #1a202c;
+                    margin: 0;
+                    padding: 0;
+                }}
+                .container {{
+                    max-width: 800px;
+                    margin: 0 auto;
+                }}
+                h1 {{ font-size: 24pt; color: #1a202c; margin-bottom: 24pt; }}
+                h2 {{ font-size: 18pt; color: #2d3748; margin-top: 24pt; margin-bottom: 12pt; border-bottom: 1px solid #e2e8f0; }}
+                p {{ margin-bottom: 12pt; text-align: justify; }}
+                strong {{ font-weight: bold; }}
+                hr {{ border: 0; border-top: 1px solid #cbd5e0; margin: 24pt 0; }}
+                ul, ol {{ margin-bottom: 12pt; padding-left: 24pt; }}
+                li {{ margin-bottom: 6pt; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                {}
+            </div>
+        </body>
+        </html>
+        "#,
+        content_html
+    )
+}
+
+/// Replace placeholders like {client_name} with actual values
+fn replace_placeholders(text: &str, values: &std::collections::HashMap<String, String>) -> String {
+    use regex::Regex;
+    let re = Regex::new(r"\{(\w+)\}").unwrap();
+
+    re.replace_all(text, |caps: &regex::Captures| {
+        let key = &caps[1];
+        values
+            .get(key)
+            .cloned()
+            .unwrap_or_else(|| caps[0].to_string())
+    })
+    .to_string()
 }
 
 #[derive(Debug, Serialize)]
@@ -72,19 +140,16 @@ pub async fn list(
         .order("created_at.desc")
         .execute()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "list_license_templates"))?;
 
     let status = resp.status();
     let text = resp
         .text()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "list_license_templates_read_body"))?;
 
     if !status.is_success() {
-        return Err((
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
-            text,
-        ));
+        return Err(crate::errors::sanitize_db_error(status.as_u16(), text));
     }
 
     let templates: Vec<LicenseTemplate> = serde_json::from_str(&text).unwrap_or(vec![]);
@@ -105,13 +170,13 @@ pub async fn stats(
         .eq("agency_id", agency_id)
         .execute()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
     let status = resp.status();
     let text = resp
         .text()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
     if !status.is_success() {
         return Err((
@@ -192,6 +257,8 @@ pub async fn create(
         "client_name": payload.client_name,
         "talent_name": payload.talent_name,
         "start_date": payload.start_date,
+        "contract_body": payload.contract_body,
+        "contract_body_format": payload.contract_body_format,
     });
 
     let resp = state
@@ -200,13 +267,13 @@ pub async fn create(
         .insert(body.to_string())
         .execute()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
     let status = resp.status();
     let text = resp
         .text()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
     if !status.is_success() {
         return Err((
@@ -259,6 +326,8 @@ pub async fn update(
         "client_name": payload.client_name,
         "talent_name": payload.talent_name,
         "start_date": payload.start_date,
+        "contract_body": payload.contract_body,
+        "contract_body_format": payload.contract_body_format,
         "updated_at": chrono::Utc::now().to_rfc3339(),
     });
 
@@ -270,13 +339,13 @@ pub async fn update(
         .eq("agency_id", agency_id)
         .execute()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
     let status = resp.status();
     let text = resp
         .text()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
     if !status.is_success() {
         return Err((
@@ -318,7 +387,7 @@ pub async fn delete_template(
         .eq("agency_id", agency_id)
         .execute()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
     Ok(StatusCode::NO_CONTENT)
 }
@@ -340,12 +409,12 @@ pub async fn copy(
         .eq("agency_id", &agency_id)
         .execute()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
     let text = resp
         .text()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
     let originals: Vec<LicenseTemplate> = serde_json::from_str(&text).unwrap_or(vec![]);
     let original = originals
         .first()
@@ -378,13 +447,13 @@ pub async fn copy(
         .insert(body.to_string())
         .execute()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
     let create_status = create_resp.status();
     let create_text = create_resp
         .text()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
     if !create_status.is_success() {
         return Err((
@@ -419,6 +488,8 @@ pub struct BuilderTokenRequest {
     pub template_name: String,
     pub docuseal_template_id: Option<i32>,
     pub external_id: Option<String>,
+    pub contract_body: Option<String>,
+    pub builder_roles: Option<Vec<String>>,
 }
 
 pub async fn create_builder_token(
@@ -446,10 +517,9 @@ pub async fn create_builder_token(
             .unwrap_or_default()
     };
 
-    // 2. Fetch template from DB to get pre-fill values
-    let mut values = None;
-    let mut submitters = None;
+    // 2. Fetch template from DB to ensure DocuSeal template is up-to-date
     let target_email = state.docuseal_user_email.clone();
+    let mut template_docuseal_id: Option<i32> = None;
 
     if !template_id.is_empty() {
         let resp = state
@@ -459,110 +529,142 @@ pub async fn create_builder_token(
             .eq("id", &template_id)
             .execute()
             .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
         let text = resp
             .text()
             .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
         let templates: Vec<LicenseTemplate> = serde_json::from_str(&text).unwrap_or_default();
 
         if let Some(license_template) = templates.first() {
-            let talent_names = license_template.talent_name.clone().unwrap_or_default();
-            let fee_str = format!(
-                "${:.2}",
-                license_template.license_fee.unwrap_or(0) as f64 / 100.0
-            );
-            let start_date = license_template
-                .start_date
+            template_docuseal_id = license_template.docuseal_template_id;
+
+            // Ensure DocuSeal template exists and is based on the latest contract body.
+            // Licensing only: no master-template fallback, no PDF upload paths.
+            // Use the provided contract_body if available, otherwise use the template's body.
+            let contract_body = req
+                .contract_body
                 .clone()
-                .and_then(|date| {
-                    chrono::NaiveDate::parse_from_str(&date, "%Y-%m-%d")
-                        .ok()
-                        .map(|parsed| parsed.format("%m/%d/%Y").to_string())
-                        .or(Some(date))
-                })
+                .or_else(|| license_template.contract_body.clone())
                 .unwrap_or_default();
 
-            let mut role_data = serde_json::Map::new();
-            role_data.insert(
-                "Client/Brand Name".to_string(),
-                json!(license_template.client_name.clone().unwrap_or_default()),
-            );
-            role_data.insert("Talent Name".to_string(), json!(talent_names));
-            role_data.insert("License Fee".to_string(), json!(fee_str));
-            role_data.insert("Category".to_string(), json!(license_template.category));
-            role_data.insert(
-                "Description".to_string(),
-                json!(license_template.description.clone().unwrap_or_default()),
-            );
-            role_data.insert(
-                "Usage Scope".to_string(),
-                json!(license_template.usage_scope.clone().unwrap_or_default()),
-            );
-            role_data.insert("Territory".to_string(), json!(license_template.territory));
-            role_data.insert(
-                "Exclusivity".to_string(),
-                json!(license_template.exclusivity),
-            );
-            role_data.insert(
-                "Duration".to_string(),
-                json!(license_template.duration_days),
-            );
-            role_data.insert("Start Date".to_string(), json!(start_date));
-            role_data.insert(
-                "Custom Terms".to_string(),
-                json!(license_template.custom_terms.clone().unwrap_or_default()),
-            );
-            role_data.insert(
-                "Template Name".to_string(),
-                json!(license_template.template_name),
-            );
+            let contract_body_format = license_template
+                .contract_body_format
+                .clone()
+                .unwrap_or_else(|| "markdown".to_string());
 
-            // Prepare submitters array for role pre-fill
-            let mut fields_list = Vec::new();
-            let mut values_map = serde_json::Map::new();
+            if !contract_body.trim().is_empty() {
+                // Build replacement map from template data
+                let mut replacements = std::collections::HashMap::new();
+                replacements.insert(
+                    "client_name".to_string(),
+                    license_template.client_name.clone().unwrap_or_default(),
+                );
+                replacements.insert(
+                    "talent_name".to_string(),
+                    license_template.talent_name.clone().unwrap_or_default(),
+                );
+                replacements.insert(
+                    "template_name".to_string(),
+                    license_template.template_name.clone(),
+                );
+                replacements.insert("category".to_string(), license_template.category.clone());
+                replacements.insert(
+                    "description".to_string(),
+                    license_template.description.clone().unwrap_or_default(),
+                );
+                replacements.insert(
+                    "usage_scope".to_string(),
+                    license_template.usage_scope.clone().unwrap_or_default(),
+                );
+                replacements.insert("territory".to_string(), license_template.territory.clone());
+                replacements.insert(
+                    "exclusivity".to_string(),
+                    license_template.exclusivity.clone(),
+                );
+                replacements.insert(
+                    "duration_days".to_string(),
+                    license_template.duration_days.to_string(),
+                );
+                replacements.insert(
+                    "modifications_allowed".to_string(),
+                    license_template
+                        .modifications_allowed
+                        .clone()
+                        .unwrap_or_default(),
+                );
+                replacements.insert(
+                    "custom_terms".to_string(),
+                    license_template.custom_terms.clone().unwrap_or_default(),
+                );
 
-            for (k, v) in role_data.iter() {
-                let val_str = if let Some(s) = v.as_str() {
-                    s.to_string()
+                // Format license fee
+                let fee_str = format!(
+                    "${:.2}",
+                    license_template.license_fee.unwrap_or(0) as f64 / 100.0
+                );
+                replacements.insert("license_fee".to_string(), fee_str);
+
+                // Format start date
+                let start_date_str = license_template
+                    .start_date
+                    .clone()
+                    .unwrap_or_else(|| "-".to_string());
+                replacements.insert("start_date".to_string(), start_date_str);
+
+                // Perform placeholder replacement
+                let rendered_contract = replace_placeholders(&contract_body, &replacements);
+
+                let document_html =
+                    render_contract_to_html(&rendered_contract, &contract_body_format);
+
+                let docuseal = DocuSealClient::new(
+                    state.docuseal_api_key.clone(),
+                    state.docuseal_base_url.clone(),
+                );
+
+                // IMPORTANT: Do not replace/update template documents on every builder open.
+                // Updating the underlying document can wipe previously placed fields in DocuSeal.
+                // We only create a template when missing; otherwise reuse the existing template.
+                let ensured_id = if let Some(existing_id) = license_template.docuseal_template_id {
+                    existing_id
                 } else {
-                    v.to_string()
+                    let created = docuseal
+                        .create_template_from_html(
+                            license_template.template_name.clone(),
+                            document_html,
+                        )
+                        .await
+                        .map_err(|e| crate::errors::handle_error(e, "docuseal_create_template"))?;
+
+                    // Persist DS template id back to license_templates
+                    let update_json = json!({
+                        "docuseal_template_id": created.id,
+                        "updated_at": chrono::Utc::now().to_rfc3339(),
+                    });
+                    let _ = state
+                        .pg
+                        .from("license_templates")
+                        .update(update_json.to_string())
+                        .eq("id", &license_template.id)
+                        .execute()
+                        .await;
+
+                    created.id
                 };
 
-                // Add to fields array (standard builder prop)
-                fields_list.push(json!({
-                    "name": k,
-                    "default_value": val_str,
-                    "value": val_str
-                }));
-
-                // Add to values map (standard submission pre-fill)
-                values_map.insert(k.clone(), json!(val_str));
+                template_docuseal_id = Some(ensured_id);
             }
-
-            submitters = Some(json!([{
-                "email": target_email.clone(),
-                "role": "First Party",
-                "fields": fields_list,
-                "values": values_map
-            }]));
-
-            let mut final_values = serde_json::Map::new();
-            final_values.insert("First Party".to_string(), json!(role_data));
-            for (k, v) in role_data.iter() {
-                final_values.insert(k.clone(), v.clone());
-            }
-            values = Some(serde_json::Value::Object(final_values));
         }
     }
 
     // 3. Determine DocuSeal template
-    let docuseal_template_id = if !state.docuseal_master_template_id.is_empty() {
-        state.docuseal_master_template_id.parse::<i32>().ok()
-    } else {
-        req.docuseal_template_id
-    };
+    // Licensing only: do not use master template fallback.
+    let docuseal_template_id = template_docuseal_id.or(req.docuseal_template_id).ok_or((
+        StatusCode::BAD_REQUEST,
+        "docuseal_template_id_missing".to_string(),
+    ))?;
 
     let docuseal = DocuSealClient::new(
         state.docuseal_api_key.clone(),
@@ -574,16 +676,20 @@ pub async fn create_builder_token(
             target_email.clone(),
             target_email.clone(),
             target_email.clone(),
-            docuseal_template_id,
+            Some(docuseal_template_id),
             req.external_id,
-            values.clone(),
-            submitters,
+            None, // No values - we pre-fill in the PDF itself
+            req.builder_roles.clone().map(|roles| {
+                json!(roles
+                    .into_iter()
+                    .map(|role| json!({ "role": role }))
+                    .collect::<Vec<_>>())
+            }),
         )
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .map_err(|e| crate::errors::handle_error(e, "license_templates"))?;
 
     Ok(Json(json!({
         "token": token,
-        "values": values,
         "docuseal_user_email": state.docuseal_user_email.clone()
     })))
 }
