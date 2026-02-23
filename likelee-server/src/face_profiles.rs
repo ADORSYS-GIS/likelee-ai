@@ -203,6 +203,8 @@ pub async fn search_marketplace_profiles(
     let mut creators_rows: Vec<serde_json::Value> = Vec::new();
     let mut connected_creator_ids: HashSet<String> = HashSet::new();
     let mut invite_status_by_creator_id: HashMap<String, String> = HashMap::new();
+    let mut followers_by_creator_id: HashMap<String, i64> = HashMap::new();
+    let mut engagement_by_creator_id: HashMap<String, f64> = HashMap::new();
     let mut effective_agency_id = user.id.clone();
 
     if user.role == "agency" {
@@ -348,6 +350,57 @@ pub async fn search_marketplace_profiles(
             return Err(sanitize_db_error(status.as_u16(), text));
         }
         creators_rows = serde_json::from_str(&text).unwrap_or_default();
+
+        let creator_ids: Vec<String> = creators_rows
+            .iter()
+            .filter_map(|r| r.get("id").and_then(|v| v.as_str()))
+            .filter(|s| !s.is_empty())
+            .map(|s| s.to_string())
+            .collect();
+
+        if !creator_ids.is_empty() {
+            let creator_refs: Vec<&str> = creator_ids.iter().map(|s| s.as_str()).collect();
+            let metrics_resp = state
+                .pg
+                .from("agency_users")
+                .select("creator_id,instagram_followers,engagement_rate,updated_at")
+                .in_("creator_id", creator_refs)
+                .eq("role", "talent")
+                .eq("status", "active")
+                .order("updated_at.desc")
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let metrics_status = metrics_resp.status();
+            let metrics_text = metrics_resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            if metrics_status.is_success() {
+                let metric_rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&metrics_text).unwrap_or_default();
+                for row in metric_rows {
+                    let creator_id = row
+                        .get("creator_id")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string();
+                    if creator_id.is_empty() {
+                        continue;
+                    }
+                    if !followers_by_creator_id.contains_key(&creator_id) {
+                        if let Some(v) = row.get("instagram_followers").and_then(|v| v.as_i64()) {
+                            followers_by_creator_id.insert(creator_id.clone(), v);
+                        }
+                    }
+                    if !engagement_by_creator_id.contains_key(&creator_id) {
+                        if let Some(v) = row.get("engagement_rate").and_then(|v| v.as_f64()) {
+                            engagement_by_creator_id.insert(creator_id.clone(), v);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     let mut results: Vec<serde_json::Value> = Vec::new();
@@ -420,8 +473,14 @@ pub async fn search_marketplace_profiles(
             "profile_photo_url": row.get("profile_photo_url").cloned().unwrap_or(serde_json::Value::Null),
             "creator_type": row.get("creator_type").cloned().unwrap_or(serde_json::Value::Null),
             "skills": row.get("facial_features").cloned().unwrap_or(serde_json::json!([])),
-            "followers": serde_json::Value::Null,
-            "engagement_rate": serde_json::Value::Null,
+            "followers": followers_by_creator_id
+                .get(creator_id)
+                .map(|v| serde_json::json!(v))
+                .unwrap_or(serde_json::Value::Null),
+            "engagement_rate": engagement_by_creator_id
+                .get(creator_id)
+                .map(|v| serde_json::json!(v))
+                .unwrap_or(serde_json::Value::Null),
             "is_verified": true,
             "is_connected": connection_status == "connected",
             "is_pending": connection_status == "pending",
