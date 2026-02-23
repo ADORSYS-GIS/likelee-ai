@@ -619,7 +619,7 @@ export function MarketplaceSection({
                           )}
                         {!profile.is_connected &&
                           connectionStatus === "disconnected" && (
-                            <Badge className="h-5 px-2 rounded-md bg-slate-100/95 text-slate-700 border border-slate-300 text-[10px] font-semibold shadow-sm">
+                            <Badge className="h-5 px-2 rounded-md bg-rose-50/95 text-rose-700 border border-rose-200 text-[10px] font-semibold shadow-sm">
                               Disconnected
                             </Badge>
                           )}
