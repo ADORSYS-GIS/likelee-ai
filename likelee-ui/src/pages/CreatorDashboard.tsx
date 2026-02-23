@@ -3299,7 +3299,7 @@ export default function CreatorDashboard() {
       public_profile_visible:
         overrides?.is_public_brands ?? creator.is_public_brands ?? true,
       visibility:
-        overrides?.is_public_brands ?? creator.is_public_brands ?? true
+        (overrides?.is_public_brands ?? creator.is_public_brands ?? true)
           ? "brands"
           : "private",
       content_types: overrides?.content_types ?? creator.content_types,
@@ -9263,18 +9263,18 @@ export default function CreatorDashboard() {
     </div>
   );
 }
-  const resolvePublicBrandsVisibility = (data: any): boolean => {
-    if (typeof data?.public_profile_visible === "boolean") {
-      return data.public_profile_visible;
-    }
-    const rawVisibility = String(data?.visibility || "")
-      .trim()
-      .toLowerCase();
-    if (!rawVisibility) return true;
-    return (
-      rawVisibility === "public" ||
-      rawVisibility === "brands" ||
-      rawVisibility === "visible_to_brands" ||
-      rawVisibility === "true"
-    );
-  };
+const resolvePublicBrandsVisibility = (data: any): boolean => {
+  if (typeof data?.public_profile_visible === "boolean") {
+    return data.public_profile_visible;
+  }
+  const rawVisibility = String(data?.visibility || "")
+    .trim()
+    .toLowerCase();
+  if (!rawVisibility) return true;
+  return (
+    rawVisibility === "public" ||
+    rawVisibility === "brands" ||
+    rawVisibility === "visible_to_brands" ||
+    rawVisibility === "true"
+  );
+};
