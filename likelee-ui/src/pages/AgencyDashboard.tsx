@@ -18469,6 +18469,7 @@ export default function AgencyDashboard() {
     agencyMode === "AI"
       ? [
           { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          { id: "marketplace", label: "Marketplace", icon: Store },
           {
             id: "roster",
             label: "Roster",

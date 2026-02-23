@@ -971,8 +971,11 @@ export function MarketplaceSection({
                     <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
                       <p className="text-gray-500">Willing to Travel</p>
                       <p className="font-semibold text-gray-900 mt-1">
-                        {detailsQuery.data?.availability?.willing_to_travel
-                          ? "Yes"
+                        {typeof detailsQuery.data?.availability
+                          ?.willing_to_travel === "boolean"
+                          ? detailsQuery.data?.availability?.willing_to_travel
+                            ? "Yes"
+                            : "No"
                           : "Not specified"}
                       </p>
                     </div>

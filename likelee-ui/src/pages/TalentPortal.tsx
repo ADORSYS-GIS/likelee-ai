@@ -272,10 +272,10 @@ export default function TalentPortal({
   });
 
   const { data: bookingPreferences } = useQuery({
-    queryKey: ["talentBookingPreferences", effectiveAgencyId || "all"],
+    queryKey: ["talentBookingPreferences", profileAgencyId || "all"],
     queryFn: async () =>
       await getTalentBookingPreferences(
-        effectiveAgencyId ? { agency_id: effectiveAgencyId } : {},
+        profileAgencyId ? { agency_id: profileAgencyId } : {},
       ),
     enabled: !!talentId,
   });
@@ -289,6 +289,28 @@ export default function TalentPortal({
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ["talentBookingPreferences"],
+      });
+    },
+    onError: (e: any) => {
+      const msg = String(e?.message || "");
+      const normalized = msg.toLowerCase();
+      if (
+        normalized.includes("agency_id is required") ||
+        normalized.includes("not connected to agency") ||
+        normalized.includes("missing required information")
+      ) {
+        toast({
+          variant: "destructive",
+          title: "Select an agency first",
+          description:
+            "Choose an agency in the Agency filter, then update booking preferences.",
+        });
+        return;
+      }
+      toast({
+        variant: "destructive",
+        title: "Failed to update booking preferences",
+        description: msg || "Please try again.",
       });
     },
   });
@@ -1474,8 +1496,8 @@ export default function TalentPortal({
                       onCheckedChange={(checked: boolean) =>
                         updateBookingPreferencesMutation.mutate({
                           willing_to_travel: checked,
-                          ...(effectiveAgencyId
-                            ? { agency_id: effectiveAgencyId }
+                          ...(profileAgencyId
+                            ? { agency_id: profileAgencyId }
                             : {}),
                         } as any)
                       }
@@ -1515,8 +1537,8 @@ export default function TalentPortal({
                             if (!raw) {
                               updateBookingPreferencesMutation.mutate({
                                 min_day_rate_cents: null,
-                                ...(effectiveAgencyId
-                                  ? { agency_id: effectiveAgencyId }
+                                ...(profileAgencyId
+                                  ? { agency_id: profileAgencyId }
                                   : {}),
                               } as any);
                               return;
@@ -1525,8 +1547,8 @@ export default function TalentPortal({
                             if (isNaN(dollars) || dollars < 0) return;
                             updateBookingPreferencesMutation.mutate({
                               min_day_rate_cents: Math.round(dollars * 100),
-                              ...(effectiveAgencyId
-                                ? { agency_id: effectiveAgencyId }
+                              ...(profileAgencyId
+                                ? { agency_id: profileAgencyId }
                                 : {}),
                             } as any);
                           }}

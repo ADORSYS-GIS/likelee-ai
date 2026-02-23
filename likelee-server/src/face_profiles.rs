@@ -635,6 +635,31 @@ pub async fn get_marketplace_profile_details(
             .iter()
             .map(|s| s.as_str())
             .collect::<Vec<_>>();
+
+        let availability_resp = state
+            .pg
+            .from("talent_booking_preferences")
+            .select("willing_to_travel,min_day_rate_cents,currency,updated_at")
+            .in_("talent_id", id_refs.clone())
+            .eq("agency_id", &effective_agency_id)
+            .order("updated_at.desc")
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let availability_status = availability_resp.status();
+        let availability_text = availability_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if availability_status.is_success() {
+            let rows: Vec<serde_json::Value> =
+                serde_json::from_str(&availability_text).unwrap_or_default();
+            if let Some(first) = rows.first() {
+                response["availability"] = first.clone();
+            }
+        }
+
         let portfolio_resp = state
             .pg
             .from("talent_portfolio_items")
