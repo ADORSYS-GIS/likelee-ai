@@ -159,6 +159,23 @@ pub async fn accept_invite(
         return Err((StatusCode::BAD_REQUEST, "invite is not pending".to_string()));
     }
 
+    // Ensure a creators row exists for this user so "talent is also creator" holds.
+    // Best-effort: if it already exists, the insert will fail and we ignore it.
+    let _ = state
+        .pg
+        .from("creators")
+        .insert(
+            json!({
+                "id": user.id,
+                "email": user.email,
+                "full_name": user.email.clone().unwrap_or_default(),
+                "updated_at": chrono::Utc::now().to_rfc3339(),
+            })
+            .to_string(),
+        )
+        .execute()
+        .await;
+
     // Mark invite accepted.
     let now = chrono::Utc::now().to_rfc3339();
     let update_payload = json!({

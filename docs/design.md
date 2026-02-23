@@ -179,43 +179,6 @@
   - Must remain disabled in normal environments.
 
 ### Stripe Subscriptions (Agency Billing)
-
-- `STRIPE_AGENCY_PRICE_ID`
-  - Stripe Price ID for the Agency subscription tier.
-- `STRIPE_SCALE_PRICE_ID`
-  - Stripe Price ID for the Scale subscription tier.
-- `STRIPE_AGENCY_BASIC_PACKAGE_PRICE_ID`
-  - Stripe Price ID for the Basic all-inclusive package (recurring).
-- `STRIPE_AGENCY_PRO_PACKAGE_PRICE_ID`
-  - Stripe Price ID for the Pro all-inclusive package (recurring).
-- `STRIPE_AGENCY_BASIC_BASE_PRICE_ID`
-  - Legacy (not used for Basic/Pro package checkout).
-- `STRIPE_AGENCY_PRO_BASE_PRICE_ID`
-  - Legacy (not used for Basic/Pro package checkout).
-- `STRIPE_AGENCY_ROSTER_5_10_PRICE_ID`
-  - Legacy (not used for Basic/Pro package checkout).
-- `STRIPE_AGENCY_ROSTER_11_50_PRICE_ID`
-  - Legacy (not used for Basic/Pro package checkout).
-- `STRIPE_AGENCY_ROSTER_51_100_PRICE_ID`
-  - Legacy (not used for Basic/Pro package checkout).
-- `STRIPE_AGENCY_ROSTER_100_PLUS_PRICE_ID`
-  - Legacy (not used for Basic/Pro package checkout).
-- `STRIPE_AGENCY_ADDON_IRL_BOOKING_PRICE_ID`
-  - Legacy (not used for Basic/Pro package checkout).
-- `STRIPE_AGENCY_ADDON_DEEPFAKE_5_10_PRICE_ID`
-  - Legacy (not used for Basic/Pro package checkout).
-- `STRIPE_AGENCY_ADDON_DEEPFAKE_11_50_PRICE_ID`
-  - Legacy (not used for Basic/Pro package checkout).
-- `STRIPE_AGENCY_ADDON_DEEPFAKE_51_100_PRICE_ID`
-  - Legacy (not used for Basic/Pro package checkout).
-- `STRIPE_AGENCY_ADDON_DEEPFAKE_100_PLUS_PRICE_ID`
-  - Legacy (not used for Basic/Pro package checkout).
-- `STRIPE_AGENCY_ADDON_TEAM_1_5_PRICE_ID`
-  - Legacy (not used for Basic/Pro package checkout).
-- `STRIPE_AGENCY_ADDON_TEAM_6_10_PRICE_ID`
-  - Legacy (not used for Basic/Pro package checkout).
-- `STRIPE_AGENCY_ADDON_TEAM_11_30_PRICE_ID`
-  - Legacy (not used for Basic/Pro package checkout).
 - `STRIPE_CHECKOUT_SUCCESS_URL`
   - URL Stripe redirects to after successful checkout.
 - `STRIPE_CHECKOUT_CANCEL_URL`
@@ -239,6 +202,9 @@
 
 - `PAYOUTS_ENABLED` (bool)
   - Enables Stripe Connect onboarding endpoints.
+- `INSTANT_PAYOUTS_ENABLED` (bool)
+  - Enables instant payouts.
+  - Standard payouts are not supported.
 - `STRIPE_SECRET_KEY`
   - Stripe secret key used server-side.
 - `STRIPE_CLIENT_ID`

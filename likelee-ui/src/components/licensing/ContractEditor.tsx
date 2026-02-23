@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
@@ -8,8 +8,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
+import { EditorContent, useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Link from "@tiptap/extension-link";
 
 interface ContractEditorProps {
   body: string;
@@ -30,48 +31,34 @@ export const ContractEditor: React.FC<ContractEditorProps> = ({
   placeholder,
   readOnly = false,
 }) => {
-  const quillRef = useRef<ReactQuill>(null);
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Link.configure({
+        openOnClick: true,
+        autolink: true,
+        linkOnPaste: true,
+      }),
+    ],
+    content: body,
+    editable: !readOnly,
+    onUpdate: ({ editor }) => {
+      if (format === "html") {
+        onChangeBody(editor.getHTML());
+      }
+    },
+  });
 
   const insertVariable = (variable: string) => {
     if (readOnly) return;
 
-    if (format === "html" && quillRef.current) {
-      const editor = quillRef.current.getEditor();
-      const range = editor.getSelection();
-      const insertIndex = range ? range.index : editor.getLength();
-      editor.insertText(insertIndex, variable);
+    if (format === "html" && editor) {
+      editor.commands.focus();
+      editor.commands.insertContent(variable);
     } else {
       onChangeBody(body + variable);
     }
   };
-
-  const quillModules = {
-    toolbar: [
-      [{ header: [1, 2, false] }],
-      ["bold", "italic", "underline", "strike", "blockquote"],
-      [
-        { list: "ordered" },
-        { list: "bullet" },
-        { indent: "-1" },
-        { indent: "+1" },
-      ],
-      ["link"],
-      ["clean"],
-    ],
-  };
-
-  const quillFormats = [
-    "header",
-    "bold",
-    "italic",
-    "underline",
-    "strike",
-    "blockquote",
-    "list",
-    "bullet",
-    "indent",
-    "link",
-  ];
 
   return (
     <div className="space-y-6">
@@ -131,17 +118,58 @@ export const ContractEditor: React.FC<ContractEditorProps> = ({
         </Label>
         {format === "html" ? (
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden min-h-[400px]">
-            <ReactQuill
-              ref={quillRef}
-              theme="snow"
-              value={body}
-              onChange={onChangeBody}
-              modules={quillModules}
-              formats={quillFormats}
-              readOnly={readOnly}
-              placeholder={placeholder || "Write your contract here..."}
-              className="h-[400px] flex flex-col"
-            />
+            {!readOnly ? (
+              <div className="border-b border-slate-200 bg-slate-50 px-3 py-2 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className="text-xs font-semibold px-2 py-1 rounded border border-slate-200 bg-white"
+                  onClick={() => editor?.chain().focus().toggleBold().run()}
+                  disabled={!editor}
+                >
+                  Bold
+                </button>
+                <button
+                  type="button"
+                  className="text-xs font-semibold px-2 py-1 rounded border border-slate-200 bg-white"
+                  onClick={() => editor?.chain().focus().toggleItalic().run()}
+                  disabled={!editor}
+                >
+                  Italic
+                </button>
+                <button
+                  type="button"
+                  className="text-xs font-semibold px-2 py-1 rounded border border-slate-200 bg-white"
+                  onClick={() =>
+                    editor?.chain().focus().toggleBulletList().run()
+                  }
+                  disabled={!editor}
+                >
+                  Bullet
+                </button>
+                <button
+                  type="button"
+                  className="text-xs font-semibold px-2 py-1 rounded border border-slate-200 bg-white"
+                  onClick={() =>
+                    editor?.chain().focus().toggleOrderedList().run()
+                  }
+                  disabled={!editor}
+                >
+                  Ordered
+                </button>
+              </div>
+            ) : null}
+
+            <div className="p-6 min-h-[400px]">
+              <EditorContent
+                editor={editor}
+                className="prose prose-sm max-w-none focus:outline-none"
+              />
+              {(!editor || editor.isEmpty) && !readOnly && placeholder ? (
+                <div className="pointer-events-none select-none text-slate-400 -mt-[400px] p-6">
+                  {placeholder}
+                </div>
+              ) : null}
+            </div>
           </div>
         ) : (
           <Textarea
@@ -153,25 +181,6 @@ export const ContractEditor: React.FC<ContractEditorProps> = ({
           />
         )}
       </div>
-      <style>{`
-        .ql-container.ql-snow {
-          border: none !important;
-          font-family: inherit;
-          font-size: 0.875rem;
-        }
-        .ql-toolbar.ql-snow {
-          border: none !important;
-          border-bottom: 1px solid #e2e8f0 !important;
-          background: #f8fafc;
-        }
-        .ql-editor {
-          min-height: 350px;
-          padding: 1.5rem;
-        }
-        .ql-editor.ql-blank::before {
-          left: 1.5rem;
-        }
-      `}</style>
     </div>
   );
 };
