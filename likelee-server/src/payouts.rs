@@ -14,6 +14,31 @@ use crate::config::AppState;
 use std::str::FromStr;
 // use stripe_sdk; // Implicitly available
 
+fn sanitized_error_response(
+    status_code: u16,
+    text: String,
+) -> (StatusCode, Json<serde_json::Value>) {
+    let (code, body) = sanitize_db_error(status_code, text);
+    let v: serde_json::Value = serde_json::from_str(&body).unwrap_or_else(
+        |_| json!({"error":"An internal error occurred. Our team has been notified."}),
+    );
+    (code, Json(json!({"status":"error","error": v})))
+}
+
+fn internal_error_response<E: std::fmt::Display>(
+    context: &str,
+    err: E,
+) -> (StatusCode, Json<serde_json::Value>) {
+    error!(context = context, error = %err, "Internal error");
+    (
+        StatusCode::INTERNAL_SERVER_ERROR,
+        Json(json!({
+            "status":"error",
+            "error":"internal_error"
+        })),
+    )
+}
+
 async fn resolve_talent_creator_id(
     state: &AppState,
     user: &AuthUser,
@@ -139,10 +164,7 @@ pub async fn create_onboarding_link(
     {
         Ok(r) => r,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"status":"error","error":e.to_string()})),
-            )
+            return internal_error_response("create_onboarding_link.fetch_profile", e);
         }
     };
     let text = prof_resp.text().await.unwrap_or("[]".into());
@@ -193,6 +215,16 @@ pub async fn create_onboarding_link(
     if account_id.is_empty() {
         let mut params = stripe_sdk::CreateAccount::new();
         params.type_ = Some(stripe_sdk::AccountType::Express);
+        params.settings = Some(stripe_sdk::AccountSettingsParams {
+            payouts: Some(stripe_sdk::PayoutSettingsParams {
+                schedule: Some(stripe_sdk::TransferScheduleParams {
+                    interval: Some(stripe_sdk::TransferScheduleInterval::Manual),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }),
+            ..Default::default()
+        });
         params.capabilities = Some(stripe_sdk::CreateAccountCapabilities {
             card_payments: Some(stripe_sdk::CreateAccountCapabilitiesCardPayments {
                 requested: Some(true),
@@ -217,10 +249,7 @@ pub async fn create_onboarding_link(
                     .await;
             }
             Err(e) => {
-                return (
-                    StatusCode::BAD_GATEWAY,
-                    Json(json!({"status":"error","error":e.to_string()})),
-                )
+                return internal_error_response("create_onboarding_link.stripe_account_create", e);
             }
         }
     }
@@ -243,10 +272,11 @@ pub async fn create_onboarding_link(
     link_params.refresh_url = Some(state.stripe_refresh_url.as_str());
     match stripe_sdk::AccountLink::create(&client, link_params).await {
         Ok(link) => (StatusCode::OK, Json(json!({"url": link.url}))),
-        Err(e) => (
-            StatusCode::BAD_GATEWAY,
-            Json(json!({"status":"error","error":e.to_string()})),
-        ),
+        Err(e) => {
+            let resp =
+                internal_error_response("create_onboarding_link.stripe_account_link_create", e);
+            (resp.0, resp.1)
+        }
     }
 }
 
@@ -285,19 +315,13 @@ pub async fn get_account_status(
     {
         Ok(r) => r,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"status":"error","error":e.to_string()})),
-            )
+            return internal_error_response("get_account_status.fetch_profile", e);
         }
     };
     let text = match resp.text().await {
         Ok(t) => t,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"status":"error","error":e.to_string()})),
-            )
+            return internal_error_response("get_account_status.read_body", e);
         }
     };
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
@@ -404,10 +428,7 @@ pub async fn create_agency_onboarding_link(
     {
         Ok(r) => r,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"status":"error","error":e.to_string()})),
-            )
+            return internal_error_response("create_agency_onboarding_link.fetch_agency", e);
         }
     };
     let status = agency_resp.status();
@@ -428,10 +449,7 @@ pub async fn create_agency_onboarding_link(
                 })),
             );
         }
-        return (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"status":"error","error":text})),
-        );
+        return sanitized_error_response(status.as_u16(), text);
     }
     let mut rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
     if rows.is_empty() {
@@ -466,10 +484,7 @@ pub async fn create_agency_onboarding_link(
             .execute()
             .await;
         if let Err(e) = insert_resp {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"status":"error","error":e.to_string()})),
-            );
+            return internal_error_response("create_agency_onboarding_link.create_agency_row", e);
         }
 
         // Re-fetch after insertion
@@ -484,10 +499,7 @@ pub async fn create_agency_onboarding_link(
         {
             Ok(r) => r,
             Err(e) => {
-                return (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(json!({"status":"error","error":e.to_string()})),
-                )
+                return internal_error_response("create_agency_onboarding_link.refetch_agency", e);
             }
         };
         let status = agency_resp.status();
@@ -507,10 +519,7 @@ pub async fn create_agency_onboarding_link(
                     })),
                 );
             }
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"status":"error","error":text})),
-            );
+            return sanitized_error_response(status.as_u16(), text);
         }
         rows = serde_json::from_str(&text).unwrap_or_default();
         if rows.is_empty() {
@@ -536,6 +545,16 @@ pub async fn create_agency_onboarding_link(
     if account_id.is_empty() {
         let mut params = stripe_sdk::CreateAccount::new();
         params.type_ = Some(stripe_sdk::AccountType::Express);
+        params.settings = Some(stripe_sdk::AccountSettingsParams {
+            payouts: Some(stripe_sdk::PayoutSettingsParams {
+                schedule: Some(stripe_sdk::TransferScheduleParams {
+                    interval: Some(stripe_sdk::TransferScheduleInterval::Manual),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }),
+            ..Default::default()
+        });
         params.capabilities = Some(stripe_sdk::CreateAccountCapabilities {
             card_payments: Some(stripe_sdk::CreateAccountCapabilitiesCardPayments {
                 requested: Some(true),
@@ -558,10 +577,10 @@ pub async fn create_agency_onboarding_link(
                     .await;
             }
             Err(e) => {
-                return (
-                    StatusCode::BAD_GATEWAY,
-                    Json(json!({"status":"error","error":e.to_string()})),
-                )
+                return internal_error_response(
+                    "create_agency_onboarding_link.stripe_account_create",
+                    e,
+                );
             }
         }
     }
@@ -583,9 +602,9 @@ pub async fn create_agency_onboarding_link(
     link_params.refresh_url = Some(state.stripe_refresh_url.as_str());
     match stripe_sdk::AccountLink::create(&client, link_params).await {
         Ok(link) => (StatusCode::OK, Json(json!({"url": link.url}))),
-        Err(e) => (
-            StatusCode::BAD_GATEWAY,
-            Json(json!({"status":"error","error":e.to_string()})),
+        Err(e) => internal_error_response(
+            "create_agency_onboarding_link.stripe_account_link_create",
+            e,
         ),
     }
 }
@@ -605,20 +624,14 @@ pub async fn get_agency_account_status(
     {
         Ok(r) => r,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"status":"error","error":e.to_string()})),
-            )
+            return internal_error_response("get_agency_account_status.fetch_agency", e);
         }
     };
     let status = resp.status();
     let text = match resp.text().await {
         Ok(t) => t,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"status":"error","error":e.to_string()})),
-            )
+            return internal_error_response("get_agency_account_status.read_body", e);
         }
     };
     if !status.is_success() {
@@ -636,10 +649,7 @@ pub async fn get_agency_account_status(
                 })),
             );
         }
-        return (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"status":"error","error":text})),
-        );
+        return sanitized_error_response(status.as_u16(), text);
     }
     let mut rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
     if rows.is_empty() {
@@ -787,19 +797,16 @@ pub async fn get_balance(
                     ),
                 );
             }
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"status":"error","error":msg})),
-            );
+            return sanitized_error_response(StatusCode::INTERNAL_SERVER_ERROR.as_u16(), msg);
         }
     };
     let text = match resp.text().await {
         Ok(t) => t,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"status":"error","error":e.to_string()})),
-            )
+            return sanitized_error_response(
+                StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+                e.to_string(),
+            );
         }
     };
     let mut rows: Vec<BalanceRow> = serde_json::from_str(&text).unwrap_or_default();
@@ -928,10 +935,10 @@ pub async fn request_payout(
     {
         Ok(r) => r,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"status":"error","error":e.to_string()})),
-            )
+            return sanitized_error_response(
+                StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+                e.to_string(),
+            );
         }
     };
     let text = bal_resp.text().await.unwrap_or("[]".to_string());
@@ -984,19 +991,16 @@ pub async fn request_payout(
     {
         Ok(r) => r,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"status":"error","error":e.to_string()})),
-            )
+            return sanitized_error_response(
+                StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+                e.to_string(),
+            );
         }
     };
     let st = ins.status();
     let text = ins.text().await.unwrap_or_else(|_| "".into());
     if !st.is_success() {
-        return (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({"status":"error","error": text})),
-        );
+        return sanitized_error_response(st.as_u16(), text);
     }
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
     let created = rows.first().cloned().unwrap_or(json!({"status":"ok"}));
@@ -1264,10 +1268,7 @@ pub async fn get_history(
     {
         Ok(r) => r,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"status":"error","error":e.to_string()})),
-            )
+            return internal_error_response("get_history.fetch", e);
         }
     };
     let text = resp.text().await.unwrap_or("[]".into());
@@ -2677,20 +2678,14 @@ pub async fn get_agency_balance(
     {
         Ok(r) => r,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"status":"error","error":e.to_string()})),
-            )
+            return internal_error_response("get_agency_balance.fetch", e);
         }
     };
 
     let balance_text = match balance_resp.text().await {
         Ok(t) => t,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"status":"error","error":e.to_string()})),
-            )
+            return internal_error_response("get_agency_balance.read_body", e);
         }
     };
 
@@ -2811,10 +2806,7 @@ pub async fn request_agency_payout(
     {
         Ok(r) => r,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"status":"error","error":e.to_string()})),
-            )
+            return internal_error_response("request_agency_payout.fetch_balance", e);
         }
     };
 
@@ -2864,10 +2856,7 @@ pub async fn request_agency_payout(
     {
         Ok(r) => r,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"status":"error","error":e.to_string()})),
-            )
+            return internal_error_response("request_agency_payout.fetch_agency_account", e);
         }
     };
 
@@ -2920,10 +2909,7 @@ pub async fn request_agency_payout(
     {
         Ok(r) => r,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"status":"error","error":e.to_string()})),
-            )
+            return internal_error_response("request_agency_payout.insert_request", e);
         }
     };
 
@@ -3197,10 +3183,7 @@ pub async fn get_agency_payout_history(
     {
         Ok(r) => r,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"status":"error","error":e.to_string()})),
-            )
+            return internal_error_response("get_agency_payout_history.fetch", e);
         }
     };
 
@@ -3209,18 +3192,12 @@ pub async fn get_agency_payout_history(
     let text = match resp.text().await {
         Ok(t) => t,
         Err(e) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!({"status":"error","error":e.to_string()})),
-            )
+            return internal_error_response("get_agency_payout_history.read_body", e);
         }
     };
 
     if !status.is_success() {
-        return (
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
-            Json(json!({"status":"error","error":text})),
-        );
+        return sanitized_error_response(status.as_u16(), text);
     }
 
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
