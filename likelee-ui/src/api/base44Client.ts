@@ -6,6 +6,66 @@ type RequestConfig = {
   params?: Record<string, string | number | boolean | undefined>;
 };
 
+function extractErrorMessage(errorData: any): string {
+  if (!errorData) return "Something went wrong. Please try again.";
+
+  let body = errorData;
+  if (typeof body === "string") {
+    try {
+      body = JSON.parse(body);
+    } catch {
+      return body;
+    }
+  }
+
+  if (body?.status === "error") {
+    const err = body?.error;
+    if (typeof err === "string") {
+      try {
+        const parsed = JSON.parse(err);
+        return (
+          parsed?.error ||
+          parsed?.message ||
+          parsed?.details ||
+          "Something went wrong. Please try again."
+        );
+      } catch {
+        return err;
+      }
+    }
+    if (typeof err === "object" && err) {
+      return (
+        err?.error ||
+        err?.message ||
+        err?.details ||
+        "Something went wrong. Please try again."
+      );
+    }
+  }
+
+  return (
+    body?.error ||
+    body?.message ||
+    body?.details ||
+    "Something went wrong. Please try again."
+  );
+}
+
+function throwBackendError(
+  method: string,
+  url: string,
+  status: number,
+  errorData: any,
+): never {
+  const msg = extractErrorMessage(errorData);
+  const err: any = new Error(msg);
+  err.status = status;
+  err.method = method;
+  err.url = url;
+  err.data = errorData;
+  throw err;
+}
+
 function buildUrl(
   base: string,
   url: string,
@@ -89,7 +149,7 @@ export const base44 = {
       // Try to parse as JSON for structured errors
       try {
         const errorData = JSON.parse(txt);
-        throw new Error(JSON.stringify(errorData));
+        throwBackendError("GET", url, res.status, errorData);
       } catch {
         // If not JSON, throw with status and text
         throw new Error(`GET ${url} failed: ${res.status} ${txt}`);
@@ -129,7 +189,7 @@ export const base44 = {
       const txt = await res.text();
       try {
         const errorData = JSON.parse(txt);
-        throw new Error(JSON.stringify(errorData));
+        throwBackendError("POST", url, res.status, errorData);
       } catch {
         throw new Error(`POST ${url} failed: ${res.status} ${txt}`);
       }
@@ -168,7 +228,7 @@ export const base44 = {
       const txt = await res.text();
       try {
         const errorData = JSON.parse(txt);
-        throw new Error(JSON.stringify(errorData));
+        throwBackendError("PUT", url, res.status, errorData);
       } catch {
         throw new Error(`PUT ${url} failed: ${res.status} ${txt}`);
       }
@@ -203,7 +263,7 @@ export const base44 = {
       const txt = await res.text();
       try {
         const errorData = JSON.parse(txt);
-        throw new Error(JSON.stringify(errorData));
+        throwBackendError("DELETE", url, res.status, errorData);
       } catch {
         throw new Error(`DELETE ${url} failed: ${res.status} ${txt}`);
       }

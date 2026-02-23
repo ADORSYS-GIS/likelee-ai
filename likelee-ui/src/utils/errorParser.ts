@@ -7,6 +7,42 @@ export function parseBackendError(error: any): string {
 
   const originalMessage = error.message || String(error);
 
+  // If we got a structured error object (e.g. from base44Client throwBackendError)
+  // prefer that over parsing message strings.
+  const structured = (error as any)?.data;
+  if (structured) {
+    try {
+      const body =
+        typeof structured === "string" ? JSON.parse(structured) : structured;
+      if (body?.status === "error") {
+        const err = body?.error;
+        if (typeof err === "string") {
+          try {
+            const parsed = JSON.parse(err);
+            return (
+              parsed?.error ||
+              parsed?.message ||
+              parsed?.details ||
+              "Something went wrong. Please check your data and try again."
+            );
+          } catch {
+            return err;
+          }
+        }
+        if (typeof err === "object" && err) {
+          return (
+            (err as any)?.error ||
+            (err as any)?.message ||
+            (err as any)?.details ||
+            "Something went wrong. Please check your data and try again."
+          );
+        }
+      }
+    } catch {
+      // ignore and fall back to message parsing
+    }
+  }
+
   // Check if it matches our client's error format: "METHOD URL failed: STATUS BODY"
   const match = originalMessage.match(/failed: \d+ (.+)$/);
   if (match && match[1]) {
@@ -15,7 +51,28 @@ export function parseBackendError(error: any): string {
 
       // Handle our new sanitized error format
       if (body.error) {
-        return body.error;
+        if (typeof body.error === "string") {
+          try {
+            const parsed = JSON.parse(body.error);
+            return (
+              parsed?.error ||
+              parsed?.message ||
+              parsed?.details ||
+              "Something went wrong. Please check your data and try again."
+            );
+          } catch {
+            return body.error;
+          }
+        }
+        if (typeof body.error === "object") {
+          return (
+            (body.error as any)?.error ||
+            (body.error as any)?.message ||
+            (body.error as any)?.details ||
+            "Something went wrong. Please check your data and try again."
+          );
+        }
+        return "Something went wrong. Please check your data and try again.";
       }
 
       // Handle raw PostgREST errors (in case some endpoints aren't sanitized yet)

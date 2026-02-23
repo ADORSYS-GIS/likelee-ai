@@ -168,6 +168,7 @@ import {
 } from "@/api/functions";
 import ClientCRMView from "@/components/crm/ClientCRMView";
 import * as crmApi from "@/api/crm";
+import { parseBackendError } from "@/utils/errorParser";
 
 const STATUS_MAP: { [key: string]: string } = {
   new_lead: "New Lead",
@@ -261,7 +262,7 @@ const ConnectBankView = () => {
       } catch (e: any) {
         toast({
           title: "Failed to load bank connection status",
-          description: String(e?.message || e),
+          description: parseBackendError(e),
           variant: "destructive" as any,
         });
       } finally {
@@ -1133,7 +1134,7 @@ const ConnectBankViewAlt = () => {
       } catch (e: any) {
         toast({
           title: "Failed to load bank connection status",
-          description: String(e?.message || e),
+          description: parseBackendError(e),
           variant: "destructive" as any,
         });
       } finally {
