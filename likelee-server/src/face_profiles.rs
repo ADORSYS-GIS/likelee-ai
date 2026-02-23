@@ -450,7 +450,6 @@ pub async fn search_marketplace_profiles(
                     .get(creator_id)
                     .map(|s| s.as_str())
                 {
-                    Some("accepted") => "connected",
                     Some("pending") => "pending",
                     Some("declined") => "declined",
                     _ => "none",
@@ -891,10 +890,8 @@ pub async fn create_marketplace_connection_request(
             .and_then(|v| v.as_str())
             .unwrap_or("pending")
             .to_lowercase();
-        if invite_status == "accepted" {
-            return Ok(Json(serde_json::json!({"status":"connected"})));
-        }
-        if invite_status == "declined" {
+        if invite_status == "accepted" || invite_status == "declined" || invite_status == "revoked"
+        {
             if invite_id.is_empty() {
                 return Err((
                     StatusCode::INTERNAL_SERVER_ERROR,
@@ -902,7 +899,7 @@ pub async fn create_marketplace_connection_request(
                 ));
             }
 
-            // Re-invite by reusing the existing declined row instead of creating duplicates.
+            // Re-invite by reusing the existing historical row instead of creating duplicates.
             let reactivate_payload = serde_json::json!({
                 "status": "pending",
                 "responded_at": serde_json::Value::Null,

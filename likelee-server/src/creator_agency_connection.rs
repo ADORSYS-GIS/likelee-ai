@@ -38,12 +38,13 @@ pub async fn list_invites(
     user: AuthUser,
 ) -> Result<Json<ListInvitesResponse>, (StatusCode, String)> {
     RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
+    let creator_id = resolve_effective_creator_id(&state, &user).await?;
 
     let resp = state
         .pg
         .from("creator_agency_invites")
         .select("id,agency_id,creator_id,status,created_at,responded_at,updated_at,agencies(agency_name,logo_url,email,website)")
-        .eq("creator_id", &user.id)
+        .eq("creator_id", &creator_id)
         .order("created_at.desc")
         .execute()
         .await
@@ -84,6 +85,7 @@ pub async fn decline_invite(
     Path(id): Path<String>,
 ) -> Result<Json<ActionResponse>, (StatusCode, String)> {
     RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
+    let creator_id = resolve_effective_creator_id(&state, &user).await?;
 
     let payload = json!({
         "status": "declined",
@@ -95,7 +97,7 @@ pub async fn decline_invite(
         .pg
         .from("creator_agency_invites")
         .eq("id", &id)
-        .eq("creator_id", &user.id)
+        .eq("creator_id", &creator_id)
         .update(payload.to_string())
         .execute()
         .await
@@ -130,6 +132,7 @@ pub async fn accept_invite(
     Path(id): Path<String>,
 ) -> Result<Json<ActionResponse>, (StatusCode, String)> {
     RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
+    let creator_id = resolve_effective_creator_id(&state, &user).await?;
 
     // Load invite to get agency_id and ensure it belongs to this creator.
     let invite_resp = state
@@ -137,7 +140,7 @@ pub async fn accept_invite(
         .from("creator_agency_invites")
         .select("agency_id,creator_id,status")
         .eq("id", &id)
-        .eq("creator_id", &user.id)
+        .eq("creator_id", &creator_id)
         .limit(1)
         .execute()
         .await
@@ -166,7 +169,7 @@ pub async fn accept_invite(
         .from("creators")
         .insert(
             json!({
-                "id": user.id,
+                "id": creator_id,
                 "email": user.email,
                 "full_name": user.email.clone().unwrap_or_default(),
                 "updated_at": chrono::Utc::now().to_rfc3339(),
@@ -188,7 +191,7 @@ pub async fn accept_invite(
         .pg
         .from("creator_agency_invites")
         .eq("id", &id)
-        .eq("creator_id", &user.id)
+        .eq("creator_id", &creator_id)
         .update(update_payload.to_string())
         .execute()
         .await
@@ -200,7 +203,7 @@ pub async fn accept_invite(
         .from("agency_users")
         .select("id")
         .eq("agency_id", &invite.agency_id)
-        .eq("creator_id", &user.id)
+        .eq("creator_id", &creator_id)
         .limit(1)
         .execute()
         .await
@@ -220,7 +223,7 @@ pub async fn accept_invite(
             .pg
             .from("creators")
             .select("full_name,email")
-            .eq("id", &user.id)
+            .eq("id", &creator_id)
             .limit(1)
             .execute()
             .await
@@ -248,7 +251,7 @@ pub async fn accept_invite(
 
         let insert_payload = json!({
             "agency_id": invite.agency_id,
-            "creator_id": user.id,
+            "creator_id": creator_id,
             "full_legal_name": full_legal_name,
             "email": user.email,
             "status": "active",
@@ -259,6 +262,24 @@ pub async fn accept_invite(
             .pg
             .from("agency_users")
             .insert(insert_payload.to_string())
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    } else {
+        // Reactivate an existing row (e.g. previously disconnected).
+        state
+            .pg
+            .from("agency_users")
+            .eq("agency_id", &invite.agency_id)
+            .eq("creator_id", &creator_id)
+            .update(
+                json!({
+                    "status": "active",
+                    "email": user.email,
+                    "updated_at": chrono::Utc::now().to_rfc3339(),
+                })
+                .to_string(),
+            )
             .execute()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -292,12 +313,13 @@ pub async fn list_connections(
     user: AuthUser,
 ) -> Result<Json<ListConnectionsResponse>, (StatusCode, String)> {
     RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
+    let creator_id = resolve_effective_creator_id(&state, &user).await?;
 
     let resp = state
         .pg
         .from("agency_users")
         .select("agency_id,agencies(agency_name,logo_url)")
-        .eq("creator_id", &user.id)
+        .eq("creator_id", &creator_id)
         .eq("status", "active")
         .execute()
         .await
@@ -323,6 +345,7 @@ pub async fn disconnect_agency(
     Path(agency_id): Path<String>,
 ) -> Result<Json<ActionResponse>, (StatusCode, String)> {
     RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
+    let creator_id = resolve_effective_creator_id(&state, &user).await?;
 
     let payload = json!({
         "status": "inactive",
@@ -332,7 +355,7 @@ pub async fn disconnect_agency(
     state
         .pg
         .from("agency_users")
-        .eq("creator_id", &user.id)
+        .eq("creator_id", &creator_id)
         .eq("agency_id", &agency_id)
         .update(payload.to_string())
         .execute()
@@ -342,4 +365,39 @@ pub async fn disconnect_agency(
     Ok(Json(ActionResponse {
         status: "ok".to_string(),
     }))
+}
+
+async fn resolve_effective_creator_id(
+    state: &AppState,
+    user: &AuthUser,
+) -> Result<String, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("agency_users")
+        .select("creator_id")
+        .or(format!("id.eq.{},user_id.eq.{}", user.id, user.id))
+        .order("updated_at.desc")
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        let err = resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let mapped = rows
+        .first()
+        .and_then(|r| r.get("creator_id"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
+
+    Ok(mapped.unwrap_or_else(|| user.id.clone()))
 }

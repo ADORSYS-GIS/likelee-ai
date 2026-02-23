@@ -494,12 +494,12 @@ pub async fn get_magic_link_by_token(
     })))
 }
 
-async fn ensure_creator_row_exists(state: &AppState, user: &AuthUser) {
+async fn ensure_creator_row_exists(state: &AppState, user: &AuthUser, creator_id: &str) {
     let resp = state
         .pg
         .from("creators")
         .select("id")
-        .eq("id", &user.id)
+        .eq("id", creator_id)
         .limit(1)
         .execute()
         .await
@@ -520,7 +520,7 @@ async fn ensure_creator_row_exists(state: &AppState, user: &AuthUser) {
         .from("creators")
         .insert(
             json!({
-                "id": user.id,
+                "id": creator_id,
                 "email": user.email,
                 "full_name": user.email.clone().unwrap_or_default(),
                 "updated_at": now_rfc3339(),
@@ -537,6 +537,7 @@ pub async fn accept_by_token(
     Path(token): Path<String>,
 ) -> Result<Json<ActionResponse>, (StatusCode, String)> {
     RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
+    let creator_id = resolve_effective_creator_id(&state, &user).await?;
 
     let resp = state
         .pg
@@ -572,7 +573,7 @@ pub async fn accept_by_token(
         ));
     }
 
-    ensure_creator_row_exists(&state, &user).await;
+    ensure_creator_row_exists(&state, &user, &creator_id).await;
 
     // Upsert / reactivate agency_users row
     let au_resp = state
@@ -580,7 +581,7 @@ pub async fn accept_by_token(
         .from("agency_users")
         .select("id,status")
         .eq("agency_id", &inv.agency_id)
-        .eq("creator_id", &user.id)
+        .eq("creator_id", &creator_id)
         .limit(1)
         .execute()
         .await
@@ -597,7 +598,7 @@ pub async fn accept_by_token(
             .pg
             .from("agency_users")
             .eq("agency_id", &inv.agency_id)
-            .eq("creator_id", &user.id)
+            .eq("creator_id", &creator_id)
             .update(
                 json!({
                     "status": "active",
@@ -615,7 +616,7 @@ pub async fn accept_by_token(
             .pg
             .from("creators")
             .select("full_name,email")
-            .eq("id", &user.id)
+            .eq("id", &creator_id)
             .single()
             .execute()
             .await
@@ -647,7 +648,7 @@ pub async fn accept_by_token(
             .insert(
                 json!({
                     "agency_id": inv.agency_id,
-                    "creator_id": user.id,
+                    "creator_id": creator_id,
                     "full_legal_name": full_legal_name,
                     "email": user.email,
                     "status": "active",
@@ -679,6 +680,41 @@ pub async fn accept_by_token(
     Ok(Json(ActionResponse {
         status: "ok".to_string(),
     }))
+}
+
+async fn resolve_effective_creator_id(
+    state: &AppState,
+    user: &AuthUser,
+) -> Result<String, (StatusCode, String)> {
+    let resp = state
+        .pg
+        .from("agency_users")
+        .select("creator_id")
+        .or(format!("id.eq.{},user_id.eq.{}", user.id, user.id))
+        .order("updated_at.desc")
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        let err = resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let mapped = rows
+        .first()
+        .and_then(|r| r.get("creator_id"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
+
+    Ok(mapped.unwrap_or_else(|| user.id.clone()))
 }
 
 pub async fn decline_by_token(
