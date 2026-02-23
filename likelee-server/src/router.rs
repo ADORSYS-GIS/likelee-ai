@@ -50,14 +50,6 @@ pub fn build_router(state: AppState) -> Router {
             "/api/talent/licensing/earnings-by-campaign",
             get(crate::talent::get_earnings_by_campaign),
         )
-        .route(
-            "/api/talent/payouts/balance",
-            get(crate::payouts::get_my_balance),
-        )
-        .route(
-            "/api/talent/payouts/request",
-            post(crate::payouts::request_my_payout),
-        )
         .route("/api/talent/analytics", get(crate::talent::get_analytics))
         .route(
             "/api/talent/portfolio-items",
@@ -74,14 +66,6 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/talent/notifications/:id/read",
             post(crate::talent::mark_notification_read),
-        )
-        .route(
-            "/api/talent/payouts/account-status",
-            get(crate::payouts::get_my_account_status),
-        )
-        .route(
-            "/api/talent/payouts/onboarding-link",
-            get(crate::payouts::create_my_onboarding_link),
         )
         .route(
             "/api/creator/agency-connections",
@@ -562,40 +546,7 @@ pub fn build_router(state: AppState) -> Router {
             "/api/book-outs/:id",
             delete(crate::book_outs::delete_book_out),
         )
-        // Payouts
-        .route(
-            "/api/payouts/onboarding_link",
-            post(crate::payouts::create_onboarding_link),
-        )
-        .route(
-            "/api/payouts/account_status",
-            get(crate::payouts::get_account_status),
-        )
-        .route("/api/payouts/balance", get(crate::payouts::get_balance))
-        .route("/api/payouts/request", post(crate::payouts::request_payout))
-        .route("/api/payouts/history", get(crate::payouts::get_history))
         .route("/webhooks/stripe", post(crate::payouts::stripe_webhook))
-        // Agency Stripe Connect (Accounting)
-        .route(
-            "/api/agency/payouts/onboarding_link",
-            post(crate::payouts::create_agency_onboarding_link),
-        )
-        .route(
-            "/api/agency/payouts/account_status",
-            get(crate::payouts::get_agency_account_status),
-        )
-        .route(
-            "/api/agency/payouts/balance",
-            get(crate::payouts::get_agency_balance),
-        )
-        .route(
-            "/api/agency/payouts/request",
-            post(crate::payouts::request_agency_payout),
-        )
-        .route(
-            "/api/agency/payouts/history",
-            get(crate::payouts::get_agency_payout_history),
-        )
         .route(
             "/api/agency/billing/checkout",
             post(crate::billing::create_agency_subscription_checkout),

@@ -1210,9 +1210,9 @@ pub async fn stripe_webhook(
         );
     }
 
-    // Best-effort: also parse into typed Event to support Connect/payout handling.
-    // If this fails, we still process subscription events from raw JSON.
-    let typed_event: Option<stripe_sdk::Event> = serde_json::from_str(&payload).ok();
+    // Best-effort: also parse into typed Event; currently unused but kept for potential
+    // future event handlers without reintroducing signature parsing changes.
+    let _typed_event: Option<stripe_sdk::Event> = serde_json::from_str(&payload).ok();
     let etype = payload_json
         .get("type")
         .and_then(|v| v.as_str())
@@ -1383,121 +1383,6 @@ pub async fn stripe_webhook(
                     },
                 )
                 .await;
-            }
-        }
-        // Connected Account status updates
-        "account.updated" => {
-            if let Some(event) = typed_event {
-                if let stripe_sdk::EventObject::Account(acct) = event.data.object {
-                    let account_id = acct.id.to_string();
-                    let payouts_enabled = acct.payouts_enabled.unwrap_or(false);
-                    let disabled_reason = acct
-                        .requirements
-                        .and_then(|r| r.disabled_reason)
-                        .unwrap_or_default();
-                    if !account_id.is_empty() {
-                        let _ = state
-                            .pg
-                            .from("creators")
-                            .eq("stripe_connect_account_id", account_id)
-                            .update(
-                                json!({
-                                    "payouts_enabled": payouts_enabled,
-                                    "last_payout_error": disabled_reason
-                                })
-                                .to_string(),
-                            )
-                            .execute()
-                            .await;
-                    }
-                }
-            }
-        }
-        // Transfer lifecycle
-        "transfer.created" => {
-            if let Some(event) = typed_event {
-                if let stripe_sdk::EventObject::Transfer(t) = event.data.object {
-                    let tid = t.id.to_string();
-                    let _ = state
-                        .pg
-                        .from("payout_requests")
-                        .eq("stripe_transfer_id", tid)
-                        .update(json!({"status":"processing"}).to_string())
-                        .execute()
-                        .await;
-                }
-            }
-        }
-        "transfer.reversed" => {
-            if let Some(event) = typed_event {
-                if let stripe_sdk::EventObject::Transfer(t) = event.data.object {
-                    let tid = t.id.to_string();
-                    let _ = state
-                        .pg
-                        .from("payout_requests")
-                        .eq("stripe_transfer_id", tid)
-                        .update(
-                            json!({"status":"failed","failure_reason":"transfer_reversed"})
-                                .to_string(),
-                        )
-                        .execute()
-                        .await;
-                }
-            }
-        }
-        // Payout lifecycle on connected accounts
-        "payout.paid" | "payout.failed" | "payout.canceled" | "payout.created" => {
-            let is_paid = etype == "payout.paid";
-            let is_failed = etype == "payout.failed";
-            let is_canceled = etype == "payout.canceled";
-            let maybe_account = typed_event
-                .as_ref()
-                .and_then(|e| e.account.clone().map(|a| a.to_string()));
-            if let Some(event) = typed_event {
-                if let stripe_sdk::EventObject::Payout(p) = event.data.object.clone() {
-                    let pid = p.id.to_string();
-                    let mut update = serde_json::Map::new();
-                    if is_paid {
-                        update.insert("status".into(), json!("paid"));
-                    }
-                    if is_failed {
-                        update.insert("status".into(), json!("failed"));
-                    }
-                    if is_canceled {
-                        update.insert("status".into(), json!("canceled"));
-                    }
-                    update.insert("stripe_payout_id".into(), json!(pid));
-                    if let (Some(btx), Some(acct_id)) = (p.balance_transaction, maybe_account) {
-                        let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
-                        let connected_client = match acct_id.parse::<stripe_sdk::AccountId>() {
-                            Ok(id) => client.with_stripe_account(id),
-                            Err(_) => client, // fallback: use platform client, retrieval may fail but won't panic
-                        };
-                        let maybe_id = match btx {
-                            stripe_sdk::Expandable::Id(id) => Some(id),
-                            stripe_sdk::Expandable::Object(obj) => Some(obj.id),
-                        };
-                        if let Some(id) = maybe_id {
-                            if let Ok(bt) = stripe_sdk::BalanceTransaction::retrieve(
-                                &connected_client,
-                                &id,
-                                &[],
-                            )
-                            .await
-                            {
-                                let fee = bt.fee.abs();
-                                update.insert("instant_fee_cents".into(), json!(fee));
-                            }
-                        }
-                    }
-                    let _ = state
-                        .pg
-                        .from("payout_requests")
-                        .eq("stripe_payout_id", pid)
-                        .update(serde_json::Value::Object(update).to_string())
-                        .execute()
-                        .await;
-                }
             }
         }
         _ => {}

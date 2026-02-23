@@ -177,21 +177,6 @@ export const getTalentEarningsByCampaign = (params?: { month?: string }) =>
     params: params || {},
   });
 
-export const getTalentPayoutBalance = () =>
-  base44Client.get(`/api/talent/payouts/balance`);
-
-export const requestTalentPayout = (data: {
-  amount_cents: number;
-  currency?: string;
-  payout_method?: "standard" | "instant";
-}) => base44Client.post(`/api/talent/payouts/request`, data);
-
-export const getTalentPayoutAccountStatus = () =>
-  base44Client.get(`/api/talent/payouts/account-status`);
-
-export const getTalentPayoutOnboardingLink = () =>
-  base44Client.get(`/api/talent/payouts/onboarding-link`);
-
 export const getTalentPortalSettings = () =>
   base44Client.get(`/api/talent/settings`);
 

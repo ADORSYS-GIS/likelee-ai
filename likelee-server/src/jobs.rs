@@ -1,6 +1,5 @@
 use crate::config::AppState;
 use chrono::{Duration, Utc};
-use serde_json::json;
 use serde_json::Value;
 use std::time::Duration as StdDuration;
 use tracing::{info, warn};
@@ -29,10 +28,6 @@ pub async fn start_agency_payout_scheduler(state: AppState) {
         .await;
 
         if !state.agency_payout_scheduler_enabled {
-            continue;
-        }
-
-        if !state.payouts_enabled || state.stripe_secret_key.trim().is_empty() {
             continue;
         }
 
@@ -88,68 +83,20 @@ async fn run_agency_payout_scheduler(state: &AppState) -> Result<(), String> {
             continue;
         }
 
-        let available_cents = compute_agency_available_to_pay_cents(state, &agency_id).await;
-        let payout_amount_cents = (available_cents - min_payout_threshold_cents).max(0);
+        let estimated_earned_cents =
+            compute_agency_estimated_earned_since_last_payout_cents(state, &agency_id, last_payout_at)
+                .await;
+        let payout_amount_cents = (estimated_earned_cents - min_payout_threshold_cents).max(0);
         if payout_amount_cents <= 0 {
             continue;
         }
 
-        let create = json!({
-            "agency_id": agency_id,
-            "amount_cents": payout_amount_cents,
-            "currency": "USD",
-            "payout_method": "standard",
-            "status": "pending"
-        });
-
-        let ins = state
-            .pg
-            .from("agency_payout_requests")
-            .insert(create.to_string())
-            .select("id")
-            .single()
-            .execute()
-            .await
-            .map_err(|e| e.to_string())?;
-
-        let ins_status = ins.status();
-        let ins_text = ins.text().await.unwrap_or_default();
-        if !ins_status.is_success() {
-            return Err(format!("agency_payout_requests insert failed: {ins_text}"));
-        }
-
-        let created: Value = serde_json::from_str(&ins_text).unwrap_or(json!({}));
-        let req_id = created
-            .get("id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
-        if req_id.trim().is_empty() {
-            return Err("agency_payout_requests insert missing id".to_string());
-        }
-
-        match crate::payouts::execute_scheduled_agency_payout(
-            state,
-            &req_id,
-            &agency_id,
-            payout_amount_cents,
-            "USD",
-        )
-        .await
-        {
-            Ok(_) => {
-                let _ = state
-                    .pg
-                    .from("agency_payout_settings")
-                    .eq("agency_id", &agency_id)
-                    .update(json!({"last_payout_at": Utc::now().to_rfc3339()}).to_string())
-                    .execute()
-                    .await;
-            }
-            Err(_) => {
-                // execute_agency_payout already updates request status/failure_reason.
-            }
-        }
+        info!(
+            agency_id = %agency_id,
+            next_due_at = %next_due_at,
+            payout_amount_cents = payout_amount_cents,
+            "Agency payout is due (preview only; no execution performed)"
+        );
     }
 
     Ok(())
@@ -174,25 +121,35 @@ fn compute_next_due_at(
     last + Duration::days(days)
 }
 
-async fn compute_agency_available_to_pay_cents(state: &AppState, agency_id: &str) -> i64 {
-    let bal_resp = match state
+async fn compute_agency_estimated_earned_since_last_payout_cents(
+    state: &AppState,
+    agency_id: &str,
+    last_payout_at: Option<&str>,
+) -> i64 {
+    let since = last_payout_at
+        .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc).to_rfc3339())
+        .unwrap_or_else(|| (Utc::now() - Duration::days(30)).to_rfc3339());
+
+    let resp = match state
         .pg
-        .from("agency_balances")
-        .select("available_cents")
+        .from("licensing_payouts")
+        .select("amount_cents")
         .eq("agency_id", agency_id)
-        .limit(1)
+        .gte("paid_at", &since)
+        .limit(2000)
         .execute()
         .await
     {
         Ok(r) => r,
         Err(_) => return 0,
     };
-    let bal_text = bal_resp.text().await.unwrap_or_else(|_| "[]".into());
-    let bal_rows: Vec<Value> = serde_json::from_str(&bal_text).unwrap_or_default();
-    bal_rows
-        .first()
-        .and_then(|r| r.get("available_cents").and_then(|v| v.as_i64()))
-        .unwrap_or(0)
+
+    let text = resp.text().await.unwrap_or_else(|_| "[]".into());
+    let rows: Vec<Value> = serde_json::from_str(&text).unwrap_or_default();
+    rows.iter()
+        .filter_map(|r| r.get("amount_cents").and_then(|v| v.as_i64()))
+        .sum::<i64>()
         .max(0)
 }
 

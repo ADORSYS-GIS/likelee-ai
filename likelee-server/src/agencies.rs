@@ -1106,31 +1106,35 @@ pub async fn get_upcoming_payout_schedule(
     };
     let next_due_at = last + chrono::Duration::days(days);
 
-    // Available balance from agency_balances ledger
-    let bal_resp = state
+    // Estimate earned cents for the current cycle from licensing_payouts.
+    // This avoids relying on payout/balance ledger tables that are being removed.
+    let since = last_payout_at
+        .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&chrono::Utc).to_rfc3339())
+        .unwrap_or_else(|| (chrono::Utc::now() - chrono::Duration::days(days as i64)).to_rfc3339());
+    let earned_resp = state
         .pg
-        .from("agency_balances")
-        .select("available_cents,currency")
+        .from("licensing_payouts")
+        .select("amount_cents")
         .eq("agency_id", &user.id)
-        .limit(1)
+        .gte("paid_at", &since)
+        .limit(2000)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let bal_txt = bal_resp.text().await.unwrap_or_else(|_| "[]".into());
-    let bal_rows: Vec<serde_json::Value> = serde_json::from_str(&bal_txt).unwrap_or_default();
-    let bal = bal_rows.first().cloned().unwrap_or(json!({}));
-    let available = bal
-        .get("available_cents")
-        .and_then(|v| v.as_i64())
-        .unwrap_or(0)
+    let earned_txt = earned_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let earned_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&earned_txt).unwrap_or_default();
+    let earned_cents: i64 = earned_rows
+        .iter()
+        .filter_map(|r| r.get("amount_cents").and_then(|v| v.as_i64()))
+        .sum::<i64>()
         .max(0);
-    let currency = bal
-        .get("currency")
-        .and_then(|v| v.as_str())
-        .unwrap_or("USD");
+
+    let currency = "USD";
 
     let now = chrono::Utc::now();
-    let payoutable_cents = (available - min_payout_threshold_cents).max(0);
+    let payoutable_cents = (earned_cents - min_payout_threshold_cents).max(0);
     let (status, projected_cents, description) = if now < next_due_at {
         (
             "not_scheduled_not_due",
