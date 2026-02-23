@@ -7375,7 +7375,9 @@ export default function CreatorDashboard() {
                 >
                   <Edit className="w-4 h-4 text-gray-700" />
                   <span className="text-sm font-medium text-gray-900">
-                    {t("creatorDashboard.nav.profile.edit")}
+                    {t("creatorDashboard.nav.profile.edit", {
+                      defaultValue: "Edit Profile",
+                    })}
                   </span>
                 </button>
 
@@ -7388,7 +7390,9 @@ export default function CreatorDashboard() {
                 >
                   <Eye className="w-4 h-4 text-gray-700" />
                   <span className="text-sm font-medium text-gray-900">
-                    {t("creatorDashboard.nav.profile.viewPublic")}
+                    {t("creatorDashboard.nav.profile.viewPublic", {
+                      defaultValue: "View Public Profile",
+                    })}
                   </span>
                 </button>
 
@@ -7401,7 +7405,9 @@ export default function CreatorDashboard() {
                 >
                   <HelpCircle className="w-4 h-4 text-gray-700" />
                   <span className="text-sm font-medium text-gray-900">
-                    {t("creatorDashboard.nav.profile.help")}
+                    {t("creatorDashboard.nav.profile.help", {
+                      defaultValue: "Help / Support",
+                    })}
                   </span>
                 </button>
               </div>
@@ -7419,7 +7425,9 @@ export default function CreatorDashboard() {
                 >
                   <LogOut className="w-4 h-4" />
                   <span className="text-sm font-medium">
-                    {t("creatorDashboard.nav.profile.logout")}
+                    {t("creatorDashboard.nav.profile.logout", {
+                      defaultValue: "Logout",
+                    })}
                   </span>
                 </button>
               </div>

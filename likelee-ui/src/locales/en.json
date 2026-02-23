@@ -2447,7 +2447,43 @@
       "contracts": "Licenses & Contracts",
       "earnings": "Earnings",
       "payouts": "Payouts",
-      "settings": "Settings"
+      "settings": "Settings",
+      "profile": {
+        "edit": "Edit Profile",
+        "viewPublic": "View Public Profile",
+        "help": "Help / Support",
+        "logout": "Logout"
+      }
+    },
+    "toasts": {
+      "profileSaved": "Profile saved successfully!",
+      "profilePhotoUpdated": "Profile photo updated!",
+      "authRequiredTitle": "Sign in required",
+      "authRequiredPhotoDesc": "Please sign in to upload a profile photo.",
+      "saveFailed": "Failed to save.",
+      "contentSaved": "Content preferences saved!",
+      "industrySaved": "Industry preferences saved!",
+      "restrictionsSaved": "Restrictions saved successfully!",
+      "negotiationEnabled": "Negotiation enabled!",
+      "negotiationDisabled": "Negotiation disabled!",
+      "voiceSuccessTitle": "Voice profile created",
+      "voiceSuccessDesc": "Your voice profile is ready.",
+      "voiceErrorTitle": "Voice error",
+      "voiceErrorDesc": "Failed to create voice profile: {{error}}",
+      "micErrorTitle": "Microphone error",
+      "micErrorDesc": "We couldn't access your microphone. Please allow microphone permission and try again.",
+      "micNoDataTitle": "No audio captured",
+      "micNoDataDesc": "No audio data was received. Please check your microphone and try again.",
+      "campaignApproved": "Campaign approved",
+      "campaignDeclined": "Campaign declined",
+      "campaignPaused": "Campaign paused",
+      "campaignRevoked": "Campaign revoked",
+      "licensePausedTitle": "License paused",
+      "licensePausedImmediate": "License is now paused.",
+      "licensePausedNextMonth": "License will pause next billing cycle.",
+      "licenseRevokedTitle": "License revoked",
+      "licenseRevokedDesc": "License revoked. Effective date: {{effectiveDate}}",
+      "error": "Error"
     }
   },
   "dashboard": {
