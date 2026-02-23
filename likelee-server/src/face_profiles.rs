@@ -353,9 +353,7 @@ pub async fn search_marketplace_profiles(
     let mut results: Vec<serde_json::Value> = Vec::new();
 
     for row in creators_rows {
-        let public_profile_visible = row
-            .get("public_profile_visible")
-            .and_then(|v| v.as_bool());
+        let public_profile_visible = row.get("public_profile_visible").and_then(|v| v.as_bool());
         let visibility = row
             .get("visibility")
             .and_then(|v| v.as_str())
@@ -566,9 +564,7 @@ pub async fn get_marketplace_profile_details(
         StatusCode::NOT_FOUND,
         "marketplace profile not found".to_string(),
     ))?;
-    let public_profile_visible = row
-        .get("public_profile_visible")
-        .and_then(|v| v.as_bool());
+    let public_profile_visible = row.get("public_profile_visible").and_then(|v| v.as_bool());
     let visibility = row
         .get("visibility")
         .and_then(|v| v.as_str())
