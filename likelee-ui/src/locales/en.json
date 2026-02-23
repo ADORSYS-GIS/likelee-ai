@@ -2451,7 +2451,6 @@
       "profile": {
         "edit": "Edit Profile",
         "viewPublic": "View Public Profile",
-<<<<<<< marketing
         "help": "Help / Support",
         "logout": "Logout"
       }
@@ -2485,11 +2484,6 @@
       "licenseRevokedTitle": "License revoked",
       "licenseRevokedDesc": "License revoked. Effective date: {{effectiveDate}}",
       "error": "Error"
-=======
-        "help": "Support & Help",
-        "logout": "Logout"
-      }
->>>>>>> main
     }
   },
   "dashboard": {

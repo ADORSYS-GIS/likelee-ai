@@ -598,7 +598,7 @@ pub async fn get_marketplace_profile_details(
         "connection_status": "none",
     });
 
-    let creator_id_for_connection: Option<String>;
+    let creator_id_for_connection: Option<String> = Some(profile_id.clone());
     let mut talent_ids_for_assets: Vec<String> = Vec::new();
     let creator_resp = state
         .pg
@@ -643,7 +643,6 @@ pub async fn get_marketplace_profile_details(
             "marketplace profile not found".to_string(),
         ));
     }
-    creator_id_for_connection = Some(profile_id.clone());
     response["profile"] = row;
 
     let rates_resp = state
