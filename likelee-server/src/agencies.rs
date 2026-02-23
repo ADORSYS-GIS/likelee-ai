@@ -1123,8 +1123,7 @@ pub async fn get_upcoming_payout_schedule(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let earned_txt = earned_resp.text().await.unwrap_or_else(|_| "[]".into());
-    let earned_rows: Vec<serde_json::Value> =
-        serde_json::from_str(&earned_txt).unwrap_or_default();
+    let earned_rows: Vec<serde_json::Value> = serde_json::from_str(&earned_txt).unwrap_or_default();
     let earned_cents: i64 = earned_rows
         .iter()
         .filter_map(|r| r.get("amount_cents").and_then(|v| v.as_i64()))

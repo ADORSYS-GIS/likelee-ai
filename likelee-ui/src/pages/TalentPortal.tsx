@@ -233,7 +233,9 @@ export default function TalentPortal({
     queryKey: ["talentIrlPayments", effectiveAgencyId || "all"],
     queryFn: async () => {
       const rows = await listTalentIrlPayments(
-        effectiveAgencyId ? { agency_id: effectiveAgencyId, limit: 200 } : { limit: 200 },
+        effectiveAgencyId
+          ? { agency_id: effectiveAgencyId, limit: 200 }
+          : { limit: 200 },
       );
       return Array.isArray(rows) ? rows : [];
     },

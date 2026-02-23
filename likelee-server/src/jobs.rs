@@ -83,9 +83,12 @@ async fn run_agency_payout_scheduler(state: &AppState) -> Result<(), String> {
             continue;
         }
 
-        let estimated_earned_cents =
-            compute_agency_estimated_earned_since_last_payout_cents(state, &agency_id, last_payout_at)
-                .await;
+        let estimated_earned_cents = compute_agency_estimated_earned_since_last_payout_cents(
+            state,
+            &agency_id,
+            last_payout_at,
+        )
+        .await;
         let payout_amount_cents = (estimated_earned_cents - min_payout_threshold_cents).max(0);
         if payout_amount_cents <= 0 {
             continue;
