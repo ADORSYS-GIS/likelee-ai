@@ -450,6 +450,7 @@ pub async fn search_marketplace_profiles(
                     .get(creator_id)
                     .map(|s| s.as_str())
                 {
+                    Some("accepted") => "disconnected",
                     Some("pending") => "pending",
                     Some("declined") => "declined",
                     _ => "none",
