@@ -323,9 +323,8 @@ pub async fn search_marketplace_profiles(
         let mut request = state
             .pg
             .from("creators")
-            .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,updated_at")
+            .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,updated_at,public_profile_visible,visibility")
             .eq("role", "creator")
-            .eq("public_profile_visible", "true")
             .eq("kyc_status", "approved")
             .limit(limit);
 
@@ -354,6 +353,26 @@ pub async fn search_marketplace_profiles(
     let mut results: Vec<serde_json::Value> = Vec::new();
 
     for row in creators_rows {
+        let public_profile_visible = row
+            .get("public_profile_visible")
+            .and_then(|v| v.as_bool());
+        let visibility = row
+            .get("visibility")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_lowercase();
+        let is_visible_to_marketplace = public_profile_visible.unwrap_or_else(|| {
+            visibility.is_empty()
+                || visibility == "public"
+                || visibility == "brands"
+                || visibility == "visible_to_brands"
+                || visibility == "true"
+        });
+        if !is_visible_to_marketplace {
+            continue;
+        }
+
         let creator_id = row.get("id").and_then(|v| v.as_str()).unwrap_or("");
         let full_name = row
             .get("full_name")
@@ -527,7 +546,7 @@ pub async fn get_marketplace_profile_details(
     let creator_resp = state
         .pg
         .from("creators")
-        .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,content_types,industries,base_monthly_price_cents,currency_code,accept_negotiations,portfolio_link")
+        .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,content_types,industries,base_monthly_price_cents,currency_code,accept_negotiations,portfolio_link,public_profile_visible,visibility")
         .eq("id", &profile_id)
         .limit(1)
         .execute()
@@ -547,6 +566,28 @@ pub async fn get_marketplace_profile_details(
         StatusCode::NOT_FOUND,
         "marketplace profile not found".to_string(),
     ))?;
+    let public_profile_visible = row
+        .get("public_profile_visible")
+        .and_then(|v| v.as_bool());
+    let visibility = row
+        .get("visibility")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+    let is_visible_to_marketplace = public_profile_visible.unwrap_or_else(|| {
+        visibility.is_empty()
+            || visibility == "public"
+            || visibility == "brands"
+            || visibility == "visible_to_brands"
+            || visibility == "true"
+    });
+    if !is_visible_to_marketplace {
+        return Err((
+            StatusCode::NOT_FOUND,
+            "marketplace profile not found".to_string(),
+        ));
+    }
     creator_id_for_connection = Some(profile_id.clone());
     response["profile"] = row;
 

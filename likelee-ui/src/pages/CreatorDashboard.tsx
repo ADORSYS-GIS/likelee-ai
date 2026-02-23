@@ -927,6 +927,7 @@ export default function CreatorDashboard() {
     price_per_month: 0,
     royalty_percentage: 0,
     accept_negotiations: true,
+    is_public_brands: resolvePublicBrandsVisibility(profile),
   });
 
   useEffect(() => {
@@ -958,6 +959,7 @@ export default function CreatorDashboard() {
         bio: profile.bio ?? prev.bio,
         tiktok_handle: profile.tiktok_handle ?? prev.tiktok_handle,
         portfolio_url: profile.portfolio_link ?? prev.portfolio_url,
+        is_public_brands: resolvePublicBrandsVisibility(profile),
       }));
     }
   }, [profile]);
@@ -1472,6 +1474,7 @@ export default function CreatorDashboard() {
             : prev.instagram_handle,
           tiktok_handle: profile.tiktok_handle ?? prev.tiktok_handle,
           portfolio_url: profile.portfolio_link ?? prev.portfolio_url,
+          is_public_brands: resolvePublicBrandsVisibility(profile),
           instagram_connected: prev.instagram_connected ?? false,
           instagram_followers: prev.instagram_followers ?? 0,
           content_types: profile.content_types || [],
@@ -3293,6 +3296,12 @@ export default function CreatorDashboard() {
         overrides?.content_restrictions ?? creator.content_restrictions,
       brand_exclusivity:
         overrides?.brand_exclusivity ?? creator.brand_exclusivity,
+      public_profile_visible:
+        overrides?.is_public_brands ?? creator.is_public_brands ?? true,
+      visibility:
+        overrides?.is_public_brands ?? creator.is_public_brands ?? true
+          ? "brands"
+          : "private",
       content_types: overrides?.content_types ?? creator.content_types,
       industries: overrides?.industries ?? creator.industries,
     };
@@ -3333,6 +3342,7 @@ export default function CreatorDashboard() {
             savedProfile.brand_exclusivity ?? prev.brand_exclusivity,
           accept_negotiations:
             savedProfile.accept_negotiations ?? prev.accept_negotiations,
+          is_public_brands: resolvePublicBrandsVisibility(savedProfile),
           price_per_month: savedProfile.base_monthly_price_cents
             ? Math.round(savedProfile.base_monthly_price_cents / 100)
             : prev.price_per_month,
@@ -6835,11 +6845,14 @@ export default function CreatorDashboard() {
                 </div>
                 <Switch
                   checked={creator.is_public_brands || false}
-                  onCheckedChange={(checked) => {
+                  onCheckedChange={async (checked) => {
                     setCreator({ ...creator, is_public_brands: checked });
-                    toast({
-                      title: `Profile is now ${checked ? "VISIBLE" : "HIDDEN"} to brands! (Demo mode)`,
-                    });
+                    await handleSaveRules(
+                      checked
+                        ? "Profile is now visible to brands."
+                        : "Profile is now hidden from brands.",
+                      { is_public_brands: checked },
+                    );
                   }}
                 />
               </div>
@@ -9242,3 +9255,18 @@ export default function CreatorDashboard() {
     </div>
   );
 }
+  const resolvePublicBrandsVisibility = (data: any): boolean => {
+    if (typeof data?.public_profile_visible === "boolean") {
+      return data.public_profile_visible;
+    }
+    const rawVisibility = String(data?.visibility || "")
+      .trim()
+      .toLowerCase();
+    if (!rawVisibility) return true;
+    return (
+      rawVisibility === "public" ||
+      rawVisibility === "brands" ||
+      rawVisibility === "visible_to_brands" ||
+      rawVisibility === "true"
+    );
+  };

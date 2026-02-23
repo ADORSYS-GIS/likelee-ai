@@ -1014,6 +1014,16 @@ export function MarketplaceSection({
                   <h4 className="text-sm font-bold text-gray-900 mb-3">
                     Portfolio
                   </h4>
+                  {!!detailsQuery.data?.profile?.portfolio_link && (
+                    <a
+                      href={String(detailsQuery.data.profile.portfolio_link)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mb-3 inline-flex items-center rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-700 hover:bg-cyan-100"
+                    >
+                      Open portfolio link
+                    </a>
+                  )}
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {(detailsQuery.data?.portfolio || [])
                       .slice(0, 9)
@@ -1045,7 +1055,9 @@ export function MarketplaceSection({
                       ))}
                     {(detailsQuery.data?.portfolio || []).length === 0 && (
                       <p className="text-sm text-gray-500">
-                        No portfolio items yet.
+                        {detailsQuery.data?.profile?.portfolio_link
+                          ? "No uploaded portfolio media yet."
+                          : "No portfolio items yet."}
                       </p>
                     )}
                   </div>

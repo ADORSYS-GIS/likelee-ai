@@ -16,6 +16,15 @@ pub struct CreatorAgencyInvite {
     pub created_at: Option<String>,
     pub responded_at: Option<String>,
     pub updated_at: Option<String>,
+    pub agencies: Option<CreatorAgencyInviteAgency>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct CreatorAgencyInviteAgency {
+    pub agency_name: Option<String>,
+    pub logo_url: Option<String>,
+    pub email: Option<String>,
+    pub website: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -33,7 +42,7 @@ pub async fn list_invites(
     let resp = state
         .pg
         .from("creator_agency_invites")
-        .select("id,agency_id,creator_id,status,created_at,responded_at,updated_at")
+        .select("id,agency_id,creator_id,status,created_at,responded_at,updated_at,agencies(agency_name,logo_url,email,website)")
         .eq("creator_id", &user.id)
         .order("created_at.desc")
         .execute()
