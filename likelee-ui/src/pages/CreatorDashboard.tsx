@@ -812,20 +812,37 @@ export default function CreatorDashboard() {
   const talentPortalEnabled =
     (profile as any)?.role === "talent" || agencyConnections.length > 0;
 
+  const loadAgencyConnectionData = async () => {
+    const [connections, creatorInvitesRes, talentInvitesRes] =
+      await Promise.all([
+        listCreatorAgencyConnections(),
+        listCreatorAgencyInvites(),
+        listTalentAgencyInvites().then((r: any) => (r?.invites as any[]) || []),
+      ]);
+
+    const mergedInvites = [...creatorInvitesRes, ...talentInvitesRes];
+    const inviteMap = new Map<string, any>();
+    for (const inv of mergedInvites) {
+      const id = String(inv?.id || "");
+      if (!id) continue;
+      if (!inviteMap.has(id)) {
+        inviteMap.set(id, inv);
+      }
+    }
+
+    return {
+      connections,
+      invites: Array.from(inviteMap.values()),
+    };
+  };
+
   useEffect(() => {
     if (!initialized || !authenticated) return;
     let active = true;
     (async () => {
       try {
         setAgencyConnectionLoading(true);
-        const connections = await listCreatorAgencyConnections();
-        const isTalent =
-          (profile as any)?.role === "talent" || connections.length > 0;
-        const invites = isTalent
-          ? await listTalentAgencyInvites().then(
-              (r: any) => (r?.invites as any[]) || [],
-            )
-          : await listCreatorAgencyInvites();
+        const { connections, invites } = await loadAgencyConnectionData();
         if (!active) return;
         setAgencyConnections(connections);
         setAgencyInvites(invites);
@@ -4441,14 +4458,7 @@ export default function CreatorDashboard() {
           String(disconnectTarget.agency_id),
         );
 
-        const connections = await listCreatorAgencyConnections();
-        const talentMode =
-          (profile as any)?.role === "talent" || connections.length > 0;
-        const invites = talentMode
-          ? await listTalentAgencyInvites().then(
-              (r: any) => (r?.invites as any[]) || [],
-            )
-          : await listCreatorAgencyInvites();
+        const { connections, invites } = await loadAgencyConnectionData();
 
         setAgencyConnections(connections);
         setAgencyInvites(invites);
@@ -4657,15 +4667,12 @@ export default function CreatorDashboard() {
                         className="border-gray-200"
                         onClick={async () => {
                           try {
-                            if (isTalent) {
-                              const token = String(inv?.token || "");
-                              if (token) {
-                                navigate(
-                                  `/invite/agency/${encodeURIComponent(token)}`,
-                                );
-                                return;
-                              }
-                              throw new Error("Missing invite token");
+                            const token = String(inv?.token || "");
+                            if (token) {
+                              navigate(
+                                `/invite/agency/${encodeURIComponent(token)}`,
+                              );
+                              return;
                             }
 
                             await declineCreatorAgencyInvite(inv.id);
@@ -4692,15 +4699,12 @@ export default function CreatorDashboard() {
                         className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
                         onClick={async () => {
                           try {
-                            if (isTalent) {
-                              const token = String(inv?.token || "");
-                              if (token) {
-                                navigate(
-                                  `/invite/agency/${encodeURIComponent(token)}`,
-                                );
-                                return;
-                              }
-                              throw new Error("Missing invite token");
+                            const token = String(inv?.token || "");
+                            if (token) {
+                              navigate(
+                                `/invite/agency/${encodeURIComponent(token)}`,
+                              );
+                              return;
                             }
 
                             await acceptCreatorAgencyInvite(inv.id);
