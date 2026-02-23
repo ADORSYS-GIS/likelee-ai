@@ -11,12 +11,23 @@ pub fn build_router(state: AppState) -> Router {
         .allow_origin(Any)
         .allow_methods(Any)
         .allow_headers(Any);
+
     Router::new()
         .route("/api/health", get(crate::health::health))
+        // --- Talent Portal ---
         .route("/api/talent/me", get(crate::talent::talent_me))
+        .route("/api/talent/profile", post(crate::talent::update_profile))
         .route(
             "/api/talent/settings",
             get(crate::talent::get_portal_settings).post(crate::talent::update_portal_settings),
+        )
+        .route(
+            "/api/talent/notifications",
+            get(crate::talent::list_notifications),
+        )
+        .route(
+            "/api/talent/notifications/:id/read",
+            post(crate::talent::mark_notification_read),
         )
         .route(
             "/api/talent/agency-invites",
@@ -51,31 +62,6 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::talent::get_earnings_by_campaign),
         )
         .route("/api/talent/analytics", get(crate::talent::get_analytics))
-        .route(
-            "/api/talent/portfolio-items",
-            get(crate::talent::list_portfolio_items).post(crate::talent::create_portfolio_item),
-        )
-        .route(
-            "/api/talent/portfolio-items/:id",
-            delete(crate::talent::delete_portfolio_item),
-        )
-        .route(
-            "/api/talent/notifications",
-            get(crate::talent::list_notifications),
-        )
-        .route(
-            "/api/talent/notifications/:id/read",
-            post(crate::talent::mark_notification_read),
-        )
-        .route(
-            "/api/creator/agency-connections",
-            get(crate::creator_agency_connection::list_connections),
-        )
-        .route(
-            "/api/creator/agency-connections/:agency_id/disconnect",
-            post(crate::creator_agency_connection::disconnect_agency),
-        )
-        .route("/api/talent/profile", post(crate::talent::update_profile))
         .route("/api/talent/bookings", get(crate::talent::list_bookings))
         .route(
             "/api/talent/book-outs",
@@ -91,6 +77,18 @@ pub fn build_router(state: AppState) -> Router {
                 .post(crate::talent::update_booking_preferences),
         )
         .route(
+            "/api/talent/portfolio-items",
+            get(crate::talent::list_portfolio_items).post(crate::talent::create_portfolio_item),
+        )
+        .route(
+            "/api/talent/portfolio-items/:id",
+            delete(crate::talent::delete_portfolio_item),
+        )
+        .route(
+            "/api/talent/portfolio-items/upload",
+            post(crate::talent::upload_portfolio_item),
+        )
+        .route(
             "/api/talent/irl/earnings/summary",
             get(crate::talent::get_irl_earnings_summary),
         )
@@ -102,10 +100,58 @@ pub fn build_router(state: AppState) -> Router {
             "/api/talent/irl/earnings/payout-request",
             post(crate::talent::create_irl_payout_request),
         )
+        // --- Payouts (Stripe Connect) ---
+        // Creator/Talent Payouts
         .route(
-            "/api/talent/portfolio-items/upload",
-            post(crate::talent::upload_portfolio_item),
+            "/api/payouts/onboarding_link",
+            post(crate::payouts::create_onboarding_link),
         )
+        .route(
+            "/api/payouts/account_status",
+            get(crate::payouts::get_account_status),
+        )
+        .route("/api/payouts/balance", get(crate::payouts::get_balance))
+        .route("/api/payouts/request", post(crate::payouts::request_payout))
+        .route("/api/payouts/history", get(crate::payouts::get_history))
+        // Talent-Specific Payouts (Portal variants)
+        .route(
+            "/api/talent/payouts/account-status",
+            get(crate::payouts::get_my_account_status),
+        )
+        .route(
+            "/api/talent/payouts/onboarding-link",
+            post(crate::payouts::create_my_onboarding_link),
+        )
+        .route(
+            "/api/talent/payouts/balance",
+            get(crate::payouts::get_my_balance),
+        )
+        .route(
+            "/api/talent/payouts/request",
+            post(crate::payouts::request_my_payout),
+        )
+        // Agency Payouts
+        .route(
+            "/api/agency/payouts/onboarding_link",
+            post(crate::payouts::create_agency_onboarding_link),
+        )
+        .route(
+            "/api/agency/payouts/account_status",
+            get(crate::payouts::get_agency_account_status),
+        )
+        .route(
+            "/api/agency/payouts/balance",
+            get(crate::payouts::get_agency_balance),
+        )
+        .route(
+            "/api/agency/payouts/request",
+            post(crate::payouts::request_agency_payout),
+        )
+        .route(
+            "/api/agency/payouts/history",
+            get(crate::payouts::get_agency_payout_history),
+        )
+        // Agency Payout Settings & Schedule
         .route(
             "/api/agency/payout-settings",
             get(crate::agencies::get_payout_settings).post(crate::agencies::update_payout_settings),
@@ -114,56 +160,7 @@ pub fn build_router(state: AppState) -> Router {
             "/api/agency/payout-schedule/upcoming",
             get(crate::agencies::get_upcoming_payout_schedule),
         )
-        // Invoices (Agency Dashboard)
-        .route(
-            "/api/invoices",
-            get(crate::invoices::list).post(crate::invoices::create),
-        )
-        .route(
-            "/api/invoices/:id",
-            get(crate::invoices::get).post(crate::invoices::update),
-        )
-        .route(
-            "/api/invoices/:id/mark-sent",
-            post(crate::invoices::mark_sent),
-        )
-        .route(
-            "/api/invoices/:id/send-payment-reminder",
-            post(crate::invoices::send_payment_reminder),
-        )
-        .route(
-            "/api/invoices/:id/mark-paid",
-            post(crate::invoices::mark_paid),
-        )
-        .route(
-            "/api/invoices/:id/void",
-            post(crate::invoices::void_invoice),
-        )
-        // Talent Statements (Agency Dashboard)
-        .route(
-            "/api/talent-statements",
-            get(crate::talent_statements::list),
-        )
-        // Expenses (Agency Dashboard)
-        .route(
-            "/api/expenses",
-            get(crate::expenses::list).post(crate::expenses::create),
-        )
-        .route("/api/kyc/session", post(crate::kyc::create_session))
-        .route("/api/kyc/status", get(crate::kyc::get_status))
-        .route(
-            "/api/kyc/organization/session",
-            post(crate::kyc::create_session),
-        )
-        .route("/api/kyc/organization/status", get(crate::kyc::get_status))
-        // Brands
-        .route("/api/brand-register", post(crate::brands::register))
-        .route("/api/brand-profile", post(crate::brands::update))
-        .route("/api/brand-profile/user", get(crate::brands::get_by_user))
-        // Agencies
-        .route("/api/agency-register", post(crate::agencies::register))
-        .route("/api/agency-profile", post(crate::agencies::update))
-        // Agency Dashboard
+        // --- Agency Dashboard & Features ---
         .route(
             "/api/agency/dashboard/overview",
             get(crate::agency_dashboard::get_dashboard_overview),
@@ -189,6 +186,22 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::agency_dashboard::get_payment_history_top_earners),
         )
         .route(
+            "/api/agency/dashboard/performance-tiers",
+            get(crate::performance_tiers::get_performance_tiers),
+        )
+        .route(
+            "/api/agency/dashboard/performance-tiers/configure",
+            post(crate::performance_tiers::configure_performance_tiers),
+        )
+        .route(
+            "/api/agency/dashboard/talent-commissions/update",
+            post(crate::performance_tiers::update_talent_commission),
+        )
+        .route(
+            "/api/agency/dashboard/talent-commissions/history",
+            get(crate::performance_tiers::get_commission_history),
+        )
+        .route(
             "/api/agency/analytics/dashboard",
             get(crate::analytics::get_analytics_dashboard),
         )
@@ -204,16 +217,11 @@ pub fn build_router(state: AppState) -> Router {
             "/api/agency/analytics/royalties",
             get(crate::analytics::get_royalties_payouts),
         )
+        .route(
+            "/api/agency/analytics/commission-breakdowns",
+            get(crate::performance_tiers::get_commission_breakdowns),
+        )
         .route("/api/agency/roster", get(crate::agency_roster::get_roster))
-        .route(
-            "/api/agency/talent-invites",
-            get(crate::agency_talent_invites::list_for_agency)
-                .post(crate::agency_talent_invites::create_for_agency),
-        )
-        .route(
-            "/api/agency/talent-invites/:id/revoke",
-            post(crate::agency_talent_invites::revoke_for_agency),
-        )
         .route(
             "/api/agency/talent",
             post(crate::agency_roster::create_talent),
@@ -227,12 +235,25 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::agency_roster::list_talent_campaigns),
         )
         .route(
+            "/api/agency/talent-invites",
+            get(crate::agency_talent_invites::list_for_agency)
+                .post(crate::agency_talent_invites::create_for_agency),
+        )
+        .route(
+            "/api/agency/talent-invites/:id/revoke",
+            post(crate::agency_talent_invites::revoke_for_agency),
+        )
+        .route(
             "/api/agency/campaigns/:id",
             post(crate::campaigns::update_campaign_split),
         )
         .route(
             "/api/agency/licensing-requests",
             get(crate::licensing_requests::list_for_agency).post(crate::licensing_requests::create),
+        )
+        .route(
+            "/api/agency/licensing-requests/status",
+            post(crate::licensing_requests::update_status_bulk),
         )
         .route(
             "/api/agency/active-licenses",
@@ -242,7 +263,112 @@ pub fn build_router(state: AppState) -> Router {
             "/api/agency/active-licenses/stats",
             get(crate::active_licenses::stats),
         )
-        // License Templates
+        .route("/api/agency/talents", get(crate::agencies::list_talents))
+        .route(
+            "/api/agency/talents/:id/assets",
+            get(crate::agencies::list_talent_assets),
+        )
+        .route(
+            "/api/agency/talents/:id/assets/upload",
+            post(crate::agencies::upload_talent_asset),
+        )
+        .route(
+            "/api/agency/talents/:talent_id/assets/:asset_id",
+            delete(crate::agencies::delete_talent_asset),
+        )
+        .route("/api/agency-register", post(crate::agencies::register))
+        .route("/api/agency-profile", post(crate::agencies::update))
+        .route(
+            "/api/agency-profile/user",
+            get(crate::agencies::get_profile),
+        )
+        .route(
+            "/api/agency/clients",
+            get(crate::agencies::list_clients).post(crate::agencies::create_client),
+        )
+        .route(
+            "/api/agency/clients/:id",
+            post(crate::agencies::update_client).delete(crate::agencies::delete_client),
+        )
+        .route(
+            "/api/agency/clients/:id/contacts",
+            get(crate::agencies::list_contacts).post(crate::agencies::create_contact),
+        )
+        .route(
+            "/api/agency/clients/:client_id/contacts/:contact_id",
+            delete(crate::agencies::delete_contact),
+        )
+        .route(
+            "/api/agency/clients/:id/communications",
+            get(crate::agencies::list_communications).post(crate::agencies::create_communication),
+        )
+        .route(
+            "/api/agency/clients/:id/files",
+            get(crate::agencies::list_client_files).post(crate::agencies::upload_client_file),
+        )
+        .route(
+            "/api/agency/clients/:id/files/:file_id/signed-url",
+            get(crate::agencies::get_client_file_signed_url),
+        )
+        .route(
+            "/api/agency/files/upload",
+            post(crate::agencies::upload_agency_file),
+        )
+        // Invoices, Expenses, Statements
+        .route(
+            "/api/invoices",
+            get(crate::invoices::list).post(crate::invoices::create),
+        )
+        .route(
+            "/api/invoices/:id",
+            get(crate::invoices::get).post(crate::invoices::update),
+        )
+        .route(
+            "/api/invoices/:id/mark-sent",
+            post(crate::invoices::mark_sent),
+        )
+        .route(
+            "/api/invoices/:id/send-payment-reminder",
+            post(crate::invoices::send_payment_reminder),
+        )
+        .route(
+            "/api/invoices/:id/mark-paid",
+            post(crate::invoices::mark_paid),
+        )
+        .route(
+            "/api/invoices/:id/void",
+            post(crate::invoices::void_invoice),
+        )
+        .route(
+            "/api/talent-statements",
+            get(crate::talent_statements::list),
+        )
+        .route(
+            "/api/expenses",
+            get(crate::expenses::list).post(crate::expenses::create),
+        )
+        // Digitals & Share
+        .route(
+            "/api/agency/digitals",
+            get(crate::digitals::list_agency_digitals),
+        )
+        .route(
+            "/api/agency/talent/:id/digitals",
+            get(crate::digitals::list_talent_digitals).post(crate::digitals::create_talent_digital),
+        )
+        .route(
+            "/api/agency/digitals/:id",
+            post(crate::digitals::update_digital),
+        )
+        .route(
+            "/api/agency/digitals/reminders",
+            post(crate::digitals::send_digitals_reminders),
+        )
+        .route(
+            "/api/agency/comp-cards/share",
+            post(crate::agency_clients::share_comp_card),
+        )
+        // --- License Management (Templates & Submissions) ---
         .route(
             "/api/license-templates",
             get(crate::license_templates::list).post(crate::license_templates::create),
@@ -264,7 +390,6 @@ pub fn build_router(state: AppState) -> Router {
             "/api/docuseal/builder-token",
             post(crate::license_templates::create_builder_token),
         )
-        // License Submissions
         .route(
             "/api/license-submissions",
             get(crate::license_submissions::list).post(crate::license_submissions::create),
@@ -297,72 +422,7 @@ pub fn build_router(state: AppState) -> Router {
             "/api/license-submissions/:id/sync-status",
             post(crate::license_submissions::sync_status),
         )
-        .route(
-            "/api/agency/licensing-requests/status",
-            post(crate::licensing_requests::update_status_bulk),
-        )
-        .route(
-            "/api/webhooks/licenseContract",
-            post(crate::license_submissions::handle_webhook),
-        )
-        .route(
-            "/api/agency/digitals",
-            get(crate::digitals::list_agency_digitals),
-        )
-        .route(
-            "/api/agency/talent/:id/digitals",
-            get(crate::digitals::list_talent_digitals).post(crate::digitals::create_talent_digital),
-        )
-        .route(
-            "/api/agency/digitals/:id",
-            post(crate::digitals::update_digital),
-        )
-        .route(
-            "/api/agency/digitals/reminders",
-            post(crate::digitals::send_digitals_reminders),
-        )
-        .route(
-            "/api/agency/comp-cards/share",
-            post(crate::agency_clients::share_comp_card),
-        )
-        .route("/api/agency/talents", get(crate::agencies::list_talents))
-        .route(
-            "/api/agency/talents/:id/assets",
-            get(crate::agencies::list_talent_assets),
-        )
-        .route(
-            "/api/agency/talents/:id/assets/upload",
-            post(crate::agencies::upload_talent_asset),
-        )
-        .route(
-            "/api/agency/talents/:talent_id/assets/:asset_id",
-            delete(crate::agencies::delete_talent_asset),
-        )
-        .route(
-            "/api/agency/clients",
-            get(crate::agencies::list_clients).post(crate::agencies::create_client),
-        )
-        .route(
-            "/api/agency-profile/user",
-            get(crate::agencies::get_profile),
-        )
-        .route(
-            "/api/agency/clients/:id",
-            post(crate::agencies::update_client).delete(crate::agencies::delete_client),
-        )
-        .route(
-            "/api/agency/clients/:id/contacts",
-            get(crate::agencies::list_contacts).post(crate::agencies::create_contact),
-        )
-        .route(
-            "/api/agency/clients/:client_id/contacts/:contact_id",
-            delete(crate::agencies::delete_contact),
-        )
-        .route(
-            "/api/agency/clients/:id/communications",
-            get(crate::agencies::list_communications).post(crate::agencies::create_communication),
-        )
-        // Agency Storage (S3-backed via Supabase Storage)
+        // --- Storage (S3 / Supabase) ---
         .route(
             "/api/agency/storage/usage",
             get(crate::agencies::get_agency_storage_usage),
@@ -387,19 +447,7 @@ pub fn build_router(state: AppState) -> Router {
             "/api/agency/storage/files/:file_id/signed-url",
             get(crate::agencies::get_agency_storage_file_signed_url),
         )
-        .route(
-            "/api/agency/files/upload",
-            post(crate::agencies::upload_agency_file),
-        )
-        .route(
-            "/api/agency/clients/:id/files",
-            get(crate::agencies::list_client_files).post(crate::agencies::upload_client_file),
-        )
-        .route(
-            "/api/agency/clients/:id/files/:file_id/signed-url",
-            get(crate::agencies::get_client_file_signed_url),
-        )
-        // Talent Packages
+        // --- Talent Packages ---
         .route(
             "/api/agency/packages",
             get(crate::packages::list_packages).post(crate::packages::create_package),
@@ -426,171 +474,7 @@ pub fn build_router(state: AppState) -> Router {
             "/api/public/packages/:token/interactions",
             post(crate::packages::create_interaction).delete(crate::packages::delete_interaction),
         )
-        .route("/api/dashboard", get(crate::dashboard::get_dashboard))
-        .route(
-            "/api/agency/dashboard/performance-tiers",
-            get(crate::performance_tiers::get_performance_tiers),
-        )
-        .route(
-            "/api/agency/dashboard/performance-tiers/configure",
-            post(crate::performance_tiers::configure_performance_tiers),
-        )
-        .route(
-            "/api/agency/dashboard/talent-commissions/update",
-            post(crate::performance_tiers::update_talent_commission),
-        )
-        .route(
-            "/api/agency/dashboard/talent-commissions/history",
-            get(crate::performance_tiers::get_commission_history),
-        )
-        .route(
-            "/api/agency/analytics/commission-breakdowns",
-            get(crate::performance_tiers::get_commission_breakdowns),
-        )
-        .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))
-        .route("/api/email/available", get(crate::creators::check_email))
-        .route("/api/profile", post(crate::creators::upsert_profile))
-        .route(
-            "/api/profile/photo-upload",
-            post(crate::creators::upload_profile_photo),
-        )
-        .route(
-            "/api/face-profiles",
-            post(crate::face_profiles::create_face_profile),
-        )
-        .route(
-            "/api/face-profiles/:id",
-            post(crate::face_profiles::update_face_profile),
-        )
-        .route("/api/faces/search", get(crate::face_profiles::search_faces))
-        .route(
-            "/api/moderation/image",
-            post(crate::moderation::moderate_image),
-        )
-        .route(
-            "/api/moderation/image-bytes",
-            post(crate::moderation::moderate_image_bytes),
-        )
-        .route(
-            "/api/reference-images/upload",
-            post(crate::reference_images::upload_reference_image),
-        )
-        .route(
-            "/api/reference-images",
-            get(crate::reference_images::list_reference_images),
-        )
-        .route(
-            "/api/reference-images/:section_id",
-            delete(crate::reference_images::delete_reference_image),
-        )
-        // Voice
-        .route(
-            "/api/voice/recordings",
-            post(crate::voice::upload_voice_recording),
-        )
-        .route(
-            "/api/voice/recordings",
-            get(crate::voice::list_voice_recordings),
-        )
-        .route(
-            "/api/voice/models",
-            post(crate::voice::register_voice_model),
-        )
-        .route(
-            "/api/voice/models/clone",
-            post(crate::voice::create_clone_from_recording),
-        )
-        .route(
-            "/api/voice/recordings/signed-url",
-            get(crate::voice::signed_url_for_recording),
-        )
-        .route(
-            "/api/voice/recordings/:id",
-            delete(crate::voice::delete_voice_recording),
-        )
-        // Licensing activation stub (to be called by checkout flow)
-        .route(
-            "/api/licenses/activated",
-            post(crate::licenses::activated_stub),
-        )
-        // Brand voice folders/assets listing (implemented in licenses module)
-        .route(
-            "/api/brand/voice-folders",
-            get(crate::licenses::list_brand_voice_folders),
-        )
-        .route(
-            "/api/brand/voice-assets",
-            get(crate::licenses::list_brand_voice_assets),
-        )
-        // Bookings (Agency Dashboard)
-        .route(
-            "/api/bookings",
-            get(crate::bookings::list).post(crate::bookings::create),
-        )
-        .route(
-            "/api/bookings/with-files",
-            post(crate::bookings::create_with_files),
-        )
-        .route("/api/bookings/:id", post(crate::bookings::update))
-        .route(
-            "/api/bookings/:id/files/upload",
-            post(crate::bookings::upload_booking_file),
-        )
-        .route("/api/bookings/:id/cancel", post(crate::bookings::cancel))
-        // Book-Outs (Availability)
-        .route(
-            "/api/book-outs",
-            get(crate::book_outs::list).post(crate::book_outs::create),
-        )
-        .route(
-            "/api/book-outs/:id",
-            delete(crate::book_outs::delete_book_out),
-        )
-        .route("/webhooks/stripe", post(crate::payouts::stripe_webhook))
-        .route(
-            "/api/agency/billing/checkout",
-            post(crate::billing::create_agency_subscription_checkout),
-        )
-        // Integrations: Core
-        .route(
-            "/api/integrations/core/send-email",
-            post(crate::email::send_email),
-        )
-        .route(
-            "/api/invites/agency-talent/:token",
-            get(crate::agency_talent_invites::get_by_token),
-        )
-        .route(
-            "/api/invites/agency-talent/:token/accept",
-            post(crate::agency_talent_invites::accept_by_token),
-        )
-        .route(
-            "/api/invites/agency-talent/:token/decline",
-            post(crate::agency_talent_invites::decline_by_token),
-        )
-        .route(
-            "/api/invites/agency-talent/:token/magic-link",
-            get(crate::agency_talent_invites::get_magic_link_by_token),
-        )
-        .route(
-            "/api/creator-rates",
-            get(crate::creator_rates::get_creator_rates)
-                .post(crate::creator_rates::upsert_creator_rates),
-        )
-        // Creator: Agency Connection
-        .route(
-            "/api/creator/agency-invites",
-            get(crate::creator_agency_connection::list_invites),
-        )
-        .route(
-            "/api/creator/agency-invites/:id/accept",
-            post(crate::creator_agency_connection::accept_invite),
-        )
-        .route(
-            "/api/creator/agency-invites/:id/decline",
-            post(crate::creator_agency_connection::decline_invite),
-        )
-        // Scouting (DocuSeal)
+        // --- Scouting ---
         .route(
             "/api/scouting/templates",
             get(crate::scouting::list_templates).post(crate::scouting::create_template),
@@ -624,8 +508,170 @@ pub fn build_router(state: AppState) -> Router {
             "/api/scouting/builder-token",
             post(crate::scouting::create_builder_token),
         )
+        // --- Bookings & Availability ---
+        .route(
+            "/api/bookings",
+            get(crate::bookings::list).post(crate::bookings::create),
+        )
+        .route(
+            "/api/bookings/with-files",
+            post(crate::bookings::create_with_files),
+        )
+        .route("/api/bookings/:id", post(crate::bookings::update))
+        .route(
+            "/api/bookings/:id/files/upload",
+            post(crate::bookings::upload_booking_file),
+        )
+        .route("/api/bookings/:id/cancel", post(crate::bookings::cancel))
+        .route(
+            "/api/book-outs",
+            get(crate::book_outs::list).post(crate::book_outs::create),
+        )
+        .route(
+            "/api/book-outs/:id",
+            delete(crate::book_outs::delete_book_out),
+        )
+        // --- Brands & Marketing ---
+        .route("/api/brand-register", post(crate::brands::register))
+        .route("/api/brand-profile", post(crate::brands::update))
+        .route("/api/brand-profile/user", get(crate::brands::get_by_user))
+        .route(
+            "/api/brand/voice-folders",
+            get(crate::licenses::list_brand_voice_folders),
+        )
+        .route(
+            "/api/brand/voice-assets",
+            get(crate::licenses::list_brand_voice_assets),
+        )
+        .route(
+            "/api/creator-rates",
+            get(crate::creator_rates::get_creator_rates)
+                .post(crate::creator_rates::upsert_creator_rates),
+        )
+        // --- KYC ---
+        .route("/api/kyc/session", post(crate::kyc::create_session))
+        .route("/api/kyc/status", get(crate::kyc::get_status))
+        .route(
+            "/api/kyc/organization/session",
+            post(crate::kyc::create_session),
+        )
+        .route("/api/kyc/organization/status", get(crate::kyc::get_status))
+        // --- Creators, Faces, Moderation ---
+        .route("/api/dashboard", get(crate::dashboard::get_dashboard)) // Common dashboard
+        .route("/api/profile", post(crate::creators::upsert_profile))
+        .route(
+            "/api/profile/photo-upload",
+            post(crate::creators::upload_profile_photo),
+        )
+        .route(
+            "/api/face-profiles",
+            post(crate::face_profiles::create_face_profile),
+        )
+        .route(
+            "/api/face-profiles/:id",
+            post(crate::face_profiles::update_face_profile),
+        )
+        .route("/api/faces/search", get(crate::face_profiles::search_faces))
+        .route(
+            "/api/moderation/image",
+            post(crate::moderation::moderate_image),
+        )
+        .route(
+            "/api/moderation/image-bytes",
+            post(crate::moderation::moderate_image_bytes),
+        )
+        .route("/api/email/available", get(crate::creators::check_email))
+        .route(
+            "/api/reference-images/upload",
+            post(crate::reference_images::upload_reference_image),
+        )
+        .route(
+            "/api/reference-images",
+            get(crate::reference_images::list_reference_images),
+        )
+        .route(
+            "/api/reference-images/:section_id",
+            delete(crate::reference_images::delete_reference_image),
+        )
+        // --- Voice ---
+        .route(
+            "/api/voice/recordings",
+            get(crate::voice::list_voice_recordings).post(crate::voice::upload_voice_recording),
+        )
+        .route(
+            "/api/voice/recordings/signed-url",
+            get(crate::voice::signed_url_for_recording),
+        )
+        .route(
+            "/api/voice/recordings/:id",
+            delete(crate::voice::delete_voice_recording),
+        )
+        .route(
+            "/api/voice/models",
+            post(crate::voice::register_voice_model),
+        )
+        .route(
+            "/api/voice/models/clone",
+            post(crate::voice::create_clone_from_recording),
+        )
+        // --- Connections & Invites ---
+        .route(
+            "/api/creator/agency-invites",
+            get(crate::creator_agency_connection::list_invites),
+        )
+        .route(
+            "/api/creator/agency-invites/:id/accept",
+            post(crate::creator_agency_connection::accept_invite),
+        )
+        .route(
+            "/api/creator/agency-invites/:id/decline",
+            post(crate::creator_agency_connection::decline_invite),
+        )
+        .route(
+            "/api/creator/agency-connections",
+            get(crate::creator_agency_connection::list_connections),
+        )
+        .route(
+            "/api/creator/agency-connections/:agency_id/disconnect",
+            post(crate::creator_agency_connection::disconnect_agency),
+        )
+        .route(
+            "/api/invites/agency-talent/:token",
+            get(crate::agency_talent_invites::get_by_token),
+        )
+        .route(
+            "/api/invites/agency-talent/:token/accept",
+            post(crate::agency_talent_invites::accept_by_token),
+        )
+        .route(
+            "/api/invites/agency-talent/:token/decline",
+            post(crate::agency_talent_invites::decline_by_token),
+        )
+        .route(
+            "/api/invites/agency-talent/:token/magic-link",
+            get(crate::agency_talent_invites::get_magic_link_by_token),
+        )
+        // --- Webhooks ---
+        .route("/webhooks/stripe", post(crate::payouts::stripe_webhook))
+        .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))
         .route("/webhooks/docuseal", post(crate::scouting::handle_webhook))
-        // Notifications
+        .route(
+            "/api/webhooks/licenseContract",
+            post(crate::license_submissions::handle_webhook),
+        )
+        // --- Integrations & Misc ---
+        .route(
+            "/api/integrations/core/send-email",
+            post(crate::email::send_email),
+        )
+        .route(
+            "/api/agency/billing/checkout",
+            post(crate::billing::create_agency_subscription_checkout),
+        )
+        .route(
+            "/api/licenses/activated",
+            post(crate::licenses::activated_stub),
+        )
         .route(
             "/api/notifications/booking-created-email",
             post(crate::notifications::booking_created_email),

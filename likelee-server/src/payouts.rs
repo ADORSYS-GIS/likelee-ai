@@ -2346,10 +2346,6 @@ async fn sync_agency_subscription_from_stripe(
     Ok(())
 }
 
-// ============================================================================
-// Agency Payout Functions
-// ============================================================================
-
 #[derive(Deserialize)]
 pub struct AgencyPayoutRequestPayload {
     pub amount_cents: i64,
@@ -2636,8 +2632,6 @@ pub async fn request_agency_payout(
     }
 
     // Re-fetch the row to return the latest status/failure_reason.
-    // This is especially important for instant payouts, where the Stripe call can fail
-    // after we created the row but before the client refreshes history.
     let payout_request = if let Some(req_id) = created_id.as_deref() {
         match state
             .pg
@@ -2670,59 +2664,6 @@ pub async fn request_agency_payout(
     )
 }
 
-pub async fn execute_scheduled_agency_payout(
-    state: &AppState,
-    agency_payout_request_id: &str,
-    agency_id: &str,
-    amount_cents: i64,
-    currency: &str,
-) -> Result<(), ()> {
-    let resp = state
-        .pg
-        .from("agencies")
-        .select("stripe_connect_account_id")
-        .eq("id", agency_id)
-        .limit(1)
-        .execute()
-        .await
-        .map_err(|_| ())?;
-
-    let txt = resp.text().await.unwrap_or("[]".into());
-    let rows: Vec<serde_json::Value> = serde_json::from_str(&txt).unwrap_or_default();
-    let stripe_account_id = rows
-        .first()
-        .and_then(|r| r.get("stripe_connect_account_id").and_then(|v| v.as_str()))
-        .unwrap_or("")
-        .to_string();
-
-    if stripe_account_id.trim().is_empty() {
-        let _ = state
-            .pg
-            .from("agency_payout_requests")
-            .eq("id", agency_payout_request_id)
-            .update(
-                json!({"status":"failed","failure_reason":"missing_connected_account"}).to_string(),
-            )
-            .execute()
-            .await;
-        return Err(());
-    }
-
-    let fee_cents = (amount_cents * (state.payout_fee_bps as i64) + 9999) / 10000;
-    execute_agency_payout(
-        state,
-        agency_payout_request_id,
-        agency_id,
-        &stripe_account_id,
-        amount_cents,
-        fee_cents,
-        currency,
-        "standard",
-    )
-    .await
-}
-
-#[allow(clippy::too_many_arguments)]
 pub async fn execute_agency_payout(
     state: &AppState,
     payout_request_id: &str,
