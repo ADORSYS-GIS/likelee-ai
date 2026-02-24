@@ -55,6 +55,15 @@ pub fn send_plain_email_with_from_name(
     send_email_smtp_internal(state, to, subject, body, from_name)
 }
 
+fn send_sales_plain_text_email(
+    state: &AppState,
+    to: &str,
+    subject: &str,
+    body: &str,
+) -> Result<(), (StatusCode, String)> {
+    send_email_smtp_internal_sales(state, to, subject, body)
+}
+
 fn send_email_smtp_internal(
     state: &AppState,
     to: &str,
@@ -127,6 +136,71 @@ fn send_email_smtp_internal(
     Ok(())
 }
 
+fn send_email_smtp_internal_sales(
+    state: &AppState,
+    to: &str,
+    subject: &str,
+    body: &str,
+) -> Result<(), (StatusCode, String)> {
+    if state.smtp_sales_host.is_empty() || state.smtp_sales_user.is_empty() {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "smtp_sales_not_configured".to_string(),
+        ));
+    }
+
+    let from_addr = state.email_from_sales.parse().map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "invalid_from_address".to_string(),
+        )
+    })?;
+
+    let to_addr = to
+        .parse()
+        .map_err(|_| (StatusCode::BAD_REQUEST, "invalid_to_address".to_string()))?;
+
+    let email = Message::builder()
+        .from(from_addr)
+        .to(to_addr)
+        .subject(subject.to_string())
+        .singlepart(SinglePart::plain(body.to_string()))
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let creds = lettre::transport::smtp::authentication::Credentials::new(
+        state.smtp_sales_user.clone(),
+        state.smtp_sales_password.clone(),
+    );
+
+    let mailer = if state.smtp_sales_port == 465 {
+        let tls = TlsParameters::new(state.smtp_sales_host.clone())
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let builder = SmtpTransport::relay(&state.smtp_sales_host)
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        builder
+            .port(465)
+            .tls(Tls::Wrapper(tls))
+            .credentials(creds)
+            .build()
+    } else {
+        let relay = match SmtpTransport::starttls_relay(&state.smtp_sales_host) {
+            Ok(r) => r,
+            Err(_) => SmtpTransport::relay(&state.smtp_sales_host)
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
+        };
+        relay
+            .port(state.smtp_sales_port)
+            .credentials(creds)
+            .build()
+    };
+
+    mailer
+        .send(&email)
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    Ok(())
+}
+
 pub async fn send_email(
     State(state): State<AppState>,
     Json(payload): Json<SendEmailRequest>,
@@ -140,16 +214,50 @@ pub async fn send_email(
         state.email_contact_to.trim().to_string()
     };
 
-    match send_email_core(
-        &state,
-        &to,
-        &payload.subject,
-        &payload.body,
-        payload.is_html.unwrap_or(false),
-        payload.attachments.as_deref(),
-    )
-    .await
+    let is_sales = !state.email_sales_to.trim().is_empty()
+        && to.trim().eq_ignore_ascii_case(state.email_sales_to.trim());
+
+    if is_sales
+        && (payload.attachments.is_some() || payload.is_html.unwrap_or(false))
     {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({
+                "status":"error",
+                "error":"sales_smtp_plain_text_only"
+            })),
+        );
+    }
+
+    let res = if is_sales {
+        match send_sales_plain_text_email(&state, &to, &payload.subject, &payload.body) {
+            Ok(_) => Ok(()),
+            Err((_code, msg)) if msg == "smtp_sales_not_configured" => {
+                send_email_core(
+                    &state,
+                    &to,
+                    &payload.subject,
+                    &payload.body,
+                    false,
+                    None,
+                )
+                .await
+            }
+            Err(e) => Err(e),
+        }
+    } else {
+        send_email_core(
+            &state,
+            &to,
+            &payload.subject,
+            &payload.body,
+            payload.is_html.unwrap_or(false),
+            payload.attachments.as_deref(),
+        )
+        .await
+    };
+
+    match res {
         Ok(_) => (StatusCode::OK, Json(json!({"status":"ok"}))),
         Err((code, msg)) => (code, Json(json!({"status":"error", "error": msg}))),
     }
