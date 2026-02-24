@@ -828,7 +828,7 @@ pub async fn get_clients_campaigns_analytics(
         let new_lr_resp = state
             .pg
             .from("licensing_requests")
-            .select("licensee_brand_name")
+            .select("client_name")
             .eq("agency_id", agency_id)
             .eq("status", "approved")
             .gte("created_at", &thirty_days_ago)
@@ -839,12 +839,20 @@ pub async fn get_clients_campaigns_analytics(
             .text()
             .await
             .unwrap_or_else(|_| "[]".to_string());
-        let new_lr_list: Vec<serde_json::Value> =
-            serde_json::from_str(&new_lr_text).unwrap_or(vec![]);
+        
+        let new_lr_list: Vec<serde_json::Value> = if let Ok(parsed) = serde_json::from_str(&new_lr_text) {
+            match parsed {
+                serde_json::Value::Array(arr) => arr,
+                _ => vec![]
+            }
+        } else {
+            vec![]
+        };
+
         let new_client_names: HashSet<String> = new_lr_list
             .iter()
             .filter_map(|r| {
-                r.get("licensee_brand_name")
+                r.get("client_name")
                     .and_then(|v| v.as_str())
                     .filter(|s| !s.is_empty())
                     .map(|s| s.to_string())
@@ -1159,8 +1167,21 @@ pub async fn get_clients_campaigns_analytics(
 }
 
 fn format_currency(cents: i64) -> String {
-    let dollars = cents as f64 / 100.0;
-    format!("${:.0}", dollars)
+    let dollars = (cents as f64 / 100.0).round() as i64;
+    let s = dollars.to_string();
+    let is_negative = s.starts_with('-');
+    let abs_s = if is_negative { &s[1..] } else { &s };
+    let mut out = String::new();
+    for (i, c) in abs_s.chars().rev().enumerate() {
+        if i > 0 && i % 3 == 0 { out.push(','); }
+        out.push(c);
+    }
+    let formatted: String = out.chars().rev().collect();
+    if is_negative {
+        format!("-${}", formatted)
+    } else {
+        format!("${}", formatted)
+    }
 }
 
 #[derive(Debug, Serialize)]

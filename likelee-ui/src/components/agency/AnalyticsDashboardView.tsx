@@ -652,13 +652,39 @@ const AnalyticsDashboardView = ({
                                 <div className="h-[350px] w-full">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <PieChart>
-                                            <Pie data={clientsAnalytics.earnings_by_client} cx="50%" cy="50%" innerRadius={80} outerRadius={120} paddingAngle={5} dataKey="budget" stroke="none">
+                                            <Pie
+                                                data={clientsAnalytics.earnings_by_client}
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={0}
+                                                outerRadius={120}
+                                                dataKey="budget"
+                                                stroke="#fff"
+                                                strokeWidth={2}
+                                                labelLine={true}
+                                                label={(props) => {
+                                                    const { name, value, fill, x, y, cx } = props;
+                                                    const formattedValue = value >= 1000 ? (value / 1000).toFixed(1) + 'K' : value;
+                                                    return (
+                                                        <text
+                                                            x={x}
+                                                            y={y}
+                                                            fill={fill}
+                                                            textAnchor={x > cx ? 'start' : 'end'}
+                                                            dominantBaseline="central"
+                                                            fontSize={14}
+                                                            fontWeight="500"
+                                                        >
+                                                            {`${name}: $${formattedValue}`}
+                                                        </text>
+                                                    );
+                                                }}
+                                            >
                                                 {clientsAnalytics.earnings_by_client.map((entry: any, index: number) => (
                                                     <Cell key={`cell-${index}`} fill={entry.color} />
                                                 ))}
                                             </Pie>
                                             <RechartsTooltip contentStyle={{ borderRadius: "12px", border: "none", fontWeight: "bold" }} />
-                                            <Legend verticalAlign="middle" align="right" layout="vertical" iconType="circle" wrapperStyle={{ paddingLeft: "20px", fontWeight: "bold" }} />
                                         </PieChart>
                                     </ResponsiveContainer>
                                 </div>
