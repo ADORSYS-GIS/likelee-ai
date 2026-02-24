@@ -172,6 +172,19 @@
   - Keep `likelee-server/.env.example` in sync.
   - Document the variables here under this section.
 
+### SMTP (Admin + Sales/Contact)
+
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`
+  - Admin/default SMTP transport used for all existing server-sent emails.
+- `EMAIL_FROM`
+  - Admin/default sender address.
+- `SMTP_SALES_HOST`, `SMTP_SALES_PORT`, `SMTP_SALES_USER`, `SMTP_SALES_PASSWORD`
+  - Sales/Contact SMTP transport (separate account/credentials).
+- `EMAIL_FROM_SALES`
+  - Sales/Contact sender address (default `operations@likelee.ai`).
+- `EMAIL_SALES_TO`
+  - Internal recipient address used by the backend to classify “sales/contact” emails (default `operations@likelee.ai`).
+
 ### KYC / Veriff
 
 - `KYC_BYPASS_VERIFF_LIMIT` (bool, default `false`)

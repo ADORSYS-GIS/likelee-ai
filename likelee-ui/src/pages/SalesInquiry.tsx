@@ -27,7 +27,6 @@ export default function SalesInquiry() {
     email: "",
     phone: "",
     company_size: "",
-    budget_range: "",
     use_case: "",
     message: "",
   });
@@ -49,7 +48,6 @@ Contact: ${data.contact_name}
 Email: ${data.email}
 Phone: ${data.phone}
 Company Size: ${data.company_size}
-Budget Range: ${data.budget_range}
 Primary Use Case: ${data.use_case}
 
 Message:
@@ -224,41 +222,6 @@ ${data.message}
                   </SelectContent>
                 </Select>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
-                  {t("salesInquiry.contactInfo.monthlyBudget")}
-                </label>
-                <Select
-                  value={formData.budget_range}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, budget_range: value })
-                  }
-                >
-                  <SelectTrigger className="h-12 border-gray-300 rounded-md">
-                    <SelectValue
-                      placeholder={t("salesInquiry.placeholders.selectRange")}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="<5k">
-                      {t("salesInquiry.options.budget_under_5k")}
-                    </SelectItem>
-                    <SelectItem value="5k-15k">
-                      {t("salesInquiry.options.budget_5k_15k")}
-                    </SelectItem>
-                    <SelectItem value="15k-50k">
-                      {t("salesInquiry.options.budget_15k_50k")}
-                    </SelectItem>
-                    <SelectItem value="50k-100k">
-                      {t("salesInquiry.options.budget_50k_100k")}
-                    </SelectItem>
-                    <SelectItem value="100k+">
-                      {t("salesInquiry.options.budget_100k_plus")}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
 
             <div>
@@ -300,7 +263,7 @@ ${data.message}
 
             <div>
               <label className="block text-sm font-medium text-gray-900 mb-2">
-                {t("salesInquiry.contactInfo.tellUsMore")}
+                {" "}
               </label>
               <Textarea
                 value={formData.message}
@@ -308,7 +271,7 @@ ${data.message}
                   setFormData({ ...formData, message: e.target.value })
                 }
                 className="min-h-[120px] border-gray-300 rounded-md resize-none"
-                placeholder={t("salesInquiry.placeholders.message")}
+                placeholder=""
               />
             </div>
 

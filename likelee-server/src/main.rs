@@ -142,6 +142,13 @@ async fn main() {
         email_from: cfg.email_from.clone(),
         email_contact_to: cfg.email_contact_to.clone(),
 
+        smtp_sales_host: cfg.smtp_sales_host.clone(),
+        smtp_sales_port: cfg.smtp_sales_port,
+        smtp_sales_user: cfg.smtp_sales_user.clone(),
+        smtp_sales_password: cfg.smtp_sales_password.clone(),
+        email_from_sales: cfg.email_from_sales.clone(),
+        email_sales_to: cfg.email_sales_to.clone(),
+
         docuseal_api_key: cfg.docuseal_api_key.clone(),
         docuseal_base_url: cfg.docuseal_api_url.clone(),
         docuseal_api_url: cfg.docuseal_api_url.clone(),
