@@ -1716,7 +1716,6 @@ async fn handle_licensing_checkout_session_completed(
     Ok(())
 }
 
-
 async fn handle_licensing_requests_checkout_session_completed(
     state: &AppState,
     obj: &serde_json::Value,
@@ -1992,7 +1991,7 @@ async fn handle_licensing_requests_checkout_session_completed(
             }
             let _old_custom_rate = r.get("commission_rate").and_then(|v| v.as_f64());
             if let Some(rate) = r.get("commission_rate").and_then(|v| v.as_f64()) {
-        custom_by_talent.insert(tid.to_string(), rate.clamp(0.0, 100.0));
+                custom_by_talent.insert(tid.to_string(), rate.clamp(0.0, 100.0));
             }
         }
     }
@@ -2536,7 +2535,6 @@ async fn handle_payment_link_checkout_completed(
     );
     Ok(())
 }
-
 
 // ============================================================================
 // Payment Link Transfer Creation

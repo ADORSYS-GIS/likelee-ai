@@ -145,8 +145,8 @@ export default function TalentPortal({
   )
     ? ((baseMe as any)?.connected_agency_ids as string[])
     : baseConnectedAgencies
-      .map((r: any) => String(r?.agency_id || ""))
-      .filter((s: string) => !!s);
+        .map((r: any) => String(r?.agency_id || ""))
+        .filter((s: string) => !!s);
 
   const defaultAgencyId = baseConnectedAgencyIds[0];
 
@@ -571,9 +571,10 @@ export default function TalentPortal({
   };
 
   const navItemClass = (active: boolean) =>
-    `w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-[16px] font-semibold transition-all duration-200 ${active
-      ? "bg-[#32C8D1] text-white shadow-md shadow-[#32C8D1]/20"
-      : "text-[#4A5568] hover:bg-gray-50"
+    `w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-[16px] font-semibold transition-all duration-200 ${
+      active
+        ? "bg-[#32C8D1] text-white shadow-md shadow-[#32C8D1]/20"
+        : "text-[#4A5568] hover:bg-gray-50"
     }`;
 
   const iconClass = (active: boolean) =>
@@ -944,80 +945,82 @@ export default function TalentPortal({
           <div className="flex items-center gap-6 min-w-max pb-3">
             {(mode === "irl"
               ? [
-                { id: "overview", label: "Overview", icon: LayoutGrid },
-                {
-                  id: "calendar",
-                  label: "Booking Calendar",
-                  icon: Calendar,
-                  badge: 0,
-                },
-                {
-                  id: "active_projects",
-                  label: "Active Projects",
-                  icon: Briefcase,
-                },
-                { id: "history", label: "Job History", icon: FileText },
-                {
-                  id: "availability",
-                  label: "Availability",
-                  icon: CheckCircle2,
-                },
-                { id: "portfolio", label: "Portfolio", icon: Image },
-                { id: "earnings", label: "Earnings", icon: DollarSign },
-                { id: "messages", label: "Messages", icon: MessageSquare },
-                { id: "settings", label: "Settings", icon: Settings },
-                {
-                  id: "agency_connection",
-                  label: "Agency Connection",
-                  icon: Building2,
-                },
-              ]
+                  { id: "overview", label: "Overview", icon: LayoutGrid },
+                  {
+                    id: "calendar",
+                    label: "Booking Calendar",
+                    icon: Calendar,
+                    badge: 0,
+                  },
+                  {
+                    id: "active_projects",
+                    label: "Active Projects",
+                    icon: Briefcase,
+                  },
+                  { id: "history", label: "Job History", icon: FileText },
+                  {
+                    id: "availability",
+                    label: "Availability",
+                    icon: CheckCircle2,
+                  },
+                  { id: "portfolio", label: "Portfolio", icon: Image },
+                  { id: "earnings", label: "Earnings", icon: DollarSign },
+                  { id: "messages", label: "Messages", icon: MessageSquare },
+                  { id: "settings", label: "Settings", icon: Settings },
+                  {
+                    id: "agency_connection",
+                    label: "Agency Connection",
+                    icon: Building2,
+                  },
+                ]
               : [
-                { id: "overview", label: "Overview", icon: LayoutGrid },
-                { id: "likeness", label: "My Likeness", icon: Sparkles },
-                {
-                  id: "campaigns",
-                  label: "Active Campaigns",
-                  icon: Briefcase,
-                  badge: activeDeals.length,
-                },
-                {
-                  id: "approvals",
-                  label: "Approval Queue",
-                  icon: CheckCircle2,
-                  badge: pendingApprovals.length,
-                },
-                { id: "archive", label: "Archive", icon: FolderArchive },
-                {
-                  id: "licenses",
-                  label: "Licenses & Contracts",
-                  icon: ShieldCheck,
-                },
-                { id: "earnings", label: "Earnings", icon: DollarSign },
-                { id: "analytics", label: "Analytics", icon: BarChart3 },
-                { id: "messages", label: "Messages", icon: MessageSquare },
-                { id: "settings", label: "Settings", icon: Settings },
-              ]
+                  { id: "overview", label: "Overview", icon: LayoutGrid },
+                  { id: "likeness", label: "My Likeness", icon: Sparkles },
+                  {
+                    id: "campaigns",
+                    label: "Active Campaigns",
+                    icon: Briefcase,
+                    badge: activeDeals.length,
+                  },
+                  {
+                    id: "approvals",
+                    label: "Approval Queue",
+                    icon: CheckCircle2,
+                    badge: pendingApprovals.length,
+                  },
+                  { id: "archive", label: "Archive", icon: FolderArchive },
+                  {
+                    id: "licenses",
+                    label: "Licenses & Contracts",
+                    icon: ShieldCheck,
+                  },
+                  { id: "earnings", label: "Earnings", icon: DollarSign },
+                  { id: "analytics", label: "Analytics", icon: BarChart3 },
+                  { id: "messages", label: "Messages", icon: MessageSquare },
+                  { id: "settings", label: "Settings", icon: Settings },
+                ]
             ).map((item) => {
               const Icon = item.icon as any;
               const active = tab === item.id;
               return (
                 <button
                   key={item.id}
-                  className={`inline-flex items-center gap-2 text-[14px] font-semibold pb-2 border-b-2 transition-colors ${active
+                  className={`inline-flex items-center gap-2 text-[14px] font-semibold pb-2 border-b-2 transition-colors ${
+                    active
                       ? "text-[#32C8D1] border-[#32C8D1]"
                       : "text-gray-600 border-transparent hover:text-gray-900"
-                    }`}
+                  }`}
                   onClick={() => setTab(item.id)}
                 >
                   <Icon className="h-4 w-4" />
                   <span className="whitespace-nowrap">{item.label}</span>
                   {typeof (item as any).badge === "number" && (
                     <span
-                      className={`inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 text-[11px] font-bold rounded-full ${active
+                      className={`inline-flex items-center justify-center h-5 min-w-[20px] px-1.5 text-[11px] font-bold rounded-full ${
+                        active
                           ? "bg-[#32C8D1]/15 text-[#32C8D1]"
                           : "bg-gray-100 text-gray-500"
-                        }`}
+                      }`}
                     >
                       {(item as any).badge}
                     </span>
@@ -1405,9 +1408,9 @@ export default function TalentPortal({
                   <BookingsView
                     activeSubTab="Talent Availability"
                     bookings={[]}
-                    onAddBooking={() => { }}
-                    onUpdateBooking={() => { }}
-                    onCancelBooking={() => { }}
+                    onAddBooking={() => {}}
+                    onUpdateBooking={() => {}}
+                    onCancelBooking={() => {}}
                     bookOuts={
                       Array.isArray(bookOuts) ? (bookOuts as any[]) : []
                     }
@@ -1493,11 +1496,11 @@ export default function TalentPortal({
                           defaultValue={
                             (bookingPreferences as any)?.min_day_rate_cents
                               ? Math.round(
-                                Number(
-                                  (bookingPreferences as any)
-                                    ?.min_day_rate_cents,
-                                ) / 100,
-                              )
+                                  Number(
+                                    (bookingPreferences as any)
+                                      ?.min_day_rate_cents,
+                                  ) / 100,
+                                )
                               : ""
                           }
                           onBlur={(e) => {
@@ -1778,7 +1781,7 @@ export default function TalentPortal({
 
                 <div className="mt-5 space-y-3">
                   {Array.isArray(talentNotifications) &&
-                    talentNotifications.length > 0 ? (
+                  talentNotifications.length > 0 ? (
                     (talentNotifications as any[]).map((n: any) => {
                       const id = String(n.id);
                       const from = n.from_label || agencyName || "Agency";
@@ -1795,10 +1798,11 @@ export default function TalentPortal({
                       return (
                         <button
                           key={id}
-                          className={`w-full text-left rounded-xl border p-4 transition-colors ${unread
+                          className={`w-full text-left rounded-xl border p-4 transition-colors ${
+                            unread
                               ? "bg-blue-50/60 border-blue-200 hover:bg-blue-50"
                               : "bg-white border-gray-100 hover:bg-gray-50"
-                            }`}
+                          }`}
                           onClick={() => {
                             if (unread && !markReadMutation.isPending) {
                               markReadMutation.mutate(id);
@@ -1862,10 +1866,11 @@ export default function TalentPortal({
                   return (
                     <button
                       key={it.id}
-                      className={`px-3 py-2 rounded-lg text-sm font-semibold border transition-colors whitespace-nowrap ${active
+                      className={`px-3 py-2 rounded-lg text-sm font-semibold border transition-colors whitespace-nowrap ${
+                        active
                           ? "bg-[#32C8D1] text-white border-[#32C8D1]"
                           : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-                        }`}
+                      }`}
                       onClick={() => setSettingsTab(it.id)}
                     >
                       {it.label}
@@ -2198,10 +2203,10 @@ export default function TalentPortal({
                         <Switch
                           checked={
                             (portalSettings as any)?.public_profile_visible ===
-                              undefined
+                            undefined
                               ? true
                               : !!(portalSettings as any)
-                                ?.public_profile_visible
+                                  ?.public_profile_visible
                           }
                           onCheckedChange={(checked: boolean) =>
                             updatePortalSettingsMutation.mutate({
@@ -2243,11 +2248,11 @@ export default function TalentPortal({
                   </div>
                   {(agencyConnectionsLoading ||
                     disconnectAgencyMutation.isPending) && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Loading
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Loading
+                    </div>
+                  )}
                 </div>
 
                 {agencyConnections.length > 0 && (
@@ -2678,7 +2683,7 @@ export default function TalentPortal({
 
                 <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                   {Array.isArray(portfolioItems) &&
-                    portfolioItems.length > 0 ? (
+                  portfolioItems.length > 0 ? (
                     (portfolioItems as any[]).slice(0, 9).map((it: any) => (
                       <div
                         key={it.id}
@@ -2793,9 +2798,9 @@ export default function TalentPortal({
                       const row = it.row || {};
                       const brandId = safeStr(
                         row.brand_id ||
-                        row.brand_org_id ||
-                        row.brand_org ||
-                        row.brand,
+                          row.brand_org_id ||
+                          row.brand_org ||
+                          row.brand,
                       );
                       const brandName = row.brand_name || "Brand";
                       const subtitle =
@@ -2898,9 +2903,9 @@ export default function TalentPortal({
                     const row = it.row || {};
                     const brandId = safeStr(
                       row.brand_id ||
-                      row.brand_org_id ||
-                      row.brand_org ||
-                      row.brand,
+                        row.brand_org_id ||
+                        row.brand_org ||
+                        row.brand,
                     );
                     const brandName = row.brand_name || "Brand";
                     const subtitle =
@@ -2914,12 +2919,12 @@ export default function TalentPortal({
                     const daysLeft =
                       endDate && !isNaN(endDate.getTime())
                         ? Math.max(
-                          0,
-                          Math.ceil(
-                            (endDate.getTime() - Date.now()) /
-                            (1000 * 60 * 60 * 24),
-                          ),
-                        )
+                            0,
+                            Math.ceil(
+                              (endDate.getTime() - Date.now()) /
+                                (1000 * 60 * 60 * 24),
+                            ),
+                          )
                         : null;
 
                     return (
@@ -3035,7 +3040,7 @@ export default function TalentPortal({
                         1,
                         Math.round(
                           (e.getTime() - s.getTime()) /
-                          (1000 * 60 * 60 * 24 * 30),
+                            (1000 * 60 * 60 * 24 * 30),
                         ),
                       );
                       return `${months} month${months === 1 ? "" : "s"}`;
@@ -3233,12 +3238,12 @@ export default function TalentPortal({
                     const daysLeft =
                       endDate && !isNaN(endDate.getTime())
                         ? Math.max(
-                          0,
-                          Math.ceil(
-                            (endDate.getTime() - Date.now()) /
-                            (1000 * 60 * 60 * 24),
-                          ),
-                        )
+                            0,
+                            Math.ceil(
+                              (endDate.getTime() - Date.now()) /
+                                (1000 * 60 * 60 * 24),
+                            ),
+                          )
                         : null;
 
                     const monthlyCents = earningsByBrandId[brandId] || 0;
@@ -3492,7 +3497,7 @@ export default function TalentPortal({
                 </div>
                 <div className="mt-4 space-y-3">
                   {Array.isArray((analytics as any)?.campaigns) &&
-                    (analytics as any).campaigns.length > 0 ? (
+                  (analytics as any).campaigns.length > 0 ? (
                     (analytics as any).campaigns.slice(0, 8).map((c: any) => (
                       <div
                         key={c.brand_id}
@@ -3660,7 +3665,7 @@ export default function TalentPortal({
 
                 <div className="mt-5 space-y-3">
                   {Array.isArray(talentNotifications) &&
-                    talentNotifications.length > 0 ? (
+                  talentNotifications.length > 0 ? (
                     (talentNotifications as any[]).map((n: any) => {
                       const id = String(n.id);
                       const from = n.from_label || agencyName || "Agency";
@@ -3677,10 +3682,11 @@ export default function TalentPortal({
                       return (
                         <button
                           key={id}
-                          className={`w-full text-left rounded-xl border p-4 transition-colors ${unread
+                          className={`w-full text-left rounded-xl border p-4 transition-colors ${
+                            unread
                               ? "bg-blue-50/60 border-blue-200 hover:bg-blue-50"
                               : "bg-white border-gray-100 hover:bg-gray-50"
-                            }`}
+                          }`}
                           onClick={() => {
                             if (unread && !markReadMutation.isPending) {
                               markReadMutation.mutate(id);
@@ -3806,7 +3812,7 @@ export default function TalentPortal({
                     <Switch
                       checked={
                         (portalSettings as any)?.public_profile_visible ===
-                          undefined
+                        undefined
                           ? true
                           : !!(portalSettings as any)?.public_profile_visible
                       }

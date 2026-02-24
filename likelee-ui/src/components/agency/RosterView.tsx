@@ -496,8 +496,8 @@ const RosterView = ({
       const {
         data: { session },
       } = supabase
-          ? await supabase.auth.getSession()
-          : { data: { session: null } };
+        ? await supabase.auth.getSession()
+        : { data: { session: null } };
       const token = session?.access_token;
 
       const sectionId = `digitals_${uploadTalent.id}_${Date.now()}`;
@@ -604,9 +604,9 @@ const RosterView = ({
         const role = String(t?.role ?? "").toLowerCase();
         const roleTypesText = Array.isArray((t as any)?.role_types)
           ? ((t as any).role_types as any[])
-            .filter((x) => typeof x === "string")
-            .join(",")
-            .toLowerCase()
+              .filter((x) => typeof x === "string")
+              .join(",")
+              .toLowerCase()
           : "";
         const skills = String(t?.special_skills ?? "").toLowerCase();
         return (
@@ -632,8 +632,8 @@ const RosterView = ({
         const role = String(t?.role ?? "").toLowerCase();
         const roleTypes = Array.isArray((t as any)?.role_types)
           ? ((t as any).role_types as any[])
-            .filter((x) => typeof x === "string")
-            .map((s) => String(s).toLowerCase())
+              .filter((x) => typeof x === "string")
+              .map((s) => String(s).toLowerCase())
           : [];
         if (role === target) return true;
         if (roleTypes.includes(target)) return true;
@@ -942,8 +942,9 @@ const RosterView = ({
         <div className="flex flex-wrap gap-8 text-sm text-gray-600">
           <div className="flex items-center gap-2">
             <ShieldCheck
-              className={`w-4 h-4 ${stripeReady ? "text-green-500" : "text-gray-300"
-                }`}
+              className={`w-4 h-4 ${
+                stripeReady ? "text-green-500" : "text-gray-300"
+              }`}
             />
             <span className="font-medium">
               {stripeStatusLoading
@@ -990,17 +991,17 @@ const RosterView = ({
             </div>
             {(earnings30dTotalCents !== 0 ||
               earningsPrev30dTotalCents !== 0) && (
-                <p
-                  className={`text-xs font-medium mt-1 ${earningsTrend.positive ? "text-green-500" : "text-red-500"}`}
-                >
-                  {earningsTrend.positive ? (
-                    <TrendingUp className="w-3 h-3 inline mr-1" />
-                  ) : (
-                    <TrendingDown className="w-3 h-3 inline mr-1" />
-                  )}
-                  {earningsTrend.label}
-                </p>
-              )}
+              <p
+                className={`text-xs font-medium mt-1 ${earningsTrend.positive ? "text-green-500" : "text-red-500"}`}
+              >
+                {earningsTrend.positive ? (
+                  <TrendingUp className="w-3 h-3 inline mr-1" />
+                ) : (
+                  <TrendingDown className="w-3 h-3 inline mr-1" />
+                )}
+                {earningsTrend.label}
+              </p>
+            )}
           </div>
           <DollarSign className="w-10 h-10 text-gray-100" />
         </Card>
@@ -1044,39 +1045,36 @@ const RosterView = ({
               "Campaigns",
               "Licenses",
               "Analytics",
-            ].map(
-              (tab) => {
-                const isLicenses = tab === "Licenses";
-                const isCampaigns = tab === "Campaigns";
-                const isAiMode = agencyMode === "AI";
+            ].map((tab) => {
+              const isLicenses = tab === "Licenses";
+              const isCampaigns = tab === "Campaigns";
+              const isAiMode = agencyMode === "AI";
 
-                // Filter logic:
-                // 1. Hide Licenses in IRL mode
-                // 2. Hide Campaigns in AI mode
-                if (isLicenses && !isAiMode) return null;
-                if (isCampaigns && isAiMode) return null;
+              // Filter logic:
+              // 1. Hide Licenses in IRL mode
+              // 2. Hide Campaigns in AI mode
+              if (isLicenses && !isAiMode) return null;
+              if (isCampaigns && isAiMode) return null;
 
-                return (
-                  <button
-                    key={tab}
-                    onClick={() =>
-                      setRosterTab(tab.toLowerCase().split(" ")[0])
-                    }
-                    className={`px-4 py-2 text-sm font-bold transition-colors relative ${rosterTab === tab.toLowerCase().split(" ")[0]
-                        ? "text-gray-900 border-b-2 border-gray-900"
-                        : "text-gray-500 hover:text-gray-900"
-                      }`}
-                  >
-                    {tab}
-                    {tab === "Analytics" && (
-                      <span className="ml-2 bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
-                        Pro
-                      </span>
-                    )}
-                  </button>
-                );
-              },
-            )}
+              return (
+                <button
+                  key={tab}
+                  onClick={() => setRosterTab(tab.toLowerCase().split(" ")[0])}
+                  className={`px-4 py-2 text-sm font-bold transition-colors relative ${
+                    rosterTab === tab.toLowerCase().split(" ")[0]
+                      ? "text-gray-900 border-b-2 border-gray-900"
+                      : "text-gray-500 hover:text-gray-900"
+                  }`}
+                >
+                  {tab}
+                  {tab === "Analytics" && (
+                    <span className="ml-2 bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
+                      Pro
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
           <div className="flex gap-3">
             <Button
@@ -1279,7 +1277,7 @@ const RosterView = ({
                                     {Array.isArray(
                                       (talent as any).role_types,
                                     ) &&
-                                      (talent as any).role_types.length > 0 ? (
+                                    (talent as any).role_types.length > 0 ? (
                                       (talent as any).role_types
                                         .filter(
                                           (x: any) =>
@@ -1407,132 +1405,148 @@ const RosterView = ({
               {/* Digitals Stats Grid */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card
-                  className={`p-5 cursor-pointer transition-all rounded-xl ${digitalsFilter === "Current Only"
+                  className={`p-5 cursor-pointer transition-all rounded-xl ${
+                    digitalsFilter === "Current Only"
                       ? "bg-indigo-50 border-2 border-indigo-200 shadow-sm"
                       : "bg-white border border-gray-100 shadow-sm hover:border-indigo-100"
-                    }`}
+                  }`}
                   onClick={() => setDigitalsFilter("Current Only")}
                 >
                   <div
-                    className={`flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-wider ${digitalsFilter === "Current Only"
+                    className={`flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-wider ${
+                      digitalsFilter === "Current Only"
                         ? "text-indigo-700"
                         : "text-gray-400"
-                      }`}
+                    }`}
                   >
                     <ImageIcon className="w-4 h-4" /> Current
                   </div>
                   <p
-                    className={`text-3xl font-bold mb-1 ${digitalsFilter === "Current Only"
+                    className={`text-3xl font-bold mb-1 ${
+                      digitalsFilter === "Current Only"
                         ? "text-indigo-900"
                         : "text-gray-900"
-                      }`}
+                    }`}
                   >
                     {digitalsStats.current}
                   </p>
                   <p
-                    className={`text-xs font-bold ${digitalsFilter === "Current Only"
+                    className={`text-xs font-bold ${
+                      digitalsFilter === "Current Only"
                         ? "text-indigo-600"
                         : "text-blue-500"
-                      }`}
+                    }`}
                   >
                     Up to date
                   </p>
                 </Card>
 
                 <Card
-                  className={`p-5 cursor-pointer transition-all rounded-xl ${digitalsFilter === "Needs Reminder"
+                  className={`p-5 cursor-pointer transition-all rounded-xl ${
+                    digitalsFilter === "Needs Reminder"
                       ? "bg-indigo-50 border-2 border-indigo-200 shadow-sm"
                       : "bg-white border border-gray-100 shadow-sm hover:border-indigo-100"
-                    }`}
+                  }`}
                   onClick={() => setDigitalsFilter("Needs Reminder")}
                 >
                   <div
-                    className={`flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-wider ${digitalsFilter === "Needs Reminder"
+                    className={`flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-wider ${
+                      digitalsFilter === "Needs Reminder"
                         ? "text-indigo-700"
                         : "text-gray-400"
-                      }`}
+                    }`}
                   >
                     <Clock className="w-4 h-4" /> Reminder Due
                   </div>
                   <p
-                    className={`text-3xl font-bold mb-1 ${digitalsFilter === "Needs Reminder"
+                    className={`text-3xl font-bold mb-1 ${
+                      digitalsFilter === "Needs Reminder"
                         ? "text-indigo-900"
                         : "text-gray-900"
-                      }`}
+                    }`}
                   >
                     {digitalsStats.needsReminder}
                   </p>
                   <p
-                    className={`text-xs font-medium ${digitalsFilter === "Needs Reminder"
+                    className={`text-xs font-medium ${
+                      digitalsFilter === "Needs Reminder"
                         ? "text-indigo-600"
                         : "text-gray-400"
-                      }`}
+                    }`}
                   >
                     75-89 days old
                   </p>
                 </Card>
 
                 <Card
-                  className={`p-5 cursor-pointer transition-all rounded-xl ${digitalsFilter === "Outdated Only"
+                  className={`p-5 cursor-pointer transition-all rounded-xl ${
+                    digitalsFilter === "Outdated Only"
                       ? "bg-indigo-50 border-2 border-indigo-200 shadow-sm"
                       : "bg-white border border-gray-100 shadow-sm hover:border-indigo-100"
-                    }`}
+                  }`}
                   onClick={() => setDigitalsFilter("Outdated Only")}
                 >
                   <div
-                    className={`flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-wider ${digitalsFilter === "Outdated Only"
+                    className={`flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-wider ${
+                      digitalsFilter === "Outdated Only"
                         ? "text-indigo-700"
                         : "text-gray-400"
-                      }`}
+                    }`}
                   >
                     <AlertCircle className="w-4 h-4" /> Outdated
                   </div>
                   <p
-                    className={`text-3xl font-bold mb-1 ${digitalsFilter === "Outdated Only"
+                    className={`text-3xl font-bold mb-1 ${
+                      digitalsFilter === "Outdated Only"
                         ? "text-indigo-900"
                         : "text-gray-900"
-                      }`}
+                    }`}
                   >
                     {digitalsStats.outdated}
                   </p>
                   <p
-                    className={`text-xs font-medium ${digitalsFilter === "Outdated Only"
+                    className={`text-xs font-medium ${
+                      digitalsFilter === "Outdated Only"
                         ? "text-indigo-600"
                         : "text-gray-400"
-                      }`}
+                    }`}
                   >
                     90+ days old
                   </p>
                 </Card>
 
                 <Card
-                  className={`p-5 cursor-pointer transition-all rounded-xl ${digitalsFilter === "All Talent"
+                  className={`p-5 cursor-pointer transition-all rounded-xl ${
+                    digitalsFilter === "All Talent"
                       ? "bg-indigo-50 border-2 border-indigo-200 shadow-sm"
                       : "bg-white border border-gray-100 shadow-sm hover:border-indigo-100"
-                    }`}
+                  }`}
                   onClick={() => setDigitalsFilter("All Talent")}
                 >
                   <div
-                    className={`flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-wider ${digitalsFilter === "All Talent"
+                    className={`flex items-center gap-2 mb-2 text-xs font-bold uppercase tracking-wider ${
+                      digitalsFilter === "All Talent"
                         ? "text-indigo-700"
                         : "text-gray-400"
-                      }`}
+                    }`}
                   >
                     <Calendar className="w-4 h-4" /> Total Talent
                   </div>
                   <p
-                    className={`text-3xl font-bold mb-1 ${digitalsFilter === "All Talent"
+                    className={`text-3xl font-bold mb-1 ${
+                      digitalsFilter === "All Talent"
                         ? "text-indigo-900"
                         : "text-gray-900"
-                      }`}
+                    }`}
                   >
                     {digitalsStats.total}
                   </p>
                   <p
-                    className={`text-xs font-bold ${digitalsFilter === "All Talent"
+                    className={`text-xs font-bold ${
+                      digitalsFilter === "All Talent"
                         ? "text-indigo-600"
                         : "text-indigo-600"
-                      }`}
+                    }`}
                   >
                     In roster
                   </p>
@@ -1733,12 +1747,12 @@ const RosterView = ({
                 const filtered = !q
                   ? rows
                   : rows.filter((t: any) => {
-                    const name = String(
-                      t?.name || t?.full_legal_name || "",
-                    ).toLowerCase();
-                    const email = String(t?.email || "").toLowerCase();
-                    return name.includes(q) || email.includes(q);
-                  });
+                      const name = String(
+                        t?.name || t?.full_legal_name || "",
+                      ).toLowerCase();
+                      const email = String(t?.email || "").toLowerCase();
+                      return name.includes(q) || email.includes(q);
+                    });
 
                 if (filtered.length === 0) {
                   return (

@@ -207,7 +207,9 @@ pub async fn get_analytics_dashboard(
                 .filter(|r| {
                     let status = r.get("status").and_then(|v| v.as_str()).unwrap_or("");
                     let created_at = r.get("created_at").and_then(|v| v.as_str()).unwrap_or("");
-                    status == "approved" && created_at >= month_start.as_str() && created_at < month_end.as_str()
+                    status == "approved"
+                        && created_at >= month_start.as_str()
+                        && created_at < month_end.as_str()
                 })
                 .count() as i64;
 
@@ -675,12 +677,15 @@ pub async fn get_clients_campaigns_analytics(
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
         let lr_text = lr_resp.text().await.unwrap_or_else(|_| "[]".to_string());
-        
+
         let lr_list: Vec<serde_json::Value> = if let Ok(parsed) = serde_json::from_str(&lr_text) {
             match parsed {
                 serde_json::Value::Array(arr) => arr,
                 _ => {
-                    tracing::error!("licensing_requests fetch error or unexpected struct: {}", lr_text);
+                    tracing::error!(
+                        "licensing_requests fetch error or unexpected struct: {}",
+                        lr_text
+                    );
                     vec![]
                 }
             }
@@ -698,8 +703,7 @@ pub async fn get_clients_campaigns_analytics(
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
         let lp_text = lp_resp.text().await.unwrap_or_else(|_| "[]".to_string());
-        let lp_list: Vec<serde_json::Value> =
-            serde_json::from_str(&lp_text).unwrap_or(vec![]);
+        let lp_list: Vec<serde_json::Value> = serde_json::from_str(&lp_text).unwrap_or(vec![]);
 
         // Build map: request_id -> amount_cents from payouts
         let mut payout_by_request: HashMap<String, i64> = HashMap::new();
@@ -708,10 +712,7 @@ pub async fn get_clients_campaigns_analytics(
                 .get("licensing_request_id")
                 .and_then(|v| v.as_str())
                 .unwrap_or_default();
-            let amt = p
-                .get("amount_cents")
-                .and_then(|v| v.as_i64())
-                .unwrap_or(0);
+            let amt = p.get("amount_cents").and_then(|v| v.as_i64()).unwrap_or(0);
             if !rid.is_empty() {
                 *payout_by_request.entry(rid.to_string()).or_insert(0) += amt;
             }
@@ -813,10 +814,7 @@ pub async fn get_clients_campaigns_analytics(
 
         // Repeat Client Rate: % of clients who appear more than once
         let total_clients = client_license_count.len() as f64;
-        let repeat_clients = client_license_count
-            .values()
-            .filter(|&&c| c > 1)
-            .count() as f64;
+        let repeat_clients = client_license_count.values().filter(|&&c| c > 1).count() as f64;
         let repeat_client_rate = if total_clients > 0.0 {
             (repeat_clients / total_clients) * 100.0
         } else {
@@ -839,15 +837,16 @@ pub async fn get_clients_campaigns_analytics(
             .text()
             .await
             .unwrap_or_else(|_| "[]".to_string());
-        
-        let new_lr_list: Vec<serde_json::Value> = if let Ok(parsed) = serde_json::from_str(&new_lr_text) {
-            match parsed {
-                serde_json::Value::Array(arr) => arr,
-                _ => vec![]
-            }
-        } else {
-            vec![]
-        };
+
+        let new_lr_list: Vec<serde_json::Value> =
+            if let Ok(parsed) = serde_json::from_str(&new_lr_text) {
+                match parsed {
+                    serde_json::Value::Array(arr) => arr,
+                    _ => vec![],
+                }
+            } else {
+                vec![]
+            };
 
         let new_client_names: HashSet<String> = new_lr_list
             .iter()
@@ -873,7 +872,6 @@ pub async fn get_clients_campaigns_analytics(
     // ===========================================================
     // IRL MODE (original logic below)
     // ===========================================================
-
 
     // 1. Earnings by Client & Top Clients Performance
     // We need payments summed by brand, and campaigns counted by brand.
@@ -1173,7 +1171,9 @@ fn format_currency(cents: i64) -> String {
     let abs_s = if is_negative { &s[1..] } else { &s };
     let mut out = String::new();
     for (i, c) in abs_s.chars().rev().enumerate() {
-        if i > 0 && i % 3 == 0 { out.push(','); }
+        if i > 0 && i % 3 == 0 {
+            out.push(',');
+        }
         out.push(c);
     }
     let formatted: String = out.chars().rev().collect();
@@ -1313,15 +1313,16 @@ pub async fn get_roster_insights(
             .text()
             .await
             .unwrap_or_else(|_| "[]".to_string());
-        
-        let payouts_list: Vec<serde_json::Value> = if let Ok(parsed) = serde_json::from_str(&payouts_text) {
-            match parsed {
-                serde_json::Value::Array(arr) => arr,
-                _ => vec![]
-            }
-        } else {
-            vec![]
-        };
+
+        let payouts_list: Vec<serde_json::Value> =
+            if let Ok(parsed) = serde_json::from_str(&payouts_text) {
+                match parsed {
+                    serde_json::Value::Array(arr) => arr,
+                    _ => vec![],
+                }
+            } else {
+                vec![]
+            };
 
         let mut talent_earnings_60d: HashMap<String, i64> = HashMap::new();
         let mut talent_earnings_30d: HashMap<String, i64> = HashMap::new();
@@ -1329,12 +1330,18 @@ pub async fn get_roster_insights(
         for payout in payouts_list {
             let paid_at = payout.get("paid_at").and_then(|v| v.as_str()).unwrap_or("");
             let splits_arr = payout.get("talent_splits").and_then(|v| v.as_array());
-            
+
             if let Some(splits) = splits_arr {
                 if !splits.is_empty() {
                     for split in splits {
-                        let s_tid = split.get("talent_id").and_then(|v| v.as_str()).unwrap_or_default();
-                        let s_amt = split.get("amount_cents").and_then(|v| v.as_i64()).unwrap_or(0);
+                        let s_tid = split
+                            .get("talent_id")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or_default();
+                        let s_amt = split
+                            .get("amount_cents")
+                            .and_then(|v| v.as_i64())
+                            .unwrap_or(0);
                         if !s_tid.is_empty() {
                             *talent_earnings_60d.entry(s_tid.to_string()).or_insert(0) += s_amt;
                             if paid_at >= thirty_days_ago.as_str() {
@@ -1345,7 +1352,7 @@ pub async fn get_roster_insights(
                     continue;
                 }
             }
-            
+
             // Fallback for single-talent legacy payouts
             let fallback_amt = payout
                 .get("talent_earnings_cents")
@@ -1357,13 +1364,16 @@ pub async fn get_roster_insights(
                 .unwrap_or_default();
 
             if !legacy_tid.is_empty() {
-                *talent_earnings_60d.entry(legacy_tid.to_string()).or_insert(0) += fallback_amt;
+                *talent_earnings_60d
+                    .entry(legacy_tid.to_string())
+                    .or_insert(0) += fallback_amt;
                 if paid_at >= thirty_days_ago.as_str() {
-                    *talent_earnings_30d.entry(legacy_tid.to_string()).or_insert(0) += fallback_amt;
+                    *talent_earnings_30d
+                        .entry(legacy_tid.to_string())
+                        .or_insert(0) += fallback_amt;
                 }
             }
         }
-
 
         // 4. Approved licensing requests (Last 30d) for Most Active (Licenses)
         let licensing_resp = state
@@ -1497,16 +1507,16 @@ pub async fn get_roster_insights(
         });
 
         // Highest Engagement: talent with the most instagram_followers
-        let highest_engagement_metric = talent_metrics
-            .iter()
-            .max_by_key(|m| m.followers_count);
+        let highest_engagement_metric = talent_metrics.iter().max_by_key(|m| m.followers_count);
 
         // Format follower count with commas (e.g. 53400 -> 53,400)
         let fmt_followers = |n: i64| -> String {
             let s = n.to_string();
             let mut out = String::new();
             for (i, c) in s.chars().rev().enumerate() {
-                if i > 0 && i % 3 == 0 { out.push(','); }
+                if i > 0 && i % 3 == 0 {
+                    out.push(',');
+                }
                 out.push(c);
             }
             out.chars().rev().collect()
@@ -1800,9 +1810,7 @@ pub async fn get_roster_insights(
     });
 
     // Highest Engagement: talent with the most instagram_followers
-    let highest_engagement_metric = talent_metrics
-        .iter()
-        .max_by_key(|m| m.followers_count);
+    let highest_engagement_metric = talent_metrics.iter().max_by_key(|m| m.followers_count);
     let highest_engagement = highest_engagement_metric.map(|m| TalentMetric {
         talent_id: m.talent_id,
         talent_name: m.talent_name.clone(),
@@ -2035,7 +2043,7 @@ pub async fn get_expired_licenses(
     let resp = state
         .pg
         .from("licensing_requests")
-        .select("id, talent_id, deadline, licensee_brand_name, status")
+        .select("id, talent_id, deadline, client_name, status")
         .eq("agency_id", &auth_user.id)
         .eq("status", "approved")
         .lt("deadline", &today)
@@ -2044,8 +2052,7 @@ pub async fn get_expired_licenses(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     let requests_text = resp.text().await.unwrap_or_else(|_| "[]".to_string());
-    let requests: Vec<serde_json::Value> =
-        serde_json::from_str(&requests_text).unwrap_or(vec![]);
+    let requests: Vec<serde_json::Value> = serde_json::from_str(&requests_text).unwrap_or(vec![]);
 
     // Collect talent_ids for name/avatar lookup
     let talent_ids: Vec<String> = requests
@@ -2071,8 +2078,7 @@ pub async fn get_expired_licenses(
             .text()
             .await
             .unwrap_or_else(|_| "[]".to_string());
-        let talents: Vec<serde_json::Value> =
-            serde_json::from_str(&talents_text).unwrap_or(vec![]);
+        let talents: Vec<serde_json::Value> = serde_json::from_str(&talents_text).unwrap_or(vec![]);
 
         for t in talents {
             if let Some(id) = t.get("id").and_then(|v| v.as_str()) {
@@ -2108,7 +2114,7 @@ pub async fn get_expired_licenses(
                 "talent_id": tid,
                 "talent_name": talent_name,
                 "talent_avatar": talent_avatar,
-                "brand_name": r.get("licensee_brand_name").and_then(|v| v.as_str()).unwrap_or("—"),
+                "brand_name": r.get("client_name").and_then(|v| v.as_str()).unwrap_or("—"),
                 "deadline": r.get("deadline").and_then(|v| v.as_str()).unwrap_or(""),
                 "status": r.get("status").and_then(|v| v.as_str()).unwrap_or("approved"),
             })

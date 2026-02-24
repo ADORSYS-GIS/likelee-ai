@@ -1488,15 +1488,22 @@ pub async fn get_pay_split(
         let c_rows: Vec<serde_json::Value> = serde_json::from_str(&c_text).unwrap_or_default();
 
         for r in &c_rows {
-            total += r.get("payment_amount").and_then(|v| v.as_f64()).unwrap_or(0.0);
-            agency_percent = r.get("agency_percent").and_then(|v| v.as_f64()).unwrap_or(0.0);
-            talent_percent = r.get("talent_percent").and_then(|v| v.as_f64()).unwrap_or(0.0);
+            total += r
+                .get("payment_amount")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
+            agency_percent = r
+                .get("agency_percent")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
+            talent_percent = r
+                .get("talent_percent")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
 
             let talent_id = reqs
                 .iter()
-                .find(|lr| {
-                    lr.get("id") == r.get("licensing_request_id")
-                })
+                .find(|lr| lr.get("id") == r.get("licensing_request_id"))
                 .and_then(|lr| lr.get("talent_id"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("");

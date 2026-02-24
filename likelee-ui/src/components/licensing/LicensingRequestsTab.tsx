@@ -382,11 +382,10 @@ export const LicensingRequestsTab = () => {
                     Decline
                   </Button>
                 </div>
-              )
-              }
-            </Card >
+              )}
+            </Card>
           ))}
-        </div >
+        </div>
 
         <Dialog
           open={counterOfferModalOpen}
@@ -438,7 +437,7 @@ export const LicensingRequestsTab = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div >
+      </div>
     </>
   );
 };

@@ -245,7 +245,9 @@ pub async fn get_performance_tiers(
             .eq("agency_id", agency_id)
             .eq("role", "talent")
             .limit(500)
-            .select("id, full_legal_name, profile_photo_url, talent_commissions!left(commission_rate)")
+            .select(
+                "id, full_legal_name, profile_photo_url, talent_commissions!left(commission_rate)"
+            )
             .execute(),
         async {
             let now = chrono::Utc::now();
@@ -276,7 +278,10 @@ pub async fn get_performance_tiers(
     let _db_time = start_total.elapsed();
 
     // Process Tiers Config
-    let text_tiers = resp_tiers_db.text().await.unwrap_or_else(|_| "[]".to_string());
+    let text_tiers = resp_tiers_db
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
     let tiers_db: Vec<TierConfigDb> = serde_json::from_str(&text_tiers).unwrap_or_default();
     let mut config_map: HashMap<String, (f64, i32, f64)> = tiers_db
         .into_iter()
@@ -306,7 +311,10 @@ pub async fn get_performance_tiers(
             2,
             2500.0_f64,
             5_i32,
-            Some("Consistently performing talent with solid earnings and regular bookings".to_string()),
+            Some(
+                "Consistently performing talent with solid earnings and regular bookings"
+                    .to_string(),
+            ),
             30.0_f64,
         ),
         (
@@ -329,25 +337,32 @@ pub async fn get_performance_tiers(
 
     let mut tiers_json: Vec<TierRule> = defaults
         .into_iter()
-        .map(|(tier_name, tier_level, default_e, default_b, description, default_pct)| {
-            let (min_e, min_b, payout_percent) = config_map
-                .remove(&tier_name)
-                .unwrap_or((default_e, default_b, default_pct));
-            TierRule {
-                tier_name,
-                tier_level,
-                min_monthly_earnings: min_e,
-                min_monthly_bookings: min_b,
-                commission_rate: 0.0,
-                description,
-                payout_percent,
-            }
-        })
+        .map(
+            |(tier_name, tier_level, default_e, default_b, description, default_pct)| {
+                let (min_e, min_b, payout_percent) =
+                    config_map
+                        .remove(&tier_name)
+                        .unwrap_or((default_e, default_b, default_pct));
+                TierRule {
+                    tier_name,
+                    tier_level,
+                    min_monthly_earnings: min_e,
+                    min_monthly_bookings: min_b,
+                    commission_rate: 0.0,
+                    description,
+                    payout_percent,
+                }
+            },
+        )
         .collect();
 
     // Capture Agency Config for Commissions
-    let text_agency = resp_agency.text().await.unwrap_or_else(|_| "[]".to_string());
-    let agency_data: Vec<serde_json::Value> = serde_json::from_str(&text_agency).unwrap_or_default();
+    let text_agency = resp_agency
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
+    let agency_data: Vec<serde_json::Value> =
+        serde_json::from_str(&text_agency).unwrap_or_default();
     let performance_commission_config = agency_data
         .first()
         .and_then(|r| r.get("performance_commission_config"))
@@ -377,8 +392,12 @@ pub async fn get_performance_tiers(
     }
 
     // Process Talents
-    let text_talents = resp_talents.text().await.unwrap_or_else(|_| "[]".to_string());
-    let talents_json: Vec<serde_json::Value> = serde_json::from_str(&text_talents).unwrap_or_default();
+    let text_talents = resp_talents
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
+    let talents_json: Vec<serde_json::Value> =
+        serde_json::from_str(&text_talents).unwrap_or_default();
 
     let mut groups: HashMap<i32, TierGroup> = HashMap::new();
     for rule in &tiers_json {
@@ -398,15 +417,28 @@ pub async fn get_performance_tiers(
     }
 
     for t in talents_json {
-        let id = t.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
-        let name = t.get("full_legal_name").and_then(|v| v.as_str()).unwrap_or("Unknown").to_string();
-        let photo = t.get("profile_photo_url").and_then(|v| v.as_str()).map(|s| s.to_string());
+        let id = t
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let name = t
+            .get("full_legal_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Unknown")
+            .to_string();
+        let photo = t
+            .get("profile_photo_url")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
         let earnings = *earnings_map.get(&id).unwrap_or(&0.0);
         let booking_count = *bookings_map.get(&id).unwrap_or(&0);
 
         let mut assigned_tier = &tiers_json[tiers_json.len() - 1];
         for rule in &tiers_json {
-            if earnings >= rule.min_monthly_earnings && booking_count >= rule.min_monthly_bookings as i64 {
+            if earnings >= rule.min_monthly_earnings
+                && booking_count >= rule.min_monthly_bookings as i64
+            {
                 assigned_tier = rule;
                 break;
             }
@@ -435,7 +467,14 @@ pub async fn get_performance_tiers(
         }
 
         let tier_body = serde_json::json!({ "performance_tier_name": assigned_tier.tier_name });
-        let _ = state.pg.from("agency_users").eq("id", &id).eq("agency_id", agency_id).update(tier_body.to_string()).execute().await;
+        let _ = state
+            .pg
+            .from("agency_users")
+            .eq("id", &id)
+            .eq("agency_id", agency_id)
+            .update(tier_body.to_string())
+            .execute()
+            .await;
     }
 
     let mut result_tiers: Vec<TierGroup> = groups.into_values().collect();
@@ -480,11 +519,29 @@ pub async fn update_talent_commission(
 
     let text_user = resp_user.text().await.unwrap_or_else(|_| "[]".to_string());
     let user_data: Vec<serde_json::Value> = serde_json::from_str(&text_user).unwrap_or_default();
-    let _old_custom_rate = user_data.first().and_then(|v| v.get("commission_rate")).and_then(|v| v.as_f64());
+    let _old_custom_rate = user_data
+        .first()
+        .and_then(|v| v.get("commission_rate"))
+        .and_then(|v| v.as_f64());
 
-    let text_tiers = resp_tiers_db.text().await.unwrap_or_else(|_| "[]".to_string());
+    let text_tiers = resp_tiers_db
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
     let tiers_db: Vec<TierConfigDb> = serde_json::from_str(&text_tiers).unwrap_or_default();
-    let mut config_map: HashMap<String, (f64, i32, f64)> = tiers_db.into_iter().map(|r| (r.tier_name, (r.min_monthly_earnings, r.min_monthly_bookings, r.payout_percent))).collect();
+    let mut config_map: HashMap<String, (f64, i32, f64)> = tiers_db
+        .into_iter()
+        .map(|r| {
+            (
+                r.tier_name,
+                (
+                    r.min_monthly_earnings,
+                    r.min_monthly_bookings,
+                    r.payout_percent,
+                ),
+            )
+        })
+        .collect();
 
     let defaults: [(String, i32, f64, i32, Option<String>, f64); 4] = [
         ("Premium".to_string(), 1, 5000.0, 8, None, 40.0),
@@ -493,14 +550,37 @@ pub async fn update_talent_commission(
         ("Inactive".to_string(), 4, 0.0, 0, None, 10.0),
     ];
 
-    let mut tiers: Vec<TierRule> = defaults.into_iter().map(|(tier_name, tier_level, default_e, default_b, description, default_pct)| {
-        let (min_e, min_b, payout_percent) = config_map.remove(&tier_name).unwrap_or((default_e, default_b, default_pct));
-        TierRule { tier_name, tier_level, min_monthly_earnings: min_e, min_monthly_bookings: min_b, commission_rate: 0.0, description, payout_percent }
-    }).collect();
+    let mut tiers: Vec<TierRule> = defaults
+        .into_iter()
+        .map(
+            |(tier_name, tier_level, default_e, default_b, description, default_pct)| {
+                let (min_e, min_b, payout_percent) =
+                    config_map
+                        .remove(&tier_name)
+                        .unwrap_or((default_e, default_b, default_pct));
+                TierRule {
+                    tier_name,
+                    tier_level,
+                    min_monthly_earnings: min_e,
+                    min_monthly_bookings: min_b,
+                    commission_rate: 0.0,
+                    description,
+                    payout_percent,
+                }
+            },
+        )
+        .collect();
 
-    let text_agency = resp_agency.text().await.unwrap_or_else(|_| "[]".to_string());
-    let agency_data: Vec<serde_json::Value> = serde_json::from_str(&text_agency).unwrap_or_default();
-    let commission_config = agency_data.first().and_then(|r| r.get("performance_commission_config")).and_then(|v| v.as_object());
+    let text_agency = resp_agency
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
+    let agency_data: Vec<serde_json::Value> =
+        serde_json::from_str(&text_agency).unwrap_or_default();
+    let commission_config = agency_data
+        .first()
+        .and_then(|r| r.get("performance_commission_config"))
+        .and_then(|v| v.as_object());
 
     if let Some(config) = commission_config {
         for t in &mut tiers {
@@ -512,9 +592,12 @@ pub async fn update_talent_commission(
         }
     }
 
-    let stats_all: Vec<PerformanceStats> = serde_json::from_str(&resp_stats.text().await.unwrap_or_default()).unwrap_or_default();
+    let stats_all: Vec<PerformanceStats> =
+        serde_json::from_str(&resp_stats.text().await.unwrap_or_default()).unwrap_or_default();
     let talent_stats = stats_all.iter().find(|s| s.talent_id == payload.talent_id);
-    let earnings = talent_stats.map(|s| s.earnings_cents as f64 / 100.0).unwrap_or(0.0);
+    let earnings = talent_stats
+        .map(|s| s.earnings_cents as f64 / 100.0)
+        .unwrap_or(0.0);
     let bookings = talent_stats.map(|s| s.booking_count).unwrap_or(0);
 
     let mut assigned_tier = &tiers[tiers.len() - 1];
@@ -563,11 +646,22 @@ pub async fn get_commission_history(
                 .to_string();
 
             CommissionHistoryLog {
-                id: r.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                id: r
+                    .get("id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string(),
                 talent_name,
-                commission_rate: r.get("commission_rate").and_then(|v| v.as_f64()).unwrap_or(0.0),
+                commission_rate: r
+                    .get("commission_rate")
+                    .and_then(|v| v.as_f64())
+                    .unwrap_or(0.0),
                 changed_by_name: Some("System (Payout)".to_string()),
-                changed_at: r.get("paid_at").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                changed_at: r
+                    .get("paid_at")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string(),
             }
         })
         .collect();
@@ -585,19 +679,56 @@ pub async fn get_commission_breakdowns(
     let text = resp.text().await.unwrap_or_else(|_| "[]".to_string());
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
 
-    let breakdowns: Vec<CommissionBreakdown> = rows.into_iter().map(|row| {
-        let id = row.get("id").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-        let date = row.get("created_at").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-        let gross_cents = row.get("gross_cents").and_then(|v| v.as_i64()).unwrap_or(0);
-        let talent_cents = row.get("talent_earnings_cents").and_then(|v| v.as_i64()).unwrap_or(0);
-        let total_value = gross_cents as f64 / 100.0;
-        let talent_share = talent_cents as f64 / 100.0;
-        let agency_share = (gross_cents - talent_cents) as f64 / 100.0;
-        let commission_percentage = if total_value > 0.0 { (agency_share / total_value) * 100.0 } else { 0.0 };
-        let talent_name = row.get("agency_users").and_then(|v| v.get("full_legal_name")).and_then(|v| v.as_str()).unwrap_or("Unknown").to_string();
-        let brand_name = row.get("brands").and_then(|v| v.get("name")).and_then(|v| v.as_str()).unwrap_or("Direct Project").to_string();
-        CommissionBreakdown { id, talent_name, brand_name, date, total_value, talent_share, agency_share, commission_percentage }
-    }).collect();
+    let breakdowns: Vec<CommissionBreakdown> = rows
+        .into_iter()
+        .map(|row| {
+            let id = row
+                .get("id")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string();
+            let date = row
+                .get("created_at")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string();
+            let gross_cents = row.get("gross_cents").and_then(|v| v.as_i64()).unwrap_or(0);
+            let talent_cents = row
+                .get("talent_earnings_cents")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(0);
+            let total_value = gross_cents as f64 / 100.0;
+            let talent_share = talent_cents as f64 / 100.0;
+            let agency_share = (gross_cents - talent_cents) as f64 / 100.0;
+            let commission_percentage = if total_value > 0.0 {
+                (agency_share / total_value) * 100.0
+            } else {
+                0.0
+            };
+            let talent_name = row
+                .get("agency_users")
+                .and_then(|v| v.get("full_legal_name"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("Unknown")
+                .to_string();
+            let brand_name = row
+                .get("brands")
+                .and_then(|v| v.get("name"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("Direct Project")
+                .to_string();
+            CommissionBreakdown {
+                id,
+                talent_name,
+                brand_name,
+                date,
+                total_value,
+                talent_share,
+                agency_share,
+                commission_percentage,
+            }
+        })
+        .collect();
 
     Ok(Json(breakdowns))
 }
@@ -617,18 +748,32 @@ pub async fn get_agency_payout_weights(
         state.pg.from("performance_tiers").select("tier_name,payout_percent").eq("agency_id", agency_id).execute()
     ).map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let talents_text = resp_talents.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let talents_text = resp_talents
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let talents: Vec<serde_json::Value> = serde_json::from_str(&talents_text).unwrap_or_default();
-    let stats_text = resp_stats.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let stats_text = resp_stats
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let stats: Vec<PerformanceStats> = serde_json::from_str(&stats_text).unwrap_or_default();
-    let tiers_text = resp_tiers.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let tiers_text = resp_tiers
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let tiers_rows: Vec<serde_json::Value> = serde_json::from_str(&tiers_text).unwrap_or_default();
 
     let mut payout_percent_by_tier: HashMap<String, f64> = HashMap::new();
     for r in tiers_rows {
         let name = r.get("tier_name").and_then(|v| v.as_str()).unwrap_or("");
-        let pct = r.get("payout_percent").and_then(|v| v.as_f64()).unwrap_or(25.0);
-        if !name.is_empty() { payout_percent_by_tier.insert(name.to_string(), pct); }
+        let pct = r
+            .get("payout_percent")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(25.0);
+        if !name.is_empty() {
+            payout_percent_by_tier.insert(name.to_string(), pct);
+        }
     }
 
     let mut earnings_map: HashMap<String, f64> = HashMap::new();
@@ -640,18 +785,52 @@ pub async fn get_agency_payout_weights(
 
     let mut items: Vec<TalentPayoutWeight> = Vec::new();
     for t in talents {
-        let id = t.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
-        if id.is_empty() { continue; }
-        let name = t.get("full_legal_name").or_else(|| t.get("stage_name")).and_then(|v| v.as_str()).unwrap_or("Unknown").to_string();
-        let photo_url = t.get("profile_photo_url").and_then(|v| v.as_str()).map(|s| s.to_string());
+        let id = t
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        if id.is_empty() {
+            continue;
+        }
+        let name = t
+            .get("full_legal_name")
+            .or_else(|| t.get("stage_name"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("Unknown")
+            .to_string();
+        let photo_url = t
+            .get("profile_photo_url")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
         let earnings = *earnings_map.get(&id).unwrap_or(&0.0);
         let bookings = *bookings_map.get(&id).unwrap_or(&0);
-        let tier_name = t.get("performance_tier_name").and_then(|v| v.as_str()).filter(|s| !s.trim().is_empty()).unwrap_or("Inactive").to_string();
-        let payout_percent = payout_percent_by_tier.get(&tier_name).copied().unwrap_or(25.0);
+        let tier_name = t
+            .get("performance_tier_name")
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.trim().is_empty())
+            .unwrap_or("Inactive")
+            .to_string();
+        let payout_percent = payout_percent_by_tier
+            .get(&tier_name)
+            .copied()
+            .unwrap_or(25.0);
 
-        items.push(TalentPayoutWeight { talent_id: id, name, photo_url, earnings_30d: earnings, bookings_this_month: bookings, tier_name, payout_percent });
+        items.push(TalentPayoutWeight {
+            talent_id: id,
+            name,
+            photo_url,
+            earnings_30d: earnings,
+            bookings_this_month: bookings,
+            tier_name,
+            payout_percent,
+        });
     }
 
-    items.sort_by(|a, b| b.payout_percent.partial_cmp(&a.payout_percent).unwrap_or(std::cmp::Ordering::Equal));
+    items.sort_by(|a, b| {
+        b.payout_percent
+            .partial_cmp(&a.payout_percent)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     Ok(Json(AgencyPayoutWeightsResponse { items }))
 }
