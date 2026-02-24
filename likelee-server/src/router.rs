@@ -485,6 +485,18 @@ pub fn build_router(state: AppState) -> Router {
         )
         .route("/api/faces/search", get(crate::face_profiles::search_faces))
         .route(
+            "/api/marketplace/search",
+            get(crate::face_profiles::search_marketplace_profiles),
+        )
+        .route(
+            "/api/marketplace/:profile_type/:id/details",
+            get(crate::face_profiles::get_marketplace_profile_details),
+        )
+        .route(
+            "/api/marketplace/connect",
+            post(crate::face_profiles::create_marketplace_connection_request),
+        )
+        .route(
             "/api/moderation/image",
             post(crate::moderation::moderate_image),
         )

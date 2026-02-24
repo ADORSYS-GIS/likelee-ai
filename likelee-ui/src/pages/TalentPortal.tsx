@@ -273,10 +273,10 @@ export default function TalentPortal({
   });
 
   const { data: bookingPreferences } = useQuery({
-    queryKey: ["talentBookingPreferences", effectiveAgencyId || "all"],
+    queryKey: ["talentBookingPreferences", profileAgencyId || "all"],
     queryFn: async () =>
       await getTalentBookingPreferences(
-        effectiveAgencyId ? { agency_id: effectiveAgencyId } : {},
+        profileAgencyId ? { agency_id: profileAgencyId } : {},
       ),
     enabled: !!talentId,
   });
@@ -290,6 +290,28 @@ export default function TalentPortal({
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ["talentBookingPreferences"],
+      });
+    },
+    onError: (e: any) => {
+      const msg = String(e?.message || "");
+      const normalized = msg.toLowerCase();
+      if (
+        normalized.includes("agency_id is required") ||
+        normalized.includes("not connected to agency") ||
+        normalized.includes("missing required information")
+      ) {
+        toast({
+          variant: "destructive",
+          title: "Select an agency first",
+          description:
+            "Choose an agency in the Agency filter, then update booking preferences.",
+        });
+        return;
+      }
+      toast({
+        variant: "destructive",
+        title: "Failed to update booking preferences",
+        description: msg || "Please try again.",
       });
     },
   });
@@ -818,6 +840,9 @@ export default function TalentPortal({
   );
 
   const agencyInvites = ((agencyInvitesResp as any)?.invites as any[]) || [];
+  const pendingAgencyInvitesCount = (agencyInvites as any[]).filter(
+    (i) => String(i?.status || "").toLowerCase() === "pending",
+  ).length;
 
   const { data: agencyConnections = [], isLoading: agencyConnectionsLoading } =
     useQuery({
@@ -1035,6 +1060,7 @@ export default function TalentPortal({
                     id: "agency_connection",
                     label: "Agency Connection",
                     icon: Building2,
+                    badge: pendingAgencyInvitesCount || undefined,
                   },
                 ]
               : [
@@ -1531,8 +1557,8 @@ export default function TalentPortal({
                       onCheckedChange={(checked: boolean) =>
                         updateBookingPreferencesMutation.mutate({
                           willing_to_travel: checked,
-                          ...(effectiveAgencyId
-                            ? { agency_id: effectiveAgencyId }
+                          ...(profileAgencyId
+                            ? { agency_id: profileAgencyId }
                             : {}),
                         } as any)
                       }
@@ -1572,8 +1598,8 @@ export default function TalentPortal({
                             if (!raw) {
                               updateBookingPreferencesMutation.mutate({
                                 min_day_rate_cents: null,
-                                ...(effectiveAgencyId
-                                  ? { agency_id: effectiveAgencyId }
+                                ...(profileAgencyId
+                                  ? { agency_id: profileAgencyId }
                                   : {}),
                               } as any);
                               return;
@@ -1582,8 +1608,8 @@ export default function TalentPortal({
                             if (isNaN(dollars) || dollars < 0) return;
                             updateBookingPreferencesMutation.mutate({
                               min_day_rate_cents: Math.round(dollars * 100),
-                              ...(effectiveAgencyId
-                                ? { agency_id: effectiveAgencyId }
+                              ...(profileAgencyId
+                                ? { agency_id: profileAgencyId }
                                 : {}),
                             } as any);
                           }}
@@ -2461,81 +2487,107 @@ export default function TalentPortal({
                       .map((inv: any) => (
                         <div
                           key={inv.id}
-                          className="p-4 border border-gray-200 rounded-lg flex items-center justify-between gap-4"
+                          className="p-4 border border-gray-200 rounded-lg space-y-3"
                         >
-                          <div className="min-w-0">
-                            <div className="font-semibold text-gray-900 truncate">
-                              Invitation from agency
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="min-w-0 flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                {inv?.agencies?.logo_url ? (
+                                  <img
+                                    src={inv.agencies.logo_url}
+                                    alt={inv?.agencies?.agency_name || "Agency"}
+                                    className="w-full h-full object-contain"
+                                  />
+                                ) : (
+                                  <Building2 className="w-5 h-5 text-gray-500" />
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="font-semibold text-gray-900 truncate">
+                                  {inv?.agencies?.agency_name
+                                    ? `Invitation from ${inv.agencies.agency_name}`
+                                    : "Invitation from agency"}
+                                </div>
+                                <div className="text-xs text-gray-500 truncate mt-1">
+                                  {inv?.agencies?.email ||
+                                    inv?.agencies?.website ||
+                                    "Agency profile available on request"}
+                                </div>
+                              </div>
                             </div>
-                            <div className="text-xs text-gray-500 truncate mt-1">
-                              {inv.agency_id}
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <Button
+                                variant="outline"
+                                disabled={disconnectAgencyMutation.isPending}
+                                onClick={async () => {
+                                  try {
+                                    const token = String(inv?.token || "");
+                                    if (token) {
+                                      navigate(
+                                        `/invite/agency/${encodeURIComponent(token)}`,
+                                      );
+                                      return;
+                                    }
+                                    toast({
+                                      title: "Missing invite token",
+                                      description:
+                                        "Open the invite link to respond.",
+                                      variant: "destructive" as any,
+                                    });
+                                  } catch (e: any) {
+                                    toast({
+                                      variant: "destructive",
+                                      title: "Failed to decline",
+                                      description: e?.message || String(e),
+                                    });
+                                  }
+                                }}
+                              >
+                                Decline
+                              </Button>
+                              <Button
+                                className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                                disabled={disconnectAgencyMutation.isPending}
+                                onClick={async () => {
+                                  try {
+                                    await acceptCreatorAgencyInvite(
+                                      String(inv.id),
+                                    );
+                                    await Promise.all([
+                                      queryClient.invalidateQueries({
+                                        queryKey: ["creatorAgencyInvites"],
+                                      }),
+                                      queryClient.invalidateQueries({
+                                        queryKey: ["creatorAgencyConnections"],
+                                      }),
+                                      queryClient.invalidateQueries({
+                                        queryKey: ["talentMe"],
+                                      }),
+                                    ]);
+                                    toast({
+                                      title: "Invitation accepted",
+                                      description:
+                                        "You are now connected to the agency.",
+                                    });
+                                  } catch (e: any) {
+                                    toast({
+                                      variant: "destructive",
+                                      title: "Failed to accept",
+                                      description: e?.message || String(e),
+                                    });
+                                  }
+                                }}
+                              >
+                                Accept
+                              </Button>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <Button
-                              variant="outline"
-                              disabled={disconnectAgencyMutation.isPending}
-                              onClick={async () => {
-                                try {
-                                  const token = String(inv?.token || "");
-                                  if (token) {
-                                    navigate(
-                                      `/invite/agency/${encodeURIComponent(token)}`,
-                                    );
-                                    return;
-                                  }
-                                  toast({
-                                    title: "Missing invite token",
-                                    description:
-                                      "Open the invite link to respond.",
-                                    variant: "destructive" as any,
-                                  });
-                                } catch (e: any) {
-                                  toast({
-                                    variant: "destructive",
-                                    title: "Failed to decline",
-                                    description: e?.message || String(e),
-                                  });
-                                }
-                              }}
-                            >
-                              Decline
-                            </Button>
-                            <Button
-                              className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                              disabled={disconnectAgencyMutation.isPending}
-                              onClick={async () => {
-                                try {
-                                  await acceptCreatorAgencyInvite(
-                                    String(inv.id),
-                                  );
-                                  await Promise.all([
-                                    queryClient.invalidateQueries({
-                                      queryKey: ["creatorAgencyInvites"],
-                                    }),
-                                    queryClient.invalidateQueries({
-                                      queryKey: ["creatorAgencyConnections"],
-                                    }),
-                                    queryClient.invalidateQueries({
-                                      queryKey: ["talentMe"],
-                                    }),
-                                  ]);
-                                  toast({
-                                    title: "Invitation accepted",
-                                    description:
-                                      "You are now connected to the agency.",
-                                  });
-                                } catch (e: any) {
-                                  toast({
-                                    variant: "destructive",
-                                    title: "Failed to accept",
-                                    description: e?.message || String(e),
-                                  });
-                                }
-                              }}
-                            >
-                              Accept
-                            </Button>
+                          <div className="rounded-md border border-cyan-100 bg-cyan-50 px-3 py-2 text-xs text-cyan-900">
+                            <span className="font-semibold">
+                              Likelee notice:
+                            </span>{" "}
+                            This agency found your public profile in marketplace
+                            and sent a connection invitation.
                           </div>
                         </div>
                       ))}

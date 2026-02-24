@@ -63,6 +63,7 @@ import {
   Mail,
   Package,
   Globe,
+  Store,
   Video,
   File,
   Tag,
@@ -126,6 +127,7 @@ import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettings
 import AgencyDashboardView from "@/components/agency/DashboardView";
 import FileStorageView from "@/components/dashboard/settings/FileStorageView";
 import AgencyRosterView from "@/components/agency/RosterView";
+import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
 import PerformanceTiers from "@/components/dashboard/PerformanceTiers";
 import {
   getAgencyRoster,
@@ -9192,6 +9194,7 @@ const ScoutingHubView = ({
             variant="default"
             className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 shadow-sm rounded-lg h-9 text-sm"
             onClick={() => {
+              setActiveTab("Open Calls");
               setEventToEdit(null);
               setIsEventModalOpen(true);
             }}
@@ -10291,103 +10294,12 @@ const SocialDiscoveryTab = () => (
 );
 
 const MarketplaceTab = () => (
-  <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-      <div>
-        <h2 className="text-xl font-bold text-gray-900">Likelee Marketplace</h2>
-        <p className="text-sm text-gray-500 font-medium">
-          Browse verified creators on the Likelee platform
-        </p>
-      </div>
-      <Button
-        variant="outline"
-        className="flex items-center gap-2 border-gray-300 font-bold text-gray-700 px-6 h-10 rounded-lg shadow-sm"
-      >
-        <Filter className="w-4 h-4 text-gray-400" /> Filters
-      </Button>
-    </div>
-
-    <div className="flex flex-col gap-6">
-      <div className="flex gap-2 w-full">
-        <div className="relative flex-1">
-          <Input
-            placeholder="Search by name, category, or skills..."
-            className="h-10 border-gray-200 bg-white rounded-lg"
-          />
-        </div>
-        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-8 rounded-lg shadow-sm">
-          Search
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Select defaultValue="all">
-          <SelectTrigger className="h-11 border-gray-200">
-            <SelectValue placeholder="All Categories" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            <SelectItem value="model">Models</SelectItem>
-            <SelectItem value="actor">Actors</SelectItem>
-            <SelectItem value="influencer">Influencers</SelectItem>
-            <SelectItem value="athlete">Athletes</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select defaultValue="all">
-          <SelectTrigger className="h-11 border-gray-200">
-            <SelectValue placeholder="All" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="unsigned">Unsigned</SelectItem>
-            <SelectItem value="signed">Signed</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select defaultValue="followers">
-          <SelectTrigger className="h-11 border-gray-200">
-            <SelectValue placeholder="Followers" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="followers">Followers</SelectItem>
-            <SelectItem value="engagement">Engagement</SelectItem>
-            <SelectItem value="recent">Recently Added</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="border border-dashed border-gray-200 rounded-2xl p-24 flex flex-col items-center justify-center text-center mt-4">
-        <div className="p-6 bg-gray-50 rounded-full mb-6">
-          <Globe className="w-12 h-12 text-gray-200" />
-        </div>
-        <h3 className="text-xl font-bold text-gray-900 mb-2">
-          Marketplace Integration Coming Soon
-        </h3>
-        <p className="text-gray-500 max-w-sm font-medium mb-8">
-          Browse and connect with verified creators from the Likelee network
-        </p>
-
-        <div className="bg-[#FAFAFA] border border-gray-100 p-8 rounded-2xl text-left max-w-md w-full">
-          <h4 className="font-bold text-gray-900 mb-4">Benefits:</h4>
-          <ul className="space-y-3">
-            {[
-              "Access verified, vetted talent profiles",
-              "See availability and booking rates",
-              "Send connection requests directly",
-              "Review portfolios and past campaigns",
-            ].map((benefit) => (
-              <li
-                key={benefit}
-                className="flex items-start gap-3 text-sm text-gray-600 font-medium"
-              >
-                <div className="w-1.5 h-1.5 bg-gray-900 rounded-full mt-1.5 flex-shrink-0" />
-                {benefit}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </div>
-  </Card>
+  <MarketplaceSection
+    title="Likelee Marketplace"
+    subtitle="Verified creators only"
+    verifiedBadgeLabel="Verified Profiles"
+    queryScope="scouting-marketplace"
+  />
 );
 
 const ScoutingMapTab = ({
@@ -18649,8 +18561,7 @@ export default function AgencyDashboard() {
   };
 
   const goToMarketplace = () => {
-    setActiveTab("scouting");
-    setActiveScoutingTab("Marketplace");
+    setActiveTab("marketplace");
     setSidebarOpen(false);
   };
 
@@ -19140,6 +19051,7 @@ export default function AgencyDashboard() {
     agencyMode === "AI"
       ? [
           { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          { id: "marketplace", label: "Marketplace", icon: Store },
           {
             id: "roster",
             label: "Roster",
@@ -19186,6 +19098,7 @@ export default function AgencyDashboard() {
         ]
       : [
           { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+          { id: "marketplace", label: "Marketplace", icon: Store },
           {
             id: "roster",
             label: "Roster",
@@ -19919,6 +19832,7 @@ export default function AgencyDashboard() {
               setActiveTab={setActiveScoutingTab}
             />
           )}
+          {activeTab === "marketplace" && <MarketplaceTab />}
           {activeTab === "client-crm" && <ClientCRMView />}
           {activeTab === "file-storage" && <FileStorageView />}
           {activeTab === "bookings" && (

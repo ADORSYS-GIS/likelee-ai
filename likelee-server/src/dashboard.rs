@@ -15,7 +15,7 @@ pub async fn get_dashboard(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<DashboardResponse>, (StatusCode, String)> {
-    let select_cols = "id, email, full_name, city, state, bio, vibes, content_types, industries, primary_platform, platform_handle, tiktok_handle, portfolio_link, visibility, kyc_status, verified_at, base_monthly_price_cents, currency_code, profile_photo_url, accept_negotiations, content_restrictions, brand_exclusivity";
+    let select_cols = "id, email, full_name, city, state, bio, vibes, content_types, industries, primary_platform, platform_handle, tiktok_handle, portfolio_link, visibility, public_profile_visible, kyc_status, verified_at, base_monthly_price_cents, currency_code, profile_photo_url, accept_negotiations, content_restrictions, brand_exclusivity";
 
     let resp = state
         .pg
