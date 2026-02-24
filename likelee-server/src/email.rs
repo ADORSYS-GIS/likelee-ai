@@ -188,10 +188,7 @@ fn send_email_smtp_internal_sales(
             Err(_) => SmtpTransport::relay(&state.smtp_sales_host)
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?,
         };
-        relay
-            .port(state.smtp_sales_port)
-            .credentials(creds)
-            .build()
+        relay.port(state.smtp_sales_port).credentials(creds).build()
     };
 
     mailer
@@ -217,9 +214,7 @@ pub async fn send_email(
     let is_sales = !state.email_sales_to.trim().is_empty()
         && to.trim().eq_ignore_ascii_case(state.email_sales_to.trim());
 
-    if is_sales
-        && (payload.attachments.is_some() || payload.is_html.unwrap_or(false))
-    {
+    if is_sales && (payload.attachments.is_some() || payload.is_html.unwrap_or(false)) {
         return (
             StatusCode::BAD_REQUEST,
             Json(json!({
@@ -233,15 +228,7 @@ pub async fn send_email(
         match send_sales_plain_text_email(&state, &to, &payload.subject, &payload.body) {
             Ok(_) => Ok(()),
             Err((_code, msg)) if msg == "smtp_sales_not_configured" => {
-                send_email_core(
-                    &state,
-                    &to,
-                    &payload.subject,
-                    &payload.body,
-                    false,
-                    None,
-                )
-                .await
+                send_email_core(&state, &to, &payload.subject, &payload.body, false, None).await
             }
             Err(e) => Err(e),
         }
