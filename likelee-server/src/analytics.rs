@@ -1116,7 +1116,7 @@ pub async fn get_roster_insights(
                 .get("is_verified_talent")
                 .and_then(|v| v.as_bool())
                 .unwrap_or(false);
-            let is_verified = is_verified_talent || creator_id.is_some();
+            let _is_verified = is_verified_talent || creator_id.is_some();
 
             let name = talent
                 .get("full_legal_name")
@@ -1146,6 +1146,9 @@ pub async fn get_roster_insights(
                 .and_then(|v| v.as_f64())
                 .unwrap_or(0.0);
 
+            // Status = Active if talent has at least 1 approved license in last 30d
+            let is_active = licenses_count > 0;
+
             talent_metrics.push(TalentPerformanceMetric {
                 talent_id: uuid::Uuid::parse_str(tid).unwrap_or_default(),
                 talent_name: name.clone(),
@@ -1156,10 +1159,10 @@ pub async fn get_roster_insights(
                 campaigns_count_30d: licenses_count,
                 avg_value_cents: avg_value,
                 avg_value_formatted: format_currency(avg_value),
-                status: if is_verified {
-                    "Verified".to_string()
+                status: if is_active {
+                    "Active".to_string()
                 } else {
-                    "Pending Verification".to_string()
+                    "Inactive".to_string()
                 },
                 image_url: image_url.clone(),
                 followers_count,
@@ -1195,35 +1198,26 @@ pub async fn get_roster_insights(
             image_url: m.image_url.clone(),
         });
 
-        // Highest Engagement: weighted score of normalized earnings + approved licenses count
-        let max_earnings = talent_metrics
+        // Highest Engagement: talent with the most instagram_followers
+        let highest_engagement_metric = talent_metrics
             .iter()
-            .map(|m| m.earnings_30d_cents)
-            .max()
-            .unwrap_or(0)
-            .max(1);
-        let max_licenses = talent_metrics
-            .iter()
-            .map(|m| m.campaigns_count_30d)
-            .max()
-            .unwrap_or(0)
-            .max(1);
+            .max_by_key(|m| m.followers_count);
 
-        let highest_engagement_metric = talent_metrics.iter().max_by(|a, b| {
-            let a_score = (a.earnings_30d_cents as f64 / max_earnings as f64)
-                + (a.campaigns_count_30d as f64 / max_licenses as f64);
-            let b_score = (b.earnings_30d_cents as f64 / max_earnings as f64)
-                + (b.campaigns_count_30d as f64 / max_licenses as f64);
-            a_score
-                .partial_cmp(&b_score)
-                .unwrap_or(std::cmp::Ordering::Equal)
-                .then_with(|| a.earnings_30d_cents.cmp(&b.earnings_30d_cents))
-        });
+        // Format follower count with commas (e.g. 53400 -> 53,400)
+        let fmt_followers = |n: i64| -> String {
+            let s = n.to_string();
+            let mut out = String::new();
+            for (i, c) in s.chars().rev().enumerate() {
+                if i > 0 && i % 3 == 0 { out.push(','); }
+                out.push(c);
+            }
+            out.chars().rev().collect()
+        };
 
         let highest_engagement = highest_engagement_metric.map(|m| TalentMetric {
             talent_id: m.talent_id,
             talent_name: m.talent_name.clone(),
-            value: format!("{:.1}% engagement", m.engagement_rate),
+            value: fmt_followers(m.followers_count),
             sub_text: format!(
                 "{} earnings • {} licenses",
                 m.earnings_30d_formatted, m.campaigns_count_30d
@@ -1409,8 +1403,7 @@ pub async fn get_roster_insights(
             .get("is_verified_talent")
             .and_then(|v| v.as_bool())
             .unwrap_or(false);
-
-        let is_verified = is_verified_talent || creator_id.is_some();
+        let _is_verified = is_verified_talent || creator_id.is_some();
 
         // Fetch name and image
         let name = talent
@@ -1441,6 +1434,9 @@ pub async fn get_roster_insights(
             .and_then(|v| v.as_f64())
             .unwrap_or(0.0);
 
+        // Status = Active if talent has an ongoing booking in the last 30d
+        let is_active = bookings_count > 0;
+
         talent_metrics.push(TalentPerformanceMetric {
             talent_id: uuid::Uuid::parse_str(tid).unwrap_or_default(),
             talent_name: name.clone(),
@@ -1448,13 +1444,13 @@ pub async fn get_roster_insights(
             earnings_30d_formatted: format_currency(realized_30d),
             projected_earnings_cents: projected,
             projected_earnings_formatted: format_currency(projected),
-            campaigns_count_30d: bookings_count, // Reusing field name, mapped to bookings
+            campaigns_count_30d: bookings_count,
             avg_value_cents: avg_value,
             avg_value_formatted: format_currency(avg_value),
-            status: if is_verified {
-                "Verified".to_string()
+            status: if is_active {
+                "Active".to_string()
             } else {
-                "Pending Verification".to_string()
+                "Inactive".to_string()
             },
             image_url: image_url.clone(),
             followers_count,
@@ -1505,21 +1501,17 @@ pub async fn get_roster_insights(
         image_url: m.image_url.clone(),
     });
 
-    // Highest Engagement: Highest Rate
-    let highest_engagement_metric = talent_metrics.iter().max_by(|a, b| {
-        a.engagement_rate
-            .partial_cmp(&b.engagement_rate)
-            .unwrap_or(std::cmp::Ordering::Equal)
-            .then_with(|| a.earnings_30d_cents.cmp(&b.earnings_30d_cents))
-    });
+    // Highest Engagement: talent with the most instagram_followers
+    let highest_engagement_metric = talent_metrics
+        .iter()
+        .max_by_key(|m| m.followers_count);
     let highest_engagement = highest_engagement_metric.map(|m| TalentMetric {
         talent_id: m.talent_id,
         talent_name: m.talent_name.clone(),
-        value: format!("{:.1}%", m.engagement_rate),
+        value: format_large_num(m.followers_count),
         sub_text: format!(
-            "{} followers • {} bookings",
-            format_large_num(m.followers_count),
-            m.campaigns_count_30d
+            "{} earnings • {} bookings",
+            m.earnings_30d_formatted, m.campaigns_count_30d
         ),
         image_url: m.image_url.clone(),
     });

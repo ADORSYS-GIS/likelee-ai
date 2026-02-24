@@ -106,7 +106,7 @@ const AnalyticsDashboardView = ({
 
     const subTabs =
         agencyMode === "AI"
-            ? ["Overview", "Roster Insights", "Clients & Campaigns"]
+            ? ["Overview", "Roster Insights", "Clients & Campaigns", "Compliance"]
             : ["Overview", "Roster Insights", "Clients & Campaigns"];
 
     useEffect(() => {
@@ -520,7 +520,7 @@ const AnalyticsDashboardView = ({
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 13, fontWeight: "bold", fill: "#64748b" }} dy={15} />
                                         <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 13, fontWeight: "bold", fill: "#94a3b8" }} tickFormatter={(val) => `$${val}`} />
-                                        <RechartsTooltip contentStyle={{ borderRadius: "12px", border: "1px solid #e2e8f0", fontWeight: "bold" }} formatter={(val: number) => `$${val.toLocaleString()}`} />
+                                        <RechartsTooltip contentStyle={{ borderRadius: "12px", border: "1px solid #e2e8f0", fontWeight: "bold" }} formatter={(val: number) => `$${val.toLocaleString()}`} cursor={{ fill: "transparent" }} />
                                         <Legend verticalAlign="bottom" align="center" iconType="rect" wrapperStyle={{ paddingTop: "40px", fontWeight: "bold", fontSize: "13px" }} formatter={(value) => <span className="text-gray-700 uppercase tracking-widest px-2">{value === "earnings" ? "30D Earnings ($)" : "Projected ($)"}</span>} />
                                         <Bar dataKey="earnings" fill="#10b981" radius={[4, 4, 0, 0]} barSize={32} name="earnings" />
                                         <Bar dataKey="projected" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={32} name="projected" />
@@ -533,7 +533,7 @@ const AnalyticsDashboardView = ({
                             {[
                                 { label: "Top Performer (Earnings)", data: rosterInsights.top_performer, borderColor: "border-green-500", textColor: "text-green-600" },
                                 { label: "Most Active (Campaigns)", data: rosterInsights.most_active, borderColor: "border-indigo-500", textColor: "text-blue-600" },
-                                { label: "Highest Engagement", data: rosterInsights.highest_engagement, borderColor: "border-purple-500", textColor: "text-purple-600" },
+                                { label: "Highest Followers", data: rosterInsights.highest_engagement, borderColor: "border-purple-500", textColor: "text-purple-600" },
                             ].map(({ label, data, borderColor, textColor }) => (
                                 <Card key={label} className="p-6 bg-white border border-gray-900 shadow-sm relative overflow-hidden">
                                     <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-6">{label}</p>
@@ -683,7 +683,7 @@ const AnalyticsDashboardView = ({
                             </div>
                         </Card>
 
-                        <div className="grid grid-cols-3 gap-6">
+                        <div className={`grid gap-6 ${agencyMode === "AI" ? "grid-cols-2" : "grid-cols-3"}`}>
                             <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
                                 <p className="text-sm font-bold text-gray-500 mb-2">Repeat Client Rate</p>
                                 <h3 className="text-4xl font-bold text-gray-900 tracking-tighter">{clientsAnalytics.repeat_client_rate.toFixed(0)}%</h3>
@@ -691,11 +691,13 @@ const AnalyticsDashboardView = ({
                                     <div className="h-full bg-gray-900 rounded-full" style={{ width: `${clientsAnalytics.repeat_client_rate}%` }} />
                                 </div>
                             </Card>
-                            <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
-                                <p className="text-sm font-bold text-gray-500 mb-2">Avg Campaign Duration</p>
-                                <h3 className="text-4xl font-bold text-gray-900 tracking-tighter">{clientsAnalytics.avg_campaign_duration} days</h3>
-                                <p className="text-xs text-gray-500 mt-2 font-medium">From booking to completion</p>
-                            </Card>
+                            {agencyMode !== "AI" && (
+                                <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
+                                    <p className="text-sm font-bold text-gray-500 mb-2">Avg Campaign Duration</p>
+                                    <h3 className="text-4xl font-bold text-gray-900 tracking-tighter">{clientsAnalytics.avg_campaign_duration} days</h3>
+                                    <p className="text-xs text-gray-500 mt-2 font-medium">From booking to completion</p>
+                                </Card>
+                            )}
                             <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
                                 <p className="text-sm font-bold text-gray-500 mb-2">Client Acquisition</p>
                                 <h3 className="text-4xl font-bold text-green-600 tracking-tighter">{clientsAnalytics.client_acquisition}</h3>
