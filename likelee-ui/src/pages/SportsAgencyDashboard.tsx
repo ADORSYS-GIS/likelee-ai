@@ -339,7 +339,7 @@ export default function SportsAgencyDashboard() {
   const isConsentExpiring = (expiryDate) => {
     const expiry = new Date(expiryDate);
     const now = new Date();
-    const daysUntilExpiry = (expiry - now) / (1000 * 60 * 60 * 24);
+    const daysUntilExpiry = (expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
     return daysUntilExpiry < 60 && daysUntilExpiry > 0;
   };
 
@@ -665,19 +665,19 @@ export default function SportsAgencyDashboard() {
                 {(searchQuery ||
                   sportFilter !== "all" ||
                   consentFilter !== "all") && (
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      setSearchQuery("");
-                      setSportFilter("all");
-                      setConsentFilter("all");
-                    }}
-                    className="text-gray-600"
-                  >
-                    <X className="w-4 h-4 mr-2" />
-                    Clear
-                  </Button>
-                )}
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setSearchQuery("");
+                        setSportFilter("all");
+                        setConsentFilter("all");
+                      }}
+                      className="text-gray-600"
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      Clear
+                    </Button>
+                  )}
               </div>
 
               {/* Table */}

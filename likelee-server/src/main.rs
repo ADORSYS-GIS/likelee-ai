@@ -8,6 +8,9 @@ use tracing::{info, warn};
 
 #[tokio::main]
 async fn main() {
+    // Load env vars from the likelee-server .env when running from the repo root,
+    // then fallback to a .env in the current working directory.
+    let _ = dotenvy::from_filename("likelee-server/.env");
     dotenv().ok();
     let cfg = likelee_server::config::ServerConfig::init_from_env()
         .expect("invalid/missing environment configuration");
@@ -19,6 +22,16 @@ async fn main() {
         .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"));
     tracing_subscriber::fmt().with_env_filter(filter).init();
     info!(port, endpoint_base = %cfg.veriff_base_url, "Starting likelee-server");
+    info!(
+        payouts_enabled = cfg.payouts_enabled,
+        instant_payouts_enabled = cfg.instant_payouts_enabled,
+        payout_auto_approve_threshold_cents = cfg.payout_auto_approve_threshold_cents,
+        min_payout_amount_cents = cfg.min_payout_amount_cents,
+        payout_fee_bps = cfg.payout_fee_bps,
+        payout_currency = %cfg.payout_currency,
+        payout_allowed_currencies = %cfg.payout_allowed_currencies,
+        "payout_config_loaded"
+    );
 
     let pg_url =
         if cfg.supabase_url.ends_with("/rest/v1") || cfg.supabase_url.ends_with("/rest/v1/") {
@@ -31,7 +44,8 @@ async fn main() {
         .insert_header(
             "Authorization",
             format!("Bearer {}", cfg.supabase_service_key),
-        );
+        )
+        .insert_header("Prefer", "return=representation");
 
     // Ensure Storage buckets and policies exist (Option B: server-only writes)
     {
@@ -104,32 +118,6 @@ async fn main() {
         stripe_licensing_enterprise_price_id: cfg.stripe_licensing_enterprise_price_id.clone(),
         stripe_agency_basic_base_price_id: cfg.stripe_agency_basic_base_price_id.clone(),
         stripe_agency_pro_base_price_id: cfg.stripe_agency_pro_base_price_id.clone(),
-        stripe_agency_basic_package_price_id: cfg.stripe_agency_basic_package_price_id.clone(),
-        stripe_agency_pro_package_price_id: cfg.stripe_agency_pro_package_price_id.clone(),
-        stripe_agency_roster_5_10_price_id: cfg.stripe_agency_roster_5_10_price_id.clone(),
-        stripe_agency_roster_11_50_price_id: cfg.stripe_agency_roster_11_50_price_id.clone(),
-        stripe_agency_roster_51_100_price_id: cfg.stripe_agency_roster_51_100_price_id.clone(),
-        stripe_agency_roster_100_plus_price_id: cfg.stripe_agency_roster_100_plus_price_id.clone(),
-        stripe_agency_addon_irl_booking_price_id: cfg
-            .stripe_agency_addon_irl_booking_price_id
-            .clone(),
-        stripe_agency_addon_deepfake_5_10_price_id: cfg
-            .stripe_agency_addon_deepfake_5_10_price_id
-            .clone(),
-        stripe_agency_addon_deepfake_11_50_price_id: cfg
-            .stripe_agency_addon_deepfake_11_50_price_id
-            .clone(),
-        stripe_agency_addon_deepfake_51_100_price_id: cfg
-            .stripe_agency_addon_deepfake_51_100_price_id
-            .clone(),
-        stripe_agency_addon_deepfake_100_plus_price_id: cfg
-            .stripe_agency_addon_deepfake_100_plus_price_id
-            .clone(),
-        stripe_agency_addon_team_1_5_price_id: cfg.stripe_agency_addon_team_1_5_price_id.clone(),
-        stripe_agency_addon_team_6_10_price_id: cfg.stripe_agency_addon_team_6_10_price_id.clone(),
-        stripe_agency_addon_team_11_30_price_id: cfg
-            .stripe_agency_addon_team_11_30_price_id
-            .clone(),
         stripe_checkout_success_url: cfg.stripe_checkout_success_url.clone(),
         stripe_checkout_cancel_url: cfg.stripe_checkout_cancel_url.clone(),
         stripe_licensing_success_url: cfg.stripe_licensing_success_url.clone(),

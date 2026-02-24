@@ -42,11 +42,15 @@ export default function AgencySubscribe() {
   );
 
   const rosterModels = 186;
-  const rosterRate = 10;
-  const rosterCost = rosterModels * rosterRate;
+  const rosterRateBasic = 5;
+  const rosterRatePro = 10;
+  const rosterCostBasic = rosterModels * rosterRateBasic;
+  const rosterCostPro = rosterModels * rosterRatePro;
   const irlBookingCost = 489;
-  const totalMonthlyBasic = 2748;
-  const totalMonthlyPro = 2838;
+  const basePlanBasic = 399;
+  const basePlanPro = 489;
+  const totalMonthlyBasic = basePlanBasic + rosterCostBasic + irlBookingCost;
+  const totalMonthlyPro = basePlanPro + rosterCostPro + irlBookingCost;
 
   const [checkingOut, setCheckingOut] = React.useState(false);
 
@@ -80,6 +84,9 @@ export default function AgencySubscribe() {
     () => bracketForValue(rosterBrackets, rosterModels),
     [],
   );
+
+  const rosterRate = plan === "basic" ? rosterRateBasic : rosterRatePro;
+  const rosterCost = plan === "basic" ? rosterCostBasic : rosterCostPro;
 
   const onCheckout = async (planOverride?: "basic" | "pro" | "enterprise") => {
     const targetPlan = planOverride || plan;
@@ -206,13 +213,13 @@ export default function AgencySubscribe() {
             <div className="mt-6 text-gray-500 font-medium">
               <div className="flex justify-between">
                 <span>Base plan</span>
-                <span>${399}</span>
+                <span>${basePlanBasic}</span>
               </div>
               <div className="flex justify-between">
                 <span>
-                  {rosterModels} models × ${rosterRate}
+                  {rosterModels} models × ${rosterRateBasic}
                 </span>
-                <span>${rosterCost}</span>
+                <span>${rosterCostBasic}</span>
               </div>
               <div className="flex justify-between">
                 <span>IRL Booking add-on</span>
@@ -298,13 +305,13 @@ export default function AgencySubscribe() {
             <div className="mt-6 text-white/70 font-medium">
               <div className="flex justify-between">
                 <span>Base plan</span>
-                <span>${489}</span>
+                <span>${basePlanPro}</span>
               </div>
               <div className="flex justify-between">
                 <span>
-                  {rosterModels} models × ${rosterRate}
+                  {rosterModels} models × ${rosterRatePro}
                 </span>
-                <span>${rosterCost}</span>
+                <span>${rosterCostPro}</span>
               </div>
               <div className="flex justify-between">
                 <span>IRL Booking add-on</span>
@@ -318,8 +325,6 @@ export default function AgencySubscribe() {
               </div>
               <div className="mt-4 space-y-3 text-white/80 font-medium">
                 {[
-                  "Protection & Usage",
-                  "Compliance Hub",
                   "Advanced Analytics",
                   "Royalties & Payouts Dashboard",
                   "Financial Reports & Expense Tracking",
@@ -440,12 +445,10 @@ export default function AgencySubscribe() {
 
             <Card className="rounded-[28px] border border-amber-200 bg-amber-50 p-6">
               <div className="text-amber-900 font-bold">
-                Protection & Usage and Compliance Hub are exclusive to the Pro
-                plan — regardless of add-ons.
+                Deepfake Detection & Protection is an add-on.
               </div>
               <div className="text-amber-800 mt-1">
-                Upgrade to Pro to track and protect your talent's likeness
-                across all AI campaigns.
+                Add it when you need it.
               </div>
             </Card>
           </div>

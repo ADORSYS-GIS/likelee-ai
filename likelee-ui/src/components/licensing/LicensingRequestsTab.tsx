@@ -1,6 +1,17 @@
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Filter, RefreshCw } from "lucide-react";
+import {
+  Filter,
+  DollarSign,
+  Eye,
+  RefreshCw,
+  FileText,
+  Search,
+  Link,
+  Send,
+  Copy,
+  CheckCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
@@ -17,6 +28,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   getAgencyLicensingRequests,
   updateAgencyLicensingRequestsStatus,
+  sendLicensingRequestPaymentLink,
 } from "@/api/functions";
 
 export const LicensingRequestsTab = () => {
@@ -32,6 +44,9 @@ export const LicensingRequestsTab = () => {
     },
   });
 
+  const [sendingPaymentLink, setSendingPaymentLink] = useState<
+    Record<string, boolean>
+  >({});
   const [counterOfferModalOpen, setCounterOfferModalOpen] = useState(false);
   const [counterOfferMessage, setCounterOfferMessage] = useState("");
   const [groupToCounter, setGroupToCounter] = useState<any>(null);
@@ -89,6 +104,65 @@ export const LicensingRequestsTab = () => {
         description: e?.message || "Could not update licensing request",
         variant: "destructive" as any,
       });
+    }
+  };
+
+  const handleSendPaymentLink = async (group: any) => {
+    const firstTalent = (group?.talents || [])[0];
+    const licensingRequestId = firstTalent?.licensing_request_id;
+    if (!licensingRequestId) {
+      toast({
+        title: "No licensing request ID found",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+
+    setSendingPaymentLink((prev) => ({ ...prev, [group.group_key]: true }));
+    try {
+      const resp = await sendLicensingRequestPaymentLink(licensingRequestId);
+      const emailSent = (resp as any)?.email_sent;
+      await queryClient.invalidateQueries({
+        queryKey: ["agency", "licensing-requests"],
+      });
+      toast({
+        title: "Payment link sent!",
+        description: emailSent
+          ? "The payment link has been emailed to the client."
+          : "Payment link generated. No client email found — please share the link manually.",
+      });
+    } catch (e: any) {
+      let friendlyTitle = "Failed to send payment link";
+      let friendlyDesc = e?.message || "Could not generate payment link";
+      try {
+        const parsed = JSON.parse(String(e?.message || ""));
+        if (
+          parsed &&
+          typeof parsed === "object" &&
+          parsed.code === "MISSING_TALENT_STRIPE_CONNECT"
+        ) {
+          friendlyTitle = "Action required: connect talent payouts";
+          const missingList = Array.isArray(parsed.missing)
+            ? parsed.missing
+            : [];
+          const missingText = missingList.length
+            ? `Missing: ${missingList.join(", ")}`
+            : "";
+          const actionText = parsed.action ? String(parsed.action) : "";
+          friendlyDesc = [String(parsed.message || ""), actionText, missingText]
+            .filter((s) => Boolean(String(s || "").trim()))
+            .join("\n");
+        }
+      } catch {
+        // ignore parse errors
+      }
+      toast({
+        title: friendlyTitle,
+        description: friendlyDesc,
+        variant: "destructive" as any,
+      });
+    } finally {
+      setSendingPaymentLink((prev) => ({ ...prev, [group.group_key]: false }));
     }
   };
 
@@ -235,8 +309,30 @@ export const LicensingRequestsTab = () => {
                 </div>
               </div>
 
-              {group.status === "approved" ? null : activeRequestTab ===
-                "Archive" ? (
+              {group.status === "approved" ? (
+                <div>
+                  <Button
+                    onClick={() => handleSendPaymentLink(group)}
+                    disabled={sendingPaymentLink[group.group_key]}
+                    className="w-full font-bold h-10 rounded-md flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white shadow-lg shadow-indigo-200"
+                  >
+                    {sendingPaymentLink[group.group_key] ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />{" "}
+                        Sending...
+                      </>
+                    ) : group.payment_link_id || group.payment_link_url ? (
+                      <>
+                        <Send className="w-4 h-4" /> Resend payment link
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" /> Send payment link
+                      </>
+                    )}
+                  </Button>
+                </div>
+              ) : activeRequestTab === "Archive" ? (
                 <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                   <Button
                     variant="outline"
@@ -250,13 +346,20 @@ export const LicensingRequestsTab = () => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Button
-                    onClick={() => updateGroupStatus(group, "approved")}
-                    className="bg-green-600 hover:bg-green-700 text-white font-bold h-10 rounded-md flex items-center justify-center gap-2"
+                    onClick={() => handleSendPaymentLink(group)}
+                    disabled={sendingPaymentLink[group.group_key]}
+                    className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-10 rounded-md flex items-center justify-center gap-2"
                   >
-                    <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
-                      <span className="text-[10px]">✓</span>
-                    </div>
-                    Approve
+                    {sendingPaymentLink[group.group_key] ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />{" "}
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" /> Send Payment Link
+                      </>
+                    )}
                   </Button>
                   <Button
                     variant="outline"
@@ -279,10 +382,11 @@ export const LicensingRequestsTab = () => {
                     Decline
                   </Button>
                 </div>
-              )}
-            </Card>
+              )
+              }
+            </Card >
           ))}
-        </div>
+        </div >
 
         <Dialog
           open={counterOfferModalOpen}
@@ -334,7 +438,7 @@ export const LicensingRequestsTab = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
+      </div >
     </>
   );
 };

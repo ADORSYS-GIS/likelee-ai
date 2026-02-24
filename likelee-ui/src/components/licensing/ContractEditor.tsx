@@ -8,6 +8,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { EditorContent, useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Link from "@tiptap/extension-link";
 
 interface ContractEditorProps {
   body: string;
@@ -28,9 +31,33 @@ export const ContractEditor: React.FC<ContractEditorProps> = ({
   placeholder,
   readOnly = false,
 }) => {
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Link.configure({
+        openOnClick: true,
+        autolink: true,
+        linkOnPaste: true,
+      }),
+    ],
+    content: body,
+    editable: !readOnly,
+    onUpdate: ({ editor }) => {
+      if (format === "html") {
+        onChangeBody(editor.getHTML());
+      }
+    },
+  });
+
   const insertVariable = (variable: string) => {
     if (readOnly) return;
-    onChangeBody(body + variable);
+
+    if (format === "html" && editor) {
+      editor.commands.focus();
+      editor.commands.insertContent(variable);
+    } else {
+      onChangeBody(body + variable);
+    }
   };
 
   return (
@@ -73,11 +100,10 @@ export const ContractEditor: React.FC<ContractEditorProps> = ({
               type="button"
               onClick={() => insertVariable(variable)}
               disabled={readOnly}
-              className={`text-[11px] font-bold px-3 py-1.5 rounded-lg border transition-all ${
-                readOnly
-                  ? "bg-slate-50 text-slate-400 border-slate-200 cursor-default"
-                  : "bg-white text-indigo-600 border-indigo-100 hover:border-indigo-300 hover:shadow-sm active:scale-95"
-              }`}
+              className={`text-[11px] font-bold px-3 py-1.5 rounded-lg border transition-all ${readOnly
+                ? "bg-slate-50 text-slate-400 border-slate-200 cursor-default"
+                : "bg-white text-indigo-600 border-indigo-100 hover:border-indigo-300 hover:shadow-sm active:scale-95"
+                }`}
             >
               {variable}
             </button>
@@ -89,13 +115,70 @@ export const ContractEditor: React.FC<ContractEditorProps> = ({
         <Label className="text-sm font-bold text-slate-900">
           Contract Body
         </Label>
-        <Textarea
-          value={body}
-          onChange={(e) => onChangeBody(e.target.value)}
-          readOnly={readOnly}
-          placeholder={placeholder || "Write your contract here..."}
-          className={`min-h-[400px] bg-white border-slate-200 rounded-xl shadow-sm focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-700 leading-relaxed text-sm p-6 ${format === "markdown" ? "font-mono" : ""}`}
-        />
+        {format === "html" ? (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden min-h-[400px]">
+            {!readOnly ? (
+              <div className="border-b border-slate-200 bg-slate-50 px-3 py-2 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className="text-xs font-semibold px-2 py-1 rounded border border-slate-200 bg-white"
+                  onClick={() => editor?.chain().focus().toggleBold().run()}
+                  disabled={!editor}
+                >
+                  Bold
+                </button>
+                <button
+                  type="button"
+                  className="text-xs font-semibold px-2 py-1 rounded border border-slate-200 bg-white"
+                  onClick={() => editor?.chain().focus().toggleItalic().run()}
+                  disabled={!editor}
+                >
+                  Italic
+                </button>
+                <button
+                  type="button"
+                  className="text-xs font-semibold px-2 py-1 rounded border border-slate-200 bg-white"
+                  onClick={() =>
+                    editor?.chain().focus().toggleBulletList().run()
+                  }
+                  disabled={!editor}
+                >
+                  Bullet
+                </button>
+                <button
+                  type="button"
+                  className="text-xs font-semibold px-2 py-1 rounded border border-slate-200 bg-white"
+                  onClick={() =>
+                    editor?.chain().focus().toggleOrderedList().run()
+                  }
+                  disabled={!editor}
+                >
+                  Ordered
+                </button>
+              </div>
+            ) : null}
+
+            <div className="p-6 min-h-[400px]">
+              <EditorContent
+                editor={editor}
+                className="prose prose-sm max-w-none focus:outline-none"
+              />
+              {(!editor || editor.isEmpty) && !readOnly && placeholder ? (
+                <div className="pointer-events-none select-none text-slate-400 -mt-[400px] p-6">
+                  {placeholder}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ) : (
+          <Textarea
+            value={body}
+            onChange={(e) => onChangeBody(e.target.value)}
+            readOnly={readOnly}
+            placeholder={placeholder || "Write your contract here..."}
+            className="min-h-[400px] bg-white border-slate-200 rounded-xl shadow-sm focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-700 leading-relaxed font-mono text-sm p-6"
+          />
+        )}
       </div>
     </div>
   );

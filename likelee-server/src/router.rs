@@ -61,6 +61,10 @@ pub fn build_router(state: AppState) -> Router {
             "/api/talent/licensing/earnings-by-campaign",
             get(crate::talent::get_earnings_by_campaign),
         )
+        .route(
+            "/api/talent/licensing/earnings-by-agency",
+            get(crate::talent::get_earnings_by_agency),
+        )
         .route("/api/talent/analytics", get(crate::talent::get_analytics))
         .route("/api/talent/bookings", get(crate::talent::list_bookings))
         .route(
@@ -160,6 +164,19 @@ pub fn build_router(state: AppState) -> Router {
             "/api/agency/payout-schedule/upcoming",
             get(crate::agencies::get_upcoming_payout_schedule),
         )
+        // Creator Balance & Payout (New from main)
+        .route(
+            "/api/creator/balance",
+            get(crate::payment_links::get_creator_balance),
+        )
+        .route(
+            "/api/creator/payout-request",
+            post(crate::payment_links::request_creator_payout),
+        )
+        .route(
+            "/api/creator/payout-history",
+            get(crate::payment_links::get_creator_payout_history),
+        )
         // --- Agency Dashboard & Features ---
         .route(
             "/api/agency/dashboard/overview",
@@ -192,6 +209,10 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/agency/dashboard/performance-tiers/configure",
             post(crate::performance_tiers::configure_performance_tiers),
+        )
+        .route(
+            "/api/agency/dashboard/payout-weights",
+            get(crate::performance_tiers::get_agency_payout_weights),
         )
         .route(
             "/api/agency/dashboard/talent-commissions/update",
@@ -256,12 +277,36 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::licensing_requests::update_status_bulk),
         )
         .route(
+            "/api/agency/licensing-requests/:id/send-payment-link",
+            post(crate::licensing_requests::send_payment_link),
+        )
+        .route(
+            "/api/agency/licensing-requests/pay-split",
+            get(crate::licensing_requests::get_pay_split)
+                .post(crate::licensing_requests::set_pay_split),
+        )
+        .route(
             "/api/agency/active-licenses",
             get(crate::active_licenses::list),
         )
         .route(
             "/api/agency/active-licenses/stats",
             get(crate::active_licenses::stats),
+        )
+        // Payment Links (for licensing)
+        .route(
+            "/api/agency/payment-links",
+            get(crate::payment_links::list_payment_links)
+                .post(crate::payment_links::generate_payment_link),
+        )
+        .route(
+            "/api/agency/payment-links/:id",
+            get(crate::payment_links::get_payment_link)
+                .post(crate::payment_links::cancel_payment_link),
+        )
+        .route(
+            "/api/agency/payment-links/send",
+            post(crate::payment_links::send_payment_link_email),
         )
         .route("/api/agency/talents", get(crate::agencies::list_talents))
         .route(

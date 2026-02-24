@@ -118,6 +118,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
     null,
   );
   const [talents, setTalents] = useState<any[]>([]);
+  const [selectedTalentIds, setSelectedTalentIds] = useState<string[]>([]);
   const { toast } = useToast();
 
   const {
@@ -153,6 +154,10 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
       setAgencySignOpen(false);
       setAgencySignUrl(null);
       setCurrentSubmissionId(null);
+      setAgencySignOpen(false);
+      setAgencySignUrl(null);
+      setCurrentSubmissionId(null);
+      setSelectedTalentIds([]);
       reset({
         client_name: "",
         talent_name: "",
@@ -210,6 +215,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
           template_id: currentTemplate.id,
           client_name: currentData.client_name,
           client_email: currentData.client_email,
+          talent_ids:
+            selectedTalentIds.length > 0 ? selectedTalentIds : undefined,
+          talent_id: selectedTalentIds[0] || undefined,
           talent_names: currentData.talent_name,
           license_fee: Math.round(currentData.license_fee * 100),
           duration_days: currentData.duration_days,
@@ -293,6 +301,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
           template_id: currentTemplate.id,
           client_name: currentData.client_name,
           client_email: currentData.client_email,
+          talent_ids:
+            selectedTalentIds.length > 0 ? selectedTalentIds : undefined,
+          talent_id: selectedTalentIds[0] || undefined,
           talent_names: currentData.talent_name,
           license_fee: Math.round(currentData.license_fee * 100),
           duration_days: currentData.duration_days,
@@ -313,6 +324,9 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
         docuseal_template_id: currentTemplate.docuseal_template_id,
         client_name: currentData.client_name,
         client_email: currentData.client_email,
+        talent_ids:
+          selectedTalentIds.length > 0 ? selectedTalentIds : undefined,
+        talent_id: selectedTalentIds[0] || undefined,
         talent_names: currentData.talent_name,
         requires_agency_signature: requiresAgencySignature,
       });
@@ -543,10 +557,20 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                               ? formData.talent_name.split(", ")
                                               : [];
                                           let updatedNames;
+                                          let updatedIds = [
+                                            ...selectedTalentIds,
+                                          ];
+
                                           if (isSelected) {
                                             updatedNames = currentNames.filter(
                                               (n) => n !== t.full_name,
                                             );
+                                            // Remove ID
+                                            if (t.id) {
+                                              updatedIds = updatedIds.filter(
+                                                (id) => id !== t.id,
+                                              );
+                                            }
                                           } else {
                                             if (t.full_name) {
                                               updatedNames = [
@@ -556,7 +580,15 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                             } else {
                                               updatedNames = currentNames;
                                             }
+                                            // Add ID
+                                            if (
+                                              t.id &&
+                                              !updatedIds.includes(t.id)
+                                            ) {
+                                              updatedIds.push(t.id);
+                                            }
                                           }
+                                          setSelectedTalentIds(updatedIds);
                                           setValue(
                                             "talent_name",
                                             updatedNames.join(", "),

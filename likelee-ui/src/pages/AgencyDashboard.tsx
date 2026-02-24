@@ -1,13 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { LicenseTemplatesTab } from "@/components/licensing/LicenseTemplatesTab";
 import { LicenseSubmissionsTab } from "@/components/licensing/LicenseSubmissionsTab";
-import { LicensingRequestsTab } from "@/components/licensing/LicensingRequestsTab";
 import { ActiveLicenseDetailsSheet } from "@/components/licensing/ActiveLicenseDetailsSheet";
 import { scoutingService } from "@/services/scoutingService";
 import { ScoutingEvent, ScoutingProspect } from "@/types/scouting";
 import { ScoutingMap } from "@/components/scouting/map/ScoutingMap";
 import { ScoutingTrips } from "@/components/scouting/ScoutingTrips";
-import { ScoutingEventModal } from "@/components/scouting/ScoutingEventModal";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -97,27 +95,15 @@ import {
   Mic,
   Link as LinkIcon,
   Pencil,
+  Play,
 } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { Button } from "@/components/ui/button";
 
-interface RenewalLaunchContext {
-  templateId: string;
-  clientName: string;
-  clientEmail: string;
-  talentName: string;
-}
-
-interface ComplianceRenewableLicense {
-  id: string;
-  template_id?: string | null;
-  talent_name?: string;
-  talent_avatar?: string;
-  client_name?: string | null;
-  client_email?: string | null;
-  brand?: string;
-  end_date?: string;
-}
+import {
+  ComplianceRenewableLicense,
+  RenewalLaunchContext
+} from "@/types/licensing";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { base44 } from "@/api/base44Client";
@@ -148,6 +134,9 @@ import GeneralSettingsView from "@/components/dashboard/settings/GeneralSettings
 import AgencyDashboardView from "@/components/agency/DashboardView";
 import FileStorageView from "@/components/dashboard/settings/FileStorageView";
 import AgencyRosterView from "@/components/agency/RosterView";
+import AnalyticsDashboardView from "@/components/agency/AnalyticsDashboardView";
+import LicensingRequestsView from "@/components/agency/LicensingRequestsView";
+import ActiveLicensesView from "@/components/agency/ActiveLicensesView";
 import PerformanceTiers from "@/components/dashboard/PerformanceTiers";
 import {
   getAgencyRoster,
@@ -159,6 +148,7 @@ import {
   getAgencyRecentActivity,
   getAgencyLicensingRequests,
   updateAgencyLicensingRequestsStatus,
+  sendLicensingRequestPaymentLink,
   listBookings,
   createBooking as apiCreateBooking,
   updateBooking as apiUpdateBooking,
@@ -182,11 +172,14 @@ import {
   markInvoicePaid,
   uploadAgencyFile,
   sendEmail,
+  generateAgencyPaymentLink,
+  sendAgencyPaymentLinkEmail,
   getAgencyActiveLicenses,
   getAgencyActiveLicensesStats,
 } from "@/api/functions";
 import ClientCRMView from "@/components/crm/ClientCRMView";
 import * as crmApi from "@/api/crm";
+import { parseBackendError } from "@/utils/errorParser";
 
 const STATUS_MAP: { [key: string]: string } = {
   new_lead: "New Lead",
@@ -247,9 +240,6 @@ const ConnectBankView = () => {
   const [payoutHistory, setPayoutHistory] = useState<any[]>([]);
   const [showPayoutDialog, setShowPayoutDialog] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState("");
-  const [payoutMethod, setPayoutMethod] = useState<"standard" | "instant">(
-    "standard",
-  );
   const [requestingPayout, setRequestingPayout] = useState(false);
 
   useEffect(() => {
@@ -283,7 +273,7 @@ const ConnectBankView = () => {
       } catch (e: any) {
         toast({
           title: "Failed to load bank connection status",
-          description: String(e?.message || e),
+          description: parseBackendError(e),
           variant: "destructive" as any,
         });
       } finally {
@@ -341,7 +331,7 @@ const ConnectBankView = () => {
       await requestAgencyPayout({
         amount_cents: amountCents,
         currency: status?.available_balance?.currency || "USD",
-        payout_method: payoutMethod,
+        payout_method: "instant",
       });
 
       const [balanceResp, historyResp] = await Promise.all([
@@ -354,9 +344,9 @@ const ConnectBankView = () => {
       setStatus((prev) =>
         prev
           ? {
-              ...prev,
-              available_balance: (balanceData as any)?.available_balance,
-            }
+            ...prev,
+            available_balance: (balanceData as any)?.available_balance,
+          }
           : prev,
       );
       setPayoutHistory((historyData as any)?.items || []);
@@ -443,12 +433,12 @@ const ConnectBankView = () => {
                 <p className="text-2xl font-black text-gray-900">
                   {status?.available_balance
                     ? new Intl.NumberFormat("en-US", {
-                        style: "currency",
-                        currency:
-                          status.available_balance.currency.toUpperCase(),
-                      }).format(
-                        (status.available_balance.amount_cents || 0) / 100,
-                      )
+                      style: "currency",
+                      currency:
+                        status.available_balance.currency.toUpperCase(),
+                    }).format(
+                      (status.available_balance.amount_cents || 0) / 100,
+                    )
                     : "$0.00"}
                 </p>
                 <p className="text-[10px] text-gray-500 font-medium mt-1">
@@ -478,7 +468,7 @@ const ConnectBankView = () => {
               <DialogHeader>
                 <DialogTitle>Request Payout</DialogTitle>
                 <DialogDescription>
-                  Enter an amount (in USD) and choose a payout method.
+                  Enter an amount (in USD) and request an instant payout.
                 </DialogDescription>
               </DialogHeader>
 
@@ -490,30 +480,6 @@ const ConnectBankView = () => {
                     onChange={(e) => setPayoutAmount(e.target.value)}
                     placeholder="e.g. 250.00"
                   />
-                </div>
-
-                <div>
-                  <Label>Method</Label>
-                  <div className="flex gap-2 mt-2">
-                    <Button
-                      type="button"
-                      variant={
-                        payoutMethod === "standard" ? "default" : "outline"
-                      }
-                      onClick={() => setPayoutMethod("standard")}
-                    >
-                      Standard
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={
-                        payoutMethod === "instant" ? "default" : "outline"
-                      }
-                      onClick={() => setPayoutMethod("instant")}
-                    >
-                      Instant
-                    </Button>
-                  </div>
                 </div>
               </div>
 
@@ -549,7 +515,7 @@ const ConnectBankView = () => {
                       {(p.amount_cents || 0) / 100}{" "}
                       {String(p.currency || "USD").toUpperCase()}
                       <span className="text-xs text-gray-500 font-normal ml-2">
-                        ({p.payout_method || "standard"})
+                        ({p.payout_method || "instant"})
                       </span>
                     </div>
                     <Badge
@@ -922,11 +888,10 @@ const ProspectModal = ({
                     selectedCategories.includes(cat) ? "default" : "secondary"
                   }
                   onClick={() => toggleCategory(cat)}
-                  className={`${
-                    selectedCategories.includes(cat)
-                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
-                  } font-medium`}
+                  className={`${selectedCategories.includes(cat)
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                    } font-medium`}
                 >
                   {cat}
                 </Button>
@@ -1159,6 +1124,8 @@ const ConnectBankViewAlt = () => {
     transfers_enabled: boolean;
     last_error: string;
     bank_last4?: string;
+    available_balance?: { amount: number; currency: string };
+    pending_balance?: { amount: number; currency: string };
   } | null>(null);
 
   useEffect(() => {
@@ -1179,7 +1146,7 @@ const ConnectBankViewAlt = () => {
       } catch (e: any) {
         toast({
           title: "Failed to load bank connection status",
-          description: String(e?.message || e),
+          description: parseBackendError(e),
           variant: "destructive" as any,
         });
       } finally {
@@ -1262,12 +1229,12 @@ const ConnectBankViewAlt = () => {
                   </p>
                 </div>
                 <p className="text-2xl font-black text-gray-900">
-                  {status?.available_balance
+                  {(status as any)?.available_balance
                     ? new Intl.NumberFormat("en-US", {
-                        style: "currency",
-                        currency:
-                          status.available_balance.currency.toUpperCase(),
-                      }).format(status.available_balance.amount / 100)
+                      style: "currency",
+                      currency:
+                        (status as any).available_balance.currency.toUpperCase(),
+                    }).format((status as any).available_balance.amount / 100)
                     : "$0.00"}
                 </p>
                 <p className="text-[10px] text-gray-500 font-medium mt-1">
@@ -1283,11 +1250,11 @@ const ConnectBankViewAlt = () => {
                   </p>
                 </div>
                 <p className="text-2xl font-black text-gray-400">
-                  {status?.pending_balance
+                  {(status as any)?.pending_balance
                     ? new Intl.NumberFormat("en-US", {
-                        style: "currency",
-                        currency: status.pending_balance.currency.toUpperCase(),
-                      }).format(status.pending_balance.amount / 100)
+                      style: "currency",
+                      currency: (status as any).pending_balance.currency.toUpperCase(),
+                    }).format((status as any).pending_balance.amount / 100)
                     : "$0.00"}
                 </p>
                 <p className="text-[10px] text-gray-400 font-medium mt-1">
@@ -1684,11 +1651,10 @@ const ProspectModalAlt = ({
                     selectedCategories.includes(cat) ? "default" : "secondary"
                   }
                   onClick={() => toggleCategory(cat)}
-                  className={`${
-                    selectedCategories.includes(cat)
-                      ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                      : "bg-gray-100 hover:bg-gray-200 text-gray-900"
-                  } font-medium`}
+                  className={`${selectedCategories.includes(cat)
+                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                    } font-medium`}
                 >
                   {cat}
                 </Button>
@@ -3959,9 +3925,9 @@ const PaymentTrackingView = () => {
     return invoiceRows.map((inv) => {
       const statusRaw = String(
         (inv as any)?.status ??
-          (inv as any)?.invoice_status ??
-          (inv as any)?.invoice?.status ??
-          "draft",
+        (inv as any)?.invoice_status ??
+        (inv as any)?.invoice?.status ??
+        "draft",
       );
       const dueDateStr = String((inv as any)?.due_date || "");
       const due = dueDateStr ? new Date(dueDateStr) : null;
@@ -4406,9 +4372,9 @@ const FinancialReportsView = () => {
     return invoiceRows.map((inv) => {
       const statusRaw = String(
         (inv as any)?.status ??
-          (inv as any)?.invoice_status ??
-          (inv as any)?.invoice?.status ??
-          "draft",
+        (inv as any)?.invoice_status ??
+        (inv as any)?.invoice?.status ??
+        "draft",
       );
       const dueDateStr = String((inv as any)?.due_date || "");
       const due = dueDateStr ? new Date(dueDateStr) : null;
@@ -4506,7 +4472,7 @@ const FinancialReportsView = () => {
         payablesTotals.set(
           "USD",
           (payablesTotals.get("USD") || 0) +
-            (Number((l as any)?.net_cents || 0) || 0),
+          (Number((l as any)?.net_cents || 0) || 0),
         );
       }
     }
@@ -5101,14 +5067,14 @@ const FinancialReportsView = () => {
       <thead><tr><th>Metric</th><th style="text-align:right;">Value</th></tr></thead>
       <tbody>
         ${tableRows([
-          ["Total Revenue", moneyTotals(summary.revenueTotals)],
-          ["Pending", moneyTotals(summary.pendingTotals)],
-          ["Outstanding Receivables", moneyTotals(summary.receivablesTotals)],
-          ["Expenses", moneyTotals(expensesTotals)],
-          ["Net Income", moneyTotals(netIncomeTotals)],
-          ["Commission", moneyTotals(summary.commissionTotals)],
-          ["Sales Tax", moneyTotals(taxTotals)],
-        ])}
+      ["Total Revenue", moneyTotals(summary.revenueTotals)],
+      ["Pending", moneyTotals(summary.pendingTotals)],
+      ["Outstanding Receivables", moneyTotals(summary.receivablesTotals)],
+      ["Expenses", moneyTotals(expensesTotals)],
+      ["Net Income", moneyTotals(netIncomeTotals)],
+      ["Commission", moneyTotals(summary.commissionTotals)],
+      ["Sales Tax", moneyTotals(taxTotals)],
+    ])}
       </tbody>
     </table>
 
@@ -5117,11 +5083,11 @@ const FinancialReportsView = () => {
       <thead><tr><th>Client</th><th style="text-align:right;">Revenue</th></tr></thead>
       <tbody>
         ${topClientsByRevenue
-          .map(
-            (c) =>
-              `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${c.clientName}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${moneyTotals(c.totals)}</td></tr>`,
-          )
-          .join("")}
+        .map(
+          (c) =>
+            `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${c.clientName}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${moneyTotals(c.totals)}</td></tr>`,
+        )
+        .join("")}
       </tbody>
     </table>
 
@@ -5130,11 +5096,11 @@ const FinancialReportsView = () => {
       <thead><tr><th>Talent</th><th style="text-align:right;">Gross</th></tr></thead>
       <tbody>
         ${topTalentByRevenue
-          .map(
-            (t) =>
-              `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${t.talentName}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${money(t.grossCents, "USD")}</td></tr>`,
-          )
-          .join("")}
+        .map(
+          (t) =>
+            `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${t.talentName}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${money(t.grossCents, "USD")}</td></tr>`,
+        )
+        .join("")}
       </tbody>
     </table>
 
@@ -5143,11 +5109,11 @@ const FinancialReportsView = () => {
       <thead><tr><th>Aging Bucket</th><th style="text-align:right;">Amount</th><th style="text-align:right;">Invoices</th></tr></thead>
       <tbody>
         ${receivables.bucketDefs
-          .map(
-            (b) =>
-              `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${b.label}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${moneyTotals(receivables.bucketTotals.get(b.key) || new Map())}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${receivables.bucketCounts.get(b.key) || 0}</td></tr>`,
-          )
-          .join("")}
+        .map(
+          (b) =>
+            `<tr><td style="padding:6px 8px;border:1px solid #e5e7eb;">${b.label}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${moneyTotals(receivables.bucketTotals.get(b.key) || new Map())}</td><td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right;">${receivables.bucketCounts.get(b.key) || 0}</td></tr>`,
+        )
+        .join("")}
       </tbody>
     </table>
 
@@ -5328,11 +5294,10 @@ const FinancialReportsView = () => {
             <button
               key={tab.id}
               onClick={() => setActiveReportTab(tab.id)}
-              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${
-                activeReportTab === tab.id
-                  ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-              }`}
+              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${activeReportTab === tab.id
+                ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                }`}
             >
               {tab.label}
             </button>
@@ -6507,11 +6472,11 @@ const GenerateInvoiceView = () => {
                 (t) =>
                   String((t as any)?.id || "") === String(it.talent_id || ""),
               )?.name ||
-                talents.find(
-                  (t) =>
-                    String((t as any)?.id || "") === String(it.talent_id || ""),
-                )?.full_name ||
-                "",
+              talents.find(
+                (t) =>
+                  String((t as any)?.id || "") === String(it.talent_id || ""),
+              )?.full_name ||
+              "",
             ).trim();
             const date = String(it.date_of_service || "").trim();
             const rate = String(it.rate_type || "").trim();
@@ -7040,11 +7005,10 @@ const GenerateInvoiceView = () => {
             <div className="flex gap-3">
               <Button
                 variant={createFrom === "booking" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
-                  createFrom === "booking"
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "border-gray-200 text-gray-700"
-                }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "booking"
+                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                  : "border-gray-200 text-gray-700"
+                  }`}
                 onClick={() => setCreateFrom("booking")}
               >
                 <Calendar className="w-5 h-5" />
@@ -7052,11 +7016,10 @@ const GenerateInvoiceView = () => {
               </Button>
               <Button
                 variant={createFrom === "manual" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
-                  createFrom === "manual"
-                    ? "bg-indigo-600 hover:bg-indigo-700 text-white"
-                    : "border-gray-200 text-gray-700"
-                }`}
+                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${createFrom === "manual"
+                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                  : "border-gray-200 text-gray-700"
+                  }`}
                 onClick={() => setCreateFrom("manual")}
               >
                 <FileText className="w-5 h-5" />
@@ -7411,7 +7374,8 @@ const GenerateInvoiceView = () => {
                   <span className="text-sm font-bold text-gray-600">%</span>
                 </div>
                 <p className="text-[10px] text-gray-500 font-medium mt-1">
-                  Agency fee: $0.00 | Talent net: $0.00
+                  For licensing requests, platform fees and talent commission
+                  will be deducted from the total paid amount.
                 </p>
               </div>
               <div>
@@ -7801,9 +7765,9 @@ const InvoiceManagementView = ({
       const invoiceId = String((inv as any)?.id || "");
       const statusRaw = String(
         (inv as any)?.status ??
-          (inv as any)?.invoice_status ??
-          (inv as any)?.invoice?.status ??
-          "draft",
+        (inv as any)?.invoice_status ??
+        (inv as any)?.invoice?.status ??
+        "draft",
       );
       const sentAt = (inv as any)?.sent_at ?? (inv as any)?.sentAt;
       const paidAt = (inv as any)?.paid_at ?? (inv as any)?.paidAt;
@@ -7982,11 +7946,10 @@ const InvoiceManagementView = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveSubTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
-                  isActive
-                    ? "bg-indigo-600 text-white shadow-sm"
-                    : "text-gray-700 hover:bg-gray-50"
-                }`}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${isActive
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-gray-700 hover:bg-gray-50"
+                  }`}
               >
                 <Icon className="w-4 h-4" />
                 {tab.label}
@@ -8414,11 +8377,11 @@ const InvoiceManagementView = ({
                       0,
                       (Number((selectedInvoice as any)?.amountCents || 0) ||
                         0) -
-                        ((selectedInvoice as any)?.paidAt
-                          ? Number(
-                              (selectedInvoice as any)?.amountCents || 0,
-                            ) || 0
-                          : 0),
+                      ((selectedInvoice as any)?.paidAt
+                        ? Number(
+                          (selectedInvoice as any)?.amountCents || 0,
+                        ) || 0
+                        : 0),
                     ),
                     String((selectedInvoice as any)?.currency || "USD"),
                   )}
@@ -9157,6 +9120,25 @@ const ScoutingHubView = ({
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  const [eventForm, setEventForm] = useState<{
+    name: string;
+    event_date: string;
+    status: ScoutingEvent["status"];
+    start_time: string;
+    end_time: string;
+    location: string;
+    description: string;
+  }>({
+    name: "",
+    event_date: "",
+    status: "scheduled",
+    start_time: "",
+    end_time: "",
+    location: "",
+    description: "",
+  });
+
+
   const tabs = [
     "Prospect Pipeline",
     "Social Discovery",
@@ -9214,11 +9196,10 @@ const ScoutingHubView = ({
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
-              activeTab === tab
-                ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
-                : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
-            }`}
+            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === tab
+              ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+              : "text-gray-500 hover:text-gray-700 hover:bg-gray-100/50"
+              }`}
           >
             {tab}
           </button>
@@ -9281,19 +9262,187 @@ const ScoutingHubView = ({
         prospect={prospectToEdit}
       />
 
-      <ScoutingEventModal
+      <Dialog
         open={isEventModalOpen}
         onOpenChange={(open) => {
           setIsEventModalOpen(open);
           if (!open) setEventToEdit(null);
         }}
-        eventToEdit={eventToEdit}
-        onSaved={async () => {
-          await queryClient.invalidateQueries({
-            queryKey: ["scouting-events"],
-          });
-        }}
-      />
+      >
+        <DialogContent className="sm:max-w-[600px] rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900">
+              {eventToEdit ? "Edit Event" : "Create Event"}
+            </DialogTitle>
+            <DialogDescription className="text-gray-500 font-medium">
+              Manage open calls and casting events for your scouting pipeline.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-gray-700">Name</Label>
+              <Input
+                value={eventForm.name}
+                onChange={(e) =>
+                  setEventForm((p) => ({ ...p, name: e.target.value }))
+                }
+                placeholder="Event name"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-700">Date</Label>
+                <Input
+                  type="date"
+                  value={eventForm.event_date}
+                  onChange={(e) =>
+                    setEventForm((p) => ({ ...p, event_date: e.target.value }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-700">
+                  Status
+                </Label>
+                <Input
+                  value={eventForm.status}
+                  onChange={(e) =>
+                    setEventForm((p) => ({
+                      ...p,
+                      status: e.target.value as ScoutingEvent["status"],
+                    }))
+                  }
+                  placeholder="scheduled"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-700">
+                  Start time
+                </Label>
+                <Input
+                  value={eventForm.start_time}
+                  onChange={(e) =>
+                    setEventForm((p) => ({ ...p, start_time: e.target.value }))
+                  }
+                  placeholder="09:00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm font-bold text-gray-700">
+                  End time
+                </Label>
+                <Input
+                  value={eventForm.end_time}
+                  onChange={(e) =>
+                    setEventForm((p) => ({ ...p, end_time: e.target.value }))
+                  }
+                  placeholder="18:00"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-gray-700">
+                Location
+              </Label>
+              <Input
+                value={eventForm.location}
+                onChange={(e) =>
+                  setEventForm((p) => ({ ...p, location: e.target.value }))
+                }
+                placeholder="Location"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-bold text-gray-700">
+                Description
+              </Label>
+              <Textarea
+                value={eventForm.description}
+                onChange={(e) =>
+                  setEventForm((p) => ({ ...p, description: e.target.value }))
+                }
+                placeholder="Optional details"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsEventModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+              onClick={async () => {
+                try {
+                  const agencyId = await scoutingService.getUserAgencyId();
+                  if (!agencyId) {
+                    toast({
+                      title: "Error",
+                      description: "Could not determine agency.",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  if (
+                    !eventForm.name ||
+                    !eventForm.event_date ||
+                    !eventForm.location
+                  ) {
+                    toast({
+                      title: "Missing fields",
+                      description: "Name, date, and location are required.",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+
+                  const payload = {
+                    agency_id: agencyId,
+                    name: eventForm.name,
+                    event_date: new Date(eventForm.event_date).toISOString(),
+                    location: eventForm.location,
+                    description: eventForm.description || null,
+                    status: eventForm.status,
+                    start_time: eventForm.start_time || null,
+                    end_time: eventForm.end_time || null,
+                  } as any;
+
+                  if (eventToEdit?.id) {
+                    await scoutingService.updateEvent(eventToEdit.id, payload);
+                    toast({ title: "Event updated" });
+                  } else {
+                    await scoutingService.createEvent(payload);
+                    toast({ title: "Event created" });
+                  }
+
+                  await queryClient.invalidateQueries({
+                    queryKey: ["scouting-events"],
+                  });
+                  setIsEventModalOpen(false);
+                } catch (e: any) {
+                  toast({
+                    title: "Error",
+                    description: e?.message || "Failed to save event.",
+                    variant: "destructive",
+                  });
+                }
+              }}
+            >
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -9336,7 +9485,7 @@ const ProspectDetailsSheet = ({
 
   return (
     <Sheet open={!!prospect} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="w-[650px] sm:max-w-none bg-white p-0 flex flex-col">
+      <SheetContent className="w-[650px] sm:max-w-none bg-white p-0 flex flex-col" {...({} as any)}>
         <SheetHeader className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between gap-4">
             <div className="flex-1 bg-gray-50/70 border rounded-xl p-3">
@@ -9462,8 +9611,8 @@ const ProspectDetailsSheet = ({
                       Send Offer
                     </Button>
                   ) : ["offer_sent", "opened", "signed", "declined"].includes(
-                      prospect.status as string,
-                    ) ? (
+                    prospect.status as string,
+                  ) ? (
                     <div className="flex items-center gap-3">
                       <Button
                         onClick={() =>
@@ -9728,23 +9877,16 @@ const ProspectPipelineTab = ({
       color: "border-amber-200 bg-amber-50/30",
     },
     {
-      label: "Test Shoot",
-      count: prospects?.filter((p) => p.status === "test_shoot").length || 0,
-      color: "border-yellow-200 bg-yellow-50/30",
-    },
-    {
       label: "Test Shoots",
       count:
-        prospects?.filter((p) => p.status.startsWith("test_shoot_")).length ||
-        0,
+        prospects?.filter((p) =>
+          ["test_shoot_pending", "test_shoot_success", "test_shoot_failed"].includes(p.status)
+        ).length || 0,
       color: "border-purple-200 bg-purple-50/30",
     },
     {
       label: "Offers Sent",
-      count:
-        prospects?.filter((p) =>
-          ["offer_sent", "opened", "signed", "declined"].includes(p.status),
-        ).length || 0,
+      count: prospects?.filter((p) => p.status === "offer_sent").length || 0,
       color: "border-green-200 bg-green-50/30",
     },
   ];
@@ -10241,8 +10383,7 @@ const MarketplaceTab = () => (
   </Card>
 );
 
-type ScoutingEvent = any;
-type ScoutingProspect = any;
+
 
 const ScoutingMapTab = ({
   onEditEvent,
@@ -10490,7 +10631,7 @@ const ScoutingAnalyticsTab = () => {
   const sources = Object.entries(analytics.sources)
     .map(([key, count]) => ({
       name: sourceLabels[key] || key,
-      value: Math.round((count / analytics.totalProspects) * 100),
+      value: Math.round(((count as number) / (analytics.totalProspects as number)) * 100),
     }))
     .sort((a, b) => b.value - a.value);
 
@@ -11507,13 +11648,13 @@ export const RosterView = ({
                   statusFilter !== "All Status" ||
                   consentFilter !== "All Consent" ||
                   sortConfig) && (
-                  <button
-                    onClick={clearFilters}
-                    className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
-                  >
-                    <X className="w-4 h-4" /> Clear Filters
-                  </button>
-                )}
+                    <button
+                      onClick={clearFilters}
+                      className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-indigo-600 transition-colors"
+                    >
+                      <X className="w-4 h-4" /> Clear Filters
+                    </button>
+                  )}
               </div>
             </div>
 
@@ -11632,16 +11773,15 @@ export const RosterView = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${
-                            talent.consent === "complete"
-                              ? "bg-green-50 text-green-600"
-                              : talent.consent === "missing"
-                                ? "bg-red-50 text-red-600"
-                                : "bg-orange-50 text-orange-600"
-                          }`}
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded flex items-center gap-1 w-fit uppercase tracking-wider ${talent.consent === "complete"
+                            ? "bg-green-50 text-green-600"
+                            : talent.consent === "missing"
+                              ? "bg-red-50 text-red-600"
+                              : "bg-orange-50 text-orange-600"
+                            }`}
                         >
                           {talent.consent === "complete" ||
-                          talent.consent === "active" ? (
+                            talent.consent === "active" ? (
                             <svg
                               className="w-3 h-3"
                               fill="none"
@@ -11828,698 +11968,7 @@ export const RosterView = ({
   );
 };
 
-const LicensingRequestsView = () => {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["agency", "licensing-requests"],
-    queryFn: async () => {
-      const resp = await getAgencyLicensingRequests();
-      return resp as any[];
-    },
-  });
-
-  const [selectedGroup, setSelectedGroup] = useState<any | null>(null);
-
-  const [counterOfferModalOpen, setCounterOfferModalOpen] = useState(false);
-  const [counterOfferMessage, setCounterOfferMessage] = useState("");
-  const [groupToCounter, setGroupToCounter] = useState<any>(null);
-  const [activeRequestTab, setActiveRequestTab] = useState<
-    "Active" | "Archive"
-  >("Active");
-
-  const statusStyle = (status: string) => {
-    if (status === "approved") return "bg-green-100 text-green-700";
-    if (status === "rejected") return "bg-red-100 text-red-700";
-    return "bg-gray-100 text-gray-700";
-  };
-
-  const formatBudget = (min?: number | null, max?: number | null) => {
-    const minOk = typeof min === "number" && Number.isFinite(min);
-    const maxOk = typeof max === "number" && Number.isFinite(max);
-    const fmt = (n: number) =>
-      n.toLocaleString(undefined, {
-        style: "currency",
-        currency: "USD",
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      });
-
-    if (minOk && maxOk) return `${fmt(min!)} - ${fmt(max!)}`;
-    if (minOk) return fmt(min!);
-    if (maxOk) return fmt(max!);
-    return "—";
-  };
-
-  const updateGroupStatus = async (group: any, status: any, notes?: string) => {
-    const ids = (group?.talents || [])
-      .map((t: any) => t.licensing_request_id)
-      .filter(Boolean);
-    if (!ids.length) return;
-
-    try {
-      await updateAgencyLicensingRequestsStatus({
-        licensing_request_ids: ids,
-        status,
-        notes,
-      });
-      await queryClient.invalidateQueries({
-        queryKey: ["agency", "licensing-requests"],
-      });
-      if (status === "negotiating") {
-        setCounterOfferModalOpen(false);
-        setCounterOfferMessage("");
-        setGroupToCounter(null);
-        toast({
-          title: "Counter offer sent",
-          description: "The client has been notified.",
-        });
-      }
-    } catch (e: any) {
-      toast({
-        title: "Update failed",
-        description: e?.message || "Could not update licensing request",
-        variant: "destructive" as any,
-      });
-    }
-  };
-
-  const filteredData = (data || []).filter((group: any) => {
-    const isArchived = ["rejected", "declined", "archived"].includes(
-      group.status,
-    );
-    return activeRequestTab === "Active" ? !isArchived : isArchived;
-  });
-
-  return (
-    <>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-2xl font-bold text-gray-900">
-              Licensing Requests
-            </h2>
-            <div className="flex bg-gray-100 p-1 rounded-lg w-fit mt-2">
-              {["Active", "Archive"].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveRequestTab(tab as any)}
-                  className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${activeRequestTab === tab ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-          </div>
-          <Button
-            variant="outline"
-            className="flex items-center gap-2 border-gray-300 font-bold text-gray-700 bg-white"
-          >
-            <Filter className="w-4 h-4" /> Filter
-          </Button>
-        </div>
-
-        <div className="space-y-6">
-          {isLoading && (
-            <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
-              <div className="text-gray-500 font-medium">Loading...</div>
-            </Card>
-          )}
-
-          {!isLoading && error && (
-            <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
-              <div className="text-red-600 font-medium">
-                Failed to load licensing requests
-              </div>
-            </Card>
-          )}
-
-          {!isLoading && !error && filteredData.length === 0 && (
-            <Card className="p-8 bg-white border-2 border-gray-900 rounded-none">
-              <div className="text-gray-500 font-medium">
-                {activeRequestTab === "Active"
-                  ? "No active licensing requests"
-                  : "No archived licensing requests"}
-              </div>
-            </Card>
-          )}
-
-          {filteredData.map((group: any) => (
-            <Card
-              key={group.group_key}
-              className="p-8 bg-white border-2 border-gray-900 rounded-none overflow-hidden relative"
-            >
-              <div className="flex justify-between items-start mb-6">
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-1">
-                    {group.brand_name || "Unknown brand"}
-                  </h3>
-                  <p className="text-gray-500 font-medium">
-                    {(group.campaign_title || "").trim() || "—"}
-                  </p>
-                </div>
-                <span
-                  className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${statusStyle(group.status)}`}
-                >
-                  {group.status}
-                </span>
-              </div>
-
-              <div className="flex flex-wrap gap-2 mb-8">
-                {(group.talents || []).map((t: any) => {
-                  const names = (t.talent_name || "")
-                    .split(",")
-                    .map((s: string) => s.trim())
-                    .filter(Boolean);
-                  return names.map((name: string, i: number) => (
-                    <span
-                      key={`${t.licensing_request_id}-${i}`}
-                      className="px-3 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded uppercase"
-                    >
-                      {name || "Talent"}
-                    </span>
-                  ));
-                })}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12 mb-8">
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                      Budget Range
-                    </p>
-                    <p className="text-sm font-bold text-gray-900">
-                      {formatBudget(group.budget_min, group.budget_max)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                      Regions
-                    </p>
-                    <p className="text-sm font-bold text-gray-900">
-                      {group.regions || "—"}
-                    </p>
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                      Usage Scope
-                    </p>
-                    <p className="text-sm font-bold text-gray-900">
-                      {(group.usage_scope || "").trim() || "—"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                      {group.license_start_date ? "Duration" : "Deadline"}
-                    </p>
-                    <p className="text-sm font-bold text-gray-900">
-                      {group.license_start_date && group.license_end_date
-                        ? `${new Date(group.license_start_date).toLocaleDateString()} - ${new Date(group.license_end_date).toLocaleDateString()}`
-                        : group.license_start_date
-                          ? `From ${new Date(group.license_start_date).toLocaleDateString()}`
-                          : group.deadline
-                            ? new Date(group.deadline).toLocaleDateString()
-                            : "—"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {group.status === "approved" ? (
-                <div className="flex items-center justify-center h-11 bg-green-50 rounded-md border border-green-200">
-                  <p className="text-xs font-black text-green-700 uppercase tracking-widest flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4" /> Approved
-                  </p>
-                </div>
-              ) : activeRequestTab === "Archive" ? (
-                <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => updateGroupStatus(group, "pending")}
-                    className="border-gray-300 text-gray-700 font-bold h-11 rounded-md flex items-center justify-center gap-2"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                    Recover to Active
-                  </Button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Button
-                    onClick={() => updateGroupStatus(group, "approved")}
-                    className="bg-green-600 hover:bg-green-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
-                  >
-                    <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
-                      <span className="text-[10px]">✓</span>
-                    </div>
-                    Approve
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setGroupToCounter(group);
-                      setCounterOfferModalOpen(true);
-                    }}
-                    className="border-gray-300 text-gray-700 font-bold h-11 rounded-md"
-                  >
-                    Counter Offer
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => updateGroupStatus(group, "rejected")}
-                    className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
-                  >
-                    <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
-                      <span className="text-[10px]">✕</span>
-                    </div>
-                    Decline
-                  </Button>
-                </div>
-              )}
-            </Card>
-          ))}
-        </div>
-
-        <Dialog
-          open={counterOfferModalOpen}
-          onOpenChange={setCounterOfferModalOpen}
-        >
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Send Counter Offer</DialogTitle>
-              <DialogDescription>
-                Explain your proposed terms to the client. They will be notified
-                by email.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4 py-2">
-              <div className="space-y-2">
-                <Label>Message to Client</Label>
-                <Textarea
-                  value={counterOfferMessage}
-                  onChange={(e) => setCounterOfferMessage(e.target.value)}
-                  placeholder="Describe your counter offer terms..."
-                  rows={5}
-                  className="resize-none"
-                />
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setCounterOfferModalOpen(false)}
-                className="font-bold"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() =>
-                  updateGroupStatus(
-                    groupToCounter,
-                    "negotiating",
-                    counterOfferMessage,
-                  )
-                }
-                disabled={!counterOfferMessage.trim()}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
-              >
-                Send Counter Offer
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-    </>
-  );
-};
-// Assuming LicensingRequestsView is now imported from another file.
-// If it was defined here, its definition has been removed as per the instruction.
-// Add the import statement for LicensingRequestsView here if it's used in this file.
-// For example: import { LicensingRequestsView } from './LicensingRequestsView';
-
-const ActiveLicensesView = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("All");
-  const [selectedLicense, setSelectedLicense] = useState<any>(null);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-
-  const handleViewDetails = (license: any) => {
-    setSelectedLicense(license);
-    setIsDetailsOpen(true);
-  };
-
-  const handleRenew = (license: ComplianceRenewableLicense) => {
-    if (!license.template_id) {
-      toast({
-        title: "Missing template",
-        description: "This license is not linked to a template for renewal.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setRenewalLaunchContext({
-      templateId: license.template_id,
-      clientName: license.client_name || license.brand || "",
-      clientEmail: license.client_email || "",
-      talentName: license.talent_name || "",
-    });
-
-    setActiveTabState("licensing");
-    setActiveSubTab("License Templates");
-
-    toast({
-      title: "Redirecting...",
-      description: `Opening template for ${license.talent_name} renewal.`,
-    });
-  };
-
-  const { data: licenses = [], isLoading: isLicensesLoading } = useQuery<any[]>(
-    {
-      queryKey: ["agency", "active-licenses", filterStatus, searchTerm],
-      queryFn: async () => {
-        const params: any = {};
-        if (filterStatus !== "All") params.status = filterStatus;
-        if (searchTerm) params.search = searchTerm;
-        return await getAgencyActiveLicenses(params);
-      },
-    },
-  );
-
-  const { data: stats } = useQuery({
-    queryKey: ["agency", "active-licenses", "stats"],
-    queryFn: () => getAgencyActiveLicensesStats(),
-  });
-
-  const statusColor = (status: string) => {
-    switch (status) {
-      case "Active":
-        return "bg-green-500";
-      case "Expiring":
-        return "bg-orange-500";
-      case "Expired":
-        return "bg-gray-500";
-      default:
-        return "bg-gray-400";
-    }
-  };
-
-  const formatMoney = (val: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(val);
-  };
-
-  const filteredLicenses = licenses; // Filtering handled by API now
-
-  return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-start">
-        <div>
-          <h2 className="text-3xl font-black text-gray-900 mb-2">
-            Active Licenses
-          </h2>
-          <p className="text-gray-500 font-medium">
-            Manage all talent licensing agreements
-          </p>
-        </div>
-        <Button
-          variant="default"
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 px-6 h-11 rounded-xl shadow-lg shadow-indigo-200"
-        >
-          <Download className="w-4 h-4" /> Export Report
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {[
-          {
-            icon: CheckCircle2,
-            label: "Active Licenses",
-            value: stats?.active || "0",
-            color: "text-green-600",
-            bg: "bg-green-50",
-            border: "border-green-100",
-          },
-          {
-            icon: Clock,
-            label: "Expiring Soon",
-            value: stats?.expiring || "0",
-            color: "text-orange-600",
-            bg: "bg-orange-50",
-            border: "border-orange-100",
-          },
-          {
-            icon: AlertCircle,
-            label: "Expired",
-            value: stats?.expired || "0",
-            color: "text-red-600",
-            bg: "bg-red-50",
-            border: "border-red-100",
-          },
-          {
-            icon: DollarSign,
-            label: "Total Value",
-            value: formatMoney(stats?.total_value || 0),
-            color: "text-indigo-600",
-            bg: "bg-indigo-50",
-            border: "border-indigo-100",
-            large: true,
-          },
-        ].map((card, i) => (
-          <Card
-            key={i}
-            className={`p-6 bg-white border ${card.border} shadow-sm rounded-2xl`}
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <div
-                className={`w-10 h-10 rounded-xl ${card.bg} flex items-center justify-center`}
-              >
-                <card.icon className={`w-5 h-5 ${card.color}`} />
-              </div>
-              <p className={`text-sm font-bold ${card.color}`}>{card.label}</p>
-            </div>
-            <p className="text-3xl font-black text-gray-900">{card.value}</p>
-          </Card>
-        ))}
-      </div>
-
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex items-center gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by talent, brand, or license type..."
-              className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium"
-            />
-          </div>
-          <div className="flex bg-gray-100 p-1 rounded-lg ml-auto">
-            {["All", "Active", "Expiring", "Expired"].map((filter) => (
-              <button
-                key={filter}
-                onClick={() => setFilterStatus(filter)}
-                className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${filterStatus === filter ? "bg-indigo-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
-              >
-                {filter}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50/50 border-b border-gray-100">
-                <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  Talent
-                </th>
-                <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  License Type
-                </th>
-                <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  Brand
-                </th>
-                <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  Deadline
-                </th>
-                <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  Usage Scope
-                </th>
-                <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  Value
-                </th>
-                <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  Status
-                </th>
-                <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {licenses.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center">
-                    <div className="flex flex-col items-center justify-center">
-                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
-                        <FileText className="w-6 h-6 text-gray-400" />
-                      </div>
-                      <p className="text-gray-900 font-medium">
-                        No active licenses found
-                      </p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Try adjusting your filters or search terms
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-              {licenses.map((lic: any) => (
-                <tr
-                  key={lic.id}
-                  className="hover:bg-gray-50/50 transition-colors"
-                >
-                  <td className="px-6 py-8 whitespace-nowrap">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
-                        {lic.talent_avatar ? (
-                          <img
-                            src={lic.talent_avatar}
-                            alt={lic.talent_name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-400">
-                            <Users className="w-5 h-5" />
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-bold text-gray-900 text-sm leading-none mb-1">
-                          {lic.talent_name}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-8">
-                    <p className="text-sm font-bold text-gray-900 leading-tight max-w-[150px]">
-                      {lic.license_type || "Unknown License"}
-                    </p>
-                  </td>
-                  <td className="px-6 py-8">
-                    <p className="text-sm font-bold text-gray-900">
-                      {lic.brand || "Unknown Brand"}
-                    </p>
-                  </td>
-                  <td className="px-6 py-8">
-                    {lic.start_date || lic.end_date || lic.deadline ? (
-                      <>
-                        {lic.start_date && (
-                          <p className="text-xs font-bold text-gray-900 mb-1">
-                            {new Date(lic.start_date).toLocaleDateString()}
-                          </p>
-                        )}
-                        {lic.end_date ? (
-                          <p className="text-[10px] font-medium text-gray-400 mb-1">
-                            to {new Date(lic.end_date).toLocaleDateString()}
-                          </p>
-                        ) : lic.deadline ? (
-                          <p className="text-[10px] font-medium text-gray-400 mb-1">
-                            Deadline:{" "}
-                            {new Date(lic.deadline).toLocaleDateString()}
-                          </p>
-                        ) : lic.start_date && lic.duration_days ? (
-                          <p className="text-[10px] font-medium text-gray-400 mb-1">
-                            Deadline:{" "}
-                            {(() => {
-                              const d = new Date(lic.start_date);
-                              d.setDate(d.getDate() + lic.duration_days);
-                              return d.toLocaleDateString();
-                            })()}
-                          </p>
-                        ) : null}
-                        {lic.days_left !== null &&
-                          lic.days_left !== undefined && (
-                            <p className="text-[10px] font-bold text-gray-400 italic">
-                              {lic.days_left > 0
-                                ? `${lic.days_left} days left`
-                                : lic.days_left === 0
-                                  ? "Expires today"
-                                  : "Expired"}
-                            </p>
-                          )}
-                      </>
-                    ) : (
-                      <p className="text-xs font-medium text-gray-400">
-                        Ongoing
-                      </p>
-                    )}
-                  </td>
-                  <td className="px-6 py-8">
-                    <p className="text-xs font-medium text-gray-600 max-w-[140px] leading-relaxed">
-                      {Array.isArray(lic.usage_scope)
-                        ? lic.usage_scope.join(", ")
-                        : String(lic.usage_scope || "")}
-                    </p>
-                  </td>
-                  <td className="px-6 py-8">
-                    <p className="text-sm font-bold text-gray-900 mb-2">
-                      {formatMoney(lic.value)}
-                    </p>
-                    {lic.auto_renew && (
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold w-fit border border-blue-100">
-                        <RefreshCw className="w-3.5 h-3.5" /> Auto-renew
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-6 py-8 whitespace-nowrap">
-                    <span
-                      className={`px-3 py-1.5 rounded-lg text-[10px] font-black text-white uppercase tracking-wider shadow-sm ${statusColor(lic.status)}`}
-                    >
-                      {lic.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-8 whitespace-nowrap text-center">
-                    <div className="flex justify-center gap-2">
-                      {String(lic.status).includes("Expiring") && (
-                        <Button className="h-9 px-4 bg-green-600 hover:bg-green-700 text-white text-[11px] font-extrabold rounded-lg flex items-center gap-2 shadow-md shadow-green-100 transition-all active:scale-95">
-                          <RefreshCw className="w-3.5 h-3.5" /> Renew
-                        </Button>
-                      )}
-                      <Button
-                        variant="outline"
-                        className="h-9 w-9 p-0 border-gray-200 text-gray-400 hover:text-gray-900 hover:border-gray-300 rounded-lg bg-white shadow-sm transition-all active:scale-95"
-                        onClick={() => handleViewDetails(lic)}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <ActiveLicenseDetailsSheet
-        license={selectedLicense}
-        open={isDetailsOpen}
-        onClose={() => setIsDetailsOpen(false)}
-        onRenew={handleRenew}
-      />
-    </div>
-  );
-};
 
 const LicenseTemplatesView = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -12700,9 +12149,9 @@ const LicenseTemplatesView = () => {
     const updatedTemplates = templates.map((t) =>
       t.id === editingTemplate.id
         ? {
-            ...editingTemplate,
-            pricing: editingTemplate.pricingRange,
-          }
+          ...editingTemplate,
+          pricing: editingTemplate.pricingRange,
+        }
         : t,
     );
     setTemplates(updatedTemplates);
@@ -13514,11 +12963,10 @@ const ProtectionUsageView = () => {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${
-                activeTab === tab
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:text-gray-900"
-              }`}
+              className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === tab
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-gray-500 hover:text-gray-900"
+                }`}
             >
               {tab}
             </button>
@@ -15692,7 +15140,7 @@ const ComplianceHubView = () => {
       title: "Action Required",
       description: message,
       action: (
-        <ToastAction altText="Try again" onClick={() => {}}>
+        <ToastAction altText="Try again" onClick={() => { }}>
           OK
         </ToastAction>
       ),
@@ -15855,11 +15303,10 @@ const ComplianceHubView = () => {
             <Button
               disabled={selectedTalentIds.length === 0}
               variant="outline"
-              className={`text-xs font-bold h-8 gap-2 ${
-                selectedTalentIds.length === 0
-                  ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
-                  : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
-              }`}
+              className={`text-xs font-bold h-8 gap-2 ${selectedTalentIds.length === 0
+                ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
+                : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
+                }`}
               onClick={handleSendRenewalRequests}
             >
               <RefreshCw
@@ -16348,7 +15795,7 @@ const RoyaltiesPayoutsView = () => {
         typeof cfgRate === "number" && Number.isFinite(cfgRate)
           ? cfgRate
           : typeof fallbackTierRate === "number" &&
-              Number.isFinite(fallbackTierRate)
+            Number.isFinite(fallbackTierRate)
             ? fallbackTierRate
             : "";
       next[name] = rate;
@@ -16573,6 +16020,14 @@ const RoyaltiesPayoutsView = () => {
         </Button>
       </div>
 
+      <Card className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
+        <div className="text-sm font-bold text-gray-900">Payouts and fees</div>
+        <div className="text-xs text-gray-700 font-medium mt-1">
+          For licensing requests, platform fees and talent commission will be
+          deducted from the total paid amount.
+        </div>
+      </Card>
+
       {/* Top Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
@@ -16644,11 +16099,10 @@ const RoyaltiesPayoutsView = () => {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-              activeTab === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-            }`}
+            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${activeTab === tab
+              ? "bg-white text-gray-900 shadow-sm"
+              : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+              }`}
           >
             {tab}
           </button>
@@ -16711,15 +16165,14 @@ const RoyaltiesPayoutsView = () => {
                 tiersData.tiers.map((group: any) => (
                   <div
                     key={group.level}
-                    className={`p-4 rounded-none space-y-3 border-2 transition-all hover:shadow-xl group relative overflow-hidden ${
-                      group.name === "Premium"
-                        ? "bg-[#FAF5FF] border-purple-200"
-                        : group.name === "Core"
-                          ? "bg-[#F0F9FF] border-blue-200"
-                          : group.name === "Growth"
-                            ? "bg-[#F0FDF4] border-green-200"
-                            : "bg-gray-50 border-gray-200"
-                    }`}
+                    className={`p-4 rounded-none space-y-3 border-2 transition-all hover:shadow-xl group relative overflow-hidden ${group.name === "Premium"
+                      ? "bg-[#FAF5FF] border-purple-200"
+                      : group.name === "Core"
+                        ? "bg-[#F0F9FF] border-blue-200"
+                        : group.name === "Growth"
+                          ? "bg-[#F0FDF4] border-green-200"
+                          : "bg-gray-50 border-gray-200"
+                      }`}
                   >
                     {/* Decorative background circle */}
                     <div
@@ -16860,9 +16313,9 @@ const RoyaltiesPayoutsView = () => {
                                 <span className="text-[10px] text-gray-400 font-medium">
                                   {item.changed_at
                                     ? format(
-                                        new Date(item.changed_at),
-                                        "MMM d, yyyy • HH:mm",
-                                      )
+                                      new Date(item.changed_at),
+                                      "MMM d, yyyy • HH:mm",
+                                    )
                                     : "N/A"}
                                 </span>
                                 <span className="w-1 h-1 rounded-full bg-gray-200" />
@@ -17175,7 +16628,7 @@ const RoyaltiesPayoutsView = () => {
             </div>
             <div>
               {paymentHistoryTopEarners &&
-              paymentHistoryTopEarners.length > 0 ? (
+                paymentHistoryTopEarners.length > 0 ? (
                 paymentHistoryTopEarners.map((row: any) => (
                   <div
                     key={row.id}
@@ -17601,1486 +17054,6 @@ const RoyaltiesPayoutsView = () => {
     </div>
   );
 };
-
-const AnalyticsDashboardView = ({
-  onRenewLicense,
-}: {
-  onRenewLicense?: (license: ComplianceRenewableLicense) => void;
-}) => {
-  const ANALYTICS_CACHE_TTL_MS = 10 * 60 * 1000;
-  const initialHasWarmCache = useMemo(() => {
-    const cache = (globalThis as any).__agencyAnalyticsDashboardCache;
-    return cache && Date.now() - cache.fetchedAt < ANALYTICS_CACHE_TTL_MS;
-  }, []);
-
-  const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("Overview");
-  const [analytics, setAnalytics] = useState<any>(
-    initialHasWarmCache
-      ? (globalThis as any).__agencyAnalyticsDashboardCache.analytics
-      : null,
-  );
-  const [rosterInsights, setRosterInsights] = useState<any>(
-    initialHasWarmCache
-      ? (globalThis as any).__agencyAnalyticsDashboardCache.rosterInsights
-      : null,
-  );
-  const [clientsAnalytics, setClientsAnalytics] = useState<any>(
-    initialHasWarmCache
-      ? (globalThis as any).__agencyAnalyticsDashboardCache.clientsAnalytics
-      : null,
-  );
-  const [expiredLicenses] = useState<ComplianceRenewableLicense[]>([]);
-  const [loading, setLoading] = useState(!initialHasWarmCache);
-  const [error, setError] = useState<string | null>(null);
-  const subTabs = [
-    "Overview",
-    "Roster Insights",
-    "Clients & Campaigns",
-    "Compliance",
-  ];
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function fetchAllAnalytics() {
-      const shouldBlockUI = !initialHasWarmCache;
-      if (shouldBlockUI) setLoading(true);
-
-      try {
-        const session = (await supabase?.auth.getSession())?.data?.session;
-        const token = session?.access_token;
-        if (!token) throw new Error("Not authenticated");
-
-        // 1. Fetch Overview (Critical) - Render immediately
-        const overviewRes = await fetch("/api/agency/analytics/dashboard", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!overviewRes.ok) {
-          throw new Error("Failed to fetch analytics overview");
-        }
-
-        const overviewData = await overviewRes.json();
-        const existingCache =
-          (globalThis as any).__agencyAnalyticsDashboardCache || {};
-
-        // Cache critical overview immediately so switching tabs does not force
-        // another full blocking load while background requests are still running.
-        (globalThis as any).__agencyAnalyticsDashboardCache = {
-          analytics: overviewData,
-          rosterInsights: existingCache.rosterInsights ?? null,
-          clientsAnalytics: existingCache.clientsAnalytics ?? null,
-          fetchedAt: Date.now(),
-        };
-
-        if (isMounted) {
-          setAnalytics(overviewData);
-          setError(null);
-          if (shouldBlockUI) setLoading(false); // Unblock UI immediately on first load
-        }
-
-        // 2. Fetch non-critical data in background
-        const [rosterRes, clientsRes] = await Promise.allSettled([
-          fetch("/api/agency/analytics/roster", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          fetch("/api/agency/analytics/clients-campaigns", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ]);
-
-        // Handle Roster Data
-        let nextRosterInsights =
-          (globalThis as any).__agencyAnalyticsDashboardCache?.rosterInsights ??
-          null;
-        if (rosterRes.status === "fulfilled" && rosterRes.value.ok) {
-          const data = await rosterRes.value.json();
-          nextRosterInsights = data;
-          if (isMounted) setRosterInsights(data);
-        }
-
-        // Handle Clients Data
-        let nextClientsAnalytics =
-          (globalThis as any).__agencyAnalyticsDashboardCache
-            ?.clientsAnalytics ?? null;
-        if (clientsRes.status === "fulfilled" && clientsRes.value.ok) {
-          const data = await clientsRes.value.json();
-          nextClientsAnalytics = data;
-          if (isMounted) setClientsAnalytics(data);
-        }
-
-        (globalThis as any).__agencyAnalyticsDashboardCache = {
-          analytics: overviewData,
-          rosterInsights: nextRosterInsights,
-          clientsAnalytics: nextClientsAnalytics,
-          fetchedAt: Date.now(),
-        };
-      } catch (err: any) {
-        if (!isMounted) return;
-        console.error(err);
-        setError(err.message);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    }
-
-    fetchAllAnalytics();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [initialHasWarmCache]);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-gray-500">Loading analytics...</div>
-      </div>
-    );
-  }
-
-  if (error || !analytics) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-red-500">Failed to load analytics data</div>
-      </div>
-    );
-  }
-
-  // Prepare dynamic campaign status data
-  const campaignStatusData = [
-    {
-      name: "In Progress",
-      value: analytics.campaign_status.in_progress,
-      color: "#111827",
-    },
-    {
-      name: "Ready to Launch",
-      value: analytics.campaign_status.ready_to_launch,
-      color: "#9ca3af",
-    },
-    {
-      name: "Completed",
-      value: analytics.campaign_status.completed,
-      color: "#374151",
-    },
-  ];
-
-  const totalCampaigns =
-    analytics.campaign_status.in_progress +
-    analytics.campaign_status.ready_to_launch +
-    analytics.campaign_status.completed;
-
-  return (
-    <div className="space-y-6 pb-20">
-      <div className="flex justify-between items-center bg-white p-6 border-b border-gray-100">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">
-            Analytics Dashboard
-          </h2>
-          <div className="flex bg-gray-100 p-1 rounded-xl mt-6 w-fit">
-            {subTabs.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-                  activeTab === tab
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-        </div>
-        <Button
-          variant="outline"
-          className="gap-2 border-gray-200 font-bold bg-white h-10 px-4 text-sm hover:bg-gray-50 transition-all"
-        >
-          <Download className="w-4 h-4" /> Export Report
-        </Button>
-      </div>
-
-      {activeTab === "Overview" ? (
-        <div className="space-y-6 animate-in fade-in duration-500">
-          {/* Top Row - 2 Columns */}
-          <div className="grid grid-cols-3 gap-6">
-            {/* Total Earnings Card */}
-            <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center min-h-[420px]">
-              <div className="relative z-10">
-                <div className="mb-6 flex items-center justify-between">
-                  <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center border border-green-100">
-                    <DollarSign className="w-7 h-7 text-green-600" />
-                  </div>
-                  <TrendingUp className="w-5 h-5 text-green-500" />
-                </div>
-                <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-3">
-                  Total Earnings (30d)
-                </p>
-                <h3 className="text-5xl font-black text-gray-900 tracking-tighter mb-4">
-                  {analytics.overview.total_earnings_formatted}
-                </h3>
-                <p
-                  className={`text-xs font-bold flex items-center gap-1.5 ${
-                    analytics.overview.earnings_growth_percentage >= 0
-                      ? "text-green-600"
-                      : "text-red-600"
-                  }`}
-                >
-                  <TrendingUp className="w-3.5 h-3.5" />{" "}
-                  {analytics.overview.earnings_growth_percentage >= 0
-                    ? "+"
-                    : ""}
-                  {analytics.overview.earnings_growth_percentage}% vs last
-                  period
-                </p>
-              </div>
-            </Card>
-
-            {/* Active Campaigns Card */}
-            <Card className="col-span-2 p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-between">
-              <div className="flex justify-between items-start mb-10">
-                <div className="flex gap-5 items-center">
-                  <div className="w-14 h-14 bg-indigo-50 rounded-xl flex items-center justify-center border border-indigo-100">
-                    <BarChart2 className="w-8 h-8 text-indigo-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">
-                      Active Campaigns
-                    </p>
-                    <h3 className="text-5xl font-black text-gray-900 tracking-tighter">
-                      {analytics.overview.active_campaigns}
-                    </h3>
-                  </div>
-                </div>
-                <TrendingUp className="w-5 h-5 text-indigo-600" />
-              </div>
-
-              <div className="grid grid-cols-3 gap-4 mb-10">
-                <div className="p-6 bg-gray-50/50 border border-gray-100 rounded-2xl">
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                    Total Value
-                  </p>
-                  <p className="text-2xl font-black text-gray-900">
-                    {analytics.overview.total_earnings_formatted}
-                  </p>
-                </div>
-                <div className="p-6 bg-gray-50/50 border border-gray-100 rounded-2xl">
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                    Avg Value
-                  </p>
-                  <p className="text-2xl font-black text-gray-900">
-                    {analytics.overview.avg_value_formatted}
-                  </p>
-                </div>
-                <div className="p-6 bg-gray-50/50 border border-gray-100 rounded-2xl">
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                    Top Scope
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <p className="text-lg font-black text-gray-900 tracking-tight">
-                      {analytics.overview.top_scope}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-[11px] font-black text-gray-400 uppercase mb-5 tracking-[0.2em]">
-                  Campaign Status Breakdown
-                </p>
-                <div className="space-y-6">
-                  {campaignStatusData.map((status, i) => (
-                    <div key={i} className="space-y-2">
-                      <div className="flex justify-between items-center text-xs font-black text-gray-600 tracking-wider">
-                        <span className="uppercase">{status.name}</span>
-                        <span>{status.value}</span>
-                      </div>
-                      <div className="w-full bg-gray-100 h-2.5 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gray-900"
-                          style={{
-                            width: `${totalCampaigns > 0 ? (status.value / totalCampaigns) * 100 : 0}%`,
-                            backgroundColor: status.color,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          {/* Middle Section - Stacked Horizontal Cards */}
-          <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden h-[180px] flex flex-col justify-center">
-            <div className="flex justify-between items-center">
-              <div>
-                <div className="mb-4">
-                  <TrendingUp className="w-8 h-8 text-purple-600" />
-                </div>
-                <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-2">
-                  AI Usages (30d)
-                </p>
-                <h3 className="text-5xl font-black text-gray-900 tracking-tighter">
-                  {analytics.ai_usage.total_usages_30d}
-                </h3>
-                <p className="text-xs font-bold text-purple-600 flex items-center gap-1.5 mt-2">
-                  <TrendingUp className="w-3.5 h-3.5" /> +18% vs last period
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center border border-purple-100">
-                <BarChart2 className="w-7 h-7 text-purple-600" />
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden h-[140px] flex flex-col justify-center">
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-2">
-                  Avg Campaign Value
-                </p>
-                <h3 className="text-4xl font-black text-gray-900 tracking-tighter">
-                  {analytics.ai_usage.avg_campaign_value_formatted}
-                </h3>
-                <p className="text-xs font-bold text-orange-600 mt-2">
-                  0 expiring soon
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center border border-orange-100">
-                <Target className="w-7 h-7 text-orange-600" />
-              </div>
-            </div>
-          </Card>
-
-          {/* Monthly Performance Trends */}
-          <Card className="p-8 bg-white border border-gray-900 shadow-sm">
-            <div className="flex justify-between items-center mb-10">
-              <h3 className="text-lg font-black text-gray-900 uppercase tracking-[0.15em]">
-                Monthly Performance Trends
-              </h3>
-              <TrendingUp className="w-5 h-5 text-indigo-600" />
-            </div>
-            <div className="h-[400px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={analytics.monthly_trends}
-                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    stroke="#f1f5f9"
-                  />
-                  <XAxis
-                    dataKey="month"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fontWeight: "bold", fill: "#94a3b8" }}
-                    dy={10}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fontWeight: "bold", fill: "#94a3b8" }}
-                  />
-                  <RechartsTooltip
-                    contentStyle={{
-                      borderRadius: "12px",
-                      border: "1px solid #e2e8f0",
-                      fontWeight: "bold",
-                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                    }}
-                  />
-                  <Legend
-                    iconType="circle"
-                    wrapperStyle={{
-                      paddingTop: "40px",
-                      fontWeight: "bold",
-                      fontSize: "12px",
-                    }}
-                    formatter={(value) => (
-                      <span className="text-gray-600 uppercase tracking-widest">
-                        {value}
-                      </span>
-                    )}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="earnings"
-                    name="Earnings ($)"
-                    stroke="#10b981"
-                    strokeWidth={3}
-                    dot={{
-                      r: 4,
-                      fill: "#10b981",
-                      strokeWidth: 2,
-                      stroke: "#fff",
-                    }}
-                    activeDot={{ r: 6 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="campaigns"
-                    name="Campaigns"
-                    stroke="#6366f1"
-                    strokeWidth={3}
-                    dot={{
-                      r: 4,
-                      fill: "#6366f1",
-                      strokeWidth: 2,
-                      stroke: "#fff",
-                    }}
-                    activeDot={{ r: 6 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="usages"
-                    name="AI Usages"
-                    stroke="#a855f7"
-                    strokeWidth={3}
-                    dot={{
-                      r: 4,
-                      fill: "#a855f7",
-                      strokeWidth: 2,
-                      stroke: "#fff",
-                    }}
-                    activeDot={{ r: 6 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-
-          {/* Distribution Pie Charts */}
-          <div className="grid grid-cols-2 gap-6 pb-10">
-            <Card className="p-8 bg-white border border-gray-900 shadow-sm">
-              <h3 className="text-lg font-black text-gray-900 mb-10 uppercase tracking-[0.1em]">
-                AI Usage Type Distribution
-              </h3>
-              <div className="flex flex-col items-center">
-                <div className="h-[280px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={[
-                          {
-                            name: "Image",
-                            value: analytics.ai_usage.usage_by_type.image,
-                            color: "#60a5fa",
-                          },
-                          {
-                            name: "Video",
-                            value: analytics.ai_usage.usage_by_type.video,
-                            color: "#8b5cf6",
-                          },
-                          {
-                            name: "Voice",
-                            value: analytics.ai_usage.usage_by_type.voice,
-                            color: "#ec4899",
-                          },
-                        ]}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={0}
-                        outerRadius={100}
-                        dataKey="value"
-                        stroke="none"
-                      >
-                        {[
-                          {
-                            name: "Image",
-                            value: analytics.ai_usage.usage_by_type.image,
-                            color: "#60a5fa",
-                          },
-                          {
-                            name: "Video",
-                            value: analytics.ai_usage.usage_by_type.video,
-                            color: "#8b5cf6",
-                          },
-                          {
-                            name: "Voice",
-                            value: analytics.ai_usage.usage_by_type.voice,
-                            color: "#ec4899",
-                          },
-                        ].map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <RechartsTooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="w-full mt-8 flex flex-col gap-3">
-                  {[
-                    {
-                      name: "Image",
-                      value: analytics.ai_usage.usage_by_type.image,
-                      color: "#60a5fa",
-                    },
-                    {
-                      name: "Video",
-                      value: analytics.ai_usage.usage_by_type.video,
-                      color: "#8b5cf6",
-                    },
-                    {
-                      name: "Voice",
-                      value: analytics.ai_usage.usage_by_type.voice,
-                      color: "#ec4899",
-                    },
-                  ].map((item) => (
-                    <div
-                      key={item.name}
-                      className="flex items-center justify-between"
-                    >
-                      <span className="text-xs font-bold text-gray-900 uppercase tracking-widest">
-                        {item.name}: {item.value}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-8 bg-white border border-gray-900 shadow-sm">
-              <h3 className="text-lg font-black text-gray-900 mb-10 uppercase tracking-[0.1em]">
-                Consent Status Breakdown
-              </h3>
-              <div className="flex flex-col items-center">
-                <div className="h-[280px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={[
-                          {
-                            name: "Complete",
-                            value: analytics.consent_status.complete,
-                            color: "#10b981",
-                          },
-                          {
-                            name: "Missing",
-                            value: analytics.consent_status.missing,
-                            color: "#f59e0b",
-                          },
-                          {
-                            name: "Expiring",
-                            value: analytics.consent_status.expiring,
-                            color: "#facc15",
-                          },
-                        ]}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={0}
-                        outerRadius={100}
-                        dataKey="value"
-                        stroke="none"
-                      >
-                        {[
-                          {
-                            name: "Complete",
-                            value: analytics.consent_status.complete,
-                            color: "#10b981",
-                          },
-                          {
-                            name: "Missing",
-                            value: analytics.consent_status.missing,
-                            color: "#f59e0b",
-                          },
-                          {
-                            name: "Expiring",
-                            value: analytics.consent_status.expiring,
-                            color: "#facc15",
-                          },
-                        ].map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <RechartsTooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="w-full mt-8 flex flex-col gap-3 text-right">
-                  {[
-                    {
-                      name: "Complete",
-                      value: analytics.consent_status.complete,
-                      color: "#10b981",
-                    },
-                    {
-                      name: "Missing",
-                      value: analytics.consent_status.missing,
-                      color: "#f59e0b",
-                    },
-                    {
-                      name: "Expiring",
-                      value: analytics.consent_status.expiring,
-                      color: "#facc15",
-                    },
-                  ].map((item) => (
-                    <div
-                      key={item.name}
-                      className="flex items-center justify-between"
-                    >
-                      <span className="text-xs font-bold text-gray-900 uppercase tracking-widest">
-                        {item.name}: {item.value}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </Card>
-          </div>
-        </div>
-      ) : activeTab === "Roster Insights" ? (
-        rosterInsights ? (
-          <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-            <h3 className="text-xl font-black text-gray-900 uppercase tracking-[0.15em] mb-10">
-              Earnings by Talent (Last 30 Days)
-            </h3>
-            <Card className="p-10 bg-white border border-gray-900 shadow-sm mb-8">
-              <div className="h-[500px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={rosterInsights.talent_metrics.map((m: any) => ({
-                      name: m.talent_name,
-                      earnings: m.earnings_30d_cents / 100,
-                      projected: m.projected_earnings_cents / 100,
-                    }))}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                  >
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      vertical={false}
-                      stroke="#f1f5f9"
-                    />
-                    <XAxis
-                      dataKey="name"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{
-                        fontSize: 13,
-                        fontWeight: "bold",
-                        fill: "#64748b",
-                      }}
-                      dy={15}
-                    />
-                    <YAxis
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{
-                        fontSize: 13,
-                        fontWeight: "bold",
-                        fill: "#94a3b8",
-                      }}
-                      tickFormatter={(val) => `$${val}`}
-                    />
-                    <RechartsTooltip
-                      contentStyle={{
-                        borderRadius: "12px",
-                        border: "1px solid #e2e8f0",
-                        fontWeight: "bold",
-                      }}
-                      formatter={(val: number) => `$${val.toLocaleString()}`}
-                    />
-                    <Legend
-                      verticalAlign="bottom"
-                      align="center"
-                      iconType="rect"
-                      wrapperStyle={{
-                        paddingTop: "40px",
-                        fontWeight: "bold",
-                        fontSize: "13px",
-                      }}
-                      formatter={(value) => (
-                        <span className="text-gray-700 uppercase tracking-widest px-2">
-                          {value === "earnings"
-                            ? "30D Earnings ($)"
-                            : "Projected ($)"}
-                        </span>
-                      )}
-                    />
-                    <Bar
-                      dataKey="earnings"
-                      fill="#10b981"
-                      radius={[4, 4, 0, 0]}
-                      barSize={32}
-                      name="earnings"
-                    />
-                    <Bar
-                      dataKey="projected"
-                      fill="#3b82f6"
-                      radius={[4, 4, 0, 0]}
-                      barSize={32}
-                      name="projected"
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </Card>
-
-            {/* Top Talent Summary Cards */}
-            <div className="grid grid-cols-3 gap-6 mb-8">
-              {/* Top Performer */}
-              <Card className="p-6 bg-white border border-gray-900 shadow-sm relative overflow-hidden">
-                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-6">
-                  Top Performer (Earnings)
-                </p>
-                {rosterInsights.top_performer ? (
-                  <div className="flex items-center gap-5">
-                    <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-green-500 p-0.5">
-                      {rosterInsights.top_performer.image_url ? (
-                        <img
-                          src={rosterInsights.top_performer.image_url}
-                          alt={rosterInsights.top_performer.talent_name}
-                          className="w-full h-full object-cover rounded-lg"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-200 flex items-center justify-center rounded-lg">
-                          <User className="w-8 h-8 text-gray-400" />
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <h4 className="text-xl font-black text-gray-900 tracking-tight">
-                        {rosterInsights.top_performer.talent_name}
-                      </h4>
-                      <p className="text-2xl font-black text-green-600">
-                        {rosterInsights.top_performer.value}
-                      </p>
-                      <p className="text-[11px] font-bold text-gray-500 mt-1">
-                        {rosterInsights.top_performer.sub_text}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-gray-400 text-sm">No data available</div>
-                )}
-              </Card>
-
-              {/* Most Active */}
-              <Card className="p-6 bg-white border border-gray-900 shadow-sm relative overflow-hidden">
-                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-6">
-                  Most Active (Campaigns)
-                </p>
-                {rosterInsights.most_active ? (
-                  <div className="flex items-center gap-5">
-                    <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-indigo-500 p-0.5">
-                      {rosterInsights.most_active.image_url ? (
-                        <img
-                          src={rosterInsights.most_active.image_url}
-                          alt={rosterInsights.most_active.talent_name}
-                          className="w-full h-full object-cover rounded-lg"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-200 flex items-center justify-center rounded-lg">
-                          <User className="w-8 h-8 text-gray-400" />
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <h4 className="text-xl font-black text-gray-900 tracking-tight">
-                        {rosterInsights.most_active.talent_name}
-                      </h4>
-                      <p className="text-2xl font-black text-blue-600">
-                        {rosterInsights.most_active.value}
-                      </p>
-                      <p className="text-[11px] font-bold text-gray-500 mt-1">
-                        {rosterInsights.most_active.sub_text}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-gray-400 text-sm">No data available</div>
-                )}
-              </Card>
-
-              {/* Highest Engagement */}
-              <Card className="p-6 bg-white border border-gray-900 shadow-sm relative overflow-hidden">
-                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-6">
-                  Highest Engagement
-                </p>
-                {rosterInsights.highest_engagement ? (
-                  <div className="flex items-center gap-5">
-                    <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-purple-500 p-0.5">
-                      {rosterInsights.highest_engagement.image_url ? (
-                        <img
-                          src={rosterInsights.highest_engagement.image_url}
-                          alt={rosterInsights.highest_engagement.talent_name}
-                          className="w-full h-full object-cover rounded-lg"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-200 flex items-center justify-center rounded-lg">
-                          <User className="w-8 h-8 text-gray-400" />
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <h4 className="text-xl font-black text-gray-900 tracking-tight">
-                        {rosterInsights.highest_engagement.talent_name}
-                      </h4>
-                      <p className="text-2xl font-black text-purple-600">
-                        {rosterInsights.highest_engagement.value}
-                      </p>
-                      <p className="text-[11px] font-bold text-gray-500 mt-1">
-                        {rosterInsights.highest_engagement.sub_text}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-gray-400 text-sm">No data available</div>
-                )}
-              </Card>
-            </div>
-
-            {/* Talent Performance Metrics Table */}
-            <Card className="bg-white border border-gray-900 shadow-sm overflow-hidden mb-8">
-              <div className="p-8 border-b border-gray-100 flex justify-between items-center">
-                <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest">
-                  Talent Performance Metrics
-                </h3>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="bg-gray-50/80">
-                      <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">
-                        Talent
-                      </th>
-                      <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">
-                        30D Earnings
-                      </th>
-                      <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">
-                        Campaigns
-                      </th>
-                      <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">
-                        Avg Value
-                      </th>
-                      <th className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {rosterInsights.talent_metrics.map((talent: any) => (
-                      <tr
-                        key={talent.talent_id}
-                        className="hover:bg-gray-50/50 transition-colors"
-                      >
-                        <td className="px-8 py-5">
-                          <div className="flex items-center gap-3">
-                            {talent.image_url ? (
-                              <img
-                                src={talent.image_url}
-                                alt={talent.talent_name}
-                                className="w-8 h-8 rounded-full object-cover border border-gray-200"
-                              />
-                            ) : (
-                              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center border border-gray-200">
-                                <User className="w-4 h-4 text-gray-400" />
-                              </div>
-                            )}
-                            <span className="text-sm font-bold text-gray-900">
-                              {talent.talent_name}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-8 py-5 text-sm font-black text-gray-900">
-                          {talent.earnings_30d_formatted}
-                        </td>
-                        <td className="px-8 py-5 text-sm font-bold text-gray-600">
-                          {talent.campaigns_count_30d}
-                        </td>
-                        <td className="px-8 py-5 text-sm font-bold text-gray-600">
-                          {talent.avg_value_formatted}
-                        </td>
-                        <td className="px-8 py-5">
-                          <Badge
-                            className={`font-bold text-[10px] py-0.5 ${talent.status === "Active" ? "bg-green-50 text-green-600 border-green-100" : "bg-gray-100 text-gray-500 border-gray-200"}`}
-                          >
-                            {talent.status}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
-          </div>
-        ) : (
-          <div className="flex items-center justify-center h-96">
-            <div className="text-gray-500">Loading roster insights...</div>
-          </div>
-        )
-      ) : activeTab === "Clients & Campaigns" ? (
-        clientsAnalytics ? (
-          <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-            <div className="grid grid-cols-2 gap-6">
-              {/* Budget Distribution Pie */}
-              <Card className="p-10 bg-white border border-gray-900 shadow-sm">
-                <h3 className="text-xl font-bold text-gray-900 mb-12 tracking-tight">
-                  Earnings by Client
-                </h3>
-                <div className="h-[350px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={clientsAnalytics.earnings_by_client}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={80}
-                        outerRadius={120}
-                        paddingAngle={5}
-                        dataKey="budget"
-                        stroke="none"
-                      >
-                        {clientsAnalytics.earnings_by_client.map(
-                          (entry: any, index: number) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ),
-                        )}
-                      </Pie>
-                      <RechartsTooltip
-                        contentStyle={{
-                          borderRadius: "12px",
-                          border: "none",
-                          fontWeight: "bold",
-                          boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
-                        }}
-                      />
-                      <Legend
-                        verticalAlign="middle"
-                        align="right"
-                        layout="vertical"
-                        iconType="circle"
-                        wrapperStyle={{
-                          paddingLeft: "20px",
-                          fontWeight: "bold",
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </Card>
-
-              {/* Campaign Performance Bar Chart */}
-              <Card className="p-10 bg-white border border-gray-900 shadow-sm">
-                <h3 className="text-xl font-bold text-gray-900 mb-12 tracking-tight">
-                  Geographic Distribution
-                </h3>
-                <div className="h-[350px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={clientsAnalytics.geographic_distribution}
-                      margin={{ left: 20 }}
-                    >
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        horizontal={false}
-                        stroke="#f1f5f9"
-                      />
-                      <XAxis
-                        dataKey="name"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{
-                          fontSize: 11,
-                          fontWeight: "bold",
-                          fill: "#64748b",
-                        }}
-                      />
-                      <YAxis
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{
-                          fontSize: 13,
-                          fontWeight: "bold",
-                          fill: "#64748b",
-                        }}
-                      />
-                      <RechartsTooltip
-                        contentStyle={{
-                          borderRadius: "12px",
-                          border: "none",
-                          fontWeight: "bold",
-                          boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
-                        }}
-                        cursor={{ fill: "#f8fafc" }}
-                      />
-                      <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={40}>
-                        {clientsAnalytics.geographic_distribution.map(
-                          (entry: any, index: number) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ),
-                        )}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </Card>
-            </div>
-
-            {/* Client Performance List Table */}
-            <Card className="bg-white border border-gray-900 shadow-sm overflow-hidden">
-              <div className="p-8 border-b border-gray-100 flex justify-between items-center">
-                <h3 className="text-lg font-bold text-gray-900 tracking-tight">
-                  Top Clients Performance
-                </h3>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="bg-gray-50/80">
-                      <th className="px-8 py-5 text-[11px] font-bold text-gray-500 tracking-widest">
-                        Client
-                      </th>
-                      <th className="px-8 py-5 text-[11px] font-bold text-gray-500 tracking-widest text-right">
-                        Action
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {clientsAnalytics.top_clients_performance.map(
-                      (client: any) => (
-                        <tr
-                          key={client.name}
-                          className="hover:bg-gray-50/50 transition-colors"
-                        >
-                          <td className="px-8 py-5">
-                            <div className="flex flex-col">
-                              <span className="text-sm font-bold text-gray-900">
-                                {client.name}
-                              </span>
-                              <span className="text-[10px] text-gray-500 font-bold">
-                                {client.campaigns} campaigns
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-8 py-5 text-right">
-                            <div className="flex flex-col items-end">
-                              <span className="text-sm font-bold text-green-600">
-                                ${client.budget.toLocaleString()}
-                              </span>
-                              <span className="text-[10px] text-gray-400 font-bold">
-                                {client.percentage.toFixed(1)}% of total
-                              </span>
-                            </div>
-                          </td>
-                        </tr>
-                      ),
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
-
-            {/* Summary Cards AT BOTTOM */}
-            <div className="grid grid-cols-3 gap-6">
-              <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
-                <p className="text-sm font-bold text-gray-500 mb-2">
-                  Repeat Client Rate
-                </p>
-                <h3 className="text-4xl font-bold text-gray-900 tracking-tighter">
-                  {clientsAnalytics.repeat_client_rate.toFixed(0)}%
-                </h3>
-                <div className="w-full bg-gray-100 h-1.5 rounded-full mt-4 overflow-hidden">
-                  <div
-                    className="h-full bg-gray-900 rounded-full"
-                    style={{ width: `${clientsAnalytics.repeat_client_rate}%` }}
-                  />
-                </div>
-              </Card>
-
-              <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
-                <p className="text-sm font-bold text-gray-500 mb-2">
-                  Avg Campaign Duration
-                </p>
-                <h3 className="text-4xl font-bold text-gray-900 tracking-tighter">
-                  {clientsAnalytics.avg_campaign_duration} days
-                </h3>
-                <p className="text-xs text-gray-500 mt-2 font-medium">
-                  From booking to completion
-                </p>
-              </Card>
-
-              <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
-                <p className="text-sm font-bold text-gray-500 mb-2">
-                  Client Acquisition
-                </p>
-                <h3 className="text-4xl font-bold text-green-600 tracking-tighter">
-                  {clientsAnalytics.client_acquisition}
-                </h3>
-                <p className="text-xs text-green-600/70 mt-2 font-bold">
-                  New clients in the last 30 days
-                </p>
-              </Card>
-            </div>
-          </div>
-        ) : (
-          <div className="flex items-center justify-center h-96">
-            <div className="text-gray-500">
-              Loading clients & campaigns analytics...
-            </div>
-          </div>
-        )
-      ) : activeTab === "Compliance" ? (
-        (() => {
-          const totalTalents = analytics.consent_status.total;
-          const activeCount = analytics.consent_status.complete;
-          const activePct = totalTalents
-            ? Math.round((activeCount / totalTalents) * 100)
-            : 0;
-
-          const verifiedCount = analytics.consent_status.verified;
-          const verificationPct = totalTalents
-            ? Math.round((verifiedCount / totalTalents) * 100)
-            : 0;
-
-          const expiringSoonLicensesCount = analytics.consent_status.expiring;
-
-          const consentExpiringCount = analytics.consent_status.expiring; // Reusing for distribution chart
-          const missingCount = analytics.consent_status.missing;
-
-          const completePct = activePct;
-          const expiringPct = totalTalents
-            ? Math.round((consentExpiringCount / totalTalents) * 100)
-            : 0;
-          const missingPct = Math.max(100 - completePct - expiringPct, 0);
-
-          const parseUsDate = (v: string) => {
-            if (!v || v === "—" || v === "N/A") return null;
-            const parts = v.split("/").map((p) => Number(p));
-            if (parts.length !== 3 || parts.some((p) => Number.isNaN(p)))
-              return null;
-            const [m, d, y] = parts;
-            if (!m || !d || !y) return null;
-            const dt = new Date(y, m - 1, d);
-            return Number.isNaN(dt.getTime()) ? null : dt;
-          };
-
-          const startOfToday = () => {
-            const now = new Date();
-            return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-          };
-
-          const daysUntil = (dt: Date) => {
-            const base = startOfToday();
-            const ms = dt.getTime() - base.getTime();
-            return Math.floor(ms / (1000 * 60 * 60 * 24));
-          };
-
-          const upcomingLicenses = LICENSE_COMPLIANCE_DATA.map((l: any) => {
-            const dt = parseUsDate(String(l.expiry));
-            return {
-              license: l,
-              expiryDate: dt,
-              daysUntil: dt ? daysUntil(dt) : null,
-            };
-          }).filter((x: any) => x.expiryDate && x.daysUntil !== null) as Array<{
-            license: any;
-            expiryDate: Date;
-            daysUntil: number;
-          }>;
-
-          const nextLicense = upcomingLicenses
-            .filter((x) => x.daysUntil >= 0)
-            .sort((a, b) => a.daysUntil - b.daysUntil)[0];
-
-          const pipelineTalentName = nextLicense?.license?.talent || "Julia";
-          const pipelineTalent =
-            TALENT_DATA.find((t: any) => t.name === pipelineTalentName) ||
-            TALENT_DATA.find((t: any) => t.id === "julia");
-          const pipelineExpiryText =
-            nextLicense?.license?.expiry || "2/15/2025";
-
-          return (
-            <div className="space-y-6 animate-in fade-in duration-500">
-              {/* Top Row: 3 Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="p-8 bg-white border border-gray-900 shadow-sm rounded-lg">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="w-10 h-10 rounded-lg border border-gray-200 flex items-center justify-center">
-                      <ShieldCheck className="w-5 h-5 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                        Verification Rate
-                      </p>
-                      <h3 className="text-3xl font-black text-gray-900 tracking-tighter">
-                        {verificationPct}%
-                      </h3>
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gray-900 rounded-full"
-                        style={{ width: `${verificationPct}%` }}
-                      />
-                    </div>
-                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                      {verificationPct === 100
-                        ? "All talent verified"
-                        : `${verifiedCount} of ${totalTalents} verified`}
-                    </p>
-                  </div>
-                </Card>
-
-                <Card className="p-8 bg-white border border-gray-900 shadow-sm rounded-lg">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="w-10 h-10 rounded-lg border border-gray-200 flex items-center justify-center">
-                      <CheckCircle2 className="w-5 h-5 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                        Active Consents
-                      </p>
-                      <h3 className="text-3xl font-black text-gray-900 tracking-tighter">
-                        {activePct}%
-                      </h3>
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gray-400 rounded-full"
-                        style={{ width: `${activePct}%` }}
-                      />
-                    </div>
-                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                      {activeCount} of {totalTalents} complete
-                    </p>
-                  </div>
-                </Card>
-
-                <Card className="p-8 bg-white border border-gray-900 shadow-sm rounded-lg">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="w-10 h-10 rounded-lg border border-gray-200 flex items-center justify-center">
-                      <AlertCircle className="w-5 h-5 text-orange-600" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                        Expiring Soon
-                      </p>
-                      <h3 className="text-3xl font-black text-gray-900 tracking-tighter">
-                        {expiringSoonLicensesCount}
-                      </h3>
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <p className="text-[10px] font-bold text-orange-600 uppercase tracking-widest">
-                      Next 10 days
-                    </p>
-                  </div>
-                </Card>
-              </div>
-
-              {/* Middle Row: License Expiry Pipeline */}
-              <Card className="p-8 bg-white border border-gray-900 shadow-sm rounded-lg">
-                <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest mb-6">
-                  License Expiry Pipeline
-                </h3>
-                <div className="space-y-3">
-                  {(() => {
-                    // Fallback to mock data if API results are empty
-                    const effectiveExpired =
-                      expiredLicenses.length > 0
-                        ? expiredLicenses
-                        : (LICENSE_COMPLIANCE_DATA as any[])
-                            .filter((x) => x.level === "EXPIRED")
-                            .map((x, idx) => ({
-                              id: `mock-${idx}`,
-                              template_id: x.template_id,
-                              talent_name: x.talent,
-                              talent_avatar: x.image,
-                              brand: x.brand,
-                              end_date: new Date(x.expiry).toISOString(),
-                              client_name: x.brand,
-                            }));
-
-                    if (effectiveExpired.length === 0) {
-                      return (
-                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 text-center">
-                          <p className="text-sm font-bold text-gray-900">
-                            No expired licenses
-                          </p>
-                          <p className="text-xs font-medium text-gray-500 mt-1">
-                            Expired contracts will appear here for renewal.
-                          </p>
-                        </div>
-                      );
-                    }
-
-                    return (effectiveExpired as any[]).map((license) => (
-                      <div
-                        key={license.id}
-                        className="bg-[#FFF7ED] border border-orange-100 p-4 rounded-xl flex items-center justify-between gap-4"
-                      >
-                        <div className="flex items-center gap-4 min-w-0">
-                          <div className="w-12 h-12 rounded-lg overflow-hidden bg-white border border-orange-100 shrink-0">
-                            {license.talent_avatar ? (
-                              <img
-                                src={license.talent_avatar}
-                                alt={license.talent_name || "Talent"}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-orange-400">
-                                <Users className="w-5 h-5" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-black text-gray-900 truncate">
-                              {license.talent_name || "Assigned Talent"}
-                            </p>
-                            <p className="text-xs font-bold text-gray-500 truncate">
-                              Expired on {formatLicenseDate(license.end_date)}
-                            </p>
-                          </div>
-                        </div>
-                        <Button
-                          className="bg-[#EA580C] hover:bg-[#C2410C] text-white font-black text-xs px-6 h-10 rounded-lg uppercase tracking-widest gap-2"
-                          onClick={() => onRenewLicense?.(license)}
-                        >
-                          <RefreshCw className="w-4 h-4" /> Renew
-                        </Button>
-                      </div>
-                    ));
-                  })()}
-                </div>
-              </Card>
-
-              {/* Bottom Row: Compliance Summary */}
-              <Card className="p-8 bg-white border border-gray-900 shadow-sm rounded-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                  {/* Left Column: Consent Status Distribution */}
-                  <div>
-                    <h3 className="text-xl font-black text-gray-900 uppercase tracking-widest mb-10">
-                      Compliance Summary
-                    </h3>
-                    <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-6 font-sans">
-                      Consent Status Distribution
-                    </p>
-                    <div className="space-y-8">
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-widest">
-                          <span className="text-gray-600">Complete</span>
-                          <span className="text-green-600">
-                            {activeCount} ({completePct}%)
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gray-900 rounded-full"
-                            style={{ width: `${completePct}%` }}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-widest">
-                          <span className="text-gray-600">Expiring</span>
-                          <span className="text-orange-600">
-                            {consentExpiringCount} ({expiringPct}%)
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-[#FB923C]/30 rounded-full shadow-inner"
-                            style={{ width: `${expiringPct}%` }}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-widest">
-                          <span className="text-gray-600">Missing</span>
-                          <span className="text-red-600">
-                            {missingCount} ({missingPct}%)
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-[#FECACA] rounded-full"
-                            style={{ width: `${missingPct}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right Column: Likeness Protection */}
-                  <div className="space-y-10 relative">
-                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 backdrop-blur-[2px] rounded-xl">
-                      <div className="bg-black/80 text-white px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg">
-                        Coming Soon
-                      </div>
-                    </div>
-                    <div className="opacity-50 pointer-events-none select-none filter blur-[2px]">
-                      <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest font-sans">
-                        Likeness Protection
-                      </p>
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between p-6 bg-green-50/50 border border-green-100 rounded-xl">
-                          <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">
-                            Authorized Uses (30d)
-                          </span>
-                          <span className="text-3xl font-black text-green-600">
-                            73
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between p-6 bg-red-50/50 border border-red-100 rounded-xl">
-                          <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">
-                            Unauthorized Alerts
-                          </span>
-                          <span className="text-3xl font-black text-red-600">
-                            0
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between p-6 bg-blue-50/50 border border-blue-100 rounded-xl">
-                          <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">
-                            Disputes Resolved
-                          </span>
-                          <span className="text-3xl font-black text-blue-600">
-                            2
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </div>
-          );
-        })()
-      ) : (
-        <PlaceholderView title={activeTab} />
-      )}
-    </div>
-  );
-};
-
-const PlaceholderView = ({ title }: { title: string }) => (
-  <div className="flex flex-col items-center justify-center h-full py-20 text-center">
-    <div className="bg-gray-100 p-6 rounded-full mb-4">
-      <Settings className="w-10 h-10 text-gray-400" />
-    </div>
-    <h2 className="text-xl font-bold text-gray-900 mb-2">{title}</h2>
-    <p className="text-gray-500 max-w-sm">
-      This section is currently under development. Check back soon for updates.
-    </p>
-  </div>
-);
-
-const formatLicenseDate = (dateStr?: string) => {
-  if (!dateStr) return "N/A";
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return "N/A";
-  return format(d, "MMM d, yyyy");
-};
-
 export default function AgencyDashboard() {
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -19095,9 +17068,7 @@ export default function AgencyDashboard() {
   const [agencyMode, setAgencyModeState] = useState<"AI" | "IRL">(
     (searchParams.get("mode") as "AI" | "IRL") || "AI",
   );
-  const [activeTab, setActiveTabState] = useState(
-    searchParams.get("tab") || "dashboard",
-  );
+  const [activeTab, setActiveTabState] = useState("dashboard");
   const [activeSubTab, setActiveSubTab] = useState(
     searchParams.get("subTab") || "All Talent",
   );
@@ -19269,8 +17240,8 @@ export default function AgencyDashboard() {
   const seatsLimit = useMemo(() => {
     return Number(
       agencyProfileQuery.data?.seats_limit ||
-        (profile as any)?.seats_limit ||
-        0,
+      (profile as any)?.seats_limit ||
+      0,
     );
   }, [agencyProfileQuery.data, profile]);
 
@@ -19685,18 +17656,6 @@ export default function AgencyDashboard() {
     setActiveTab("dashboard");
   }, [agencyMode, activeTab]);
 
-  useEffect(() => {
-    const handleSwitchTab = (e: any) => {
-      const { tab, subTab, scoutingTab } = e.detail;
-      if (tab) setActiveTab(tab);
-      if (subTab) setActiveSubTab(subTab);
-      if (scoutingTab) setActiveScoutingTab(scoutingTab);
-    };
-
-    window.addEventListener("switchTab", handleSwitchTab);
-    return () => window.removeEventListener("switchTab", handleSwitchTab);
-  }, []);
-
   const setActiveTab = (tab: string) => {
     setActiveTabState(tab);
     setSearchParams((prev) => {
@@ -19851,108 +17810,110 @@ export default function AgencyDashboard() {
   const sidebarItems: SidebarItem[] =
     agencyMode === "AI"
       ? [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        {
+          id: "licensing",
+          label: "Licensing",
+          icon: FileText,
+          subItems: [
+            "Licensing Requests",
+            "License Submissions",
+            "Active Licenses",
+            "License Templates",
+          ],
+        },
+        { id: "payouts", label: "Payouts", icon: DollarSign },
+        {
+          id: "protection",
+          label: "Protection & Usage",
+          icon: Shield,
+          subItems: ["Protect & Usage", "Compliance Hub"],
+          badges: { "Compliance Hub": "NEW" },
+          disabled: !hasProAccess,
+          disabledReason: "Requires Pro",
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+          disabledSubItems: {
+            "Analytics Dashboard": !hasProAccess,
           },
-          {
-            id: "licensing",
-            label: "Licensing",
-            icon: FileText,
-            subItems: [
-              "Licensing Requests",
-              "License Submissions",
-              "Active Licenses",
-              "License Templates",
-            ],
-          },
-          { id: "payouts", label: "Payouts", icon: DollarSign },
-          {
-            id: "protection",
-            label: "Protection & Usage",
-            icon: Shield,
-            subItems: ["Protect & Usage", "Compliance Hub"],
-            badges: { "Compliance Hub": "NEW" },
-            disabled: !hasProAccess,
-            disabledReason: "Requires Pro",
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-            disabled: !hasProAccess,
-            disabledReason: "Requires Pro",
-          },
-          { id: "packages", label: "Talent Packages", icon: Package },
-          {
-            id: "settings",
-            label: "Settings",
-            icon: Settings,
-            subItems: ["General Settings", "File Storage"],
-          },
-        ]
+        },
+        { id: "packages", label: "Talent Packages", icon: Package },
+        {
+          id: "settings",
+          label: "Settings",
+          icon: Settings,
+          subItems: ["General Settings", "File Storage"],
+        },
+      ]
       : [
-          { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-          {
-            id: "roster",
-            label: "Roster",
-            icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
+        { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+        {
+          id: "roster",
+          label: "Roster",
+          icon: Users,
+          subItems: ["All Talent", "Performance Tiers"],
+        },
+        { id: "scouting", label: "Scouting", icon: Target },
+        { id: "client-crm", label: "Client CRM", icon: Building2 },
+        {
+          id: "bookings",
+          label: "Bookings",
+          icon: Calendar,
+          subItems: [
+            "Calendar & Schedule",
+            "Booking Requests",
+            "Client Database",
+            "Talent Availability",
+            "Notifications",
+            "Management & Analytics",
+          ],
+        },
+        { id: "payouts", label: "Payouts", icon: DollarSign },
+        {
+          id: "accounting",
+          label: "Accounting & Invoicing",
+          icon: CreditCard,
+          subItems: [
+            "Invoice Generation",
+            "Invoice Management",
+            "Payment Tracking",
+            "Talent Statements",
+            "Financial Reports",
+            "Expense Tracking",
+            "Connect Bank",
+          ],
+          disabledSubItems: {
+            "Financial Reports": !hasProAccess,
+            "Expense Tracking": !hasProAccess,
           },
-          { id: "scouting", label: "Scouting", icon: Target },
-          { id: "client-crm", label: "Client CRM", icon: Building2 },
-          {
-            id: "bookings",
-            label: "Bookings",
-            icon: Calendar,
-            subItems: [
-              "Calendar & Schedule",
-              "Booking Requests",
-              "Client Database",
-              "Talent Availability",
-              "Notifications",
-              "Management & Analytics",
-            ],
+        },
+        {
+          id: "analytics",
+          label: "Analytics",
+          icon: BarChart2,
+          subItems: ["Analytics Dashboard", "Royalties & Payouts"],
+          disabledSubItems: {
+            "Analytics Dashboard": !hasProAccess,
           },
-          { id: "payouts", label: "Payouts", icon: DollarSign },
-          {
-            id: "accounting",
-            label: "Accounting & Invoicing",
-            icon: CreditCard,
-            subItems: [
-              "Invoice Generation",
-              "Invoice Management",
-              "Payment Tracking",
-              "Talent Statements",
-              "Financial Reports",
-              "Expense Tracking",
-              "Connect Bank",
-            ],
-            disabledSubItems: {
-              "Financial Reports": !hasProAccess,
-              "Expense Tracking": !hasProAccess,
-            },
-          },
-          {
-            id: "analytics",
-            label: "Analytics",
-            icon: BarChart2,
-            subItems: ["Analytics Dashboard", "Royalties & Payouts"],
-            disabled: !hasProAccess,
-            disabledReason: "Requires Pro",
-          },
-          { id: "packages", label: "Talent Packages", icon: Package },
-          {
-            id: "settings",
-            label: "Settings",
-            icon: Settings,
-            subItems: ["General Settings", "File Storage"],
-          },
-        ];
+        },
+        { id: "packages", label: "Talent Packages", icon: Package },
+        {
+          id: "settings",
+          label: "Settings",
+          icon: Settings,
+          subItems: ["General Settings", "File Storage"],
+        },
+      ];
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
@@ -20035,16 +17996,14 @@ export default function AgencyDashboard() {
                     ? item.disabledReason || "Requires Pro"
                     : undefined
                 }
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === item.id && !item.subItems
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                } ${item.disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id && !item.subItems
+                  ? "bg-indigo-50 text-indigo-700"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  } ${item.disabled ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 <item.icon
-                  className={`w-5 h-5 ${
-                    activeTab === item.id ? "text-indigo-700" : "text-gray-500"
-                  }`}
+                  className={`w-5 h-5 ${activeTab === item.id ? "text-indigo-700" : "text-gray-500"
+                    }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
                 {item.disabled && (
@@ -20083,11 +18042,10 @@ export default function AgencyDashboard() {
                           ? "Requires Pro"
                           : undefined
                       }
-                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                        activeTab === item.id && activeSubTab === subItem
-                          ? "text-indigo-700 bg-indigo-50 font-bold"
-                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
-                      } ${item.disabledSubItems && item.disabledSubItems[subItem] ? "opacity-50 cursor-not-allowed" : ""}`}
+                      className={`w-full flex items-center justify-between text-left px-3 py-2 text-sm rounded-md transition-colors ${activeTab === item.id && activeSubTab === subItem
+                        ? "text-indigo-700 bg-indigo-50 font-bold"
+                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium"
+                        } ${item.disabledSubItems && item.disabledSubItems[subItem] ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                       <span className="truncate">{subItem}</span>
                       <span className="flex items-center gap-2">
@@ -20539,11 +18497,11 @@ export default function AgencyDashboard() {
             <PerformanceTiers />
           )}
           {activeTab === "licensing" &&
-            activeSubTab === "Licensing Requests" && <LicensingRequestsTab />}
+            activeSubTab === "Licensing Requests" && <LicensingRequestsView />}
           {activeTab === "licensing" &&
             activeSubTab === "License Submissions" && <LicenseSubmissionsTab />}
           {activeTab === "licensing" && activeSubTab === "Active Licenses" && (
-            <ActiveLicensesView />
+            <ActiveLicensesView onRenew={handleRenew} />
           )}
           {activeTab === "licensing" &&
             activeSubTab === "License Templates" && <LicenseTemplatesTab />}
@@ -20594,7 +18552,12 @@ export default function AgencyDashboard() {
           {activeTab === "analytics" &&
             activeSubTab === "Analytics Dashboard" &&
             (hasProAccess ? (
-              <AnalyticsDashboardView onRenewLicense={handleRenew} />
+              <AnalyticsDashboardView
+                onRenewLicense={handleRenew}
+                agencyMode={agencyMode}
+                licenseComplianceData={LICENSE_COMPLIANCE_DATA}
+                talentData={TALENT_DATA}
+              />
             ) : (
               <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
                 <div className="text-lg font-black text-gray-900">
@@ -20614,27 +18577,7 @@ export default function AgencyDashboard() {
               </Card>
             ))}
           {activeTab === "analytics" &&
-            activeSubTab === "Royalties & Payouts" &&
-            (hasProAccess ? (
-              <RoyaltiesPayoutsView />
-            ) : (
-              <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                <div className="text-lg font-black text-gray-900">
-                  Upgrade required
-                </div>
-                <div className="text-gray-500 font-medium mt-1">
-                  Royalties & Payouts is available on the Pro plan.
-                </div>
-                <div className="mt-4">
-                  <Button
-                    className="rounded-xl font-bold"
-                    onClick={() => navigate("/agencysubscribe")}
-                  >
-                    View plans
-                  </Button>
-                </div>
-              </Card>
-            ))}
+            activeSubTab === "Royalties & Payouts" && <RoyaltiesPayoutsView />}
           {activeTab === "packages" && <PackagesView />}
           {activeTab === "payouts" && <ConnectBankView />}
           {activeTab === "settings" && activeSubTab === "General Settings" && (

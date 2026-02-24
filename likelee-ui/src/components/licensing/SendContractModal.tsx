@@ -23,6 +23,31 @@ import { useToast } from "@/components/ui/use-toast";
 import { DocusealForm } from "@docuseal/react";
 import { Switch } from "@/components/ui/switch";
 import { getUserFriendlyError } from "@/utils/error-utils";
+import { getAgencyTalents } from "@/api/functions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Check, ChevronsUpDown, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface SendContractModalProps {
   isOpen: boolean;
@@ -37,7 +62,6 @@ interface SendContractModalProps {
 interface FormData {
   client_name: string;
   client_email: string;
-  talent_names?: string;
 }
 
 export const SendContractModal: React.FC<SendContractModalProps> = ({
@@ -67,6 +91,9 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
   const [currentSubmissionId, setCurrentSubmissionId] = useState<string | null>(
     null,
   );
+  const [talents, setTalents] = useState<any[]>([]);
+  const [selectedTalentIds, setSelectedTalentIds] = useState<string[]>([]);
+  const [selectedTalentNames, setSelectedTalentNames] = useState<string[]>([]);
 
   // Fetch the template to get default values
   const { data: templates } = useQuery({
@@ -83,21 +110,22 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
     if (template.client_name) {
       setValue("client_name", template.client_name);
     }
-
-    if (template.talent_name) {
-      setValue("talent_names", template.talent_name);
-    }
-
     if (initialValues?.client_name) {
       setValue("client_name", initialValues.client_name);
     }
     if (initialValues?.client_email) {
       setValue("client_email", initialValues.client_email);
     }
-    if (initialValues?.talent_names) {
-      setValue("talent_names", initialValues.talent_names);
-    }
   }, [isOpen, template, initialValues, setValue]);
+
+  useEffect(() => {
+    if (isOpen) {
+      // Fetch agency talents for the dropdown
+      getAgencyTalents()
+        .then((res) => setTalents(res || []))
+        .catch((err) => console.error("Failed to fetch talents:", err));
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -108,6 +136,9 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
       setAgencySignOpen(false);
       setAgencySignUrl(null);
       setCurrentSubmissionId(null);
+      setCurrentSubmissionId(null);
+      setSelectedTalentIds([]);
+      setSelectedTalentNames([]);
     }
   }, [isOpen]);
 
@@ -118,7 +149,10 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
         docuseal_template_id: docusealTemplateId,
         client_name: data.client_name,
         client_email: data.client_email,
-        talent_names: data.talent_names || template?.talent_name,
+        talent_ids:
+          selectedTalentIds.length > 0 ? selectedTalentIds : undefined,
+        talent_id: selectedTalentIds[0] || undefined,
+        talent_names: selectedTalentNames.join(", ") || template?.talent_name,
         license_fee: licenseFee || template?.license_fee,
         duration_days: template?.duration_days,
         start_date: template?.start_date,
@@ -143,7 +177,10 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
         docuseal_template_id: docusealTemplateId,
         client_name: args.data.client_name,
         client_email: args.data.client_email,
-        talent_names: args.data.talent_names || template?.talent_name,
+        talent_ids:
+          selectedTalentIds.length > 0 ? selectedTalentIds : undefined,
+
+        talent_names: selectedTalentNames.join(", ") || template?.talent_name,
         license_fee: licenseFee || template?.license_fee,
         duration_days: template?.duration_days,
         start_date: template?.start_date,
@@ -183,7 +220,10 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
         docuseal_template_id: docusealTemplateId,
         client_name: data.client_name,
         client_email: data.client_email,
-        talent_names: data.talent_names || template?.talent_name,
+        talent_ids:
+          selectedTalentIds.length > 0 ? selectedTalentIds : undefined,
+        talent_id: selectedTalentIds[0] || undefined,
+        talent_names: selectedTalentNames.join(", ") || template?.talent_name,
         requires_agency_signature: requiresAgencySignature,
       });
     },
@@ -294,15 +334,142 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="talent_names">Talent Name (Optional)</Label>
-              <Input
-                id="talent_names"
-                placeholder={template?.talent_name || "e.g. John Doe"}
-                {...register("talent_names")}
-              />
+              <Label htmlFor="talent_select">Talent</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full h-auto min-h-[48px] justify-between bg-slate-50 border-slate-200 rounded-xl hover:bg-slate-100 transition-all font-medium py-2 px-3"
+                  >
+                    <div className="flex flex-wrap gap-1.5 items-center">
+                      {selectedTalentNames.length > 0 ? (
+                        selectedTalentNames.map((name) => (
+                          <Badge
+                            key={name}
+                            variant="secondary"
+                            className="bg-white text-indigo-600 border-indigo-100 rounded-lg px-2 py-0.5 flex items-center gap-1 group/badge"
+                          >
+                            {name}
+                            <X
+                              className="h-3 w-3 cursor-pointer hover:text-indigo-800"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const index = selectedTalentNames.indexOf(name);
+                                if (index > -1) {
+                                  const newNames = [...selectedTalentNames];
+                                  newNames.splice(index, 1);
+                                  setSelectedTalentNames(newNames);
+
+                                  const t = talents.find(
+                                    (t) => t.full_name === name,
+                                  );
+                                  if (t) {
+                                    const newIds = selectedTalentIds.filter(
+                                      (id) => String(id) !== String(t.id),
+                                    );
+                                    setSelectedTalentIds(newIds);
+                                  }
+                                }
+                              }}
+                            />
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-slate-400">
+                          {template?.talent_name
+                            ? `Default: ${template.talent_name}`
+                            : "Select talents..."}
+                        </span>
+                      )}
+                    </div>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50 text-slate-500" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-[400px] p-0 rounded-2xl border-slate-200 shadow-2xl overflow-hidden"
+                  align="start"
+                >
+                  <Command className="border-none">
+                    <CommandInput
+                      placeholder="Search talent..."
+                      className="border-none focus:ring-0 h-12"
+                    />
+                    <CommandList className="max-h-[300px]">
+                      <CommandEmpty className="py-6 text-center text-sm text-slate-500 font-medium">
+                        No talent found.
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {talents.map((t) => {
+                          const isSelected = selectedTalentIds.includes(
+                            String(t.id),
+                          );
+                          return (
+                            <CommandItem
+                              key={t.id}
+                              value={t.full_name}
+                              onSelect={() => {
+                                let newIds = [...selectedTalentIds];
+                                let newNames = [...selectedTalentNames];
+
+                                if (isSelected) {
+                                  newIds = newIds.filter(
+                                    (id) => String(id) !== String(t.id),
+                                  );
+                                  newNames = newNames.filter(
+                                    (name) => name !== t.full_name,
+                                  );
+                                } else {
+                                  if (!newIds.includes(String(t.id))) {
+                                    newIds.push(String(t.id));
+                                  }
+                                  if (!newNames.includes(t.full_name)) {
+                                    newNames.push(t.full_name);
+                                  }
+                                }
+                                setSelectedTalentIds(newIds);
+                                setSelectedTalentNames(newNames);
+                              }}
+                              className="flex items-center gap-3 p-3 cursor-pointer hover:bg-slate-50 transition-colors rounded-lg m-1"
+                            >
+                              <div className="relative">
+                                <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
+                                  <AvatarImage src={t.profile_photo_url} />
+                                  <AvatarFallback className="bg-indigo-50 text-indigo-600 font-bold text-xs uppercase">
+                                    {t.full_name?.substring(0, 2) || "UT"}
+                                  </AvatarFallback>
+                                </Avatar>
+                                {isSelected && (
+                                  <div className="absolute -top-1 -right-1 h-4 w-4 bg-indigo-500 rounded-full flex items-center justify-center border-2 border-white">
+                                    <Check className="h-2.5 w-2.5 text-white" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex flex-col">
+                                <span
+                                  className={cn(
+                                    "font-bold text-slate-900",
+                                    isSelected && "text-indigo-600",
+                                  )}
+                                >
+                                  {t.full_name || "Unknown Talent"}
+                                </span>
+                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                                  ID: {String(t.id).slice(0, 8)}
+                                </span>
+                              </div>
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               <p className="text-xs text-muted-foreground">
-                Leave blank to use template default:{" "}
-                {template?.talent_name || "N/A"}
+                {selectedTalentNames.length > 0
+                  ? `Selected: ${selectedTalentNames.join(", ")}`
+                  : `Template default: ${template?.talent_name || "N/A"}`}
               </p>
             </div>
 

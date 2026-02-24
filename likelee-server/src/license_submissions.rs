@@ -24,7 +24,6 @@ pub struct LicenseSubmission {
     pub docuseal_template_id: Option<i32>,
     pub client_name: Option<String>,
     pub client_email: Option<String>,
-    pub talent_names: Option<String>,
     pub license_fee: Option<i64>,
     pub duration_days: Option<i32>,
     pub start_date: Option<String>,
@@ -43,11 +42,12 @@ pub struct LicenseSubmission {
     pub agency_signed_at: Option<String>,
     pub client_submitter_id: Option<i64>,
     pub client_submitter_slug: Option<String>,
+    pub talent_id: Option<String>,
+    pub talent_names: Option<String>,
     pub template_name: Option<String>, // Added for UI display
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
 }
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CreateSubmissionRequest {
     pub template_id: String,
@@ -55,6 +55,8 @@ pub struct CreateSubmissionRequest {
     pub client_email: String,
     pub client_name: String,
     pub docuseal_template_id: Option<i32>,
+    pub talent_id: Option<String>,
+    pub talent_ids: Option<Vec<String>>,
     pub talent_names: Option<String>,
     pub license_fee: Option<i64>,
     pub duration_days: Option<i32>,
@@ -168,6 +170,8 @@ pub async fn create_draft(
         "requires_agency_signature": req.requires_agency_signature.unwrap_or(false),
         "client_name": client_name,
         "client_email": req.client_email,
+        "talent_id": req.talent_id,
+        "talent_ids": req.talent_ids,
         "talent_names": talent_names,
         "license_fee": req.license_fee,
         "duration_days": req.duration_days,
@@ -475,6 +479,8 @@ pub struct FinalizeSubmissionRequest {
     pub docuseal_template_id: Option<i32>,
     pub client_name: Option<String>,
     pub client_email: Option<String>,
+    pub talent_id: Option<String>,
+    pub talent_ids: Option<Vec<String>>,
     pub talent_names: Option<String>,
     pub requires_agency_signature: Option<bool>,
 }
@@ -904,7 +910,13 @@ pub async fn finalize(
         "Failed to update submission (empty response)".to_string(),
     ))?;
 
-    // 6. Create linked licensing_request (if not already exists)
+    // 6. Create a linked licensing_request — single request for all talents.
+    // Resolve the list of talent IDs to use:
+    //   1. talent_ids from the finalize request (array, preferred)
+    //   2. talent_ids stored in the submission at draft time
+    //   3. single talent_id from finalize request (legacy)
+    //   4. single talent_id stored in the submission
+    //   5. None — create one request with no talents
     let talent_name = submission_data["talent_names"]
         .as_str()
         .or(req.talent_names.as_deref());
@@ -913,27 +925,81 @@ pub async fn finalize(
         .as_str()
         .unwrap_or(&client_name);
 
+    let resolved_talent_ids: Vec<Option<String>> = {
+        // Try talent_ids array from request
+        let from_req: Vec<String> = req
+            .talent_ids
+            .clone()
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|s| !s.is_empty())
+            .collect();
+
+        // Try talent_ids array from stored submission data
+        let from_submission: Vec<String> = submission_data["talent_ids"]
+            .as_array()
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|v| v.as_str())
+                    .filter(|s| !s.is_empty())
+                    .map(|s| s.to_string())
+                    .collect()
+            })
+            .unwrap_or_default();
+
+        let ids = if !from_req.is_empty() {
+            from_req
+        } else if !from_submission.is_empty() {
+            from_submission
+        } else {
+            // Fall back to single talent_id
+            let single = req.talent_id.clone().filter(|s| !s.is_empty()).or_else(|| {
+                submission_data["talent_id"]
+                    .as_str()
+                    .filter(|s| !s.is_empty())
+                    .map(|s| s.to_string())
+            });
+            match single {
+                Some(id) => vec![id],
+                None => vec![],
+            }
+        };
+
+        if ids.is_empty() {
+            vec![None] // create one request with no talent_id
+        } else {
+            ids.into_iter().map(Some).collect()
+        }
+    };
+
+    let mut full_talent_ids: Vec<String> = resolved_talent_ids
+        .iter()
+        .filter_map(|v| v.clone())
+        .collect();
+    full_talent_ids.sort();
+    full_talent_ids.dedup();
+
     tracing::info!(
-        "Creating licensing_request for submission {}: agency_id={}, client_name={}, talent_name={:?}",
+        "Creating 1 licensing_request for submission {}: agency_id={}, client_name={}, talent_count={}, talent_name={:?}",
         submission.id,
         agency_id,
         client_name_str,
-        talent_name
+        full_talent_ids.len(),
+        talent_name,
     );
 
     let lr_data = json!({
         "agency_id": agency_id,
         "brand_id": submission.client_id,
         "client_name": client_name_str,
-        "talent_id": None::<String>,
+        "talent_id": serde_json::Value::Null,
+        "talent_ids": full_talent_ids,
         "talent_name": talent_name,
         "submission_id": submission.id,
         "status": "pending",
         "campaign_title": license_template.template_name.clone(),
         "usage_scope": license_template.usage_scope.clone(),
         "regions": license_template.territory.clone(),
-        "budget_min": license_fee.unwrap_or(0) as f64 / 100.0,
-        "budget_max": license_fee.unwrap_or(0) as f64 / 100.0,
         "deadline": deadline.map(|d| d.to_string()),
     });
 
@@ -951,7 +1017,7 @@ pub async fn finalize(
             let status = resp.status();
             if status.is_success() {
                 tracing::info!(
-                    "Successfully created licensing_request for submission {}",
+                    "Created licensing_request for submission {} (multi-talent)",
                     submission.id
                 );
             } else {
@@ -964,7 +1030,7 @@ pub async fn finalize(
             }
         }
         Err(e) => {
-            tracing::error!("Failed to create licensing_request (network error): {}", e);
+            tracing::error!("Error creating licensing_request: {}", e);
         }
     }
 
@@ -1183,6 +1249,13 @@ pub async fn resend(
             docuseal_template_id: existing_data["docuseal_template_id"]
                 .as_i64()
                 .map(|v| v as i32),
+            talent_id: existing_data["talent_id"].as_str().map(|s| s.to_string()),
+            talent_ids: existing_data["talent_ids"].as_array().map(|arr| {
+                arr.iter()
+                    .filter_map(|v| v.as_str())
+                    .map(|s| s.to_string())
+                    .collect()
+            }),
             talent_names: existing_data["talent_names"]
                 .as_str()
                 .map(|s| s.to_string()),
@@ -1263,6 +1336,8 @@ pub async fn resend(
         docuseal_template_id: req.docuseal_template_id,
         client_name: Some(req.client_name),
         client_email: Some(req.client_email),
+        talent_id: None,
+        talent_ids: req.talent_ids,
         talent_names: req.talent_names,
         requires_agency_signature: req.requires_agency_signature,
     };
@@ -1470,6 +1545,7 @@ pub struct CreateAndSendRequest {
     pub client_name: String,
     pub client_email: String,
     pub talent_names: Option<String>,
+    pub talent_ids: Option<Vec<String>>,
     pub license_fee: Option<i64>,
     pub duration_days: Option<i32>,
     pub start_date: Option<String>,
@@ -1773,6 +1849,7 @@ pub async fn create_and_send(
         "client_name": req.client_name.clone(),
         "client_email": req.client_email.clone(),
         "talent_names": talent_names_val.clone(),
+        "talent_ids": req.talent_ids.clone(),
         "license_fee": license_fee_val,
         "duration_days": duration_days,
         "start_date": req.start_date.clone().or(license_template.start_date.clone()),
@@ -1911,6 +1988,7 @@ pub async fn create_and_send(
         agency_signed_at: None,
         client_submitter_id: client_submitter.map(|s| s.id as i64),
         client_submitter_slug: client_submitter.map(|s| s.slug.clone()),
+        talent_id: None,
         template_name: Some(license_template.template_name.clone()),
         created_at: Some(chrono::Utc::now().to_rfc3339()),
         updated_at: Some(chrono::Utc::now().to_rfc3339()),

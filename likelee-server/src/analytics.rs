@@ -1,6 +1,10 @@
 use crate::auth::AuthUser;
 use crate::config::AppState;
-use axum::{extract::State, http::StatusCode, Json};
+use axum::{
+    extract::{Query, State},
+    http::StatusCode,
+    Json,
+};
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 use serde_json::json;
@@ -13,6 +17,24 @@ pub struct AnalyticsDashboard {
     pub ai_usage: AIUsageMetrics,
     pub monthly_trends: Vec<MonthlyTrend>,
     pub consent_status: ConsentStatusBreakdown,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum AnalyticsMode {
+    Ai,
+    Irl,
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct AnalyticsModeQuery {
+    pub mode: Option<String>,
+}
+
+fn parse_mode(mode: Option<&str>) -> AnalyticsMode {
+    match mode.unwrap_or("irl").to_lowercase().as_str() {
+        "ai" => AnalyticsMode::Ai,
+        _ => AnalyticsMode::Irl,
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -69,9 +91,11 @@ pub struct ConsentStatusBreakdown {
 /// GET /api/agency/analytics/dashboard
 pub async fn get_analytics_dashboard(
     State(state): State<AppState>,
+    Query(q): Query<AnalyticsModeQuery>,
     auth_user: AuthUser,
 ) -> Result<Json<AnalyticsDashboard>, (StatusCode, String)> {
     let agency_id = &auth_user.id;
+    let mode = parse_mode(q.mode.as_deref());
     let now = Utc::now();
     let thirty_days_ago = (now - chrono::Duration::days(30)).to_rfc3339();
     let sixty_days_ago = (now - chrono::Duration::days(60)).to_rfc3339();
@@ -81,6 +105,128 @@ pub async fn get_analytics_dashboard(
         .format("%Y-%m-%d")
         .to_string();
 
+    if mode == AnalyticsMode::Ai {
+        // --- AI MODE: earnings/trends from licensing_payouts, no campaign metrics ---
+        let payouts_resp = state
+            .pg
+            .from("licensing_payouts")
+            .select("amount_cents, paid_at, talent_id")
+            .eq("agency_id", agency_id)
+            .gte("paid_at", &five_months_ago)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        let payouts_text = payouts_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "[]".to_string());
+        let payouts_data: Vec<serde_json::Value> =
+            serde_json::from_str(&payouts_text).unwrap_or(vec![]);
+
+        // A. OVERVIEW & GROWTH (Payouts in last 30d vs prev 30d)
+        let total_earnings_cents: i64 = payouts_data
+            .iter()
+            .filter(|p| {
+                let paid_at = p.get("paid_at").and_then(|v| v.as_str()).unwrap_or("");
+                paid_at >= thirty_days_ago.as_str()
+            })
+            .filter_map(|p| p.get("amount_cents").and_then(|v| v.as_i64()))
+            .sum();
+
+        let prev_earnings_cents: i64 = payouts_data
+            .iter()
+            .filter(|p| {
+                let paid_at = p.get("paid_at").and_then(|v| v.as_str()).unwrap_or("");
+                paid_at >= sixty_days_ago.as_str() && paid_at < thirty_days_ago.as_str()
+            })
+            .filter_map(|p| p.get("amount_cents").and_then(|v| v.as_i64()))
+            .sum();
+
+        let earnings_growth_percentage = if prev_earnings_cents > 0 {
+            ((total_earnings_cents - prev_earnings_cents) as f64 / prev_earnings_cents as f64)
+                * 100.0
+        } else if total_earnings_cents > 0 {
+            100.0
+        } else {
+            0.0
+        };
+
+        // B. MONTHLY TRENDS
+        let mut monthly_trends = Vec::new();
+        for i in (0..5).rev() {
+            let month_start_date = now - chrono::Duration::days(30 * i);
+            let month_start = month_start_date.format("%Y-%m-01").to_string();
+            let month_end = if i == 0 {
+                now.to_rfc3339()
+            } else {
+                (now - chrono::Duration::days(30 * (i - 1)))
+                    .format("%Y-%m-01")
+                    .to_string()
+            };
+
+            let month_earnings: i64 = payouts_data
+                .iter()
+                .filter(|p| {
+                    let paid_at = p.get("paid_at").and_then(|v| v.as_str()).unwrap_or("");
+                    paid_at >= month_start.as_str() && paid_at < month_end.as_str()
+                })
+                .filter_map(|p| p.get("amount_cents").and_then(|v| v.as_i64()))
+                .sum();
+
+            monthly_trends.push(MonthlyTrend {
+                month: month_start_date.format("%b").to_string(),
+                earnings: month_earnings as f64 / 100.0,
+                campaigns: 0,
+                usages: 60 + (i * 3), // Mock
+            });
+        }
+
+        let total_earnings_formatted = format_currency(total_earnings_cents);
+
+        // Mock AI Usage
+        let total_usages_30d = 73;
+        let usage_by_type = AIUsageByType {
+            image: 45,
+            video: 38,
+            voice: 17,
+        };
+
+        // Keep response shape stable: zero out campaign/consent fields for AI mode.
+        return Ok(Json(AnalyticsDashboard {
+            overview: OverviewMetrics {
+                total_earnings_cents,
+                total_earnings_formatted,
+                earnings_growth_percentage: (earnings_growth_percentage * 10.0).round() / 10.0,
+                active_campaigns: 0,
+                total_value_cents: total_earnings_cents,
+                avg_value_cents: 0,
+                avg_value_formatted: format_currency(0),
+                top_scope: "Licensing".to_string(),
+            },
+            campaign_status: CampaignStatusBreakdown {
+                in_progress: 0,
+                ready_to_launch: 0,
+                completed: 0,
+            },
+            ai_usage: AIUsageMetrics {
+                total_usages_30d,
+                avg_campaign_value_cents: 0,
+                avg_campaign_value_formatted: format_currency(0),
+                usage_by_type,
+            },
+            monthly_trends,
+            consent_status: ConsentStatusBreakdown {
+                complete: 0,
+                missing: 0,
+                expiring: 0,
+                total: 0,
+                verified: 0,
+            },
+        }));
+    }
+
+    // --- IRL MODE (DEFAULT) ---
     // 1. BULK FETCH PAYMENTS (Last 5 months)
     let payments_resp = state
         .pg
@@ -404,6 +550,7 @@ pub struct ClientPerformance {
 /// GET /api/agency/analytics/clients-campaigns
 pub async fn get_clients_campaigns_analytics(
     State(state): State<AppState>,
+    Query(_q): Query<AnalyticsModeQuery>, // Accepted for consistency, currently unused for specific branching
     auth_user: AuthUser,
 ) -> Result<Json<ClientsCampaignsResponse>, (StatusCode, String)> {
     let agency_id = &auth_user.id;
@@ -742,11 +889,299 @@ pub struct TalentPerformanceMetric {
 /// GET /api/agency/analytics/roster
 pub async fn get_roster_insights(
     State(state): State<AppState>,
+    Query(q): Query<AnalyticsModeQuery>,
     auth_user: AuthUser,
 ) -> Result<Json<RosterInsightsResponse>, (StatusCode, String)> {
+    let mode = parse_mode(q.mode.as_deref());
     let now = Utc::now();
     let thirty_days_ago = (now - chrono::Duration::days(30)).to_rfc3339();
     let sixty_days_ago = (now - chrono::Duration::days(60)).to_rfc3339();
+
+    if mode == AnalyticsMode::Ai {
+        // --- AI MODE: license-based roster insights (no campaigns) ---
+
+        // 1. Fetch all agency talents
+        let query = state
+            .pg
+            .from("agency_users")
+            .select("id, full_legal_name, stage_name, profile_photo_url, instagram_followers, engagement_rate, creator_id, is_verified_talent")
+            .eq("agency_id", &auth_user.id)
+            .eq("role", "talent")
+            .order("created_at.desc");
+
+        let response = query.execute().await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Database error: {}", e),
+            )
+        })?;
+
+        let talents: Vec<serde_json::Value> =
+            serde_json::from_str(&response.text().await.map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("Failed to read response: {}", e),
+                )
+            })?)
+            .map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("Failed to parse talents: {}", e),
+                )
+            })?;
+
+        // Collect creator_ids to fetch KYC status
+        let creator_ids: Vec<String> = talents
+            .iter()
+            .filter_map(|t| t.get("creator_id").and_then(|v| v.as_str()))
+            .map(|s| s.to_string())
+            .collect();
+
+        // 2. Fetch Creators (for KYC status)
+        let mut creator_kyc_map: HashMap<String, String> = HashMap::new();
+        if !creator_ids.is_empty() {
+            let creators_resp = state
+                .pg
+                .from("creators")
+                .select("id, kyc_status")
+                .in_("id", creator_ids)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+            let creators_text = creators_resp
+                .text()
+                .await
+                .unwrap_or_else(|_| "[]".to_string());
+            let creators_list: Vec<serde_json::Value> =
+                serde_json::from_str(&creators_text).unwrap_or(vec![]);
+
+            for c in creators_list {
+                if let (Some(id), Some(status)) = (
+                    c.get("id").and_then(|v| v.as_str()),
+                    c.get("kyc_status").and_then(|v| v.as_str()),
+                ) {
+                    creator_kyc_map.insert(id.to_string(), status.to_string());
+                }
+            }
+        }
+
+        // 3. Licensing payouts (Last 60d) for earnings + projected
+        let payouts_resp = state
+            .pg
+            .from("licensing_payouts")
+            .select("amount_cents, talent_id, paid_at")
+            .eq("agency_id", &auth_user.id)
+            .gte("paid_at", &sixty_days_ago)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        let payouts_text = payouts_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "[]".to_string());
+        let payouts_list: Vec<serde_json::Value> =
+            serde_json::from_str(&payouts_text).unwrap_or(vec![]);
+
+        let mut talent_earnings_60d: HashMap<String, i64> = HashMap::new();
+        let mut talent_earnings_30d: HashMap<String, i64> = HashMap::new();
+
+        for payout in payouts_list {
+            let amt = payout
+                .get("amount_cents")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(0);
+            let tid = payout
+                .get("talent_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default();
+            let paid_at = payout.get("paid_at").and_then(|v| v.as_str()).unwrap_or("");
+
+            if !tid.is_empty() {
+                *talent_earnings_60d.entry(tid.to_string()).or_insert(0) += amt;
+                if paid_at >= thirty_days_ago.as_str() {
+                    *talent_earnings_30d.entry(tid.to_string()).or_insert(0) += amt;
+                }
+            }
+        }
+
+        // 4. Approved licensing requests (Last 30d) for Most Active (Licenses)
+        let licensing_resp = state
+            .pg
+            .from("licensing_requests")
+            .select("talent_id, created_at, status")
+            .eq("agency_id", &auth_user.id)
+            .eq("status", "approved")
+            .gte("created_at", &thirty_days_ago)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        let licensing_text = licensing_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "[]".to_string());
+        let licensing_list: Vec<serde_json::Value> =
+            serde_json::from_str(&licensing_text).unwrap_or(vec![]);
+
+        let mut talent_approved_licenses_count: HashMap<String, i64> = HashMap::new();
+        for r in licensing_list {
+            if let Some(tid) = r.get("talent_id").and_then(|v| v.as_str()) {
+                *talent_approved_licenses_count
+                    .entry(tid.to_string())
+                    .or_insert(0) += 1;
+            }
+        }
+
+        let mut talent_metrics = Vec::new();
+        for talent in talents.iter() {
+            let tid = talent
+                .get("id")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default();
+            if tid.is_empty() {
+                continue;
+            }
+
+            let realized_30d = *talent_earnings_30d.get(tid).unwrap_or(&0);
+            let total_60d = *talent_earnings_60d.get(tid).unwrap_or(&0);
+            let projected = total_60d / 2;
+
+            let licenses_count = *talent_approved_licenses_count.get(tid).unwrap_or(&0);
+
+            let creator_id = talent.get("creator_id").and_then(|v| v.as_str());
+            let is_verified_talent = talent
+                .get("is_verified_talent")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
+            let is_verified = is_verified_talent || creator_id.is_some();
+
+            let name = talent
+                .get("full_legal_name")
+                .and_then(|v| v.as_str())
+                .or_else(|| talent.get("stage_name").and_then(|v| v.as_str()))
+                .unwrap_or("Unknown")
+                .to_string();
+            let image_url = talent
+                .get("profile_photo_url")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+
+            let avg_value = if licenses_count > 0 {
+                realized_30d / licenses_count
+            } else {
+                0
+            };
+
+            let _format_currency = |cents: i64| format!("${:.0}", cents as f64 / 100.0);
+
+            let followers_count = talent
+                .get("instagram_followers")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(0);
+            let engagement_rate = talent
+                .get("engagement_rate")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
+
+            talent_metrics.push(TalentPerformanceMetric {
+                talent_id: uuid::Uuid::parse_str(tid).unwrap_or_default(),
+                talent_name: name.clone(),
+                earnings_30d_cents: realized_30d,
+                earnings_30d_formatted: format_currency(realized_30d),
+                projected_earnings_cents: projected,
+                projected_earnings_formatted: format_currency(projected),
+                campaigns_count_30d: licenses_count,
+                avg_value_cents: avg_value,
+                avg_value_formatted: format_currency(avg_value),
+                status: if is_verified {
+                    "Verified".to_string()
+                } else {
+                    "Pending Verification".to_string()
+                },
+                image_url: image_url.clone(),
+                followers_count,
+                engagement_rate,
+            });
+        }
+
+        // Top Performer: highest earnings
+        let top_performer_metric = talent_metrics.iter().max_by_key(|m| m.earnings_30d_cents);
+        let top_performer = top_performer_metric.map(|m| TalentMetric {
+            talent_id: m.talent_id,
+            talent_name: m.talent_name.clone(),
+            value: m.earnings_30d_formatted.clone(),
+            sub_text: format!(
+                "{} licenses • {:.1}% engagement",
+                m.campaigns_count_30d, m.engagement_rate
+            ),
+            image_url: m.image_url.clone(),
+        });
+
+        // Most Active: most approved licenses
+        let most_active_metric = talent_metrics
+            .iter()
+            .max_by_key(|m| (m.campaigns_count_30d, m.earnings_30d_cents));
+        let most_active = most_active_metric.map(|m| TalentMetric {
+            talent_id: m.talent_id,
+            talent_name: m.talent_name.clone(),
+            value: format!("{} licenses", m.campaigns_count_30d),
+            sub_text: format!(
+                "{} earnings • {:.1}% engagement",
+                m.earnings_30d_formatted, m.engagement_rate
+            ),
+            image_url: m.image_url.clone(),
+        });
+
+        // Highest Engagement: weighted score of normalized earnings + approved licenses count
+        let max_earnings = talent_metrics
+            .iter()
+            .map(|m| m.earnings_30d_cents)
+            .max()
+            .unwrap_or(0)
+            .max(1);
+        let max_licenses = talent_metrics
+            .iter()
+            .map(|m| m.campaigns_count_30d)
+            .max()
+            .unwrap_or(0)
+            .max(1);
+
+        let highest_engagement_metric = talent_metrics.iter().max_by(|a, b| {
+            let a_score = (a.earnings_30d_cents as f64 / max_earnings as f64)
+                + (a.campaigns_count_30d as f64 / max_licenses as f64);
+            let b_score = (b.earnings_30d_cents as f64 / max_earnings as f64)
+                + (b.campaigns_count_30d as f64 / max_licenses as f64);
+            a_score
+                .partial_cmp(&b_score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+                .then_with(|| a.earnings_30d_cents.cmp(&b.earnings_30d_cents))
+        });
+
+        let highest_engagement = highest_engagement_metric.map(|m| TalentMetric {
+            talent_id: m.talent_id,
+            talent_name: m.talent_name.clone(),
+            value: format!("{} licenses", m.campaigns_count_30d),
+            sub_text: format!(
+                "{} earnings • {:.1}% engagement",
+                m.earnings_30d_formatted, m.engagement_rate
+            ),
+            image_url: m.image_url.clone(),
+        });
+
+        // Preserve KYC-based data enrichment (not exposed yet but kept consistent)
+        let _ = creator_kyc_map;
+
+        return Ok(Json(RosterInsightsResponse {
+            highest_engagement,
+            most_active,
+            top_performer,
+            talent_metrics,
+        }));
+    }
+
+    // --- IRL MODE (DEFAULT) ---
 
     // 1. Fetch all agency talents
     let query = state
@@ -867,12 +1302,7 @@ pub async fn get_roster_insights(
         .select("talent_id")
         .eq("agency_id", &auth_user.id)
         .in_("status", vec!["confirmed", "completed"])
-        //.gte("date", &thirty_days_ago) // Filter by date? Or just all time active? User said "Most active... gotten from bookings table". Usually implies recent. I'll stick to 30d for "Most Active" card consistency.
-        // Actually, let's fetch ALL confirmed/completed to be safe for "Most Active" if user implies general activity level.
-        // But dashboard usually implies monthly. I'll stick to 30d filter for now.
-        .gte("created_at", &thirty_days_ago) // Using created_at or date? date is better for booking date.
-        // let's use date column if possible. Date is YYYY-MM-DD.
-        // thirty_days_ago is RFC3339.
+        .gte("created_at", &thirty_days_ago)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -964,16 +1394,7 @@ pub async fn get_roster_insights(
                 "Verified".to_string()
             } else {
                 "Pending Verification".to_string()
-            }, // Using status field for verification status display ?? Or keep Active/Inactive?
-            // User didn't explicitly say to change status text, but "talent verification... determined by..." suggests displaying it.
-            // Existing UI likely shows "Active" / "Inactive".
-            // If I change it to "Verified", existing UI might break or look different.
-            // I'll assume status here should reflect the "Active/Inactive" AND maybe verification?
-            // Wait, existing logic was "Active" if campaigns active.
-            // User asked for "talent verification".
-            // I'll stick to "Active" if realized > 0 or bookings > 0?
-            // Or I'll just map `is_verified` to `status` text?
-            // Let's use "Verified" if verified, else "Unverified".
+            },
             image_url: image_url.clone(),
             followers_count,
             engagement_rate,
@@ -1124,6 +1545,7 @@ pub struct RoyaltiesPayoutsResponse {
 /// GET /api/agency/analytics/royalties
 pub async fn get_royalties_payouts(
     State(state): State<AppState>,
+    Query(_q): Query<AnalyticsModeQuery>, // Accepted for consistency
     auth_user: AuthUser,
 ) -> Result<Json<RoyaltiesPayoutsResponse>, (StatusCode, String)> {
     let agency_id = &auth_user.id;

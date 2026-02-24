@@ -10,6 +10,7 @@ export interface LicenseSubmission {
   docuseal_slug: string;
   client_name?: string;
   client_email?: string;
+  talent_id?: string;
   talent_names?: string;
   license_fee?: number;
   duration_days?: number;
@@ -40,6 +41,8 @@ export interface CreateSubmissionRequest {
   client_email: string;
   client_name: string;
   docuseal_template_id?: number;
+  talent_id?: string;
+  talent_ids?: string[];
   talent_names?: string;
   license_fee?: number;
   duration_days?: number;
@@ -63,6 +66,8 @@ export const createAndSendLicenseSubmission = async (data: {
   docuseal_template_id?: number;
   client_name: string;
   client_email: string;
+  talent_id?: string;
+  talent_ids?: string[];
   talent_names?: string;
   license_fee?: number;
   duration_days?: number;
@@ -82,6 +87,8 @@ export const finalizeLicenseSubmission = async (
     docuseal_template_id?: number;
     client_name?: string;
     client_email?: string;
+    talent_id?: string;
+    talent_ids?: string[];
     talent_names?: string;
     requires_agency_signature?: boolean;
   },
@@ -98,6 +105,7 @@ export const previewLicenseSubmission = async (
     docuseal_template_id?: number;
     client_name?: string;
     client_email?: string;
+    talent_ids?: string[];
     talent_names?: string;
     license_fee?: number;
     duration_days?: number;
