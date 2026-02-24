@@ -242,6 +242,10 @@ pub fn build_router(state: AppState) -> Router {
             "/api/agency/analytics/commission-breakdowns",
             get(crate::performance_tiers::get_commission_breakdowns),
         )
+        .route(
+            "/api/agency/analytics/expired-licenses",
+            get(crate::analytics::get_expired_licenses),
+        )
         .route("/api/agency/roster", get(crate::agency_roster::get_roster))
         .route(
             "/api/agency/talent",

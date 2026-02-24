@@ -100,9 +100,29 @@ const AnalyticsDashboardView = ({
             ? (globalThis as any)[analyticsCacheKey].clientsAnalytics
             : null,
     );
-    const [expiredLicenses] = useState<ComplianceRenewableLicense[]>([]);
+    const [expiredLicensesFromDB, setExpiredLicensesFromDB] = useState<any[]>([]);
     const [loading, setLoading] = useState(!initialHasWarmCache);
     const [error, setError] = useState<string | null>(null);
+
+    // Fetch expired licenses from DB when Compliance tab is active
+    useEffect(() => {
+        if (activeTab !== "Compliance") return;
+        let active = true;
+        (async () => {
+            const session = (await supabase?.auth.getSession())?.data?.session;
+            const token = session?.access_token;
+            if (!token) return;
+            const res = await fetch(
+                `/api/agency/analytics/expired-licenses`,
+                { headers: { Authorization: `Bearer ${token}` } },
+            );
+            if (res.ok && active) {
+                const data = await res.json();
+                setExpiredLicensesFromDB(Array.isArray(data) ? data : []);
+            }
+        })();
+        return () => { active = false; };
+    }, [activeTab]);
 
     const subTabs =
         agencyMode === "AI"
@@ -466,35 +486,49 @@ const AnalyticsDashboardView = ({
                             <div className="flex flex-col items-center">
                                 <div className="h-[280px] w-full">
                                     <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
-                                            <Pie
-                                                data={[
-                                                    { name: "Complete", value: analytics.consent_status.complete, color: "#10b981" },
-                                                    { name: "Missing", value: analytics.consent_status.missing, color: "#f59e0b" },
-                                                    { name: "Expiring", value: analytics.consent_status.expiring, color: "#facc15" },
-                                                ]}
-                                                cx="50%" cy="50%" innerRadius={0} outerRadius={100} dataKey="value" stroke="none"
-                                            >
-                                                {[{ color: "#10b981" }, { color: "#f59e0b" }, { color: "#facc15" }].map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={entry.color} />
-                                                ))}
-                                            </Pie>
-                                            <RechartsTooltip />
-                                        </PieChart>
+                                        {(() => {
+                                            const total = analytics.consent_status.total || 1;
+                                            const completePct = Math.round((analytics.consent_status.complete / total) * 100);
+                                            const missingPct = Math.round((analytics.consent_status.missing / total) * 100);
+                                            const expiringPct = Math.round((analytics.consent_status.expiring / total) * 100);
+                                            const otherPct = Math.max(0, 100 - completePct - missingPct - expiringPct);
+                                            const pieData = [
+                                                { name: "Complete", value: completePct, color: "#10b981" },
+                                                { name: "Missing", value: missingPct, color: "#f59e0b" },
+                                                { name: "Expiring", value: expiringPct, color: "#facc15" },
+                                                ...(otherPct > 0 ? [{ name: "No Consent Data", value: otherPct, color: "#e5e7eb" }] : []),
+                                            ];
+                                            return (
+                                                <PieChart>
+                                                    <Pie
+                                                        data={pieData}
+                                                        cx="50%" cy="50%" innerRadius={0} outerRadius={100} dataKey="value" stroke="none"
+                                                    >
+                                                        {pieData.map((entry, index) => (
+                                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                                        ))}
+                                                    </Pie>
+                                                    <RechartsTooltip formatter={(val: number) => `${val}%`} />
+                                                </PieChart>
+                                            );
+                                        })()}
                                     </ResponsiveContainer>
                                 </div>
                                 <div className="w-full mt-8 flex flex-col gap-3 text-right">
                                     {[
-                                        { name: "Complete", value: analytics.consent_status.complete },
-                                        { name: "Missing", value: analytics.consent_status.missing },
-                                        { name: "Expiring", value: analytics.consent_status.expiring },
-                                    ].map((item) => (
-                                        <div key={item.name} className="flex items-center justify-between">
-                                            <span className="text-xs font-bold text-gray-900 uppercase tracking-widest">
-                                                {item.name}: {item.value}%
-                                            </span>
-                                        </div>
-                                    ))}
+                                        { name: "Complete", value: analytics.consent_status.complete, color: "text-green-600" },
+                                        { name: "Missing", value: analytics.consent_status.missing, color: "text-amber-600" },
+                                        { name: "Expiring", value: analytics.consent_status.expiring, color: "text-yellow-500" },
+                                    ].map((item) => {
+                                        const total = analytics.consent_status.total || 1;
+                                        const pct = Math.round((item.value / total) * 100);
+                                        return (
+                                            <div key={item.name} className="flex items-center justify-between">
+                                                <span className={`text-xs font-bold uppercase tracking-widest ${item.color}`}>{item.name}</span>
+                                                <span className="text-xs font-bold text-gray-900">{item.value} of {analytics.consent_status.total} ({pct}%)</span>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </Card>
@@ -520,7 +554,7 @@ const AnalyticsDashboardView = ({
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 13, fontWeight: "bold", fill: "#64748b" }} dy={15} />
                                         <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 13, fontWeight: "bold", fill: "#94a3b8" }} tickFormatter={(val) => `$${val}`} />
-                                        <RechartsTooltip contentStyle={{ borderRadius: "12px", border: "1px solid #e2e8f0", fontWeight: "bold" }} formatter={(val: number) => `$${val.toLocaleString()}`} cursor={{ fill: "transparent" }} />
+                                        <RechartsTooltip contentStyle={{ borderRadius: "12px", border: "1px solid #e2e8f0", fontWeight: "bold" }} formatter={(val: number) => `$${val.toLocaleString()}`} cursor={false} />
                                         <Legend verticalAlign="bottom" align="center" iconType="rect" wrapperStyle={{ paddingTop: "40px", fontWeight: "bold", fontSize: "13px" }} formatter={(value) => <span className="text-gray-700 uppercase tracking-widest px-2">{value === "earnings" ? "30D Earnings ($)" : "Projected ($)"}</span>} />
                                         <Bar dataKey="earnings" fill="#10b981" radius={[4, 4, 0, 0]} barSize={32} name="earnings" />
                                         <Bar dataKey="projected" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={32} name="projected" />
@@ -755,20 +789,15 @@ const AnalyticsDashboardView = ({
                     const pipelineTalentName = nextLicense?.license?.talent || "Julia";
                     const pipelineTalent = talentData.find((t: any) => t.name === pipelineTalentName) || talentData.find((t: any) => t.id === "julia");
 
-                    const effectiveExpired =
-                        expiredLicenses.length > 0
-                            ? expiredLicenses
-                            : (licenseComplianceData as any[])
-                                .filter((x) => x.level === "EXPIRED")
-                                .map((x, idx) => ({
-                                    id: `mock-${idx}`,
-                                    template_id: x.template_id,
-                                    talent_name: x.talent,
-                                    talent_avatar: x.image,
-                                    brand: x.brand,
-                                    end_date: new Date(x.expiry).toISOString(),
-                                    client_name: x.brand,
-                                }));
+                    const effectiveExpired: any[] = expiredLicensesFromDB.map((x: any) => ({
+                        id: x.id,
+                        template_id: x.id,
+                        talent_name: x.talent_name ?? x.talent ?? "Unknown",
+                        talent_avatar: x.talent_avatar ?? null,
+                        brand: x.brand_name ?? x.client_name ?? "—",
+                        end_date: x.deadline ?? x.effective_end_date ?? x.end_date ?? null,
+                        client_name: x.brand_name ?? x.client_name ?? "—",
+                    }));
 
                     return (
                         <div className="space-y-6 animate-in fade-in duration-500">

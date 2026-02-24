@@ -1725,3 +1725,97 @@ pub async fn get_royalties_payouts(
         agency_commission_ytd_formatted,
     }))
 }
+/// GET /api/agency/analytics/expired-licenses
+/// Returns approved licensing_requests whose `deadline` has already passed.
+pub async fn get_expired_licenses(
+    State(state): State<AppState>,
+    auth_user: AuthUser,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let today = Utc::now().format("%Y-%m-%d").to_string();
+
+    // Fetch expired approved requests
+    let resp = state
+        .pg
+        .from("licensing_requests")
+        .select("id, talent_id, deadline, licensee_brand_name, status")
+        .eq("agency_id", &auth_user.id)
+        .eq("status", "approved")
+        .lt("deadline", &today)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let requests_text = resp.text().await.unwrap_or_else(|_| "[]".to_string());
+    let requests: Vec<serde_json::Value> =
+        serde_json::from_str(&requests_text).unwrap_or(vec![]);
+
+    // Collect talent_ids for name/avatar lookup
+    let talent_ids: Vec<String> = requests
+        .iter()
+        .filter_map(|r| r.get("talent_id").and_then(|v| v.as_str()))
+        .map(|s| s.to_string())
+        .collect::<std::collections::HashSet<_>>()
+        .into_iter()
+        .collect();
+
+    let mut talent_map: HashMap<String, serde_json::Value> = HashMap::new();
+    if !talent_ids.is_empty() {
+        let talents_resp = state
+            .pg
+            .from("agency_users")
+            .select("id, full_legal_name, stage_name, profile_photo_url")
+            .in_("id", talent_ids)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        let talents_text = talents_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "[]".to_string());
+        let talents: Vec<serde_json::Value> =
+            serde_json::from_str(&talents_text).unwrap_or(vec![]);
+
+        for t in talents {
+            if let Some(id) = t.get("id").and_then(|v| v.as_str()) {
+                talent_map.insert(id.to_string(), t);
+            }
+        }
+    }
+
+    let result: Vec<serde_json::Value> = requests
+        .into_iter()
+        .map(|r| {
+            let tid = r
+                .get("talent_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default();
+            let talent = talent_map.get(tid);
+
+            let talent_name = talent
+                .and_then(|t| {
+                    t.get("full_legal_name")
+                        .and_then(|v| v.as_str())
+                        .or_else(|| t.get("stage_name").and_then(|v| v.as_str()))
+                })
+                .unwrap_or("Unknown")
+                .to_string();
+
+            let talent_avatar = talent
+                .and_then(|t| t.get("profile_photo_url").and_then(|v| v.as_str()))
+                .map(|s| s.to_string());
+
+            json!({
+                "id": r.get("id").and_then(|v| v.as_str()).unwrap_or_default(),
+                "talent_id": tid,
+                "talent_name": talent_name,
+                "talent_avatar": talent_avatar,
+                "brand_name": r.get("licensee_brand_name").and_then(|v| v.as_str()).unwrap_or("—"),
+                "deadline": r.get("deadline").and_then(|v| v.as_str()).unwrap_or(""),
+                "status": r.get("status").and_then(|v| v.as_str()).unwrap_or("approved"),
+            })
+        })
+        .collect();
+
+    Ok(Json(json!(result)))
+}
