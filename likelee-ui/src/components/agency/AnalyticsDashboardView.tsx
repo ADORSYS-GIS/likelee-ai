@@ -566,7 +566,7 @@ const AnalyticsDashboardView = ({
                         <div className="grid grid-cols-3 gap-6 mb-8">
                             {[
                                 { label: "Top Performer (Earnings)", data: rosterInsights.top_performer, borderColor: "border-green-500", textColor: "text-green-600" },
-                                { label: "Most Active (Campaigns)", data: rosterInsights.most_active, borderColor: "border-indigo-500", textColor: "text-blue-600" },
+                                { label: `Most Active (${agencyMode === "AI" ? "Licenses" : "Campaigns"})`, data: rosterInsights.most_active, borderColor: "border-indigo-500", textColor: "text-blue-600" },
                                 { label: "Highest Followers", data: rosterInsights.highest_engagement, borderColor: "border-purple-500", textColor: "text-purple-600" },
                             ].map(({ label, data, borderColor, textColor }) => (
                                 <Card key={label} className="p-6 bg-white border border-gray-900 shadow-sm relative overflow-hidden">
@@ -603,7 +603,7 @@ const AnalyticsDashboardView = ({
                                 <table className="w-full text-left">
                                     <thead>
                                         <tr className="bg-gray-50/80">
-                                            {["Talent", "30D Earnings", "Campaigns", "Avg Value", "Status"].map((h) => (
+                                            {["Talent", "30D Earnings", agencyMode === "AI" ? "Licenses" : "Campaigns", "Avg Value", "Status"].map((h) => (
                                                 <th key={h} className="px-8 py-5 text-[11px] font-black text-gray-500 uppercase tracking-widest">{h}</th>
                                             ))}
                                         </tr>
@@ -701,7 +701,7 @@ const AnalyticsDashboardView = ({
                                                 <td className="px-8 py-5">
                                                     <div className="flex flex-col">
                                                         <span className="text-sm font-bold text-gray-900">{client.name}</span>
-                                                        <span className="text-[10px] text-gray-500 font-bold">{client.campaigns} campaigns</span>
+                                                        <span className="text-[10px] text-gray-500 font-bold">{client.campaigns} {agencyMode === "AI" ? "licenses" : "campaigns"}</span>
                                                     </div>
                                                 </td>
                                                 <td className="px-8 py-5 text-right">

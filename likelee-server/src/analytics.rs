@@ -611,11 +611,209 @@ pub struct ClientPerformance {
 /// GET /api/agency/analytics/clients-campaigns
 pub async fn get_clients_campaigns_analytics(
     State(state): State<AppState>,
-    Query(_q): Query<AnalyticsModeQuery>, // Accepted for consistency, currently unused for specific branching
+    Query(q): Query<AnalyticsModeQuery>,
     auth_user: AuthUser,
 ) -> Result<Json<ClientsCampaignsResponse>, (StatusCode, String)> {
     let agency_id = &auth_user.id;
     let colors = ["#6366f1", "#8b5cf6", "#ec4899", "#f59e0b"];
+    let mode = parse_mode(q.mode.as_deref());
+
+    // ===========================================================
+    // AI MODE: licensing_requests + licensing_payouts
+    // ===========================================================
+    if mode == AnalyticsMode::Ai {
+        // 1. All approved licensing requests for this agency
+        let lr_resp = state
+            .pg
+            .from("licensing_requests")
+            .select("id, licensee_brand_name, region")
+            .eq("agency_id", agency_id)
+            .eq("status", "approved")
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let lr_text = lr_resp.text().await.unwrap_or_else(|_| "[]".to_string());
+        let lr_list: Vec<serde_json::Value> =
+            serde_json::from_str(&lr_text).unwrap_or(vec![]);
+
+        // 2. Licensing payouts for this agency (all time for Top Clients)
+        let lp_resp = state
+            .pg
+            .from("licensing_payouts")
+            .select("amount_cents, licensing_request_id")
+            .eq("agency_id", agency_id)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let lp_text = lp_resp.text().await.unwrap_or_else(|_| "[]".to_string());
+        let lp_list: Vec<serde_json::Value> =
+            serde_json::from_str(&lp_text).unwrap_or(vec![]);
+
+        // Build map: request_id -> amount_cents from payouts
+        let mut payout_by_request: HashMap<String, i64> = HashMap::new();
+        for p in &lp_list {
+            let rid = p
+                .get("licensing_request_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default();
+            let amt = p
+                .get("amount_cents")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(0);
+            if !rid.is_empty() {
+                *payout_by_request.entry(rid.to_string()).or_insert(0) += amt;
+            }
+        }
+
+        // Aggregate by client name
+        let mut client_earnings: HashMap<String, i64> = HashMap::new();
+        let mut client_license_count: HashMap<String, i64> = HashMap::new();
+        let mut region_counts: HashMap<String, i64> = HashMap::new();
+
+        for req in &lr_list {
+            let client = req
+                .get("licensee_brand_name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("Unknown")
+                .to_string();
+            let rid = req
+                .get("id")
+                .and_then(|v| v.as_str())
+                .unwrap_or_default()
+                .to_string();
+
+            let payout = payout_by_request.get(&rid).cloned().unwrap_or(0);
+            *client_earnings.entry(client.clone()).or_insert(0) += payout;
+            *client_license_count.entry(client).or_insert(0) += 1;
+
+            let region = req
+                .get("region")
+                .and_then(|v| v.as_str())
+                .filter(|r| !r.is_empty())
+                .unwrap_or("Unknown")
+                .to_string();
+            *region_counts.entry(region).or_insert(0) += 1;
+        }
+
+        let total_revenue: i64 = client_earnings.values().sum();
+
+        // Earnings by client (top 4 by payout)
+        let mut earnings_vec: Vec<ClientEarning> = client_earnings
+            .iter()
+            .map(|(name, cents)| ClientEarning {
+                name: name.clone(),
+                budget: *cents as f64 / 100.0,
+                color: String::new(),
+            })
+            .collect();
+        earnings_vec.sort_by(|a, b| {
+            b.budget
+                .partial_cmp(&a.budget)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+        earnings_vec.truncate(4);
+        for (i, item) in earnings_vec.iter_mut().enumerate() {
+            item.color = colors[i % colors.len()].to_string();
+        }
+
+        // Geographic distribution (top 4 by license count)
+        let mut geo_vec: Vec<GeoMetric> = region_counts
+            .iter()
+            .map(|(name, count)| GeoMetric {
+                name: name.clone(),
+                value: *count as f64,
+                color: String::new(),
+            })
+            .collect();
+        geo_vec.sort_by(|a, b| {
+            b.value
+                .partial_cmp(&a.value)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+        geo_vec.truncate(4);
+        for (i, item) in geo_vec.iter_mut().enumerate() {
+            item.color = colors[i % colors.len()].to_string();
+        }
+
+        // Top Clients Performance (sorted by total payout, top 4)
+        let mut perf_vec: Vec<ClientPerformance> = client_earnings
+            .iter()
+            .map(|(name, cents)| {
+                let count = client_license_count.get(name).cloned().unwrap_or(0);
+                ClientPerformance {
+                    name: name.clone(),
+                    campaigns: count,
+                    budget: *cents as f64 / 100.0,
+                    percentage: if total_revenue > 0 {
+                        (*cents as f64 / total_revenue as f64) * 100.0
+                    } else {
+                        0.0
+                    },
+                }
+            })
+            .collect();
+        perf_vec.sort_by(|a, b| {
+            b.budget
+                .partial_cmp(&a.budget)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+        perf_vec.truncate(4);
+
+        // Repeat Client Rate: % of clients who appear more than once
+        let total_clients = client_license_count.len() as f64;
+        let repeat_clients = client_license_count
+            .values()
+            .filter(|&&c| c > 1)
+            .count() as f64;
+        let repeat_client_rate = if total_clients > 0.0 {
+            (repeat_clients / total_clients) * 100.0
+        } else {
+            0.0
+        };
+
+        // Client Acquisition: distinct clients seen in the last 30 days
+        let thirty_days_ago = (Utc::now() - chrono::Duration::days(30)).to_rfc3339();
+        let new_lr_resp = state
+            .pg
+            .from("licensing_requests")
+            .select("licensee_brand_name")
+            .eq("agency_id", agency_id)
+            .eq("status", "approved")
+            .gte("created_at", &thirty_days_ago)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let new_lr_text = new_lr_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "[]".to_string());
+        let new_lr_list: Vec<serde_json::Value> =
+            serde_json::from_str(&new_lr_text).unwrap_or(vec![]);
+        let new_client_names: HashSet<String> = new_lr_list
+            .iter()
+            .filter_map(|r| {
+                r.get("licensee_brand_name")
+                    .and_then(|v| v.as_str())
+                    .filter(|s| !s.is_empty())
+                    .map(|s| s.to_string())
+            })
+            .collect();
+        let client_acquisition = new_client_names.len() as i64;
+
+        return Ok(Json(ClientsCampaignsResponse {
+            earnings_by_client: earnings_vec,
+            geographic_distribution: geo_vec,
+            top_clients_performance: perf_vec,
+            repeat_client_rate,
+            avg_campaign_duration: 0,
+            client_acquisition,
+        }));
+    }
+
+    // ===========================================================
+    // IRL MODE (original logic below)
+    // ===========================================================
+
 
     // 1. Earnings by Client & Top Clients Performance
     // We need payments summed by brand, and campaigns counted by brand.
