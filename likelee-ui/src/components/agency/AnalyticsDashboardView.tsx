@@ -428,7 +428,7 @@ const AnalyticsDashboardView = ({
                                     <RechartsTooltip contentStyle={{ borderRadius: "12px", border: "1px solid #e2e8f0", fontWeight: "bold" }} />
                                     <Legend iconType="circle" wrapperStyle={{ paddingTop: "40px", fontWeight: "bold", fontSize: "12px" }} formatter={(value) => <span className="text-gray-600 uppercase tracking-widest">{value}</span>} />
                                     <Line type="monotone" dataKey="earnings" name="Earnings ($)" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: "#10b981", strokeWidth: 2, stroke: "#fff" }} activeDot={{ r: 6 }} />
-                                    <Line type="monotone" dataKey={agencyMode === "AI" ? "earnings" : "campaigns"} name={agencyMode === "AI" ? "Licenses" : "Campaigns"} stroke="#6366f1" strokeWidth={3} dot={{ r: 4, fill: "#6366f1", strokeWidth: 2, stroke: "#fff" }} activeDot={{ r: 6 }} />
+                                    <Line type="monotone" dataKey="campaigns" name={agencyMode === "AI" ? "Licenses" : "Campaigns"} stroke="#6366f1" strokeWidth={3} dot={{ r: 4, fill: "#6366f1", strokeWidth: 2, stroke: "#fff" }} activeDot={{ r: 6 }} />
                                     {agencyMode === "AI" && (
                                         <Line type="monotone" dataKey="usages" name="AI Usages" stroke="#a855f7" strokeWidth={3} dot={{ r: 4, fill: "#a855f7", strokeWidth: 2, stroke: "#fff" }} activeDot={{ r: 6 }} />
                                     )}
