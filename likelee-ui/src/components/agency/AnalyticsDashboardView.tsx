@@ -70,6 +70,8 @@ const AnalyticsDashboardView = ({
     licenseComplianceData,
     talentData,
 }: AnalyticsDashboardViewProps) => {
+    // Use a single shared cache key - data is fetched for the current mode
+    // and persisted so switching modes doesn't cause a re-fetch within TTL.
     const analyticsCacheKey =
         agencyMode === "AI"
             ? "__agencyAnalyticsDashboardCache_ai"
@@ -104,8 +106,8 @@ const AnalyticsDashboardView = ({
 
     const subTabs =
         agencyMode === "AI"
-            ? ["Overview", "Roster Insights", "Compliance"]
-            : ["Overview", "Roster Insights", "Clients & Campaigns", "Compliance"];
+            ? ["Overview", "Roster Insights", "Clients & Campaigns"]
+            : ["Overview", "Roster Insights", "Clients & Campaigns"];
 
     useEffect(() => {
         let isMounted = true;
@@ -189,7 +191,10 @@ const AnalyticsDashboardView = ({
         return () => {
             isMounted = false;
         };
-    }, [initialHasWarmCache, analyticsModeQuery, analyticsCacheKey]);
+        // analyticsModeQuery intentionally omitted: data is cached per-mode so
+        // toggling AI ⇔ IRL re-uses the warm cache instead of re-fetching.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [initialHasWarmCache, analyticsCacheKey]);
 
     if (loading) {
         return (

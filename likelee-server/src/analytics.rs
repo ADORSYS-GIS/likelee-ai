@@ -104,6 +104,7 @@ pub async fn get_analytics_dashboard(
     let ten_days_hence = (now + chrono::Duration::days(10))
         .format("%Y-%m-%d")
         .to_string();
+    let agency_id_owned = agency_id.clone();
 
     if mode == AnalyticsMode::Ai {
         // --- AI MODE: earnings/trends from licensing_payouts, no campaign metrics ---
@@ -192,7 +193,65 @@ pub async fn get_analytics_dashboard(
             voice: 17,
         };
 
-        // Keep response shape stable: zero out campaign/consent fields for AI mode.
+        // C. CONSENT STATUS — real data from agency_users
+        let ai_talents_resp = state
+            .pg
+            .from("agency_users")
+            .select("id, consent_status, is_verified_talent")
+            .eq("agency_id", &agency_id_owned)
+            .eq("role", "talent")
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let ai_talents_text = ai_talents_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "[]".to_string());
+        let ai_talents_data: Vec<serde_json::Value> =
+            serde_json::from_str(&ai_talents_text).unwrap_or(vec![]);
+
+        let ai_total_talents = ai_talents_data.len() as i64;
+        let mut ai_consent_complete = 0i64;
+        let mut ai_consent_missing = 0i64;
+        let mut ai_verified_count = 0i64;
+        for t in ai_talents_data.iter() {
+            if t.get("is_verified_talent")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false)
+            {
+                ai_verified_count += 1;
+            }
+            let consent = t
+                .get("consent_status")
+                .and_then(|v| v.as_str())
+                .unwrap_or("missing");
+            if consent == "complete" {
+                ai_consent_complete += 1;
+            } else {
+                ai_consent_missing += 1;
+            }
+        }
+
+        // D. EXPIRING SOON — licensing_requests approved and deadline within 10 days
+        let ai_expiring_resp = state
+            .pg
+            .from("licensing_requests")
+            .select("talent_id")
+            .eq("agency_id", &agency_id_owned)
+            .eq("status", "approved")
+            .gte("deadline", &today)
+            .lte("deadline", &ten_days_hence)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let ai_expiring_text = ai_expiring_resp
+            .text()
+            .await
+            .unwrap_or_else(|_| "[]".to_string());
+        let ai_expiring_data: Vec<serde_json::Value> =
+            serde_json::from_str(&ai_expiring_text).unwrap_or(vec![]);
+        let ai_expiring = ai_expiring_data.len() as i64;
+
         return Ok(Json(AnalyticsDashboard {
             overview: OverviewMetrics {
                 total_earnings_cents,
@@ -217,11 +276,11 @@ pub async fn get_analytics_dashboard(
             },
             monthly_trends,
             consent_status: ConsentStatusBreakdown {
-                complete: 0,
-                missing: 0,
-                expiring: 0,
-                total: 0,
-                verified: 0,
+                complete: ai_consent_complete,
+                missing: ai_consent_missing,
+                expiring: ai_expiring,
+                total: ai_total_talents,
+                verified: ai_verified_count,
             },
         }));
     }
@@ -423,7 +482,8 @@ pub async fn get_analytics_dashboard(
         });
     }
 
-    // F. CONSENT STATUS
+    // F. CONSENT STATUS — active_consents = talents with consent_status="complete"
+    //                       verification rate = talents with is_verified_talent=true
     let mut consent_complete = 0i64;
     let mut consent_missing = 0i64;
     let mut verified_count = 0i64;
@@ -442,21 +502,22 @@ pub async fn get_analytics_dashboard(
             .get("consent_status")
             .and_then(|v| v.as_str())
             .unwrap_or("missing");
-        if consent == "missing" || consent == "pending" || consent == "not_started" {
-            consent_missing += 1;
-        } else {
+        if consent == "complete" {
             consent_complete += 1;
+        } else {
+            consent_missing += 1;
         }
     }
 
-    // 4. EXPIRING REQUESTS (Keep standalone query)
+    // 4. EXPIRING REQUESTS — approved requests with deadline within 10 days
     let expiring_resp = state
         .pg
         .from("licensing_requests")
         .select("talent_id")
         .eq("agency_id", agency_id)
-        .gte("effective_end_date", &today)
-        .lte("effective_end_date", &ten_days_hence)
+        .eq("status", "approved")
+        .gte("deadline", &today)
+        .lte("deadline", &ten_days_hence)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -1162,10 +1223,10 @@ pub async fn get_roster_insights(
         let highest_engagement = highest_engagement_metric.map(|m| TalentMetric {
             talent_id: m.talent_id,
             talent_name: m.talent_name.clone(),
-            value: format!("{} licenses", m.campaigns_count_30d),
+            value: format!("{:.1}% engagement", m.engagement_rate),
             sub_text: format!(
-                "{} earnings • {:.1}% engagement",
-                m.earnings_30d_formatted, m.engagement_rate
+                "{} earnings • {} licenses",
+                m.earnings_30d_formatted, m.campaigns_count_30d
             ),
             image_url: m.image_url.clone(),
         });
