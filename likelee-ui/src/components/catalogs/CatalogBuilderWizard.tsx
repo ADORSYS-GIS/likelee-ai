@@ -50,6 +50,7 @@ type FormState = {
     client_email: string;
     notes: string;
     licensing_request_id: string;
+    expires_at: string;
     items: Record<string, CatalogItem>; // keyed by talent_id
 };
 
@@ -69,8 +70,8 @@ export function CatalogBuilderWizard({
         title: "",
         client_name: "",
         client_email: "",
-        notes: "",
         licensing_request_id: "",
+        expires_at: "",
         items: {},
     });
 
@@ -325,6 +326,7 @@ export function CatalogBuilderWizard({
             client_email: form.client_email || undefined,
             licensing_request_id: form.licensing_request_id || undefined,
             notes: form.notes || undefined,
+            expires_at: form.expires_at ? new Date(form.expires_at).toISOString() : undefined,
             items: Object.values(form.items),
         };
         createMutation.mutate(payload);
@@ -345,7 +347,9 @@ export function CatalogBuilderWizard({
     };
 
     const canNext = () => {
-        if (step === "info") return form.title.trim().length > 0;
+        if (step === "info") {
+            return form.title.trim().length > 0 && form.expires_at.trim().length > 0;
+        }
         return true;
     };
 
@@ -420,6 +424,19 @@ export function CatalogBuilderWizard({
                                     }
                                     className="min-h-[80px]"
                                 />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label>
+                                    Catalog Expiration <span className="text-red-500">*</span>
+                                </Label>
+                                <Input
+                                    type="datetime-local"
+                                    value={form.expires_at}
+                                    onChange={(e) =>
+                                        setForm((p) => ({ ...p, expires_at: e.target.value }))
+                                    }
+                                />
+                                <p className="text-[10px] text-gray-400">Public link will become inaccessible after this date/time.</p>
                             </div>
                         </div>
                     )}

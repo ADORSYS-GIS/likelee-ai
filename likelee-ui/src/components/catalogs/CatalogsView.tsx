@@ -22,6 +22,13 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+} from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
 import { catalogApi } from "@/api/catalogs";
 import { CatalogBuilderWizard } from "./CatalogBuilderWizard";
@@ -31,6 +38,7 @@ export function CatalogsView() {
     const queryClient = useQueryClient();
     const [showBuilder, setShowBuilder] = useState(false);
     const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [previewCatalog, setPreviewCatalog] = useState<any | null>(null);
 
     const catalogsQuery = useQuery({
         queryKey: ["agency-catalogs"],
@@ -140,7 +148,8 @@ export function CatalogsView() {
                     {catalogs.map((catalog: any) => (
                         <Card
                             key={catalog.id}
-                            className="p-5 bg-white border border-gray-100 rounded-2xl flex flex-col sm:flex-row sm:items-center gap-4"
+                            onClick={() => setPreviewCatalog(catalog)}
+                            className="p-5 bg-white border border-gray-100 rounded-2xl flex flex-col sm:flex-row sm:items-center gap-4 cursor-pointer hover:border-indigo-100 hover:shadow-sm transition-all"
                         >
                             <div className="flex items-center gap-3 flex-1 min-w-0">
                                 <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center shrink-0">
@@ -170,6 +179,14 @@ export function CatalogsView() {
                                             day: "numeric",
                                             year: "numeric",
                                         })}
+                                        {catalog.expires_at && (
+                                            <>
+                                                {" • "}
+                                                <span className="text-orange-500 font-medium">
+                                                    Expires {new Date(catalog.expires_at).toLocaleDateString()}
+                                                </span>
+                                            </>
+                                        )}
                                     </p>
                                 </div>
                             </div>
@@ -245,6 +262,126 @@ export function CatalogsView() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* Preview Dialog */}
+            <Dialog
+                open={!!previewCatalog}
+                onOpenChange={(o) => !o && setPreviewCatalog(null)}
+            >
+                <DialogContent className="max-w-xl rounded-2xl p-6">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                            <BookOpen className="w-5 h-5 text-indigo-600" />
+                            Catalog Preview
+                        </DialogTitle>
+                        <DialogDescription>
+                            Summary of the distribution settings for this catalog.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {previewCatalog && (
+                        <div className="mt-6 space-y-6">
+                            {(() => {
+                                const items = previewCatalog.items || [];
+                                const talentCount = items.length;
+                                const assetCount = items.reduce((sum: number, it: any) => sum + (it.assets?.[0]?.count || 0), 0);
+                                const recordingCount = items.reduce((sum: number, it: any) => sum + (it.recordings?.[0]?.count || 0), 0);
+
+                                return (
+                                    <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-3 text-sm">
+                                        <div className="flex justify-between items-start">
+                                            <span className="text-gray-500 font-medium shrink-0">Title</span>
+                                            <span className="font-bold text-gray-900 text-right uppercase tracking-tight">
+                                                {previewCatalog.title}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-start">
+                                            <span className="text-gray-500 font-medium shrink-0">Client</span>
+                                            <span className="font-semibold text-gray-900 text-right">
+                                                {previewCatalog.client_name || "—"}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-start">
+                                            <span className="text-gray-500 font-medium shrink-0">Recipient</span>
+                                            <span className="font-semibold text-gray-900 text-right">
+                                                {previewCatalog.client_email || "—"}
+                                            </span>
+                                        </div>
+                                        <div className="h-px bg-gray-100 my-1" />
+
+                                        <div className="grid grid-cols-3 gap-2 py-1">
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Talents</span>
+                                                <span className="font-bold text-gray-900">{talentCount}</span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Assets</span>
+                                                <span className="font-bold text-gray-900">{assetCount}</span>
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Voice</span>
+                                                <span className="font-bold text-gray-900">{recordingCount}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="h-px bg-gray-100 my-1" />
+
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-500 font-medium">Linked Receipt</span>
+                                            <span className={`font-bold ${previewCatalog.licensing_request_id ? "text-green-600" : "text-gray-400"}`}>
+                                                {previewCatalog.licensing_request_id ? "Active" : "No"}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-500 font-medium">Created On</span>
+                                            <span className="font-semibold text-gray-900">
+                                                {new Date(previewCatalog.created_at).toLocaleString()}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-500 font-medium text-orange-600">Expiration</span>
+                                            <span className="font-bold text-orange-600">
+                                                {previewCatalog.expires_at
+                                                    ? new Date(previewCatalog.expires_at).toLocaleString()
+                                                    : "Mandatory (Missing)"}
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+
+                            {previewCatalog.notes && (
+                                <div className="space-y-1.5">
+                                    <span className="text-xs font-black uppercase tracking-widest text-gray-400">Internal Notes</span>
+                                    <div className="p-4 bg-white border border-gray-100 rounded-xl text-sm text-gray-600 italic">
+                                        “{previewCatalog.notes}”
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="flex items-center justify-end gap-3 pt-2">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setPreviewCatalog(null)}
+                                    className="rounded-xl font-bold"
+                                >
+                                    Close
+                                </Button>
+                                <Button
+                                    onClick={() => {
+                                        copyLink(previewCatalog.access_token);
+                                        setPreviewCatalog(null);
+                                    }}
+                                    className="bg-indigo-600 hover:bg-indigo-700 rounded-xl font-bold flex items-center gap-2"
+                                >
+                                    <Copy className="w-4 h-4" />
+                                    Copy Link
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

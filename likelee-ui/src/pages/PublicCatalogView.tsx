@@ -170,14 +170,23 @@ export default function PublicCatalogView() {
     }
 
     if (isError || !catalog) {
+        const status = (isError as any)?.response?.status;
+        const isExpired = status === 410;
+
         return (
             <div className="min-h-screen bg-white flex items-center justify-center">
                 <div className="text-center px-6">
                     <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
                         <AlertCircle className="w-8 h-8 text-red-500" />
                     </div>
-                    <h1 className="text-xl font-bold text-gray-900 mb-2">Catalog Not Found</h1>
-                    <p className="text-sm text-gray-400 font-medium">This link may be invalid or expired.</p>
+                    <h1 className="text-xl font-bold text-gray-900 mb-2">
+                        {isExpired ? "Link Expired" : "Catalog Not Found"}
+                    </h1>
+                    <p className="text-sm text-gray-400 font-medium">
+                        {isExpired
+                            ? "This distribution link has reached its expiration date and is no longer accessible."
+                            : "This link may be invalid or has been removed."}
+                    </p>
                 </div>
             </div>
         );
@@ -185,6 +194,16 @@ export default function PublicCatalogView() {
 
     const createdDate = catalog.created_at
         ? new Date(catalog.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+        : null;
+
+    const displayExpiry = catalog.expires_at
+        ? new Date(catalog.expires_at).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+            hour: "numeric",
+            minute: "2-digit"
+        })
         : null;
 
     const agency = catalog.agency ?? {};
@@ -198,17 +217,6 @@ export default function PublicCatalogView() {
             <nav className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-gray-100 px-6 md:px-10 py-6">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        {view !== "talents" && (
-                            <button
-                                onClick={() => {
-                                    if (view === "category") setView("talent-detail");
-                                    else { setView("talents"); setSelectedItem(null); }
-                                }}
-                                className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-50 border border-gray-100 text-gray-500 hover:bg-gray-100 transition-all mr-1"
-                            >
-                                <ChevronLeft className="w-5 h-5" />
-                            </button>
-                        )}
                         <LikeleeLogoMark />
                     </div>
 
@@ -222,6 +230,11 @@ export default function PublicCatalogView() {
                             )}
                         </div>
                         {createdDate && <p className="text-[10px] text-gray-400 font-medium mt-1">Delivered on {createdDate}</p>}
+                        {displayExpiry && (
+                            <p className="text-[10px] text-orange-500 font-bold mt-0.5">
+                                Link expires on {displayExpiry}
+                            </p>
+                        )}
                     </div>
                 </div>
             </nav>
@@ -579,6 +592,19 @@ export default function PublicCatalogView() {
                                     </button>
                                 ))}
                             </div>
+
+                            {/* Back Button */}
+                            <div className="mt-20 pt-10 border-t border-gray-50">
+                                <button
+                                    onClick={() => { setView("talents"); setSelectedItem(null); }}
+                                    className="group flex items-center gap-3 text-sm font-black text-gray-400 hover:text-gray-900 transition-all"
+                                >
+                                    <div className="w-10 h-10 rounded-full border border-gray-100 flex items-center justify-center group-hover:bg-gray-50 transition-all">
+                                        <ChevronLeft className="w-5 h-5" />
+                                    </div>
+                                    Back to Talents
+                                </button>
+                            </div>
                         </>
                     )}
                 </div>
@@ -754,8 +780,8 @@ export default function PublicCatalogView() {
                                                         }
                                                     }}
                                                     className={`h-10 px-3 rounded-xl border flex items-center gap-2 transition-all ${(playbackSpeeds[recId] || 1) !== 1
-                                                            ? "border-indigo-200 bg-indigo-50 text-indigo-600 font-black"
-                                                            : "border-gray-100 text-gray-400 hover:border-gray-200"
+                                                        ? "border-indigo-200 bg-indigo-50 text-indigo-600 font-black"
+                                                        : "border-gray-100 text-gray-400 hover:border-gray-200"
                                                         }`}
                                                 >
                                                     <FastForward className="w-4 h-4" />
@@ -793,6 +819,20 @@ export default function PublicCatalogView() {
                             </div>
                         )
                     )}
+                    )}
+
+                    {/* Back Button */}
+                    <div className="mt-24 pt-12 border-t border-gray-100">
+                        <button
+                            onClick={() => setView("talent-detail")}
+                            className="group flex items-center gap-4 text-lg font-black text-gray-400 hover:text-gray-900 transition-all"
+                        >
+                            <div className="w-14 h-14 rounded-full border-2 border-gray-50 flex items-center justify-center group-hover:bg-white group-hover:shadow-xl transition-all">
+                                <ChevronLeft className="w-8 h-8" />
+                            </div>
+                            Back to Overview
+                        </button>
+                    </div>
                 </div>
             )}
 

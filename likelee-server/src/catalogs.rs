@@ -19,6 +19,7 @@ pub struct CreateCatalogRequest {
     pub client_email: Option<String>,
     pub licensing_request_id: Option<String>,
     pub notes: Option<String>,
+    pub expires_at: Option<String>,
     pub items: Vec<CatalogItemRequest>,
 }
 
@@ -71,7 +72,7 @@ pub async fn list_catalogs(
     let resp = state
         .pg
         .from("agency_catalogs")
-        .select("id,agency_id,licensing_request_id,title,client_name,client_email,access_token,created_at,sent_at,notes")
+        .select("id,agency_id,licensing_request_id,title,client_name,client_email,access_token,created_at,sent_at,notes,expires_at,items:agency_catalog_items(id,assets:agency_catalog_assets(count),recordings:agency_catalog_recordings(count))")
         .eq("agency_id", &user.id)
         .order("created_at.desc")
         .limit(200)
@@ -288,6 +289,11 @@ pub async fn create_catalog(
             catalog_insert["notes"] = json!(notes.trim());
         }
     }
+    if let Some(ref expires) = payload.expires_at {
+        if !expires.trim().is_empty() {
+            catalog_insert["expires_at"] = json!(expires.trim());
+        }
+    }
 
     let ins_resp = state
         .pg
@@ -497,7 +503,7 @@ pub async fn get_public_catalog(
     let cat_resp = state
         .pg
         .from("agency_catalogs")
-        .select("id,agency_id,licensing_request_id,title,client_name,client_email,created_at,notes")
+        .select("id,agency_id,licensing_request_id,title,client_name,client_email,created_at,notes,expires_at")
         .eq("access_token", &token)
         .limit(1)
         .execute()
@@ -518,6 +524,15 @@ pub async fn get_public_catalog(
     let catalog = cat_rows.into_iter().next().ok_or_else(|| {
         (StatusCode::NOT_FOUND, "Catalog not found".to_string())
     })?;
+
+    // Expiry check
+    if let Some(exp_str) = catalog.get("expires_at").and_then(|v| v.as_str()) {
+        if let Ok(exp_dt) = chrono::DateTime::parse_from_rfc3339(exp_str) {
+            if chrono::Utc::now() > exp_dt {
+                return Err((StatusCode::GONE, "This link has expired".to_string()));
+            }
+        }
+    }
 
     let catalog_id = catalog
         .get("id")
@@ -816,6 +831,7 @@ pub async fn get_public_catalog(
         "client_name": catalog.get("client_name"),
         "created_at": catalog.get("created_at"),
         "notes": catalog.get("notes"),
+        "expires_at": catalog.get("expires_at"),
         "items": enriched_items,
         "receipt": receipt,
         "agency": agency_branding,
