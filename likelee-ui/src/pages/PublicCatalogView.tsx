@@ -21,6 +21,7 @@ import {
     Globe,
     CreditCard,
     CheckCircle2,
+    FastForward,
 } from "lucide-react";
 import { catalogApi } from "@/api/catalogs";
 
@@ -58,7 +59,9 @@ export default function PublicCatalogView() {
     const [brokenCoverIds, setBrokenCoverIds] = useState<Record<string, boolean>>({});
     const [activeCategory, setActiveCategory] = useState<Category>("images");
     const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+    const [isPlaying, setIsPlaying] = useState<boolean>(false);
     const [playingId, setPlayingId] = useState<string | null>(null);
+    const [playbackSpeeds, setPlaybackSpeeds] = useState<Record<string, number>>({});
     const audioRefs = useRef<Record<string, HTMLAudioElement | null>>({});
 
     const { data, isLoading, isError } = useQuery({
@@ -738,8 +741,43 @@ export default function PublicCatalogView() {
                                                 </div>
                                             )}
 
+                                            <div className="flex items-center gap-4">
+                                                {/* Speed Toggle */}
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        const currentSpeed = playbackSpeeds[recId] || 1;
+                                                        const newSpeed = currentSpeed === 1 ? 1.5 : currentSpeed === 1.5 ? 2 : 1;
+                                                        setPlaybackSpeeds(prev => ({ ...prev, [recId]: newSpeed }));
+                                                        if (audioRefs.current[recId]) {
+                                                            audioRefs.current[recId]!.playbackRate = newSpeed;
+                                                        }
+                                                    }}
+                                                    className={`h-10 px-3 rounded-xl border flex items-center gap-2 transition-all ${(playbackSpeeds[recId] || 1) !== 1
+                                                            ? "border-indigo-200 bg-indigo-50 text-indigo-600 font-black"
+                                                            : "border-gray-100 text-gray-400 hover:border-gray-200"
+                                                        }`}
+                                                >
+                                                    <FastForward className="w-4 h-4" />
+                                                    <span className="text-xs">{playbackSpeeds[recId] || 1}x</span>
+                                                </button>
+
+                                                {/* Download */}
+                                                <a
+                                                    href={signedUrl}
+                                                    download={`${emotion.replace(/\s+/g, '_')}.mp3`}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 hover:text-indigo-600 hover:border-indigo-100 transition-all"
+                                                >
+                                                    <Download className="w-5 h-5" />
+                                                </a>
+                                            </div>
+
                                             <audio
-                                                ref={(el) => { audioRefs.current[recId] = el; }}
+                                                ref={(el) => {
+                                                    audioRefs.current[recId] = el;
+                                                    if (el) el.playbackRate = playbackSpeeds[recId] || 1;
+                                                }}
                                                 src={signedUrl}
                                                 onEnded={() => setPlayingId(null)}
                                                 onPlay={() => {
