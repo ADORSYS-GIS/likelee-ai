@@ -161,7 +161,10 @@ pub async fn get_booking_preferences(
                 "agency_id is required when connected to multiple agencies".to_string(),
             ));
         }
-        resolve_talent(&state, &user).await?
+        if ids.is_empty() {
+            return Err((StatusCode::FORBIDDEN, "not connected to agency".to_string()));
+        }
+        resolve_talent_for_agency(&state, &user, &ids[0]).await?
     };
 
     let resp = state
@@ -215,15 +218,59 @@ pub async fn update_booking_preferences(
                 "agency_id is required when connected to multiple agencies".to_string(),
             ));
         }
-        resolve_talent(&state, &user).await?
+        if ids.is_empty() {
+            return Err((StatusCode::FORBIDDEN, "not connected to agency".to_string()));
+        }
+        resolve_talent_for_agency(&state, &user, &ids[0]).await?
     };
+
+    let existing_resp = state
+        .pg
+        .from("talent_booking_preferences")
+        .select("willing_to_travel,min_day_rate_cents,currency")
+        .eq("talent_id", &resolved.talent_id)
+        .eq("agency_id", &resolved.agency_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let existing_status = existing_resp.status();
+    let existing_txt = existing_resp.text().await.unwrap_or_else(|_| "[]".into());
+    if !existing_status.is_success() {
+        return Err(sanitize_db_error(existing_status.as_u16(), existing_txt));
+    }
+    let existing_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&existing_txt).unwrap_or_default();
+    let existing = existing_rows.first();
+
+    let willing_to_travel = payload.willing_to_travel.unwrap_or_else(|| {
+        existing
+            .and_then(|r| r.get("willing_to_travel"))
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+    });
+    let min_day_rate_cents = if payload.min_day_rate_cents.is_some() {
+        payload.min_day_rate_cents
+    } else {
+        existing
+            .and_then(|r| r.get("min_day_rate_cents"))
+            .and_then(|v| v.as_i64())
+            .map(|v| v as i32)
+    };
+    let currency = payload.currency.clone().unwrap_or_else(|| {
+        existing
+            .and_then(|r| r.get("currency"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("USD")
+            .to_string()
+    });
 
     let row = json!({
         "talent_id": resolved.talent_id,
         "agency_id": resolved.agency_id,
-        "willing_to_travel": payload.willing_to_travel,
-        "min_day_rate_cents": payload.min_day_rate_cents,
-        "currency": payload.currency,
+        "willing_to_travel": willing_to_travel,
+        "min_day_rate_cents": min_day_rate_cents,
+        "currency": currency,
         "updated_at": chrono::Utc::now().to_rfc3339(),
     });
 

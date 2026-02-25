@@ -556,16 +556,14 @@
   },
   "salesInquiry": {
     "title": "Talk to Sales",
-    "subtitle": "Let's discuss how Likelee can help scale your creative production",
+    "subtitle": "Let's discuss how Likelee can help scale your agency",
     "contactInfo": {
       "companyName": "Company Name",
       "yourName": "Your Name",
       "workEmail": "Work Email",
       "phone": "Phone Number",
       "companySize": "Company Size",
-      "monthlyBudget": "Monthly Budget Range",
-      "primaryUseCase": "Primary Use Case",
-      "tellUsMore": "Tell us about your needs"
+      "primaryUseCase": "Primary Use Case"
     },
     "placeholders": {
       "companyName": "Your Company",
@@ -573,9 +571,8 @@
       "workEmail": "you@company.com",
       "phone": "+1 (555) 123-4567",
       "selectSize": "Select size",
-      "selectRange": "Select range",
       "selectUseCase": "Select use case",
-      "message": "What are you looking to achieve with AI-powered creator content?"
+      "message": ""
     },
     "options": {
       "employees_1_10": "1-10 employees",
@@ -583,24 +580,19 @@
       "employees_51_200": "51-200 employees",
       "employees_201_500": "201-500 employees",
       "employees_501_plus": "501+ employees",
-      "budget_under_5k": "Less than $5K",
-      "budget_5k_15k": "$5K - $15K",
-      "budget_15k_50k": "$15K - $50K",
-      "budget_50k_100k": "$50K - $100K",
-      "budget_100k_plus": "$100K+",
       "useCase_ecommerce": "E-commerce Product Photos",
       "useCase_advertising": "Advertising Campaigns",
       "useCase_social": "Social Media Content",
-      "useCase_video": "Video Production",
+      "useCase_video": "Video Content",
       "useCase_other": "Other"
     },
     "submit": "Submit Inquiry",
     "submitting": "Submitting...",
     "success": {
       "title": "Thank You!",
-      "message": "We've received your inquiry and will be in touch within 24 hours to discuss how Likelee can help your brand create amazing AI-powered campaigns.",
+      "message": "We've received your inquiry and will be in touch within 24 hours to discuss how Likelee can help your agency.",
       "whatsNextTitle": "What's next?",
-      "whatsNextMessage": "Our team will review your inquiry and schedule a personalized demo to show you exactly how our platform can work for your campaigns."
+      "whatsNextMessage": "Our team will review your inquiry and schedule a personalized demo to show you exactly how our platform can work for your clients."
     },
     "assistance": "Need immediate assistance? Email us at"
   },
@@ -2451,9 +2443,39 @@
       "profile": {
         "edit": "Edit Profile",
         "viewPublic": "View Public Profile",
-        "help": "Support & Help",
+        "help": "Help / Support",
         "logout": "Logout"
       }
+    },
+    "toasts": {
+      "profileSaved": "Profile saved successfully!",
+      "profilePhotoUpdated": "Profile photo updated!",
+      "authRequiredTitle": "Sign in required",
+      "authRequiredPhotoDesc": "Please sign in to upload a profile photo.",
+      "saveFailed": "Failed to save.",
+      "contentSaved": "Content preferences saved!",
+      "industrySaved": "Industry preferences saved!",
+      "restrictionsSaved": "Restrictions saved successfully!",
+      "negotiationEnabled": "Negotiation enabled!",
+      "negotiationDisabled": "Negotiation disabled!",
+      "voiceSuccessTitle": "Voice profile created",
+      "voiceSuccessDesc": "Your voice profile is ready.",
+      "voiceErrorTitle": "Voice error",
+      "voiceErrorDesc": "Failed to create voice profile: {{error}}",
+      "micErrorTitle": "Microphone error",
+      "micErrorDesc": "We couldn't access your microphone. Please allow microphone permission and try again.",
+      "micNoDataTitle": "No audio captured",
+      "micNoDataDesc": "No audio data was received. Please check your microphone and try again.",
+      "campaignApproved": "Campaign approved",
+      "campaignDeclined": "Campaign declined",
+      "campaignPaused": "Campaign paused",
+      "campaignRevoked": "Campaign revoked",
+      "licensePausedTitle": "License paused",
+      "licensePausedImmediate": "License is now paused.",
+      "licensePausedNextMonth": "License will pause next billing cycle.",
+      "licenseRevokedTitle": "License revoked",
+      "licenseRevokedDesc": "License revoked. Effective date: {{effectiveDate}}",
+      "error": "Error"
     }
   },
   "dashboard": {
