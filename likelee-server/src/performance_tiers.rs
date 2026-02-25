@@ -123,7 +123,6 @@ pub async fn configure_performance_tiers(
     auth_user: AuthUser,
     Json(payload): Json<ConfigurePerformanceRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
-    let mut thresholds_config = serde_json::Map::new();
     let mut commission_config = serde_json::Map::new();
     let config_obj = payload.config.as_object().ok_or((
         StatusCode::BAD_REQUEST,
@@ -132,20 +131,6 @@ pub async fn configure_performance_tiers(
 
     for (tier_name, tier_cfg) in config_obj {
         if let Some(tier_obj) = tier_cfg.as_object() {
-            let mut next_thresholds = serde_json::Map::new();
-            if let Some(v) = tier_obj.get("min_earnings") {
-                next_thresholds.insert("min_earnings".to_string(), v.clone());
-            }
-            if let Some(v) = tier_obj.get("min_bookings") {
-                next_thresholds.insert("min_bookings".to_string(), v.clone());
-            }
-            if let Some(v) = tier_obj.get("payout_percent") {
-                next_thresholds.insert("payout_percent".to_string(), v.clone());
-            }
-            if !next_thresholds.is_empty() {
-                thresholds_config.insert(tier_name.clone(), Value::Object(next_thresholds));
-            }
-
             if let Some(v) = tier_obj.get("commission_rate") {
                 let mut next_commission = serde_json::Map::new();
                 next_commission.insert("commission_rate".to_string(), v.clone());
@@ -155,7 +140,6 @@ pub async fn configure_performance_tiers(
     }
 
     let update_payload = json!({
-        "performance_config": Value::Object(thresholds_config),
         "performance_commission_config": Value::Object(commission_config)
     });
 
@@ -269,7 +253,7 @@ pub async fn get_performance_tiers(
         state
             .pg
             .from("agencies")
-            .select("performance_config,performance_commission_config")
+            .select("performance_commission_config")
             .eq("id", agency_id)
             .execute()
     )
@@ -509,7 +493,7 @@ pub async fn update_talent_commission(
     let (resp_user, resp_tiers_db, resp_agency, resp_stats) = tokio::try_join!(
         state.pg.from("talent_commissions").select("commission_rate").eq("talent_id", &payload.talent_id).eq("agency_id", agency_id).limit(1).execute(),
         state.pg.from("performance_tiers").eq("agency_id", agency_id).select("tier_name,min_monthly_earnings,min_monthly_bookings,payout_percent").execute(),
-        state.pg.from("agencies").select("performance_config,performance_commission_config").eq("id", agency_id).execute(),
+        state.pg.from("agencies").select("performance_commission_config").eq("id", agency_id).execute(),
         async {
             let now = chrono::Utc::now();
             let month_start = now.format("%Y-%m-01").to_string();

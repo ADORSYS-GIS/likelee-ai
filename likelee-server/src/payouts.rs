@@ -1970,7 +1970,7 @@ async fn handle_licensing_requests_checkout_session_completed(
         .from("talent_commissions")
         .select("talent_id,commission_rate")
         .eq("agency_id", &agency_id)
-        .in_("talent_id", talent_id_refs)
+        .in_("talent_id", talent_id_refs.clone())
         .execute()
         .await
         .map_err(|e| e.to_string())?;
@@ -1996,22 +1996,12 @@ async fn handle_licensing_requests_checkout_session_completed(
         }
     }
 
-    let (resp_tiers, resp_cfg, resp_stats) = tokio::try_join!(
-        async {
-            state
-                .pg
-                .from("performance_tiers")
-                .select("tier_name,tier_level,description,payout_percent")
-                .order("tier_level.asc")
-                .execute()
-                .await
-                .map_err(|e| e.to_string())
-        },
+    let (resp_agency, resp_talent_tiers) = tokio::try_join!(
         async {
             state
                 .pg
                 .from("agencies")
-                .select("performance_config,performance_commission_config")
+                .select("performance_commission_config")
                 .eq("id", &agency_id)
                 .limit(1)
                 .execute()
@@ -2019,100 +2009,61 @@ async fn handle_licensing_requests_checkout_session_completed(
                 .map_err(|e| e.to_string())
         },
         async {
-            let now = chrono::Utc::now();
-            let month_start = now.format("%Y-%m-01").to_string();
-            let thirty_days_ago = (now - chrono::Duration::days(30))
-                .format("%Y-%m-%d")
-                .to_string();
             state
                 .pg
-                .rpc(
-                    "get_agency_performance_stats",
-                    json!({
-                        "p_agency_id": &agency_id,
-                        "p_earnings_start_date": thirty_days_ago,
-                        "p_bookings_start_date": month_start,
-                    })
-                    .to_string(),
-                )
+                .from("agency_users")
+                .select("id,performance_tier_name")
+                .eq("agency_id", &agency_id)
+                .in_("id", talent_id_refs.clone())
                 .execute()
                 .await
                 .map_err(|e| e.to_string())
         }
     )?;
 
-    let tiers_db: Vec<crate::performance_tiers::TierRuleDb> =
-        serde_json::from_str(&resp_tiers.text().await.unwrap_or_default()).unwrap_or_default();
-    let mut tiers: Vec<crate::performance_tiers::TierRule> = tiers_db
-        .into_iter()
-        .map(|t| crate::performance_tiers::TierRule {
-            tier_name: t.tier_name,
-            tier_level: t.tier_level,
-            min_monthly_earnings: 0.0,
-            min_monthly_bookings: 0,
-            commission_rate: 0.0,
-            description: t.description,
-            payout_percent: t.payout_percent,
-        })
-        .collect();
-
-    let cfg_rows: Vec<serde_json::Value> =
-        serde_json::from_str(&resp_cfg.text().await.unwrap_or_default()).unwrap_or_default();
-    let thresholds_cfg = cfg_rows
-        .first()
-        .and_then(|r| r.get("performance_config"))
-        .and_then(|v| v.as_object());
-    let commission_cfg = cfg_rows
+    let agency_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&resp_agency.text().await.unwrap_or_default()).unwrap_or_default();
+    let commission_cfg = agency_rows
         .first()
         .and_then(|r| r.get("performance_commission_config"))
         .and_then(|v| v.as_object());
 
-    for t in &mut tiers {
-        if let Some(c) = thresholds_cfg.and_then(|m| m.get(&t.tier_name)) {
-            if let Some(e) = c.get("min_earnings").and_then(|v| v.as_f64()) {
-                t.min_monthly_earnings = e;
-            }
-            if let Some(b) = c.get("min_bookings").and_then(|v| v.as_i64()) {
-                t.min_monthly_bookings = b as i32;
-            }
+    let tier_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&resp_talent_tiers.text().await.unwrap_or_default())
+            .unwrap_or_default();
+    let mut tier_name_by_talent: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    for row in tier_rows {
+        let tid = row
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if tid.is_empty() {
+            continue;
         }
-        if let Some(c) = commission_cfg.and_then(|m| m.get(&t.tier_name)) {
-            if let Some(r) = c.get("commission_rate").and_then(|v| v.as_f64()) {
-                t.commission_rate = r;
-            }
-        }
+        let tier_name = row
+            .get("performance_tier_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Inactive")
+            .trim()
+            .to_string();
+        tier_name_by_talent.insert(tid, tier_name);
     }
-
-    let stats_text = resp_stats.text().await.unwrap_or_else(|_| "[]".into());
-    let stats_all: Vec<crate::performance_tiers::PerformanceStats> =
-        serde_json::from_str(&stats_text).unwrap_or_default();
-    let mut stats_by_talent: std::collections::HashMap<
-        String,
-        crate::performance_tiers::PerformanceStats,
-    > = std::collections::HashMap::new();
-    for s in stats_all {
-        stats_by_talent.insert(s.talent_id.clone(), s);
-    }
-
-    tiers.sort_by_key(|t| t.tier_level);
 
     let mut default_rate_by_talent: std::collections::HashMap<String, f64> =
         std::collections::HashMap::new();
     for tid in &talent_ids {
-        let s = stats_by_talent.get(tid);
-        let earnings = s.map(|x| x.earnings_cents as f64 / 100.0).unwrap_or(0.0);
-        let bookings = s.map(|x| x.booking_count).unwrap_or(0);
-
-        let mut assigned = tiers.last();
-        for rule in &tiers {
-            if earnings >= rule.min_monthly_earnings && bookings >= rule.min_monthly_bookings as i64
-            {
-                assigned = Some(rule);
-                break;
-            }
-        }
-
-        let rate = assigned.map(|r| r.commission_rate).unwrap_or(0.0);
+        let tier_name = tier_name_by_talent
+            .get(tid)
+            .map(String::as_str)
+            .unwrap_or("Inactive");
+        let rate = commission_cfg
+            .and_then(|cfg| cfg.get(tier_name))
+            .and_then(|tier_cfg| tier_cfg.get("commission_rate"))
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0);
         default_rate_by_talent.insert(tid.clone(), rate.clamp(0.0, 100.0));
     }
 
@@ -2370,6 +2321,11 @@ async fn handle_payment_link_checkout_completed(
         .unwrap_or("USD")
         .to_string();
     let talent_splits = pl.get("talent_splits").cloned().unwrap_or(json!([]));
+    let effective_commission_rate = if net_amount_cents > 0 {
+        ((agency_amount_cents as f64 / net_amount_cents as f64) * 100.0).clamp(0.0, 100.0)
+    } else {
+        0.0
+    };
 
     // Verify payment amount matches
     let pl_total = pl
@@ -2413,6 +2369,7 @@ async fn handle_payment_link_checkout_completed(
         "currency": currency,
         "payment_link_id": payment_link_id,
         "stripe_payment_intent_id": payment_intent_id,
+        "commission_rate": effective_commission_rate,
         "paid_at": chrono::Utc::now().to_rfc3339(),
     });
 
