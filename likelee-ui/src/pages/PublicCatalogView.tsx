@@ -224,7 +224,7 @@ export default function PublicCatalogView() {
                         <div className="text-center">
                             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-3">Curated By</p>
                             {agency.logo_url ? (
-                                <img src={agency.logo_url} alt={agency.agency_name} className="h-10 object-contain mb-1" />
+                                <img src={agency.logo_url} alt={agency.agency_name} className="h-14 w-14 object-cover rounded-2xl shadow-sm border border-gray-50 mb-1" />
                             ) : (
                                 <p className="text-lg font-black text-[#1A1F2C] tracking-tight mb-1">{agency.agency_name || "Academy"}</p>
                             )}
@@ -511,7 +511,7 @@ export default function PublicCatalogView() {
                             <div className="mt-16 p-10 border border-dashed border-gray-200 rounded-[40px] flex flex-col md:flex-row items-center justify-between gap-8">
                                 <div className="flex items-center gap-6">
                                     {agency.logo_url ? (
-                                        <img src={agency.logo_url} alt={agency.agency_name} className="h-10 object-contain grayscale opacity-50" />
+                                        <img src={agency.logo_url} alt={agency.agency_name} className="h-14 w-14 object-cover rounded-2xl shadow-sm border border-gray-100" />
                                     ) : (
                                         <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center">
                                             <User className="w-6 h-6 text-gray-200" />
