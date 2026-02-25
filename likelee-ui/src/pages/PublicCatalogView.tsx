@@ -240,6 +240,32 @@ export default function PublicCatalogView() {
                         )}
                     </div>
 
+                    {/* Catalog Overview Stats */}
+                    {(() => {
+                        const totalTalents = catalog?.items?.length || 0;
+                        const totalAssets = catalog?.items?.reduce((acc: number, item: any) => acc + (item.assets?.length || 0), 0) || 0;
+                        const totalVoice = catalog?.items?.reduce((acc: number, item: any) => acc + (item.recordings?.length || 0), 0) || 0;
+
+                        return (
+                            <div className="flex flex-wrap gap-8 items-center mb-16 pb-12 border-b border-gray-100">
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500 mb-1">Total Talents</span>
+                                    <span className="text-4xl font-black text-[#1A1F2C] tracking-tighter">{totalTalents}</span>
+                                </div>
+                                <div className="w-px h-10 bg-gray-100 hidden sm:block" />
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FFD54F] mb-1">Visual Assets</span>
+                                    <span className="text-4xl font-black text-[#1A1F2C] tracking-tighter">{totalAssets}</span>
+                                </div>
+                                <div className="w-px h-10 bg-gray-100 hidden sm:block" />
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF8A65] mb-1">Voice Samples</span>
+                                    <span className="text-4xl font-black text-[#1A1F2C] tracking-tighter">{totalVoice}</span>
+                                </div>
+                            </div>
+                        );
+                    })()}
+
                     {/* Talent cards */}
                     <div className={`grid gap-10 ${(catalog.items?.length ?? 0) === 1
                         ? "grid-cols-1 max-w-sm"
