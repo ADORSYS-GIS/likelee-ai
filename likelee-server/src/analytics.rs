@@ -1624,47 +1624,79 @@ pub async fn get_roster_insights(
         }
     }
 
-    // 3. Payments (Last 60d) for Projected Earnings
-    // Projected = (Payments Last 60d) / 2
-    let payments_resp = state
+    // 3. Licensing payouts (Last 60d) for earnings + projected
+    let payouts_resp = state
         .pg
-        .from("payments")
-        .select("talent_earnings_cents, talent_id, paid_at")
+        .from("licensing_payouts")
+        .select("amount_cents, talent_earnings_cents, talent_id, talent_splits, paid_at")
         .eq("agency_id", &auth_user.id)
-        .eq("status", "succeeded")
         .gte("paid_at", &sixty_days_ago)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let payments_text = payments_resp
+    let payouts_text = payouts_resp
         .text()
         .await
         .unwrap_or_else(|_| "[]".to_string());
-    let payments_list: Vec<serde_json::Value> =
-        serde_json::from_str(&payments_text).unwrap_or(vec![]);
+
+    let payouts_list: Vec<serde_json::Value> =
+        if let Ok(parsed) = serde_json::from_str(&payouts_text) {
+            match parsed {
+                serde_json::Value::Array(arr) => arr,
+                _ => vec![],
+            }
+        } else {
+            vec![]
+        };
 
     let mut talent_earnings_60d: HashMap<String, i64> = HashMap::new();
     let mut talent_earnings_30d: HashMap<String, i64> = HashMap::new();
 
-    for payment in payments_list {
-        let amt = payment
+    for payout in payouts_list {
+        let paid_at = payout.get("paid_at").and_then(|v| v.as_str()).unwrap_or("");
+        let splits_arr = payout.get("talent_splits").and_then(|v| v.as_array());
+
+        if let Some(splits) = splits_arr {
+            if !splits.is_empty() {
+                for split in splits {
+                    let s_tid = split
+                        .get("talent_id")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or_default();
+                    let s_amt = split
+                        .get("amount_cents")
+                        .and_then(|v| v.as_i64())
+                        .unwrap_or(0);
+                    if !s_tid.is_empty() {
+                        *talent_earnings_60d.entry(s_tid.to_string()).or_insert(0) += s_amt;
+                        if paid_at >= thirty_days_ago.as_str() {
+                            *talent_earnings_30d.entry(s_tid.to_string()).or_insert(0) += s_amt;
+                        }
+                    }
+                }
+                continue;
+            }
+        }
+
+        // Fallback for single-talent legacy payouts
+        let fallback_amt = payout
             .get("talent_earnings_cents")
             .and_then(|v| v.as_i64())
             .unwrap_or(0);
-        let tid = payment
+        let legacy_tid = payout
             .get("talent_id")
             .and_then(|v| v.as_str())
             .unwrap_or_default();
-        let paid_at = payment
-            .get("paid_at")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
 
-        if !tid.is_empty() {
-            *talent_earnings_60d.entry(tid.to_string()).or_insert(0) += amt;
+        if !legacy_tid.is_empty() {
+            *talent_earnings_60d
+                .entry(legacy_tid.to_string())
+                .or_insert(0) += fallback_amt;
             if paid_at >= thirty_days_ago.as_str() {
-                *talent_earnings_30d.entry(tid.to_string()).or_insert(0) += amt;
+                *talent_earnings_30d
+                    .entry(legacy_tid.to_string())
+                    .or_insert(0) += fallback_amt;
             }
         }
     }
