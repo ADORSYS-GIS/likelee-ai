@@ -2,7 +2,6 @@
 
 pub mod active_licenses;
 pub mod agencies;
-pub mod catalogs;
 pub mod agency_clients;
 pub mod agency_dashboard;
 pub mod agency_roster;
@@ -13,6 +12,7 @@ pub mod book_outs;
 pub mod bookings;
 pub mod brands;
 pub mod campaigns;
+pub mod catalogs;
 pub mod config;
 pub mod creator_agency_connection;
 pub mod creator_rates;

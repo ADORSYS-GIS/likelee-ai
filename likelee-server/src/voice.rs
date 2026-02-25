@@ -550,10 +550,10 @@ pub async fn list_voice_recordings(
                 .execute()
                 .await
                 .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-            
+
             let text = resp.text().await.unwrap_or_default();
             let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
-            
+
             if let Some(row) = rows.first() {
                 target_user_ids.clear();
                 // 1. push the agency_users.id itself (where agency uploads might go)
@@ -565,7 +565,10 @@ pub async fn list_voice_recordings(
                     }
                 }
             } else {
-                return Err((StatusCode::FORBIDDEN, "Not authorized to access this talent".into()));
+                return Err((
+                    StatusCode::FORBIDDEN,
+                    "Not authorized to access this talent".into(),
+                ));
             }
         } else if user.role == "admin" {
             target_user_ids = vec![tid.clone()];
