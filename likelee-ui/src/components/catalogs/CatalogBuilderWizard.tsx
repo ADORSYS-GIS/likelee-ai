@@ -398,7 +398,7 @@ export function CatalogBuilderWizard({
                 </div>
 
                 {/* Step content */}
-                <div className="px-6 py-5 min-h-[280px] overflow-y-auto max-h-[450px]">
+                <div className="px-6 py-5 min-h-[400px] overflow-y-auto max-h-[650px]">
                     {/* ---- Step: Info ---- */}
                     {step === "info" && (
                         <div className="space-y-4">
