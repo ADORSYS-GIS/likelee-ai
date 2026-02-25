@@ -367,7 +367,17 @@ export default function PublicCatalogView() {
                 VIEW 2: TALENT DETAIL — 3 CATEGORY CARDS
             ═══════════════════════════════════════════════ */}
             {view === "talent-detail" && selectedItem && (
-                <div className="max-w-6xl mx-auto px-6 md:px-10 pt-16 pb-24">
+                <div className="max-w-6xl mx-auto px-6 md:px-10 pt-8 pb-24">
+                    {/* Back Button (Top) */}
+                    <button
+                        onClick={() => { setView("talents"); setSelectedItem(null); }}
+                        className="group flex items-center gap-3 text-sm font-black text-gray-400 hover:text-gray-900 transition-all mb-10"
+                    >
+                        <div className="w-10 h-10 rounded-full border border-gray-100 flex items-center justify-center group-hover:bg-gray-50 transition-all">
+                            <ChevronLeft className="w-5 h-5" />
+                        </div>
+                        Back to Talents
+                    </button>
                     {selectedItem._receipt ? (
                         <div className="max-w-4xl mx-auto">
                             {/* Receipt Header */}
@@ -593,18 +603,6 @@ export default function PublicCatalogView() {
                                 ))}
                             </div>
 
-                            {/* Back Button */}
-                            <div className="mt-20 pt-10 border-t border-gray-50">
-                                <button
-                                    onClick={() => { setView("talents"); setSelectedItem(null); }}
-                                    className="group flex items-center gap-3 text-sm font-black text-gray-400 hover:text-gray-900 transition-all"
-                                >
-                                    <div className="w-10 h-10 rounded-full border border-gray-100 flex items-center justify-center group-hover:bg-gray-50 transition-all">
-                                        <ChevronLeft className="w-5 h-5" />
-                                    </div>
-                                    Back to Talents
-                                </button>
-                            </div>
                         </>
                     )}
                 </div>
@@ -614,7 +612,17 @@ export default function PublicCatalogView() {
                 VIEW 3: CATEGORY CONTENT
             ═══════════════════════════════════════════════ */}
             {view === "category" && selectedItem && (
-                <div className="max-w-7xl mx-auto px-6 md:px-10 pt-16 pb-24">
+                <div className="max-w-7xl mx-auto px-6 md:px-10 pt-8 pb-24">
+                    {/* Back Button (Top) */}
+                    <button
+                        onClick={() => setView("talent-detail")}
+                        className="group flex items-center gap-3 text-sm font-black text-gray-400 hover:text-gray-900 transition-all mb-10"
+                    >
+                        <div className="w-10 h-10 rounded-full border border-gray-100 flex items-center justify-center group-hover:bg-gray-50 transition-all">
+                            <ChevronLeft className="w-5 h-5" />
+                        </div>
+                        Back to Overview
+                    </button>
                     {/* Content Header */}
                     <div className="flex items-end justify-between mb-16 border-b border-gray-100 pb-10">
                         <div className="flex items-center gap-8">
@@ -819,20 +827,7 @@ export default function PublicCatalogView() {
                             </div>
                         )
                     )}
-                    )}
 
-                    {/* Back Button */}
-                    <div className="mt-24 pt-12 border-t border-gray-100">
-                        <button
-                            onClick={() => setView("talent-detail")}
-                            className="group flex items-center gap-4 text-lg font-black text-gray-400 hover:text-gray-900 transition-all"
-                        >
-                            <div className="w-14 h-14 rounded-full border-2 border-gray-50 flex items-center justify-center group-hover:bg-white group-hover:shadow-xl transition-all">
-                                <ChevronLeft className="w-8 h-8" />
-                            </div>
-                            Back to Overview
-                        </button>
-                    </div>
                 </div>
             )}
 
