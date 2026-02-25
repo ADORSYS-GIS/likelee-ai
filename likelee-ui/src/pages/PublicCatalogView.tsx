@@ -16,6 +16,11 @@ import {
     User,
     Receipt,
     ChevronRight,
+    Calendar,
+    MapPin,
+    Globe,
+    CreditCard,
+    CheckCircle2,
 } from "lucide-react";
 import { catalogApi } from "@/api/catalogs";
 
@@ -237,10 +242,10 @@ export default function PublicCatalogView() {
 
                     {/* Talent cards */}
                     <div className={`grid gap-10 ${(catalog.items?.length ?? 0) === 1
-                            ? "grid-cols-1 max-w-sm"
-                            : (catalog.items?.length ?? 0) === 2
-                                ? "grid-cols-1 sm:grid-cols-2 max-w-2xl"
-                                : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                        ? "grid-cols-1 max-w-sm"
+                        : (catalog.items?.length ?? 0) === 2
+                            ? "grid-cols-1 sm:grid-cols-2 max-w-2xl"
+                            : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
                         }`}>
                         {(catalog.items ?? []).map((item: any, idx: number) => {
                             const photo = coverUrl(item);
@@ -316,100 +321,232 @@ export default function PublicCatalogView() {
             ═══════════════════════════════════════════════ */}
             {view === "talent-detail" && selectedItem && (
                 <div className="max-w-6xl mx-auto px-6 md:px-10 pt-16 pb-24">
-                    {/* Talent Info */}
-                    <div className="flex items-center gap-6 mb-16">
-                        {coverUrl(selectedItem) ? (
-                            <img
-                                src={coverUrl(selectedItem)}
-                                alt={selectedItem.talent_name}
-                                className="w-24 h-24 rounded-[32px] object-cover shadow-2xl shadow-gray-200 grayscale"
-                            />
-                        ) : (
-                            <div className="w-24 h-24 rounded-[32px] bg-gray-50 border border-gray-100 flex items-center justify-center">
-                                <User className="w-12 h-12 text-gray-200" />
+                    {selectedItem._receipt ? (
+                        <div className="max-w-4xl mx-auto">
+                            {/* Receipt Header */}
+                            <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                                <div>
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-50 text-green-600 rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
+                                        <CheckCircle2 className="w-3 h-3" /> Validated License
+                                    </div>
+                                    <p className="text-[10px] font-black tracking-widest uppercase text-indigo-500 mb-1">Official Document</p>
+                                    <h2 className="text-5xl font-black tracking-tighter text-[#1A1F2C] leading-none">
+                                        License Receipt
+                                    </h2>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-xs text-gray-400 font-medium">Issue Date</p>
+                                    <p className="text-sm font-bold text-gray-900">{createdDate}</p>
+                                </div>
                             </div>
-                        )}
-                        <div>
-                            <p className="text-[10px] font-black tracking-widest uppercase text-indigo-500 mb-1">Exclusive Portfolio</p>
-                            <h2 className="text-5xl font-black tracking-tighter text-[#1A1F2C] leading-none">
-                                {selectedItem.talent_stage_name ?? selectedItem.talent_name ?? "Talent"}
-                            </h2>
+
+                            {/* Main Content Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                {/* Left Column: Client & Campaign */}
+                                <div className="md:col-span-2 space-y-8">
+                                    <div className="bg-white border border-gray-100 rounded-[40px] p-10 shadow-sm">
+                                        <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-8 pb-4 border-b border-gray-50">Campaign Specifications</h3>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-2">Campaign Title</p>
+                                                <p className="text-2xl font-black text-gray-900 leading-tight">{catalog.receipt.campaign_title || "Untitled Campaign"}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-2">Licensee (Client)</p>
+                                                <p className="text-2xl font-black text-gray-900 leading-tight">{catalog.receipt.client_name || "N/A"}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white border border-gray-100 rounded-[40px] p-10 shadow-sm">
+                                        <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-8 pb-4 border-b border-gray-50">Usage & Distribution</h3>
+                                        <div className="space-y-10">
+                                            <div className="flex gap-6">
+                                                <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center shrink-0">
+                                                    <Globe className="w-6 h-6 text-indigo-500" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Rights Scope</p>
+                                                    <p className="text-lg font-bold text-gray-900 leading-relaxed text-wrap break-words">{catalog.receipt.usage_scope || "Standard Digital Usage"}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-6">
+                                                <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center shrink-0">
+                                                    <MapPin className="w-6 h-6 text-indigo-500" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Authorized Regions</p>
+                                                    <p className="text-lg font-bold text-gray-900 leading-relaxed capitalize">{catalog.receipt.regions || "Worldwide"}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Right Column: Meta & Fee */}
+                                <div className="space-y-8">
+                                    <div className="bg-gray-900 rounded-[40px] p-10 text-white shadow-2xl">
+                                        <div className="mb-10">
+                                            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center mb-6">
+                                                <CreditCard className="w-6 h-6 text-white" />
+                                            </div>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-1">Total License Fee</p>
+                                            <p className="text-4xl font-black">{catalog.receipt.license_fee_display || "$0.00"}</p>
+                                        </div>
+                                        <div className="space-y-6 pt-6 border-t border-white/10">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs font-bold text-white/50">Status</span>
+                                                <span className="text-xs font-black uppercase tracking-widest text-green-400">Paid</span>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs font-bold text-white/50">ID</span>
+                                                <span className="text-[10px] font-mono text-white/30 truncate max-w-[100px]">{token?.split('-')[0]?.toUpperCase() || "L-XXXX"}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white border border-gray-100 rounded-[40px] p-10 shadow-sm">
+                                        <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-8">Validity Period</h3>
+                                        <div className="space-y-6">
+                                            <div className="flex items-start gap-4">
+                                                <Calendar className="w-4 h-4 text-indigo-500 mt-0.5" />
+                                                <div>
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Effective Date</p>
+                                                    <p className="text-sm font-bold text-gray-900">{catalog.receipt.license_start_date ? new Date(catalog.receipt.license_start_date).toLocaleDateString() : "Immediate"}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-start gap-4">
+                                                <Calendar className="w-4 h-4 text-red-400 mt-0.5" />
+                                                <div>
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Expiration Date</p>
+                                                    <p className="text-sm font-bold text-gray-900">{catalog.receipt.license_end_date ? new Date(catalog.receipt.license_end_date).toLocaleDateString() : "Perpetual"}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Agency Attribution Footer */}
+                            <div className="mt-16 p-10 border border-dashed border-gray-200 rounded-[40px] flex flex-col md:flex-row items-center justify-between gap-8">
+                                <div className="flex items-center gap-6">
+                                    {agency.logo_url ? (
+                                        <img src={agency.logo_url} alt={agency.agency_name} className="h-10 object-contain grayscale opacity-50" />
+                                    ) : (
+                                        <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center">
+                                            <User className="w-6 h-6 text-gray-200" />
+                                        </div>
+                                    )}
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Issued by</p>
+                                        <p className="text-lg font-black text-gray-900 tracking-tight">{agency.agency_name || "The Academy Lab"}</p>
+                                    </div>
+                                </div>
+                                <div className="text-center md:text-right">
+                                    <p className="text-[11px] text-gray-400 font-medium max-w-xs">
+                                        This is a computer-generated receipt for a digitally licensed asset collection through the Likelee platform.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-
-                    {/* Catalog Info Strip */}
-                    <div className="mb-20 max-w-2xl">
-                        <h1 className="text-4xl font-black tracking-tight text-[#1A1F2C] mb-6">
-                            Asset Collection Experience
-                        </h1>
-                        <p className="text-gray-400 text-xl font-medium leading-relaxed">
-                            A refined selection of high-end media assets delivered with precision.
-                            Browse studio photography, cinema recordings, and professional voice architecture.
-                        </p>
-                    </div>
-
-                    {/* ── 3 Category Cards ── */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {[
-                            {
-                                id: "images" as Category,
-                                icon: ImageIcon,
-                                label: "Images",
-                                desc: "High-resolution photography and editorial studio capture.",
-                                count: (selectedItem?.assets ?? []).filter((a: any) => !a.asset_type?.toLowerCase().includes("video")).length,
-                                color: "#4DD0E1",
-                            },
-                            {
-                                id: "videos" as Category,
-                                icon: Film,
-                                label: "Videos",
-                                desc: "Cinematic footage and high-fidelity motion graphics production.",
-                                count: (selectedItem?.assets ?? []).filter((a: any) => a.asset_type?.toLowerCase().includes("video")).length,
-                                color: "#FFD54F",
-                            },
-                            {
-                                id: "voice" as Category,
-                                icon: Mic,
-                                label: "Voice",
-                                desc: "Elite vocal architecture and studio-grade audio synthesis.",
-                                count: (selectedItem?.recordings ?? []).length,
-                                color: "#FF8A65",
-                            },
-                        ].map(({ id, icon: Icon, label, desc, count, color }) => (
-                            <button
-                                key={id}
-                                onClick={() => { setActiveCategory(id); setView("category"); }}
-                                className={`group relative bg-white border border-gray-100 rounded-[48px] p-12 text-center transition-all duration-500 hover:shadow-[0_40px_80px_rgba(0,0,0,0.06)] hover:-translate-y-3`}
-                            >
-                                <div
-                                    className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-10 transition-all duration-500 group-hover:scale-110 shadow-lg shadow-gray-50`}
-                                    style={{ backgroundColor: `${color}10`, border: `2.5px solid ${color}30` }}
-                                >
-                                    <Icon className="w-10 h-10" style={{ color: color }} />
-                                </div>
-
-                                <h3 className="text-3xl font-black text-[#1A1F2C] mb-4 tracking-tighter">{label}</h3>
-                                <p className="text-sm text-gray-400 font-medium leading-relaxed mb-8">{desc}</p>
-
-                                {count > 0 ? (
-                                    <div
-                                        className="inline-flex items-center px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors"
-                                        style={{ backgroundColor: `${color}15`, color: color }}
-                                    >
-                                        {count} {count === 1 ? "Item" : "Items"}
-                                    </div>
+                    ) : (
+                        <>
+                            {/* Talent Info */}
+                            <div className="flex items-center gap-6 mb-16">
+                                {coverUrl(selectedItem) ? (
+                                    <img
+                                        src={coverUrl(selectedItem)}
+                                        alt={selectedItem.talent_name}
+                                        className="w-24 h-24 rounded-[32px] object-cover shadow-2xl shadow-gray-200 grayscale"
+                                    />
                                 ) : (
-                                    <div className="text-[10px] font-black uppercase tracking-widest text-gray-200">Archive Empty</div>
-                                )}
-
-                                <div className="mt-10 flex justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-y-3 group-hover:translate-y-0">
-                                    <div className="w-12 h-12 rounded-full bg-gray-900 border border-gray-800 flex items-center justify-center text-white shadow-xl">
-                                        <ZoomIn className="w-6 h-6" />
+                                    <div className="w-24 h-24 rounded-[32px] bg-gray-50 border border-gray-100 flex items-center justify-center">
+                                        <User className="w-12 h-12 text-gray-200" />
                                     </div>
+                                )}
+                                <div>
+                                    <p className="text-[10px] font-black tracking-widest uppercase text-indigo-500 mb-1">Exclusive Portfolio</p>
+                                    <h2 className="text-5xl font-black tracking-tighter text-[#1A1F2C] leading-none">
+                                        {selectedItem.talent_stage_name ?? selectedItem.talent_name ?? "Talent"}
+                                    </h2>
                                 </div>
-                            </button>
-                        ))}
-                    </div>
+                            </div>
+
+                            {/* Catalog Info Strip */}
+                            <div className="mb-20 max-w-2xl">
+                                <h1 className="text-4xl font-black tracking-tight text-[#1A1F2C] mb-6">
+                                    Asset Collection Experience
+                                </h1>
+                                <p className="text-gray-400 text-xl font-medium leading-relaxed">
+                                    A refined selection of high-end media assets delivered with precision.
+                                    Browse studio photography, cinema recordings, and professional voice architecture.
+                                </p>
+                            </div>
+
+                            {/* ── 3 Category Cards ── */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                {[
+                                    {
+                                        id: "images" as Category,
+                                        icon: ImageIcon,
+                                        label: "Images",
+                                        desc: "High-resolution photography and editorial studio capture.",
+                                        count: (selectedItem?.assets ?? []).filter((a: any) => !a.asset_type?.toLowerCase().includes("video")).length,
+                                        color: "#4DD0E1",
+                                    },
+                                    {
+                                        id: "videos" as Category,
+                                        icon: Film,
+                                        label: "Videos",
+                                        desc: "Cinematic footage and high-fidelity motion graphics production.",
+                                        count: (selectedItem?.assets ?? []).filter((a: any) => a.asset_type?.toLowerCase().includes("video")).length,
+                                        color: "#FFD54F",
+                                    },
+                                    {
+                                        id: "voice" as Category,
+                                        icon: Mic,
+                                        label: "Voice",
+                                        desc: "Elite vocal architecture and studio-grade audio synthesis.",
+                                        count: (selectedItem?.recordings ?? []).length,
+                                        color: "#FF8A65",
+                                    },
+                                ].map(({ id, icon: Icon, label, desc, count, color }) => (
+                                    <button
+                                        key={id}
+                                        onClick={() => { setActiveCategory(id); setView("category"); }}
+                                        className={`group relative bg-white border border-gray-100 rounded-[48px] p-12 text-center transition-all duration-500 hover:shadow-[0_40px_80px_rgba(0,0,0,0.06)] hover:-translate-y-3`}
+                                    >
+                                        <div
+                                            className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-10 transition-all duration-500 group-hover:scale-110 shadow-lg shadow-gray-50`}
+                                            style={{ backgroundColor: `${color}10`, border: `2.5px solid ${color}30` }}
+                                        >
+                                            <Icon className="w-10 h-10" style={{ color: color }} />
+                                        </div>
+
+                                        <h3 className="text-3xl font-black text-[#1A1F2C] mb-4 tracking-tighter">{label}</h3>
+                                        <p className="text-sm text-gray-400 font-medium leading-relaxed mb-8">{desc}</p>
+
+                                        {count > 0 ? (
+                                            <div
+                                                className="inline-flex items-center px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors"
+                                                style={{ backgroundColor: `${color}15`, color: color }}
+                                            >
+                                                {count} {count === 1 ? "Item" : "Items"}
+                                            </div>
+                                        ) : (
+                                            <div className="text-[10px] font-black uppercase tracking-widest text-gray-200">Archive Empty</div>
+                                        )}
+
+                                        <div className="mt-10 flex justify-center opacity-0 group-hover:opacity-100 transition-all transform translate-y-3 group-hover:translate-y-0">
+                                            <div className="w-12 h-12 rounded-full bg-gray-900 border border-gray-800 flex items-center justify-center text-white shadow-xl">
+                                                <ZoomIn className="w-6 h-6" />
+                                            </div>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </>
+                    )}
                 </div>
             )}
 
@@ -526,8 +663,8 @@ export default function PublicCatalogView() {
                                         <div
                                             key={recId}
                                             className={`rounded-[40px] border-2 transition-all duration-500 p-8 flex items-center gap-8 ${isPlaying
-                                                    ? "border-indigo-100 bg-indigo-50/40 shadow-2xl shadow-indigo-100/50"
-                                                    : "border-gray-50 bg-white hover:border-gray-100 hover:shadow-2xl hover:shadow-gray-100"
+                                                ? "border-indigo-100 bg-indigo-50/40 shadow-2xl shadow-indigo-100/50"
+                                                : "border-gray-50 bg-white hover:border-gray-100 hover:shadow-2xl hover:shadow-gray-100"
                                                 }`}
                                         >
                                             {/* Play btn */}
@@ -535,10 +672,10 @@ export default function PublicCatalogView() {
                                                 onClick={() => signedUrl && toggleAudio(recId)}
                                                 disabled={!signedUrl}
                                                 className={`w-20 h-20 rounded-[24px] flex items-center justify-center shrink-0 transition-all ${isPlaying
-                                                        ? "bg-indigo-600 text-white shadow-2xl shadow-indigo-200"
-                                                        : signedUrl
-                                                            ? "bg-gray-100 text-indigo-600 hover:bg-indigo-100 hover:scale-105"
-                                                            : "bg-gray-50 cursor-not-allowed opacity-40 text-gray-300"
+                                                    ? "bg-indigo-600 text-white shadow-2xl shadow-indigo-200"
+                                                    : signedUrl
+                                                        ? "bg-gray-100 text-indigo-600 hover:bg-indigo-100 hover:scale-105"
+                                                        : "bg-gray-50 cursor-not-allowed opacity-40 text-gray-300"
                                                     }`}
                                             >
                                                 {isPlaying ? (
