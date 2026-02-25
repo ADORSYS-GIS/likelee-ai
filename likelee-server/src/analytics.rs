@@ -440,7 +440,7 @@ pub async fn get_analytics_dashboard(
             completed += 1;
         }
 
-        // Top Scope (created in last 30d) - skipping vertical as it's not in bookings_campaigns yet
+        // Top Scope (created in last 30d) - skipping vertical
         if created_at >= thirty_days_ago.as_str() {
             // Default to generic for now since vertical is not in bookings_campaigns
             *scope_counts.entry("Social Media".to_string()).or_insert(0) += 1;
@@ -869,147 +869,66 @@ pub async fn get_clients_campaigns_analytics(
         }));
     }
 
-    // ===========================================================
-    // IRL MODE (original logic below)
-    // ===========================================================
-
-    // 1. Earnings by Client & Top Clients Performance
-    // We need payments summed by brand, and campaigns counted by brand.
-
-    // Fetch all successful payments for this agency to aggregate by brand
-    let payments_resp = state
+    // Fetch all bookings for this agency
+    let bookings_resp = state
         .pg
-        .from("payments")
-        .select("gross_cents, brand_id, campaign_id")
-        .eq("agency_id", agency_id)
-        .eq("status", "succeeded")
+        .from("bookings")
+        .select("id, client_name, location, rate_cents, campaign_id")
+        .eq("agency_user_id", agency_id)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let payments_data: serde_json::Value = serde_json::from_str(
-        &payments_resp
-            .text()
-            .await
-            .unwrap_or_else(|_| "[]".to_string()),
-    )
-    .unwrap_or(json!([]));
-
-    // Debug logging
-    let payment_count = payments_data.as_array().map(|a| a.len()).unwrap_or(0);
-    tracing::info!(
-        "Found {} successful payments for agency {}",
-        payment_count,
-        agency_id
-    );
-
-    let mut brand_earnings: HashMap<String, i64> = HashMap::new();
-    let mut brand_campaigns_interactions: HashMap<String, HashSet<String>> = HashMap::new();
-
-    if let Some(payments) = payments_data.as_array() {
-        for p in payments {
-            if let Some(brand_id) = p.get("brand_id").and_then(|v| v.as_str()) {
-                let cents = p.get("gross_cents").and_then(|v| v.as_i64()).unwrap_or(0);
-                *brand_earnings.entry(brand_id.to_string()).or_insert(0) += cents;
-
-                if let Some(cid) = p.get("campaign_id").and_then(|v| v.as_str()) {
-                    brand_campaigns_interactions
-                        .entry(brand_id.to_string())
-                        .or_default()
-                        .insert(cid.to_string());
-                }
-            }
-        }
-    }
-
-    tracing::info!("Aggregated earnings for {} brands", brand_earnings.len());
-
-    // Fetch all campaigns to get regions and count per brand
-    let campaigns_resp = state
-        .pg
-        .from("campaigns")
-        .select("id, brand_id, region")
-        .eq("agency_id", agency_id)
-        .execute()
+    let bookings_text = bookings_resp
+        .text()
         .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        .unwrap_or_else(|_| "[]".to_string());
+    let bookings_data: Vec<serde_json::Value> =
+        serde_json::from_str(&bookings_text).unwrap_or(vec![]);
 
-    let campaigns_data: serde_json::Value = serde_json::from_str(
-        &campaigns_resp
-            .text()
-            .await
-            .unwrap_or_else(|_| "[]".to_string()),
-    )
-    .unwrap_or(json!([]));
+    let mut client_earnings: HashMap<String, i64> = HashMap::new();
+    let mut client_campaigns: HashMap<String, HashSet<String>> = HashMap::new();
     let mut region_earnings: HashMap<String, i64> = HashMap::new();
-    let mut brand_campaign_count: HashMap<String, i64> = HashMap::new();
-    let mut total_revenue = 0i64;
 
-    if let Some(campaigns) = campaigns_data.as_array() {
-        for c in campaigns {
-            if let Some(bid) = c.get("brand_id").and_then(|v| v.as_str()) {
-                *brand_campaign_count.entry(bid.to_string()).or_insert(0) += 1;
-            }
+    for b in &bookings_data {
+        let client = b
+            .get("client_name")
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.is_empty())
+            .unwrap_or("Unknown")
+            .to_string();
 
-            if let Some(rid) = c.get("id").and_then(|v| v.as_str()) {
-                let region = c
-                    .get("region")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("Unknown");
-                // Find earnings for this campaign from payments_data
-                let campaign_rev: i64 = payments_data
-                    .as_array()
-                    .map(|arr| {
-                        arr.iter()
-                            .filter(|p| p.get("campaign_id").and_then(|v| v.as_str()) == Some(rid))
-                            .filter_map(|p| p.get("gross_cents").and_then(|v| v.as_i64()))
-                            .sum()
-                    })
-                    .unwrap_or(0);
+        let cents = b.get("rate_cents").and_then(|v| v.as_i64()).unwrap_or(0);
+        *client_earnings.entry(client.clone()).or_insert(0) += cents;
 
-                *region_earnings.entry(region.to_string()).or_insert(0) += campaign_rev;
-                total_revenue += campaign_rev;
-            }
+        if let Some(cid) = b.get("campaign_id").and_then(|v| v.as_str()) {
+            client_campaigns
+                .entry(client.clone())
+                .or_default()
+                .insert(cid.to_string());
+        } else if let Some(bid) = b.get("id").and_then(|v| v.as_str()) {
+            client_campaigns
+                .entry(client.clone())
+                .or_default()
+                .insert(bid.to_string());
         }
-    }
 
-    // Get Brand Names
-    let brands_resp = state
-        .pg
-        .from("brands")
-        .select("id, company_name")
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let brands_list: serde_json::Value = serde_json::from_str(
-        &brands_resp
-            .text()
-            .await
-            .unwrap_or_else(|_| "[]".to_string()),
-    )
-    .unwrap_or(json!([]));
-    let mut brand_names: HashMap<String, String> = HashMap::new();
-    if let Some(arr) = brands_list.as_array() {
-        for b in arr {
-            if let (Some(id), Some(name)) = (
-                b.get("id").and_then(|v| v.as_str()),
-                b.get("company_name").and_then(|v| v.as_str()),
-            ) {
-                brand_names.insert(id.to_string(), name.to_string());
-            }
-        }
+        let region = b
+            .get("location")
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.is_empty())
+            .unwrap_or("Unknown")
+            .to_string();
+        *region_earnings.entry(region).or_insert(0) += cents;
     }
 
     // Format Earnings by Client (Top 4)
-    let mut earnings_vec: Vec<ClientEarning> = brand_earnings
+    let mut earnings_vec: Vec<ClientEarning> = client_earnings
         .iter()
-        .map(|(id, cents)| ClientEarning {
-            name: brand_names
-                .get(id)
-                .cloned()
-                .unwrap_or_else(|| "Unknown Brand".to_string()),
+        .map(|(name, cents)| ClientEarning {
+            name: name.clone(),
             budget: *cents as f64 / 100.0,
-            color: "".to_string(), // Will assign below
+            color: "".to_string(),
         })
         .collect();
     earnings_vec.sort_by(|a, b| {
@@ -1017,12 +936,6 @@ pub async fn get_clients_campaigns_analytics(
             .partial_cmp(&a.budget)
             .unwrap_or(std::cmp::Ordering::Equal)
     });
-
-    tracing::info!("Before truncate: {} earnings entries", earnings_vec.len());
-    for (idx, earning) in earnings_vec.iter().enumerate() {
-        tracing::info!("  [{}] {} = ${:.2}", idx, earning.name, earning.budget);
-    }
-
     earnings_vec.truncate(4);
     for (i, item) in earnings_vec.iter_mut().enumerate() {
         item.color = colors[i % colors.len()].to_string();
@@ -1048,25 +961,27 @@ pub async fn get_clients_campaigns_analytics(
     }
 
     // Format Top Clients Performance (Top 4 by count)
-    let mut perf_vec: Vec<ClientPerformance> = brand_campaign_count
+    let mut perf_vec: Vec<ClientPerformance> = client_campaigns
         .iter()
-        .map(|(id, count)| {
-            let cents = brand_earnings.get(id).cloned().unwrap_or(0);
+        .map(|(name, cids)| {
+            let count = cids.len() as i64;
+            let budget = *client_earnings.get(name).unwrap_or(&0) as f64 / 100.0;
             ClientPerformance {
-                name: brand_names
-                    .get(id)
-                    .cloned()
-                    .unwrap_or_else(|| "Unknown Brand".to_string()),
-                campaigns: *count,
-                budget: cents as f64 / 100.0,
-                percentage: if total_revenue > 0 {
-                    (cents as f64 / total_revenue as f64) * 100.0
-                } else {
-                    0.0
-                },
+                name: name.clone(),
+                campaigns: count,
+                budget,
+                percentage: 0.0,
             }
         })
         .collect();
+
+    let total_revenue: i64 = client_earnings.values().sum();
+    if total_revenue > 0 {
+        for p in &mut perf_vec {
+            p.percentage = ((p.budget * 100.0) / (total_revenue as f64 / 100.0)).round();
+        }
+    }
+
     perf_vec.sort_by(|a, b| {
         b.campaigns.cmp(&a.campaigns).then_with(|| {
             b.budget
@@ -1077,11 +992,11 @@ pub async fn get_clients_campaigns_analytics(
     perf_vec.truncate(4);
 
     // Repeat Client Rate
-    // percentage = (brands with >1 unique campaign) / (total unique brands in campaigns)
-    let total_brands = brand_campaign_count.len() as f64;
-    let repeat_brands = brand_campaign_count.values().filter(|&&c| c > 1).count() as f64;
+    // percentage = (clients with >1 unique campaign/booking) / (total unique clients)
+    let total_brands = client_campaigns.len() as f64;
+    let repeat_brands = client_campaigns.values().filter(|s| s.len() > 1).count() as f64;
     let repeat_client_rate = if total_brands > 0.0 {
-        (repeat_brands / total_brands) * 100.0
+        ((repeat_brands / total_brands) * 100.0).round()
     } else {
         0.0
     };

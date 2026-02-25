@@ -3516,6 +3516,7 @@ pub async fn request_agency_payout(
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn execute_agency_payout(
     state: &AppState,
     payout_request_id: &str,

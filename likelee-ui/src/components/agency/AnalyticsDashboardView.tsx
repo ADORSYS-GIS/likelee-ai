@@ -982,7 +982,7 @@ const AnalyticsDashboardView = ({
                         cx="50%"
                         cy="50%"
                         innerRadius={0}
-                        outerRadius={120}
+                        outerRadius={90}
                         dataKey="budget"
                         stroke="#fff"
                         strokeWidth={2}
@@ -993,6 +993,10 @@ const AnalyticsDashboardView = ({
                             value >= 1000
                               ? (value / 1000).toFixed(1) + "K"
                               : value;
+                          const displayName =
+                            name.length > 18
+                              ? name.substring(0, 18) + "..."
+                              : name;
                           return (
                             <text
                               x={x}
@@ -1003,7 +1007,7 @@ const AnalyticsDashboardView = ({
                               fontSize={14}
                               fontWeight="500"
                             >
-                              {`${name}: $${formattedValue}`}
+                              {`${displayName}: $${formattedValue}`}
                             </text>
                           );
                         }}
