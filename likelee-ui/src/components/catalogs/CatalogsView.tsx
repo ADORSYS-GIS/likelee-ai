@@ -7,7 +7,7 @@ import {
     Archive,
     Mail,
     Loader2,
-    BookOpen,
+    Library,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -153,7 +153,7 @@ export function CatalogsView() {
                         >
                             <div className="flex items-center gap-3 flex-1 min-w-0">
                                 <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center shrink-0">
-                                    <BookOpen className="w-5 h-5 text-indigo-600" />
+                                    <Library className="w-5 h-5 text-indigo-600" />
                                 </div>
                                 <div className="min-w-0">
                                     <p className="font-bold text-gray-900 truncate">
@@ -206,7 +206,10 @@ export function CatalogsView() {
                                     size="sm"
                                     variant="outline"
                                     className="h-8 px-3 rounded-lg font-semibold text-xs flex items-center gap-1"
-                                    onClick={() => copyLink(catalog.access_token)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        copyLink(catalog.access_token);
+                                    }}
                                 >
                                     <Copy className="w-3.5 h-3.5" />
                                     Copy Link
@@ -215,7 +218,10 @@ export function CatalogsView() {
                                     size="sm"
                                     variant="ghost"
                                     className="h-8 w-8 p-0 rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50"
-                                    onClick={() => setDeleteId(catalog.id)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setDeleteId(catalog.id);
+                                    }}
                                 >
                                     <Trash2 className="w-4 h-4" />
                                 </Button>
@@ -271,7 +277,7 @@ export function CatalogsView() {
                 <DialogContent className="max-w-xl rounded-2xl p-6">
                     <DialogHeader>
                         <DialogTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                            <BookOpen className="w-5 h-5 text-indigo-600" />
+                            <Library className="w-5 h-5 text-indigo-600" />
                             Catalog Preview
                         </DialogTitle>
                         <DialogDescription>
