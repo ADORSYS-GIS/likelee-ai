@@ -18486,7 +18486,16 @@ export default function AgencyDashboard() {
             ))}
           {activeTab === "analytics" &&
             activeSubTab === "Analytics Dashboard" &&
-            (hasProAccess ? (
+            (agencyMode === "IRL" ? (
+              <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                <div className="text-lg font-black text-gray-900">
+                  Coming soon
+                </div>
+                <div className="text-gray-500 font-medium mt-1">
+                  Analytics Dashboard for IRL Mode is coming soon.
+                </div>
+              </Card>
+            ) : hasProAccess ? (
               <AnalyticsDashboardView
                 onRenewLicense={handleRenew}
                 agencyMode={agencyMode}
