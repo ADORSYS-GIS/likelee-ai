@@ -2,6 +2,7 @@
 
 pub mod active_licenses;
 pub mod agencies;
+pub mod catalogs;
 pub mod agency_clients;
 pub mod agency_dashboard;
 pub mod agency_roster;

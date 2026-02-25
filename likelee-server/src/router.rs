@@ -447,6 +447,23 @@ pub fn build_router(state: AppState) -> Router {
             "/api/public/packages/:token",
             get(crate::packages::get_public_package),
         )
+        // Catalogs
+        .route(
+            "/api/agency/catalogs",
+            get(crate::catalogs::list_catalogs).post(crate::catalogs::create_catalog),
+        )
+        .route(
+            "/api/agency/catalogs/eligible-requests",
+            get(crate::catalogs::list_eligible_requests),
+        )
+        .route(
+            "/api/agency/catalogs/:id",
+            delete(crate::catalogs::delete_catalog),
+        )
+        .route(
+            "/api/public/catalogs/:token",
+            get(crate::catalogs::get_public_catalog),
+        )
         .route(
             "/api/public/packages/:token/full-assets-request",
             post(crate::packages::create_public_package_full_assets_request),
