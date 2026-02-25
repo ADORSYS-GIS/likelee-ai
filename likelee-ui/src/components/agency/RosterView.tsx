@@ -1045,29 +1045,36 @@ const RosterView = ({
               "Campaigns",
               "Licenses",
               "Analytics",
-            ].map(
-              (tab) =>
-                (tab !== "Licenses" || agencyMode === "AI") && (
-                  <button
-                    key={tab}
-                    onClick={() =>
-                      setRosterTab(tab.toLowerCase().split(" ")[0])
-                    }
-                    className={`px-4 py-2 text-sm font-bold transition-colors relative ${
-                      rosterTab === tab.toLowerCase().split(" ")[0]
-                        ? "text-gray-900 border-b-2 border-gray-900"
-                        : "text-gray-500 hover:text-gray-900"
-                    }`}
-                  >
-                    {tab}
-                    {tab === "Analytics" && (
-                      <span className="ml-2 bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
-                        Pro
-                      </span>
-                    )}
-                  </button>
-                ),
-            )}
+            ].map((tab) => {
+              const isLicenses = tab === "Licenses";
+              const isCampaigns = tab === "Campaigns";
+              const isAiMode = agencyMode === "AI";
+
+              // Filter logic:
+              // 1. Hide Licenses in IRL mode
+              // 2. Hide Campaigns in AI mode
+              if (isLicenses && !isAiMode) return null;
+              if (isCampaigns && isAiMode) return null;
+
+              return (
+                <button
+                  key={tab}
+                  onClick={() => setRosterTab(tab.toLowerCase().split(" ")[0])}
+                  className={`px-4 py-2 text-sm font-bold transition-colors relative ${
+                    rosterTab === tab.toLowerCase().split(" ")[0]
+                      ? "text-gray-900 border-b-2 border-gray-900"
+                      : "text-gray-500 hover:text-gray-900"
+                  }`}
+                >
+                  {tab}
+                  {tab === "Analytics" && (
+                    <span className="ml-2 bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
+                      Pro
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
           <div className="flex gap-3">
             <Button

@@ -68,6 +68,191 @@ pub struct ActiveTalent {
 }
 
 #[derive(Debug, Serialize)]
+pub struct PaymentHistoryTopEarner {
+    pub id: String,
+    pub name: String,
+    pub photo_url: Option<String>,
+    pub campaigns_count: usize,
+    pub total_gross_cents: i64,
+    pub total_gross_formatted: String,
+    pub talent_cents: i64,
+    pub talent_formatted: String,
+    pub agency_cents: i64,
+    pub agency_formatted: String,
+}
+
+pub async fn get_payment_history_top_earners(
+    State(state): State<AppState>,
+    auth_user: AuthUser,
+) -> Result<Json<Vec<PaymentHistoryTopEarner>>, (StatusCode, String)> {
+    let agency_id = &auth_user.id;
+    let now = chrono::Utc::now();
+    let thirty_days_ago = (now - chrono::Duration::days(30)).to_rfc3339();
+
+    // Query licensing_payouts instead of payments
+    let resp = state
+        .pg
+        .from("licensing_payouts")
+        .select("talent_id, amount_cents, talent_earnings_cents, talent_splits, paid_at, licensing_requests(campaign_id)")
+        .eq("agency_id", agency_id)
+        .gte("paid_at", &thirty_days_ago)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        let err = resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+    }
+
+    let payouts_text = resp.text().await.unwrap_or_else(|_| "[]".to_string());
+    let payouts_list: Vec<serde_json::Value> =
+        serde_json::from_str(&payouts_text).unwrap_or_default();
+
+    // Fetch talent names/photos
+    let users_resp = state
+        .pg
+        .from("agency_users")
+        .select("id, stage_name, full_legal_name, profile_photo_url")
+        .eq("agency_id", agency_id)
+        .eq("role", "talent")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let users_text = users_resp.text().await.unwrap_or_else(|_| "[]".to_string());
+    let users_list: Vec<serde_json::Value> = serde_json::from_str(&users_text).unwrap_or_default();
+    let mut user_map = HashMap::new();
+    for u in users_list {
+        if let Some(id) = u.get("id").and_then(|v| v.as_str()) {
+            user_map.insert(id.to_string(), u);
+        }
+    }
+
+    #[derive(Default)]
+    struct Agg {
+        gross_cents: i64,
+        talent_cents: i64,
+        campaign_ids: HashSet<String>,
+    }
+
+    let mut by_talent: HashMap<String, Agg> = HashMap::new();
+
+    for payout in payouts_list {
+        let gross_total = payout
+            .get("amount_cents")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+        let net_total = payout
+            .get("talent_earnings_cents")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+        let splits = payout.get("talent_splits").and_then(|v| v.as_array());
+
+        let cid = payout
+            .get("licensing_requests")
+            .and_then(|lr| lr.get("campaign_id"))
+            .and_then(|v| v.as_str())
+            .unwrap_or_default()
+            .to_string();
+
+        if let Some(splits) = splits {
+            if !splits.is_empty() {
+                for split in splits {
+                    let tid = split
+                        .get("talent_id")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or_default();
+                    if tid.is_empty() {
+                        continue;
+                    }
+                    let net = split
+                        .get("amount_cents")
+                        .and_then(|v| v.as_i64())
+                        .unwrap_or(0);
+
+                    // Proportionally attribute gross to this talent
+                    let gross = if net_total > 0 {
+                        (gross_total as f64 * (net as f64 / net_total as f64)) as i64
+                    } else {
+                        gross_total / splits.len() as i64
+                    };
+
+                    let entry = by_talent.entry(tid.to_string()).or_default();
+                    entry.gross_cents += gross;
+                    entry.talent_cents += net;
+                    if !cid.is_empty() {
+                        entry.campaign_ids.insert(cid.clone());
+                    }
+                }
+                continue;
+            }
+        }
+
+        // Single talent fallback
+        let tid = payout
+            .get("talent_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default();
+        if !tid.is_empty() {
+            let entry = by_talent.entry(tid.to_string()).or_default();
+            entry.gross_cents += gross_total;
+            entry.talent_cents += net_total;
+            if !cid.is_empty() {
+                entry.campaign_ids.insert(cid);
+            }
+        }
+    }
+
+    let mut rows: Vec<PaymentHistoryTopEarner> = by_talent
+        .into_iter()
+        .map(|(id, agg)| {
+            let (name, photo) = if let Some(user) = user_map.get(&id) {
+                let stage = user
+                    .get("stage_name")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let legal = user
+                    .get("full_legal_name")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("Unknown");
+                let name = if !stage.trim().is_empty() {
+                    stage.to_string()
+                } else {
+                    legal.to_string()
+                };
+                let photo = user
+                    .get("profile_photo_url")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+                (name, photo)
+            } else {
+                ("Unknown".to_string(), None)
+            };
+
+            let agency_cents = agg.gross_cents - agg.talent_cents;
+            PaymentHistoryTopEarner {
+                id,
+                name,
+                photo_url: photo,
+                campaigns_count: agg.campaign_ids.len(),
+                total_gross_cents: agg.gross_cents,
+                total_gross_formatted: format!("${:.0}", agg.gross_cents as f64 / 100.0),
+                talent_cents: agg.talent_cents,
+                talent_formatted: format!("${:.0}", agg.talent_cents as f64 / 100.0),
+                agency_cents,
+                agency_formatted: format!("${:.0}", agency_cents as f64 / 100.0),
+            }
+        })
+        .collect();
+
+    rows.sort_by(|a, b| b.total_gross_cents.cmp(&a.total_gross_cents));
+    rows.truncate(10);
+
+    Ok(Json(rows))
+}
+
+#[derive(Debug, Serialize)]
 pub struct NewTalent {
     pub id: String,
     pub name: String,
@@ -642,13 +827,11 @@ async fn get_top_revenue_generators(
     let now = chrono::Utc::now();
     let thirty_days_ago = (now - chrono::Duration::days(30)).to_rfc3339();
 
-    // Query payments joined with agency_users to get real gross revenue
-    let resp = state
+    // 1. Fetch Booking Payments
+    let payments_resp = state
         .pg
         .from("payments")
-        .select(
-            "talent_id, gross_cents, agency_users(stage_name, full_legal_name, profile_photo_url)",
-        )
+        .select("talent_id, gross_cents")
         .eq("agency_id", agency_id)
         .eq("status", "succeeded")
         .gte("paid_at", &thirty_days_ago)
@@ -656,66 +839,145 @@ async fn get_top_revenue_generators(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let text = resp.text().await.unwrap_or_else(|_| "[]".to_string());
-    let data: serde_json::Value = serde_json::from_str(&text).unwrap_or(json!([]));
-    let empty_vec = vec![];
-    let items = data.as_array().unwrap_or(&empty_vec);
+    let payments_text = payments_resp
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
+    let payments_list: Vec<serde_json::Value> =
+        serde_json::from_str(&payments_text).unwrap_or_default();
 
-    let mut talent_map: HashMap<String, (String, Option<String>, i64)> = HashMap::new();
+    // 2. Fetch Licensing Payouts
+    let payouts_resp = state
+        .pg
+        .from("licensing_payouts")
+        .select("talent_id, amount_cents, talent_earnings_cents, talent_splits")
+        .eq("agency_id", agency_id)
+        .gte("paid_at", &thirty_days_ago)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    for item in items {
-        let talent_id = item
-            .get("talent_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("unknown")
-            .to_string();
+    let payouts_text = payouts_resp
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
+    let payouts_list: Vec<serde_json::Value> =
+        serde_json::from_str(&payouts_text).unwrap_or_default();
 
-        let cents = item
-            .get("gross_cents")
-            .and_then(|v| v.as_i64())
-            .unwrap_or(0);
+    // 3. Fetch Talent names/photos
+    let users_resp = state
+        .pg
+        .from("agency_users")
+        .select("id, stage_name, full_legal_name, profile_photo_url")
+        .eq("agency_id", agency_id)
+        .eq("role", "talent")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-        let user = item.get("agency_users");
-        let stage_name = user
-            .and_then(|u| u.get("stage_name"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
-        let legal_name = user
-            .and_then(|u| u.get("full_legal_name"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("Unknown User")
-            .to_string();
-
-        let name = if !stage_name.trim().is_empty() {
-            stage_name
-        } else {
-            legal_name
-        };
-        let photo = user
-            .and_then(|u| u.get("profile_photo_url"))
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string());
-
-        let entry = talent_map.entry(talent_id).or_insert((name, photo, 0));
-        entry.2 += cents;
+    let users_text = users_resp.text().await.unwrap_or_else(|_| "[]".to_string());
+    let users_list: Vec<serde_json::Value> = serde_json::from_str(&users_text).unwrap_or_default();
+    let mut user_map = HashMap::new();
+    for u in users_list {
+        if let Some(id) = u.get("id").and_then(|v| v.as_str()) {
+            user_map.insert(id.to_string(), u);
+        }
     }
 
-    let mut sorted_talents: Vec<TopTalent> = talent_map
+    let mut talent_revenue: HashMap<String, i64> = HashMap::new();
+
+    // Aggregate Payments (Bookings) - Revenue is gross_cents
+    for p in payments_list {
+        if let Some(tid) = p.get("talent_id").and_then(|v| v.as_str()) {
+            let gross = p.get("gross_cents").and_then(|v| v.as_i64()).unwrap_or(0);
+            *talent_revenue.entry(tid.to_string()).or_insert(0) += gross;
+        }
+    }
+
+    // Aggregate Payouts (Licensing) - Revenue is amount_cents (gross)
+    for payout in payouts_list {
+        let gross_total = payout
+            .get("amount_cents")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+        let net_total = payout
+            .get("talent_earnings_cents")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+        let splits = payout.get("talent_splits").and_then(|v| v.as_array());
+
+        if let Some(splits) = splits {
+            if !splits.is_empty() {
+                for split in splits {
+                    let tid = split
+                        .get("talent_id")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or_default();
+                    if tid.is_empty() {
+                        continue;
+                    }
+                    let net = split
+                        .get("amount_cents")
+                        .and_then(|v| v.as_i64())
+                        .unwrap_or(0);
+
+                    let gross = if net_total > 0 {
+                        (gross_total as f64 * (net as f64 / net_total as f64)) as i64
+                    } else {
+                        gross_total / splits.len() as i64
+                    };
+                    *talent_revenue.entry(tid.to_string()).or_insert(0) += gross;
+                }
+                continue;
+            }
+        }
+
+        let tid = payout
+            .get("talent_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default();
+        if !tid.is_empty() {
+            *talent_revenue.entry(tid.to_string()).or_insert(0) += gross_total;
+        }
+    }
+
+    let mut sorted_talents: Vec<TopTalent> = talent_revenue
         .into_iter()
-        .map(|(id, (name, photo, cents))| TopTalent {
-            id,
-            name,
-            photo_url: photo,
-            earnings_cents: cents,
-            earnings_formatted: format!("${:.2}K", cents as f64 / 100_000.0),
+        .map(|(id, cents)| {
+            let (name, photo) = if let Some(user) = user_map.get(&id) {
+                let stage = user
+                    .get("stage_name")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let legal = user
+                    .get("full_legal_name")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("Unknown");
+                let name = if !stage.trim().is_empty() {
+                    stage.to_string()
+                } else {
+                    legal.to_string()
+                };
+                let photo = user
+                    .get("profile_photo_url")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+                (name, photo)
+            } else {
+                ("Unknown".to_string(), None)
+            };
+
+            TopTalent {
+                id,
+                name,
+                photo_url: photo,
+                earnings_cents: cents,
+                earnings_formatted: format!("${:.1}K", cents as f64 / 100_000.0),
+            }
         })
         .collect();
 
-    // Sort descending by earnings
     sorted_talents.sort_by(|a, b| b.earnings_cents.cmp(&a.earnings_cents));
-
-    // Take top 3
     Ok(sorted_talents.into_iter().take(3).collect())
 }
 

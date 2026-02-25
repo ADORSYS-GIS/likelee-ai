@@ -55,6 +55,7 @@ interface SendContractModalProps {
   templateId: string; // From LicenseTemplate
   docusealTemplateId?: number;
   licenseFee?: number; // Optional overrides
+  initialValues?: Partial<FormData>;
   onSuccess?: () => void;
 }
 
@@ -69,6 +70,7 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
   templateId,
   docusealTemplateId,
   licenseFee,
+  initialValues,
   onSuccess,
 }) => {
   const { toast } = useToast();
@@ -108,7 +110,13 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
     if (template.client_name) {
       setValue("client_name", template.client_name);
     }
-  }, [isOpen, template, setValue]);
+    if (initialValues?.client_name) {
+      setValue("client_name", initialValues.client_name);
+    }
+    if (initialValues?.client_email) {
+      setValue("client_email", initialValues.client_email);
+    }
+  }, [isOpen, template, initialValues, setValue]);
 
   useEffect(() => {
     if (isOpen) {
