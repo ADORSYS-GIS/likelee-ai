@@ -442,6 +442,8 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/license-submissions",
             get(crate::license_submissions::list).post(crate::license_submissions::create),
+        )
+        .route(
             "/api/marketplace/search",
             get(crate::face_profiles::search_marketplace_profiles),
         )
@@ -452,10 +454,6 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/marketplace/connect",
             post(crate::face_profiles::create_marketplace_connection_request),
-        )
-        .route(
-            "/api/moderation/image",
-            post(crate::moderation::moderate_image),
         )
         .route(
             "/api/license-submissions/draft",
