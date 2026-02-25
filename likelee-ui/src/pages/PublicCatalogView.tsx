@@ -424,7 +424,9 @@ export default function PublicCatalogView() {
                                                 </div>
                                                 <div>
                                                     <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Rights Scope</p>
-                                                    <p className="text-lg font-bold text-gray-900 leading-relaxed text-wrap break-words">{catalog.receipt.usage_scope || "Standard Digital Usage"}</p>
+                                                    <p className="text-lg font-bold text-gray-900 leading-relaxed capitalize">
+                                                        {catalog.receipt.usage_scope || "Standard Content License"}
+                                                    </p>
                                                 </div>
                                             </div>
                                             <div className="flex gap-6">
@@ -433,7 +435,9 @@ export default function PublicCatalogView() {
                                                 </div>
                                                 <div>
                                                     <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Authorized Regions</p>
-                                                    <p className="text-lg font-bold text-gray-900 leading-relaxed capitalize">{catalog.receipt.regions || "Worldwide"}</p>
+                                                    <p className="text-lg font-bold text-gray-900 leading-relaxed capitalize">
+                                                        {catalog.receipt.regions || "Worldwide / All Territories"}
+                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
@@ -457,26 +461,45 @@ export default function PublicCatalogView() {
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-xs font-bold text-white/50">ID</span>
-                                                <span className="text-[10px] font-mono text-white/30 truncate max-w-[100px]">{token?.split('-')[0]?.toUpperCase() || "L-XXXX"}</span>
+                                                <span className="text-[10px] font-mono text-white/30 truncate max-w-[100px] uppercase">
+                                                    {catalog.receipt.id?.split('-')[0] || "REF-0000"}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="bg-white border border-gray-100 rounded-[40px] p-10 shadow-sm">
-                                        <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-8">Validity Period</h3>
-                                        <div className="space-y-6">
+                                    <div className="bg-white border border-gray-100 rounded-[40px] p-10 shadow-sm relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/30 rounded-full -mr-16 -mt-16 blur-3xl" />
+                                        <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-8 border-b border-gray-50 pb-4">License Validity</h3>
+                                        <div className="space-y-8">
                                             <div className="flex items-start gap-4">
-                                                <Calendar className="w-4 h-4 text-indigo-500 mt-0.5" />
+                                                <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+                                                    <Calendar className="w-4 h-4 text-indigo-500" />
+                                                </div>
                                                 <div>
-                                                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Effective Date</p>
-                                                    <p className="text-sm font-bold text-gray-900">{catalog.receipt.license_start_date ? new Date(catalog.receipt.license_start_date).toLocaleDateString() : "Immediate"}</p>
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-1">Activation Date</p>
+                                                    <p className="text-base font-black text-gray-900 leading-none">
+                                                        {catalog.receipt.license_start_date
+                                                            ? new Date(catalog.receipt.license_start_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                                                            : new Date(catalog.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                                    </p>
+                                                    <p className="text-[10px] text-gray-400 font-medium mt-1">Full rights active</p>
                                                 </div>
                                             </div>
                                             <div className="flex items-start gap-4">
-                                                <Calendar className="w-4 h-4 text-red-400 mt-0.5" />
+                                                <div className="w-8 h-8 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
+                                                    <Calendar className="w-4 h-4 text-orange-500" />
+                                                </div>
                                                 <div>
-                                                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Expiration Date</p>
-                                                    <p className="text-sm font-bold text-gray-900">{catalog.receipt.license_end_date ? new Date(catalog.receipt.license_end_date).toLocaleDateString() : "Perpetual"}</p>
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-orange-400 mb-1">Term Expiry</p>
+                                                    <p className="text-base font-black text-gray-900 leading-none">
+                                                        {catalog.receipt.license_end_date
+                                                            ? new Date(catalog.receipt.license_end_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                                                            : "Permanent License"}
+                                                    </p>
+                                                    <p className="text-[10px] text-gray-400 font-medium mt-1">
+                                                        {catalog.receipt.license_end_date ? "End of usage rights" : "Lifetime digital rights"}
+                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
