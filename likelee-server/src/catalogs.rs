@@ -560,15 +560,71 @@ pub async fn get_public_catalog(
             .execute()
             .await;
 
-        let assets: Vec<serde_json::Value> = if let Ok(resp) = assets_resp {
+        let assets_raw: Vec<serde_json::Value> = if let Ok(resp) = assets_resp {
             if let Ok(text) = resp.text().await {
                 serde_json::from_str(&text).unwrap_or_default()
-            } else {
-                Vec::new()
+            } else { Vec::new() }
+        } else { Vec::new() };
+
+        // Enrich each asset_id with its public_url (reference_images or agency_files)
+        let mut assets: Vec<serde_json::Value> = Vec::new();
+        for mut asset in assets_raw {
+            let asset_id = asset.get("asset_id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            if !asset_id.is_empty() {
+                // Try reference_images first
+                let ri_rows: Vec<serde_json::Value> = if let Ok(r) = state.pg
+                    .from("reference_images")
+                    .auth(state.supabase_service_key.clone())
+                    .select("public_url,storage_bucket,storage_path")
+                    .eq("id", &asset_id)
+                    .limit(1)
+                    .execute().await {
+                    r.text().await.ok().and_then(|t| serde_json::from_str(&t).ok()).unwrap_or_default()
+                } else { vec![] };
+
+                if let Some(ri) = ri_rows.into_iter().next() {
+                    let pu = ri.get("public_url").and_then(|v| v.as_str()).unwrap_or("");
+                    if !pu.is_empty() {
+                        if let Some(obj) = asset.as_object_mut() { obj.insert("url".into(), json!(pu)); }
+                    } else {
+                        let bucket = ri.get("storage_bucket").and_then(|v| v.as_str()).unwrap_or("");
+                        let path  = ri.get("storage_path").and_then(|v| v.as_str()).unwrap_or("");
+                        if !bucket.is_empty() {
+                            if let Some(su) = generate_signed_url(&state, bucket, path).await {
+                                if let Some(obj) = asset.as_object_mut() { obj.insert("url".into(), json!(su)); }
+                            }
+                        }
+                    }
+                } else {
+                    // Try agency_files
+                    let af_rows: Vec<serde_json::Value> = if let Ok(r) = state.pg
+                        .from("agency_files")
+                        .auth(state.supabase_service_key.clone())
+                        .select("public_url,storage_bucket,storage_path")
+                        .eq("id", &asset_id)
+                        .limit(1)
+                        .execute().await {
+                        r.text().await.ok().and_then(|t| serde_json::from_str(&t).ok()).unwrap_or_default()
+                    } else { vec![] };
+
+                    if let Some(af) = af_rows.into_iter().next() {
+                        let pu = af.get("public_url").and_then(|v| v.as_str()).unwrap_or("");
+                        if !pu.is_empty() {
+                            if let Some(obj) = asset.as_object_mut() { obj.insert("url".into(), json!(pu)); }
+                        } else {
+                            let bucket = af.get("storage_bucket").and_then(|v| v.as_str()).unwrap_or("");
+                            let path  = af.get("storage_path").and_then(|v| v.as_str()).unwrap_or("");
+                            if !bucket.is_empty() {
+                                if let Some(su) = generate_signed_url(&state, bucket, path).await {
+                                    if let Some(obj) = asset.as_object_mut() { obj.insert("url".into(), json!(su)); }
+                                }
+                            }
+                        }
+                    }
+                }
             }
-        } else {
-            Vec::new()
-        };
+            assets.push(asset);
+        }
 
         // Fetch voice recordings
         let recs_resp = state
@@ -583,12 +639,8 @@ pub async fn get_public_catalog(
         let recordings_raw: Vec<serde_json::Value> = if let Ok(resp) = recs_resp {
             if let Ok(text) = resp.text().await {
                 serde_json::from_str(&text).unwrap_or_default()
-            } else {
-                Vec::new()
-            }
-        } else {
-            Vec::new()
-        };
+            } else { Vec::new() }
+        } else { Vec::new() };
 
         // Enrich recordings with their storage paths so the client can request signed URLs
         let mut recordings: Vec<serde_json::Value> = Vec::new();
@@ -611,27 +663,25 @@ pub async fn get_public_catalog(
             let vr_rows: Vec<serde_json::Value> = if let Ok(resp) = vr_resp {
                 if let Ok(text) = resp.text().await {
                     serde_json::from_str(&text).unwrap_or_default()
-                } else {
-                    Vec::new()
-                }
-            } else {
-                Vec::new()
-            };
+                } else { Vec::new() }
+            } else { Vec::new() };
 
             if let Some(vr) = vr_rows.into_iter().next() {
-                let accessible = vr
-                    .get("accessible")
-                    .and_then(|v| v.as_bool())
-                    .unwrap_or(true);
-                if !accessible {
-                    continue;
-                }
+                let accessible = vr.get("accessible").and_then(|v| v.as_bool()).unwrap_or(true);
+                if !accessible { continue; }
                 let mut merged = rec.clone();
+                let bucket = vr.get("storage_bucket").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                let path   = vr.get("storage_path").and_then(|v| v.as_str()).unwrap_or("").to_string();
                 if let Some(obj) = merged.as_object_mut() {
                     obj.insert("storage_bucket".into(), vr["storage_bucket"].clone());
-                    obj.insert("storage_path".into(), vr["storage_path"].clone());
-                    obj.insert("mime_type".into(), vr["mime_type"].clone());
+                    obj.insert("storage_path".into(),   vr["storage_path"].clone());
+                    obj.insert("mime_type".into(),       vr["mime_type"].clone());
                     obj.entry("emotion_tag").or_insert_with(|| vr["emotion_tag"].clone());
+                    if !bucket.is_empty() && !path.is_empty() {
+                        if let Some(su) = generate_signed_url(&state, &bucket, &path).await {
+                            obj.insert("signed_url".into(), json!(su));
+                        }
+                    }
                 }
                 recordings.push(merged);
             }
@@ -736,4 +786,25 @@ pub async fn get_public_catalog(
         "items": enriched_items,
         "receipt": receipt,
     })))
+}
+
+// Helper: generate a 24-hour signed URL for a private storage object
+async fn generate_signed_url(state: &crate::config::AppState, bucket: &str, path: &str) -> Option<String> {
+    let url = format!("{}/storage/v1/object/sign/{}/{}", state.supabase_url, bucket, path);
+    let body = serde_json::json!({ "expiresIn": 86400 }); // 24h
+    let http = reqwest::Client::new();
+    let resp = http
+        .post(&url)
+        .header("Authorization", format!("Bearer {}", state.supabase_service_key))
+        .header("apikey", state.supabase_service_key.clone())
+        .json(&body)
+        .send()
+        .await
+        .ok()?;
+    if !resp.status().is_success() {
+        return None;
+    }
+    let j: serde_json::Value = resp.json().await.ok()?;
+    let signed_path = j.get("signedURL").and_then(|v| v.as_str())?;
+    Some(format!("{}/storage/v1{}", state.supabase_url, signed_path))
 }
