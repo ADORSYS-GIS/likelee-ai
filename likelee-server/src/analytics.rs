@@ -366,7 +366,24 @@ pub async fn get_analytics_dashboard(
     let campaigns_data: Vec<serde_json::Value> =
         serde_json::from_str(&campaigns_text).unwrap_or(vec![]);
 
-    // 3. BULK FETCH TALENTS
+    // 3. BULK FETCH BOOKINGS (to validate payments mapping)
+    let bookings_resp = state
+        .pg
+        .from("bookings")
+        .select("id")
+        .eq("agency_user_id", agency_id)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let bookings_text = bookings_resp
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
+    let bookings_data: Vec<serde_json::Value> =
+        serde_json::from_str(&bookings_text).unwrap_or(vec![]);
+
+    // 4. BULK FETCH TALENTS
     let talents_resp = state
         .pg
         .from("agency_users")
@@ -385,13 +402,31 @@ pub async fn get_analytics_dashboard(
         serde_json::from_str(&talents_text).unwrap_or(vec![]);
 
     // --- AGGREGATION IN MEMORY ---
+    let mut valid_campaigns = HashSet::new();
+    for c in &campaigns_data {
+        if let Some(id) = c.get("id").and_then(|v| v.as_str()) {
+            valid_campaigns.insert(id.to_string());
+        }
+    }
+
+    let mut valid_bookings = HashSet::new();
+    for b in &bookings_data {
+        if let Some(id) = b.get("id").and_then(|v| v.as_str()) {
+            valid_bookings.insert(id.to_string());
+        }
+    }
 
     // A. OVERVIEW & GROWTH (Payments in last 30d vs prev 30d)
     let total_earnings_cents: i64 = payments_data
         .iter()
         .filter(|p| {
+            let p_cid = p.get("campaign_id").and_then(|v| v.as_str()).unwrap_or("");
+            let p_bid = p.get("booking_id").and_then(|v| v.as_str()).unwrap_or("");
+            let is_valid = (!p_cid.is_empty() && valid_campaigns.contains(p_cid))
+                || (!p_bid.is_empty() && valid_bookings.contains(p_bid));
+
             let paid_at = p.get("paid_at").and_then(|v| v.as_str()).unwrap_or("");
-            paid_at >= thirty_days_ago.as_str()
+            is_valid && paid_at >= thirty_days_ago.as_str()
         })
         .filter_map(|p| p.get("gross_cents").and_then(|v| v.as_i64()))
         .sum();
@@ -399,8 +434,13 @@ pub async fn get_analytics_dashboard(
     let prev_earnings_cents: i64 = payments_data
         .iter()
         .filter(|p| {
+            let p_cid = p.get("campaign_id").and_then(|v| v.as_str()).unwrap_or("");
+            let p_bid = p.get("booking_id").and_then(|v| v.as_str()).unwrap_or("");
+            let is_valid = (!p_cid.is_empty() && valid_campaigns.contains(p_cid))
+                || (!p_bid.is_empty() && valid_bookings.contains(p_bid));
+
             let paid_at = p.get("paid_at").and_then(|v| v.as_str()).unwrap_or("");
-            paid_at >= sixty_days_ago.as_str() && paid_at < thirty_days_ago.as_str()
+            is_valid && paid_at >= sixty_days_ago.as_str() && paid_at < thirty_days_ago.as_str()
         })
         .filter_map(|p| p.get("gross_cents").and_then(|v| v.as_i64()))
         .sum();
@@ -886,6 +926,23 @@ pub async fn get_clients_campaigns_analytics(
     let bookings_data: Vec<serde_json::Value> =
         serde_json::from_str(&bookings_text).unwrap_or(vec![]);
 
+    // Fetch all successful payments for this agency
+    let payments_resp = state
+        .pg
+        .from("payments")
+        .select("booking_id, campaign_id, gross_cents")
+        .eq("agency_id", agency_id)
+        .eq("status", "succeeded")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let payments_text = payments_resp
+        .text()
+        .await
+        .unwrap_or_else(|_| "[]".to_string());
+    let payments_data: Vec<serde_json::Value> =
+        serde_json::from_str(&payments_text).unwrap_or(vec![]);
+
     let mut client_earnings: HashMap<String, i64> = HashMap::new();
     let mut client_campaigns: HashMap<String, HashSet<String>> = HashMap::new();
     let mut region_earnings: HashMap<String, i64> = HashMap::new();
@@ -898,28 +955,68 @@ pub async fn get_clients_campaigns_analytics(
             .unwrap_or("Unknown")
             .to_string();
 
-        let cents = b.get("rate_cents").and_then(|v| v.as_i64()).unwrap_or(0);
-        *client_earnings.entry(client.clone()).or_insert(0) += cents;
+        let b_id = b.get("id").and_then(|v| v.as_str()).unwrap_or("");
+        let c_id = b.get("campaign_id").and_then(|v| v.as_str()).unwrap_or("");
 
-        if let Some(cid) = b.get("campaign_id").and_then(|v| v.as_str()) {
+        if !c_id.is_empty() {
             client_campaigns
                 .entry(client.clone())
                 .or_default()
-                .insert(cid.to_string());
-        } else if let Some(bid) = b.get("id").and_then(|v| v.as_str()) {
+                .insert(c_id.to_string());
+        } else if !b_id.is_empty() {
             client_campaigns
                 .entry(client.clone())
                 .or_default()
-                .insert(bid.to_string());
+                .insert(b_id.to_string());
         }
 
-        let region = b
-            .get("location")
-            .and_then(|v| v.as_str())
-            .filter(|s| !s.is_empty())
-            .unwrap_or("Unknown")
-            .to_string();
-        *region_earnings.entry(region).or_insert(0) += cents;
+        // Initialize earnings bucket for this client
+        client_earnings.entry(client.clone()).or_insert(0);
+    }
+
+    // Evaluate exact payments for IRL Mode
+    for p in &payments_data {
+        let p_bid = p.get("booking_id").and_then(|v| v.as_str()).unwrap_or("");
+        let p_cid = p.get("campaign_id").and_then(|v| v.as_str()).unwrap_or("");
+        let cents = p.get("gross_cents").and_then(|v| v.as_i64()).unwrap_or(0);
+
+        if cents <= 0 {
+            continue;
+        }
+
+        let mut matched_client = String::new();
+        let mut matched_location = String::new();
+
+        // 1. Try matching with bookings first
+        for b in &bookings_data {
+            let b_id = b.get("id").and_then(|v| v.as_str()).unwrap_or("");
+            let c_id = b.get("campaign_id").and_then(|v| v.as_str()).unwrap_or("");
+
+            if (!p_bid.is_empty() && p_bid == b_id) || (!p_cid.is_empty() && p_cid == c_id) {
+                matched_client = b
+                    .get("client_name")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("Unknown")
+                    .to_string();
+                matched_location = b
+                    .get("location")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("Unknown")
+                    .to_string();
+                break;
+            }
+        }
+
+        if !matched_client.is_empty() {
+            *client_earnings.entry(matched_client).or_insert(0) += cents;
+
+            let loc = if matched_location.is_empty() {
+                "Unknown".to_string()
+            } else {
+                matched_location
+            };
+            *region_earnings.entry(loc).or_insert(0) += cents;
+        }
     }
 
     // Format Earnings by Client (Top 4)
