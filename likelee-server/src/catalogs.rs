@@ -524,10 +524,37 @@ pub async fn get_public_catalog(
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
+    let agency_id = catalog
+        .get("agency_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let licensing_request_id = catalog
         .get("licensing_request_id")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
+
+    // 1b. Fetch agency branding
+    let mut agency_branding = json!({});
+    if !agency_id.is_empty() {
+        let agency_resp = state
+            .pg
+            .from("agencies")
+            .auth(state.supabase_service_key.clone())
+            .select("agency_name,logo_url")
+            .eq("id", agency_id)
+            .limit(1)
+            .execute()
+            .await;
+
+        if let Ok(resp) = agency_resp {
+            if let Ok(text) = resp.text().await {
+                let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+                if let Some(agency) = rows.into_iter().next() {
+                    agency_branding = agency;
+                }
+            }
+        }
+    }
 
     // 2. Fetch all items for this catalog
     let items_resp = state
@@ -687,13 +714,13 @@ pub async fn get_public_catalog(
             }
         }
 
-        // Fetch talent display name
-        let talent_name = {
+        // Fetch talent display name + photo
+        let (talent_name, talent_stage_name, talent_photo_url) = {
             let tn_resp = state
                 .pg
                 .from("agency_users")
                 .auth(state.supabase_service_key.clone())
-                .select("full_legal_name,stage_name")
+                .select("full_legal_name,stage_name,profile_photo_url")
                 .eq("id", talent_id)
                 .limit(1)
                 .execute()
@@ -702,26 +729,32 @@ pub async fn get_public_catalog(
             let tn_rows: Vec<serde_json::Value> = if let Ok(resp) = tn_resp {
                 if let Ok(text) = resp.text().await {
                     serde_json::from_str(&text).unwrap_or_default()
-                } else {
-                    Vec::new()
-                }
-            } else {
-                Vec::new()
-            };
+                } else { Vec::new() }
+            } else { Vec::new() };
 
-            tn_rows.first()
+            let row = tn_rows.into_iter().next();
+            let name = row.as_ref()
                 .and_then(|r| {
-                    r.get("full_legal_name")
-                        .or_else(|| r.get("stage_name"))
+                    r.get("stage_name")
+                        .or_else(|| r.get("full_legal_name"))
                         .and_then(|v| v.as_str())
                 })
                 .unwrap_or("Talent")
-                .to_string()
+                .to_string();
+            let stage = row.as_ref()
+                .and_then(|r| r.get("stage_name").and_then(|v| v.as_str()))
+                .map(|s| s.to_string());
+            let photo = row.as_ref()
+                .and_then(|r| r.get("profile_photo_url").and_then(|v| v.as_str()))
+                .map(|s| s.to_string());
+            (name, stage, photo)
         };
 
         enriched_items.push(json!({
             "talent_id": talent_id,
             "talent_name": talent_name,
+            "talent_stage_name": talent_stage_name,
+            "talent_photo_url": talent_photo_url,
             "sort_order": item.get("sort_order"),
             "assets": assets,
             "recordings": recordings,
@@ -785,6 +818,7 @@ pub async fn get_public_catalog(
         "notes": catalog.get("notes"),
         "items": enriched_items,
         "receipt": receipt,
+        "agency": agency_branding,
     })))
 }
 
