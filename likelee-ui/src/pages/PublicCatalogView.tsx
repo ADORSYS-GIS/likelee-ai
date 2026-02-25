@@ -22,6 +22,8 @@ import {
     CreditCard,
     CheckCircle2,
     FastForward,
+    Clock,
+    ShieldCheck,
 } from "lucide-react";
 import { catalogApi } from "@/api/catalogs";
 
@@ -470,35 +472,52 @@ export default function PublicCatalogView() {
 
                                     <div className="bg-white border border-gray-100 rounded-[40px] p-10 shadow-sm relative overflow-hidden">
                                         <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/30 rounded-full -mr-16 -mt-16 blur-3xl" />
-                                        <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-8 border-b border-gray-50 pb-4">License Validity</h3>
+                                        <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-8 border-b border-gray-50 pb-4">License & Access Terms</h3>
                                         <div className="space-y-8">
+                                            {/* 1. Legal Activation */}
                                             <div className="flex items-start gap-4">
-                                                <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
-                                                    <Calendar className="w-4 h-4 text-indigo-500" />
+                                                <div className="w-8 h-8 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
+                                                    <CheckCircle2 className="w-4 h-4 text-green-500" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-1">Activation Date</p>
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-green-600 mb-1">Rights Activation</p>
                                                     <p className="text-base font-black text-gray-900 leading-none">
                                                         {catalog.receipt.license_start_date
                                                             ? new Date(catalog.receipt.license_start_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
                                                             : new Date(catalog.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                                                     </p>
-                                                    <p className="text-[10px] text-gray-400 font-medium mt-1">Full rights active</p>
+                                                    <p className="text-[10px] text-gray-400 font-medium mt-1">Legal usage rights active</p>
                                                 </div>
                                             </div>
+
+                                            {/* 2. Link Distribution Deadline */}
                                             <div className="flex items-start gap-4">
                                                 <div className="w-8 h-8 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
-                                                    <Calendar className="w-4 h-4 text-orange-500" />
+                                                    <Clock className="w-4 h-4 text-orange-500" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-[10px] font-black uppercase tracking-widest text-orange-400 mb-1">Term Expiry</p>
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-orange-500 mb-1">Distribution Access</p>
+                                                    <p className="text-base font-black text-gray-900 leading-none">
+                                                        {displayExpiry || "N/A"}
+                                                    </p>
+                                                    <p className="text-[10px] text-gray-400 font-medium mt-1">Final date to access this link</p>
+                                                </div>
+                                            </div>
+
+                                            {/* 3. Legal Term */}
+                                            <div className="flex items-start gap-4">
+                                                <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+                                                    <ShieldCheck className="w-4 h-4 text-indigo-500" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-1">Legal Usage Term</p>
                                                     <p className="text-base font-black text-gray-900 leading-none">
                                                         {catalog.receipt.license_end_date
-                                                            ? new Date(catalog.receipt.license_end_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-                                                            : "Permanent License"}
+                                                            ? `Until ${new Date(catalog.receipt.license_end_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`
+                                                            : "Perpetual Rights"}
                                                     </p>
                                                     <p className="text-[10px] text-gray-400 font-medium mt-1">
-                                                        {catalog.receipt.license_end_date ? "End of usage rights" : "Lifetime digital rights"}
+                                                        {catalog.receipt.license_end_date ? "End of authorized usage" : "Permanent ownership of rights"}
                                                     </p>
                                                 </div>
                                             </div>
