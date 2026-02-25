@@ -238,6 +238,11 @@ export default function PublicCatalogView() {
                                 Prepared for <span className="text-gray-900 font-bold">{catalog.client_name}</span>
                             </p>
                         )}
+                        {catalog.notes && (
+                            <p className="mt-6 text-lg text-gray-400 font-medium leading-relaxed max-w-3xl">
+                                {catalog.notes}
+                            </p>
+                        )}
                     </div>
 
                     {/* Catalog Overview Stats */}
