@@ -88,8 +88,7 @@ export default function Layout({ children, currentPageName }) {
     // Add meta tags for SEO
     const updateMetaTags = () => {
       // Set title
-      document.title =
-        "Likelee - Fueling the Income Ecosystem for Creators in the AI Era";
+      document.title = "The Verified Talent Ecosystem for AI-powered Media.";
 
       // Update or create meta description
       let metaDescription = document.querySelector(
