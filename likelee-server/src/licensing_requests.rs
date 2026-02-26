@@ -127,7 +127,7 @@ pub async fn list_for_agency(
     let resp = state
         .pg
         .from("licensing_requests")
-        .select("id,brand_id,talent_id,status,created_at,campaign_title,client_name,talent_name,usage_scope,regions,deadline,license_start_date,license_end_date,notes,negotiation_reason,submission_id,archived_at,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name,license_fee),agency_users(full_legal_name,stage_name),campaigns(id,payment_amount,agency_percent,talent_percent,agency_earnings_cents,talent_earnings_cents)")
+        .select("id,brand_id,talent_id,status,created_at,campaign_title,client_name,talent_name,usage_scope,regions,deadline,license_start_date,license_end_date,notes,negotiation_reason,submission_id,archived_at,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name,license_fee),agency_users(full_legal_name,stage_name),campaigns(id,payment_amount,agency_earnings_cents,talent_earnings_cents)")
         .eq("agency_id", &user.id)
         .is("archived_at", "null")  // Only show non-archived records
         .order("created_at.desc")
@@ -376,9 +376,22 @@ pub async fn list_for_agency(
         let total_agreed_amount = campaign
             .and_then(|c| c.get("payment_amount"))
             .and_then(value_to_f64);
-        let agency_commission_percent = campaign
-            .and_then(|c| c.get("agency_percent"))
-            .and_then(value_to_f64);
+        let agency_commission_percent = {
+            let agency_cents = campaign
+                .and_then(|c| c.get("agency_earnings_cents"))
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
+            let talent_cents = campaign
+                .and_then(|c| c.get("talent_earnings_cents"))
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
+            let total = agency_cents + talent_cents;
+            if total > 0.0 {
+                Some(((agency_cents / total) * 100.0).clamp(0.0, 100.0))
+            } else {
+                None
+            }
+        };
 
         let agency_amount = campaign
             .and_then(|c| c.get("agency_earnings_cents"))
@@ -764,7 +777,7 @@ pub async fn send_payment_link(
     let lr_resp = state
         .pg
         .from("licensing_requests")
-        .select("id,agency_id,brand_id,talent_id,talent_ids,status,campaign_title,client_name,talent_name,submission_id,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name,license_fee),agency_users(full_legal_name,stage_name,creator_id),campaigns(id,payment_amount,agency_percent,talent_percent,agency_earnings_cents,talent_earnings_cents)")
+        .select("id,agency_id,brand_id,talent_id,talent_ids,status,campaign_title,client_name,talent_name,submission_id,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name,license_fee),agency_users(full_legal_name,stage_name,creator_id),campaigns(id,payment_amount,agency_earnings_cents,talent_earnings_cents)")
         .eq("id", &id)
         .eq("agency_id", &user.id)
         .limit(1)
@@ -1473,14 +1486,16 @@ pub async fn get_pay_split(
     let c_resp = state
         .pg
         .from("campaigns")
-        .select("id,licensing_request_id,payment_amount,agency_percent,talent_percent")
+        .select(
+            "id,licensing_request_id,payment_amount,agency_earnings_cents,talent_earnings_cents",
+        )
         .in_("licensing_request_id", ids)
         .execute()
         .await;
 
     let mut total = 0.0;
-    let mut agency_percent = 0.0;
-    let mut talent_percent = 0.0;
+    let mut agency_percent: Option<f64> = None;
+    let mut talent_percent: Option<f64> = None;
     let mut out_rows: Vec<serde_json::Value> = vec![];
 
     if let Ok(c_resp) = c_resp {
@@ -1492,14 +1507,30 @@ pub async fn get_pay_split(
                 .get("payment_amount")
                 .and_then(|v| v.as_f64())
                 .unwrap_or(0.0);
-            agency_percent = r
-                .get("agency_percent")
-                .and_then(|v| v.as_f64())
-                .unwrap_or(0.0);
-            talent_percent = r
-                .get("talent_percent")
-                .and_then(|v| v.as_f64())
-                .unwrap_or(0.0);
+            if agency_percent.is_none() || talent_percent.is_none() {
+                let agency_cents = r
+                    .get("agency_earnings_cents")
+                    .and_then(|v| {
+                        v.as_f64()
+                            .or_else(|| v.as_i64().map(|i| i as f64))
+                            .or_else(|| v.as_str().and_then(|s| s.parse::<f64>().ok()))
+                    })
+                    .unwrap_or(0.0);
+                let talent_cents = r
+                    .get("talent_earnings_cents")
+                    .and_then(|v| {
+                        v.as_f64()
+                            .or_else(|| v.as_i64().map(|i| i as f64))
+                            .or_else(|| v.as_str().and_then(|s| s.parse::<f64>().ok()))
+                    })
+                    .unwrap_or(0.0);
+                let split_total = agency_cents + talent_cents;
+                if split_total > 0.0 {
+                    let ap = ((agency_cents / split_total) * 100.0).clamp(0.0, 100.0);
+                    agency_percent = Some(ap);
+                    talent_percent = Some(100.0 - ap);
+                }
+            }
 
             let talent_id = reqs
                 .iter()
@@ -1528,217 +1559,16 @@ pub async fn get_pay_split(
 }
 
 pub async fn set_pay_split(
-    State(state): State<AppState>,
+    State(_state): State<AppState>,
     user: AuthUser,
-    Json(payload): Json<PaySplitBody>,
+    Json(_payload): Json<PaySplitBody>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     if user.role != "agency" {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
 
-    if payload.licensing_request_ids.is_empty() {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "No licensing_request_ids".to_string(),
-        ));
-    }
-
-    if payload.total_payment_amount < 0.0 {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "Invalid total_payment_amount".to_string(),
-        ));
-    }
-
-    if payload.agency_percent < 0.0 || payload.agency_percent > 100.0 {
-        return Err((
-            StatusCode::BAD_REQUEST,
-            "Invalid agency_percent".to_string(),
-        ));
-    }
-
-    let talent_percent = 100.0 - payload.agency_percent;
-    let per_talent_payment_amount = if payload.licensing_request_ids.is_empty() {
-        0.0
-    } else {
-        payload.total_payment_amount / payload.licensing_request_ids.len() as f64
-    };
-
-    let ids: Vec<&str> = payload
-        .licensing_request_ids
-        .iter()
-        .map(|s| s.as_str())
-        .collect();
-
-    let lr_resp = state
-        .pg
-        .from("licensing_requests")
-        .select("id,agency_id,brand_id,talent_id,status,created_at")
-        .eq("agency_id", &user.id)
-        .in_("id", ids.clone())
-        .execute()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    if !lr_resp.status().is_success() {
-        let err = lr_resp.text().await.unwrap_or_default();
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
-    }
-
-    let lr_text = lr_resp
-        .text()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let lr_rows: serde_json::Value = serde_json::from_str(&lr_text).unwrap_or(json!([]));
-
-    let mut reqs: Vec<serde_json::Value> = vec![];
-    if let Some(arr) = lr_rows.as_array() {
-        reqs = arr.clone();
-    }
-
-    if reqs.len() != payload.licensing_request_ids.len() {
-        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
-    }
-
-    for r in &reqs {
-        let st = r
-            .get("status")
-            .and_then(|v| v.as_str())
-            .unwrap_or("pending");
-        if st != "approved" && st != "confirmed" {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                "All licensing requests must be approved before setting pay".to_string(),
-            ));
-        }
-    }
-
-    // Find existing campaign rows
-    let c_resp = state
-        .pg
-        .from("campaigns")
-        .select("id,licensing_request_id")
-        .in_("licensing_request_id", ids.clone())
-        .execute()
-        .await;
-
-    let mut campaign_id_by_request_id: HashMap<String, String> = HashMap::new();
-    if let Ok(c_resp) = c_resp {
-        if c_resp.status().is_success() {
-            let c_text = c_resp.text().await.unwrap_or_else(|_| "[]".into());
-            let c_rows: serde_json::Value = serde_json::from_str(&c_text).unwrap_or(json!([]));
-            if let Some(arr) = c_rows.as_array() {
-                for r in arr {
-                    let cid = r.get("id").and_then(|v| v.as_str()).unwrap_or("");
-                    let lrid = r
-                        .get("licensing_request_id")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("");
-                    if !cid.is_empty() && !lrid.is_empty() {
-                        campaign_id_by_request_id.insert(lrid.to_string(), cid.to_string());
-                    }
-                }
-            }
-        }
-    }
-
-    for r in &reqs {
-        let lrid = r.get("id").and_then(|v| v.as_str()).unwrap_or("");
-        if lrid.is_empty() {
-            continue;
-        }
-        let talent_id = r.get("talent_id").and_then(|v| v.as_str()).unwrap_or("");
-        let brand_id = r.get("brand_id").and_then(|v| v.as_str()).unwrap_or("");
-        let created_at = r.get("created_at").and_then(|v| v.as_str()).unwrap_or("");
-        let date = created_at.get(0..10).unwrap_or("");
-
-        let gross_cents = (per_talent_payment_amount * 100.0) as i64;
-        let talent_cents = (gross_cents as f64 * (talent_percent / 100.0)) as i64;
-        let agency_cents = gross_cents - talent_cents;
-
-        let mut campaign_row = json!({
-            "agency_id": user.id,
-            "talent_id": talent_id,
-            "brand_id": if brand_id.is_empty() { serde_json::Value::Null } else { json!(brand_id) },
-            "name": "Licensing",
-            "campaign_type": "Endorsement",
-            "date": if date.is_empty() { serde_json::Value::Null } else { json!(date) },
-            "status": "Confirmed",
-            "payment_amount": per_talent_payment_amount,
-            "agency_percent": payload.agency_percent,
-            "talent_percent": talent_percent,
-            "agency_earnings_cents": agency_cents,
-            "talent_earnings_cents": talent_cents,
-            "licensing_request_id": lrid,
-        });
-
-        if let serde_json::Value::Object(ref mut map) = campaign_row {
-            let null_keys: Vec<String> = map
-                .iter()
-                .filter_map(|(k, val)| if val.is_null() { Some(k.clone()) } else { None })
-                .collect();
-            for k in null_keys {
-                map.remove(&k);
-            }
-        }
-
-        let cid = if let Some(existing_cid) = campaign_id_by_request_id.get(lrid).cloned() {
-            let _ = state
-                .pg
-                .from("campaigns")
-                .eq("id", &existing_cid)
-                .update(campaign_row.to_string())
-                .execute()
-                .await;
-            existing_cid
-        } else {
-            let c_resp = state
-                .pg
-                .from("campaigns")
-                .insert(campaign_row.to_string())
-                .execute()
-                .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-            let c_text = c_resp.text().await.unwrap_or_else(|_| "[]".into());
-            let c_rows: serde_json::Value = serde_json::from_str(&c_text).unwrap_or(json!([]));
-            c_rows
-                .get(0)
-                .and_then(|v| v.get("id"))
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string()
-        };
-
-        if !cid.is_empty() {
-            let payment_row = json!({
-                "agency_id": user.id,
-                "talent_id": talent_id,
-                "campaign_id": cid,
-                "licensing_request_id": lrid,
-                "brand_id": if brand_id.is_empty() { serde_json::Value::Null } else { json!(brand_id) },
-                "gross_cents": gross_cents,
-                "talent_earnings_cents": talent_cents,
-                "status": "pending",
-                "currency_code": "USD",
-                "due_date": if date.is_empty() { serde_json::Value::Null } else { json!(date) },
-            });
-
-            let _ = state
-                .pg
-                .from("payments")
-                .upsert(payment_row.to_string())
-                .execute()
-                .await;
-        }
-    }
-
-    let ids_joined = payload.licensing_request_ids.join(",");
-    get_pay_split(
-        State(state),
-        user,
-        Query(PaySplitQuery {
-            licensing_request_ids: ids_joined,
-        }),
-    )
-    .await
+    Err((
+        StatusCode::BAD_REQUEST,
+        "Pay split is no longer configurable on campaigns".to_string(),
+    ))
 }

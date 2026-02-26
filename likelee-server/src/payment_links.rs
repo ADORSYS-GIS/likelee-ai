@@ -135,7 +135,7 @@ pub async fn generate_payment_link(
     let lr_resp = state
         .pg
         .from("licensing_requests")
-        .select("id,agency_id,brand_id,talent_id,status,campaign_title,client_name,talent_name,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name),campaigns(id,payment_amount,agency_percent,talent_percent,agency_earnings_cents,talent_earnings_cents)")
+        .select("id,agency_id,brand_id,talent_id,status,campaign_title,client_name,talent_name,brands(email,company_name),license_submissions!licensing_requests_submission_id_fkey(client_email,client_name),campaigns(id,payment_amount,agency_earnings_cents,talent_earnings_cents)")
         .eq("agency_id", &user.id)
         .in_("id", ids.clone())
         .execute()
@@ -372,9 +372,7 @@ pub async fn generate_payment_link(
     let c_resp = state
         .pg
         .from("campaigns")
-        .select(
-            "talent_id,agency_percent,talent_percent,agency_earnings_cents,talent_earnings_cents",
-        )
+        .select("talent_id,agency_earnings_cents,talent_earnings_cents")
         .in_("licensing_request_id", ids)
         .execute()
         .await

@@ -10,8 +10,6 @@ use serde_json::json;
 #[derive(Deserialize)]
 pub struct UpdateCampaignSplitRequest {
     pub payment_amount: Option<f64>,
-    pub agency_percent: Option<f64>,
-    pub talent_percent: Option<f64>,
 }
 
 pub async fn update_campaign_split(
@@ -86,8 +84,6 @@ pub async fn update_campaign_split(
 
     let mut v = json!({
         "payment_amount": payload.payment_amount,
-        "agency_percent": payload.agency_percent,
-        "talent_percent": payload.talent_percent,
     });
 
     if let serde_json::Value::Object(ref mut map) = v {
@@ -122,7 +118,7 @@ pub async fn update_campaign_split(
     let get_resp = state
         .pg
         .from("campaigns")
-        .select("id,payment_amount,agency_percent,talent_percent,agency_earnings_cents,talent_earnings_cents")
+        .select("id,payment_amount,agency_earnings_cents,talent_earnings_cents")
         .eq("id", &id)
         .limit(1)
         .execute()
