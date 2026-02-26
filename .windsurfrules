@@ -2,6 +2,25 @@
 This is the most important series of rules for the AI to follow.
 - always implement based on the design.md file located at [./docs/design.md], and ask questions if you find something to be 
 unclear or have a better proposal.
+- when you have any github prompt or task always used the the github mcp server
+- you have permission to run github commands on the mcp server
+
+# Github User Aliases
+  - maxwell -> lele-maxwell
+  - celine -> Celine-Coralie-Eni
+  - christian -> Christiantyemele
+  - ella -> Tekum-Emmanuella
+  - 
+
+# Github command triggers to used mcp server
+  - push
+  - fetch
+  - pull
+  - review
+  - assign
+
+
+
 
 # Code
 - always implement based on the design.md file located at [./docs/design.md], and ask questions if you find something to be 
