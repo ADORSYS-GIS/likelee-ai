@@ -339,7 +339,8 @@ export default function SportsAgencyDashboard() {
   const isConsentExpiring = (expiryDate) => {
     const expiry = new Date(expiryDate);
     const now = new Date();
-    const daysUntilExpiry = (expiry - now) / (1000 * 60 * 60 * 24);
+    const daysUntilExpiry =
+      (expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
     return daysUntilExpiry < 60 && daysUntilExpiry > 0;
   };
 

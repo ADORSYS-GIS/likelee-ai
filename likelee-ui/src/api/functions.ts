@@ -205,7 +205,6 @@ export const getTalentPayoutAccountStatus = () =>
 
 export const getTalentPayoutOnboardingLink = () =>
   base44Client.get(`/api/talent/payouts/onboarding-link`);
-
 export const getTalentPortalSettings = () =>
   base44Client.get(`/api/talent/settings`);
 
@@ -463,20 +462,6 @@ export const updateCampaignSplit = (
 export const getAgencyLicensingRequests = () =>
   base44Client.get(`/agency/licensing-requests`);
 
-export const getAgencyActiveLicenses = (params?: {
-  status?: string;
-  search?: string;
-}) => base44Client.get(`/agency/active-licenses`, { params });
-
-export const getAgencyActiveLicensesStats = () =>
-  base44Client.get(`/agency/active-licenses/stats`);
-
-export const updateAgencyLicensingRequestsStatus = (data: {
-  licensing_request_ids: string[];
-  status: "pending" | "approved" | "rejected" | "negotiating" | "archived";
-  notes?: string;
-}) => base44Client.post(`/agency/licensing-requests/status`, data);
-
 export const getAgencyLicensingRequestsPaySplit = (
   licensing_request_ids: string,
 ) =>
@@ -492,6 +477,20 @@ export const setAgencyLicensingRequestsPaySplit = (data: {
 
 export const sendLicensingRequestPaymentLink = (id: string) =>
   base44Client.post(`/agency/licensing-requests/${id}/send-payment-link`, {});
+
+export const getAgencyActiveLicenses = (params?: {
+  status?: string;
+  search?: string;
+}) => base44Client.get(`/agency/active-licenses`, { params });
+
+export const getAgencyActiveLicensesStats = () =>
+  base44Client.get(`/agency/active-licenses/stats`);
+
+export const updateAgencyLicensingRequestsStatus = (data: {
+  licensing_request_ids: string[];
+  status: "pending" | "approved" | "rejected" | "negotiating" | "archived";
+  notes?: string;
+}) => base44Client.post(`/agency/licensing-requests/status`, data);
 
 // Payment Links (Agency)
 export const generateAgencyPaymentLink = (data: {
@@ -518,7 +517,6 @@ export const getAgencyPaymentLink = (id: string) =>
 
 export const cancelAgencyPaymentLink = (id: string) =>
   base44Client.post(`/agency/payment-links/${id}`, {});
-
 export const createTalentDigitals = (talentId: string, data: any) =>
   base44Client.post(`/agency/talent/${talentId}/digitals`, data);
 

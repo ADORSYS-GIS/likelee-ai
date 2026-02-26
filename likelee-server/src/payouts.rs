@@ -1313,8 +1313,8 @@ pub async fn stripe_webhook(
         );
     }
 
-    // Best-effort: also parse into typed Event to support Connect/payout handling.
-    // If this fails, we still process subscription events from raw JSON.
+    // Best-effort: also parse into typed Event; currently unused but kept for potential
+    // future event handlers without reintroducing signature parsing changes.
     let typed_event: Option<stripe_sdk::Event> = serde_json::from_str(&payload).ok();
     let etype = payload_json
         .get("type")
@@ -1357,7 +1357,18 @@ pub async fn stripe_webhook(
                 .to_string();
 
             if billing_domain == "licensing" {
-                let _ = handle_licensing_checkout_session_completed(&state, &obj).await;
+                let md = obj.get("metadata").cloned().unwrap_or(json!({}));
+                let has_request_ids = md
+                    .get("licensing_request_ids")
+                    .and_then(|v| v.as_str())
+                    .map(|s| !s.trim().is_empty())
+                    .unwrap_or(false);
+                if has_request_ids {
+                    let _ =
+                        handle_licensing_requests_checkout_session_completed(&state, &obj).await;
+                } else {
+                    let _ = handle_licensing_checkout_session_completed(&state, &obj).await;
+                }
                 return (StatusCode::OK, Json(json!({"status":"ok"})));
             }
 
@@ -1591,16 +1602,15 @@ pub async fn stripe_webhook(
                             )
                             .await
                             {
-                                let fee = bt.fee.abs();
-                                update.insert("instant_fee_cents".into(), json!(fee));
+                                update.insert("fee_cents".into(), json!(bt.fee));
                             }
                         }
                     }
                     let _ = state
                         .pg
                         .from("creator_payout_requests")
-                        .eq("stripe_payout_id", pid)
-                        .update(serde_json::Value::Object(update).to_string())
+                        .eq("id", &pid)
+                        .update(json!(update).to_string())
                         .execute()
                         .await;
                 }
@@ -1702,6 +1712,468 @@ async fn handle_licensing_checkout_session_completed(
         &sub,
     )
     .await;
+
+    Ok(())
+}
+
+async fn handle_licensing_requests_checkout_session_completed(
+    state: &AppState,
+    obj: &serde_json::Value,
+) -> Result<(), String> {
+    let session_id = obj
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if session_id.is_empty() {
+        return Ok(());
+    }
+
+    let md = obj.get("metadata").cloned().unwrap_or(json!({}));
+    let agency_id = md
+        .get("agency_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if agency_id.is_empty() {
+        return Ok(());
+    }
+
+    let licensing_request_ids_csv = md
+        .get("licensing_request_ids")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if licensing_request_ids_csv.is_empty() {
+        return Ok(());
+    }
+
+    let ids: Vec<String> = licensing_request_ids_csv
+        .split(',')
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+    if ids.is_empty() {
+        return Ok(());
+    }
+    let id_refs: Vec<&str> = ids.iter().map(|s| s.as_str()).collect();
+
+    // Idempotency: only early-return if this checkout session has already credited ALL licensing requests.
+    let existing_resp = state
+        .pg
+        .from("licensing_payouts")
+        .select("licensing_request_id")
+        .eq("stripe_checkout_session_id", &session_id)
+        .in_("licensing_request_id", id_refs.clone())
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+    if existing_resp.status().is_success() {
+        let existing_text = existing_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let existing_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&existing_text).unwrap_or_default();
+        if existing_rows.len() >= ids.len() {
+            return Ok(());
+        }
+    }
+
+    let gross_total_cents = obj
+        .get("amount_total")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0)
+        .max(0);
+    let currency_code = obj
+        .get("currency")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_uppercase())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "USD".to_string());
+
+    let lr_resp = state
+        .pg
+        .from("licensing_requests")
+        .select("id,talent_id,brand_id")
+        .eq("agency_id", &agency_id)
+        .in_("id", id_refs.clone())
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !lr_resp.status().is_success() {
+        let err = lr_resp.text().await.unwrap_or_default();
+        return Err(err);
+    }
+    let lr_text = lr_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let lr_rows: Vec<serde_json::Value> = serde_json::from_str(&lr_text).unwrap_or_default();
+    if lr_rows.is_empty() {
+        return Ok(());
+    }
+
+    let mut lr_by_id: std::collections::HashMap<String, serde_json::Value> =
+        std::collections::HashMap::new();
+    for r in lr_rows {
+        let lrid = r.get("id").and_then(|v| v.as_str()).unwrap_or("").trim();
+        if lrid.is_empty() {
+            continue;
+        }
+        lr_by_id.insert(lrid.to_string(), r);
+    }
+    if lr_by_id.is_empty() {
+        return Ok(());
+    }
+
+    // Fetch existing payment rows for these licensing requests.
+    let payments_resp = state
+        .pg
+        .from("payments")
+        .select(
+            "id,licensing_request_id,agency_id,talent_id,brand_id,gross_cents,agency_earnings_cents,talent_earnings_cents,commission_rate,currency_code",
+        )
+        .eq("agency_id", &agency_id)
+        .in_("licensing_request_id", id_refs)
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !payments_resp.status().is_success() {
+        let err = payments_resp.text().await.unwrap_or_default();
+        return Err(err);
+    }
+    let payments_text = payments_resp.text().await.unwrap_or_else(|_| "[]".into());
+    let payments_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&payments_text).unwrap_or_default();
+    if payments_rows.is_empty() {
+        return Ok(());
+    }
+
+    let mut payments_by_lr: std::collections::HashMap<String, serde_json::Value> =
+        std::collections::HashMap::new();
+    for p in &payments_rows {
+        let lrid = p
+            .get("licensing_request_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim();
+        if lrid.is_empty() {
+            continue;
+        }
+        payments_by_lr.insert(lrid.to_string(), p.clone());
+    }
+
+    // Pro-rata allocate gross_total_cents across licensing_request_ids.
+    // Weights come from precomputed per-request payments.gross_cents.
+    let mut missing_weights: Vec<String> = vec![];
+    for lrid in &ids {
+        if !payments_by_lr.contains_key(lrid) {
+            missing_weights.push(lrid.clone());
+        }
+    }
+    if !missing_weights.is_empty() {
+        tracing::error!(
+            "Missing payments rows for licensing_request_ids in checkout session {}: {:?}",
+            session_id,
+            missing_weights
+        );
+        return Err("Missing payments rows for some licensing_request_ids".to_string());
+    }
+
+    let mut weights: Vec<(String, i64)> = ids
+        .iter()
+        .map(|lrid| {
+            let w = payments_by_lr
+                .get(lrid)
+                .and_then(|p| p.get("gross_cents"))
+                .and_then(|v| v.as_i64())
+                .unwrap_or(0)
+                .max(0);
+            (lrid.clone(), w)
+        })
+        .collect();
+
+    let mut sum_w: i64 = weights.iter().map(|(_, w)| *w).sum();
+    if sum_w <= 0 {
+        tracing::error!(
+            "All weights are zero for checkout session {}; falling back to equal split",
+            session_id
+        );
+        let n = weights.len().max(1) as i64;
+        for (_, w) in &mut weights {
+            *w = 1;
+        }
+        sum_w = n;
+    }
+
+    let mut alloc_floor_by_lr: std::collections::HashMap<String, i64> =
+        std::collections::HashMap::new();
+    let mut remainders: Vec<(String, i128)> = vec![];
+    let mut floor_sum: i64 = 0;
+
+    for (lrid, w) in &weights {
+        let numer: i128 = (gross_total_cents as i128) * (*w as i128);
+        let denom: i128 = (sum_w as i128).max(1);
+        let floor_alloc: i64 = (numer / denom) as i64;
+        let rem: i128 = numer - denom * (floor_alloc as i128);
+        let floor_alloc = floor_alloc.max(0);
+        alloc_floor_by_lr.insert(lrid.clone(), floor_alloc);
+        remainders.push((lrid.clone(), rem));
+        floor_sum += floor_alloc;
+    }
+
+    let mut leftover: i64 = (gross_total_cents - floor_sum).max(0);
+    remainders
+        .sort_by(|(a_id, a_rem), (b_id, b_rem)| b_rem.cmp(a_rem).then_with(|| a_id.cmp(b_id)));
+
+    for (lrid, _) in remainders {
+        if leftover <= 0 {
+            break;
+        }
+        if let Some(v) = alloc_floor_by_lr.get_mut(&lrid) {
+            *v += 1;
+            leftover -= 1;
+        }
+    }
+
+    let alloc_sum: i64 = alloc_floor_by_lr.values().sum();
+    if alloc_sum != gross_total_cents {
+        tracing::error!(
+            "Allocation invariant violated: alloc_sum={} gross_total_cents={} session_id={}",
+            alloc_sum,
+            gross_total_cents,
+            session_id
+        );
+        return Err("Allocation invariant violated".to_string());
+    }
+
+    let paid_at = chrono::Utc::now().to_rfc3339();
+
+    // Resolve custom commission overrides (talent_commissions).
+    let mut talent_ids: Vec<String> = vec![];
+    for lrid in &ids {
+        let tid = lr_by_id
+            .get(lrid)
+            .and_then(|lr| lr.get("talent_id"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if !tid.is_empty() {
+            talent_ids.push(tid);
+        }
+    }
+    talent_ids.sort();
+    talent_ids.dedup();
+    let talent_id_refs: Vec<&str> = talent_ids.iter().map(|s| s.as_str()).collect();
+
+    let comm_resp = state
+        .pg
+        .from("talent_commissions")
+        .select("talent_id,commission_rate")
+        .eq("agency_id", &agency_id)
+        .in_("talent_id", talent_id_refs.clone())
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+    let mut custom_by_talent: std::collections::HashMap<String, f64> =
+        std::collections::HashMap::new();
+    if comm_resp.status().is_success() {
+        let comm_text = comm_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let comm_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&comm_text).unwrap_or_default();
+        for r in comm_rows {
+            let tid = r
+                .get("talent_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim();
+            if tid.is_empty() {
+                continue;
+            }
+            let _old_custom_rate = r.get("commission_rate").and_then(|v| v.as_f64());
+            if let Some(rate) = r.get("commission_rate").and_then(|v| v.as_f64()) {
+                custom_by_talent.insert(tid.to_string(), rate.clamp(0.0, 100.0));
+            }
+        }
+    }
+
+    let (resp_agency, resp_talent_tiers) = tokio::try_join!(
+        async {
+            state
+                .pg
+                .from("agencies")
+                .select("performance_commission_config")
+                .eq("id", &agency_id)
+                .limit(1)
+                .execute()
+                .await
+                .map_err(|e| e.to_string())
+        },
+        async {
+            state
+                .pg
+                .from("agency_users")
+                .select("id,performance_tier_name")
+                .eq("agency_id", &agency_id)
+                .in_("id", talent_id_refs.clone())
+                .execute()
+                .await
+                .map_err(|e| e.to_string())
+        }
+    )?;
+
+    let agency_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&resp_agency.text().await.unwrap_or_default()).unwrap_or_default();
+    let commission_cfg = agency_rows
+        .first()
+        .and_then(|r| r.get("performance_commission_config"))
+        .and_then(|v| v.as_object());
+
+    let tier_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&resp_talent_tiers.text().await.unwrap_or_default())
+            .unwrap_or_default();
+    let mut tier_name_by_talent: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+    for row in tier_rows {
+        let tid = row
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if tid.is_empty() {
+            continue;
+        }
+        let tier_name = row
+            .get("performance_tier_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Inactive")
+            .trim()
+            .to_string();
+        tier_name_by_talent.insert(tid, tier_name);
+    }
+
+    let mut default_rate_by_talent: std::collections::HashMap<String, f64> =
+        std::collections::HashMap::new();
+    for tid in &talent_ids {
+        let tier_name = tier_name_by_talent
+            .get(tid)
+            .map(String::as_str)
+            .unwrap_or("Inactive");
+        let rate = commission_cfg
+            .and_then(|cfg| cfg.get(tier_name))
+            .and_then(|tier_cfg| tier_cfg.get("commission_rate"))
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0);
+        default_rate_by_talent.insert(tid.clone(), rate.clamp(0.0, 100.0));
+    }
+
+    let mut computed_payout_rows: Vec<serde_json::Value> = vec![];
+    let mut computed_payment_ids: Vec<String> = vec![];
+
+    for lrid in &ids {
+        let lr = match lr_by_id.get(lrid) {
+            Some(v) => v,
+            None => continue,
+        };
+        let p = match payments_by_lr.get(lrid) {
+            Some(v) => v,
+            None => continue,
+        };
+
+        let payment_id = p
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if payment_id.is_empty() {
+            continue;
+        }
+
+        let talent_id = lr
+            .get("talent_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if talent_id.is_empty() {
+            continue;
+        }
+
+        let gross_cents = alloc_floor_by_lr.get(lrid).copied().unwrap_or(0).max(0);
+        let effective_rate = custom_by_talent
+            .get(&talent_id)
+            .copied()
+            .unwrap_or_else(|| {
+                default_rate_by_talent
+                    .get(&talent_id)
+                    .copied()
+                    .unwrap_or(0.0)
+            })
+            .clamp(0.0, 100.0);
+
+        let agency_earnings_cents =
+            ((gross_cents as f64) * (effective_rate / 100.0)).round() as i64;
+        let agency_earnings_cents = agency_earnings_cents.max(0).min(gross_cents);
+        let talent_earnings_cents = (gross_cents - agency_earnings_cents).max(0);
+
+        let update_body = json!({
+            "gross_cents": gross_cents,
+            "agency_earnings_cents": agency_earnings_cents,
+            "talent_earnings_cents": talent_earnings_cents,
+            "commission_rate": effective_rate,
+            "currency_code": currency_code,
+            "paid_at": paid_at,
+            "status": "succeeded"
+        });
+
+        let _ = state
+            .pg
+            .from("payments")
+            .eq("id", &payment_id)
+            .update(update_body.to_string())
+            .execute()
+            .await;
+
+        computed_payment_ids.push(payment_id);
+
+        let mut row = serde_json::Map::new();
+        row.insert("licensing_request_id".into(), json!(lrid));
+        row.insert("agency_id".into(), json!(agency_id));
+        row.insert("talent_id".into(), json!(talent_id));
+        row.insert("amount_cents".into(), json!(agency_earnings_cents));
+        row.insert("currency".into(), json!(currency_code));
+        row.insert("paid_at".into(), json!(paid_at));
+        row.insert("stripe_checkout_session_id".into(), json!(session_id));
+        row.insert("commission_rate".into(), json!(effective_rate));
+        computed_payout_rows.push(serde_json::Value::Object(row));
+    }
+
+    computed_payment_ids.sort();
+    computed_payment_ids.dedup();
+
+    // Insert licensing_payouts rows (agency share) so the DB trigger credits agency_balances.
+    // Best-effort: insert each row; unique index + stripe_checkout_session_id makes it idempotent.
+    for row in computed_payout_rows {
+        let _ = state
+            .pg
+            .from("licensing_payouts")
+            .insert(row.to_string())
+            .execute()
+            .await;
+    }
+
+    // Mark related payments as succeeded.
+    let payment_ids: Vec<&str> = computed_payment_ids.iter().map(|s| s.as_str()).collect();
+    if !payment_ids.is_empty() {
+        let _ = state
+            .pg
+            .from("payments")
+            .in_("id", payment_ids)
+            .update(json!({"status":"succeeded"}).to_string())
+            .execute()
+            .await;
+    }
 
     Ok(())
 }
@@ -1849,6 +2321,11 @@ async fn handle_payment_link_checkout_completed(
         .unwrap_or("USD")
         .to_string();
     let talent_splits = pl.get("talent_splits").cloned().unwrap_or(json!([]));
+    let effective_commission_rate = if net_amount_cents > 0 {
+        ((agency_amount_cents as f64 / net_amount_cents as f64) * 100.0).clamp(0.0, 100.0)
+    } else {
+        0.0
+    };
 
     // Verify payment amount matches
     let pl_total = pl
@@ -1892,6 +2369,7 @@ async fn handle_payment_link_checkout_completed(
         "currency": currency,
         "payment_link_id": payment_link_id,
         "stripe_payment_intent_id": payment_intent_id,
+        "commission_rate": effective_commission_rate,
         "paid_at": chrono::Utc::now().to_rfc3339(),
     });
 
@@ -1901,14 +2379,14 @@ async fn handle_payment_link_checkout_completed(
         .insert(payout_record.to_string())
         .execute()
         .await;
-
     // Update payments table status
-    for lr_id in &lr_ids {
-        let payment_update = json!({
-            "status": "paid",
-            "paid_at": chrono::Utc::now().to_rfc3339(),
-        });
+    let payment_update = json!({
+        "status": "paid",
+        "paid_at": chrono::Utc::now().to_rfc3339(),
+        "stripe_payment_intent_id": payment_intent_id,
+    });
 
+    for lr_id in &lr_ids {
         let _ = state
             .pg
             .from("payments")
@@ -2012,7 +2490,6 @@ async fn handle_payment_link_checkout_completed(
         agency_id = %agency_id,
         "Licensing requests and submissions archived after payment"
     );
-
     Ok(())
 }
 
@@ -2651,10 +3128,6 @@ async fn sync_agency_subscription_from_stripe(
     Ok(())
 }
 
-// ============================================================================
-// Agency Payout Functions
-// ============================================================================
-
 #[derive(Deserialize)]
 pub struct AgencyPayoutRequestPayload {
     pub amount_cents: i64,
@@ -2968,8 +3441,6 @@ pub async fn request_agency_payout(
     }
 
     // Re-fetch the row to return the latest status/failure_reason.
-    // This is especially important for instant payouts, where the Stripe call can fail
-    // after we created the row but before the client refreshes history.
     let payout_request = if let Some(req_id) = created_id.as_deref() {
         match state
             .pg
@@ -3003,7 +3474,7 @@ pub async fn request_agency_payout(
 }
 
 #[allow(clippy::too_many_arguments)]
-async fn execute_agency_payout(
+pub async fn execute_agency_payout(
     state: &AppState,
     payout_request_id: &str,
     _agency_id: &str,

@@ -247,7 +247,9 @@ export default function MarketingAgencyDashboard() {
   const filteredCampaigns = getFilteredCampaigns();
   const filteredGenerations = getFilteredGenerations();
 
-  const generationsByCampaign = filteredGenerations.reduce((acc, gen) => {
+  const generationsByCampaign = filteredGenerations.reduce<
+    Record<string, { campaign_name: string; generations: any[] }>
+  >((acc, gen) => {
     if (!acc[gen.campaign_id]) {
       acc[gen.campaign_id] = {
         campaign_name: gen.campaign_name,

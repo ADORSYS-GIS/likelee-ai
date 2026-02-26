@@ -386,33 +386,13 @@ pub async fn generate_payment_link(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let c_rows: Vec<serde_json::Value> = serde_json::from_str(&c_text).unwrap_or_default();
 
-    // Calculate splits based on campaigns table
-    let mut agency_percent = 20.0f64;
-    let mut talent_percent = 80.0f64;
+    // Build talent list from campaigns rows
     let mut talent_ids: Vec<String> = vec![];
-    let mut talent_earnings_map: HashMap<String, i64> = HashMap::new();
 
     if !c_rows.is_empty() {
-        // Use first row's percentages (they should all be the same for a group)
-        if let Some(first) = c_rows.first() {
-            agency_percent = first
-                .get("agency_percent")
-                .and_then(|v| v.as_f64())
-                .unwrap_or(20.0);
-            talent_percent = first
-                .get("talent_percent")
-                .and_then(|v| v.as_f64())
-                .unwrap_or(80.0);
-        }
-
         for r in &c_rows {
             if let Some(tid) = r.get("talent_id").and_then(|v| v.as_str()) {
                 talent_ids.push(tid.to_string());
-                let talent_cents = r
-                    .get("talent_earnings_cents")
-                    .and_then(|v| v.as_i64())
-                    .unwrap_or(0);
-                talent_earnings_map.insert(tid.to_string(), talent_cents);
             }
         }
     }
@@ -420,9 +400,11 @@ pub async fn generate_payment_link(
     talent_ids.sort();
     talent_ids.dedup();
 
-    // Calculate amounts (splits are based on net after platform fee)
-    let agency_amount_cents = ((net_amount_cents as f64) * (agency_percent / 100.0)).round() as i64;
-    let talent_amount_cents = net_amount_cents - agency_amount_cents;
+    // Calculate payout amounts from tier-weighted gross shares and commission rates.
+    let mut agency_amount_cents: i64 = 0;
+    let mut talent_amount_cents: i64 = net_amount_cents;
+    let mut agency_percent: f64 = 0.0;
+    let mut talent_percent: f64 = 100.0;
 
     // Fetch talent details and Stripe Connect account IDs
     let mut talent_splits: Vec<TalentSplit> = vec![];
@@ -436,7 +418,7 @@ pub async fn generate_payment_link(
             .pg
             .from("agency_users")
             .select("id,creator_id,full_legal_name,stage_name,performance_tier_name")
-            .in_("id", t_refs)
+            .in_("id", t_refs.clone())
             .execute()
             .await;
 
@@ -541,6 +523,69 @@ pub async fn generate_payment_link(
             }
         }
 
+        // Fetch agency tier-default commission config
+        let agency_cfg_resp = state
+            .pg
+            .from("agencies")
+            .select("performance_commission_config")
+            .eq("id", &user.id)
+            .limit(1)
+            .execute()
+            .await;
+        let mut commission_rate_by_tier: HashMap<String, f64> = HashMap::new();
+        if let Ok(agency_cfg_resp) = agency_cfg_resp {
+            if agency_cfg_resp.status().is_success() {
+                let cfg_text = agency_cfg_resp.text().await.unwrap_or_else(|_| "[]".into());
+                let cfg_rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&cfg_text).unwrap_or_default();
+                if let Some(cfg) = cfg_rows
+                    .first()
+                    .and_then(|r| r.get("performance_commission_config"))
+                    .and_then(|v| v.as_object())
+                {
+                    for (tier_name, tier_cfg) in cfg {
+                        let rate = tier_cfg
+                            .get("commission_rate")
+                            .and_then(|v| v.as_f64())
+                            .unwrap_or(0.0)
+                            .clamp(0.0, 100.0);
+                        commission_rate_by_tier.insert(tier_name.clone(), rate);
+                    }
+                }
+            }
+        }
+
+        // Fetch talent custom commission overrides
+        let mut custom_rate_by_talent: HashMap<String, f64> = HashMap::new();
+        if !t_refs.is_empty() {
+            let custom_resp = state
+                .pg
+                .from("talent_commissions")
+                .select("talent_id,commission_rate")
+                .eq("agency_id", &user.id)
+                .in_("talent_id", t_refs.clone())
+                .execute()
+                .await;
+            if let Ok(custom_resp) = custom_resp {
+                if custom_resp.status().is_success() {
+                    let custom_text = custom_resp.text().await.unwrap_or_else(|_| "[]".into());
+                    let custom_rows: Vec<serde_json::Value> =
+                        serde_json::from_str(&custom_text).unwrap_or_default();
+                    for r in &custom_rows {
+                        let tid = r.get("talent_id").and_then(|v| v.as_str()).unwrap_or("");
+                        let rate = r
+                            .get("commission_rate")
+                            .and_then(|v| v.as_f64())
+                            .unwrap_or(0.0)
+                            .clamp(0.0, 100.0);
+                        if !tid.is_empty() {
+                            custom_rate_by_talent.insert(tid.to_string(), rate);
+                        }
+                    }
+                }
+            }
+        }
+
         // Check that all talents have Stripe Connect accounts
         let mut missing_stripe: Vec<String> = vec![];
         for (talent_id, creator_id) in &talent_creator_map {
@@ -563,8 +608,9 @@ pub async fn generate_payment_link(
             ));
         }
 
-        // Build talent splits weighted by performance tier payout_percent
-        // Each talent gets (their tier payout_percent / total payout_percent of all talents) * talent_amount_cents
+        // Build talent splits:
+        // 1) Allocate gross shares by tier payout_percent (weights)
+        // 2) Apply commission (custom per talent, else default by assigned tier)
         let total_payout_weight: f64 = talent_ids
             .iter()
             .map(|tid| {
@@ -579,7 +625,9 @@ pub async fn generate_payment_link(
             })
             .sum::<f64>();
 
-        let mut distributed_cents: i64 = 0;
+        let mut distributed_gross_cents: i64 = 0;
+        let mut total_agency_commission_cents: i64 = 0;
+        let mut total_talent_take_cents: i64 = 0;
 
         for (i, talent_id) in talent_ids.iter().enumerate() {
             let talent_name = talent_name_map
@@ -596,16 +644,33 @@ pub async fn generate_payment_link(
                 .copied()
                 .unwrap_or(25.0);
 
-            // Proportional share; give remainder to last talent to avoid rounding loss
-            let amount_cents = if i == talent_ids.len() - 1 {
-                talent_amount_cents - distributed_cents
+            // Allocate gross share from net pool; give remainder to last talent.
+            let gross_share_cents = if i == talent_ids.len() - 1 {
+                net_amount_cents - distributed_gross_cents
             } else if total_payout_weight > 0.0 {
-                (talent_amount_cents as f64 * (payout_pct / total_payout_weight)).round() as i64
+                (net_amount_cents as f64 * (payout_pct / total_payout_weight)).round() as i64
             } else {
-                (talent_amount_cents as f64 / talent_ids.len() as f64).round() as i64
+                (net_amount_cents as f64 / talent_ids.len() as f64).round() as i64
             };
 
-            distributed_cents += amount_cents;
+            distributed_gross_cents += gross_share_cents;
+
+            let default_rate = commission_rate_by_tier
+                .get(tier_name)
+                .copied()
+                .unwrap_or(0.0);
+            let effective_rate = custom_rate_by_talent
+                .get(talent_id)
+                .copied()
+                .unwrap_or(default_rate)
+                .clamp(0.0, 100.0);
+            let agency_commission_cents =
+                ((gross_share_cents as f64) * (effective_rate / 100.0)).round() as i64;
+            let agency_commission_cents = agency_commission_cents.max(0).min(gross_share_cents);
+            let amount_cents = (gross_share_cents - agency_commission_cents).max(0);
+
+            total_agency_commission_cents += agency_commission_cents;
+            total_talent_take_cents += amount_cents;
 
             talent_splits.push(TalentSplit {
                 talent_id: talent_id.clone(),
@@ -630,15 +695,27 @@ pub async fn generate_payment_link(
                 "stripe_connect_account_id": stripe_account_id,
                 "tier_name": tier_name,
                 "payout_percent": payout_pct,
+                "commission_rate": effective_rate,
+                "gross_share_cents": gross_share_cents,
+                "agency_commission_cents": agency_commission_cents,
             }));
+        }
+
+        // Final totals used by webhook/accounting
+        agency_amount_cents = total_agency_commission_cents.max(0).min(net_amount_cents);
+        talent_amount_cents = total_talent_take_cents.max(0).min(net_amount_cents);
+        if net_amount_cents > 0 {
+            agency_percent =
+                ((agency_amount_cents as f64 / net_amount_cents as f64) * 100.0).clamp(0.0, 100.0);
+            talent_percent = 100.0 - agency_percent;
         }
     }
 
     // Get campaign_id from first licensing request
     let first_lr = lr_rows.first().cloned().unwrap_or(json!({}));
-    let campaign_id = c_rows
-        .first()
-        .and_then(|r| r.get("id").and_then(|v| v.as_str()))
+    let campaign_id = first_lr
+        .get("campaigns")
+        .and_then(|c| c.get("id").and_then(|v| v.as_str()))
         .map(|s| s.to_string());
 
     // Get client info from licensing request
