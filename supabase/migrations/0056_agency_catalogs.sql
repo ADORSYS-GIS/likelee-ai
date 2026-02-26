@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS agency_catalogs (
   client_email           TEXT,
   access_token           TEXT        UNIQUE NOT NULL DEFAULT gen_random_uuid()::TEXT,
   created_at             TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at             TIMESTAMPTZ,
   sent_at                TIMESTAMPTZ,
   notes                  TEXT
 );
