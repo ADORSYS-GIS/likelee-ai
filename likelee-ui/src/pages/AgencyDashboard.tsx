@@ -12,6 +12,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { searchLocations } from "@/components/scouting/map/geocoding";
 import { CreatePackageWizard } from "@/components/packages/CreatePackageWizard";
 import { PackagesView } from "@/components/packages/PackagesView";
+import { CatalogsView } from "@/components/catalogs/CatalogsView";
 import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
 
@@ -97,6 +98,7 @@ import {
   Link as LinkIcon,
   Pencil,
   Play,
+  Library,
 } from "lucide-react";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { Button } from "@/components/ui/button";
@@ -17779,6 +17781,7 @@ export default function AgencyDashboard() {
             },
           },
           { id: "packages", label: "Talent Packages", icon: Package },
+          { id: "catalogs", label: "Catalogs", icon: Library },
           {
             id: "settings",
             label: "Settings",
@@ -17839,6 +17842,7 @@ export default function AgencyDashboard() {
             },
           },
           { id: "packages", label: "Talent Packages", icon: Package },
+          { id: "catalogs", label: "Catalogs", icon: Library },
           {
             id: "settings",
             label: "Settings",
@@ -18523,6 +18527,7 @@ export default function AgencyDashboard() {
           {activeTab === "analytics" &&
             activeSubTab === "Royalties & Payouts" && <RoyaltiesPayoutsView />}
           {activeTab === "packages" && <PackagesView />}
+          {activeTab === "catalogs" && <CatalogsView />}
           {activeTab === "payouts" && <ConnectBankView />}
           {activeTab === "settings" && activeSubTab === "General Settings" && (
             <GeneralSettingsView />

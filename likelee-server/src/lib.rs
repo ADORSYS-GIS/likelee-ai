@@ -13,6 +13,7 @@ pub mod book_outs;
 pub mod bookings;
 pub mod brands;
 pub mod campaigns;
+pub mod catalogs;
 pub mod config;
 pub mod creator_agency_connection;
 pub mod creator_rates;

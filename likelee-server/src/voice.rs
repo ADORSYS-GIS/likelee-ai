@@ -256,10 +256,37 @@ pub async fn signed_url_for_recording(
         .and_then(|v| v.as_str())
         .ok_or((StatusCode::NOT_FOUND, "recording not found".into()))?;
 
-    if owner_id != user.id {
+    let mut has_access = owner_id == user.id;
+
+    if !has_access && user.role == "admin" {
+        has_access = true;
+    }
+
+    if !has_access && user.role == "agency" {
+        // check if this agency manages the owner_id (either as the agency_user ID or their creator_id)
+        let or_cond = format!("id.eq.{},creator_id.eq.{}", owner_id, owner_id);
+        let check_resp = state
+            .pg
+            .from("agency_users")
+            .select("id")
+            .eq("agency_id", &user.id)
+            .or(&or_cond)
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        let text = check_resp.text().await.unwrap_or_default();
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+        if !rows.is_empty() {
+            has_access = true;
+        }
+    }
+
+    if !has_access {
         return Err((
             StatusCode::FORBIDDEN,
-            "You do not have permission to access this recording".to_string(),
+            "You do not have permission to access/sign this recording".to_string(),
         ));
     }
 
@@ -502,25 +529,67 @@ pub async fn create_clone_from_recording(
 pub struct ListVoiceQuery {
     pub user_id: String,
 }
-
 // List persisted recordings for a user and include derived fields
 pub async fn list_voice_recordings(
     State(state): State<AppState>,
+    Query(params): Query<std::collections::HashMap<String, String>>,
     user: AuthUser,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    // We will query recordings where user_id is IN this list
+    let mut target_user_ids = vec![user.id.clone()];
+
+    // If a talent_id is provided and the user is an agency, check management access
+    if let Some(tid) = params.get("talent_id") {
+        if user.role == "agency" {
+            let resp = state
+                .pg
+                .from("agency_users")
+                .select("id, creator_id")
+                .eq("agency_id", &user.id)
+                .eq("id", tid)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+            let text = resp.text().await.unwrap_or_default();
+            let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+
+            if let Some(row) = rows.first() {
+                target_user_ids.clear();
+                // 1. push the agency_users.id itself (where agency uploads might go)
+                target_user_ids.push(tid.clone());
+                // 2. push the creator_id (where talent's own recordings go)
+                if let Some(creator_id) = row.get("creator_id").and_then(|v| v.as_str()) {
+                    if !creator_id.is_empty() {
+                        target_user_ids.push(creator_id.to_string());
+                    }
+                }
+            } else {
+                return Err((
+                    StatusCode::FORBIDDEN,
+                    "Not authorized to access this talent".into(),
+                ));
+            }
+        } else if user.role == "admin" {
+            target_user_ids = vec![tid.clone()];
+        }
+    }
+
+    let t_refs: Vec<&str> = target_user_ids.iter().map(|s| s.as_str()).collect();
+
     let resp = state
         .pg
         .from("voice_recordings")
         .select("*")
-        .eq("user_id", &user.id)
+        .in_("user_id", t_refs)
         .order("created_at.desc")
         .execute()
-        .await
+        .await // Added .await here
         .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
     let txt = resp.text().await.unwrap_or_else(|_| "[]".into());
     let json: serde_json::Value = serde_json::from_str(&txt).unwrap_or(serde_json::json!([]));
 
-    // Enrich with whether a model exists for each recording (best-effort)
     let mut out_arr = Vec::new();
     if let Some(arr) = json.as_array() {
         for row in arr {

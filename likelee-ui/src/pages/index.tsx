@@ -108,6 +108,7 @@ import RoyaltyWallet from "./RoyaltyWallet";
 import PublicProfile from "./PublicProfile";
 import BrandDiscoverFaces from "./BrandDiscoverFaces";
 import { PublicPackageView } from "./PublicPackageView";
+import PublicCatalogView from "./PublicCatalogView";
 
 import {
   BrowserRouter as Router,
@@ -257,6 +258,7 @@ function _getCurrentPage(url) {
 function AppRoutes() {
   const location = useLocation();
   const isPublicPackage = location.pathname.startsWith("/share/package/");
+  const isPublicCatalog = location.pathname.startsWith("/share/catalog/");
 
   const currentPage = _getCurrentPage(location.pathname);
 
@@ -525,6 +527,14 @@ function AppRoutes() {
       <Route path="/Unauthorized" element={<Unauthorized />} />
     </Routes>
   );
+
+  if (isPublicCatalog) {
+    return (
+      <Routes>
+        <Route path="/share/catalog/:token" element={<PublicCatalogView />} />
+      </Routes>
+    );
+  }
 
   if (isPublicPackage) {
     return (
