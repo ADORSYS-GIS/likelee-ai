@@ -171,6 +171,12 @@ pub struct ServerConfig {
     #[envconfig(from = "PAYOUT_ALLOWED_CURRENCIES", default = "USD,EUR")]
     pub payout_allowed_currencies: String,
 
+    #[envconfig(from = "AGENCY_PAYOUT_SCHEDULER_ENABLED", default = "false")]
+    pub agency_payout_scheduler_enabled: bool,
+
+    #[envconfig(from = "AGENCY_PAYOUT_SCHEDULER_INTERVAL_SECS", default = "3600")]
+    pub agency_payout_scheduler_interval_secs: u64,
+
     // DocuSeal API configuration
     #[envconfig(from = "DOCUSEAL_API_KEY", default = "")]
     pub docuseal_api_key: String,
@@ -240,6 +246,9 @@ pub struct AppState {
     pub payout_fee_bps: u32,
     pub payout_currency: String,
     pub payout_allowed_currencies: Vec<String>,
+
+    pub agency_payout_scheduler_enabled: bool,
+    pub agency_payout_scheduler_interval_secs: u64,
 
     pub smtp_host: String,
     pub smtp_port: u16,

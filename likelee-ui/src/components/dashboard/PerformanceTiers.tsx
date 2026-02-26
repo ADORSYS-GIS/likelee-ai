@@ -22,11 +22,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
@@ -107,6 +105,7 @@ interface TierRule {
   tier_level: number;
   min_monthly_earnings: number;
   min_monthly_bookings: number;
+  commission_rate: number;
   description: string | null;
 }
 
@@ -117,6 +116,8 @@ interface TalentPerformance {
   earnings_30d: number;
   bookings_this_month: number;
   tier: TierRule;
+  commission_rate: number;
+  is_custom_rate: boolean;
 }
 
 interface TierGroup {
@@ -128,7 +129,10 @@ interface TierGroup {
 
 interface PerformanceTiersResponse {
   tiers: TierGroup[];
-  config?: Record<string, { min_earnings: number; min_bookings: number }>;
+  config?: Record<
+    string,
+    { min_earnings: number; min_bookings: number; commission_rate?: number }
+  >;
 }
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
@@ -140,13 +144,10 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
 export const PerformanceTiers: React.FC = () => {
   const queryClient = useQueryClient();
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+
   const [configForm, setConfigForm] = useState<
     Record<string, { min_earnings: number; min_bookings: number }>
-  >({
-    Premium: { min_earnings: 5000, min_bookings: 8 },
-    Core: { min_earnings: 2500, min_bookings: 5 },
-    Growth: { min_earnings: 500, min_bookings: 1 },
-  });
+  >({});
 
   const { data, isLoading, error } = useQuery<PerformanceTiersResponse>({
     queryKey: ["performance-tiers"],
@@ -172,7 +173,17 @@ export const PerformanceTiers: React.FC = () => {
 
   useEffect(() => {
     if (data?.config) {
-      setConfigForm(data.config as any);
+      const next: Record<
+        string,
+        { min_earnings: number; min_bookings: number }
+      > = {};
+      for (const tier of ["Premium", "Core", "Growth"]) {
+        next[tier] = {
+          min_earnings: data.config?.[tier]?.min_earnings ?? 0,
+          min_bookings: data.config?.[tier]?.min_bookings ?? 0,
+        };
+      }
+      setConfigForm(next);
     }
   }, [data?.config]);
 
@@ -239,16 +250,20 @@ export const PerformanceTiers: React.FC = () => {
     data?.tiers.reduce((acc, t) => acc + t.talents.length, 0) || 0;
 
   const handleSaveConfig = () => {
-    configMutation.mutate(configForm);
-  };
+    const existing = data?.config || {};
+    const merged: any = { ...existing };
 
-  const handleResetToDefaults = () => {
-    const defaults = {
-      Premium: { min_earnings: 5000, min_bookings: 8 },
-      Core: { min_earnings: 2500, min_bookings: 5 },
-      Growth: { min_earnings: 500, min_bookings: 1 },
-    };
-    setConfigForm(defaults);
+    for (const tier of ["Premium", "Core", "Growth"]) {
+      merged[tier] = {
+        min_earnings:
+          configForm?.[tier]?.min_earnings ?? existing?.[tier]?.min_earnings,
+        min_bookings:
+          configForm?.[tier]?.min_bookings ?? existing?.[tier]?.min_bookings,
+        commission_rate: existing?.[tier]?.commission_rate,
+      };
+    }
+
+    configMutation.mutate(merged);
   };
 
   return (
@@ -349,10 +364,12 @@ export const PerformanceTiers: React.FC = () => {
                 >
                   <cfg.icon className="w-8 h-8 text-white" />
                 </div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 leading-tight">
-                    {cfg.label}
-                  </h2>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <h2 className="text-xl font-bold text-gray-900 leading-tight">
+                      {cfg.label}
+                    </h2>
+                  </div>
                   <p className="text-sm text-gray-500 font-medium">
                     {thresholdStr}
                   </p>
@@ -451,9 +468,11 @@ export const PerformanceTiers: React.FC = () => {
               </div>
 
               <div>
-                <h4 className="text-sm font-bold text-gray-900 mb-6 font-bold">
-                  Talent in This Tier
-                </h4>
+                <div className="flex items-center justify-between mb-6">
+                  <h4 className="text-sm font-bold text-gray-900 font-bold">
+                    Talent in This Tier
+                  </h4>
+                </div>
                 <div className="space-y-3">
                   {group.talents.length > 0 ? (
                     group.talents.map((talent) => (
@@ -563,7 +582,7 @@ export const PerformanceTiers: React.FC = () => {
                 <div className="grid grid-cols-2 gap-8">
                   <div className="space-y-3">
                     <Label className="text-[13px] font-bold text-gray-600 ml-1">
-                      Minimum Monthly Earnings ($)
+                      Min Monthly Earnings ($)
                     </Label>
                     <Input
                       type="number"
@@ -585,7 +604,7 @@ export const PerformanceTiers: React.FC = () => {
                   </div>
                   <div className="space-y-3">
                     <Label className="text-[13px] font-bold text-gray-600 ml-1">
-                      Minimum Bookings/Month
+                      Min Bookings/Month
                     </Label>
                     <Input
                       type="number"
@@ -617,22 +636,15 @@ export const PerformanceTiers: React.FC = () => {
           <div className="px-10 pb-10 pt-4 flex flex-col sm:flex-row gap-4 sm:justify-end flex-shrink-0">
             <Button
               variant="outline"
-              onClick={handleResetToDefaults}
-              className="h-11 px-8 rounded-xl border-gray-200 font-bold text-gray-700 bg-white hover:bg-gray-50 order-2 sm:order-1"
-            >
-              Reset to Defaults
-            </Button>
-            <Button
-              variant="outline"
               onClick={() => setIsConfigModalOpen(false)}
-              className="h-11 px-8 rounded-xl border-gray-200 font-bold text-gray-700 bg-white hover:bg-gray-50 order-3 sm:order-2"
+              className="h-11 px-8 rounded-xl border-gray-200 font-bold text-gray-700 bg-white hover:bg-gray-50 order-2 sm:order-1"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSaveConfig}
               disabled={configMutation.isPending}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 px-10 rounded-xl shadow-lg shadow-indigo-100 transition-all active:scale-95 disabled:opacity-70 order-1 sm:order-3 min-w-[160px] border-none"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 px-10 rounded-xl shadow-lg shadow-indigo-100 transition-all active:scale-95 disabled:opacity-70 order-1 sm:order-2 min-w-[160px] border-none"
             >
               {configMutation.isPending ? "Saving..." : "Save Changes"}
             </Button>

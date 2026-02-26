@@ -33,8 +33,6 @@ import {
   declineTalentLicensingRequest,
   listTalentNotifications,
   markTalentNotificationRead,
-  getTalentPayoutAccountStatus,
-  getTalentPayoutOnboardingLink,
   getTalentPortalSettings,
   updateTalentPortalSettings,
   getLatestTalentTaxDocument,
@@ -228,36 +226,33 @@ export default function TalentPortal({
     enabled: !!talentId,
   });
 
-  const { data: payoutBalance } = useQuery({
-    queryKey: ["talentPayoutBalance"],
-    queryFn: async () => await getTalentPayoutBalance(),
+  const { data: irlEarningsSummary } = useQuery({
+    queryKey: ["talentIrlEarningsSummary"],
+    queryFn: async () => await getTalentIrlEarningsSummary(),
     enabled: !!talentId,
   });
 
-  const withdrawable = React.useMemo(() => {
-    const balances = (payoutBalance as any)?.balances;
-    if (!Array.isArray(balances) || balances.length === 0)
-      return { currency: "USD", available_cents: 0 };
-    const usd = balances.find(
-      (b: any) => String(b.currency || "").toUpperCase() === "USD",
-    );
-    const row = usd || balances[0];
-    return {
-      currency: String(row.currency || "USD").toUpperCase(),
-      available_cents:
-        typeof row.available_cents === "number"
-          ? row.available_cents
-          : Number(row.available_cents || 0),
-    };
-  }, [payoutBalance]);
+  const { data: irlPayments = [] } = useQuery({
+    queryKey: ["talentIrlPayments", effectiveAgencyId || "all"],
+    queryFn: async () => {
+      const rows = await listTalentIrlPayments(
+        effectiveAgencyId
+          ? { agency_id: effectiveAgencyId, limit: 200 }
+          : { limit: 200 },
+      );
+      return Array.isArray(rows) ? rows : [];
+    },
+    enabled: !!talentId,
+  });
 
-  const requestPayoutMutation = useMutation({
+  const createIrlPayoutRequestMutation = useMutation({
     mutationFn: async (payload: { amount_cents: number; currency?: string }) =>
-      await requestTalentPayout(payload),
+      await createTalentIrlPayoutRequest(payload),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["talentPayoutBalance"],
+        queryKey: ["talentIrlEarningsSummary"],
       });
+      await queryClient.invalidateQueries({ queryKey: ["talentIrlPayments"] });
     },
   });
 
@@ -313,55 +308,6 @@ export default function TalentPortal({
         title: "Failed to update booking preferences",
         description: msg || "Please try again.",
       });
-    },
-  });
-
-  const { data: irlEarningsSummary } = useQuery({
-    queryKey: ["talentIrlEarningsSummary"],
-    queryFn: async () => await getTalentIrlEarningsSummary(),
-    enabled: !!talentId,
-  });
-
-  const { data: irlPayments = [] } = useQuery({
-    queryKey: ["talentIrlPayments", effectiveAgencyId || "all"],
-    queryFn: async () => {
-      const rows = await listTalentIrlPayments({
-        limit: 50,
-        ...(effectiveAgencyId ? { agency_id: effectiveAgencyId } : {}),
-      });
-      return Array.isArray(rows) ? rows : [];
-    },
-    enabled: !!talentId,
-  });
-
-  const createIrlPayoutRequestMutation = useMutation({
-    mutationFn: async (payload: { amount_cents: number; currency?: string }) =>
-      await createTalentIrlPayoutRequest(payload),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["talentIrlEarningsSummary"],
-      });
-      await queryClient.invalidateQueries({ queryKey: ["talentIrlPayments"] });
-    },
-  });
-
-  const addBookOutMutation = useMutation({
-    mutationFn: async (payload: {
-      start_date: string;
-      end_date: string;
-      reason?: string;
-      notes?: string;
-      notify_agency?: boolean;
-    }) => await createTalentBookOut(payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["talentBookOuts"] });
-    },
-  });
-
-  const deleteBookOutMutation = useMutation({
-    mutationFn: async (id: string) => await deleteTalentBookOut(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["talentBookOuts"] });
     },
   });
 
@@ -908,20 +854,10 @@ export default function TalentPortal({
 
   const [newPortfolioUrl, setNewPortfolioUrl] = React.useState("");
 
-  const { data: payoutAccountStatus } = useQuery({
-    queryKey: ["talentPayoutAccountStatus"],
-    queryFn: async () => await getTalentPayoutAccountStatus(),
-    enabled: !!talentId,
-  });
-
-  const onboardingLinkMutation = useMutation({
-    mutationFn: async () => await getTalentPayoutOnboardingLink(),
-  });
-
   const { data: portalSettings } = useQuery({
     queryKey: ["talentPortalSettings"],
     queryFn: async () => await getTalentPortalSettings(),
-    enabled: !!talentId,
+    enabled: initialized && authenticated,
   });
 
   const currentYear = React.useMemo(() => new Date().getFullYear(), []);
@@ -2229,57 +2165,6 @@ export default function TalentPortal({
 
                     <div className="mt-4 space-y-3">
                       <div className="rounded-xl border border-gray-200 bg-white p-4">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <div className="text-sm font-semibold text-gray-900">
-                              Bank Account
-                            </div>
-                            <div className="text-xs text-gray-600 mt-1">
-                              {(payoutAccountStatus as any)?.bank_last4
-                                ? `•••• •••• •••• ${(payoutAccountStatus as any)?.bank_last4}`
-                                : "Not connected"}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {(payoutAccountStatus as any)?.connected &&
-                            (payoutAccountStatus as any)?.transfers_enabled ? (
-                              <Badge className="bg-green-600 text-white border-0">
-                                Connected
-                              </Badge>
-                            ) : (
-                              <Badge
-                                variant="outline"
-                                className="text-gray-700"
-                              >
-                                Not Connected
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-
-                        <Button
-                          variant="outline"
-                          className="mt-4 w-full h-10"
-                          disabled={onboardingLinkMutation.isPending}
-                          onClick={async () => {
-                            const res =
-                              await onboardingLinkMutation.mutateAsync();
-                            const url = (res as any)?.url;
-                            if (url) window.open(url, "_blank");
-                          }}
-                        >
-                          {onboardingLinkMutation.isPending ? (
-                            <span className="inline-flex items-center gap-2">
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              Processing...
-                            </span>
-                          ) : (
-                            "Update Bank Details"
-                          )}
-                        </Button>
-                      </div>
-
-                      <div className="rounded-xl border border-gray-200 bg-white p-4">
                         <div>
                           <div className="text-sm font-semibold text-gray-900">
                             Tax Documentation
@@ -3515,20 +3400,6 @@ export default function TalentPortal({
                 </Card>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-                <Card className="p-6 rounded-xl shadow-sm">
-                  <div className="text-xs font-medium text-gray-500">
-                    Withdrawable balance
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900 mt-2">
-                    {fmtCents(withdrawable.available_cents)}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    {withdrawable.currency}
-                  </div>
-                </Card>
-              </div>
-
               <Card className="p-6 rounded-xl shadow-sm">
                 <div className="text-sm font-semibold text-gray-900">
                   Earnings by Campaign
@@ -3564,25 +3435,6 @@ export default function TalentPortal({
                   )}
                 </div>
               </Card>
-
-              <button
-                className="w-full h-11 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition-colors disabled:opacity-60 disabled:hover:bg-green-600"
-                disabled={
-                  requestPayoutMutation.isPending ||
-                  !withdrawable.available_cents ||
-                  withdrawable.available_cents <= 0
-                }
-                onClick={() =>
-                  requestPayoutMutation.mutate({
-                    amount_cents: withdrawable.available_cents,
-                    currency: withdrawable.currency,
-                  })
-                }
-              >
-                {requestPayoutMutation.isPending
-                  ? "Requesting…"
-                  : "Request payout"}
-              </button>
 
               <Card className="p-5 rounded-xl shadow-sm border-0 bg-gradient-to-r from-indigo-50 to-blue-50">
                 <div className="flex items-center justify-between gap-4">
@@ -3947,53 +3799,6 @@ export default function TalentPortal({
                 </div>
 
                 <div className="mt-4 space-y-3">
-                  <div className="rounded-xl border border-gray-200 bg-white p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <div className="text-sm font-semibold text-gray-900">
-                          Bank Account
-                        </div>
-                        <div className="text-xs text-gray-600 mt-1">
-                          {(payoutAccountStatus as any)?.bank_last4
-                            ? `•••• •••• •••• ${(payoutAccountStatus as any)?.bank_last4}`
-                            : "Not connected"}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {(payoutAccountStatus as any)?.connected &&
-                        (payoutAccountStatus as any)?.transfers_enabled ? (
-                          <Badge className="bg-green-600 text-white border-0">
-                            Connected
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-gray-700">
-                            Not Connected
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      className="mt-4 w-full h-10"
-                      disabled={onboardingLinkMutation.isPending}
-                      onClick={async () => {
-                        const res = await onboardingLinkMutation.mutateAsync();
-                        const url = (res as any)?.url;
-                        if (url) window.open(url, "_blank");
-                      }}
-                    >
-                      {onboardingLinkMutation.isPending ? (
-                        <span className="inline-flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Processing...
-                        </span>
-                      ) : (
-                        "Update Bank Details"
-                      )}
-                    </Button>
-                  </div>
-
                   <div className="rounded-xl border border-gray-200 bg-white p-4">
                     <div>
                       <div className="text-sm font-semibold text-gray-900">
