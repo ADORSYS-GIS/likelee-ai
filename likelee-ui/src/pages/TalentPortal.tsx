@@ -33,8 +33,6 @@ import {
   declineTalentLicensingRequest,
   listTalentNotifications,
   markTalentNotificationRead,
-  getTalentPayoutAccountStatus,
-  getTalentPayoutOnboardingLink,
   getTalentPortalSettings,
   updateTalentPortalSettings,
   getLatestTalentTaxDocument,
@@ -228,72 +226,6 @@ export default function TalentPortal({
     enabled: !!talentId,
   });
 
-  const { data: payoutBalance } = useQuery({
-    queryKey: ["talentPayoutBalance"],
-    queryFn: async () => await getTalentPayoutBalance(),
-    enabled: !!talentId,
-  });
-
-  const withdrawable = React.useMemo(() => {
-    const balances = (payoutBalance as any)?.balances;
-    if (!Array.isArray(balances) || balances.length === 0)
-      return { currency: "USD", available_cents: 0 };
-    const usd = balances.find(
-      (b: any) => String(b.currency || "").toUpperCase() === "USD",
-    );
-    const row = usd || balances[0];
-    return {
-      currency: String(row.currency || "USD").toUpperCase(),
-      available_cents:
-        typeof row.available_cents === "number"
-          ? row.available_cents
-          : Number(row.available_cents || 0),
-    };
-  }, [payoutBalance]);
-
-  const requestPayoutMutation = useMutation({
-    mutationFn: async (payload: { amount_cents: number; currency?: string }) =>
-      await requestTalentPayout(payload),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["talentPayoutBalance"],
-      });
-    },
-  });
-
-  const { data: bookOuts = [] } = useQuery({
-    queryKey: ["talentBookOuts", effectiveAgencyId || "all"],
-    queryFn: async () => {
-      const rows = await listTalentBookOuts(
-        effectiveAgencyId ? { agency_id: effectiveAgencyId } : {},
-      );
-      return Array.isArray(rows) ? rows : [];
-    },
-    enabled: !!talentId,
-  });
-
-  const { data: bookingPreferences } = useQuery({
-    queryKey: ["talentBookingPreferences", effectiveAgencyId || "all"],
-    queryFn: async () =>
-      await getTalentBookingPreferences(
-        effectiveAgencyId ? { agency_id: effectiveAgencyId } : {},
-      ),
-    enabled: !!talentId,
-  });
-
-  const updateBookingPreferencesMutation = useMutation({
-    mutationFn: async (payload: {
-      willing_to_travel?: boolean;
-      min_day_rate_cents?: number | null;
-      currency?: string;
-    }) => await updateTalentBookingPreferences(payload),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["talentBookingPreferences"],
-      });
-    },
-  });
-
   const { data: irlEarningsSummary } = useQuery({
     queryKey: ["talentIrlEarningsSummary"],
     queryFn: async () => await getTalentIrlEarningsSummary(),
@@ -303,10 +235,11 @@ export default function TalentPortal({
   const { data: irlPayments = [] } = useQuery({
     queryKey: ["talentIrlPayments", effectiveAgencyId || "all"],
     queryFn: async () => {
-      const rows = await listTalentIrlPayments({
-        limit: 50,
-        ...(effectiveAgencyId ? { agency_id: effectiveAgencyId } : {}),
-      });
+      const rows = await listTalentIrlPayments(
+        effectiveAgencyId
+          ? { agency_id: effectiveAgencyId, limit: 200 }
+          : { limit: 200 },
+      );
       return Array.isArray(rows) ? rows : [];
     },
     enabled: !!talentId,
@@ -323,23 +256,58 @@ export default function TalentPortal({
     },
   });
 
-  const addBookOutMutation = useMutation({
-    mutationFn: async (payload: {
-      start_date: string;
-      end_date: string;
-      reason?: string;
-      notes?: string;
-      notify_agency?: boolean;
-    }) => await createTalentBookOut(payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["talentBookOuts"] });
+  const { data: bookOuts = [] } = useQuery({
+    queryKey: ["talentBookOuts", effectiveAgencyId || "all"],
+    queryFn: async () => {
+      const rows = await listTalentBookOuts(
+        effectiveAgencyId ? { agency_id: effectiveAgencyId } : {},
+      );
+      return Array.isArray(rows) ? rows : [];
     },
+    enabled: !!talentId,
   });
 
-  const deleteBookOutMutation = useMutation({
-    mutationFn: async (id: string) => await deleteTalentBookOut(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["talentBookOuts"] });
+  const { data: bookingPreferences } = useQuery({
+    queryKey: ["talentBookingPreferences", profileAgencyId || "all"],
+    queryFn: async () =>
+      await getTalentBookingPreferences(
+        profileAgencyId ? { agency_id: profileAgencyId } : {},
+      ),
+    enabled: !!talentId,
+  });
+
+  const updateBookingPreferencesMutation = useMutation({
+    mutationFn: async (payload: {
+      willing_to_travel?: boolean;
+      min_day_rate_cents?: number | null;
+      currency?: string;
+    }) => await updateTalentBookingPreferences(payload),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["talentBookingPreferences"],
+      });
+    },
+    onError: (e: any) => {
+      const msg = String(e?.message || "");
+      const normalized = msg.toLowerCase();
+      if (
+        normalized.includes("agency_id is required") ||
+        normalized.includes("not connected to agency") ||
+        normalized.includes("missing required information")
+      ) {
+        toast({
+          variant: "destructive",
+          title: "Select an agency first",
+          description:
+            "Choose an agency in the Agency filter, then update booking preferences.",
+        });
+        return;
+      }
+      toast({
+        variant: "destructive",
+        title: "Failed to update booking preferences",
+        description: msg || "Please try again.",
+      });
     },
   });
 
@@ -818,6 +786,9 @@ export default function TalentPortal({
   );
 
   const agencyInvites = ((agencyInvitesResp as any)?.invites as any[]) || [];
+  const pendingAgencyInvitesCount = (agencyInvites as any[]).filter(
+    (i) => String(i?.status || "").toLowerCase() === "pending",
+  ).length;
 
   const { data: agencyConnections = [], isLoading: agencyConnectionsLoading } =
     useQuery({
@@ -883,20 +854,10 @@ export default function TalentPortal({
 
   const [newPortfolioUrl, setNewPortfolioUrl] = React.useState("");
 
-  const { data: payoutAccountStatus } = useQuery({
-    queryKey: ["talentPayoutAccountStatus"],
-    queryFn: async () => await getTalentPayoutAccountStatus(),
-    enabled: !!talentId,
-  });
-
-  const onboardingLinkMutation = useMutation({
-    mutationFn: async () => await getTalentPayoutOnboardingLink(),
-  });
-
   const { data: portalSettings } = useQuery({
     queryKey: ["talentPortalSettings"],
     queryFn: async () => await getTalentPortalSettings(),
-    enabled: !!talentId,
+    enabled: initialized && authenticated,
   });
 
   const currentYear = React.useMemo(() => new Date().getFullYear(), []);
@@ -1035,6 +996,7 @@ export default function TalentPortal({
                     id: "agency_connection",
                     label: "Agency Connection",
                     icon: Building2,
+                    badge: pendingAgencyInvitesCount || undefined,
                   },
                 ]
               : [
@@ -1531,8 +1493,8 @@ export default function TalentPortal({
                       onCheckedChange={(checked: boolean) =>
                         updateBookingPreferencesMutation.mutate({
                           willing_to_travel: checked,
-                          ...(effectiveAgencyId
-                            ? { agency_id: effectiveAgencyId }
+                          ...(profileAgencyId
+                            ? { agency_id: profileAgencyId }
                             : {}),
                         } as any)
                       }
@@ -1572,8 +1534,8 @@ export default function TalentPortal({
                             if (!raw) {
                               updateBookingPreferencesMutation.mutate({
                                 min_day_rate_cents: null,
-                                ...(effectiveAgencyId
-                                  ? { agency_id: effectiveAgencyId }
+                                ...(profileAgencyId
+                                  ? { agency_id: profileAgencyId }
                                   : {}),
                               } as any);
                               return;
@@ -1582,8 +1544,8 @@ export default function TalentPortal({
                             if (isNaN(dollars) || dollars < 0) return;
                             updateBookingPreferencesMutation.mutate({
                               min_day_rate_cents: Math.round(dollars * 100),
-                              ...(effectiveAgencyId
-                                ? { agency_id: effectiveAgencyId }
+                              ...(profileAgencyId
+                                ? { agency_id: profileAgencyId }
                                 : {}),
                             } as any);
                           }}
@@ -2203,57 +2165,6 @@ export default function TalentPortal({
 
                     <div className="mt-4 space-y-3">
                       <div className="rounded-xl border border-gray-200 bg-white p-4">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <div className="text-sm font-semibold text-gray-900">
-                              Bank Account
-                            </div>
-                            <div className="text-xs text-gray-600 mt-1">
-                              {(payoutAccountStatus as any)?.bank_last4
-                                ? `•••• •••• •••• ${(payoutAccountStatus as any)?.bank_last4}`
-                                : "Not connected"}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {(payoutAccountStatus as any)?.connected &&
-                            (payoutAccountStatus as any)?.transfers_enabled ? (
-                              <Badge className="bg-green-600 text-white border-0">
-                                Connected
-                              </Badge>
-                            ) : (
-                              <Badge
-                                variant="outline"
-                                className="text-gray-700"
-                              >
-                                Not Connected
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-
-                        <Button
-                          variant="outline"
-                          className="mt-4 w-full h-10"
-                          disabled={onboardingLinkMutation.isPending}
-                          onClick={async () => {
-                            const res =
-                              await onboardingLinkMutation.mutateAsync();
-                            const url = (res as any)?.url;
-                            if (url) window.open(url, "_blank");
-                          }}
-                        >
-                          {onboardingLinkMutation.isPending ? (
-                            <span className="inline-flex items-center gap-2">
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              Processing...
-                            </span>
-                          ) : (
-                            "Update Bank Details"
-                          )}
-                        </Button>
-                      </div>
-
-                      <div className="rounded-xl border border-gray-200 bg-white p-4">
                         <div>
                           <div className="text-sm font-semibold text-gray-900">
                             Tax Documentation
@@ -2461,81 +2372,107 @@ export default function TalentPortal({
                       .map((inv: any) => (
                         <div
                           key={inv.id}
-                          className="p-4 border border-gray-200 rounded-lg flex items-center justify-between gap-4"
+                          className="p-4 border border-gray-200 rounded-lg space-y-3"
                         >
-                          <div className="min-w-0">
-                            <div className="font-semibold text-gray-900 truncate">
-                              Invitation from agency
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="min-w-0 flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                {inv?.agencies?.logo_url ? (
+                                  <img
+                                    src={inv.agencies.logo_url}
+                                    alt={inv?.agencies?.agency_name || "Agency"}
+                                    className="w-full h-full object-contain"
+                                  />
+                                ) : (
+                                  <Building2 className="w-5 h-5 text-gray-500" />
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="font-semibold text-gray-900 truncate">
+                                  {inv?.agencies?.agency_name
+                                    ? `Invitation from ${inv.agencies.agency_name}`
+                                    : "Invitation from agency"}
+                                </div>
+                                <div className="text-xs text-gray-500 truncate mt-1">
+                                  {inv?.agencies?.email ||
+                                    inv?.agencies?.website ||
+                                    "Agency profile available on request"}
+                                </div>
+                              </div>
                             </div>
-                            <div className="text-xs text-gray-500 truncate mt-1">
-                              {inv.agency_id}
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <Button
+                                variant="outline"
+                                disabled={disconnectAgencyMutation.isPending}
+                                onClick={async () => {
+                                  try {
+                                    const token = String(inv?.token || "");
+                                    if (token) {
+                                      navigate(
+                                        `/invite/agency/${encodeURIComponent(token)}`,
+                                      );
+                                      return;
+                                    }
+                                    toast({
+                                      title: "Missing invite token",
+                                      description:
+                                        "Open the invite link to respond.",
+                                      variant: "destructive" as any,
+                                    });
+                                  } catch (e: any) {
+                                    toast({
+                                      variant: "destructive",
+                                      title: "Failed to decline",
+                                      description: e?.message || String(e),
+                                    });
+                                  }
+                                }}
+                              >
+                                Decline
+                              </Button>
+                              <Button
+                                className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                                disabled={disconnectAgencyMutation.isPending}
+                                onClick={async () => {
+                                  try {
+                                    await acceptCreatorAgencyInvite(
+                                      String(inv.id),
+                                    );
+                                    await Promise.all([
+                                      queryClient.invalidateQueries({
+                                        queryKey: ["creatorAgencyInvites"],
+                                      }),
+                                      queryClient.invalidateQueries({
+                                        queryKey: ["creatorAgencyConnections"],
+                                      }),
+                                      queryClient.invalidateQueries({
+                                        queryKey: ["talentMe"],
+                                      }),
+                                    ]);
+                                    toast({
+                                      title: "Invitation accepted",
+                                      description:
+                                        "You are now connected to the agency.",
+                                    });
+                                  } catch (e: any) {
+                                    toast({
+                                      variant: "destructive",
+                                      title: "Failed to accept",
+                                      description: e?.message || String(e),
+                                    });
+                                  }
+                                }}
+                              >
+                                Accept
+                              </Button>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <Button
-                              variant="outline"
-                              disabled={disconnectAgencyMutation.isPending}
-                              onClick={async () => {
-                                try {
-                                  const token = String(inv?.token || "");
-                                  if (token) {
-                                    navigate(
-                                      `/invite/agency/${encodeURIComponent(token)}`,
-                                    );
-                                    return;
-                                  }
-                                  toast({
-                                    title: "Missing invite token",
-                                    description:
-                                      "Open the invite link to respond.",
-                                    variant: "destructive" as any,
-                                  });
-                                } catch (e: any) {
-                                  toast({
-                                    variant: "destructive",
-                                    title: "Failed to decline",
-                                    description: e?.message || String(e),
-                                  });
-                                }
-                              }}
-                            >
-                              Decline
-                            </Button>
-                            <Button
-                              className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                              disabled={disconnectAgencyMutation.isPending}
-                              onClick={async () => {
-                                try {
-                                  await acceptCreatorAgencyInvite(
-                                    String(inv.id),
-                                  );
-                                  await Promise.all([
-                                    queryClient.invalidateQueries({
-                                      queryKey: ["creatorAgencyInvites"],
-                                    }),
-                                    queryClient.invalidateQueries({
-                                      queryKey: ["creatorAgencyConnections"],
-                                    }),
-                                    queryClient.invalidateQueries({
-                                      queryKey: ["talentMe"],
-                                    }),
-                                  ]);
-                                  toast({
-                                    title: "Invitation accepted",
-                                    description:
-                                      "You are now connected to the agency.",
-                                  });
-                                } catch (e: any) {
-                                  toast({
-                                    variant: "destructive",
-                                    title: "Failed to accept",
-                                    description: e?.message || String(e),
-                                  });
-                                }
-                              }}
-                            >
-                              Accept
-                            </Button>
+                          <div className="rounded-md border border-cyan-100 bg-cyan-50 px-3 py-2 text-xs text-cyan-900">
+                            <span className="font-semibold">
+                              Likelee notice:
+                            </span>{" "}
+                            This agency found your public profile in marketplace
+                            and sent a connection invitation.
                           </div>
                         </div>
                       ))}
@@ -3463,20 +3400,6 @@ export default function TalentPortal({
                 </Card>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-                <Card className="p-6 rounded-xl shadow-sm">
-                  <div className="text-xs font-medium text-gray-500">
-                    Withdrawable balance
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900 mt-2">
-                    {fmtCents(withdrawable.available_cents)}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    {withdrawable.currency}
-                  </div>
-                </Card>
-              </div>
-
               <Card className="p-6 rounded-xl shadow-sm">
                 <div className="text-sm font-semibold text-gray-900">
                   Earnings by Campaign
@@ -3512,25 +3435,6 @@ export default function TalentPortal({
                   )}
                 </div>
               </Card>
-
-              <button
-                className="w-full h-11 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition-colors disabled:opacity-60 disabled:hover:bg-green-600"
-                disabled={
-                  requestPayoutMutation.isPending ||
-                  !withdrawable.available_cents ||
-                  withdrawable.available_cents <= 0
-                }
-                onClick={() =>
-                  requestPayoutMutation.mutate({
-                    amount_cents: withdrawable.available_cents,
-                    currency: withdrawable.currency,
-                  })
-                }
-              >
-                {requestPayoutMutation.isPending
-                  ? "Requesting…"
-                  : "Request payout"}
-              </button>
 
               <Card className="p-5 rounded-xl shadow-sm border-0 bg-gradient-to-r from-indigo-50 to-blue-50">
                 <div className="flex items-center justify-between gap-4">
@@ -3895,53 +3799,6 @@ export default function TalentPortal({
                 </div>
 
                 <div className="mt-4 space-y-3">
-                  <div className="rounded-xl border border-gray-200 bg-white p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <div className="text-sm font-semibold text-gray-900">
-                          Bank Account
-                        </div>
-                        <div className="text-xs text-gray-600 mt-1">
-                          {(payoutAccountStatus as any)?.bank_last4
-                            ? `•••• •••• •••• ${(payoutAccountStatus as any)?.bank_last4}`
-                            : "Not connected"}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {(payoutAccountStatus as any)?.connected &&
-                        (payoutAccountStatus as any)?.transfers_enabled ? (
-                          <Badge className="bg-green-600 text-white border-0">
-                            Connected
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-gray-700">
-                            Not Connected
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      className="mt-4 w-full h-10"
-                      disabled={onboardingLinkMutation.isPending}
-                      onClick={async () => {
-                        const res = await onboardingLinkMutation.mutateAsync();
-                        const url = (res as any)?.url;
-                        if (url) window.open(url, "_blank");
-                      }}
-                    >
-                      {onboardingLinkMutation.isPending ? (
-                        <span className="inline-flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Processing...
-                        </span>
-                      ) : (
-                        "Update Bank Details"
-                      )}
-                    </Button>
-                  </div>
-
                   <div className="rounded-xl border border-gray-200 bg-white p-4">
                     <div>
                       <div className="text-sm font-semibold text-gray-900">

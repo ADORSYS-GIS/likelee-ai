@@ -812,20 +812,37 @@ export default function CreatorDashboard() {
   const talentPortalEnabled =
     (profile as any)?.role === "talent" || agencyConnections.length > 0;
 
+  const loadAgencyConnectionData = async () => {
+    const [connections, creatorInvitesRes, talentInvitesRes] =
+      await Promise.all([
+        listCreatorAgencyConnections(),
+        listCreatorAgencyInvites(),
+        listTalentAgencyInvites().then((r: any) => (r?.invites as any[]) || []),
+      ]);
+
+    const mergedInvites = [...creatorInvitesRes, ...talentInvitesRes];
+    const inviteMap = new Map<string, any>();
+    for (const inv of mergedInvites) {
+      const id = String(inv?.id || "");
+      if (!id) continue;
+      if (!inviteMap.has(id)) {
+        inviteMap.set(id, inv);
+      }
+    }
+
+    return {
+      connections,
+      invites: Array.from(inviteMap.values()),
+    };
+  };
+
   useEffect(() => {
     if (!initialized || !authenticated) return;
     let active = true;
     (async () => {
       try {
         setAgencyConnectionLoading(true);
-        const connections = await listCreatorAgencyConnections();
-        const isTalent =
-          (profile as any)?.role === "talent" || connections.length > 0;
-        const invites = isTalent
-          ? await listTalentAgencyInvites().then(
-              (r: any) => (r?.invites as any[]) || [],
-            )
-          : await listCreatorAgencyInvites();
+        const { connections, invites } = await loadAgencyConnectionData();
         if (!active) return;
         setAgencyConnections(connections);
         setAgencyInvites(invites);
@@ -927,6 +944,7 @@ export default function CreatorDashboard() {
     price_per_month: 0,
     royalty_percentage: 0,
     accept_negotiations: true,
+    is_public_brands: resolvePublicBrandsVisibility(profile),
   });
 
   useEffect(() => {
@@ -958,6 +976,7 @@ export default function CreatorDashboard() {
         bio: profile.bio ?? prev.bio,
         tiktok_handle: profile.tiktok_handle ?? prev.tiktok_handle,
         portfolio_url: profile.portfolio_link ?? prev.portfolio_url,
+        is_public_brands: resolvePublicBrandsVisibility(profile),
       }));
     }
   }, [profile]);
@@ -1475,6 +1494,7 @@ export default function CreatorDashboard() {
             : prev.instagram_handle,
           tiktok_handle: profile.tiktok_handle ?? prev.tiktok_handle,
           portfolio_url: profile.portfolio_link ?? prev.portfolio_url,
+          is_public_brands: resolvePublicBrandsVisibility(profile),
           instagram_connected: prev.instagram_connected ?? false,
           instagram_followers: prev.instagram_followers ?? 0,
           content_types: profile.content_types || [],
@@ -1704,6 +1724,10 @@ export default function CreatorDashboard() {
       id: "agency-connection",
       label: "Agency Connection",
       icon: LinkIcon,
+      badge:
+        agencyInvites.filter((i) => i.status === "pending").length > 0
+          ? agencyInvites.filter((i) => i.status === "pending").length
+          : undefined,
     },
   ];
 
@@ -3292,6 +3316,12 @@ export default function CreatorDashboard() {
         overrides?.content_restrictions ?? creator.content_restrictions,
       brand_exclusivity:
         overrides?.brand_exclusivity ?? creator.brand_exclusivity,
+      public_profile_visible:
+        overrides?.is_public_brands ?? creator.is_public_brands ?? true,
+      visibility:
+        (overrides?.is_public_brands ?? creator.is_public_brands ?? true)
+          ? "brands"
+          : "private",
       content_types: overrides?.content_types ?? creator.content_types,
       industries: overrides?.industries ?? creator.industries,
     };
@@ -3332,6 +3362,7 @@ export default function CreatorDashboard() {
             savedProfile.brand_exclusivity ?? prev.brand_exclusivity,
           accept_negotiations:
             savedProfile.accept_negotiations ?? prev.accept_negotiations,
+          is_public_brands: resolvePublicBrandsVisibility(savedProfile),
           price_per_month: savedProfile.base_monthly_price_cents
             ? Math.round(savedProfile.base_monthly_price_cents / 100)
             : prev.price_per_month,
@@ -4427,14 +4458,7 @@ export default function CreatorDashboard() {
           String(disconnectTarget.agency_id),
         );
 
-        const connections = await listCreatorAgencyConnections();
-        const talentMode =
-          (profile as any)?.role === "talent" || connections.length > 0;
-        const invites = talentMode
-          ? await listTalentAgencyInvites().then(
-              (r: any) => (r?.invites as any[]) || [],
-            )
-          : await listCreatorAgencyInvites();
+        const { connections, invites } = await loadAgencyConnectionData();
 
         setAgencyConnections(connections);
         setAgencyInvites(invites);
@@ -4555,7 +4579,7 @@ export default function CreatorDashboard() {
                         {c.agencies?.agency_name || c.agency_id}
                       </div>
                       <div className="text-xs text-gray-500 truncate">
-                        {c.agency_id}
+                        Connected agency
                       </div>
                     </div>
                   </div>
@@ -4609,109 +4633,114 @@ export default function CreatorDashboard() {
               {pending.map((inv) => (
                 <div
                   key={inv.id}
-                  className="p-4 border border-gray-200 rounded-lg flex items-center justify-between gap-4"
+                  className="p-4 border border-gray-200 rounded-lg space-y-3"
                 >
-                  <div className="min-w-0 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
-                      {inv?.agencies?.logo_url ? (
-                        <img
-                          src={inv.agencies.logo_url}
-                          alt={inv.agencies.agency_name || "Agency"}
-                          className="w-full h-full object-contain"
-                        />
-                      ) : (
-                        <Users className="w-5 h-5 text-gray-500" />
-                      )}
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {inv?.agencies?.logo_url ? (
+                          <img
+                            src={inv.agencies.logo_url}
+                            alt={inv.agencies.agency_name || "Agency"}
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <Building2 className="w-5 h-5 text-gray-500" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-semibold text-gray-900 truncate">
+                          {inv?.agencies?.agency_name
+                            ? `Invitation from ${inv.agencies.agency_name}`
+                            : "Invitation from agency"}
+                        </div>
+                        <div className="text-xs text-gray-500 truncate mt-1">
+                          {inv?.agencies?.email ||
+                            inv?.agencies?.website ||
+                            "Agency profile available on request"}
+                        </div>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <div className="font-semibold text-gray-900 truncate">
-                        {inv?.agencies?.agency_name || "Invitation from agency"}
-                      </div>
-                      <div className="text-xs text-gray-500 truncate mt-1">
-                        {inv.agency_id}
-                      </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <Button
+                        variant="outline"
+                        className="border-gray-200"
+                        onClick={async () => {
+                          try {
+                            const token = String(inv?.token || "");
+                            if (token) {
+                              navigate(
+                                `/invite/agency/${encodeURIComponent(token)}`,
+                              );
+                              return;
+                            }
+
+                            await declineCreatorAgencyInvite(inv.id);
+                            setAgencyInvites((prev) =>
+                              prev.map((p) =>
+                                p.id === inv.id
+                                  ? { ...p, status: "declined" }
+                                  : p,
+                              ),
+                            );
+                            toast({ title: "Invitation declined" });
+                          } catch (e: any) {
+                            toast({
+                              variant: "destructive",
+                              title: "Failed to decline",
+                              description: e?.message || String(e),
+                            });
+                          }
+                        }}
+                      >
+                        Decline
+                      </Button>
+                      <Button
+                        className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                        onClick={async () => {
+                          try {
+                            const token = String(inv?.token || "");
+                            if (token) {
+                              navigate(
+                                `/invite/agency/${encodeURIComponent(token)}`,
+                              );
+                              return;
+                            }
+
+                            await acceptCreatorAgencyInvite(inv.id);
+                            const [connections] = await Promise.all([
+                              listCreatorAgencyConnections(),
+                            ]);
+                            setAgencyConnections(connections);
+                            setAgencyInvites((prev) =>
+                              prev.map((p) =>
+                                p.id === inv.id
+                                  ? { ...p, status: "accepted" }
+                                  : p,
+                              ),
+                            );
+                            toast({
+                              title: "Invitation accepted",
+                              description:
+                                "You are now connected to this agency. You can edit your profile per agency in Talent Portal settings.",
+                            });
+                          } catch (e: any) {
+                            toast({
+                              variant: "destructive",
+                              title: "Failed to accept",
+                              description: e?.message || String(e),
+                            });
+                          }
+                        }}
+                      >
+                        Accept
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <Button
-                      variant="outline"
-                      className="border-gray-200"
-                      onClick={async () => {
-                        try {
-                          if (isTalent) {
-                            const token = String(inv?.token || "");
-                            if (token) {
-                              navigate(
-                                `/invite/agency/${encodeURIComponent(token)}`,
-                              );
-                              return;
-                            }
-                            throw new Error("Missing invite token");
-                          }
-
-                          await declineCreatorAgencyInvite(inv.id);
-                          setAgencyInvites((prev) =>
-                            prev.map((p) =>
-                              p.id === inv.id
-                                ? { ...p, status: "declined" }
-                                : p,
-                            ),
-                          );
-                          toast({ title: "Invitation declined" });
-                        } catch (e: any) {
-                          toast({
-                            variant: "destructive",
-                            title: "Failed to decline",
-                            description: e?.message || String(e),
-                          });
-                        }
-                      }}
-                    >
-                      Decline
-                    </Button>
-                    <Button
-                      className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                      onClick={async () => {
-                        try {
-                          if (isTalent) {
-                            const token = String(inv?.token || "");
-                            if (token) {
-                              navigate(
-                                `/invite/agency/${encodeURIComponent(token)}`,
-                              );
-                              return;
-                            }
-                            throw new Error("Missing invite token");
-                          }
-
-                          await acceptCreatorAgencyInvite(inv.id);
-                          const [connections] = await Promise.all([
-                            listCreatorAgencyConnections(),
-                          ]);
-                          setAgencyConnections(connections);
-                          setAgencyInvites((prev) =>
-                            prev.map((p) =>
-                              p.id === inv.id
-                                ? { ...p, status: "accepted" }
-                                : p,
-                            ),
-                          );
-                          toast({
-                            title: "Invitation accepted",
-                            description:
-                              "You are now connected to this agency. You can edit your profile per agency in Talent Portal settings.",
-                          });
-                        } catch (e: any) {
-                          toast({
-                            variant: "destructive",
-                            title: "Failed to accept",
-                            description: e?.message || String(e),
-                          });
-                        }
-                      }}
-                    >
-                      Accept
-                    </Button>
+                  <div className="rounded-md border border-cyan-100 bg-cyan-50 px-3 py-2 text-xs text-cyan-900">
+                    <span className="font-semibold">Likelee notice:</span> This
+                    agency found your public profile in marketplace and sent a
+                    connection invitation.
                   </div>
                 </div>
               ))}
@@ -6883,11 +6912,14 @@ export default function CreatorDashboard() {
                 </div>
                 <Switch
                   checked={creator.is_public_brands || false}
-                  onCheckedChange={(checked) => {
+                  onCheckedChange={async (checked) => {
                     setCreator({ ...creator, is_public_brands: checked });
-                    toast({
-                      title: `Profile is now ${checked ? "VISIBLE" : "HIDDEN"} to brands! (Demo mode)`,
-                    });
+                    await handleSaveRules(
+                      checked
+                        ? "Profile is now visible to brands."
+                        : "Profile is now hidden from brands.",
+                      { is_public_brands: checked },
+                    );
                   }}
                 />
               </div>
@@ -7410,7 +7442,9 @@ export default function CreatorDashboard() {
                 >
                   <Edit className="w-4 h-4 text-gray-700" />
                   <span className="text-sm font-medium text-gray-900">
-                    {t("creatorDashboard.nav.profile.edit")}
+                    {t("creatorDashboard.nav.profile.edit", {
+                      defaultValue: "Edit Profile",
+                    })}
                   </span>
                 </button>
 
@@ -7423,7 +7457,9 @@ export default function CreatorDashboard() {
                 >
                   <Eye className="w-4 h-4 text-gray-700" />
                   <span className="text-sm font-medium text-gray-900">
-                    {t("creatorDashboard.nav.profile.viewPublic")}
+                    {t("creatorDashboard.nav.profile.viewPublic", {
+                      defaultValue: "View Public Profile",
+                    })}
                   </span>
                 </button>
 
@@ -7436,7 +7472,9 @@ export default function CreatorDashboard() {
                 >
                   <HelpCircle className="w-4 h-4 text-gray-700" />
                   <span className="text-sm font-medium text-gray-900">
-                    {t("creatorDashboard.nav.profile.help")}
+                    {t("creatorDashboard.nav.profile.help", {
+                      defaultValue: "Help / Support",
+                    })}
                   </span>
                 </button>
               </div>
@@ -7454,7 +7492,9 @@ export default function CreatorDashboard() {
                 >
                   <LogOut className="w-4 h-4" />
                   <span className="text-sm font-medium">
-                    {t("creatorDashboard.nav.profile.logout")}
+                    {t("creatorDashboard.nav.profile.logout", {
+                      defaultValue: "Logout",
+                    })}
                   </span>
                 </button>
               </div>
@@ -9298,3 +9338,18 @@ export default function CreatorDashboard() {
     </div>
   );
 }
+const resolvePublicBrandsVisibility = (data: any): boolean => {
+  if (typeof data?.public_profile_visible === "boolean") {
+    return data.public_profile_visible;
+  }
+  const rawVisibility = String(data?.visibility || "")
+    .trim()
+    .toLowerCase();
+  if (!rawVisibility) return true;
+  return (
+    rawVisibility === "public" ||
+    rawVisibility === "brands" ||
+    rawVisibility === "visible_to_brands" ||
+    rawVisibility === "true"
+  );
+};

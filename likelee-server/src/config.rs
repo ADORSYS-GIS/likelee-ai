@@ -81,6 +81,24 @@ pub struct ServerConfig {
     #[envconfig(from = "EMAIL_CONTACT_TO", default = "")]
     pub email_contact_to: String,
 
+    #[envconfig(from = "SMTP_SALES_HOST", default = "")]
+    pub smtp_sales_host: String,
+
+    #[envconfig(from = "SMTP_SALES_PORT", default = "587")]
+    pub smtp_sales_port: u16,
+
+    #[envconfig(from = "SMTP_SALES_USER", default = "")]
+    pub smtp_sales_user: String,
+
+    #[envconfig(from = "SMTP_SALES_PASSWORD", default = "")]
+    pub smtp_sales_password: String,
+
+    #[envconfig(from = "EMAIL_FROM_SALES", default = "operations@likelee.ai")]
+    pub email_from_sales: String,
+
+    #[envconfig(from = "EMAIL_SALES_TO", default = "operations@likelee.ai")]
+    pub email_sales_to: String,
+
     // Stripe
     #[envconfig(from = "STRIPE_SECRET_KEY", default = "")]
     pub stripe_secret_key: String,
@@ -153,6 +171,12 @@ pub struct ServerConfig {
     #[envconfig(from = "PAYOUT_ALLOWED_CURRENCIES", default = "USD,EUR")]
     pub payout_allowed_currencies: String,
 
+    #[envconfig(from = "AGENCY_PAYOUT_SCHEDULER_ENABLED", default = "false")]
+    pub agency_payout_scheduler_enabled: bool,
+
+    #[envconfig(from = "AGENCY_PAYOUT_SCHEDULER_INTERVAL_SECS", default = "3600")]
+    pub agency_payout_scheduler_interval_secs: u64,
+
     // DocuSeal API configuration
     #[envconfig(from = "DOCUSEAL_API_KEY", default = "")]
     pub docuseal_api_key: String,
@@ -223,12 +247,22 @@ pub struct AppState {
     pub payout_currency: String,
     pub payout_allowed_currencies: Vec<String>,
 
+    pub agency_payout_scheduler_enabled: bool,
+    pub agency_payout_scheduler_interval_secs: u64,
+
     pub smtp_host: String,
     pub smtp_port: u16,
     pub smtp_user: String,
     pub smtp_password: String,
     pub email_from: String,
     pub email_contact_to: String,
+
+    pub smtp_sales_host: String,
+    pub smtp_sales_port: u16,
+    pub smtp_sales_user: String,
+    pub smtp_sales_password: String,
+    pub email_from_sales: String,
+    pub email_sales_to: String,
 
     // DocuSeal
     pub docuseal_api_key: String,

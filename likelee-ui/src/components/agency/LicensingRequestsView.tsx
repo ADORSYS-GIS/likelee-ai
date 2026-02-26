@@ -1,20 +1,9 @@
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Filter,
-  DollarSign,
-  Eye,
-  RefreshCw,
-  FileText,
-  Search,
-  Link,
-  Send,
-  Copy,
-  CheckCircle,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Filter, CheckCircle2, Send, RefreshCw } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -31,7 +20,7 @@ import {
   sendLicensingRequestPaymentLink,
 } from "@/api/functions";
 
-export const LicensingRequestsTab = () => {
+const LicensingRequestsView = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -39,20 +28,18 @@ export const LicensingRequestsTab = () => {
     queryKey: ["agency", "licensing-requests"],
     queryFn: async () => {
       const resp = await getAgencyLicensingRequests();
-      // Ensure we always return an array even if backend returns an object or null
-      return Array.isArray(resp) ? resp : (resp as any)?.data || [];
+      return resp as any[];
     },
   });
 
-  const [sendingPaymentLink, setSendingPaymentLink] = useState<
-    Record<string, boolean>
-  >({});
+  const [selectedGroup, setSelectedGroup] = useState<any | null>(null);
   const [counterOfferModalOpen, setCounterOfferModalOpen] = useState(false);
   const [counterOfferMessage, setCounterOfferMessage] = useState("");
   const [groupToCounter, setGroupToCounter] = useState<any>(null);
   const [activeRequestTab, setActiveRequestTab] = useState<
     "Active" | "Archive"
   >("Active");
+  const [sendPaymentBusyKey, setSendPaymentBusyKey] = useState<string>("");
 
   const statusStyle = (status: string) => {
     if (status === "approved") return "bg-green-100 text-green-700";
@@ -60,14 +47,21 @@ export const LicensingRequestsTab = () => {
     return "bg-gray-100 text-gray-700";
   };
 
-  const formatLicenseFee = (fee?: number | null) => {
-    if (typeof fee !== "number" || !Number.isFinite(fee)) return "—";
-    return fee.toLocaleString(undefined, {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    });
+  const formatBudget = (min?: number | null, max?: number | null) => {
+    const minOk = typeof min === "number" && Number.isFinite(min);
+    const maxOk = typeof max === "number" && Number.isFinite(max);
+    const fmt = (n: number) =>
+      n.toLocaleString(undefined, {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      });
+
+    if (minOk && maxOk) return `${fmt(min!)} - ${fmt(max!)}`;
+    if (minOk) return fmt(min!);
+    if (maxOk) return fmt(max!);
+    return "—";
   };
 
   const updateGroupStatus = async (
@@ -107,33 +101,35 @@ export const LicensingRequestsTab = () => {
     }
   };
 
-  const handleSendPaymentLink = async (group: any) => {
-    const firstTalent = (group?.talents || [])[0];
-    const licensingRequestId = firstTalent?.licensing_request_id;
-    if (!licensingRequestId) {
-      toast({
-        title: "No licensing request ID found",
-        variant: "destructive" as any,
-      });
-      return;
-    }
+  const sendPaymentLinkForGroup = async (group: any) => {
+    const ids = (group?.talents || [])
+      .map((t: any) => t.licensing_request_id)
+      .filter(Boolean);
+    if (!ids.length) return;
 
-    setSendingPaymentLink((prev) => ({ ...prev, [group.group_key]: true }));
+    const licensingRequestId = String(ids[0] || "");
+    if (!licensingRequestId) return;
+
+    const groupKey = String(group?.group_key || "");
+    setSendPaymentBusyKey(groupKey);
     try {
-      const resp = await sendLicensingRequestPaymentLink(licensingRequestId);
-      const emailSent = (resp as any)?.email_sent;
+      const resp: any =
+        await sendLicensingRequestPaymentLink(licensingRequestId);
+      const paymentLinkUrl = String(resp?.payment_link_url || "");
+
       await queryClient.invalidateQueries({
         queryKey: ["agency", "licensing-requests"],
       });
+
       toast({
-        title: "Payment link sent!",
-        description: emailSent
-          ? "The payment link has been emailed to the client."
-          : "Payment link generated. No client email found — please share the link manually.",
+        title: "Payment link sent",
+        description: paymentLinkUrl
+          ? "Payment link generated and sent."
+          : "Payment link sent.",
       });
     } catch (e: any) {
-      let friendlyTitle = "Failed to send payment link";
-      let friendlyDesc = e?.message || "Could not generate payment link";
+      let friendlyTitle = "Send payment link failed";
+      let friendlyDesc = e?.message || "Could not generate/send payment link";
       try {
         const parsed = JSON.parse(String(e?.message || ""));
         if (
@@ -162,7 +158,7 @@ export const LicensingRequestsTab = () => {
         variant: "destructive" as any,
       });
     } finally {
-      setSendingPaymentLink((prev) => ({ ...prev, [group.group_key]: false }));
+      setSendPaymentBusyKey("");
     }
   };
 
@@ -237,7 +233,7 @@ export const LicensingRequestsTab = () => {
                     {group.brand_name || "Unknown brand"}
                   </h3>
                   <p className="text-gray-500 font-medium">
-                    {(group.campaign_title || "").trim() || "—"}
+                    {(group.campaign_title || "").trim() || "\u2014"}
                   </p>
                 </div>
                 <span
@@ -268,10 +264,10 @@ export const LicensingRequestsTab = () => {
                 <div className="space-y-4">
                   <div>
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">
-                      License Fee
+                      Budget Range
                     </p>
                     <p className="text-sm font-bold text-gray-900">
-                      {formatLicenseFee(group.license_fee)}
+                      {formatBudget(group.budget_min, group.budget_max)}
                     </p>
                   </div>
                   <div>
@@ -279,7 +275,7 @@ export const LicensingRequestsTab = () => {
                       Regions
                     </p>
                     <p className="text-sm font-bold text-gray-900">
-                      {group.regions || "—"}
+                      {group.regions || "\u2014"}
                     </p>
                   </div>
                 </div>
@@ -289,7 +285,7 @@ export const LicensingRequestsTab = () => {
                       Usage Scope
                     </p>
                     <p className="text-sm font-bold text-gray-900">
-                      {(group.usage_scope || "").trim() || "—"}
+                      {(group.usage_scope || "").trim() || "\u2014"}
                     </p>
                   </div>
                   <div>
@@ -303,41 +299,55 @@ export const LicensingRequestsTab = () => {
                           ? `From ${new Date(group.license_start_date).toLocaleDateString()}`
                           : group.deadline
                             ? new Date(group.deadline).toLocaleDateString()
-                            : "—"}
+                            : "\u2014"}
                     </p>
                   </div>
                 </div>
               </div>
 
               {group.status === "approved" ? (
-                <div>
-                  <Button
-                    onClick={() => handleSendPaymentLink(group)}
-                    disabled={sendingPaymentLink[group.group_key]}
-                    className="w-full font-bold h-10 rounded-md flex items-center justify-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white shadow-lg shadow-indigo-200"
-                  >
-                    {sendingPaymentLink[group.group_key] ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />{" "}
-                        Sending...
-                      </>
-                    ) : group.payment_link_id || group.payment_link_url ? (
-                      <>
-                        <Send className="w-4 h-4" /> Resend payment link
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4" /> Send payment link
-                      </>
-                    )}
-                  </Button>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center h-11 bg-green-50 rounded-md border border-green-200">
+                    <p className="text-xs font-black text-green-700 uppercase tracking-widest flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4" /> Approved
+                    </p>
+                  </div>
+                  {group.payment_link_id || group.payment_link_url ? (
+                    <Button
+                      onClick={() => sendPaymentLinkForGroup(group)}
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                      disabled={
+                        !!sendPaymentBusyKey &&
+                        sendPaymentBusyKey === String(group?.group_key || "")
+                      }
+                    >
+                      <Send className="w-4 h-4" />
+                      {sendPaymentBusyKey === String(group?.group_key || "")
+                        ? "Sending..."
+                        : "Resend payment link"}
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => sendPaymentLinkForGroup(group)}
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
+                      disabled={
+                        !!sendPaymentBusyKey &&
+                        sendPaymentBusyKey === String(group?.group_key || "")
+                      }
+                    >
+                      <Send className="w-4 h-4" />
+                      {sendPaymentBusyKey === String(group?.group_key || "")
+                        ? "Sending..."
+                        : "Send payment link"}
+                    </Button>
+                  )}
                 </div>
               ) : activeRequestTab === "Archive" ? (
                 <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                   <Button
                     variant="outline"
                     onClick={() => updateGroupStatus(group, "pending")}
-                    className="border-gray-300 text-gray-700 font-bold h-10 rounded-md flex items-center justify-center gap-2"
+                    className="border-gray-300 text-gray-700 font-bold h-11 rounded-md flex items-center justify-center gap-2"
                   >
                     <RefreshCw className="w-4 h-4" />
                     Recover to Active
@@ -346,20 +356,13 @@ export const LicensingRequestsTab = () => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Button
-                    onClick={() => handleSendPaymentLink(group)}
-                    disabled={sendingPaymentLink[group.group_key]}
-                    className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-10 rounded-md flex items-center justify-center gap-2"
+                    onClick={() => updateGroupStatus(group, "approved")}
+                    className="bg-green-600 hover:bg-green-700 text-white font-bold h-11 rounded-md flex items-center justify-center gap-2"
                   >
-                    {sendingPaymentLink[group.group_key] ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />{" "}
-                        Sending...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4" /> Send Payment Link
-                      </>
-                    )}
+                    <div className="w-4 h-4 rounded-full border-2 border-white flex items-center justify-center">
+                      <span className="text-[10px] font-bold">✓</span>
+                    </div>
+                    Approve
                   </Button>
                   <Button
                     variant="outline"
@@ -367,17 +370,17 @@ export const LicensingRequestsTab = () => {
                       setGroupToCounter(group);
                       setCounterOfferModalOpen(true);
                     }}
-                    className="border-gray-300 text-gray-700 font-bold h-10 rounded-md"
+                    className="border-gray-300 text-gray-700 font-bold h-11 rounded-md"
                   >
                     Counter Offer
                   </Button>
                   <Button
                     variant="outline"
                     onClick={() => updateGroupStatus(group, "rejected")}
-                    className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-10 rounded-md flex items-center justify-center gap-2"
+                    className="border-red-200 text-red-600 hover:bg-red-50 font-bold h-11 rounded-md flex items-center justify-center gap-2"
                   >
                     <div className="w-4 h-4 rounded-full border-2 border-red-200 flex items-center justify-center">
-                      <span className="text-[10px]">✕</span>
+                      <span className="text-[10px] font-bold">\u2715</span>
                     </div>
                     Decline
                   </Button>
@@ -430,7 +433,7 @@ export const LicensingRequestsTab = () => {
                   )
                 }
                 disabled={!counterOfferMessage.trim()}
-                className="bg-indigo-500 hover:bg-indigo-500 text-white font-bold"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
               >
                 Send Counter Offer
               </Button>
@@ -441,3 +444,5 @@ export const LicensingRequestsTab = () => {
     </>
   );
 };
+
+export default LicensingRequestsView;

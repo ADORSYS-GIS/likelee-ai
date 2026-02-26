@@ -135,12 +135,22 @@ async fn main() {
             .filter(|s| !s.is_empty())
             .collect(),
 
+        agency_payout_scheduler_enabled: cfg.agency_payout_scheduler_enabled,
+        agency_payout_scheduler_interval_secs: cfg.agency_payout_scheduler_interval_secs,
+
         smtp_host: cfg.smtp_host.clone(),
         smtp_port: cfg.smtp_port,
         smtp_user: cfg.smtp_user.clone(),
         smtp_password: cfg.smtp_password.clone(),
         email_from: cfg.email_from.clone(),
         email_contact_to: cfg.email_contact_to.clone(),
+
+        smtp_sales_host: cfg.smtp_sales_host.clone(),
+        smtp_sales_port: cfg.smtp_sales_port,
+        smtp_sales_user: cfg.smtp_sales_user.clone(),
+        smtp_sales_password: cfg.smtp_sales_password.clone(),
+        email_from_sales: cfg.email_from_sales.clone(),
+        email_sales_to: cfg.email_sales_to.clone(),
 
         docuseal_api_key: cfg.docuseal_api_key.clone(),
         docuseal_base_url: cfg.docuseal_api_url.clone(),
@@ -158,6 +168,9 @@ async fn main() {
 
     // Start background jobs
     tokio::spawn(likelee_server::jobs::start_payment_reminders(state.clone()));
+    tokio::spawn(likelee_server::jobs::start_agency_payout_scheduler(
+        state.clone(),
+    ));
 
     let app = likelee_server::router::build_router(state);
 
