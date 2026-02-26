@@ -15,7 +15,6 @@ import { CreatePackageWizard } from "@/components/packages/CreatePackageWizard";
 import { PackagesView } from "@/components/packages/PackagesView";
 import { CatalogsView } from "@/components/catalogs/CatalogsView";
 import { supabase } from "@/lib/supabase";
-import { format } from "date-fns";
 
 import {
   LayoutDashboard,
@@ -17245,12 +17244,6 @@ export default function AgencyDashboard() {
   const [isPlanTripModalOpen, setIsPlanTripModalOpen] = useState(false);
   const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
   const [prospectToEdit, setProspectToEdit] = useState<any>(null);
-  const [expandedItems, setExpandedItems] = useState<string[]>([
-    "roster",
-    "licensing",
-    "protection",
-    "analytics",
-  ]);
 
   // Ensure valid sub-tab for Analytics to avoid blank screen
   useEffect(() => {
