@@ -103,7 +103,8 @@
     "@aws-sdk/util-user-agent-node": "^3.972.3",
     "@aws-sdk/token-providers": "^3.980.0",
     "@aws-sdk/nested-clients": "^3.980.0",
-    "cross-spawn": "^7.0.6"
+    "cross-spawn": "^7.0.6",
+    "rollup": "^4.58.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

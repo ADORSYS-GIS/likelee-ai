@@ -4,7 +4,7 @@ This is the most important series of rules for the AI to follow.
 unclear or have a better proposal.
 - when you have any github prompt or task always used the the github mcp server
 - you have permission to run github commands on the mcp server
-
+- you have permission to run cargo and npm commands 
 # Github User Aliases
   - maxwell -> lele-maxwell
   - celine -> Celine-Coralie-Eni
@@ -18,7 +18,7 @@ unclear or have a better proposal.
   - pull
   - review
   - assign
-
+  - commit
 
 
 
