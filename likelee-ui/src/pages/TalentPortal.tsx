@@ -916,7 +916,7 @@ export default function TalentPortal({
 
   const portalContent = (
     <>
-      <div className="space-y-4">
+      <div className="sticky top-0 z-20 space-y-4 bg-gray-50/95 backdrop-blur supports-[backdrop-filter]:bg-gray-50/80 py-2">
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="text-2xl font-bold text-gray-900">
