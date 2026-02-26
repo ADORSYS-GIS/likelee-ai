@@ -251,7 +251,7 @@ pub async fn list_eligible_requests(
         if let Some(obj) = row.as_object_mut() {
             let ids = obj
                 .remove("_talent_ids")
-                .and_then(|v| v.as_array().map(|a| a.clone()))
+                .and_then(|v| v.as_array().cloned())
                 .unwrap_or_default();
             let mut linked_talents = Vec::new();
             for tval in ids {
