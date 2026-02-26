@@ -18504,50 +18504,16 @@ export default function AgencyDashboard() {
           )}
           {activeTab === "licensing" &&
             activeSubTab === "License Templates" && <LicenseTemplatesTab />}
-          {activeTab === "protection" &&
-            activeSubTab === "Protect & Usage" &&
-            (hasProAccess ? (
-              <ProtectionUsageView />
-            ) : (
-              <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                <div className="text-lg font-black text-gray-900">
-                  Upgrade required
-                </div>
-                <div className="text-gray-500 font-medium mt-1">
-                  Protection & Usage is available on the Pro plan.
-                </div>
-                <div className="mt-4">
-                  <Button
-                    className="rounded-xl font-bold"
-                    onClick={() => navigate("/agencysubscribe")}
-                  >
-                    View plans
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          {activeTab === "protection" &&
-            activeSubTab === "Compliance Hub" &&
-            (hasProAccess ? (
-              <ComplianceHubView />
-            ) : (
-              <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
-                <div className="text-lg font-black text-gray-900">
-                  Upgrade required
-                </div>
-                <div className="text-gray-500 font-medium mt-1">
-                  Compliance Hub is available on the Pro plan.
-                </div>
-                <div className="mt-4">
-                  <Button
-                    className="rounded-xl font-bold"
-                    onClick={() => navigate("/agencysubscribe")}
-                  >
-                    View plans
-                  </Button>
-                </div>
-              </Card>
-            ))}
+          {activeTab === "protection" && (
+            <Card className="p-8 bg-white border border-gray-200 rounded-2xl">
+              <div className="text-lg font-black text-gray-900">
+                Coming soon
+              </div>
+              <div className="text-gray-500 font-medium mt-1">
+                Protection & Usage is currently under development.
+              </div>
+            </Card>
+          )}
           {activeTab === "analytics" &&
             activeSubTab === "Analytics Dashboard" &&
             (agencyMode === "IRL" ? (
