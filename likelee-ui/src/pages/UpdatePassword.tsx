@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import Layout from "./Layout";
 
 import { useAuth } from "@/auth/AuthProvider";
 import { toast } from "@/components/ui/use-toast";

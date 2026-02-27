@@ -50,6 +50,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<any | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const userRef = React.useRef<User | null>(null);
+  const profileRef = React.useRef<Profile | null>(null);
 
   const redirectToPasswordUpdateIfNeeded = (event?: string) => {
     try {
@@ -206,22 +208,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  useEffect(() => {
+    profileRef.current = profile;
+  }, [profile]);
+
+  useEffect(() => {
     if (!supabase) {
       setInitialized(true);
       return;
     }
+
+    const applySession = (nextSession: any | null) => {
+      const nextUser = nextSession?.user ?? null;
+      const prevUserId = userRef.current?.id ?? null;
+      const nextUserId = nextUser?.id ?? null;
+      const userChanged = prevUserId !== nextUserId;
+
+      if (userChanged) {
+        setProfile(null);
+        profileRef.current = null;
+        queryClient.clear();
+      }
+
+      setUser(nextUser);
+      userRef.current = nextUser;
+      setSession(nextSession);
+      return nextUser;
+    };
+
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, _session) => {
         const session = _session;
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
-        setSession(session);
+        const currentUser = applySession(session);
 
         redirectToPasswordUpdateIfNeeded(event);
 
         if (currentUser && (currentUser.email_confirmed_at || session)) {
-          // Prevent infinite loop: only fetch if profile is not already loaded or if user changed
-          if (!profile || profile.id !== currentUser.id) {
+          const currentProfile = profileRef.current;
+          if (!currentProfile || currentProfile.id !== currentUser.id) {
             fetchProfile(
               currentUser.id,
               currentUser.email,
@@ -231,27 +258,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         } else {
           setProfile(null);
+          profileRef.current = null;
         }
         setInitialized(true);
       },
     );
     // Initialize from current session as well
     supabase.auth.getSession().then(({ data }) => {
-      const currentUser = data.session?.user ?? null;
-      setUser(currentUser);
-      setSession(data.session);
+      const currentUser = applySession(data.session ?? null);
 
       redirectToPasswordUpdateIfNeeded();
 
       // If a session already exists on page load, onAuthStateChange may not fire.
       // Ensure profile is fetched so ProtectedRoute can render role-gated pages.
-      if (currentUser && (!profile || profile.id !== currentUser.id)) {
+      const currentProfile = profileRef.current;
+      if (currentUser && (!currentProfile || currentProfile.id !== currentUser.id)) {
         fetchProfile(
           currentUser.id,
           currentUser.email,
           currentUser.user_metadata?.full_name,
           currentUser.user_metadata?.role,
         );
+      } else if (!currentUser) {
+        setProfile(null);
+        profileRef.current = null;
       }
 
       setInitialized(true);

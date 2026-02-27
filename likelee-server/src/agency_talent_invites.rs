@@ -575,35 +575,78 @@ pub async fn accept_by_token(
 
     ensure_creator_row_exists(&state, &user, &creator_id).await;
 
-    // Upsert / reactivate agency_users row
-    let au_resp = state
+    // Upsert / reactivate agency_users row.
+    // Resolution order to avoid duplicates:
+    // 1) existing by agency + creator_id
+    // 2) fallback existing by agency + invited email (roster row before account activation)
+    let mut existing_agency_user_id: Option<String> = None;
+
+    let au_by_creator_resp = state
         .pg
         .from("agency_users")
-        .select("id,status")
+        .select("id")
         .eq("agency_id", &inv.agency_id)
         .eq("creator_id", &creator_id)
+        .order("updated_at.desc")
         .limit(1)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let au_text = au_resp
+    let au_by_creator_text = au_by_creator_resp
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let existing: serde_json::Value = serde_json::from_str(&au_text).unwrap_or(json!([]));
+    let au_by_creator_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&au_by_creator_text).unwrap_or_default();
+    if let Some(id) = au_by_creator_rows
+        .first()
+        .and_then(|r| r.get("id"))
+        .and_then(|v| v.as_str())
+    {
+        existing_agency_user_id = Some(id.to_string());
+    }
 
-    if existing.as_array().map(|a| !a.is_empty()).unwrap_or(false) {
+    if existing_agency_user_id.is_none() {
+        let invited_email = inv.email.trim().to_lowercase();
+        let au_by_email_resp = state
+            .pg
+            .from("agency_users")
+            .select("id")
+            .eq("agency_id", &inv.agency_id)
+            .eq("email", &invited_email)
+            .order("updated_at.desc")
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        let au_by_email_text = au_by_email_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let au_by_email_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&au_by_email_text).unwrap_or_default();
+        if let Some(id) = au_by_email_rows
+            .first()
+            .and_then(|r| r.get("id"))
+            .and_then(|v| v.as_str())
+        {
+            existing_agency_user_id = Some(id.to_string());
+        }
+    }
+
+    if let Some(agency_user_id) = existing_agency_user_id {
         let _ = state
             .pg
             .from("agency_users")
-            .eq("agency_id", &inv.agency_id)
-            .eq("creator_id", &creator_id)
+            .eq("id", &agency_user_id)
             .update(
                 json!({
+                    "creator_id": creator_id,
                     "status": "active",
                     "role": "talent",
-                    "email": user.email,
+                    "email": user.email.clone().unwrap_or_else(|| inv.email.clone()),
                     "updated_at": now_rfc3339(),
                 })
                 .to_string(),
@@ -650,7 +693,7 @@ pub async fn accept_by_token(
                     "agency_id": inv.agency_id,
                     "creator_id": creator_id,
                     "full_legal_name": full_legal_name,
-                    "email": user.email,
+                    "email": user.email.clone().unwrap_or_else(|| inv.email.clone()),
                     "status": "active",
                     "role": "talent",
                     "updated_at": now_rfc3339(),

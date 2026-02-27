@@ -12,6 +12,12 @@ import {
   getAgencyTalentInviteMagicLinkByToken,
 } from "@/api/functions";
 
+const INVITE_INTENT_KEY = "likelee_invite_intent";
+const INVITE_INTENT_TOKEN_KEY = "likelee_invite_token";
+const INVITE_INTENT_TS_KEY = "likelee_invite_intent_ts";
+const INVITE_INTENT_ACCEPT = "accept";
+const INVITE_INTENT_TTL_MS = 1000 * 60 * 30;
+
 export default function AgencyInviteLanding() {
   const { token } = useParams();
   const navigate = useNavigate();
@@ -20,6 +26,11 @@ export default function AgencyInviteLanding() {
   const [loading, setLoading] = React.useState(true);
   const [actionLoading, setActionLoading] = React.useState(false);
   const [invite, setInvite] = React.useState<any>(null);
+  const [hasAcceptIntent, setHasAcceptIntent] = React.useState(false);
+  const [autoFinalizeError, setAutoFinalizeError] = React.useState<
+    string | null
+  >(null);
+  const autoFinalizeRef = React.useRef(false);
 
   const effectiveToken = String(token || "").trim();
 
@@ -59,11 +70,39 @@ export default function AgencyInviteLanding() {
   const hasInviteRole =
     effectiveRole === "creator" || effectiveRole === "talent";
 
-  const startedMagicLinkRef = React.useRef(false);
+  const isPending = status === "pending";
+
+  const readAcceptIntent = React.useCallback(() => {
+    try {
+      const intent = localStorage.getItem(INVITE_INTENT_KEY) || "";
+      const storedToken = localStorage.getItem(INVITE_INTENT_TOKEN_KEY) || "";
+      const ts = Number(localStorage.getItem(INVITE_INTENT_TS_KEY) || "0");
+      const fresh = ts > 0 && Date.now() - ts < INVITE_INTENT_TTL_MS;
+      return (
+        fresh &&
+        intent === INVITE_INTENT_ACCEPT &&
+        storedToken === effectiveToken
+      );
+    } catch {
+      return false;
+    }
+  }, [effectiveToken]);
+
+  const clearAcceptIntent = React.useCallback(() => {
+    try {
+      localStorage.removeItem(INVITE_INTENT_KEY);
+      localStorage.removeItem(INVITE_INTENT_TOKEN_KEY);
+      localStorage.removeItem(INVITE_INTENT_TS_KEY);
+    } catch {
+      // ignore
+    }
+    setHasAcceptIntent(false);
+  }, []);
 
   const startMagicLinkFlow = async () => {
     if (!effectiveToken) return;
     setActionLoading(true);
+    setAutoFinalizeError(null);
     try {
       try {
         localStorage.setItem(
@@ -71,9 +110,13 @@ export default function AgencyInviteLanding() {
           `/invite/agency/${encodeURIComponent(effectiveToken)}`,
         );
         localStorage.setItem("likelee_invite_next_ts", String(Date.now()));
+        localStorage.setItem(INVITE_INTENT_KEY, INVITE_INTENT_ACCEPT);
+        localStorage.setItem(INVITE_INTENT_TOKEN_KEY, effectiveToken);
+        localStorage.setItem(INVITE_INTENT_TS_KEY, String(Date.now()));
       } catch {
         // ignore
       }
+      setHasAcceptIntent(true);
 
       const res: any =
         await getAgencyTalentInviteMagicLinkByToken(effectiveToken);
@@ -94,35 +137,53 @@ export default function AgencyInviteLanding() {
   };
 
   React.useEffect(() => {
-    if (startedMagicLinkRef.current) return;
-    if (!effectiveToken) return;
-    if (!invite) return;
-    if (authenticated) return;
-    if (String(invite?.status || "") !== "pending") return;
-    startedMagicLinkRef.current = true;
-    void startMagicLinkFlow();
-  }, [authenticated, effectiveToken, invite]);
+    setHasAcceptIntent(readAcceptIntent());
+  }, [readAcceptIntent, loading, authenticated]);
 
-  const acceptInvite = async () => {
-    if (!effectiveToken) return;
-    setActionLoading(true);
-    try {
-      await acceptAgencyTalentInviteByToken(effectiveToken);
-      toast({
-        title: "Invitation accepted",
-        description: "Welcome! Redirecting you to the Talent Portal…",
-      });
-      navigate("/talentportal", { replace: true });
-    } catch (e: any) {
-      toast({
-        variant: "destructive",
-        title: "Could not accept",
-        description: e?.message || String(e),
-      });
-    } finally {
-      setActionLoading(false);
+  React.useEffect(() => {
+    if (!isPending && hasAcceptIntent) {
+      clearAcceptIntent();
     }
-  };
+  }, [isPending, hasAcceptIntent, clearAcceptIntent]);
+
+  React.useEffect(() => {
+    if (!authenticated || !isPending || !hasInviteRole || !hasAcceptIntent) {
+      return;
+    }
+    if (autoFinalizeRef.current) return;
+    autoFinalizeRef.current = true;
+    setAutoFinalizeError(null);
+    setActionLoading(true);
+
+    (async () => {
+      try {
+        await acceptAgencyTalentInviteByToken(effectiveToken);
+        clearAcceptIntent();
+        toast({
+          title: "Invitation accepted",
+          description: "Welcome! Redirecting you to the Talent Portal…",
+        });
+        navigate("/talentportal", { replace: true });
+      } catch (e: any) {
+        setAutoFinalizeError(e?.message || String(e));
+        toast({
+          variant: "destructive",
+          title: "Could not complete invite acceptance",
+          description: e?.message || String(e),
+        });
+      } finally {
+        setActionLoading(false);
+      }
+    })();
+  }, [
+    authenticated,
+    isPending,
+    hasInviteRole,
+    hasAcceptIntent,
+    effectiveToken,
+    navigate,
+    clearAcceptIntent,
+  ]);
 
   const declineInvite = async () => {
     if (!effectiveToken) return;
@@ -175,8 +236,6 @@ export default function AgencyInviteLanding() {
     );
   }
 
-  const isPending = status === "pending";
-
   return (
     <div className="max-w-xl mx-auto px-6 py-16">
       <Card className="p-6">
@@ -205,8 +264,8 @@ export default function AgencyInviteLanding() {
         </div>
 
         <div className="mt-6 text-sm text-gray-700">
-          To access the Talent Portal, you need to set a password and accept the
-          invitation.
+          Accept this invitation to continue. You will then set your password
+          and be redirected directly to the Talent Portal.
         </div>
 
         {!authenticated ? (
@@ -224,13 +283,13 @@ export default function AgencyInviteLanding() {
                   Redirecting…
                 </span>
               ) : (
-                "Continue"
+                "Accept & Continue"
               )}
             </Button>
 
             <div className="mt-3 text-xs text-gray-500">
-              You’ll be redirected to set your password. After that, you’ll come
-              back here to accept or decline.
+              You’ll be redirected to set your password. After that, acceptance
+              is completed automatically.
             </div>
           </div>
         ) : (
@@ -271,28 +330,48 @@ export default function AgencyInviteLanding() {
                 </div>
               </div>
             )}
-            <Button
-              className="w-full h-11 bg-[#32C8D1] hover:bg-[#2AB8C1]"
-              disabled={!isPending || actionLoading || !hasInviteRole}
-              onClick={acceptInvite}
-            >
-              {actionLoading ? (
-                <span className="inline-flex items-center gap-2">
+            {hasAcceptIntent && isPending && hasInviteRole ? (
+              <div className="rounded-lg border border-cyan-200 bg-cyan-50 p-3 text-sm text-cyan-900">
+                <div className="inline-flex items-center gap-2 font-medium">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Processing…
-                </span>
-              ) : (
-                "Accept invitation"
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full h-11"
-              disabled={!isPending || actionLoading || !hasInviteRole}
-              onClick={declineInvite}
-            >
-              Decline
-            </Button>
+                  Finalizing your acceptance...
+                </div>
+                {autoFinalizeError && (
+                  <div className="mt-2 text-xs text-red-700">
+                    {autoFinalizeError}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <Button
+                  className="w-full h-11 bg-[#32C8D1] hover:bg-[#2AB8C1]"
+                  disabled={!isPending || actionLoading || !hasInviteRole}
+                  onClick={startMagicLinkFlow}
+                >
+                  {actionLoading ? (
+                    <span className="inline-flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Redirecting…
+                    </span>
+                  ) : (
+                    "Accept & Continue"
+                  )}
+                </Button>
+                <div className="text-xs text-gray-500">
+                  You’ll be redirected to set your password. After that,
+                  acceptance is completed automatically.
+                </div>
+                <Button
+                  variant="outline"
+                  className="w-full h-11"
+                  disabled={!isPending || actionLoading || !hasInviteRole}
+                  onClick={declineInvite}
+                >
+                  Decline
+                </Button>
+              </>
+            )}
 
             <div className="text-xs text-gray-500">
               Signed in as {profile?.email || ""}
