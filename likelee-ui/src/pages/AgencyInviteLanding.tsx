@@ -22,7 +22,7 @@ export default function AgencyInviteLanding() {
   const { token } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { authenticated, profile, user, supabase } = useAuth();
+  const { authenticated, profile, supabase } = useAuth();
 
   const [loading, setLoading] = React.useState(true);
   const [actionLoading, setActionLoading] = React.useState(false);
@@ -67,14 +67,12 @@ export default function AgencyInviteLanding() {
     invite?.agencies?.agency_name || invite?.agency_name || "Agency";
   const agencyLogoUrl = invite?.agencies?.logo_url || invite?.agency_logo_url;
   const status = String(invite?.status || "");
-  const signedInEmail = String(user?.email || profile?.email || "")
+  const signedInEmail = String(profile?.email || "")
     .trim()
     .toLowerCase();
   const inviteEmail = email.trim().toLowerCase();
   const emailMatchesInvite = !!inviteEmail && signedInEmail === inviteEmail;
-  const effectiveRole = String(
-    profile?.role || user?.user_metadata?.role || "",
-  ).toLowerCase();
+  const effectiveRole = String(profile?.role || "").toLowerCase();
   const hasInviteRole =
     effectiveRole === "creator" || effectiveRole === "talent";
 
@@ -182,7 +180,6 @@ export default function AgencyInviteLanding() {
         });
         navigate("/talentportal", { replace: true });
       } catch (e: any) {
-        autoFinalizeRef.current = false;
         setAutoFinalizeError(e?.message || String(e));
         toast({
           variant: "destructive",
@@ -203,30 +200,6 @@ export default function AgencyInviteLanding() {
     navigate,
     clearAcceptIntent,
   ]);
-
-  const completeAcceptance = React.useCallback(async () => {
-    if (!effectiveToken) return;
-    setActionLoading(true);
-    setAutoFinalizeError(null);
-    try {
-      await acceptAgencyTalentInviteByToken(effectiveToken);
-      clearAcceptIntent();
-      toast({
-        title: "Invitation accepted",
-        description: "Welcome! Redirecting you to the Talent Portal…",
-      });
-      navigate("/talentportal", { replace: true });
-    } catch (e: any) {
-      setAutoFinalizeError(e?.message || String(e));
-      toast({
-        variant: "destructive",
-        title: "Could not complete invite acceptance",
-        description: e?.message || String(e),
-      });
-    } finally {
-      setActionLoading(false);
-    }
-  }, [clearAcceptIntent, effectiveToken, navigate]);
 
   const declineInvite = async () => {
     if (!effectiveToken) return;
@@ -337,7 +310,10 @@ export default function AgencyInviteLanding() {
           </div>
         ) : (
           <div className="mt-6 space-y-3">
-            {hasAcceptIntent && isPending && hasInviteRole && emailMatchesInvite ? (
+            {hasAcceptIntent &&
+            isPending &&
+            hasInviteRole &&
+            emailMatchesInvite ? (
               <div className="rounded-lg border border-cyan-200 bg-cyan-50 p-3 text-sm text-cyan-900">
                 <div className="inline-flex items-center gap-2 font-medium">
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -354,13 +330,7 @@ export default function AgencyInviteLanding() {
                 <Button
                   className="w-full h-11 bg-[#32C8D1] hover:bg-[#2AB8C1]"
                   disabled={!isPending || actionLoading}
-                  onClick={async () => {
-                    if (authenticated && hasInviteRole && emailMatchesInvite) {
-                      await completeAcceptance();
-                      return;
-                    }
-                    await startMagicLinkFlow();
-                  }}
+                  onClick={startMagicLinkFlow}
                 >
                   {actionLoading ? (
                     <span className="inline-flex items-center gap-2">
@@ -398,7 +368,7 @@ export default function AgencyInviteLanding() {
             )}
 
             <div className="text-xs text-gray-500">
-              Signed in as {user?.email || profile?.email || ""}
+              Signed in as {profile?.email || ""}
             </div>
           </div>
         )}
