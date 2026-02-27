@@ -12,15 +12,7 @@ import {
   type CreatorAgencyConnection,
   type CreatorAgencyInvite,
 } from "@/api/creatorAgencyConnection";
-import {
-  exchangeStripeOAuthCode,
-  getHistory,
-  getPayoutBalance,
-  getPayoutsAccountStatus,
-  getStripeOAuthUrl,
-  listTalentAgencyInvites,
-  requestTalentPayout,
-} from "@/api/functions";
+import { listTalentAgencyInvites } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -1208,6 +1200,8 @@ export default function CreatorDashboard() {
   const fetchPayoutStatus = async () => {
     if (!initialized || !authenticated || !user?.id) return;
     try {
+      const { getPayoutsAccountStatus, getPayoutBalance, getHistory } =
+        await import("@/api/functions");
       const [statusRes, balanceRes, historyRes] = await Promise.all([
         getPayoutsAccountStatus(user.id),
         getPayoutBalance(user.id),
@@ -1236,6 +1230,7 @@ export default function CreatorDashboard() {
 
         try {
           setIsLoadingPayout(true);
+          const { exchangeStripeOAuthCode } = await import("@/api/functions");
           const res = await exchangeStripeOAuthCode(code, user.id);
 
           if (res.data.status === "ok") {
@@ -9052,6 +9047,8 @@ export default function CreatorDashboard() {
                     try {
                       setIsLoadingPayout(true);
                       if (!user?.id) throw new Error("Not authenticated");
+                      const { getStripeOAuthUrl } =
+                        await import("@/api/functions");
                       const res = await getStripeOAuthUrl(user.id);
 
                       // Handle both possible response formats
@@ -9085,6 +9082,8 @@ export default function CreatorDashboard() {
                       const profileId = user?.id;
                       if (!profileId) throw new Error("Not authenticated");
 
+                      const { getStripeOAuthUrl } =
+                        await import("@/api/functions");
                       const res = await getStripeOAuthUrl(profileId);
 
                       const url = res?.data?.url || res?.url;
@@ -9115,11 +9114,32 @@ export default function CreatorDashboard() {
                 onClick={async () => {
                   try {
                     setIsLoadingPayout(true);
-                    toast({
-                      title: "Coming soon",
-                      description:
-                        "PayPal and Wise payouts are not available yet. Please use Stripe Connect for now.",
+                    const profileId = user?.id;
+                    if (!profileId) throw new Error("Not authenticated");
+
+                    const { updatePayoutSettings } =
+                      await import("@/api/functions");
+                    const result = await updatePayoutSettings({
+                      profile_id: profileId,
+                      preference: payoutMethod,
+                      paypal_email:
+                        payoutMethod === "paypal" ? paypalEmail : undefined,
+                      wise_details:
+                        payoutMethod === "wise"
+                          ? { email: wiseDetails }
+                          : undefined,
                     });
+
+                    if (result.data?.status === "error") {
+                      throw new Error(result.data?.error || "Unknown error");
+                    }
+
+                    toast({
+                      title: "Success",
+                      description: `${payoutMethod === "paypal" ? "PayPal" : "Wise"} payout method configured successfully! You can now withdraw funds.`,
+                    });
+                    setShowPayoutSettings(false);
+                    await fetchPayoutStatus();
                   } catch (e) {
                     console.error(e);
                     toast({
@@ -9236,6 +9256,8 @@ export default function CreatorDashboard() {
               onClick={async () => {
                 try {
                   setIsLoadingPayout(true);
+                  const { requestTalentPayout } =
+                    await import("@/api/functions");
                   const amountCents = Math.round(
                     parseFloat(requestPayoutAmount) * 100,
                   );
