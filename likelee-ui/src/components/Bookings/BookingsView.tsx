@@ -7,6 +7,7 @@ import { ClientDatabaseTab } from "./Tabs/ClientDatabaseTab";
 import { TalentAvailabilityTab } from "./Tabs/TalentAvailabilityTab";
 import { ManagementAnalyticsView } from "./ManagementAnalyticsView";
 import { NotificationsTab } from "./Tabs/NotificationsTab";
+import { CampaignsTab } from "./Tabs/CampaignsTab";
 
 // We keep PlaceholderView for fallback
 const PlaceholderView = ({ activeSubTab }: { activeSubTab: string }) => (
@@ -71,6 +72,7 @@ export const BookingsView = ({
     return <NotificationsTab bookings={bookings} />;
   if (activeSubTab === "Management & Analytics")
     return <ManagementAnalyticsView bookings={bookings} />;
+  if (activeSubTab === "Campaigns") return <CampaignsTab />;
 
   return <PlaceholderView activeSubTab={activeSubTab} />;
 };
