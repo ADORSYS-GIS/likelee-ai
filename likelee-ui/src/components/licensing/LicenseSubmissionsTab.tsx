@@ -204,7 +204,7 @@ export const LicenseSubmissionsTab = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-start">
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
         <div className="flex flex-col gap-1">
           <h2 className="text-2xl font-bold tracking-tight">
             License Submissions
@@ -233,262 +233,271 @@ export const LicenseSubmissionsTab = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Client</TableHead>
-                <TableHead>Template</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Sent Date</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
+          <div className="-mx-2 overflow-x-auto px-2">
+            <Table className="min-w-[860px]">
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center h-24">
-                    Loading...
-                  </TableCell>
+                  <TableHead>Client</TableHead>
+                  <TableHead>Template</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Sent Date</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ) : filteredSubmissions.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={5}
-                    className="text-center h-24 text-muted-foreground"
-                  >
-                    {activeTab === "Active"
-                      ? "No active submissions found."
-                      : "No archived submissions found."}
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredSubmissions.map((sub) => (
-                  <TableRow key={sub.id}>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-medium text-sm">
-                          {sub.client_name}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {sub.client_email}
-                        </span>
-                      </div>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center h-24">
+                      Loading...
                     </TableCell>
-                    <TableCell>
-                      <span className="text-sm font-semibold text-gray-700">
-                        {sub.template_name || "—"}
-                      </span>
+                  </TableRow>
+                ) : filteredSubmissions.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={5}
+                      className="text-center h-24 text-muted-foreground"
+                    >
+                      {activeTab === "Active"
+                        ? "No active submissions found."
+                        : "No archived submissions found."}
                     </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1">
-                        {getStatusBadge(sub)}
-                        {sub.status === "declined" && sub.decline_reason && (
-                          <p className="text-[10px] text-red-600 bg-red-50 p-1.5 rounded border border-red-100 mt-1 max-w-[200px]">
-                            <span className="font-bold">Reason:</span>{" "}
-                            {sub.decline_reason}
-                          </p>
+                  </TableRow>
+                ) : (
+                  filteredSubmissions.map((sub) => (
+                    <TableRow key={sub.id}>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-sm">
+                            {sub.client_name}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {sub.client_email}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm font-semibold text-gray-700">
+                          {sub.template_name || "—"}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          {getStatusBadge(sub)}
+                          {sub.status === "declined" && sub.decline_reason && (
+                            <p className="text-[10px] text-red-600 bg-red-50 p-1.5 rounded border border-red-100 mt-1 max-w-[200px]">
+                              <span className="font-bold">Reason:</span>{" "}
+                              {sub.decline_reason}
+                            </p>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {format(
+                          new Date(sub.sent_at || sub.created_at),
+                          "MMM d, yyyy",
                         )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {format(
-                        new Date(sub.sent_at || sub.created_at),
-                        "MMM d, yyyy",
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {activeTab === "Archive" ? (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            title="Recover"
-                            onClick={() => recoverMutation.mutate(sub.id)}
-                          >
-                            <RotateCcw className="h-4 w-4 text-blue-600" />
-                          </Button>
-                        ) : (
-                          <>
-                            {sub.status === "agency_pending" &&
-                            getAgencySigningUrl(sub) ? (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 px-3 text-xs font-semibold text-blue-700 border-blue-200 hover:bg-blue-50"
-                                title="Open Agency Signing Link"
-                                onClick={() =>
-                                  window.open(
-                                    getAgencySigningUrl(sub)!,
-                                    "_blank",
-                                  )
-                                }
-                              >
-                                Sign here
-                              </Button>
-                            ) : (
-                              sub.status !== "completed" &&
-                              sub.status !== "signed" && (
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {activeTab === "Archive" ? (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              title="Recover"
+                              onClick={() => recoverMutation.mutate(sub.id)}
+                            >
+                              <RotateCcw className="h-4 w-4 text-blue-600" />
+                            </Button>
+                          ) : (
+                            <>
+                              {sub.status === "agency_pending" &&
+                              getAgencySigningUrl(sub) ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 px-3 text-xs font-semibold text-blue-700 border-blue-200 hover:bg-blue-50"
+                                  title="Open Agency Signing Link"
+                                  onClick={() =>
+                                    window.open(
+                                      getAgencySigningUrl(sub)!,
+                                      "_blank",
+                                    )
+                                  }
+                                >
+                                  Sign here
+                                </Button>
+                              ) : (
+                                sub.status !== "completed" &&
+                                sub.status !== "signed" && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    title="Resend"
+                                    onClick={() =>
+                                      resendMutation.mutate(sub.id)
+                                    }
+                                  >
+                                    <RotateCcw className="h-4 w-4 text-blue-600" />
+                                  </Button>
+                                )
+                              )}
+                              {sub.signed_document_url && (
                                 <Button
                                   variant="ghost"
                                   size="icon"
                                   className="h-8 w-8"
-                                  title="Resend"
-                                  onClick={() => resendMutation.mutate(sub.id)}
+                                  title="Download"
+                                  onClick={() =>
+                                    window.open(
+                                      sub.signed_document_url,
+                                      "_blank",
+                                    )
+                                  }
                                 >
-                                  <RotateCcw className="h-4 w-4 text-blue-600" />
+                                  <Download className="h-4 w-4 text-green-600" />
                                 </Button>
-                              )
-                            )}
-                            {sub.signed_document_url && (
+                              )}
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8"
-                                title="Download"
-                                onClick={() =>
-                                  window.open(sub.signed_document_url, "_blank")
-                                }
+                                title="Archive"
+                                onClick={() => archiveMutation.mutate(sub.id)}
                               >
-                                <Download className="h-4 w-4 text-green-600" />
+                                <Archive className="h-4 w-4 text-red-600" />
                               </Button>
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              title="Archive"
-                              onClick={() => archiveMutation.mutate(sub.id)}
-                            >
-                              <Archive className="h-4 w-4 text-red-600" />
-                            </Button>
-                          </>
-                        )}
+                            </>
+                          )}
 
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              title="More actions"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent
-                            align="end"
-                            className="w-56 rounded-xl"
-                          >
-                            {getAgencySigningUrl(sub) && (
-                              <>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    window.open(
-                                      getAgencySigningUrl(sub)!,
-                                      "_blank",
-                                    )
-                                  }
-                                >
-                                  <Link2 className="mr-2 h-4 w-4 text-red-600" />
-                                  Open Agency Link
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    copyLink(
-                                      getAgencySigningUrl(sub)!,
-                                      "Agency link",
-                                    )
-                                  }
-                                >
-                                  <Copy className="mr-2 h-4 w-4 text-red-600" />
-                                  Copy Agency Link
-                                </DropdownMenuItem>
-                              </>
-                            )}
-
-                            {getClientSigningUrl(sub) && (
-                              <>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    window.open(
-                                      getClientSigningUrl(sub)!,
-                                      "_blank",
-                                    )
-                                  }
-                                >
-                                  <Link2 className="mr-2 h-4 w-4 text-blue-600" />
-                                  Open Client Link
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    copyLink(
-                                      getClientSigningUrl(sub)!,
-                                      "Client link",
-                                    )
-                                  }
-                                >
-                                  <Copy className="mr-2 h-4 w-4 text-blue-600" />
-                                  Copy Client Link
-                                </DropdownMenuItem>
-                              </>
-                            )}
-
-                            {(getAgencySigningUrl(sub) ||
-                              getClientSigningUrl(sub)) && (
-                              <DropdownMenuSeparator />
-                            )}
-
-                            {activeTab === "Archive" ? (
-                              <DropdownMenuItem
-                                onClick={() => recoverMutation.mutate(sub.id)}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                title="More actions"
                               >
-                                <RotateCcw className="mr-2 h-4 w-4 text-blue-600" />
-                                Recover to Active
-                              </DropdownMenuItem>
-                            ) : (
-                              <>
-                                {sub.status !== "completed" &&
-                                  sub.status !== "signed" && (
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        resendMutation.mutate(sub.id)
-                                      }
-                                    >
-                                      <RotateCcw className="mr-2 h-4 w-4 text-blue-600" />
-                                      Resend Email
-                                    </DropdownMenuItem>
-                                  )}
-                                {sub.signed_document_url && (
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              align="end"
+                              className="w-56 rounded-xl"
+                            >
+                              {getAgencySigningUrl(sub) && (
+                                <>
                                   <DropdownMenuItem
                                     onClick={() =>
                                       window.open(
-                                        sub.signed_document_url,
+                                        getAgencySigningUrl(sub)!,
                                         "_blank",
                                       )
                                     }
                                   >
-                                    <Download className="mr-2 h-4 w-4 text-green-600" />
-                                    Download PDF
+                                    <Link2 className="mr-2 h-4 w-4 text-red-600" />
+                                    Open Agency Link
                                   </DropdownMenuItem>
-                                )}
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      copyLink(
+                                        getAgencySigningUrl(sub)!,
+                                        "Agency link",
+                                      )
+                                    }
+                                  >
+                                    <Copy className="mr-2 h-4 w-4 text-red-600" />
+                                    Copy Agency Link
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+
+                              {getClientSigningUrl(sub) && (
+                                <>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      window.open(
+                                        getClientSigningUrl(sub)!,
+                                        "_blank",
+                                      )
+                                    }
+                                  >
+                                    <Link2 className="mr-2 h-4 w-4 text-blue-600" />
+                                    Open Client Link
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      copyLink(
+                                        getClientSigningUrl(sub)!,
+                                        "Client link",
+                                      )
+                                    }
+                                  >
+                                    <Copy className="mr-2 h-4 w-4 text-blue-600" />
+                                    Copy Client Link
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+
+                              {(getAgencySigningUrl(sub) ||
+                                getClientSigningUrl(sub)) && (
+                                <DropdownMenuSeparator />
+                              )}
+
+                              {activeTab === "Archive" ? (
                                 <DropdownMenuItem
-                                  onClick={() => archiveMutation.mutate(sub.id)}
+                                  onClick={() => recoverMutation.mutate(sub.id)}
                                 >
-                                  <Archive className="mr-2 h-4 w-4 text-red-600" />
-                                  Archive
+                                  <RotateCcw className="mr-2 h-4 w-4 text-blue-600" />
+                                  Recover to Active
                                 </DropdownMenuItem>
-                              </>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                              ) : (
+                                <>
+                                  {sub.status !== "completed" &&
+                                    sub.status !== "signed" && (
+                                      <DropdownMenuItem
+                                        onClick={() =>
+                                          resendMutation.mutate(sub.id)
+                                        }
+                                      >
+                                        <RotateCcw className="mr-2 h-4 w-4 text-blue-600" />
+                                        Resend Email
+                                      </DropdownMenuItem>
+                                    )}
+                                  {sub.signed_document_url && (
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        window.open(
+                                          sub.signed_document_url,
+                                          "_blank",
+                                        )
+                                      }
+                                    >
+                                      <Download className="mr-2 h-4 w-4 text-green-600" />
+                                      Download PDF
+                                    </DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      archiveMutation.mutate(sub.id)
+                                    }
+                                  >
+                                    <Archive className="mr-2 h-4 w-4 text-red-600" />
+                                    Archive
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

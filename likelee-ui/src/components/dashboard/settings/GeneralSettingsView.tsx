@@ -2149,8 +2149,8 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                         {pref.desc}
                       </p>
                     </div>
-                    <div className="flex items-center gap-6">
-                      <div className="flex items-center gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full sm:w-auto">
+                      <div className="flex items-center justify-between sm:justify-start gap-2">
                         <Switch
                           checked={pref.channels.email}
                           onCheckedChange={(checked) =>
@@ -2173,7 +2173,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                           Email
                         </span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-between sm:justify-start gap-2">
                         <Switch checked={false} disabled />
                         <span className="text-xs font-bold text-gray-900 opacity-60">
                           SMS
@@ -2182,7 +2182,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                           Coming Soon
                         </span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-between sm:justify-start gap-2">
                         <Switch checked={false} disabled />
                         <span className="text-xs font-bold text-gray-900 opacity-60">
                           Push
@@ -2619,7 +2619,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
 
         {activeTab === "Team" && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <h3 className="text-xl font-bold text-gray-900">
                   Team Management
@@ -2630,7 +2630,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
               </div>
               <Button
                 disabled
-                className="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2 shrink-0"
+                className="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 shrink-0 w-full sm:w-auto"
               >
                 <Plus className="w-4 h-4" />
                 Invite User
