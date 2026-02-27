@@ -575,10 +575,6 @@ pub async fn accept_by_token(
 
     ensure_creator_row_exists(&state, &user, &creator_id).await;
 
-    // Upsert / reactivate agency_users row.
-    // Resolution order to avoid duplicates:
-    // 1) existing by agency + creator_id
-    // 2) fallback existing by agency + invited email (roster row before account activation)
     let mut existing_agency_user_id: Option<String> = None;
 
     let au_by_creator_resp = state
