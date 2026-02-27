@@ -272,7 +272,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // If a session already exists on page load, onAuthStateChange may not fire.
       // Ensure profile is fetched so ProtectedRoute can render role-gated pages.
       const currentProfile = profileRef.current;
-      if (currentUser && (!currentProfile || currentProfile.id !== currentUser.id)) {
+      if (
+        currentUser &&
+        (!currentProfile || currentProfile.id !== currentUser.id)
+      ) {
         fetchProfile(
           currentUser.id,
           currentUser.email,
