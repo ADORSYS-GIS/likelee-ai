@@ -27,6 +27,8 @@ export default function AgencyInviteLanding() {
   const [loading, setLoading] = React.useState(true);
   const [actionLoading, setActionLoading] = React.useState(false);
   const [invite, setInvite] = React.useState<any>(null);
+  const [requiresPasswordSetup, setRequiresPasswordSetup] =
+    React.useState<boolean>(true);
   const [hasAcceptIntent, setHasAcceptIntent] = React.useState(false);
   const [autoFinalizeError, setAutoFinalizeError] = React.useState<
     string | null
@@ -48,6 +50,7 @@ export default function AgencyInviteLanding() {
         const inv = res?.invite;
         if (!active) return;
         setInvite(inv || null);
+        setRequiresPasswordSetup(Boolean(res?.requires_password_setup));
       } catch (e: any) {
         if (!active) return;
         setInvite(null);
@@ -280,8 +283,7 @@ export default function AgencyInviteLanding() {
         </div>
 
         <div className="mt-6 text-sm text-gray-700">
-          Accept this invitation to continue. You will then set your password
-          and be redirected directly to the Talent Portal.
+          Accept this invitation to continue to the Talent Portal.
         </div>
 
         {!authenticated ? (
@@ -304,8 +306,9 @@ export default function AgencyInviteLanding() {
             </Button>
 
             <div className="mt-3 text-xs text-gray-500">
-              You’ll be redirected to set your password. After that, acceptance
-              is completed automatically.
+              {requiresPasswordSetup
+                ? "You’ll be redirected to set your password first. After that, acceptance is completed automatically."
+                : "You’ll receive a secure sign-in link. After sign-in, acceptance is completed automatically."}
             </div>
           </div>
         ) : (
@@ -342,8 +345,9 @@ export default function AgencyInviteLanding() {
                   )}
                 </Button>
                 <div className="text-xs text-gray-500">
-                  You’ll be redirected to set your password. After that,
-                  acceptance is completed automatically.
+                  {requiresPasswordSetup
+                    ? "You’ll be redirected to set your password first. After that, acceptance is completed automatically."
+                    : "You’ll receive a secure sign-in link. After sign-in, acceptance is completed automatically."}
                 </div>
                 {authenticated && (!hasInviteRole || !emailMatchesInvite) && (
                   <div className="text-xs text-amber-700">
