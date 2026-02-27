@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ const INVITE_INTENT_TTL_MS = 1000 * 60 * 30;
 
 export default function AgencyInviteLanding() {
   const { token } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { authenticated, profile, supabase } = useAuth();
 
@@ -66,6 +67,9 @@ export default function AgencyInviteLanding() {
     invite?.agencies?.agency_name || invite?.agency_name || "Agency";
   const agencyLogoUrl = invite?.agencies?.logo_url || invite?.agency_logo_url;
   const status = String(invite?.status || "");
+  const signedInEmail = String(profile?.email || "").trim().toLowerCase();
+  const inviteEmail = email.trim().toLowerCase();
+  const emailMatchesInvite = !!inviteEmail && signedInEmail === inviteEmail;
   const effectiveRole = String(profile?.role || "").toLowerCase();
   const hasInviteRole =
     effectiveRole === "creator" || effectiveRole === "talent";
@@ -73,6 +77,9 @@ export default function AgencyInviteLanding() {
   const isPending = status === "pending";
 
   const readAcceptIntent = React.useCallback(() => {
+    const params = new URLSearchParams(location.search);
+    const urlIntent = params.get("intent");
+    if (urlIntent === INVITE_INTENT_ACCEPT) return true;
     try {
       const intent = localStorage.getItem(INVITE_INTENT_KEY) || "";
       const storedToken = localStorage.getItem(INVITE_INTENT_TOKEN_KEY) || "";
@@ -86,7 +93,7 @@ export default function AgencyInviteLanding() {
     } catch {
       return false;
     }
-  }, [effectiveToken]);
+  }, [effectiveToken, location.search]);
 
   const clearAcceptIntent = React.useCallback(() => {
     try {
@@ -107,7 +114,7 @@ export default function AgencyInviteLanding() {
       try {
         localStorage.setItem(
           "likelee_invite_next",
-          `/invite/agency/${encodeURIComponent(effectiveToken)}`,
+          `/invite/agency/${encodeURIComponent(effectiveToken)}?intent=accept`,
         );
         localStorage.setItem("likelee_invite_next_ts", String(Date.now()));
         localStorage.setItem(INVITE_INTENT_KEY, INVITE_INTENT_ACCEPT);
@@ -147,7 +154,13 @@ export default function AgencyInviteLanding() {
   }, [isPending, hasAcceptIntent, clearAcceptIntent]);
 
   React.useEffect(() => {
-    if (!authenticated || !isPending || !hasInviteRole || !hasAcceptIntent) {
+    if (
+      !authenticated ||
+      !isPending ||
+      !hasInviteRole ||
+      !emailMatchesInvite ||
+      !hasAcceptIntent
+    ) {
       return;
     }
     if (autoFinalizeRef.current) return;
@@ -179,6 +192,7 @@ export default function AgencyInviteLanding() {
     authenticated,
     isPending,
     hasInviteRole,
+    emailMatchesInvite,
     hasAcceptIntent,
     effectiveToken,
     navigate,
@@ -294,43 +308,7 @@ export default function AgencyInviteLanding() {
           </div>
         ) : (
           <div className="mt-6 space-y-3">
-            {!hasInviteRole && (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-                You’re signed in as{" "}
-                <span className="font-semibold">
-                  {effectiveRole || "unknown"}
-                </span>
-                . To accept this portal invite, please sign in as a{" "}
-                <span className="font-semibold">Creator (Face/Talent)</span>
-                with <span className="font-semibold">{email}</span>.
-                <div className="mt-3">
-                  <Button
-                    variant="outline"
-                    className="h-10"
-                    disabled={actionLoading}
-                    onClick={async () => {
-                      try {
-                        await supabase?.auth.signOut();
-                        toast({
-                          title: "Signed out",
-                          description:
-                            "Now set your password / log in with the invited email.",
-                        });
-                      } catch (e: any) {
-                        toast({
-                          variant: "destructive",
-                          title: "Could not sign out",
-                          description: e?.message || String(e),
-                        });
-                      }
-                    }}
-                  >
-                    Sign out
-                  </Button>
-                </div>
-              </div>
-            )}
-            {hasAcceptIntent && isPending && hasInviteRole ? (
+            {hasAcceptIntent && isPending && hasInviteRole && emailMatchesInvite ? (
               <div className="rounded-lg border border-cyan-200 bg-cyan-50 p-3 text-sm text-cyan-900">
                 <div className="inline-flex items-center gap-2 font-medium">
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -346,7 +324,7 @@ export default function AgencyInviteLanding() {
               <>
                 <Button
                   className="w-full h-11 bg-[#32C8D1] hover:bg-[#2AB8C1]"
-                  disabled={!isPending || actionLoading || !hasInviteRole}
+                  disabled={!isPending || actionLoading}
                   onClick={startMagicLinkFlow}
                 >
                   {actionLoading ? (
@@ -362,10 +340,21 @@ export default function AgencyInviteLanding() {
                   You’ll be redirected to set your password. After that,
                   acceptance is completed automatically.
                 </div>
+                {authenticated && (!hasInviteRole || !emailMatchesInvite) && (
+                  <div className="text-xs text-amber-700">
+                    Continue with the invited account ({email || "invite email"}
+                    ) to finish acceptance.
+                  </div>
+                )}
                 <Button
                   variant="outline"
                   className="w-full h-11"
-                  disabled={!isPending || actionLoading || !hasInviteRole}
+                  disabled={
+                    !isPending ||
+                    actionLoading ||
+                    !hasInviteRole ||
+                    !emailMatchesInvite
+                  }
                   onClick={declineInvite}
                 >
                   Decline
