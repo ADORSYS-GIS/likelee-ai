@@ -95,6 +95,32 @@ async fn creator_profile_exists_by_email(state: &AppState, email: &str) -> bool 
     !rows.is_empty()
 }
 
+async fn creator_id_by_email(state: &AppState, email: &str) -> Option<String> {
+    let normalized = email.trim().to_lowercase();
+    if normalized.is_empty() {
+        return None;
+    }
+
+    let resp = state
+        .pg
+        .from("creators")
+        .select("id")
+        .eq("email", &normalized)
+        .limit(1)
+        .execute()
+        .await
+        .ok()?;
+    if !resp.status().is_success() {
+        return None;
+    }
+    let text = resp.text().await.ok()?;
+    let rows: Vec<Value> = serde_json::from_str(&text).ok()?;
+    rows.first()
+        .and_then(|r| r.get("id"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+}
+
 fn parse_string_list(value: &Value) -> Vec<String> {
     if let Some(arr) = value.as_array() {
         return arr
@@ -441,6 +467,53 @@ pub async fn create_for_agency(
         return Err((StatusCode::BAD_REQUEST, "missing email".to_string()));
     }
     let creator_profile_exists = creator_profile_exists_by_email(&state, &email).await;
+    let existing_creator_id = creator_id_by_email(&state, &email).await;
+
+    if let Some(creator_id) = existing_creator_id.as_ref() {
+        let active_link_resp = state
+            .pg
+            .from("agency_users")
+            .select("id")
+            .eq("agency_id", &user.id)
+            .eq("creator_id", creator_id)
+            .eq("status", "active")
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        let active_link_text = active_link_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let active_link_rows: Vec<Value> =
+            serde_json::from_str(&active_link_text).unwrap_or_default();
+
+        if !active_link_rows.is_empty() {
+            let _ = state
+                .pg
+                .from("agency_talent_invites")
+                .eq("agency_id", &user.id)
+                .eq("email", &email)
+                .eq("status", "pending")
+                .update(
+                    json!({
+                        "status": "revoked",
+                        "updated_at": now_rfc3339(),
+                    })
+                    .to_string(),
+                )
+                .execute()
+                .await;
+
+            return Ok(Json(json!({
+                "status": "ok",
+                "invite_status": "already_connected",
+                "creator_profile_exists": creator_profile_exists,
+                "requires_password_setup": false,
+            })));
+        }
+    }
 
     // Re-invitation: revoke previous pending invites to same email for this agency.
     let _ = state
