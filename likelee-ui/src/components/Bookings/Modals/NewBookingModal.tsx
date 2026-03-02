@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { format } from "date-fns";
 import {
   Building2,
   Calendar as CalendarIcon,
@@ -8,6 +9,7 @@ import {
   MapPin,
   Plus,
   Search,
+  Tag,
   Upload,
   File as FileIcon,
   User,
@@ -40,7 +42,9 @@ import {
   getAgencyClients,
   createAgencyClient,
   createBookingWithFiles,
+  getBookingsCampaigns,
 } from "@/api/functions";
+import { CampaignModal } from "./CampaignModal";
 
 export const NewBookingModal = ({
   open,
@@ -73,7 +77,7 @@ export const NewBookingModal = ({
     terms: "Net 30",
     industry: "",
   });
-  const [date, setDate] = useState("2026-01-12");
+  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [allDay, setAllDay] = useState(false);
   const [callTime, setCallTime] = useState("09:00");
   const [wrapTime, setWrapTime] = useState("17:00");
@@ -94,6 +98,10 @@ export const NewBookingModal = ({
   });
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
+  const [campaignSearch, setCampaignSearch] = useState("");
+  const [showCampaignModal, setShowCampaignModal] = useState(false);
 
   // When all-day is enabled, normalize times to full-day window
   useEffect(() => {
@@ -149,13 +157,25 @@ export const NewBookingModal = ({
     loadClients();
   }, [open]);
 
+  // Load campaigns when modal opens
+  useEffect(() => {
+    const loadCampaigns = async () => {
+      if (!open) return;
+      try {
+        const rows = await getBookingsCampaigns();
+        setCampaigns(Array.isArray(rows) ? rows : []);
+      } catch (_e) {}
+    };
+    loadCampaigns();
+  }, [open]);
+
   // Pre-fill data for Edit or Duplicate modes
   useEffect(() => {
     if (open && initialData) {
       setBookingType(
         initialData.type || initialData.booking_type || "confirmed",
       );
-      setDate(initialData.date || "2026-01-12");
+      setDate(initialData.date || format(new Date(), "yyyy-MM-dd"));
       setNotes(initialData.notes || "");
 
       if (typeof initialData.all_day === "boolean") {
@@ -193,9 +213,10 @@ export const NewBookingModal = ({
       setSelectedTalents([]);
       setSelectedClient(null);
       setNotes("");
-      setDate("2026-01-12");
+      setDate(format(new Date(), "yyyy-MM-dd"));
+      setSelectedCampaign(null);
     }
-  }, [open, initialData, clients, talents]);
+  }, [open, initialData, clients, talents, campaigns]);
 
   // Server-side filtering of talents via q param
   useEffect(() => {
@@ -282,6 +303,17 @@ export const NewBookingModal = ({
   // Shared submit routine for Save button and Preview -> Confirm
   const submitBookings = async () => {
     if (selectedTalents.length === 0 || !selectedClient || saving) return;
+
+    // Require campaign selection
+    if (!selectedCampaign) {
+      toast({
+        title: "Campaign Required",
+        description: "Please select a campaign before creating a booking.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+
     setSaving(true);
     try {
       for (let index = 0; index < selectedTalents.length; index++) {
@@ -310,6 +342,7 @@ export const NewBookingModal = ({
           notify_sms: notifications.sms,
           notify_push: notifications.push,
           notify_calendar: notifications.calendar,
+          campaign_id: selectedCampaign?.id,
         };
         const created = await createBookingWithFiles(payload, files);
         const row = Array.isArray(created) ? created[0] : created;
@@ -319,7 +352,10 @@ export const NewBookingModal = ({
             status: row.status || payload.status,
             type: row.type || payload.booking_type,
             date: row.date || payload.date,
+            talent_id: row.talent_id || payload.talent_id,
             talent_name: row.talent_name || payload.talent_name,
+            client_id: row.client_id || payload.client_id,
+            client_name: row.client_name || payload.client_name,
           };
           onSave(normalized);
         }
@@ -698,6 +734,69 @@ export const NewBookingModal = ({
                     </div>
                   </div>
                 </>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>
+                Campaign <span className="text-red-500">*</span>
+              </Label>
+              <div className="relative">
+                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  className="pl-9"
+                  placeholder="Search campaigns..."
+                  value={campaignSearch}
+                  onChange={(e) => setCampaignSearch(e.target.value)}
+                />
+              </div>
+              <div className="border border-gray-200 rounded-lg max-h-32 overflow-y-auto bg-white">
+                {campaigns
+                  .filter((c) =>
+                    c.name.toLowerCase().includes(campaignSearch.toLowerCase()),
+                  )
+                  .map((c) => (
+                    <div
+                      key={c.id}
+                      onClick={() => {
+                        setSelectedCampaign(c);
+                        setCampaignSearch("");
+                      }}
+                      className={`flex items-center gap-2 p-2 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0 ${
+                        selectedCampaign?.id === c.id ? "bg-indigo-50/50" : ""
+                      }`}
+                    >
+                      <Tag className="w-4 h-4 text-gray-400" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{c.name}</p>
+                      </div>
+                      {selectedCampaign?.id === c.id && (
+                        <CheckCircle2 className="w-4 h-4 text-indigo-600" />
+                      )}
+                    </div>
+                  ))}
+                <div
+                  onClick={() => setShowCampaignModal(true)}
+                  className="flex items-center gap-2 p-2 text-indigo-600 hover:bg-indigo-50 cursor-pointer border-t border-gray-100 font-bold text-xs"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Create New Campaign
+                </div>
+              </div>
+              {selectedCampaign && (
+                <div className="flex items-center justify-between p-2 bg-indigo-50 border border-indigo-100 rounded-lg mt-1">
+                  <div className="flex items-center gap-2">
+                    <Tag className="w-4 h-4 text-indigo-600" />
+                    <p className="text-sm font-bold text-indigo-900">
+                      Campaign: {selectedCampaign.name}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedCampaign(null)}
+                    className="text-indigo-400 hover:text-indigo-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
               )}
             </div>
 
@@ -1108,6 +1207,17 @@ export const NewBookingModal = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {showCampaignModal && (
+        <CampaignModal
+          open={showCampaignModal}
+          onOpenChange={setShowCampaignModal}
+          onSaveSuccess={(newCampaign) => {
+            setCampaigns([...campaigns, newCampaign]);
+            setSelectedCampaign(newCampaign);
+          }}
+        />
+      )}
     </>
   );
 };
