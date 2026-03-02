@@ -55,6 +55,139 @@ pub fn send_plain_email_with_from_name(
     send_email_smtp_internal(state, to, subject, body, from_name)
 }
 
+pub async fn send_email_core_with_from_name(
+    state: &AppState,
+    to: &str,
+    subject: &str,
+    body: &str,
+    is_html: bool,
+    attachments: Option<&[EmailAttachment]>,
+    from_name: Option<&str>,
+) -> Result<(), (StatusCode, String)> {
+    if to.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "missing_destination".to_string()));
+    }
+
+    if state.smtp_host.is_empty() || state.smtp_user.is_empty() {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "smtp_not_configured".to_string(),
+        ));
+    }
+
+    let parsed_from: Mailbox = state.email_from.parse::<Mailbox>().map_err(|_e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "invalid_from_address".to_string(),
+        )
+    })?;
+    let from_addr = match from_name {
+        Some(name) if !name.trim().is_empty() => Mailbox {
+            name: Some(name.trim().to_string()),
+            email: parsed_from.email.clone(),
+        },
+        _ => parsed_from,
+    };
+
+    let to_addr: Mailbox = to
+        .parse::<Mailbox>()
+        .map_err(|_| (StatusCode::BAD_REQUEST, "invalid_to_address".to_string()))?;
+
+    let part = if is_html {
+        SinglePart::html(body.to_string())
+    } else {
+        SinglePart::plain(body.to_string())
+    };
+
+    let email = if let Some(atts) = attachments {
+        let mut multipart = MultiPart::mixed().singlepart(part);
+        for att in atts {
+            let bytes = general_purpose::STANDARD
+                .decode(att.content_base64.trim())
+                .map_err(|_| {
+                    (
+                        StatusCode::BAD_REQUEST,
+                        "invalid_attachment_base64".to_string(),
+                    )
+                })?;
+            let ct = att.content_type.parse().map_err(|_| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    "invalid_attachment_content_type".to_string(),
+                )
+            })?;
+            multipart =
+                multipart.singlepart(LettreAttachment::new(att.filename.clone()).body(bytes, ct));
+        }
+        Message::builder()
+            .from(from_addr)
+            .to(to_addr)
+            .subject(subject.to_string())
+            .multipart(multipart)
+            .map_err(|_| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "build_message_failed".to_string(),
+                )
+            })?
+    } else {
+        Message::builder()
+            .from(from_addr)
+            .to(to_addr)
+            .subject(subject.to_string())
+            .singlepart(part)
+            .map_err(|_| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "build_message_failed".to_string(),
+                )
+            })?
+    };
+
+    let creds = lettre::transport::smtp::authentication::Credentials::new(
+        state.smtp_user.clone(),
+        state.smtp_password.clone(),
+    );
+
+    let mailer = if state.smtp_port == 465 {
+        let tls = TlsParameters::new(state.smtp_host.clone()).map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "tls_parameters_init_failed".to_string(),
+            )
+        })?;
+
+        SmtpTransport::relay(&state.smtp_host)
+            .map_err(|_| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "smtp_relay_init_failed".to_string(),
+                )
+            })?
+            .port(465)
+            .tls(Tls::Wrapper(tls))
+            .credentials(creds)
+            .build()
+    } else {
+        let relay = SmtpTransport::starttls_relay(&state.smtp_host)
+            .or_else(|_| SmtpTransport::relay(&state.smtp_host))
+            .map_err(|_| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "smtp_relay_init_failed".to_string(),
+                )
+            })?;
+
+        relay.port(state.smtp_port).credentials(creds).build()
+    };
+
+    mailer
+        .send(&email)
+        .map_err(|e| (StatusCode::BAD_GATEWAY, format!("smtp_send_failed: {}", e)))?;
+
+    Ok(())
+}
+
 fn send_sales_plain_text_email(
     state: &AppState,
     to: &str,
@@ -258,119 +391,5 @@ pub async fn send_email_core(
     is_html: bool,
     attachments: Option<&[EmailAttachment]>,
 ) -> Result<(), (StatusCode, String)> {
-    if to.is_empty() {
-        return Err((StatusCode::BAD_REQUEST, "missing_destination".to_string()));
-    }
-
-    if state.smtp_host.is_empty() || state.smtp_user.is_empty() {
-        return Err((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "smtp_not_configured".to_string(),
-        ));
-    }
-
-    let from_addr = state.email_from.parse().map_err(|_| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            "invalid_from_address".to_string(),
-        )
-    })?;
-
-    let to_addr = to
-        .parse()
-        .map_err(|_| (StatusCode::BAD_REQUEST, "invalid_to_address".to_string()))?;
-
-    let part = if is_html {
-        SinglePart::html(body.to_string())
-    } else {
-        SinglePart::plain(body.to_string())
-    };
-
-    let email = if let Some(atts) = attachments {
-        let mut multipart = MultiPart::mixed().singlepart(part);
-        for att in atts {
-            let bytes = general_purpose::STANDARD
-                .decode(att.content_base64.trim())
-                .map_err(|_| {
-                    (
-                        StatusCode::BAD_REQUEST,
-                        "invalid_attachment_base64".to_string(),
-                    )
-                })?;
-            let ct = att.content_type.parse().map_err(|_| {
-                (
-                    StatusCode::BAD_REQUEST,
-                    "invalid_attachment_content_type".to_string(),
-                )
-            })?;
-            multipart =
-                multipart.singlepart(LettreAttachment::new(att.filename.clone()).body(bytes, ct));
-        }
-        Message::builder()
-            .from(from_addr)
-            .to(to_addr)
-            .subject(subject.to_string())
-            .multipart(multipart)
-            .map_err(|_| {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "build_message_failed".to_string(),
-                )
-            })?
-    } else {
-        Message::builder()
-            .from(from_addr)
-            .to(to_addr)
-            .subject(subject.to_string())
-            .singlepart(part)
-            .map_err(|_| {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "build_message_failed".to_string(),
-                )
-            })?
-    };
-
-    let creds = lettre::transport::smtp::authentication::Credentials::new(
-        state.smtp_user.clone(),
-        state.smtp_password.clone(),
-    );
-
-    let mailer = if state.smtp_port == 465 {
-        let tls = TlsParameters::new(state.smtp_host.clone()).map_err(|_| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "tls_parameters_init_failed".to_string(),
-            )
-        })?;
-
-        SmtpTransport::relay(&state.smtp_host)
-            .map_err(|_| {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "smtp_relay_init_failed".to_string(),
-                )
-            })?
-            .port(465)
-            .tls(Tls::Wrapper(tls))
-            .credentials(creds)
-            .build()
-    } else {
-        let relay = SmtpTransport::starttls_relay(&state.smtp_host)
-            .or_else(|_| SmtpTransport::relay(&state.smtp_host))
-            .map_err(|_| {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "smtp_relay_init_failed".to_string(),
-                )
-            })?;
-
-        relay.port(state.smtp_port).credentials(creds).build()
-    };
-
-    mailer
-        .send(&email)
-        .map_err(|e| (StatusCode::BAD_GATEWAY, format!("smtp_send_failed: {}", e)))?;
-
-    Ok(())
+    send_email_core_with_from_name(state, to, subject, body, is_html, attachments, None).await
 }
