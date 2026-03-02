@@ -175,7 +175,7 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 border-none bg-slate-50 rounded-3xl shadow-2xl">
+      <DialogContent className="max-w-4xl h-[90vh] max-h-[90vh] overflow-hidden flex flex-col p-0 border-none bg-slate-50 rounded-3xl shadow-2xl">
         <form
           id="license-template-form"
           onSubmit={handleSubmit(onSubmit)}

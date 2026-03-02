@@ -263,30 +263,32 @@ const AnalyticsDashboardView = ({
 
   return (
     <div className="space-y-6 pb-20">
-      <div className="flex justify-between items-center bg-white p-6 border-b border-gray-100">
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center bg-white p-4 sm:p-6 border-b border-gray-100">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
             Analytics Dashboard
           </h2>
-          <div className="flex bg-gray-100 p-1 rounded-xl mt-6 w-fit">
-            {subTabs.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-                  activeTab === tab
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
+          <div className="mt-6 overflow-x-auto">
+            <div className="flex w-max min-w-full bg-gray-100 p-1 rounded-xl">
+              {subTabs.map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg whitespace-nowrap ${
+                    activeTab === tab
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
         <Button
           variant="outline"
-          className="gap-2 border-gray-200 font-bold bg-white h-10 px-4 text-sm hover:bg-gray-50 transition-all"
+          className="w-full sm:w-auto gap-2 border-gray-200 font-bold bg-white h-10 px-4 text-sm hover:bg-gray-50 transition-all"
         >
           <Download className="w-4 h-4" /> Export Report
         </Button>
@@ -294,9 +296,9 @@ const AnalyticsDashboardView = ({
 
       {activeTab === "Overview" ? (
         <div className="space-y-6 animate-in fade-in duration-500">
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Total Earnings */}
-            <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center min-h-[420px]">
+            <Card className="p-5 sm:p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center min-h-[300px] sm:min-h-[420px]">
               <div className="relative z-10">
                 <div className="mb-6 flex items-center justify-between">
                   <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center border border-green-100">
@@ -307,7 +309,7 @@ const AnalyticsDashboardView = ({
                 <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-3">
                   Total Earnings (30d)
                 </p>
-                <h3 className="text-5xl font-black text-gray-900 tracking-tighter mb-4">
+                <h3 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tighter mb-4 break-words">
                   {analytics.overview.total_earnings_formatted}
                 </h3>
                 <p
@@ -330,7 +332,7 @@ const AnalyticsDashboardView = ({
             {/* Right side — mode dependent */}
             {agencyMode === "AI" ? (
               <div className="col-span-2 flex flex-col gap-6">
-                <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden h-[200px] flex flex-col justify-center">
+                <Card className="p-5 sm:p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden min-h-[180px] sm:h-[200px] flex flex-col justify-center">
                   <div className="flex justify-between items-center">
                     <div>
                       <div className="mb-4">
@@ -339,7 +341,7 @@ const AnalyticsDashboardView = ({
                       <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-2">
                         Active Licenses
                       </p>
-                      <h3 className="text-5xl font-black text-gray-900 tracking-tighter">
+                      <h3 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tighter">
                         {analytics.overview.active_campaigns}
                       </h3>
                       <p className="text-xs font-bold text-indigo-600 flex items-center gap-1.5 mt-2">
@@ -351,7 +353,7 @@ const AnalyticsDashboardView = ({
                     </div>
                   </div>
                 </Card>
-                <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden h-[195px] flex flex-col justify-center">
+                <Card className="p-5 sm:p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden min-h-[180px] sm:h-[195px] flex flex-col justify-center">
                   <div className="flex justify-between items-center">
                     <div>
                       <div className="mb-4">
@@ -360,7 +362,7 @@ const AnalyticsDashboardView = ({
                       <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-2">
                         AI Usages (30d)
                       </p>
-                      <h3 className="text-5xl font-black text-gray-900 tracking-tighter">
+                      <h3 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tighter">
                         {analytics.ai_usage.total_usages_30d}
                       </h3>
                       <p className="text-xs font-bold text-purple-600 flex items-center gap-1.5 mt-2">
@@ -375,8 +377,8 @@ const AnalyticsDashboardView = ({
                 </Card>
               </div>
             ) : (
-              <Card className="col-span-2 p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-between">
-                <div className="flex justify-between items-start mb-10">
+              <Card className="col-span-2 p-5 sm:p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-between">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-8 sm:mb-10">
                   <div className="flex gap-5 items-center">
                     <div className="w-14 h-14 bg-indigo-50 rounded-xl flex items-center justify-center border border-indigo-100">
                       <BarChart2 className="w-8 h-8 text-indigo-600" />
@@ -385,14 +387,14 @@ const AnalyticsDashboardView = ({
                       <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">
                         Active Campaigns
                       </p>
-                      <h3 className="text-5xl font-black text-gray-900 tracking-tighter">
+                      <h3 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tighter">
                         {analytics.overview.active_campaigns}
                       </h3>
                     </div>
                   </div>
                   <TrendingUp className="w-5 h-5 text-indigo-600" />
                 </div>
-                <div className="grid grid-cols-3 gap-4 mb-10">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8 sm:mb-10">
                   <div className="p-6 bg-gray-50/50 border border-gray-100 rounded-2xl">
                     <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1">
                       Total Value
@@ -447,14 +449,14 @@ const AnalyticsDashboardView = ({
           </div>
 
           {/* Monthly Performance Trends */}
-          <Card className="p-8 bg-white border border-gray-900 shadow-sm">
-            <div className="flex justify-between items-center mb-10">
+          <Card className="p-4 sm:p-8 bg-white border border-gray-900 shadow-sm">
+            <div className="flex justify-between items-center mb-6 sm:mb-10">
               <h3 className="text-lg font-black text-gray-900 uppercase tracking-[0.15em]">
                 Monthly Performance Trends
               </h3>
               <TrendingUp className="w-5 h-5 text-indigo-600" />
             </div>
-            <div className="h-[400px]">
+            <div className="h-[280px] sm:h-[400px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={analytics.monthly_trends}
@@ -547,8 +549,8 @@ const AnalyticsDashboardView = ({
           </Card>
 
           {/* Distribution Pie Charts */}
-          <div className="grid grid-cols-2 gap-6 pb-10">
-            <Card className="p-8 bg-white border border-gray-900 shadow-sm">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-10">
+            <Card className="p-4 sm:p-8 bg-white border border-gray-900 shadow-sm">
               <h3 className="text-lg font-black text-gray-900 mb-10 uppercase tracking-[0.1em]">
                 AI Usage Type Distribution
               </h3>
@@ -621,7 +623,7 @@ const AnalyticsDashboardView = ({
               </div>
             </Card>
 
-            <Card className="p-8 bg-white border border-gray-900 shadow-sm">
+            <Card className="p-4 sm:p-8 bg-white border border-gray-900 shadow-sm">
               <h3 className="text-lg font-black text-gray-900 mb-10 uppercase tracking-[0.1em]">
                 Consent Status Breakdown
               </h3>
@@ -740,8 +742,8 @@ const AnalyticsDashboardView = ({
             <h3 className="text-xl font-black text-gray-900 uppercase tracking-[0.15em] mb-10">
               Earnings by Talent (Last 30 Days)
             </h3>
-            <Card className="p-10 bg-white border border-gray-900 shadow-sm mb-8">
-              <div className="h-[500px] w-full">
+            <Card className="p-4 sm:p-10 bg-white border border-gray-900 shadow-sm mb-8">
+              <div className="h-[320px] sm:h-[500px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={rosterInsights.talent_metrics.map((m: any) => ({
@@ -822,7 +824,7 @@ const AnalyticsDashboardView = ({
               </div>
             </Card>
 
-            <div className="grid grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
               {[
                 {
                   label: "Top Performer (Earnings)",
@@ -851,7 +853,7 @@ const AnalyticsDashboardView = ({
                     {label}
                   </p>
                   {data ? (
-                    <div className="flex items-center gap-5">
+                    <div className="flex items-center gap-4 sm:gap-5 min-w-0">
                       <div
                         className={`w-16 h-16 rounded-xl overflow-hidden border-2 ${borderColor} p-0.5`}
                       >
@@ -867,8 +869,8 @@ const AnalyticsDashboardView = ({
                           </div>
                         )}
                       </div>
-                      <div>
-                        <h4 className="text-xl font-black text-gray-900 tracking-tight">
+                      <div className="min-w-0">
+                        <h4 className="text-xl font-black text-gray-900 tracking-tight truncate">
                           {data.talent_name}
                         </h4>
                         <p className={`text-2xl font-black ${textColor}`}>
@@ -889,13 +891,13 @@ const AnalyticsDashboardView = ({
             </div>
 
             <Card className="bg-white border border-gray-900 shadow-sm overflow-hidden mb-8">
-              <div className="p-8 border-b border-gray-100 flex justify-between items-center">
+              <div className="p-4 sm:p-8 border-b border-gray-100 flex justify-between items-center">
                 <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest">
                   Talent Performance Metrics
                 </h3>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-left">
+                <table className="w-full min-w-[760px] text-left">
                   <thead>
                     <tr className="bg-gray-50/80">
                       {[
@@ -969,8 +971,8 @@ const AnalyticsDashboardView = ({
       ) : activeTab === "Clients & Campaigns" ? (
         clientsAnalytics ? (
           <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-            <div className="grid grid-cols-2 gap-6">
-              <Card className="p-10 bg-white border border-gray-900 shadow-sm">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="p-4 sm:p-10 bg-white border border-gray-900 shadow-sm">
                 <h3 className="text-xl font-bold text-gray-900 mb-12 tracking-tight">
                   Earnings by Client
                 </h3>
@@ -986,31 +988,8 @@ const AnalyticsDashboardView = ({
                         dataKey="budget"
                         stroke="#fff"
                         strokeWidth={2}
-                        labelLine={true}
-                        label={(props) => {
-                          const { name, value, fill, x, y, cx } = props;
-                          const formattedValue =
-                            value >= 1000
-                              ? (value / 1000).toFixed(1) + "K"
-                              : value;
-                          const displayName =
-                            name.length > 18
-                              ? name.substring(0, 18) + "..."
-                              : name;
-                          return (
-                            <text
-                              x={x}
-                              y={y}
-                              fill={fill}
-                              textAnchor={x > cx ? "start" : "end"}
-                              dominantBaseline="central"
-                              fontSize={14}
-                              fontWeight="500"
-                            >
-                              {`${displayName}: $${formattedValue}`}
-                            </text>
-                          );
-                        }}
+                        labelLine={false}
+                        label={false}
                       >
                         {clientsAnalytics.earnings_by_client.map(
                           (entry: any, index: number) => (
@@ -1028,8 +1007,23 @@ const AnalyticsDashboardView = ({
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
+                <div className="mt-4 space-y-2">
+                  {clientsAnalytics.earnings_by_client.map((entry: any) => (
+                    <div
+                      key={entry.name}
+                      className="flex items-center justify-between gap-3"
+                    >
+                      <span className="text-xs font-bold text-gray-700 truncate">
+                        {entry.name}
+                      </span>
+                      <span className="text-xs font-black text-gray-900 shrink-0">
+                        ${Number(entry.budget || 0).toLocaleString()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </Card>
-              <Card className="p-10 bg-white border border-gray-900 shadow-sm">
+              <Card className="p-4 sm:p-10 bg-white border border-gray-900 shadow-sm">
                 <h3 className="text-xl font-bold text-gray-900 mb-12 tracking-tight">
                   Geographic Distribution
                 </h3>
@@ -1085,13 +1079,13 @@ const AnalyticsDashboardView = ({
             </div>
 
             <Card className="bg-white border border-gray-900 shadow-sm overflow-hidden">
-              <div className="p-8 border-b border-gray-100 flex justify-between items-center">
+              <div className="p-4 sm:p-8 border-b border-gray-100 flex justify-between items-center">
                 <h3 className="text-lg font-bold text-gray-900 tracking-tight">
                   Top Clients Performance
                 </h3>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-left">
+                <table className="w-full min-w-[560px] text-left">
                   <thead>
                     <tr className="bg-gray-50/80">
                       <th className="px-8 py-5 text-[11px] font-bold text-gray-500 tracking-widest">
@@ -1139,9 +1133,9 @@ const AnalyticsDashboardView = ({
             </Card>
 
             <div
-              className={`grid gap-6 ${agencyMode === "AI" ? "grid-cols-2" : "grid-cols-3"}`}
+              className={`grid gap-6 ${agencyMode === "AI" ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"}`}
             >
-              <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
+              <Card className="p-5 sm:p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
                 <p className="text-sm font-bold text-gray-500 mb-2">
                   Repeat Client Rate
                 </p>
@@ -1156,7 +1150,7 @@ const AnalyticsDashboardView = ({
                 </div>
               </Card>
               {agencyMode !== "AI" && (
-                <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
+                <Card className="p-5 sm:p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
                   <p className="text-sm font-bold text-gray-500 mb-2">
                     Avg Campaign Duration
                   </p>
@@ -1168,7 +1162,7 @@ const AnalyticsDashboardView = ({
                   </p>
                 </Card>
               )}
-              <Card className="p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
+              <Card className="p-5 sm:p-8 bg-white border border-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-center h-[180px]">
                 <p className="text-sm font-bold text-gray-500 mb-2">
                   Client Acquisition
                 </p>
@@ -1298,7 +1292,7 @@ const AnalyticsDashboardView = ({
                 ].map(({ icon, label, value, sub, pct, barColor }) => (
                   <Card
                     key={label}
-                    className="p-8 bg-white border border-gray-900 shadow-sm rounded-lg"
+                    className="p-5 sm:p-8 bg-white border border-gray-900 shadow-sm rounded-lg"
                   >
                     <div className="flex items-center gap-4 mb-6">
                       <div className="w-10 h-10 rounded-lg border border-gray-200 flex items-center justify-center">
@@ -1330,7 +1324,7 @@ const AnalyticsDashboardView = ({
                 ))}
               </div>
 
-              <Card className="p-8 bg-white border border-gray-900 shadow-sm rounded-lg">
+              <Card className="p-4 sm:p-8 bg-white border border-gray-900 shadow-sm rounded-lg">
                 <h3 className="text-lg font-black text-gray-900 uppercase tracking-widest mb-6">
                   License Expiry Pipeline
                 </h3>
@@ -1348,7 +1342,7 @@ const AnalyticsDashboardView = ({
                     (effectiveExpired as any[]).map((license) => (
                       <div
                         key={license.id}
-                        className="bg-[#FFF7ED] border border-orange-100 p-4 rounded-xl flex items-center justify-between gap-4"
+                        className="bg-[#FFF7ED] border border-orange-100 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
                       >
                         <div className="flex items-center gap-4 min-w-0">
                           <div className="w-12 h-12 rounded-lg overflow-hidden bg-white border border-orange-100 shrink-0">
@@ -1374,7 +1368,7 @@ const AnalyticsDashboardView = ({
                           </div>
                         </div>
                         <Button
-                          className="bg-[#EA580C] hover:bg-[#C2410C] text-white font-black text-xs px-6 h-10 rounded-lg uppercase tracking-widest gap-2"
+                          className="w-full sm:w-auto bg-[#EA580C] hover:bg-[#C2410C] text-white font-black text-xs px-6 h-10 rounded-lg uppercase tracking-widest gap-2"
                           onClick={() => onRenewLicense?.(license)}
                         >
                           <RefreshCw className="w-4 h-4" /> Renew
@@ -1385,8 +1379,8 @@ const AnalyticsDashboardView = ({
                 </div>
               </Card>
 
-              <Card className="p-8 bg-white border border-gray-900 shadow-sm rounded-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              <Card className="p-4 sm:p-8 bg-white border border-gray-900 shadow-sm rounded-lg">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 xl:gap-12">
                   <div>
                     <h3 className="text-xl font-black text-gray-900 uppercase tracking-widest mb-10">
                       Compliance Summary

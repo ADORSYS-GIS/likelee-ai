@@ -1038,7 +1038,7 @@ const RosterView = ({
       {/* Roster Table Section */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 -mx-1 px-1">
             {[
               "Roster",
               "Digitals Tracking",
@@ -1076,23 +1076,23 @@ const RosterView = ({
               );
             })}
           </div>
-          <div className="flex gap-3">
+          <div className="flex w-full md:w-auto flex-wrap gap-3">
             <Button
               variant="outline"
-              className="gap-2 font-bold h-10 rounded-lg"
+              className="gap-2 font-bold h-10 rounded-lg w-full sm:w-auto"
             >
               <Download className="w-4 h-4" /> Export CSV
             </Button>
             <Button
               variant="outline"
               onClick={handleInviteTalentClick}
-              className="border-gray-200 gap-2 font-bold h-10 rounded-lg"
+              className="border-gray-200 gap-2 font-bold h-10 rounded-lg w-full sm:w-auto"
             >
               <Mail className="w-4 h-4" /> Send Portal Invite
             </Button>
             <Button
               onClick={handleAddTalentClick}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 font-bold h-10 rounded-lg"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 font-bold h-10 rounded-lg w-full sm:w-auto"
             >
               <Plus className="w-4 h-4" /> Add Talent
             </Button>
@@ -1119,11 +1119,11 @@ const RosterView = ({
                       className="pl-10 h-11"
                     />
                   </div>
-                  <div className="flex gap-4">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                     <select
                       value={statusFilter}
                       onChange={(e) => setStatusFilter(e.target.value)}
-                      className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
                       <option>All Status</option>
                       <option>Active</option>
@@ -1133,7 +1133,7 @@ const RosterView = ({
                     <select
                       value={categoryFilter}
                       onChange={(e) => setCategoryFilter(e.target.value)}
-                      className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
                       <option>All Categories</option>
                       <option>Model</option>
@@ -1144,7 +1144,7 @@ const RosterView = ({
                     </select>
                     <Button
                       variant="outline"
-                      className={`gap-2 font-bold h-11 rounded-lg px-6 ${showAdvancedFilters ? "bg-gray-100 border-gray-300" : ""}`}
+                      className={`gap-2 font-bold h-11 rounded-lg px-6 w-full sm:w-auto ${showAdvancedFilters ? "bg-gray-100 border-gray-300" : ""}`}
                       onClick={() =>
                         setShowAdvancedFilters(!showAdvancedFilters)
                       }
@@ -1163,7 +1163,68 @@ const RosterView = ({
                   />
                 )}
 
-                <div className="overflow-x-auto rounded-xl border border-gray-100">
+                <div className="md:hidden space-y-3">
+                  {isLoading && filteredTalent.length === 0 ? (
+                    <div className="flex items-center justify-center gap-2 text-sm text-gray-500 font-medium py-8">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Loading talents...
+                    </div>
+                  ) : filteredTalent.length === 0 ? (
+                    <div className="text-center text-sm text-gray-500 font-medium py-8">
+                      No talents to display.
+                    </div>
+                  ) : (
+                    filteredTalent.map((talent) => (
+                      <button
+                        key={talent.id}
+                        type="button"
+                        className="w-full text-left bg-white border border-gray-200 rounded-xl p-4"
+                        onClick={() => setSelectedTalent(talent)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={talent.img || "https://placehold.co/150"}
+                            alt={talent.name}
+                            className="w-12 h-12 rounded-lg object-cover"
+                          />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1">
+                              <span className="font-bold text-gray-900 truncate">
+                                {talent.name}
+                              </span>
+                              {talent.is_verified && (
+                                <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                              )}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-0.5">
+                              {String(talent.role || "Model")}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 mt-3 text-sm">
+                          <div>
+                            <div className="text-xs text-gray-500">
+                              Followers
+                            </div>
+                            <div className="font-bold text-gray-900">
+                              {talent.followers || "0"}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-gray-500">Revenue</div>
+                            <div className="font-bold text-gray-900">
+                              {formatCurrency(
+                                Number(talent?.earnings_val ?? 0),
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+
+                <div className="hidden md:block overflow-x-auto rounded-xl border border-gray-100">
                   <table className="w-full text-left border-collapse min-w-[1000px]">
                     <thead>
                       <tr className="bg-gray-50 border-b border-gray-100">
@@ -1555,7 +1616,7 @@ const RosterView = ({
 
               {/* Filter Section */}
               <div className="flex items-center gap-4">
-                <div className="w-64">
+                <div className="w-full sm:w-64">
                   <select
                     value={digitalsFilter}
                     onChange={(e) => setDigitalsFilter(e.target.value)}
@@ -1606,7 +1667,7 @@ const RosterView = ({
                   return (
                     <div
                       key={talent.id}
-                      className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between shadow-sm hover:border-gray-300 transition-colors"
+                      className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 shadow-sm hover:border-gray-300 transition-colors"
                     >
                       <div className="flex items-center gap-4">
                         <img
@@ -1621,7 +1682,7 @@ const RosterView = ({
                             </h3>
                             {statusBadge}
                           </div>
-                          <div className="flex items-center gap-4 mt-1 text-xs text-gray-500 font-medium">
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1 text-xs text-gray-500 font-medium">
                             <span className="flex items-center gap-1.5">
                               <Clock className="w-3.5 h-3.5 text-gray-400" />
                               Last updated:{" "}
@@ -1638,7 +1699,7 @@ const RosterView = ({
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex w-full lg:w-auto flex-wrap items-center gap-2">
                         <Button
                           variant="outline"
                           size="sm"
