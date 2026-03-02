@@ -106,6 +106,32 @@ export const CalendarScheduleTab = ({
   // Month Navigation for the stats/dropdowns logic if we want to change view
   const handlePrevMonth = () => setCurrentDate((prev) => subMonths(prev, 1));
   const handleNextMonth = () => setCurrentDate((prev) => addMonths(prev, 1));
+  const handleMonthChange = (monthNameLower: string) => {
+    const months = [
+      "january",
+      "february",
+      "march",
+      "april",
+      "may",
+      "june",
+      "july",
+      "august",
+      "september",
+      "october",
+      "november",
+      "december",
+    ];
+    const monthIndex = months.indexOf(monthNameLower);
+    if (monthIndex < 0) return;
+
+    setCurrentDate((prev) => {
+      const year = prev.getFullYear();
+      const currentDay = prev.getDate();
+      const maxDayInTargetMonth = getDaysInMonth(new Date(year, monthIndex, 1));
+      const nextDay = Math.min(currentDay, maxDayInTargetMonth);
+      return new Date(year, monthIndex, nextDay);
+    });
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -201,6 +227,12 @@ export const CalendarScheduleTab = ({
   });
 
   const currentMonthDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const trailingDaysCount =
+    (7 - ((firstDayOfMonth + currentMonthDays.length) % 7)) % 7;
+  const nextMonthDays = Array.from(
+    { length: trailingDaysCount },
+    (_, i) => i + 1,
+  );
 
   const countBookOutsOnDate = (dateStr: string) => {
     if (!Array.isArray(visibleBookOuts) || visibleBookOuts.length === 0)
@@ -272,9 +304,7 @@ export const CalendarScheduleTab = ({
           <div className="flex w-full xl:w-auto items-center gap-2 overflow-x-auto pb-1 flex-nowrap">
             <Select
               value={format(currentDate, "MMMM").toLowerCase()}
-              onValueChange={(val) => {
-                // Approximate set month logic if needed
-              }}
+              onValueChange={handleMonthChange}
             >
               <SelectTrigger className="w-28 sm:w-32 shrink-0">
                 <SelectValue placeholder={format(currentDate, "MMMM")} />
@@ -455,76 +485,6 @@ export const CalendarScheduleTab = ({
           </span>
         </div>
 
-        <div className="border rounded-lg overflow-hidden">
-          <div className="grid grid-cols-7 border-b bg-gray-50/50">
-            {days.map((d) => (
-              <div
-                key={d}
-                className="p-3 text-center text-sm font-bold text-gray-600"
-              >
-                {d}
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-7 auto-rows-[120px] divide-x divide-y">
-            {/* Previous Month Filler */}
-            {previousMonthDays.map((d) => (
-              <div
-                key={`prev-${d}`}
-                className="p-2 text-gray-400 text-sm font-medium bg-gray-50/20"
-              >
-                {d}
-              </div>
-            ))}
-            {/* Current Month Days */}
-            {currentMonthDays.map((d) => {
-              const year = currentDate.getFullYear();
-              const month = currentDate.getMonth() + 1;
-              const dayString = `${year}-${month.toString().padStart(2, "0")}-${d.toString().padStart(2, "0")}`;
-              const dayBookings = visibleBookings.filter((b) => {
-                // Normalize date to YYYY-MM-DD by taking first 10 chars or splitting on 'T'
-                let bDate = "";
-                if (typeof b.date === "string") {
-                  bDate = b.date.includes("T")
-                    ? b.date.split("T")[0]
-                    : b.date.slice(0, 10);
-                }
-                return bDate === dayString;
-              });
-              const dayBookOutsCount = countBookOutsOnDate(dayString);
-
-              const getEventColor = (type?: string, status?: string) => {
-                const s = (status || "").toLowerCase();
-                const t = (type || "").toLowerCase();
-                // Status overrides
-                if (s === "cancelled") return "bg-red-200 text-gray-900";
-                if (s === "completed") return "bg-purple-200 text-gray-900";
-                if (s === "confirmed") return "bg-green-200 text-gray-900";
-                // Otherwise color by type (legend)
-                switch (t) {
-                  case "casting":
-                    return "bg-blue-100 text-gray-900";
-                  case "option":
-                    return "bg-yellow-100 text-gray-900";
-                  case "confirmed":
-                    return "bg-green-200 text-gray-900";
-                  case "test-shoot":
-                    return "bg-orange-100 text-gray-900";
-                  case "fitting":
-                    return "bg-yellow-50 text-gray-900";
-                  case "rehearsal":
-                    return "bg-gray-200 text-gray-900";
-                  default:
-                    // Fall back to status pending or generic
-                    if (s === "pending") return "bg-gray-200 text-gray-900";
-                    return "bg-indigo-200 text-gray-900";
-                }
-              };
-
-              const isSelected = d === currentDate.getDate();
-
-              return (
         <div className="border rounded-lg overflow-x-auto">
           <div className="min-w-[760px]">
             <div className="grid grid-cols-7 border-b bg-gray-50/50">
@@ -553,9 +513,16 @@ export const CalendarScheduleTab = ({
                 const year = currentDate.getFullYear();
                 const month = currentDate.getMonth() + 1;
                 const dayString = `${year}-${month.toString().padStart(2, "0")}-${d.toString().padStart(2, "0")}`;
-                const dayBookings = visibleBookings.filter(
-                  (b) => b.date === dayString,
-                );
+                const dayBookings = visibleBookings.filter((b) => {
+                  // Normalize date to YYYY-MM-DD by taking first 10 chars or splitting on "T"
+                  let bDate = "";
+                  if (typeof b.date === "string") {
+                    bDate = b.date.includes("T")
+                      ? b.date.split("T")[0]
+                      : b.date.slice(0, 10);
+                  }
+                  return bDate === dayString;
+                });
                 const dayBookOutsCount = countBookOutsOnDate(dayString);
 
                 const getEventColor = (type?: string, status?: string) => {
@@ -677,6 +644,15 @@ export const CalendarScheduleTab = ({
                   </div>
                 );
               })}
+              {/* Next Month Filler */}
+              {nextMonthDays.map((d) => (
+                <div
+                  key={`next-${d}`}
+                  className="p-2 text-gray-400 text-sm font-medium bg-gray-50/20"
+                >
+                  {d}
+                </div>
+              ))}
             </div>
           </div>
         </div>
