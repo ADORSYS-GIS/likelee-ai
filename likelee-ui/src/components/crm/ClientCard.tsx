@@ -49,15 +49,15 @@ const ClientCard = ({
   };
 
   return (
-    <Card className="p-6 bg-white border border-gray-100 rounded-2xl hover:shadow-lg transition-all duration-300 group">
-      <div className="flex items-center justify-between gap-6">
-        <div className="flex items-center gap-6 flex-1">
+    <Card className="p-4 sm:p-6 bg-white border border-gray-100 rounded-2xl hover:shadow-lg transition-all duration-300 group">
+      <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6">
+        <div className="flex items-start gap-4 sm:gap-6 flex-1 min-w-0">
           <div className="w-14 h-14 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center shrink-0 group-hover:bg-indigo-50 group-hover:border-indigo-100 transition-colors">
             <Building2 className="w-8 h-8 text-gray-400 group-hover:text-indigo-500 transition-colors" />
           </div>
-          <div className="space-y-1.5 flex-1">
-            <div className="flex items-center gap-3">
-              <h3 className="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
+          <div className="space-y-1.5 flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <h3 className="text-lg font-bold text-gray-900 group-hover:text-indigo-600 transition-colors min-w-0 break-words">
                 {client.name}
               </h3>
               <Badge
@@ -65,7 +65,7 @@ const ClientCard = ({
               >
                 {client.status}
               </Badge>
-              <div className="flex gap-1.5">
+              <div className="flex flex-wrap gap-1.5">
                 {client.tags.map((tag) => (
                   <Badge
                     key={tag}
@@ -78,7 +78,7 @@ const ClientCard = ({
                 ))}
               </div>
             </div>
-            <div className="flex items-center gap-6 text-[11px] text-gray-500 font-bold">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-[11px] text-gray-500 font-bold">
               <div className="flex items-center gap-2">
                 <Building2 className="w-3.5 h-3.5 text-gray-400" />
                 {client.industry}
@@ -100,7 +100,7 @@ const ClientCard = ({
                 {client.contacts} contacts
               </div>
             </div>
-            <div className="flex items-center gap-8 text-sm mt-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-4 text-sm mt-4">
               <div className="flex items-center gap-2">
                 <span className="text-gray-500 font-bold">Total Revenue:</span>
                 <span className="text-gray-900 font-extrabold text-lg">
@@ -130,31 +130,31 @@ const ClientCard = ({
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
-            className="h-9 px-4 rounded-lg border-gray-200 text-gray-600 font-bold text-xs"
+            className="h-9 px-4 rounded-lg border-gray-200 text-gray-600 font-bold text-xs w-full sm:w-auto"
           >
             <Mail className="w-3.5 h-3.5 mr-2" />
             Email
           </Button>
           <Button
             variant="outline"
-            className="h-9 px-4 rounded-lg border-gray-200 text-gray-600 font-bold text-xs"
+            className="h-9 px-4 rounded-lg border-gray-200 text-gray-600 font-bold text-xs w-full sm:w-auto"
           >
             <Phone className="w-3.5 h-3.5 mr-2" />
             Call
           </Button>
           <Button
             variant="outline"
-            className="h-9 px-4 rounded-lg border-gray-200 text-gray-600 font-bold text-xs"
+            className="h-9 px-4 rounded-lg border-gray-200 text-gray-600 font-bold text-xs w-full sm:w-auto"
           >
             <Package className="w-3.5 h-3.5 mr-2" />
             Send Package
           </Button>
           <Button
             onClick={onViewProfile}
-            className="h-9 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs"
+            className="h-9 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs w-full sm:w-auto"
           >
             View Profile
           </Button>

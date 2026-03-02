@@ -164,7 +164,7 @@ export function PackagesView() {
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
       {/* Stats Row */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {stats.map((s, i) => (
           <Card
             key={i}
@@ -188,32 +188,34 @@ export function PackagesView() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-gray-200">
-        <button
-          onClick={() => setActiveTab("templates")}
-          className={`px-6 py-3 font-bold text-sm uppercase tracking-wider transition-all ${
-            activeTab === "templates"
-              ? "border-b-2 border-indigo-600 text-indigo-600"
-              : "text-gray-500 hover:text-gray-700"
-          }`}
-        >
-          Templates
-        </button>
-        <button
-          onClick={() => setActiveTab("sent")}
-          className={`px-6 py-3 font-bold text-sm uppercase tracking-wider transition-all ${
-            activeTab === "sent"
-              ? "border-b-2 border-indigo-600 text-indigo-600"
-              : "text-gray-500 hover:text-gray-700"
-          }`}
-        >
-          Packages Sent
-        </button>
+      <div className="overflow-x-auto border-b border-gray-200">
+        <div className="flex gap-2 min-w-max">
+          <button
+            onClick={() => setActiveTab("templates")}
+            className={`px-6 py-3 font-bold text-sm uppercase tracking-wider transition-all whitespace-nowrap ${
+              activeTab === "templates"
+                ? "border-b-2 border-indigo-600 text-indigo-600"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Templates
+          </button>
+          <button
+            onClick={() => setActiveTab("sent")}
+            className={`px-6 py-3 font-bold text-sm uppercase tracking-wider transition-all whitespace-nowrap ${
+              activeTab === "sent"
+                ? "border-b-2 border-indigo-600 text-indigo-600"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Packages Sent
+          </button>
+        </div>
       </div>
 
       {/* Header & Search */}
-      <div className="flex justify-between items-center gap-4">
-        <div className="flex-1 relative max-w-md">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <div className="flex-1 relative max-w-none sm:max-w-md">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
             placeholder={`Search ${activeTab === "templates" ? "templates" : "sent packages"}...`}
@@ -222,13 +224,13 @@ export function PackagesView() {
             className="pl-10 h-12 bg-white border-gray-200 font-medium rounded-lg"
           />
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 w-full sm:w-auto">
           <Button
             onClick={() => {
               setWizardMode(activeTab === "templates" ? "template" : "package");
               setShowWizard(true);
             }}
-            className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg"
+            className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg w-full sm:w-auto"
           >
             <Plus className="w-4 h-4 mr-2" />{" "}
             {activeTab === "templates" ? "Template" : "Package"}
@@ -354,10 +356,10 @@ export function PackagesView() {
             return (
               <Card
                 key={pkg.id}
-                className="p-6 bg-white border border-gray-200 hover:border-gray-900 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
+                className="p-4 sm:p-6 bg-white border border-gray-200 hover:border-gray-900 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
                 onClick={() => setSelectedFeedbackPackage(pkg.id)}
               >
-                <div className="flex items-center gap-6">
+                <div className="flex flex-col lg:flex-row lg:items-center gap-4 sm:gap-6">
                   <div className="w-32 h-20 rounded-xl bg-gray-100 flex-shrink-0 relative overflow-hidden border border-gray-100">
                     {pkg.cover_image_url ? (
                       <img
@@ -384,7 +386,7 @@ export function PackagesView() {
                       </h4>
                       <Badge className={statusClass}>{statusLabel}</Badge>
                     </div>
-                    <div className="flex items-center gap-4 text-xs text-gray-500 font-bold uppercase tracking-widest">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-500 font-bold uppercase tracking-widest">
                       <span className="flex items-center gap-1.5 text-blue-600">
                         <Clock className="w-3.5 h-3.5 text-blue-600" /> Created{" "}
                         {format(new Date(pkg.created_at), "MMM d, yyyy")}
@@ -406,7 +408,7 @@ export function PackagesView() {
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                     {isExpired && (
                       <Button
                         variant="outline"
@@ -441,7 +443,7 @@ export function PackagesView() {
                       }}
                     >
                       <Activity className="w-4 h-4 mr-2" />
-                      Client Activity
+                      Activity
                     </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
