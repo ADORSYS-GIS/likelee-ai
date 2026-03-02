@@ -221,7 +221,7 @@ export const CalendarScheduleTab = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
         <div>
           <h2 className="text-3xl font-bold text-gray-900">
             Bookings & Schedule
@@ -230,17 +230,17 @@ export const CalendarScheduleTab = ({
             Manage your talent's bookings and availability
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <Button
             variant="outline"
-            className="font-bold text-gray-700 bg-white"
+            className="font-bold text-gray-700 bg-white w-full sm:w-auto"
             onClick={() => setModalOpen(true)}
           >
             <Calendar className="w-4 h-4 mr-2" /> Manage Availability
           </Button>
           {!disableBookingEdits && (
             <Button
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold w-full sm:w-auto"
               onClick={() => {
                 setBookingMode("new");
                 setSelectedBooking(null);
@@ -253,7 +253,7 @@ export const CalendarScheduleTab = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((s) => (
           <Card
             key={s.label}
@@ -269,14 +269,14 @@ export const CalendarScheduleTab = ({
 
       <Card className="p-4 bg-white border border-gray-200 shadow-sm rounded-xl">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
-          <div className="flex items-center gap-2">
+          <div className="flex w-full xl:w-auto items-center gap-2 overflow-x-auto pb-1 flex-nowrap">
             <Select
               value={format(currentDate, "MMMM").toLowerCase()}
               onValueChange={(val) => {
                 // Approximate set month logic if needed
               }}
             >
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-28 sm:w-32 shrink-0">
                 <SelectValue placeholder={format(currentDate, "MMMM")} />
               </SelectTrigger>
               <SelectContent>
@@ -309,7 +309,7 @@ export const CalendarScheduleTab = ({
                 setCurrentDate(newDate);
               }}
             >
-              <SelectTrigger className="w-24">
+              <SelectTrigger className="w-20 sm:w-24 shrink-0">
                 <SelectValue placeholder={format(currentDate, "yyyy")} />
               </SelectTrigger>
               <SelectContent>
@@ -320,7 +320,7 @@ export const CalendarScheduleTab = ({
                 ))}
               </SelectContent>
             </Select>
-            <div className="flex items-center bg-gray-100 rounded-lg p-1 gap-1">
+            <div className="flex items-center bg-gray-100 rounded-lg p-1 gap-1 shrink-0">
               {/* UI Arrows still control Month as is standard behaviour */}
               <Button
                 variant="ghost"
@@ -352,9 +352,7 @@ export const CalendarScheduleTab = ({
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className={
-                    "w-[140px] justify-start text-left font-normal border-gray-200"
-                  }
+                  className="w-[130px] sm:w-[140px] justify-start text-left font-normal border-gray-200 shrink-0"
                 >
                   <Calendar className="mr-2 h-4 w-4" />
                   {currentDate ? (
@@ -377,9 +375,9 @@ export const CalendarScheduleTab = ({
             </Popover>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex w-full xl:w-auto items-center gap-2 overflow-x-auto pb-1 flex-nowrap">
             <Select defaultValue="month">
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-28 sm:w-32 shrink-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -396,7 +394,7 @@ export const CalendarScheduleTab = ({
                   value={talentViewMode}
                   onValueChange={(v) => setTalentViewMode(v as any)}
                 >
-                  <SelectTrigger className="w-40">
+                  <SelectTrigger className="w-32 sm:w-40 shrink-0">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -411,7 +409,7 @@ export const CalendarScheduleTab = ({
                     value={selectedTalentId}
                     onValueChange={setSelectedTalentId}
                   >
-                    <SelectTrigger className="w-48">
+                    <SelectTrigger className="w-40 sm:w-48 shrink-0">
                       <SelectValue placeholder="Select talent" />
                     </SelectTrigger>
                     <SelectContent>
@@ -428,7 +426,7 @@ export const CalendarScheduleTab = ({
 
             {!disableBookingEdits && (
               <Button
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold whitespace-nowrap shrink-0"
                 onClick={() => {
                   setBookingMode("new");
                   setSelectedBooking(null);
@@ -441,7 +439,7 @@ export const CalendarScheduleTab = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-4 text-xs text-gray-400 mb-4 px-2">
+        <div className="hidden sm:flex items-center gap-4 text-xs text-gray-400 mb-4 px-2">
           <span className="flex items-center gap-1">
             <span className="border p-0.5 rounded px-1">←</span>{" "}
             <span className="border p-0.5 rounded px-1">→</span> Navigate
@@ -457,157 +455,159 @@ export const CalendarScheduleTab = ({
           </span>
         </div>
 
-        <div className="border rounded-lg overflow-hidden">
-          <div className="grid grid-cols-7 border-b bg-gray-50/50">
-            {days.map((d) => (
-              <div
-                key={d}
-                className="p-3 text-center text-sm font-bold text-gray-600"
-              >
-                {d}
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-7 auto-rows-[120px] divide-x divide-y">
-            {/* Previous Month Filler */}
-            {previousMonthDays.map((d) => (
-              <div
-                key={`prev-${d}`}
-                className="p-2 text-gray-400 text-sm font-medium bg-gray-50/20"
-              >
-                {d}
-              </div>
-            ))}
-            {/* Current Month Days */}
-            {currentMonthDays.map((d) => {
-              const year = currentDate.getFullYear();
-              const month = currentDate.getMonth() + 1;
-              const dayString = `${year}-${month.toString().padStart(2, "0")}-${d.toString().padStart(2, "0")}`;
-              const dayBookings = visibleBookings.filter(
-                (b) => b.date === dayString,
-              );
-              const dayBookOutsCount = countBookOutsOnDate(dayString);
-
-              const getEventColor = (type?: string, status?: string) => {
-                const s = (status || "").toLowerCase();
-                const t = (type || "").toLowerCase();
-                // Status overrides
-                if (s === "cancelled") return "bg-red-200 text-gray-900";
-                if (s === "completed") return "bg-purple-200 text-gray-900";
-                if (s === "confirmed") return "bg-green-200 text-gray-900";
-                // Otherwise color by type (legend)
-                switch (t) {
-                  case "casting":
-                    return "bg-blue-100 text-gray-900";
-                  case "option":
-                    return "bg-yellow-100 text-gray-900";
-                  case "confirmed":
-                    return "bg-green-200 text-gray-900";
-                  case "test-shoot":
-                    return "bg-orange-100 text-gray-900";
-                  case "fitting":
-                    return "bg-yellow-50 text-gray-900";
-                  case "rehearsal":
-                    return "bg-gray-200 text-gray-900";
-                  default:
-                    // Fall back to status pending or generic
-                    if (s === "pending") return "bg-gray-200 text-gray-900";
-                    return "bg-indigo-200 text-gray-900";
-                }
-              };
-
-              const isSelected = d === currentDate.getDate();
-
-              return (
+        <div className="border rounded-lg overflow-x-auto">
+          <div className="min-w-[760px]">
+            <div className="grid grid-cols-7 border-b bg-gray-50/50">
+              {days.map((d) => (
                 <div
                   key={d}
-                  className={`p-2 relative group hover:bg-gray-50 transition-colors ${
-                    isSelected
-                      ? "bg-blue-50/10 ring-2 ring-indigo-600 inset-0 z-10"
-                      : ""
-                  }`}
-                  onClick={() => {
-                    const newDate = new Date(currentDate);
-                    newDate.setDate(d);
-                    // First click selects the day; clicking the already-selected day opens New Booking
-                    const wasSelected = d === currentDate.getDate();
-                    setCurrentDate(newDate);
-                    if (wasSelected) {
-                      setBookingMode("new");
-                      setSelectedBooking({
-                        date: dayString,
-                        ...(selectedTalentName
-                          ? {
-                              talentName: selectedTalentName,
-                              talent_name: selectedTalentName,
-                            }
-                          : {}),
-                      });
-                      setNewBookingOpen(true);
-                    }
-                  }}
+                  className="p-3 text-center text-sm font-bold text-gray-600"
                 >
-                  <span
-                    className={`text-sm font-medium ${
-                      isSelected
-                        ? "bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center -ml-1 -mt-1"
-                        : "text-gray-700"
-                    }`}
-                  >
-                    {d}
-                  </span>
-                  <div className="mt-1 space-y-1">
-                    {dayBookings.map((b, idx) => {
-                      const statusVal = (b.status || b.booking_status) as
-                        | string
-                        | undefined;
-                      const typeVal = (b.type ||
-                        b.bookingType ||
-                        b.booking_type) as string | undefined;
-                      const pick = (v?: any) =>
-                        typeof v === "string" && v.trim().length > 0
-                          ? v.trim()
-                          : undefined;
-                      const displayName =
-                        pick(b.talent_name) ||
-                        pick(b.talentName) ||
-                        pick(b?.talent?.full_name) ||
-                        pick(b?.talent?.name) ||
-                        pick(b.client_name) ||
-                        "Untitled";
-                      // TEMP: debug what drives color (remove after validation)
-                      // console.debug("calendar booking", { date: dayString, status: statusVal, type: typeVal, name: displayName, id: b.id });
-                      return (
-                        <div
-                          key={`${b.id} - ${idx}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedBooking(b);
-                            setDetailsModalOpen(true);
-                          }}
-                          className={
-                            getEventColor(typeVal, statusVal) +
-                            " w-full h-7 flex items-center text-sm px-3 rounded-md font-semibold whitespace-nowrap overflow-hidden text-ellipsis cursor-pointer hover:opacity-90 border border-black/5 shadow-sm"
-                          }
-                          title={displayName}
-                        >
-                          {displayName}
-                        </div>
-                      );
-                    })}
-                    {dayBookOutsCount > 0 && (
-                      <div
-                        className="bg-red-100 text-red-700 w-full h-7 flex items-center text-xs px-3 rounded-md font-bold whitespace-nowrap overflow-hidden text-ellipsis border border-red-200"
-                        title={`${dayBookOutsCount} unavailable`}
-                      >
-                        ✕ {dayBookOutsCount} unavailable
-                      </div>
-                    )}
-                  </div>
+                  {d}
                 </div>
-              );
-            })}
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 auto-rows-[120px] divide-x divide-y">
+              {/* Previous Month Filler */}
+              {previousMonthDays.map((d) => (
+                <div
+                  key={`prev-${d}`}
+                  className="p-2 text-gray-400 text-sm font-medium bg-gray-50/20"
+                >
+                  {d}
+                </div>
+              ))}
+              {/* Current Month Days */}
+              {currentMonthDays.map((d) => {
+                const year = currentDate.getFullYear();
+                const month = currentDate.getMonth() + 1;
+                const dayString = `${year}-${month.toString().padStart(2, "0")}-${d.toString().padStart(2, "0")}`;
+                const dayBookings = visibleBookings.filter(
+                  (b) => b.date === dayString,
+                );
+                const dayBookOutsCount = countBookOutsOnDate(dayString);
+
+                const getEventColor = (type?: string, status?: string) => {
+                  const s = (status || "").toLowerCase();
+                  const t = (type || "").toLowerCase();
+                  // Status overrides
+                  if (s === "cancelled") return "bg-red-200 text-gray-900";
+                  if (s === "completed") return "bg-purple-200 text-gray-900";
+                  if (s === "confirmed") return "bg-green-200 text-gray-900";
+                  // Otherwise color by type (legend)
+                  switch (t) {
+                    case "casting":
+                      return "bg-blue-100 text-gray-900";
+                    case "option":
+                      return "bg-yellow-100 text-gray-900";
+                    case "confirmed":
+                      return "bg-green-200 text-gray-900";
+                    case "test-shoot":
+                      return "bg-orange-100 text-gray-900";
+                    case "fitting":
+                      return "bg-yellow-50 text-gray-900";
+                    case "rehearsal":
+                      return "bg-gray-200 text-gray-900";
+                    default:
+                      // Fall back to status pending or generic
+                      if (s === "pending") return "bg-gray-200 text-gray-900";
+                      return "bg-indigo-200 text-gray-900";
+                  }
+                };
+
+                const isSelected = d === currentDate.getDate();
+
+                return (
+                  <div
+                    key={d}
+                    className={`p-2 relative group hover:bg-gray-50 transition-colors ${
+                      isSelected
+                        ? "bg-blue-50/10 ring-2 ring-indigo-600 inset-0 z-10"
+                        : ""
+                    }`}
+                    onClick={() => {
+                      const newDate = new Date(currentDate);
+                      newDate.setDate(d);
+                      // First click selects the day; clicking the already-selected day opens New Booking
+                      const wasSelected = d === currentDate.getDate();
+                      setCurrentDate(newDate);
+                      if (wasSelected) {
+                        setBookingMode("new");
+                        setSelectedBooking({
+                          date: dayString,
+                          ...(selectedTalentName
+                            ? {
+                                talentName: selectedTalentName,
+                                talent_name: selectedTalentName,
+                              }
+                            : {}),
+                        });
+                        setNewBookingOpen(true);
+                      }
+                    }}
+                  >
+                    <span
+                      className={`text-sm font-medium ${
+                        isSelected
+                          ? "bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center -ml-1 -mt-1"
+                          : "text-gray-700"
+                      }`}
+                    >
+                      {d}
+                    </span>
+                    <div className="mt-1 space-y-1">
+                      {dayBookings.map((b, idx) => {
+                        const statusVal = (b.status || b.booking_status) as
+                          | string
+                          | undefined;
+                        const typeVal = (b.type ||
+                          b.bookingType ||
+                          b.booking_type) as string | undefined;
+                        const pick = (v?: any) =>
+                          typeof v === "string" && v.trim().length > 0
+                            ? v.trim()
+                            : undefined;
+                        const displayName =
+                          pick(b.talent_name) ||
+                          pick(b.talentName) ||
+                          pick(b?.talent?.full_name) ||
+                          pick(b?.talent?.name) ||
+                          pick(b.client_name) ||
+                          "Untitled";
+                        // TEMP: debug what drives color (remove after validation)
+                        // console.debug("calendar booking", { date: dayString, status: statusVal, type: typeVal, name: displayName, id: b.id });
+                        return (
+                          <div
+                            key={`${b.id} - ${idx}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedBooking(b);
+                              setDetailsModalOpen(true);
+                            }}
+                            className={
+                              getEventColor(typeVal, statusVal) +
+                              " w-full h-7 flex items-center text-sm px-3 rounded-md font-semibold whitespace-nowrap overflow-hidden text-ellipsis cursor-pointer hover:opacity-90 border border-black/5 shadow-sm"
+                            }
+                            title={displayName}
+                          >
+                            {displayName}
+                          </div>
+                        );
+                      })}
+                      {dayBookOutsCount > 0 && (
+                        <div
+                          className="bg-red-100 text-red-700 w-full h-7 flex items-center text-xs px-3 rounded-md font-bold whitespace-nowrap overflow-hidden text-ellipsis border border-red-200"
+                          title={`${dayBookOutsCount} unavailable`}
+                        >
+                          ✕ {dayBookOutsCount} unavailable
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
 

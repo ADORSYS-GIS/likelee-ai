@@ -77,7 +77,7 @@ export function CatalogsView() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Asset Catalogs</h2>
           <p className="text-gray-500 font-medium text-sm mt-0.5">
@@ -86,7 +86,7 @@ export function CatalogsView() {
           </p>
         </div>
         <Button
-          className="h-10 px-5 rounded-xl font-bold flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700"
+          className="h-10 w-full sm:w-auto px-5 rounded-xl font-bold flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700"
           onClick={() => setShowBuilder(true)}
         >
           <Plus className="w-4 h-4" />
@@ -167,7 +167,7 @@ export function CatalogsView() {
                       </span>
                     )}
                     {catalog.client_email && (
-                      <span className="flex items-center gap-1 text-xs text-gray-400">
+                      <span className="flex items-center gap-1 text-xs text-gray-400 break-all">
                         <Mail className="w-3 h-3" />
                         {catalog.client_email}
                       </span>
@@ -193,7 +193,7 @@ export function CatalogsView() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0 flex-wrap">
+              <div className="flex w-full sm:w-auto items-center gap-2 shrink-0 flex-wrap">
                 <Badge
                   variant="secondary"
                   className={
