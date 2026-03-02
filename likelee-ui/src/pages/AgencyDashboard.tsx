@@ -389,7 +389,7 @@ const ConnectBankView = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
             Connect Your Bank Account
@@ -401,7 +401,7 @@ const ConnectBankView = () => {
         </div>
         <Button
           variant="outline"
-          className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+          className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center justify-center gap-2 w-full sm:w-auto"
           onClick={connect}
           disabled={loading}
         >
@@ -410,7 +410,7 @@ const ConnectBankView = () => {
         </Button>
       </div>
 
-      <Card className="p-8 bg-white border border-gray-100 rounded-2xl">
+      <Card className="p-4 sm:p-8 bg-white border border-gray-100 rounded-2xl">
         <div className="max-w-3xl mx-auto">
           <div className="flex flex-col items-center text-center mb-6">
             <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
@@ -453,7 +453,7 @@ const ConnectBankView = () => {
           )}
 
           {connected && (
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
               <div className="text-sm text-gray-600 font-medium">
                 Request a payout from your available balance.
               </div>
@@ -513,7 +513,7 @@ const ConnectBankView = () => {
                 {payoutHistory.slice(0, 5).map((p) => (
                   <div
                     key={p.id}
-                    className="flex items-center justify-between p-3 rounded-xl border border-gray-100"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 rounded-xl border border-gray-100"
                   >
                     <div className="text-sm font-medium text-gray-900">
                       {(p.amount_cents || 0) / 100}{" "}
@@ -833,7 +833,7 @@ const ProspectModal = ({
         <div className="space-y-6 py-4">
           <div>
             <h3 className="font-bold text-gray-900 mb-4">Basic Information</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Name *</Label>
                 <Input
@@ -906,7 +906,7 @@ const ProspectModal = ({
 
           <div>
             <h3 className="font-bold text-gray-900 mb-4">Discovery Details</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Discovery Source</Label>
                 <Select
@@ -964,7 +964,7 @@ const ProspectModal = ({
             <h3 className="font-bold text-gray-900 mb-4">
               Status & Assignment
             </h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Status</Label>
                 <Select
@@ -1023,7 +1023,7 @@ const ProspectModal = ({
             <h3 className="font-bold text-gray-900 mb-4">
               Social Media (Optional)
             </h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Instagram Followers</Label>
                 <Input
@@ -1188,7 +1188,7 @@ const ConnectBankViewAlt = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
             Connect Your Bank Account
@@ -1200,7 +1200,7 @@ const ConnectBankViewAlt = () => {
         </div>
         <Button
           variant="outline"
-          className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+          className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center justify-center gap-2 w-full sm:w-auto"
           onClick={connect}
           disabled={loading}
         >
@@ -1209,7 +1209,7 @@ const ConnectBankViewAlt = () => {
         </Button>
       </div>
 
-      <Card className="p-8 bg-white border border-gray-100 rounded-2xl">
+      <Card className="p-4 sm:p-8 bg-white border border-gray-100 rounded-2xl">
         <div className="max-w-3xl mx-auto">
           <div className="flex flex-col items-center text-center mb-6">
             <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
@@ -1600,7 +1600,7 @@ const ProspectModalAlt = ({
         <div className="space-y-6 py-4">
           <div>
             <h3 className="font-bold text-gray-900 mb-4">Basic Information</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Name *</Label>
                 <Input
@@ -1673,7 +1673,7 @@ const ProspectModalAlt = ({
 
           <div>
             <h3 className="font-bold text-gray-900 mb-4">Discovery Details</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Discovery Source</Label>
                 <Select
@@ -1787,7 +1787,7 @@ const ProspectModalAlt = ({
             <h3 className="font-bold text-gray-900 mb-4">
               Social Media (Optional)
             </h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Instagram Followers</Label>
                 <Input
@@ -2734,7 +2734,7 @@ const ShareFileModal = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2.5">
               <Label className="text-sm font-bold text-gray-700 ml-1">
                 Link Expiration
@@ -3002,7 +3002,7 @@ const ExpenseTrackingView = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Expense Tracking</h2>
           <p className="text-gray-600 font-medium">
@@ -3011,14 +3011,14 @@ const ExpenseTrackingView = () => {
         </div>
         <Button
           onClick={() => setShowAddExpense(true)}
-          className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
+          className="h-11 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 w-full sm:w-auto"
         >
           <Plus className="w-5 h-5" />
           Add Expense
         </Button>
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <Input
@@ -3029,7 +3029,7 @@ const ExpenseTrackingView = () => {
           />
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-64 h-12 bg-white border-gray-100 rounded-xl">
+          <SelectTrigger className="w-full sm:w-64 h-12 bg-white border-gray-100 rounded-xl">
             <SelectValue placeholder="All Categories" />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
@@ -3050,8 +3050,8 @@ const ExpenseTrackingView = () => {
               key={expense.id}
               className="p-5 bg-white border border-gray-100 rounded-2xl hover:shadow-sm transition-shadow"
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4 flex-1">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex items-center gap-4 flex-1 min-w-0">
                   <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center border border-orange-100">
                     {getCategoryIcon(expense.category)}
                   </div>
@@ -3065,7 +3065,7 @@ const ExpenseTrackingView = () => {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center justify-between sm:justify-end gap-4">
                   <Badge
                     variant="outline"
                     className={`text-xs font-bold px-3 py-1 rounded-lg capitalize ${getStatusColor(expense.status)}`}
@@ -3083,7 +3083,7 @@ const ExpenseTrackingView = () => {
       </div>
 
       <Card className="p-6 bg-gradient-to-br from-orange-50 to-red-50 border border-orange-100 rounded-2xl">
-        <div className="flex justify-between items-center">
+        <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-sm font-bold text-gray-700 mb-1">
               Total Expenses
@@ -3118,7 +3118,7 @@ const ExpenseTrackingView = () => {
                 placeholder="e.g. Camera rental"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-sm font-bold text-gray-700">
                   Category
@@ -3148,7 +3148,7 @@ const ExpenseTrackingView = () => {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-sm font-bold text-gray-700">
                   Amount (USD)
@@ -3500,7 +3500,7 @@ const TalentStatementsView = () => {
           </div>
         </Card>
 
-        <div className="grid grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card className="p-6 bg-orange-50 border border-orange-100 rounded-2xl">
             <div className="flex items-center gap-2 mb-2">
               <DollarSign className="w-4 h-4 text-orange-600" />
@@ -3671,7 +3671,7 @@ const TalentStatementsView = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
             Talent Earnings Statements
@@ -3682,7 +3682,7 @@ const TalentStatementsView = () => {
         </div>
         <Button
           variant="outline"
-          className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+          className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center justify-center gap-2 w-full sm:w-auto"
           onClick={exportAll}
           disabled={loading}
         >
@@ -3691,7 +3691,7 @@ const TalentStatementsView = () => {
         </Button>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
@@ -3702,7 +3702,7 @@ const TalentStatementsView = () => {
           />
         </div>
         <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-56 h-10 bg-white border-gray-200 rounded-xl font-bold text-gray-700 text-sm">
+          <SelectTrigger className="w-full sm:w-56 h-10 bg-white border-gray-200 rounded-xl font-bold text-gray-700 text-sm">
             <SelectValue placeholder="Sort by..." />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
@@ -3717,7 +3717,7 @@ const TalentStatementsView = () => {
             <SelectItem value="name-za">Name (Z-A)</SelectItem>
           </SelectContent>
         </Select>
-        <div className="flex items-center gap-2 px-3 h-10 bg-white border border-gray-200 rounded-xl">
+        <div className="flex items-center gap-2 px-3 h-10 bg-white border border-gray-200 rounded-xl w-full sm:w-auto">
           <Checkbox
             id="unpaid-earnings"
             checked={hasUnpaidEarnings}
@@ -3744,8 +3744,8 @@ const TalentStatementsView = () => {
               key={talent.talentId}
               className="p-4 bg-white border border-gray-100 rounded-2xl hover:shadow-sm transition-shadow"
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 flex-1">
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-3 min-w-0">
                   <Checkbox className="rounded-md w-4 h-4 border-gray-300" />
                   <img
                     src={
@@ -3755,7 +3755,7 @@ const TalentStatementsView = () => {
                     alt={talent.name}
                     className="w-12 h-12 rounded-xl object-cover border-2 border-white shadow-sm"
                   />
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <h4 className="text-sm font-bold text-gray-900">
                       {talent.name}
                     </h4>
@@ -3764,8 +3764,8 @@ const TalentStatementsView = () => {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-6">
-                  <div className="text-right">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                  <div className="text-left sm:text-right min-w-0">
                     <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
                       Total Owed
                     </p>
@@ -3776,7 +3776,7 @@ const TalentStatementsView = () => {
                       {talent.totalOwedCents > 0 ? "Has unpaid" : "No unpaid"}
                     </p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-left sm:text-right min-w-0">
                     <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
                       Total Paid (YTD)
                     </p>
@@ -3787,7 +3787,7 @@ const TalentStatementsView = () => {
                       {talent.totalPaidYTDCents > 0 ? "Has paid" : "No paid"}
                     </p>
                   </div>
-                  <div className="text-right min-w-[100px]">
+                  <div className="text-left sm:text-right min-w-0">
                     <p className="text-[10px] text-gray-500 font-bold mb-0.5 uppercase tracking-wider">
                       Last Payment
                     </p>
@@ -3799,7 +3799,7 @@ const TalentStatementsView = () => {
                   </div>
                   <Button
                     onClick={() => setSelectedTalent(talent)}
-                    className="h-10 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2"
+                    className="h-10 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 col-span-2 sm:col-span-3"
                   >
                     <FileText className="w-4 h-4" />
                     View Statement
@@ -4114,7 +4114,7 @@ const PaymentTrackingView = () => {
         </Card>
       </div>
 
-      <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
+      <Card className="p-4 sm:p-6 bg-white border border-gray-100 rounded-2xl">
         <h3 className="text-lg font-bold text-gray-900 mb-4">
           Recent Payments
         </h3>
@@ -4125,7 +4125,7 @@ const PaymentTrackingView = () => {
             {summary.recentPayments.map((p: any) => (
               <div
                 key={String(p.id || p.invoiceNumber)}
-                className="bg-green-50 border border-green-100 rounded-xl p-4 flex items-center justify-between"
+                className="bg-green-50 border border-green-100 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
@@ -4153,7 +4153,7 @@ const PaymentTrackingView = () => {
         )}
       </Card>
 
-      <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
+      <Card className="p-4 sm:p-6 bg-white border border-gray-100 rounded-2xl">
         <h3 className="text-lg font-bold text-gray-900 mb-4">
           Payment Reminder Settings
         </h3>
@@ -4162,7 +4162,7 @@ const PaymentTrackingView = () => {
           only save your preferences.
         </p>
         <div className="space-y-3">
-          <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-100 rounded-xl">
+          <div className="flex items-start sm:items-center justify-between gap-3 p-4 bg-blue-50 border border-blue-100 rounded-xl">
             <div>
               <p className="text-sm font-bold text-gray-900">
                 Auto-send reminder 3 days before due date
@@ -4179,7 +4179,7 @@ const PaymentTrackingView = () => {
               className="rounded-md w-6 h-6 border-gray-300"
             />
           </div>
-          <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-100 rounded-xl">
+          <div className="flex items-start sm:items-center justify-between gap-3 p-4 bg-blue-50 border border-blue-100 rounded-xl">
             <div>
               <p className="text-sm font-bold text-gray-900">
                 Auto-send reminder on due date
@@ -4196,7 +4196,7 @@ const PaymentTrackingView = () => {
               className="rounded-md w-6 h-6 border-gray-300"
             />
           </div>
-          <div className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-100 rounded-xl">
+          <div className="flex items-start sm:items-center justify-between gap-3 p-4 bg-yellow-50 border border-yellow-100 rounded-xl">
             <div>
               <p className="text-sm font-bold text-gray-900">
                 Auto-send reminder 7 days after due date
@@ -5211,13 +5211,13 @@ const FinancialReportsView = () => {
         </Card>
       </div>
 
-      <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
-        <div className="flex justify-between items-center mb-6">
+      <Card className="p-4 sm:p-6 bg-white border border-gray-100 rounded-2xl">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
           <h3 className="text-lg font-bold text-gray-900">Financial Reports</h3>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <Button
               variant="outline"
-              className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+              className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center justify-center gap-2 w-full sm:w-auto"
               onClick={handleExportPdf}
             >
               <FileDown className="w-4 h-4" />
@@ -5225,7 +5225,7 @@ const FinancialReportsView = () => {
             </Button>
             <Button
               variant="outline"
-              className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+              className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center justify-center gap-2 w-full sm:w-auto"
               onClick={handleExportExcel}
             >
               <Download className="w-4 h-4" />
@@ -5234,7 +5234,7 @@ const FinancialReportsView = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           <div>
             <Label className="text-sm font-bold text-gray-700 mb-2 block">
               Report Period
@@ -5291,27 +5291,29 @@ const FinancialReportsView = () => {
           </div>
         </div>
 
-        <div className="flex gap-2 mb-6 border-b border-gray-100">
-          {[
-            { id: "revenue", label: "Revenue Report" },
-            { id: "receivables", label: "Outstanding Receivables" },
-            { id: "payables", label: "Talent Payables" },
-            { id: "commission", label: "Commission Report" },
-            { id: "profit", label: "Profit & Loss" },
-            { id: "tax", label: "Tax Reports" },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveReportTab(tab.id)}
-              className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${
-                activeReportTab === tab.id
-                  ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
-                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="overflow-x-auto mb-6 border-b border-gray-100">
+          <div className="flex gap-2 min-w-max">
+            {[
+              { id: "revenue", label: "Revenue Report" },
+              { id: "receivables", label: "Outstanding Receivables" },
+              { id: "payables", label: "Talent Payables" },
+              { id: "commission", label: "Commission Report" },
+              { id: "profit", label: "Profit & Loss" },
+              { id: "tax", label: "Tax Reports" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveReportTab(tab.id)}
+                className={`px-4 py-2 text-sm font-bold rounded-t-lg transition-colors ${
+                  activeReportTab === tab.id
+                    ? "text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {activeReportTab === "revenue" && (
@@ -5411,7 +5413,7 @@ const FinancialReportsView = () => {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="p-5 bg-gray-50 border border-gray-100 rounded-xl">
                 <h4 className="text-sm font-bold text-gray-900 mb-4">
                   Top Clients by Revenue
@@ -5597,7 +5599,7 @@ const FinancialReportsView = () => {
 
         {activeReportTab === "commission" && (
           <div className="space-y-6">
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <Card className="p-6 bg-indigo-50 border border-indigo-100 rounded-2xl">
                 <div className="flex items-center gap-2 mb-2">
                   <Percent className="w-4 h-4 text-indigo-600" />
@@ -5650,7 +5652,7 @@ const FinancialReportsView = () => {
               </Card>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="p-6 bg-gray-50 border border-gray-100 rounded-xl">
                 <h4 className="text-base font-bold text-gray-900 mb-4">
                   Commission by Client
@@ -5756,7 +5758,7 @@ const FinancialReportsView = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-6 mt-12 max-w-2xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12 max-w-2xl mx-auto">
                 <Card className="p-4 bg-gray-50 border border-gray-100 rounded-xl text-center">
                   <p className="text-xs font-bold text-gray-500 mb-1">
                     Profit Margin
@@ -5784,7 +5786,7 @@ const FinancialReportsView = () => {
               <h4 className="text-lg font-bold text-gray-900 mb-6">
                 Tax Summary
               </h4>
-              <div className="grid grid-cols-2 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <Card className="p-6 bg-blue-50 border border-blue-100 rounded-xl">
                   <p className="text-sm font-bold text-gray-700 mb-2">
                     Sales Tax Collected
@@ -6919,7 +6921,7 @@ const GenerateInvoiceView = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
             Invoice Generation
@@ -6928,17 +6930,17 @@ const GenerateInvoiceView = () => {
             Create and manage client invoices
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           <Button
             variant="outline"
-            className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center justify-center gap-2 w-full sm:w-auto"
           >
             <Download className="w-5 h-5" />
             Load Template
           </Button>
           <Button
             variant="outline"
-            className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center justify-center gap-2 w-full sm:w-auto"
             onClick={() => setPreviewOpen(true)}
           >
             <Eye className="w-5 h-5" />
@@ -7010,16 +7012,16 @@ const GenerateInvoiceView = () => {
         </DialogContent>
       </Dialog>
 
-      <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
+      <Card className="p-4 sm:p-6 bg-white border border-gray-100 rounded-2xl">
         <div className="space-y-6">
           <div>
             <Label className="text-sm font-bold text-gray-700 mb-3 block">
               Create Invoice From
             </Label>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <Button
                 variant={createFrom === "booking" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
+                className={`h-11 px-6 rounded-xl font-bold flex items-center justify-center gap-2 w-full sm:w-auto ${
                   createFrom === "booking"
                     ? "bg-indigo-600 hover:bg-indigo-700 text-white"
                     : "border-gray-200 text-gray-700"
@@ -7031,7 +7033,7 @@ const GenerateInvoiceView = () => {
               </Button>
               <Button
                 variant={createFrom === "manual" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
+                className={`h-11 px-6 rounded-xl font-bold flex items-center justify-center gap-2 w-full sm:w-auto ${
                   createFrom === "manual"
                     ? "bg-indigo-600 hover:bg-indigo-700 text-white"
                     : "border-gray-200 text-gray-700"
@@ -7065,7 +7067,7 @@ const GenerateInvoiceView = () => {
             </div>
           )}
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <Label className="text-sm font-bold text-gray-700 mb-2 block">
                 Invoice Number <span className="text-red-500">*</span>
@@ -7092,7 +7094,7 @@ const GenerateInvoiceView = () => {
               <Label className="text-sm font-bold text-gray-700 mb-2 block">
                 Due Date <span className="text-red-500">*</span>
               </Label>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input
                   type="date"
                   value={dueDate}
@@ -7100,7 +7102,7 @@ const GenerateInvoiceView = () => {
                   className="h-12 rounded-xl border-gray-200 flex-1"
                 />
                 <Select value={paymentTerms} onValueChange={setPaymentTerms}>
-                  <SelectTrigger className="h-12 rounded-xl border-gray-200 w-32">
+                  <SelectTrigger className="h-12 rounded-xl border-gray-200 w-full sm:w-32">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
@@ -7146,7 +7148,7 @@ const GenerateInvoiceView = () => {
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label className="text-sm font-bold text-gray-700 mb-2 block">
                 PO Number (Optional)
@@ -7208,7 +7210,7 @@ const GenerateInvoiceView = () => {
                         className="min-h-[80px] rounded-xl border-gray-200 resize-none"
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Label className="text-xs font-bold text-gray-700 mb-2 block">
                           Talent
@@ -7257,7 +7259,7 @@ const GenerateInvoiceView = () => {
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       <div>
                         <Label className="text-xs font-bold text-gray-700 mb-2 block">
                           Rate Type
@@ -7371,7 +7373,7 @@ const GenerateInvoiceView = () => {
             )}
           </Card>
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <h4 className="text-sm font-bold text-gray-900">
                 Financial Settings
@@ -7506,7 +7508,7 @@ const GenerateInvoiceView = () => {
             </Card>
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <Label className="text-xs font-bold text-gray-700 mb-2 block">
                 Additional Notes (Optional)
@@ -7579,7 +7581,7 @@ const GenerateInvoiceView = () => {
             )}
           </div>
 
-          <div className="flex gap-3 pt-6 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200">
             <Button
               variant="outline"
               className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
@@ -7954,7 +7956,7 @@ const InvoiceManagementView = ({
     <div className="space-y-6">
       {/* Horizontal Tab Navigation */}
       <Card className="p-2 bg-white border border-gray-100 rounded-2xl">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 overflow-x-auto">
           {accountingTabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = tab.id === activeSubTab;
@@ -7962,7 +7964,7 @@ const InvoiceManagementView = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveSubTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm whitespace-nowrap transition-all ${
                   isActive
                     ? "bg-indigo-600 text-white shadow-sm"
                     : "text-gray-700 hover:bg-gray-50"
@@ -7976,7 +7978,7 @@ const InvoiceManagementView = ({
         </div>
       </Card>
 
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
             Invoice Management
@@ -7985,11 +7987,11 @@ const InvoiceManagementView = ({
             View and manage all client invoices
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 w-full sm:w-auto">
           <Button
             variant="outline"
             onClick={() => setShowFilters(!showFilters)}
-            className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            className="h-10 px-5 rounded-xl border-gray-200 font-bold flex items-center justify-center gap-2 w-full sm:w-auto"
           >
             <Filter className="w-4 h-4" />
             Filters
@@ -8000,7 +8002,7 @@ const InvoiceManagementView = ({
         </div>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
@@ -8011,7 +8013,7 @@ const InvoiceManagementView = ({
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-40 h-10 bg-white border-gray-200 rounded-xl font-bold text-gray-700 text-sm">
+          <SelectTrigger className="w-full sm:w-40 h-10 bg-white border-gray-200 rounded-xl font-bold text-gray-700 text-sm">
             <SelectValue placeholder="All Status" />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
@@ -8051,7 +8053,7 @@ const InvoiceManagementView = ({
           </SelectContent>
         </Select>
         <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-40 h-10 bg-white border-gray-200 rounded-xl font-bold text-gray-700 text-sm">
+          <SelectTrigger className="w-full sm:w-40 h-10 bg-white border-gray-200 rounded-xl font-bold text-gray-700 text-sm">
             <SelectValue placeholder="Sort by..." />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
@@ -8095,7 +8097,7 @@ const InvoiceManagementView = ({
       {/* Advanced Filters Panel */}
       {showFilters && (
         <Card className="p-5 bg-white border border-gray-200 rounded-2xl">
-          <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div>
               <Label className="text-sm font-bold text-gray-700 mb-2 block">
                 Issue Date From
@@ -8359,7 +8361,7 @@ const InvoiceManagementView = ({
 
           <div className="space-y-4">
             {/* Summary Cards */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <Card className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
                 <p className="text-xs font-bold text-gray-700 mb-1">
                   Invoice Total
@@ -9177,7 +9179,7 @@ const ScoutingHubView = ({
             Discover, track, and manage talent prospects
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex w-full md:w-auto items-center gap-3 overflow-x-auto pb-1">
           <Button
             variant="outline"
             className="flex items-center gap-2 border-gray-300 font-bold text-gray-700 bg-white shadow-sm rounded-lg h-9 text-sm"
@@ -9504,7 +9506,7 @@ const ProspectDetailsSheet = ({
   return (
     <Sheet open={!!prospect} onOpenChange={(open) => !open && onClose()}>
       <SheetContent
-        className="w-[650px] sm:max-w-none bg-white p-0 flex flex-col"
+        className="w-full max-w-[95vw] sm:w-[650px] sm:max-w-none bg-white p-0 flex flex-col"
         {...({} as any)}
       >
         <SheetHeader className="p-6 border-b border-gray-200">
@@ -9722,7 +9724,7 @@ const ProspectDetailsSheet = ({
           </Section>
 
           <Section title="Social Metrics">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <MetricBox
                 label="Instagram Followers"
                 value={prospect.instagram_followers?.toLocaleString() || "N/A"}
@@ -10221,7 +10223,7 @@ const ProspectPipelineTab = ({
 };
 
 const SocialDiscoveryTab = () => (
-  <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
+  <Card className="p-4 sm:p-6 lg:p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
       <div>
         <h2 className="text-xl font-bold text-gray-900">
@@ -10240,19 +10242,19 @@ const SocialDiscoveryTab = () => (
     </div>
 
     <div className="flex flex-col gap-6">
-      <div className="flex gap-2 w-full">
+      <div className="flex flex-col sm:flex-row gap-2 w-full">
         <div className="relative flex-1">
           <Input
             placeholder="Search by username, hashtag, or location..."
             className="h-10 border-gray-200 bg-white rounded-lg"
           />
         </div>
-        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-8 rounded-lg shadow-sm">
+        <Button className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-8 rounded-lg shadow-sm">
           Search
         </Button>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Button
           variant="outline"
           className="flex items-center gap-2 border-gray-200 font-bold text-gray-700 px-6 h-9 rounded-lg"
@@ -10273,7 +10275,7 @@ const SocialDiscoveryTab = () => (
         </Button>
       </div>
 
-      <div className="border border-dashed border-gray-200 rounded-2xl p-24 flex flex-col items-center justify-center text-center mt-4">
+      <div className="border border-dashed border-gray-200 rounded-2xl p-6 sm:p-10 lg:p-24 flex flex-col items-center justify-center text-center mt-4">
         <div className="p-6 bg-gray-50 rounded-full mb-6">
           <Instagram className="w-12 h-12 text-gray-200" />
         </div>
@@ -10284,7 +10286,7 @@ const SocialDiscoveryTab = () => (
           Search Instagram, TikTok, and YouTube to find potential talent
         </p>
 
-        <div className="bg-[#FAFAFA] border border-gray-100 p-8 rounded-2xl text-left max-w-md w-full">
+        <div className="bg-[#FAFAFA] border border-gray-100 p-5 sm:p-8 rounded-2xl text-left max-w-md w-full">
           <h4 className="font-bold text-gray-900 mb-4">Features:</h4>
           <ul className="space-y-3">
             {[
@@ -12139,7 +12141,7 @@ const LicenseTemplatesView = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="p-6 bg-white border border-gray-200 shadow-sm">
           <p className="text-sm text-gray-500 mb-1">Total Templates</p>
           <p className="text-3xl font-bold text-gray-900">{templates.length}</p>
@@ -12188,7 +12190,7 @@ const LicenseTemplatesView = () => {
       </div>
 
       {/* Template Cards */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {filteredTemplates.map((template) => (
           <Card
             key={template.id}
@@ -12288,7 +12290,7 @@ const LicenseTemplatesView = () => {
             </div>
 
             <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="col-span-1">
                   <Label className="block text-sm font-bold text-gray-900 mb-2">
                     Template Name <span className="text-red-500">*</span>
@@ -12361,7 +12363,7 @@ const LicenseTemplatesView = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div>
                   <Label className="block text-sm font-bold text-gray-900 mb-2">
                     Duration
@@ -12506,7 +12508,7 @@ const LicenseTemplatesView = () => {
             {editingTemplate && (
               <>
                 <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="col-span-1">
                       <Label className="block text-sm font-bold text-gray-900 mb-2">
                         Template Name <span className="text-red-500">*</span>
@@ -12589,7 +12591,7 @@ const LicenseTemplatesView = () => {
                     />
                   </div>
 
-                  <div className="grid grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div>
                       <Label className="block text-sm font-bold text-gray-900 mb-2">
                         Duration
@@ -12729,7 +12731,7 @@ const LicenseTemplatesView = () => {
       {/* Delete Confirmation Toast */}
       {deleteConfirmation.show && (
         <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-5">
-          <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 min-w-[320px]">
+          <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 w-[calc(100vw-2rem)] sm:w-auto sm:min-w-[320px]">
             <div className="flex justify-between items-start mb-3">
               <h3 className="text-sm font-bold text-gray-900">
                 Delete Template?
@@ -12829,7 +12831,7 @@ const ProtectionUsageView = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card className="p-6 bg-white border border-gray-200 shadow-sm">
           <div className="flex items-center gap-3 mb-2">
             <Users className="w-6 h-6 text-gray-400" />
@@ -12865,7 +12867,7 @@ const ProtectionUsageView = () => {
 
       {/* Overall Status */}
       <Card className="p-4 bg-white border border-gray-200 shadow-sm">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
           <div className="flex items-center gap-3">
             <CheckCircle2 className="w-5 h-5 text-green-500" />
             <div>
@@ -12876,15 +12878,18 @@ const ProtectionUsageView = () => {
               </p>
             </div>
           </div>
-          <Button variant="outline" className="font-bold border-gray-300">
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto font-bold border-gray-300"
+          >
             View All Alerts
           </Button>
         </div>
       </Card>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <div className="flex gap-6">
+      <div className="border-b border-gray-200 overflow-x-auto">
+        <div className="flex gap-4 min-w-max">
           {[
             "Current Alerts",
             "How It Works",
@@ -12923,7 +12928,7 @@ const ProtectionUsageView = () => {
             </div>
 
             <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="flex gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <img
                   src={TALENT_DATA.find((t) => t.name === "Emma")?.img || ""}
                   alt="Emma"
@@ -12941,14 +12946,17 @@ const ProtectionUsageView = () => {
                   </p>
                 </div>
               </div>
-              <div className="flex gap-3 mt-4">
-                <Button className="bg-gray-900 hover:bg-gray-800 text-white font-bold">
+              <div className="flex flex-wrap gap-3 mt-4">
+                <Button className="w-full sm:w-auto bg-gray-900 hover:bg-gray-800 text-white font-bold">
                   View Details
                 </Button>
-                <Button className="bg-red-600 hover:bg-red-700 text-white font-bold">
+                <Button className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold">
                   Request Takedown
                 </Button>
-                <Button variant="outline" className="font-bold border-gray-300">
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto font-bold border-gray-300"
+                >
                   Snooze 24h
                 </Button>
               </div>
@@ -12957,7 +12965,7 @@ const ProtectionUsageView = () => {
 
           {/* High Priority */}
           <Card className="p-6 bg-white border border-gray-200 shadow-sm">
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
               <div className="p-2 bg-orange-100 rounded">
                 <FileText className="w-5 h-5 text-orange-600" />
               </div>
@@ -12969,11 +12977,17 @@ const ProtectionUsageView = () => {
                   4 items requiring attention
                 </p>
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" className="font-bold border-gray-300">
+              <div className="flex w-full sm:w-auto flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto font-bold border-gray-300"
+                >
                   View All High Priority
                 </Button>
-                <Button variant="outline" className="font-bold border-gray-300">
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto font-bold border-gray-300"
+                >
                   Bulk Actions
                 </Button>
               </div>
@@ -12993,7 +13007,7 @@ const ProtectionUsageView = () => {
 
           {/* Medium Priority */}
           <Card className="p-6 bg-white border border-gray-200 shadow-sm">
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
               <div className="p-2 bg-yellow-100 rounded">
                 <Clock className="w-5 h-5 text-yellow-600" />
               </div>
@@ -13005,7 +13019,10 @@ const ProtectionUsageView = () => {
                   {alerts.medium} items | Most Recent: 3 hours ago
                 </p>
               </div>
-              <Button variant="outline" className="font-bold border-gray-300">
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto font-bold border-gray-300"
+              >
                 View Weekly Digest
               </Button>
             </div>
@@ -13016,7 +13033,7 @@ const ProtectionUsageView = () => {
 
           {/* Monitored */}
           <Card className="p-6 bg-white border border-gray-200 shadow-sm">
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
               <div className="p-2 bg-gray-100 rounded">
                 <Eye className="w-5 h-5 text-gray-600" />
               </div>
@@ -13029,7 +13046,10 @@ const ProtectionUsageView = () => {
                   archives
                 </p>
               </div>
-              <Button variant="outline" className="font-bold border-gray-300">
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto font-bold border-gray-300"
+              >
                 View Monitored Items
               </Button>
             </div>
@@ -13040,24 +13060,33 @@ const ProtectionUsageView = () => {
 
           {/* Kanban Board */}
           <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center mb-6">
               <h3 className="text-xl font-bold text-gray-900">
                 Rapid Response Kanban
               </h3>
-              <div className="flex gap-2">
-                <Button variant="outline" className="font-bold border-gray-300">
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto font-bold border-gray-300"
+                >
                   View as Kanban Board
                 </Button>
-                <Button variant="outline" className="font-bold border-gray-300">
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto font-bold border-gray-300"
+                >
                   View as List
                 </Button>
-                <Button variant="outline" className="font-bold border-gray-300">
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto font-bold border-gray-300"
+                >
                   <Download className="w-4 h-4 mr-2" /> Export All
                 </Button>
               </div>
             </div>
 
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h4 className="font-bold text-gray-900 mb-1">DETECTED (New)</h4>
                 <p className="text-3xl font-bold text-gray-900 mb-1">3</p>
@@ -13119,7 +13148,7 @@ const ProtectionUsageView = () => {
       {/* How It Works Tab */}
       {activeTab === "How It Works" && (
         <div className="space-y-6">
-          <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-sm">
+          <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-8 shadow-sm">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
               What We're Protecting Against & How We Find It
             </h2>
@@ -13275,7 +13304,7 @@ const ProtectionUsageView = () => {
           </div>
 
           {/* Three-Layer Detection */}
-          <div className="bg-white border border-gray-200 rounded-lg p-8 shadow-sm">
+          <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-8 shadow-sm">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">
               Our Three-Layer Detection
             </h2>
@@ -13517,7 +13546,7 @@ const ProtectionUsageView = () => {
                 </label>
               </div>
 
-              <Button className="mt-4 bg-gray-900 hover:bg-gray-800 text-white font-bold">
+              <Button className="mt-4 w-full sm:w-auto whitespace-normal text-left sm:text-center bg-gray-900 hover:bg-gray-800 text-white font-bold">
                 Slack/Teams notification: Integrate Now
               </Button>
             </div>
@@ -13570,7 +13599,7 @@ const ProtectionUsageView = () => {
                 </label>
               </div>
 
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-3">
                 <label className="text-sm font-bold">Delivery Time:</label>
                 <select className="px-3 py-1.5 border border-gray-200 rounded text-sm">
                   <option>9:00 AM</option>
@@ -13650,11 +13679,11 @@ const ProtectionUsageView = () => {
                 </div>
               </div>
 
-              <div className="flex gap-3 mb-6">
-                <Button className="bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold">
+              <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                <Button className="w-full sm:w-auto bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold">
                   Slack Integration - Connect Now
                 </Button>
-                <Button className="bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold">
+                <Button className="w-full sm:w-auto bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold">
                   Teams Integration - Connect Now
                 </Button>
               </div>
@@ -14002,19 +14031,19 @@ const ProtectionUsageView = () => {
 
                 <div className="mt-4">
                   <p className="text-sm font-bold mb-2">RECOMMENDED ACTIONS:</p>
-                  <div className="flex gap-2">
-                    <Button className="bg-gray-900 hover:bg-gray-800 text-white font-bold text-sm">
+                  <div className="flex flex-wrap gap-2">
+                    <Button className="w-full sm:w-auto bg-gray-900 hover:bg-gray-800 text-white font-bold text-sm">
                       REQUEST TAKEDOWN NOW
                     </Button>
                     <Button
                       variant="outline"
-                      className="font-bold border-gray-300 text-sm"
+                      className="w-full sm:w-auto font-bold border-gray-300 text-sm"
                     >
                       Monitor 24h
                     </Button>
                     <Button
                       variant="outline"
-                      className="font-bold border-gray-300 text-sm"
+                      className="w-full sm:w-auto font-bold border-gray-300 text-sm"
                     >
                       Contact Liaison
                     </Button>
@@ -14176,14 +14205,14 @@ const ProtectionUsageView = () => {
                   </div>
                 </div>
 
-                <div className="flex gap-2 mt-4">
-                  <Button className="bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold text-sm">
+                <div className="flex flex-wrap gap-2 mt-4">
+                  <Button className="w-full sm:w-auto bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold text-sm">
                     Share Action Plan with Team
                   </Button>
-                  <Button className="bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold text-sm">
+                  <Button className="w-full sm:w-auto bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold text-sm">
                     Send Email to Talent
                   </Button>
-                  <Button className="bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold text-sm">
+                  <Button className="w-full sm:w-auto bg-white hover:bg-gray-50 text-gray-900 border border-gray-300 font-bold text-sm">
                     Notify Counsel
                   </Button>
                 </div>
@@ -14228,16 +14257,16 @@ const ProtectionUsageView = () => {
                   <li>– Partial Action</li>
                 </ul>
 
-                <div className="flex gap-2 mt-4">
+                <div className="flex flex-wrap gap-2 mt-4">
                   <Button
                     variant="outline"
-                    className="font-bold border-gray-300 text-sm"
+                    className="w-full sm:w-auto font-bold border-gray-300 text-sm"
                   >
                     View DMCA Details
                   </Button>
                   <Button
                     variant="outline"
-                    className="font-bold border-gray-300 text-sm"
+                    className="w-full sm:w-auto font-bold border-gray-300 text-sm"
                   >
                     Contact Support
                   </Button>
@@ -14260,7 +14289,7 @@ const ProtectionUsageView = () => {
                   <li>✓ Re-upload monitoring begins (catches 2nd accounts)</li>
                   <li>✓ Final case report generated for legal file</li>
                 </ul>
-                <Button className="mt-2 bg-gray-900 hover:bg-gray-800 text-white font-bold text-sm">
+                <Button className="mt-2 w-full sm:w-auto whitespace-normal bg-gray-900 hover:bg-gray-800 text-white font-bold text-sm">
                   RESOLVED - REMOVAL CONFIRMED
                 </Button>
               </div>
@@ -14274,7 +14303,7 @@ const ProtectionUsageView = () => {
                   <li>✓ Stronger evidence re-packaged</li>
                   <li>✓ Appeal resubmitted within 24 hours</li>
                 </ul>
-                <Button className="mt-2 bg-gray-700 hover:bg-gray-600 text-white font-bold text-sm">
+                <Button className="mt-2 w-full sm:w-auto whitespace-normal bg-gray-700 hover:bg-gray-600 text-white font-bold text-sm">
                   UNDER APPEAL
                 </Button>
               </div>
@@ -14288,7 +14317,7 @@ const ProtectionUsageView = () => {
                   <li>✓ Remaining items targeted with new evidence</li>
                   <li>✓ Secondary review initiated</li>
                 </ul>
-                <Button className="mt-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm">
+                <Button className="mt-2 w-full sm:w-auto whitespace-normal bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm">
                   PARTIAL REMOVAL - ESCALATING
                 </Button>
               </div>
@@ -14630,14 +14659,20 @@ const ProtectionUsageView = () => {
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
+              <div className="flex flex-wrap gap-3">
+                <Button className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
                   Generate Report
                 </Button>
-                <Button variant="outline" className="font-bold border-gray-300">
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto font-bold border-gray-300"
+                >
                   Email to Team
                 </Button>
-                <Button variant="outline" className="font-bold border-gray-300">
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto font-bold border-gray-300"
+                >
                   Download
                 </Button>
               </div>
@@ -15128,12 +15163,12 @@ const ComplianceHubView = () => {
 
   return (
     <div className="space-y-6 pb-20 scroll-smooth">
-      <div className="flex justify-between items-center py-2 mb-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center py-2 mb-2">
         <h2 className="text-2xl font-bold text-gray-900">Compliance Hub</h2>
-        <div className="flex gap-3">
+        <div className="flex w-full sm:w-auto flex-col sm:flex-row gap-3">
           <Button
             variant="outline"
-            className="gap-2 border-gray-300 font-bold bg-white h-10"
+            className="w-full sm:w-auto gap-2 border-gray-300 font-bold bg-white h-10"
             onClick={() =>
               handleActionToast(
                 "Downloading compliance certificate for agency records...",
@@ -15144,7 +15179,7 @@ const ComplianceHubView = () => {
           </Button>
           <Button
             variant="outline"
-            className="gap-2 border-gray-300 font-bold bg-white h-10"
+            className="w-full sm:w-auto gap-2 border-gray-300 font-bold bg-white h-10"
             onClick={() => handleActionToast("Exporting report as PDF...")}
           >
             <Download className="w-4 h-4" /> Export Report
@@ -15153,7 +15188,7 @@ const ComplianceHubView = () => {
       </div>
 
       {/* Overview Cards */}
-      <div className="grid grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {OVERVIEW_CARDS_DATA.map((card, idx) => (
           <Card
             key={idx}
@@ -15222,14 +15257,14 @@ const ComplianceHubView = () => {
 
       {/* Talent Consent Audit */}
       <Card className="p-0 border border-gray-200 bg-white shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+        <div className="p-6 border-b border-gray-100 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
           <h3 className="text-lg font-bold text-gray-900">
             Talent Consent Audit
           </h3>
-          <div className="flex gap-3">
+          <div className="flex w-full sm:w-auto flex-col sm:flex-row gap-3">
             <Button
               variant="outline"
-              className="text-xs font-bold border-gray-300 h-8"
+              className="w-full sm:w-auto text-xs font-bold border-gray-300 h-8"
               onClick={handleSelectAllExpiring}
             >
               Select All Expiring
@@ -15237,7 +15272,7 @@ const ComplianceHubView = () => {
             <Button
               disabled={selectedTalentIds.length === 0}
               variant="outline"
-              className={`text-xs font-bold h-8 gap-2 ${
+              className={`w-full sm:w-auto text-xs font-bold h-8 gap-2 ${
                 selectedTalentIds.length === 0
                   ? "text-indigo-400 border-indigo-100 bg-indigo-50/30"
                   : "text-indigo-700 border-indigo-300 bg-indigo-50 hover:bg-indigo-100"
@@ -15255,7 +15290,7 @@ const ComplianceHubView = () => {
           {CONSENT_DATA.map((talent) => (
             <div
               key={talent.id}
-              className={`p-4 flex items-center gap-6 ${talent.status === "warning" ? "bg-orange-50/30 border-y border-orange-200/50" : talent.status === "error" ? "bg-red-50/30 border-y border-red-200/50" : "hover:bg-gray-50/50"} transition-colors`}
+              className={`p-4 flex flex-col items-start gap-3 sm:gap-4 lg:flex-row lg:items-center lg:gap-6 ${talent.status === "warning" ? "bg-orange-50/30 border-y border-orange-200/50" : talent.status === "error" ? "bg-red-50/30 border-y border-red-200/50" : "hover:bg-gray-50/50"} transition-colors`}
             >
               <Checkbox
                 className="border-gray-300"
@@ -15270,7 +15305,7 @@ const ComplianceHubView = () => {
                   }
                 }}
               />
-              <div className="flex items-center gap-3 min-w-[150px]">
+              <div className="flex items-center gap-3 min-w-0">
                 <img
                   src={talent.image}
                   alt={talent.name}
@@ -15289,7 +15324,7 @@ const ComplianceHubView = () => {
                   )}
                 </div>
               </div>
-              <div className="flex-1 flex gap-8 text-[11px] font-medium text-gray-500">
+              <div className="w-full flex-1 flex flex-wrap gap-4 sm:gap-6 text-[11px] font-medium text-gray-500">
                 <div className="flex flex-col gap-1">
                   <span className="text-gray-400 text-[10px] uppercase tracking-wider">
                     Consent Date
@@ -15324,9 +15359,9 @@ const ComplianceHubView = () => {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="w-full lg:w-auto flex items-center gap-3">
                 {(talent.status === "warning" || talent.status === "error") && (
-                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] h-8 px-4 font-bold rounded-md">
+                  <Button className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] h-8 px-4 font-bold rounded-md">
                     Request Renewal
                   </Button>
                 )}
@@ -15345,11 +15380,11 @@ const ComplianceHubView = () => {
 
       {/* License Compliance */}
       <Card className="p-0 border border-gray-200 bg-white shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+        <div className="p-6 border-b border-gray-100 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
           <h3 className="text-lg font-bold text-gray-900">
             License Compliance
           </h3>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {[
               "30-day alerts: ON",
               "60-day alerts: ON",
@@ -15365,7 +15400,7 @@ const ComplianceHubView = () => {
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full min-w-[980px] text-left">
             <thead>
               <tr className="bg-gray-50/50 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
                 <th className="px-6 py-4">Talent</th>
@@ -15558,7 +15593,7 @@ const ComplianceHubView = () => {
           </h3>
         </div>
         <div className="p-8 space-y-8">
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="p-4 bg-green-50 border border-green-100 rounded-xl relative overflow-hidden">
               <div className="flex items-center gap-2 mb-2">
                 <CheckCircle2 className="w-5 h-5 text-green-600" />
@@ -15943,13 +15978,13 @@ const RoyaltiesPayoutsView = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex justify-between items-center bg-white p-6 border-b border-gray-100 rounded-xl">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 bg-white p-4 sm:p-6 border-b border-gray-100 rounded-xl">
         <h2 className="text-2xl font-bold text-gray-900">
           Commission & Payout Management
         </h2>
         <Button
           variant="outline"
-          className="gap-2 border-gray-200 font-bold bg-white h-10 px-4 text-sm"
+          className="gap-2 border-gray-200 font-bold bg-white h-10 px-4 text-sm w-full sm:w-auto"
         >
           <Download className="w-4 h-4" /> Export Report
         </Button>
@@ -15965,7 +16000,7 @@ const RoyaltiesPayoutsView = () => {
 
       {/* Top Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
+        <Card className="p-5 sm:p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
           <div className="mb-4 flex items-center gap-3">
             <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center border border-green-100">
               <DollarSign className="w-6 h-6 text-green-600" />
@@ -15980,7 +16015,7 @@ const RoyaltiesPayoutsView = () => {
           <p className="text-xs font-bold text-green-600">Ready for payout</p>
         </Card>
 
-        <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
+        <Card className="p-5 sm:p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
           <div className="mb-4 flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center border border-blue-100">
               <TrendingUp className="w-6 h-6 text-blue-600" />
@@ -15995,7 +16030,7 @@ const RoyaltiesPayoutsView = () => {
           </p>
         </Card>
 
-        <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
+        <Card className="p-5 sm:p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
           <div className="mb-4 flex items-center gap-3">
             <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center border border-purple-100">
               <CheckCircle2 className="w-6 h-6 text-purple-600" />
@@ -16008,7 +16043,7 @@ const RoyaltiesPayoutsView = () => {
           <p className="text-xs font-bold text-gray-400">To Talent This year</p>
         </Card>
 
-        <Card className="p-8 bg-indigo-50 border border-indigo-200 shadow-sm rounded-xl">
+        <Card className="p-5 sm:p-8 bg-indigo-50 border border-indigo-200 shadow-sm rounded-xl">
           <div className="mb-4 flex items-center gap-3">
             <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center border border-indigo-100 shadow-sm">
               <Percent className="w-6 h-6 text-indigo-600" />
@@ -16029,26 +16064,28 @@ const RoyaltiesPayoutsView = () => {
       </div>
 
       {/* Sub-tabs Navigation */}
-      <div className="flex bg-gray-100 p-1 rounded-xl w-fit">
-        {subTabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg ${
-              activeTab === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+      <div className="overflow-x-auto">
+        <div className="flex bg-gray-100 p-1 rounded-xl w-max min-w-full sm:min-w-0 sm:w-fit">
+          {subTabs.map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 text-sm font-semibold transition-all rounded-lg whitespace-nowrap ${
+                activeTab === tab
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-900 hover:bg-white/50"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
       {activeTab === "Commission Structure" && (
         <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
-          <Card className="p-10 bg-white border border-gray-900 shadow-sm rounded-xl">
-            <div className="flex justify-between items-start mb-8">
+          <Card className="p-4 sm:p-10 bg-white border border-gray-900 shadow-sm rounded-xl">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-8">
               <div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">
                   Commission by Performance Tier
@@ -16059,7 +16096,7 @@ const RoyaltiesPayoutsView = () => {
                   as an incentive.
                 </p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 {!isEditingTierCommission ? (
                   <Button
                     variant="outline"
@@ -16096,7 +16133,7 @@ const RoyaltiesPayoutsView = () => {
                 )}
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-8">
               {tiersData?.tiers && tiersData.tiers.length > 0 ? (
                 tiersData.tiers.map((group: any) => (
                   <div
@@ -16178,7 +16215,7 @@ const RoyaltiesPayoutsView = () => {
           </Card>
 
           <Card className="bg-white border border-gray-900 shadow-sm overflow-hidden rounded-xl">
-            <div className="p-10 border-b border-gray-100 flex justify-between items-center">
+            <div className="p-4 sm:p-10 border-b border-gray-100 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
               <div className="space-y-2">
                 <h3 className="text-xl font-bold text-gray-900">
                   Talent Commission Settings
@@ -16188,10 +16225,10 @@ const RoyaltiesPayoutsView = () => {
                   (e.g., special contracts, VIP talent)
                 </p>
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-3 w-full sm:w-auto">
                 <Button
                   variant="outline"
-                  className={`font-black uppercase tracking-tight text-[10px] gap-2 h-10 px-5 border-gray-200 shadow-sm transition-all ${showHistory ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-gray-600"}`}
+                  className={`font-black uppercase tracking-tight text-[10px] gap-2 h-10 px-5 border-gray-200 shadow-sm transition-all w-full sm:w-auto ${showHistory ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-gray-600"}`}
                   onClick={() => setShowHistory(!showHistory)}
                 >
                   <History
@@ -16311,8 +16348,8 @@ const RoyaltiesPayoutsView = () => {
               </div>
             ) : (
               <>
-                <div className="px-10 py-6 border-b border-gray-100 bg-gray-50/30 flex items-center justify-between">
-                  <div className="flex items-center gap-6">
+                <div className="px-4 sm:px-10 py-6 border-b border-gray-100 bg-gray-50/30 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                  <div className="flex flex-wrap items-center gap-3 sm:gap-6">
                     <div className="flex items-center gap-3">
                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
                         Tier Filter:
@@ -16338,11 +16375,11 @@ const RoyaltiesPayoutsView = () => {
                       candidates
                     </span>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 w-full lg:w-auto">
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 text-[10px] font-bold text-gray-400 uppercase tracking-tight gap-1.5 hover:text-indigo-600"
+                      className="h-8 text-[10px] font-bold text-gray-400 uppercase tracking-tight gap-1.5 hover:text-indigo-600 w-full lg:w-auto justify-center"
                     >
                       <Download className="w-3.5 h-3.5" /> Export Rates
                     </Button>
@@ -16466,8 +16503,8 @@ const RoyaltiesPayoutsView = () => {
               </>
             )}
 
-            <div className="p-8 bg-[#F0F7FF] flex items-center justify-between border-t border-indigo-100">
-              <div className="flex items-center gap-3">
+            <div className="p-4 sm:p-8 bg-[#F0F7FF] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-indigo-100">
+              <div className="flex items-start sm:items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center border border-indigo-100 shadow-sm text-indigo-600">
                   <Settings className="w-4 h-4" />
                 </div>
@@ -16478,7 +16515,7 @@ const RoyaltiesPayoutsView = () => {
               </div>
               <Button
                 variant="ghost"
-                className="font-bold text-xs text-gray-500 uppercase tracking-wider gap-2 hover:bg-white/50 border border-gray-200 px-6 h-10 shadow-sm"
+                className="font-bold text-xs text-gray-500 uppercase tracking-wider gap-2 hover:bg-white/50 border border-gray-200 px-6 h-10 shadow-sm w-full sm:w-auto justify-center"
               >
                 <Download className="w-4 h-4" /> Export Settings
               </Button>
@@ -17905,7 +17942,7 @@ export default function AgencyDashboard() {
         ];
 
   return (
-    <div className="flex h-screen bg-gray-50 font-sans text-slate-800">
+    <div className="flex h-screen min-h-[100dvh] bg-gray-50 font-sans text-slate-800">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
@@ -18075,7 +18112,7 @@ export default function AgencyDashboard() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col ml-0 md:ml-64 overflow-hidden transition-all duration-300">
         {/* Top Header */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-20">
+        <header className="h-16 bg-white/95 backdrop-blur border-b border-gray-200 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-30">
           <Button
             variant="ghost"
             size="icon"
@@ -18085,14 +18122,15 @@ export default function AgencyDashboard() {
             <Menu className="w-6 h-6" />
           </Button>
 
-          <div className="flex items-center gap-4 ml-auto">
+          <div className="flex items-center gap-1.5 sm:gap-4 ml-auto">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setAgencyMode(agencyMode === "AI" ? "IRL" : "AI")}
-              className="font-bold border-2 border-gray-200 hover:bg-gray-50 transition-all"
+              className="font-bold border-2 border-gray-200 hover:bg-gray-50 transition-all px-2.5 sm:px-3"
             >
-              {agencyMode === "AI" ? "AI Mode" : "IRL Mode"}
+              {agencyMode === "AI" ? "AI" : "IRL"}
+              <span className="hidden sm:inline">&nbsp;Mode</span>
             </Button>
 
             <Button
@@ -18116,7 +18154,7 @@ export default function AgencyDashboard() {
               </Button>
 
               {showNotifications && (
-                <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div className="absolute right-0 top-full mt-2 w-[min(20rem,calc(100vw-1rem))] bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                   <div className="p-4 border-b border-gray-100">
                     <h3 className="font-bold text-gray-900">Notifications</h3>
                   </div>
@@ -18166,7 +18204,7 @@ export default function AgencyDashboard() {
               </Button>
 
               {showProfileMenu && (
-                <div className="absolute right-0 top-full mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <div className="absolute right-0 top-full mt-2 w-[min(18rem,calc(100vw-1rem))] bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                   <div className="p-5 border-b border-gray-100">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center p-1 overflow-hidden">
@@ -18440,7 +18478,7 @@ export default function AgencyDashboard() {
         </Dialog>
 
         {/* Dynamic Dashboard Content */}
-        <main className="flex-1 overflow-auto px-12 py-8 bg-gray-50">
+        <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-8 bg-gray-50">
           {activeTab === "dashboard" && (
             <AgencyDashboardView
               onKYC={handleKYC}

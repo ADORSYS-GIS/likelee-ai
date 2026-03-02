@@ -267,9 +267,9 @@ export const PerformanceTiers: React.FC = () => {
   };
 
   return (
-    <div className="p-10 animate-in fade-in duration-500 space-y-12">
+    <div className="p-4 sm:p-6 lg:p-10 animate-in fade-in duration-500 space-y-8 sm:space-y-12">
       <div className="mb-12">
-        <div className="flex justify-between items-start mb-10">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
               Performance Tiers
@@ -281,7 +281,7 @@ export const PerformanceTiers: React.FC = () => {
           <Button
             variant="outline"
             onClick={() => setIsConfigModalOpen(true)}
-            className="flex items-center gap-2 border-gray-200 font-bold text-gray-700 bg-white hover:bg-gray-50 transition-colors rounded-none shadow-sm"
+            className="w-full sm:w-auto flex items-center gap-2 border-gray-200 font-bold text-gray-700 bg-white hover:bg-gray-50 transition-colors rounded-none shadow-sm"
           >
             <Settings className="w-4 h-4 text-gray-400" /> Configure Tiers
           </Button>
@@ -353,7 +353,7 @@ export const PerformanceTiers: React.FC = () => {
           return (
             <div
               key={group.name}
-              className="bg-white rounded-none border border-gray-200 shadow-sm overflow-hidden p-8"
+              className="bg-white rounded-none border border-gray-200 shadow-sm overflow-hidden p-4 sm:p-6 lg:p-8"
             >
               <div className="flex items-center gap-4 mb-8">
                 <div
@@ -478,7 +478,7 @@ export const PerformanceTiers: React.FC = () => {
                     group.talents.map((talent) => (
                       <div
                         key={talent.id}
-                        className="flex items-center gap-4 p-5 border border-gray-100 rounded-none bg-white shadow-sm hover:shadow-md transition-all group"
+                        className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 sm:p-5 border border-gray-100 rounded-none bg-white shadow-sm hover:shadow-md transition-all group"
                       >
                         <Avatar className="w-14 h-14 rounded-none object-cover bg-gray-50 shadow-sm border border-gray-200">
                           <AvatarImage
@@ -489,14 +489,14 @@ export const PerformanceTiers: React.FC = () => {
                             {talent.name.substring(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="font-bold text-gray-900 text-[15px]">
+                            <span className="font-bold text-gray-900 text-[15px] truncate">
                               {talent.name}
                             </span>
                             <CheckCircle2 className="w-4 h-4 text-green-500 fill-green-500/10" />
                           </div>
-                          <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400">
+                          <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold text-gray-400">
                             <span className="text-gray-900 font-bold">
                               {currencyFormatter.format(talent.earnings_30d)}/mo
                             </span>
@@ -525,7 +525,7 @@ export const PerformanceTiers: React.FC = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-10 font-bold text-gray-700 bg-white border-gray-200 px-6 rounded-none hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                          className="w-full sm:w-auto h-10 font-bold text-gray-700 bg-white border-gray-200 px-6 rounded-none hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
                         >
                           View
                         </Button>
@@ -579,7 +579,7 @@ export const PerformanceTiers: React.FC = () => {
                     {TIER_CONFIG[tier].label}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                   <div className="space-y-3">
                     <Label className="text-[13px] font-bold text-gray-600 ml-1">
                       Min Monthly Earnings ($)

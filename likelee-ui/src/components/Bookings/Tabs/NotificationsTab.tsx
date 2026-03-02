@@ -221,7 +221,7 @@ export const NotificationsTab = ({
       <div className="flex items-center gap-3">
         <Bell className="w-8 h-8 text-gray-700" />
         <div>
-          <h2 className="text-3xl font-bold text-gray-900">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
             Notifications Center
           </h2>
           <p className="text-gray-500 font-medium text-sm mt-1">
@@ -231,32 +231,37 @@ export const NotificationsTab = ({
       </div>
 
       {/* Sub-navigation */}
-      <div className="flex gap-1 border-b border-gray-200">
-        {[
-          "Notification Logs",
-          "Settings",
-          "Talent Preferences",
-          "Test Notifications",
-        ].map((tab, idx) => (
-          <button
-            key={tab}
-            onClick={() =>
-              setActiveSubNav(["logs", "settings", "preferences", "test"][idx])
-            }
-            className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${
-              activeSubNav === ["logs", "settings", "preferences", "test"][idx]
-                ? "border-indigo-600 text-indigo-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+      <div className="overflow-x-auto border-b border-gray-200">
+        <div className="flex gap-1 min-w-max">
+          {[
+            "Notification Logs",
+            "Settings",
+            "Talent Preferences",
+            "Test Notifications",
+          ].map((tab, idx) => (
+            <button
+              key={tab}
+              onClick={() =>
+                setActiveSubNav(
+                  ["logs", "settings", "preferences", "test"][idx],
+                )
+              }
+              className={`px-4 py-2 text-sm font-bold border-b-2 whitespace-nowrap transition-colors ${
+                activeSubNav ===
+                ["logs", "settings", "preferences", "test"][idx]
+                  ? "border-indigo-600 text-indigo-600"
+                  : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
       </div>
 
       {activeSubNav === "logs" && (
         <>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
             {stats.map((s) => (
               <Card
                 key={s.label}
@@ -276,8 +281,8 @@ export const NotificationsTab = ({
             ))}
           </div>
 
-          <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
-            <div className="flex justify-between items-center mb-6">
+          <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
               <h3 className="text-xl font-bold text-gray-900">
                 Recent Notifications
               </h3>
@@ -306,8 +311,8 @@ export const NotificationsTab = ({
                       : "border-gray-100 hover:border-indigo-200 transition-colors"
                   }`}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div className="flex items-start gap-4 min-w-0">
                       <div
                         className={`p-2 rounded-lg ${
                           notif.type === "EMAIL"
@@ -344,7 +349,7 @@ export const NotificationsTab = ({
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="text-left sm:text-right">
                       <p className="text-xs font-bold text-gray-500">
                         {notif.time}
                       </p>
@@ -367,7 +372,7 @@ export const NotificationsTab = ({
       )}
 
       {activeSubNav === "settings" && (
-        <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
+        <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
           <div className="mb-6">
             <h3 className="text-lg font-bold text-gray-900 mb-1">
               Event Notification Settings
@@ -383,7 +388,7 @@ export const NotificationsTab = ({
               <h4 className="font-bold text-gray-900 mb-3 text-sm">
                 Booking Created/Confirmed
               </h4>
-              <div className="grid grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-8">
                 <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4 text-gray-900" />
@@ -454,7 +459,7 @@ export const NotificationsTab = ({
               <h4 className="font-bold text-gray-900 mb-3 text-sm">
                 Booking Updated
               </h4>
-              <div className="grid grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-8">
                 <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4 text-gray-900" />
@@ -521,7 +526,7 @@ export const NotificationsTab = ({
               <h4 className="font-bold text-gray-900 mb-3 text-sm">
                 Booking Cancelled
               </h4>
-              <div className="grid grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-8">
                 <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4 text-gray-900" />
@@ -594,7 +599,7 @@ export const NotificationsTab = ({
                   <p className="text-sm font-medium text-gray-900 mb-3">
                     24 Hours Before Booking
                   </p>
-                  <div className="grid grid-cols-3 gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-8">
                     <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
                       <div className="flex items-center gap-2">
                         <Mail className="w-4 h-4 text-gray-900" />
@@ -660,7 +665,7 @@ export const NotificationsTab = ({
                   <p className="text-sm font-medium text-gray-900 mb-3">
                     48 Hours Before Booking
                   </p>
-                  <div className="grid grid-cols-3 gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-8">
                     <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
                       <div className="flex items-center gap-2">
                         <Mail className="w-4 h-4 text-gray-900" />
@@ -722,7 +727,7 @@ export const NotificationsTab = ({
                   <p className="text-sm font-medium text-gray-900 mb-3">
                     1 Week Before Booking
                   </p>
-                  <div className="grid grid-cols-3 gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-8">
                     <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
                       <div className="flex items-center gap-2">
                         <Mail className="w-4 h-4 text-gray-900" />
@@ -786,7 +791,7 @@ export const NotificationsTab = ({
       )}
 
       {activeSubNav === "preferences" && (
-        <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
+        <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
           <div className="mb-6">
             <h3 className="text-xl font-bold text-gray-900 mb-2">
               Per-Talent Notification Preferences
@@ -896,7 +901,7 @@ export const NotificationsTab = ({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-8">
                     <div className="flex items-center justify-between border border-gray-200 rounded-lg p-4">
                       <span className="text-sm font-bold text-gray-900">
                         Email
@@ -954,7 +959,7 @@ export const NotificationsTab = ({
       )}
 
       {activeSubNav === "test" && (
-        <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
+        <Card className="p-4 sm:p-8 bg-white border border-gray-200 shadow-sm rounded-xl">
           <div className="mb-8">
             <h3 className="text-xl font-bold text-gray-900 mb-2">
               Test Notification Delivery
