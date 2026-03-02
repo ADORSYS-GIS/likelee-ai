@@ -377,39 +377,41 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
   return (
     <div className="space-y-6">
       <Tabs value={topTab} onValueChange={(v) => setTopTab(v as any)}>
-        <TabsList className="w-full justify-start bg-transparent p-0 border-b rounded-none">
-          <TabsTrigger
-            value="templates"
-            className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 px-6 font-bold"
-          >
-            Templates
-          </TabsTrigger>
-          <TabsTrigger
-            value="submissions"
-            className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 px-6 font-bold"
-          >
-            Submissions
-          </TabsTrigger>
-          <TabsTrigger
-            value="requests"
-            className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 px-6 font-bold"
-          >
-            Requests
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto">
+          <TabsList className="w-max min-w-full justify-start bg-transparent p-0 border-b rounded-none">
+            <TabsTrigger
+              value="templates"
+              className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 px-4 sm:px-6 font-bold whitespace-nowrap"
+            >
+              Templates
+            </TabsTrigger>
+            <TabsTrigger
+              value="submissions"
+              className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 px-4 sm:px-6 font-bold whitespace-nowrap"
+            >
+              Submissions
+            </TabsTrigger>
+            <TabsTrigger
+              value="requests"
+              className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-600 px-4 sm:px-6 font-bold whitespace-nowrap"
+            >
+              Requests
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="templates" className="space-y-6 mt-6">
-          <div className="flex justify-between items-start">
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
             <div>
               <h2 className="text-2xl font-bold tracking-tight">Templates</h2>
               <p className="text-muted-foreground">
                 Manage your agency license agreements and contract templates
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex w-full sm:w-auto items-center gap-2">
               <Button
                 onClick={openNewTemplateModal}
-                className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-10 px-6 rounded-xl shadow-lg shadow-indigo-100/50"
+                className="w-full sm:w-auto bg-indigo-500 hover:bg-indigo-600 text-white font-bold h-10 px-6 rounded-xl shadow-lg shadow-indigo-100/50"
               >
                 <Plus className="mr-2 h-4 w-4" /> New Contract Template
               </Button>

@@ -45,20 +45,22 @@ export const ManagementAnalyticsView = ({ bookings }: { bookings: any[] }) => {
             Filter, search, and analyze your bookings
           </p>
         </div>
-        <div className="flex bg-gray-100 p-1 rounded-lg w-fit">
-          {["Analytics", "Manage Bookings", "Reports & Export"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 text-sm font-bold rounded-md transition-all ${
-                activeTab === tab
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-900"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
+        <div className="overflow-x-auto">
+          <div className="flex bg-gray-100 p-1 rounded-lg w-max min-w-full sm:min-w-0 sm:w-fit">
+            {["Analytics", "Manage Bookings", "Reports & Export"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-2 text-sm font-bold rounded-md whitespace-nowrap transition-all ${
+                  activeTab === tab
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-900"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -231,7 +233,7 @@ const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {stats.map((s, i) => (
           <Card key={i} className="p-6 border shadow-sm">
             <div className="flex items-start gap-3">
@@ -252,7 +254,7 @@ const ManagementAnalyticsTab = ({ bookings }: { bookings: any[] }) => {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <Card className="p-6 border shadow-sm">
           <h3 className="text-lg font-bold text-gray-900 mb-6">
             Bookings by Type
@@ -466,7 +468,7 @@ const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
           <h3 className="font-bold text-gray-900">Filters</h3>
         </div>
 
-        <div className="grid grid-cols-4 gap-4 mb-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
           <div className="border border-gray-200 rounded-lg p-4">
             <Label className="font-bold text-xs uppercase text-gray-500 mb-3 block">
               Talent
@@ -567,7 +569,7 @@ const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="border border-gray-200 rounded-lg p-4">
             <Label className="font-bold text-xs uppercase text-gray-500 mb-3 block">
               Date Range
@@ -610,11 +612,11 @@ const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
       </Card>
 
       <Card className="p-4 border shadow-sm">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
           <ArrowUpDown className="w-4 h-4 text-gray-500" />
           <span className="text-sm font-bold text-gray-700">Sort by:</span>
           <Select value={sortKey} onValueChange={setSortKey}>
-            <SelectTrigger className="w-[180px] h-9">
+            <SelectTrigger className="w-full sm:w-[180px] h-9">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -646,9 +648,9 @@ const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
           filteredAndSortedBookings.map((booking) => (
             <div
               key={booking.id}
-              className="bg-white border rounded-xl p-4 flex items-center justify-between shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+              className="bg-white border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
             >
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 min-w-0">
                 <div className="h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center font-bold text-indigo-700">
                   {pickString(
                     booking?.talent_name,
@@ -671,7 +673,7 @@ const ManageBookingsTab = ({ bookings }: { bookings: any[] }) => {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-6">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-6">
                 <div className="text-right">
                   <p className="text-xs font-bold text-gray-500">
                     {booking.date
@@ -757,7 +759,7 @@ const ReportsExportTab = ({ bookings }: { bookings?: any[] }) => {
           </p>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-8">
           <Button
             variant="outline"
             className="h-24 flex flex-col gap-2 border-green-200 hover:bg-green-50 hover:border-green-300 transition-all group"
@@ -786,7 +788,7 @@ const ReportsExportTab = ({ bookings }: { bookings?: any[] }) => {
 
         <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
           <h4 className="font-bold text-gray-900 mb-4">Included Columns:</h4>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             {[
               "Talent Name",
               "Client Name",

@@ -298,10 +298,10 @@ export function CreatePackageWizard({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0 overflow-hidden bg-white/95 backdrop-blur-xl rounded-2xl border-none shadow-[0_32px_128px_-12px_rgba(0,0,0,0.1)]">
+        <DialogContent className="max-w-[96vw] sm:max-w-4xl h-[90vh] sm:h-[85vh] flex flex-col p-0 overflow-hidden bg-white/95 backdrop-blur-xl rounded-2xl border-none shadow-[0_32px_128px_-12px_rgba(0,0,0,0.1)]">
           {/* Template Mode Banner */}
           {mode === "send-from-template" && (
-            <div className="bg-indigo-50 border-b border-indigo-100 px-6 py-3 flex items-center justify-center gap-2">
+            <div className="bg-indigo-50 border-b border-indigo-100 px-4 sm:px-6 py-3 flex items-center justify-center gap-2">
               <Copy className="w-4 h-4 text-indigo-600" />
               <p className="text-xs font-bold text-indigo-700 uppercase tracking-widest">
                 Creating new package from{" "}
@@ -314,7 +314,7 @@ export function CreatePackageWizard({
           )}
 
           {/* Header */}
-          <div className="p-10 pb-0">
+          <div className="p-4 sm:p-10 pb-0">
             <div className="flex justify-between items-start mb-8">
               <div>
                 <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight">
@@ -330,31 +330,33 @@ export function CreatePackageWizard({
             </div>
 
             {/* Step Bar */}
-            <div className="flex items-center gap-0 mb-10 max-w-2xl mx-auto">
-              {STEPS.slice(0, totalSteps).map((s, i) => (
-                <React.Fragment key={s.id}>
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-black transition-all duration-500 ${step >= i ? "bg-indigo-600 text-white shadow-xl shadow-indigo-100" : "bg-gray-100 text-gray-400"}`}
-                    >
-                      {step > i ? <Check className="w-5 h-5" /> : i + 1}
+            <div className="overflow-x-auto mb-8">
+              <div className="flex items-center gap-0 min-w-max max-w-2xl mx-auto">
+                {STEPS.slice(0, totalSteps).map((s, i) => (
+                  <React.Fragment key={s.id}>
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-9 h-9 rounded-full flex items-center justify-center text-[10px] font-black transition-all duration-500 ${step >= i ? "bg-indigo-600 text-white shadow-xl shadow-indigo-100" : "bg-gray-100 text-gray-400"}`}
+                      >
+                        {step > i ? <Check className="w-5 h-5" /> : i + 1}
+                      </div>
+                      <span
+                        className={`text-[10px] uppercase font-black tracking-widest ${step >= i ? "text-gray-900" : "text-gray-500"}`}
+                      >
+                        {s.title}
+                      </span>
                     </div>
-                    <span
-                      className={`text-[10px] uppercase font-black tracking-widest ${step >= i ? "text-gray-900" : "text-gray-500"}`}
-                    >
-                      {s.title}
-                    </span>
-                  </div>
-                  {i < STEPS.length - 1 && (
-                    <div className="flex-1 mx-6 h-1 bg-gray-300" />
-                  )}
-                </React.Fragment>
-              ))}
+                    {i < STEPS.length - 1 && (
+                      <div className="flex-1 mx-3 sm:mx-6 h-1 bg-gray-300 min-w-6 sm:min-w-12" />
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
             </div>
           </div>
 
           {/* Body */}
-          <div className="flex-1 overflow-y-auto px-10 pb-10">
+          <div className="flex-1 overflow-y-auto px-4 sm:px-10 pb-6 sm:pb-10">
             <AnimatePresence mode="wait">
               <motion.div
                 key={step}
@@ -482,7 +484,7 @@ export function CreatePackageWizard({
 
                 {step === 1 && (
                   <div className="space-y-8 max-w-3xl mx-auto w-full">
-                    <div className="flex justify-between items-center">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                       <div>
                         <h3 className="text-xl font-black text-gray-900 tracking-tight">
                           Selected Talents
@@ -494,7 +496,7 @@ export function CreatePackageWizard({
                       </div>
                       <Button
                         onClick={() => setShowTalentSelector(true)}
-                        className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg flex items-center gap-2"
+                        className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg flex items-center justify-center gap-2 w-full sm:w-auto"
                       >
                         <Plus className="w-5 h-5" /> Add Talent
                       </Button>
@@ -511,9 +513,9 @@ export function CreatePackageWizard({
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
-                                className="group flex items-center justify-between p-4 bg-white border border-gray-200 rounded-2xl hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-50 transition-all duration-300"
+                                className="group flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-white border border-gray-200 rounded-2xl hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-50 transition-all duration-300"
                               >
-                                <div className="flex items-center gap-6">
+                                <div className="flex items-center gap-3 sm:gap-6 min-w-0">
                                   <div className="hidden sm:block p-2 text-gray-200 group-hover:text-indigo-200 transition-colors cursor-grab active:cursor-grabbing">
                                     <GripVertical className="w-5 h-5" />
                                   </div>
@@ -523,7 +525,7 @@ export function CreatePackageWizard({
                                       className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-500"
                                     />
                                   </div>
-                                  <div>
+                                  <div className="min-w-0">
                                     <h5 className="font-black text-gray-900 tracking-tight text-lg">
                                       {item.talent.full_name}
                                     </h5>
@@ -540,7 +542,7 @@ export function CreatePackageWizard({
                                     </div>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-4">
+                                <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
                                   <Button
                                     onClick={() =>
                                       setActiveTalentForAssets({
@@ -548,7 +550,7 @@ export function CreatePackageWizard({
                                         name: item.talent.full_name,
                                       })
                                     }
-                                    className={`h-10 px-6 rounded-full border-none text-xs font-bold uppercase tracking-wider gap-2 transition-all duration-300 ${item.assets.length > 0 ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-indigo-100 text-indigo-700 hover:bg-indigo-200"}`}
+                                    className={`h-10 px-4 sm:px-6 rounded-full border-none text-xs font-bold uppercase tracking-wider gap-2 transition-all duration-300 w-full sm:w-auto ${item.assets.length > 0 ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-indigo-100 text-indigo-700 hover:bg-indigo-200"}`}
                                   >
                                     <Layers className="w-4 h-4" />
                                     {item.assets.length > 0
@@ -725,7 +727,7 @@ export function CreatePackageWizard({
                           Complete the recipient details to publish the package
                         </p>
                       </div>
-                      <div className="grid grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div className="space-y-3">
                           <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">
                             Client Contact *
@@ -939,14 +941,14 @@ export function CreatePackageWizard({
 
           {/* Footer */}
           {!showSuccess && (
-            <div className="p-10 bg-gray-50/50 backdrop-blur-md border-t border-gray-100 flex items-center justify-between">
+            <div className="p-4 sm:p-10 bg-gray-50/50 backdrop-blur-md border-t border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <Button
                 variant="ghost"
                 onClick={() => {
                   if (step === 0) onOpenChange(false);
                   else prevStep();
                 }}
-                className="h-10 px-6 font-bold text-sm rounded-lg border-2 border-gray-200 text-gray-700 hover:bg-gray-50"
+                className="h-10 px-6 font-bold text-sm rounded-lg border-2 border-gray-200 text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
               >
                 {step === 0 ? (
                   "Cancel"
@@ -957,12 +959,12 @@ export function CreatePackageWizard({
                 )}
               </Button>
 
-              <div className="flex gap-4">
+              <div className="flex gap-3 w-full sm:w-auto">
                 {step < totalSteps - 1 ? (
                   <Button
                     onClick={nextStep}
                     disabled={isNavigating}
-                    className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg group"
+                    className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg group w-full sm:w-auto"
                   >
                     {isNavigating ? (
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -977,7 +979,7 @@ export function CreatePackageWizard({
                   <Button
                     onClick={handleSubmit}
                     disabled={mutation.isPending}
-                    className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg group flex items-center gap-2"
+                    className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg group flex items-center justify-center gap-2 w-full sm:w-auto"
                   >
                     {mutation.isPending ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
@@ -1001,7 +1003,7 @@ export function CreatePackageWizard({
 
       {/* Talent Selector Overlay Modal */}
       <Dialog open={showTalentSelector} onOpenChange={setShowTalentSelector}>
-        <DialogContent className="max-w-2xl rounded-[3rem] p-10 border-none bg-white/95 backdrop-blur-xl shadow-2xl">
+        <DialogContent className="max-w-[96vw] sm:max-w-2xl rounded-2xl sm:rounded-[3rem] p-4 sm:p-10 border-none bg-white/95 backdrop-blur-xl shadow-2xl">
           <DialogHeader className="mb-8">
             <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight">
               {isEditMode
@@ -1024,8 +1026,8 @@ export function CreatePackageWizard({
             />
           </div>
 
-          <ScrollArea className="h-[450px] pr-4">
-            <div className="grid grid-cols-2 gap-4">
+          <ScrollArea className="h-[450px] pr-2 sm:pr-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {Array.isArray(talentsData) &&
                 talentsData.map((talent: any) => {
                   const isSelected = formData.items.some(
