@@ -13,11 +13,9 @@ import { Amplify } from "aws-amplify";
     const href = window.location.href;
     const hash = window.location.hash || "";
     const isRecoveryHash = /\btype=recovery\b/i.test(hash);
-    const hasAuthTokens =
-      /\baccess_token=\b/i.test(hash) && /\brefresh_token=\b/i.test(hash);
     const isOnUpdatePassword = href.includes("/update-password");
 
-    if ((isRecoveryHash || hasAuthTokens) && !isOnUpdatePassword) {
+    if (isRecoveryHash && !isOnUpdatePassword) {
       const next = localStorage.getItem("likelee_invite_next") || "";
       const tsRaw = localStorage.getItem("likelee_invite_next_ts") || "0";
       const ts = Number(tsRaw);

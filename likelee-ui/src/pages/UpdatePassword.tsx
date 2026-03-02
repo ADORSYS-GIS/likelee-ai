@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import Layout from "./Layout";
 
 import { useAuth } from "@/auth/AuthProvider";
 import { toast } from "@/components/ui/use-toast";
@@ -20,6 +19,17 @@ export default function UpdatePassword() {
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const withInviteAcceptIntent = (path: string) => {
+    if (!path.startsWith("/invite/agency/")) return path;
+    const [pathname, query = ""] = path.split("?");
+    const params = new URLSearchParams(query);
+    if (!params.get("intent")) {
+      params.set("intent", "accept");
+    }
+    const q = params.toString();
+    return q ? `${pathname}?${q}` : pathname;
+  };
 
   return (
     <div className="max-w-md mx-auto px-6 py-16">
@@ -48,7 +58,9 @@ export default function UpdatePassword() {
 
             const params = new URLSearchParams(location.search);
             const next = params.get("next") || "";
-            const nextPath = next.startsWith("/") ? next : "/login";
+            const nextPath = next.startsWith("/")
+              ? withInviteAcceptIntent(next)
+              : "/login";
             setTimeout(() => navigate(nextPath), 700);
           } catch (err: any) {
             const msg = err?.message ?? "Failed to update password";
