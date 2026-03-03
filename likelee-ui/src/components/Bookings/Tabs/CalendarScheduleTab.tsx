@@ -39,6 +39,7 @@ export const CalendarScheduleTab = ({
   onRemoveBookOut,
   fixedTalent,
   disableBookingEdits,
+  isSportsAgency = false,
 }: {
   bookings: any[];
   onAddBooking: (booking: any) => void;
@@ -49,7 +50,10 @@ export const CalendarScheduleTab = ({
   onRemoveBookOut: (id: string) => void;
   fixedTalent?: { id: string; name: string };
   disableBookingEdits?: boolean;
+  isSportsAgency?: boolean;
 }) => {
+  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
+  const entitySingularLower = isSportsAgency ? "athlete" : "talent";
   const [modalOpen, setModalOpen] = useState(false);
   const [newBookingOpen, setNewBookingOpen] = useState(false);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
@@ -227,7 +231,7 @@ export const CalendarScheduleTab = ({
             Bookings & Schedule
           </h2>
           <p className="text-gray-500 font-medium text-sm mt-1">
-            Manage your talent's bookings and availability
+            {`Manage your ${entitySingularLower}'s bookings and availability`}
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -399,8 +403,10 @@ export const CalendarScheduleTab = ({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="single">Single View</SelectItem>
-                    <SelectItem value="all">All Talent</SelectItem>
-                    <SelectItem value="selected">Selected Talent</SelectItem>
+                    <SelectItem value="all">{`All ${entitySingularTitle}`}</SelectItem>
+                    <SelectItem value="selected">
+                      {`Selected ${entitySingularTitle}`}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -410,7 +416,9 @@ export const CalendarScheduleTab = ({
                     onValueChange={setSelectedTalentId}
                   >
                     <SelectTrigger className="w-40 sm:w-48 shrink-0">
-                      <SelectValue placeholder="Select talent" />
+                      <SelectValue
+                        placeholder={`Select ${entitySingularLower}`}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {talents.map((t) => (
@@ -661,11 +669,13 @@ export const CalendarScheduleTab = ({
         onAddBookOut={onAddBookOut}
         onRemoveBookOut={onRemoveBookOut}
         fixedTalent={fixedTalent}
+        isSportsAgency={isSportsAgency}
       />
       {!disableBookingEdits && (
         <NewBookingModal
           open={newBookingOpen}
           onOpenChange={setNewBookingOpen}
+          isSportsAgency={isSportsAgency}
           onSave={(b) => {
             if (bookingMode === "edit") {
               onUpdateBooking(b);
@@ -682,6 +692,7 @@ export const CalendarScheduleTab = ({
         open={detailsModalOpen}
         onOpenChange={setDetailsModalOpen}
         booking={selectedBooking}
+        isSportsAgency={isSportsAgency}
         onEdit={(b) => {
           if (disableBookingEdits) return;
           setSelectedBooking(b);

@@ -906,7 +906,7 @@ export default function OrganizationSignup() {
                               Marketing Agency
                             </SelectItem>
                             <SelectItem value="talent_agency">
-                              Talent Agency
+                              Talent / Modeling Agency
                             </SelectItem>
                             <SelectItem value="sports_agency">
                               Sports Agency

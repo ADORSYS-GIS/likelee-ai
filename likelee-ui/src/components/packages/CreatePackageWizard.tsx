@@ -28,6 +28,7 @@ import {
   MessageSquare,
   CheckCircle2,
   Copy,
+  ShieldCheck,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -59,14 +60,8 @@ interface CreatePackageWizardProps {
   packageToEdit?: any;
   onSuccess?: () => void;
   mode?: "template" | "package" | "send-from-template";
+  isSportsAgency?: boolean;
 }
-
-const STEPS = [
-  { id: "basic", title: "Basic Info", icon: Type },
-  { id: "talent", title: "Select Talents", icon: User },
-  { id: "custom", title: "Customize", icon: Palette },
-  { id: "send", title: "Send", icon: Send },
-];
 
 export function CreatePackageWizard({
   open,
@@ -74,7 +69,18 @@ export function CreatePackageWizard({
   packageToEdit,
   onSuccess,
   mode = "package",
+  isSportsAgency = false,
 }: CreatePackageWizardProps) {
+  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
+  const entityPluralTitle = isSportsAgency ? "Athletes" : "Talents";
+  const entitySingularLower = isSportsAgency ? "athlete" : "talent";
+  const entityPluralLower = isSportsAgency ? "athletes" : "talents";
+  const steps = [
+    { id: "basic", title: "Basic Info", icon: Type },
+    { id: "talent", title: `Select ${entityPluralTitle}`, icon: User },
+    { id: "custom", title: "Customize", icon: Palette },
+    { id: "send", title: "Send", icon: Send },
+  ];
   const [step, setStep] = useState(0);
   const [showTalentSelector, setShowTalentSelector] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
@@ -101,6 +107,12 @@ export function CreatePackageWizard({
     allow_comments: true,
     allow_favorites: true,
     allow_callbacks: true,
+    consent_items: [
+      "Use selected assets only for the approved campaign scope.",
+      "Do not edit assets in a misleading or defamatory way.",
+      "Do not sublicense, resell, or redistribute raw assets.",
+      "Stop usage immediately after package/license expiry.",
+    ],
     password_protected: false,
     password: "",
     expires_at: "",
@@ -124,6 +136,11 @@ export function CreatePackageWizard({
         allow_comments: packageToEdit.allow_comments ?? true,
         allow_favorites: packageToEdit.allow_favorites ?? true,
         allow_callbacks: packageToEdit.allow_callbacks ?? true,
+        consent_items:
+          Array.isArray(packageToEdit.consent_items) &&
+          packageToEdit.consent_items.length > 0
+            ? packageToEdit.consent_items
+            : initialFormData.consent_items,
         password_protected: packageToEdit.password_protected || false,
         password: packageToEdit.password || "",
         expires_at: packageToEdit.expires_at
@@ -209,7 +226,7 @@ export function CreatePackageWizard({
     if (step === 1 && formData.items.length === 0)
       return toast({
         title: "Empty",
-        description: "Please select at least one talent",
+        description: `Please select at least one ${entitySingularLower}`,
         variant: "destructive",
       });
 
@@ -251,6 +268,31 @@ export function CreatePackageWizard({
     }));
   };
 
+  const updateConsentItem = (index: number, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      consent_items: (prev.consent_items || []).map(
+        (item: string, i: number) => (i === index ? value : item),
+      ),
+    }));
+  };
+
+  const addConsentItem = () => {
+    setFormData((prev) => ({
+      ...prev,
+      consent_items: [...(prev.consent_items || []), ""],
+    }));
+  };
+
+  const removeConsentItem = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      consent_items: (prev.consent_items || []).filter(
+        (_: string, i: number) => i !== index,
+      ),
+    }));
+  };
+
   const handleSubmit = () => {
     // For templates, client details are optional. For packages, they're required.
     if (!isTemplateMode) {
@@ -284,6 +326,9 @@ export function CreatePackageWizard({
     const finalData = {
       ...formData,
       is_template: isTemplateMode,
+      consent_items: (formData.consent_items || [])
+        .map((item: string) => item.trim())
+        .filter(Boolean),
       items: itemsArray.map(({ talent, assets, ...item }) => ({
         ...item,
         asset_ids: assets.map((asset: any) => ({
@@ -319,12 +364,11 @@ export function CreatePackageWizard({
               <div>
                 <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight">
                   {isEditMode
-                    ? "Edit Talent Package"
-                    : "Create a New Talent Package"}
+                    ? `Edit ${entitySingularTitle} Package`
+                    : `Create a New ${entitySingularTitle} Package`}
                 </DialogTitle>
                 <DialogDescription className="text-sm text-gray-500 font-medium mt-1">
-                  Build a beautiful portfolio package to showcase your talent to
-                  clients
+                  {`Build a beautiful portfolio package to showcase your ${entitySingularLower} to clients`}
                 </DialogDescription>
               </div>
             </div>
@@ -332,7 +376,7 @@ export function CreatePackageWizard({
             {/* Step Bar */}
             <div className="overflow-x-auto mb-8">
               <div className="flex items-center gap-0 min-w-max max-w-2xl mx-auto">
-                {STEPS.slice(0, totalSteps).map((s, i) => (
+                {steps.slice(0, totalSteps).map((s, i) => (
                   <React.Fragment key={s.id}>
                     <div className="flex items-center gap-3">
                       <div
@@ -346,7 +390,7 @@ export function CreatePackageWizard({
                         {s.title}
                       </span>
                     </div>
-                    {i < STEPS.length - 1 && (
+                    {i < steps.length - 1 && (
                       <div className="flex-1 mx-3 sm:mx-6 h-1 bg-gray-300 min-w-6 sm:min-w-12" />
                     )}
                   </React.Fragment>
@@ -487,18 +531,18 @@ export function CreatePackageWizard({
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                       <div>
                         <h3 className="text-xl font-black text-gray-900 tracking-tight">
-                          Selected Talents
+                          {`Selected ${entityPluralTitle}`}
                         </h3>
                         <p className="text-sm font-medium text-gray-700">
-                          Select talents and pick their best assets for this
-                          package
+                          {`Select ${entityPluralLower} and pick their best assets for this package`}
                         </p>
                       </div>
                       <Button
                         onClick={() => setShowTalentSelector(true)}
                         className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg flex items-center justify-center gap-2 w-full sm:w-auto"
                       >
-                        <Plus className="w-5 h-5" /> Add Talent
+                        <Plus className="w-5 h-5" />{" "}
+                        {`Add ${entitySingularTitle}`}
                       </Button>
                     </div>
 
@@ -578,11 +622,10 @@ export function CreatePackageWizard({
                             <User className="w-8 h-8 text-gray-300" />
                           </div>
                           <p className="text-gray-600 font-black text-sm uppercase tracking-widest">
-                            No talents added yet
+                            {`No ${entityPluralLower} added yet`}
                           </p>
                           <p className="text-gray-400 text-xs mt-2 font-medium">
-                            Add talent from your roster to start building the
-                            package
+                            {`Add ${entitySingularLower} from your roster to start building the package`}
                           </p>
                         </div>
                       )}
@@ -606,12 +649,12 @@ export function CreatePackageWizard({
                           {
                             id: "allow_comments",
                             label: "Client Feedback",
-                            desc: "Allow clients to leave notes on specific talents",
+                            desc: `Allow clients to leave notes on specific ${entityPluralLower}`,
                           },
                           {
                             id: "allow_favorites",
                             label: "Interest Tracking",
-                            desc: "Let clients favorite talents to shortlist them",
+                            desc: `Let clients favorite ${entityPluralLower} to shortlist them`,
                           },
                           {
                             id: "allow_callbacks",
@@ -764,6 +807,54 @@ export function CreatePackageWizard({
                       </div>
                     </div>
 
+                    <div className="space-y-4 border border-gray-200 rounded-2xl p-5 bg-gray-50/40">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest">
+                            Consent Checklist
+                          </h4>
+                          <p className="text-xs text-gray-500 font-medium mt-1">
+                            Client must check all points to complete consent.
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          onClick={addConsentItem}
+                          variant="outline"
+                          size="sm"
+                          className="h-8 px-3 text-xs font-bold"
+                        >
+                          <Plus className="w-3.5 h-3.5 mr-1" />
+                          Add Point
+                        </Button>
+                      </div>
+                      <div className="space-y-2">
+                        {(formData.consent_items || []).map(
+                          (item: string, idx: number) => (
+                            <div key={`${idx}-${item}`} className="flex gap-2">
+                              <Input
+                                value={item}
+                                onChange={(e) =>
+                                  updateConsentItem(idx, e.target.value)
+                                }
+                                placeholder={`Consent point ${idx + 1}`}
+                                className="h-10 bg-white border-gray-200"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                onClick={() => removeConsentItem(idx)}
+                                className="h-10 w-10 border-gray-200"
+                              >
+                                <Trash2 className="w-4 h-4 text-red-600" />
+                              </Button>
+                            </div>
+                          ),
+                        )}
+                      </div>
+                    </div>
+
                     <div className="p-10 bg-white rounded-[1.75rem] border border-gray-200 shadow-sm relative overflow-hidden min-h-[190px]">
                       <div className="absolute top-4 right-4 opacity-5">
                         <Send className="w-28 h-28 text-indigo-600" />
@@ -787,7 +878,7 @@ export function CreatePackageWizard({
 
                           <div className="flex flex-wrap gap-2">
                             <Badge className="bg-gray-100 text-gray-700 border-none px-3 py-1 rounded-lg font-bold text-[10px] uppercase tracking-widest whitespace-nowrap">
-                              {formData.items.length} Talents
+                              {`${formData.items.length} ${entityPluralTitle}`}
                             </Badge>
                             <Badge className="bg-gray-100 text-gray-700 border-none px-3 py-1 rounded-lg font-bold text-[10px] uppercase tracking-widest whitespace-nowrap">
                               {formData.items.reduce(
@@ -835,6 +926,12 @@ export function CreatePackageWizard({
                                   enabled: formData.password_protected,
                                   label: "Locked",
                                   icon: Globe,
+                                },
+                                {
+                                  enabled:
+                                    (formData.consent_items || []).length > 0,
+                                  label: "Consent",
+                                  icon: ShieldCheck,
                                 },
                               ].map((opt, i) => (
                                 <div
@@ -1001,18 +1098,17 @@ export function CreatePackageWizard({
         </DialogContent>
       </Dialog>
 
-      {/* Talent Selector Overlay Modal */}
+      {/* Athlete/Talent Selector Overlay Modal */}
       <Dialog open={showTalentSelector} onOpenChange={setShowTalentSelector}>
         <DialogContent className="max-w-[96vw] sm:max-w-2xl rounded-2xl sm:rounded-[3rem] p-4 sm:p-10 border-none bg-white/95 backdrop-blur-xl shadow-2xl">
           <DialogHeader className="mb-8">
             <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight">
               {isEditMode
-                ? "Edit Talent Package"
-                : "Create a New Talent Package"}
+                ? `Edit ${entitySingularTitle} Package`
+                : `Create a New ${entitySingularTitle} Package`}
             </DialogTitle>
             <p className="text-sm text-gray-500 font-medium mt-1">
-              Build a beautiful portfolio package to showcase your talent to
-              clients
+              {`Build a beautiful portfolio package to showcase your ${entitySingularLower} to clients`}
             </p>
           </DialogHeader>
 

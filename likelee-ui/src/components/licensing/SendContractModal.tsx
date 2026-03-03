@@ -52,6 +52,7 @@ import { cn } from "@/lib/utils";
 interface SendContractModalProps {
   isOpen: boolean;
   onClose: () => void;
+  isSportsAgency?: boolean;
   templateId: string; // From LicenseTemplate
   docusealTemplateId?: number;
   licenseFee?: number; // Optional overrides
@@ -67,12 +68,16 @@ interface FormData {
 export const SendContractModal: React.FC<SendContractModalProps> = ({
   isOpen,
   onClose,
+  isSportsAgency = false,
   templateId,
   docusealTemplateId,
   licenseFee,
   initialValues,
   onSuccess,
 }) => {
+  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
+  const entityPluralLower = isSportsAgency ? "athletes" : "talents";
+  const entitySingularLower = isSportsAgency ? "athlete" : "talent";
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const {
@@ -334,7 +339,7 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="talent_select">Talent</Label>
+              <Label htmlFor="talent_select">{entitySingularTitle}</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -379,7 +384,7 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
                         <span className="text-slate-400">
                           {template?.talent_name
                             ? `Default: ${template.talent_name}`
-                            : "Select talents..."}
+                            : `Select ${entityPluralLower}...`}
                         </span>
                       )}
                     </div>
@@ -392,12 +397,12 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
                 >
                   <Command className="border-none">
                     <CommandInput
-                      placeholder="Search talent..."
+                      placeholder={`Search ${entitySingularLower}...`}
                       className="border-none focus:ring-0 h-12"
                     />
                     <CommandList className="max-h-[300px]">
                       <CommandEmpty className="py-6 text-center text-sm text-slate-500 font-medium">
-                        No talent found.
+                        {`No ${entitySingularLower} found.`}
                       </CommandEmpty>
                       <CommandGroup>
                         {talents.map((t) => {
@@ -452,7 +457,8 @@ export const SendContractModal: React.FC<SendContractModalProps> = ({
                                     isSelected && "text-indigo-600",
                                   )}
                                 >
-                                  {t.full_name || "Unknown Talent"}
+                                  {t.full_name ||
+                                    `Unknown ${entitySingularTitle}`}
                                 </span>
                                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                                   ID: {String(t.id).slice(0, 8)}

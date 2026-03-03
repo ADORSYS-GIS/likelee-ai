@@ -31,7 +31,13 @@ import {
   sendLicensingRequestPaymentLink,
 } from "@/api/functions";
 
-export const LicensingRequestsTab = () => {
+export const LicensingRequestsTab = ({
+  isSportsAgency = false,
+}: {
+  isSportsAgency?: boolean;
+}) => {
+  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
+  const entityPluralLower = isSportsAgency ? "athlete" : "talent";
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -141,7 +147,7 @@ export const LicensingRequestsTab = () => {
           typeof parsed === "object" &&
           parsed.code === "MISSING_TALENT_STRIPE_CONNECT"
         ) {
-          friendlyTitle = "Action required: connect talent payouts";
+          friendlyTitle = `Action required: connect ${entityPluralLower} payouts`;
           const missingList = Array.isArray(parsed.missing)
             ? parsed.missing
             : [];
@@ -258,7 +264,7 @@ export const LicensingRequestsTab = () => {
                       key={`${t.licensing_request_id}-${i}`}
                       className="px-3 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded uppercase"
                     >
-                      {name || "Talent"}
+                      {name || entitySingularTitle}
                     </span>
                   ));
                 })}

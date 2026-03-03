@@ -52,10 +52,14 @@ type BookingNotificationRow = {
 
 export const NotificationsTab = ({
   bookings = [] as BookingLike[],
+  isSportsAgency = false,
 }: {
   bookings?: BookingLike[];
+  isSportsAgency?: boolean;
 }) => {
   const { toast } = useToast();
+  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
+  const entitySingularLower = isSportsAgency ? "athlete" : "talent";
   const [activeSubNav, setActiveSubNav] = useState("logs");
   const [testNotificationType, setTestNotificationType] = useState("");
   const [testTargetTalent, setTestTargetTalent] = useState("");
@@ -236,7 +240,7 @@ export const NotificationsTab = ({
           {[
             "Notification Logs",
             "Settings",
-            "Talent Preferences",
+            `${entitySingularTitle} Preferences`,
             "Test Notifications",
           ].map((tab, idx) => (
             <button
@@ -794,17 +798,17 @@ export const NotificationsTab = ({
         <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-xl">
           <div className="mb-6">
             <h3 className="text-xl font-bold text-gray-900 mb-2">
-              Per-Talent Notification Preferences
+              {`Per-${entitySingularTitle} Notification Preferences`}
             </h3>
             <p className="text-sm text-gray-600">
-              Override agency defaults for specific talent
+              {`Override agency defaults for specific ${entitySingularLower}`}
             </p>
           </div>
 
           <div className="relative mb-6">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
-              placeholder="Search talent by name..."
+              placeholder={`Search ${entitySingularLower} by name...`}
               className="pl-9"
               onChange={(e) => setTestTargetTalent(e.target.value)}
               value={testTargetTalent}
@@ -993,14 +997,16 @@ export const NotificationsTab = ({
 
             <div className="space-y-2">
               <Label className="text-sm font-bold text-gray-700">
-                Select Talent
+                {`Select ${entitySingularTitle}`}
               </Label>
               <Select
                 value={testTargetTalent}
                 onValueChange={setTestTargetTalent}
               >
                 <SelectTrigger className="h-12 border-gray-200 rounded-xl">
-                  <SelectValue placeholder="Choose talent to notify" />
+                  <SelectValue
+                    placeholder={`Choose ${entitySingularLower} to notify`}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {testTalents.map((name) => (

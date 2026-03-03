@@ -19,6 +19,7 @@ import {
   X,
   Lock,
   Check,
+  ShieldCheck,
 } from "lucide-react";
 import { packageApi } from "@/api/packages";
 import AssetGallery from "@/components/packages/AssetGallery";
@@ -64,6 +65,17 @@ export function PublicPackageView() {
   const [selectedSelections, setSelectedSelections] = useState<Set<string>>(
     new Set(),
   );
+  const [initialConsentChecks, setInitialConsentChecks] = useState<
+    Record<string, boolean>
+  >({});
+  const [consentChecks, setConsentChecks] = useState<Record<string, boolean>>(
+    {},
+  );
+  const [initialConsentClientName, setInitialConsentClientName] = useState("");
+  const [initialConsentClientEmail, setInitialConsentClientEmail] =
+    useState("");
+  const [consentClientName, setConsentClientName] = useState("");
+  const [consentClientEmail, setConsentClientEmail] = useState("");
   const [pendingNotes, setPendingNotes] = useState<
     Record<string, { comment: string; clientName: string }>
   >({});
@@ -189,6 +201,41 @@ export function PublicPackageView() {
       );
   }, [selectedItem]);
 
+  const consentItems = useMemo(() => {
+    if (!pkg) return [] as string[];
+    if (!Array.isArray(pkg?.consent_items)) return [] as string[];
+    return pkg.consent_items
+      .map((item: any) => String(item || "").trim())
+      .filter(Boolean);
+  }, [pkg]);
+
+  const isPackageExpired = useMemo(() => {
+    if (!pkg?.expires_at) return false;
+    const dt = new Date(pkg.expires_at);
+    if (Number.isNaN(dt.getTime())) return false;
+    return dt.getTime() < Date.now();
+  }, [pkg?.expires_at]);
+
+  const consentInteraction = useMemo(() => {
+    const all = Array.isArray(pkg?.interactions) ? pkg.interactions : [];
+    return all
+      .filter((i: any) => i?.type === "consent")
+      .sort(
+        (a: any, b: any) =>
+          new Date(b?.created_at || 0).getTime() -
+          new Date(a?.created_at || 0).getTime(),
+      )[0];
+  }, [pkg?.interactions]);
+
+  const consentStatus = useMemo(() => {
+    if (isPackageExpired) return "expired";
+    if (consentItems.length === 0) return "missing";
+    const checkedCount = consentItems.filter(
+      (item) => consentChecks[item],
+    ).length;
+    return checkedCount === consentItems.length ? "complete" : "missing";
+  }, [consentChecks, consentItems, isPackageExpired]);
+
   useEffect(() => {
     if (selectedItem && packageData) {
       const talentId = selectedItem.talent.id;
@@ -245,8 +292,36 @@ export function PublicPackageView() {
       setSelectedCallbacks(initialCalls);
       setInitialSelections(initialSelected);
       setSelectedSelections(initialSelected);
+
+      const nextConsent: Record<string, boolean> = {};
+      consentItems.forEach((item) => {
+        nextConsent[item] = false;
+      });
+      try {
+        const parsed = consentInteraction?.content
+          ? JSON.parse(consentInteraction.content)
+          : null;
+        const accepted = Array.isArray(parsed?.accepted_items)
+          ? parsed.accepted_items.map((x: any) => String(x))
+          : [];
+        accepted.forEach((item: string) => {
+          if (Object.prototype.hasOwnProperty.call(nextConsent, item)) {
+            nextConsent[item] = true;
+          }
+        });
+      } catch {
+        // ignore malformed consent payload
+      }
+      setInitialConsentChecks(nextConsent);
+      setConsentChecks(nextConsent);
+      const cName = String(consentInteraction?.client_name || "");
+      const cEmail = String(consentInteraction?.client_email || "");
+      setInitialConsentClientName(cName);
+      setInitialConsentClientEmail(cEmail);
+      setConsentClientName(cName);
+      setConsentClientEmail(cEmail);
     }
-  }, [packageData]);
+  }, [packageData, consentItems, consentInteraction]);
 
   const toggleFavorite = (talentId: string) => {
     setSelectedFavorites((prev) => {
@@ -395,9 +470,19 @@ export function PublicPackageView() {
     const notesChanged = Object.values(pendingNotes).some(
       (note) => note.comment || note.clientName,
     );
+    const consentChecksChanged =
+      JSON.stringify(initialConsentChecks) !== JSON.stringify(consentChecks);
+    const consentSignerChanged =
+      initialConsentClientName !== consentClientName ||
+      initialConsentClientEmail !== consentClientEmail;
 
     return (
-      favoritesChanged || callbacksChanged || selectionsChanged || notesChanged
+      favoritesChanged ||
+      callbacksChanged ||
+      selectionsChanged ||
+      notesChanged ||
+      consentChecksChanged ||
+      consentSignerChanged
     );
   }, [
     selectedFavorites,
@@ -407,7 +492,57 @@ export function PublicPackageView() {
     initialFavorites,
     initialCallbacks,
     initialSelections,
+    initialConsentChecks,
+    consentChecks,
+    initialConsentClientName,
+    consentClientName,
+    initialConsentClientEmail,
+    consentClientEmail,
   ]);
+
+  const submitConsent = async () => {
+    if (!token) return;
+    if (consentItems.length === 0) return;
+    const acceptedItems = consentItems.filter((item) => consentChecks[item]);
+    const status = isPackageExpired
+      ? "expired"
+      : acceptedItems.length === consentItems.length
+        ? "complete"
+        : "missing";
+    try {
+      await interactionMutation.mutateAsync({
+        type: "consent",
+        content: JSON.stringify({
+          status,
+          consent_items: consentItems,
+          accepted_items: acceptedItems,
+          completed: status === "complete",
+          checked_count: acceptedItems.length,
+          total_count: consentItems.length,
+        }),
+        client_name: consentClientName.trim() || undefined,
+        client_email: consentClientEmail.trim() || undefined,
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["public-package", token],
+      });
+      toast({
+        title: "Consent saved",
+        description:
+          status === "complete"
+            ? "Consent is complete."
+            : status === "expired"
+              ? "Package expired. Consent is marked as expired."
+              : "Consent is currently missing required acknowledgements.",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Failed to save consent",
+        description: String(e?.message || e),
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     const handler = (event: BeforeUnloadEvent) => {
@@ -608,6 +743,95 @@ export function PublicPackageView() {
           </Button>
         </Card>
       </div>
+
+      {consentItems.length > 0 && (
+        <div className="max-w-7xl mx-auto px-6 mb-10">
+          <Card className="border-2 border-gray-200 rounded-3xl p-6 space-y-5">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div
+                  className="w-11 h-11 rounded-2xl flex items-center justify-center"
+                  style={{ backgroundColor: `${primaryColor}15` }}
+                >
+                  <ShieldCheck
+                    className="w-5 h-5"
+                    style={{ color: primaryColor }}
+                  />
+                </div>
+                <div>
+                  <div className="font-black text-gray-900 text-lg">
+                    Consent Checklist
+                  </div>
+                  <div className="text-gray-500 text-sm">
+                    Check all points to complete consent for asset usage.
+                  </div>
+                </div>
+              </div>
+              <Badge
+                className={
+                  consentStatus === "complete"
+                    ? "bg-green-100 text-green-700 border-green-200"
+                    : consentStatus === "expired"
+                      ? "bg-red-100 text-red-700 border-red-200"
+                      : "bg-yellow-100 text-yellow-800 border-yellow-200"
+                }
+              >
+                {consentStatus.toUpperCase()}
+              </Badge>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {consentItems.map((item, idx) => (
+                <label
+                  key={`${item}-${idx}`}
+                  className={`flex items-start gap-3 p-3 rounded-xl border ${consentChecks[item] ? "border-green-200 bg-green-50/50" : "border-gray-200 bg-white"}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={!!consentChecks[item]}
+                    disabled={isPackageExpired}
+                    onChange={(e) =>
+                      setConsentChecks((prev) => ({
+                        ...prev,
+                        [item]: e.target.checked,
+                      }))
+                    }
+                    className="mt-1 h-4 w-4"
+                  />
+                  <span className="text-sm text-gray-700">{item}</span>
+                </label>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Input
+                placeholder="Your Name (optional)"
+                value={consentClientName}
+                disabled={isPackageExpired}
+                onChange={(e) => setConsentClientName(e.target.value)}
+              />
+              <Input
+                type="email"
+                placeholder="Your Email (optional)"
+                value={consentClientEmail}
+                disabled={isPackageExpired}
+                onChange={(e) => setConsentClientEmail(e.target.value)}
+              />
+            </div>
+
+            <div className="flex justify-end">
+              <Button
+                disabled={interactionMutation.isPending || isPackageExpired}
+                onClick={submitConsent}
+                className="rounded-2xl font-black uppercase tracking-widest text-[10px]"
+                style={{ backgroundColor: primaryColor }}
+              >
+                {interactionMutation.isPending ? "Saving..." : "Save Consent"}
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* Talent Grid */}
       <main className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">

@@ -38,6 +38,7 @@ export const BookingDetailsModal = ({
   onEdit,
   onDuplicate,
   onCancel,
+  isSportsAgency = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -45,8 +46,11 @@ export const BookingDetailsModal = ({
   onEdit: (booking: any) => void;
   onDuplicate: (booking: any) => void;
   onCancel: (id: string) => void;
+  isSportsAgency?: boolean;
 }) => {
   const { toast } = useToast();
+  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
+  const entitySingularLower = isSportsAgency ? "athlete" : "talent";
 
   if (!booking) return null;
 
@@ -128,7 +132,7 @@ export const BookingDetailsModal = ({
 
   const handleRemind = () => {
     const { dismiss } = toast({
-      title: "Send reminder notification to talent?",
+      title: `Send reminder notification to ${entitySingularLower}?`,
       description: "This will send a reminder to " + booking.talentName,
       action: (
         <div className="flex gap-2">
@@ -174,7 +178,7 @@ export const BookingDetailsModal = ({
 
           <div className="border border-indigo-100 bg-indigo-50/30 rounded-xl p-4">
             <div className="flex items-center gap-2 text-indigo-600 font-bold text-sm mb-3">
-              <User className="w-4 h-4" /> Talent
+              <User className="w-4 h-4" /> {entitySingularTitle}
             </div>
             <p className="text-lg font-black text-gray-900">
               {booking.talentName}

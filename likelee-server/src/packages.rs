@@ -20,6 +20,7 @@ pub struct TalentPackage {
     pub allow_comments: bool,
     pub allow_favorites: bool,
     pub allow_callbacks: bool,
+    pub consent_items: Option<Vec<String>>,
     pub expires_at: Option<String>,
     pub access_token: String,
     pub created_at: Option<String>,
@@ -37,6 +38,7 @@ pub struct CreatePackageRequest {
     pub allow_comments: Option<bool>,
     pub allow_favorites: Option<bool>,
     pub allow_callbacks: Option<bool>,
+    pub consent_items: Option<Vec<String>>,
     pub expires_at: Option<String>,
     pub client_name: Option<String>,
     pub client_email: Option<String>,
@@ -129,6 +131,11 @@ pub async fn create_package(
         "allow_comments": payload.allow_comments.unwrap_or(true),
         "allow_favorites": payload.allow_favorites.unwrap_or(true),
         "allow_callbacks": payload.allow_callbacks.unwrap_or(true),
+        "consent_items": payload
+            .consent_items
+            .as_ref()
+            .map(|v| serde_json::Value::Array(v.iter().map(|s| serde_json::Value::String(s.clone())).collect()))
+            .unwrap_or_else(|| serde_json::json!([])),
         "expires_at": sanitize(&payload.expires_at),
         "client_name": sanitize(&payload.client_name),
         "client_email": sanitize(&payload.client_email),
@@ -451,6 +458,11 @@ pub async fn update_package(
         "allow_comments": payload.allow_comments.unwrap_or(true),
         "allow_favorites": payload.allow_favorites.unwrap_or(true),
         "allow_callbacks": payload.allow_callbacks.unwrap_or(true),
+        "consent_items": payload
+            .consent_items
+            .as_ref()
+            .map(|v| serde_json::Value::Array(v.iter().map(|s| serde_json::Value::String(s.clone())).collect()))
+            .unwrap_or_else(|| serde_json::json!([])),
         "expires_at": sanitize(&payload.expires_at),
         "client_name": sanitize(&payload.client_name),
         "client_email": sanitize(&payload.client_email),
@@ -1118,7 +1130,7 @@ pub async fn create_interaction(
     let package_resp = state
         .pg
         .from("agency_talent_packages")
-        .select("id")
+        .select("id,agency_id")
         .eq("access_token", &token)
         .single()
         .execute()
@@ -1147,6 +1159,7 @@ pub async fn create_interaction(
     let package_id = package["id"]
         .as_str()
         .ok_or((StatusCode::NOT_FOUND, "Package ID missing".to_string()))?;
+    let package_agency_id = package["agency_id"].as_str().unwrap_or("").to_string();
 
     let mut interaction = payload.clone();
     interaction
@@ -1166,6 +1179,22 @@ pub async fn create_interaction(
         state
             .pg
             .rpc("upsert_interaction", params.to_string())
+            .execute()
+            .await
+    } else if interaction_type == "consent" {
+        // Keep a single latest consent snapshot per package.
+        let _ = state
+            .pg
+            .from("agency_talent_package_interactions")
+            .delete()
+            .eq("package_id", package_id)
+            .eq("type", "consent")
+            .execute()
+            .await;
+        state
+            .pg
+            .from("agency_talent_package_interactions")
+            .insert(interaction.to_string())
             .execute()
             .await
     } else {
@@ -1200,6 +1229,77 @@ pub async fn create_interaction(
             format!("Failed to parse created interaction: {}", e),
         )
     })?;
+
+    if interaction_type == "consent" {
+        let consent_status = payload
+            .get("content")
+            .and_then(|v| v.as_str())
+            .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+            .and_then(|obj| {
+                obj.get("status")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+            })
+            .map(|s| s.trim().to_lowercase())
+            .filter(|s| s == "complete" || s == "missing" || s == "expired")
+            .unwrap_or_else(|| "missing".to_string());
+
+        let item_resp = state
+            .pg
+            .from("agency_talent_package_items")
+            .select("talent_id")
+            .eq("package_id", package_id)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        if !item_resp.status().is_success() {
+            let status = item_resp.status();
+            let err_text = item_resp.text().await.unwrap_or_default();
+            return Err((
+                StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+                err_text,
+            ));
+        }
+
+        let item_text = item_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let item_rows: Vec<serde_json::Value> = serde_json::from_str(&item_text).map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to parse package items for consent sync: {}", e),
+            )
+        })?;
+        let talent_ids: Vec<String> = item_rows
+            .iter()
+            .filter_map(|r| r.get("talent_id").and_then(|v| v.as_str()))
+            .map(|s| s.to_string())
+            .collect();
+
+        if !talent_ids.is_empty() {
+            let update_resp = state
+                .pg
+                .from("agency_users")
+                .in_("id", talent_ids)
+                .eq("agency_id", package_agency_id)
+                .update(serde_json::json!({ "consent_status": consent_status }).to_string())
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+            if !update_resp.status().is_success() {
+                let status = update_resp.status();
+                let err_text = update_resp.text().await.unwrap_or_default();
+                return Err((
+                    StatusCode::from_u16(status.as_u16())
+                        .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
+                    err_text,
+                ));
+            }
+        }
+    }
 
     Ok((StatusCode::CREATED, Json(created_interaction)))
 }

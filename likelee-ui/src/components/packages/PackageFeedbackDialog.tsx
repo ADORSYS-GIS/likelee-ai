@@ -18,6 +18,7 @@ import {
   User,
   MessageSquare,
   Check,
+  ShieldCheck,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { packageApi } from "@/api/packages";
@@ -56,6 +57,26 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
   const callbacks = interactions.filter((i: any) => i.type === "callback");
   const selected = interactions.filter((i: any) => i.type === "selected");
   const comments = interactions.filter((i: any) => i.type === "comment");
+  const consents = interactions.filter((i: any) => i.type === "consent");
+  const latestConsent = [...consents].sort(
+    (a: any, b: any) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+  )[0];
+  const isExpired = pkg?.expires_at
+    ? new Date(pkg.expires_at).getTime() < Date.now()
+    : false;
+  const consentStatus = (() => {
+    if (isExpired) return "expired";
+    if (!latestConsent?.content) return "missing";
+    try {
+      const parsed = JSON.parse(latestConsent.content);
+      const s = String(parsed?.status || "").toLowerCase();
+      if (s === "complete" || s === "missing" || s === "expired") return s;
+    } catch {
+      // ignore invalid payload
+    }
+    return "missing";
+  })();
 
   const resolveTalent = (interaction: any) => {
     const item = pkg?.items?.find(
@@ -95,6 +116,19 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                 Detailed timeline of client interactions with{" "}
                 <strong>{pkg?.title}</strong>
               </DialogDescription>
+              <div className="mt-2">
+                <Badge
+                  className={
+                    consentStatus === "complete"
+                      ? "bg-green-100 text-green-700 border-green-200"
+                      : consentStatus === "expired"
+                        ? "bg-red-100 text-red-700 border-red-200"
+                        : "bg-yellow-100 text-yellow-800 border-yellow-200"
+                  }
+                >
+                  {`Consent: ${consentStatus}`}
+                </Badge>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <DropdownMenu>
@@ -253,10 +287,23 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                 const isCallback = interaction.type === "callback";
                 const isSelected = interaction.type === "selected";
                 const isComment = interaction.type === "comment";
+                const isConsent = interaction.type === "consent";
 
                 const commentText =
                   interaction?.content ||
                   interaction?.interaction_data?.message;
+                let consentSummary = "";
+                if (isConsent) {
+                  try {
+                    const parsed = JSON.parse(interaction?.content || "{}");
+                    const checked = Number(parsed?.checked_count || 0);
+                    const total = Number(parsed?.total_count || 0);
+                    const status = String(parsed?.status || "missing");
+                    consentSummary = `${status.toUpperCase()} (${checked}/${total})`;
+                  } catch {
+                    consentSummary = "Consent updated";
+                  }
+                }
                 // Find talent name from pkg.items
                 // (Logic: interaction has talent_id, pkg.items has talent embedded)
                 const item = pkg?.items?.find(
@@ -283,15 +330,19 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                             ? "bg-red-100 text-red-600"
                             : isSelected
                               ? "bg-emerald-100 text-emerald-600"
-                              : isComment
-                                ? "bg-amber-100 text-amber-700"
-                                : "bg-blue-100 text-blue-600"
+                              : isConsent
+                                ? "bg-purple-100 text-purple-700"
+                                : isComment
+                                  ? "bg-amber-100 text-amber-700"
+                                  : "bg-blue-100 text-blue-600"
                         }`}
                       >
                         {isFavorite ? (
                           <Heart className="w-4 h-4 fill-current" />
                         ) : isSelected ? (
                           <Check className="w-4 h-4" />
+                        ) : isConsent ? (
+                          <ShieldCheck className="w-4 h-4" />
                         ) : isComment ? (
                           <MessageSquare className="w-4 h-4" />
                         ) : (
@@ -312,9 +363,11 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                                 ? "Favorited a Talent"
                                 : isSelected
                                   ? "Selected a Talent"
-                                  : isComment
-                                    ? "Commented on a Talent"
-                                    : "Requested Callback"}
+                                  : isConsent
+                                    ? "Updated Consent"
+                                    : isComment
+                                      ? "Commented on a Talent"
+                                      : "Requested Callback"}
                             </h4>
                             <p className="text-xs text-gray-400 font-medium">
                               {format(
@@ -323,7 +376,7 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                               )}
                             </p>
                           </div>
-                          {commentText && (
+                          {isComment && commentText && (
                             <Badge
                               variant="outline"
                               className="text-[10px] font-bold uppercase tracking-widest text-gray-500"
@@ -333,22 +386,30 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                           )}
                         </div>
 
-                        <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg border border-gray-100 mb-3">
-                          <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden shrink-0">
-                            {talentImage ? (
-                              <img
-                                src={talentImage}
-                                alt={talentName}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <User className="w-4 h-4 m-2 text-gray-400" />
-                            )}
+                        {!isConsent && (
+                          <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg border border-gray-100 mb-3">
+                            <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden shrink-0">
+                              {talentImage ? (
+                                <img
+                                  src={talentImage}
+                                  alt={talentName}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <User className="w-4 h-4 m-2 text-gray-400" />
+                              )}
+                            </div>
+                            <span className="font-bold text-sm text-gray-700">
+                              {talentName}
+                            </span>
                           </div>
-                          <span className="font-bold text-sm text-gray-700">
-                            {talentName}
-                          </span>
-                        </div>
+                        )}
+
+                        {isConsent && (
+                          <div className="text-sm text-purple-700 bg-purple-50 p-3 rounded-lg border border-purple-100 mb-3">
+                            {consentSummary}
+                          </div>
+                        )}
 
                         {commentText && (
                           <div className="text-sm text-gray-600 bg-yellow-50/50 p-3 rounded-lg border border-yellow-100/50 flex gap-3 items-start">

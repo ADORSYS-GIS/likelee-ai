@@ -95,7 +95,8 @@ const TIER_CONFIG: Record<string, any> = {
     modalInputBg: "bg-gray-100/30",
     recommendation:
       "Requires immediate action. Consider portfolio refresh, marketing push, or roster review.",
-    thresholds: "Includes all talent that don't meet Tier 3 requirements",
+    thresholds:
+      "Includes all roster profiles that don't meet Tier 3 requirements",
     id: "Inactive",
   },
 };
@@ -141,9 +142,13 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
-export const PerformanceTiers: React.FC = () => {
+export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
+  isSportsAgency = false,
+}) => {
   const queryClient = useQueryClient();
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const entitySingular = isSportsAgency ? "athlete" : "talent";
+  const entityPlural = isSportsAgency ? "Athletes" : "Talent";
 
   const [configForm, setConfigForm] = useState<
     Record<string, { min_earnings: number; min_bookings: number }>
@@ -275,7 +280,7 @@ export const PerformanceTiers: React.FC = () => {
               Performance Tiers
             </h1>
             <p className="text-gray-500 font-medium text-sm mt-1">
-              Talent segmented by earnings and activity levels
+              {`${entityPlural} segmented by earnings and activity levels`}
             </p>
           </div>
           <Button
@@ -310,7 +315,7 @@ export const PerformanceTiers: React.FC = () => {
                       {group.talents.length}
                     </span>
                     <span className="text-xs text-gray-500 font-medium pb-1">
-                      talent
+                      {entitySingular}
                     </span>
                   </div>
                 </div>
@@ -347,7 +352,7 @@ export const PerformanceTiers: React.FC = () => {
             thresholdStr = `≥ ${currencyFormatter.format(c.min_earnings)}/mo • ≥ ${c.min_bookings} bookings`;
           } else if (group.name === "Inactive") {
             thresholdStr =
-              "Includes all talent that don't meet Tier 3 requirements";
+              "Includes all roster profiles that don't meet Tier 3 requirements";
           }
 
           return (
@@ -441,7 +446,7 @@ export const PerformanceTiers: React.FC = () => {
                       <Users className={cn("w-4 h-4", cfg.brandColor)} />
                     </div>
                     <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                      Total Talent
+                      {`Total ${entityPlural}`}
                     </span>
                   </div>
                   <div className="text-2xl font-bold text-gray-900">
@@ -470,7 +475,7 @@ export const PerformanceTiers: React.FC = () => {
               <div>
                 <div className="flex items-center justify-between mb-6">
                   <h4 className="text-sm font-bold text-gray-900 font-bold">
-                    Talent in This Tier
+                    {`${entityPlural} in This Tier`}
                   </h4>
                 </div>
                 <div className="space-y-3">
@@ -537,7 +542,7 @@ export const PerformanceTiers: React.FC = () => {
                         <Users className="w-12 h-12 text-gray-100" />
                       </div>
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-widest leading-relaxed">
-                        No talent assigned to
+                        {`No ${entitySingular} assigned to`}
                         <br />
                         this performance tier yet
                       </p>
@@ -629,7 +634,7 @@ export const PerformanceTiers: React.FC = () => {
             ))}
             <p className="text-[13px] text-gray-500 font-medium pl-1 py-2">
               <span className="font-bold">Note:</span> Tier 4 includes all
-              talent that don't meet Tier 3 requirements.
+              roster profiles that don't meet Tier 3 requirements.
             </p>
           </div>
 

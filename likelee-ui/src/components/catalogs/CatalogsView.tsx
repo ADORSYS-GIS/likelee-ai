@@ -33,7 +33,12 @@ import { useToast } from "@/components/ui/use-toast";
 import { catalogApi } from "@/api/catalogs";
 import { CatalogBuilderWizard } from "./CatalogBuilderWizard";
 
-export function CatalogsView() {
+export function CatalogsView({
+  isSportsAgency = false,
+}: {
+  isSportsAgency?: boolean;
+}) {
+  const entityPluralTitle = isSportsAgency ? "Athletes" : "Talents";
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showBuilder, setShowBuilder] = useState(false);
@@ -333,7 +338,7 @@ export function CatalogsView() {
                     <div className="grid grid-cols-3 gap-2 py-1">
                       <div className="flex flex-col">
                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-                          Talents
+                          {entityPluralTitle}
                         </span>
                         <span className="font-bold text-gray-900">
                           {talentCount}
