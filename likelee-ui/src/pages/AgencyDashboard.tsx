@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { format, addDays } from "date-fns";
 import { LicenseTemplatesTab } from "@/components/licensing/LicenseTemplatesTab";
 import { LicenseSubmissionsTab } from "@/components/licensing/LicenseSubmissionsTab";
 import { ActiveLicenseDetailsSheet } from "@/components/licensing/ActiveLicenseDetailsSheet";
@@ -14,7 +15,6 @@ import { CreatePackageWizard } from "@/components/packages/CreatePackageWizard";
 import { PackagesView } from "@/components/packages/PackagesView";
 import { CatalogsView } from "@/components/catalogs/CatalogsView";
 import { supabase } from "@/lib/supabase";
-import { format } from "date-fns";
 
 import {
   LayoutDashboard,
@@ -5912,8 +5912,12 @@ const GenerateInvoiceView = () => {
   const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [clients, setClients] = useState<any[]>([]);
   const [talents, setTalents] = useState<any[]>([]);
-  const [invoiceDate, setInvoiceDate] = useState("2026-01-13");
-  const [dueDate, setDueDate] = useState("2026-02-13");
+  const [invoiceDate, setInvoiceDate] = useState(
+    format(new Date(), "yyyy-MM-dd"),
+  );
+  const [dueDate, setDueDate] = useState(
+    format(addDays(new Date(), 30), "yyyy-MM-dd"),
+  );
   const [paymentTerms, setPaymentTerms] = useState("net_30");
   const [poNumber, setPoNumber] = useState("");
   const [projectReference, setProjectReference] = useState("");
@@ -17080,10 +17084,37 @@ export default function AgencyDashboard() {
   const [activeTab, setActiveTabState] = useState(
     searchParams.get("tab") || "dashboard",
   );
+
+  // Sensible default sub-tab based on tab
+  const getDefaultSubTab = (tab: string) => {
+    switch (tab) {
+      case "roster":
+        return "All Talent";
+      case "licensing":
+        return "Licensing Requests";
+      case "protection":
+        return "Protect & Usage";
+      case "analytics":
+        return "Analytics Dashboard";
+      case "bookings":
+        return "Calendar & Schedule";
+      case "accounting":
+        return "Connect Bank";
+      case "settings":
+        return "General Settings";
+      default:
+        return "All Talent";
+    }
+  };
   const [activeSubTab, setActiveSubTab] = useState(
-    searchParams.get("subTab") || "All Talent",
+    searchParams.get("subTab") ||
+      getDefaultSubTab(searchParams.get("tab") || "dashboard"),
   );
 
+  const [expandedItems, setExpandedItems] = useState<string[]>(() => {
+    const tabFromUrl = searchParams.get("tab");
+    return tabFromUrl ? [tabFromUrl] : ["dashboard"];
+  });
   const handleRenew = (license: ComplianceRenewableLicense) => {
     if (!license.template_id) {
       toast({
@@ -17355,12 +17386,6 @@ export default function AgencyDashboard() {
   const [isPlanTripModalOpen, setIsPlanTripModalOpen] = useState(false);
   const [isProspectModalOpen, setIsProspectModalOpen] = useState(false);
   const [prospectToEdit, setProspectToEdit] = useState<any>(null);
-  const [expandedItems, setExpandedItems] = useState<string[]>([
-    "roster",
-    "licensing",
-    "protection",
-    "analytics",
-  ]);
 
   // Ensure valid sub-tab for Analytics to avoid blank screen
   useEffect(() => {
@@ -17588,7 +17613,11 @@ export default function AgencyDashboard() {
     (async () => {
       try {
         const data = await listBookings();
-        setBookings(Array.isArray(data) ? data : []);
+        const normalized = (Array.isArray(data) ? data : []).map((b: any) => ({
+          ...b,
+          date: typeof b.date === "string" ? b.date.split("T")[0] : b.date,
+        }));
+        setBookings(normalized);
       } catch (e) {
         // noop for now
       }
@@ -17612,7 +17641,21 @@ export default function AgencyDashboard() {
       // If booking already has an id, it was created upstream (e.g., multipart with files).
       // Append directly to state to reflect immediately and avoid duplicate API call.
       if (booking && booking.id) {
-        setBookings([...bookings, booking]);
+        // Normalize the date to YYYY-MM-DD format
+        const normalizedBooking = {
+          ...booking,
+          date:
+            typeof booking.date === "string"
+              ? booking.date.includes("T")
+                ? booking.date.split("T")[0]
+                : booking.date.slice(0, 10)
+              : booking.date,
+        };
+        setBookings((prev) => {
+          const exists = prev.some((b) => b.id === normalizedBooking.id);
+          if (exists) return prev;
+          return [...prev, normalizedBooking];
+        });
         try {
           await notifyBookingCreatedEmail(booking.id);
           toast({
@@ -17638,8 +17681,13 @@ export default function AgencyDashboard() {
         notes: booking.notes,
       };
       const created = await apiCreateBooking(payload);
+      if (!created || (Array.isArray(created) && created.length === 0)) {
+        throw new Error("Failed to create booking: empty response from server");
+      }
       const row = Array.isArray(created) ? created[0] : created;
-      setBookings([...bookings, row]);
+      if (row && row.id) {
+        setBookings((prev) => [...prev, row]);
+      }
       try {
         if (row?.id) {
           await notifyBookingCreatedEmail(row.id);
@@ -17676,17 +17724,19 @@ export default function AgencyDashboard() {
       };
       const updated = await apiUpdateBooking(id, payload);
       const row = Array.isArray(updated) ? updated[0] : updated;
-      setBookings(bookings.map((b) => (b.id === row.id ? row : b)));
+      setBookings((prev) => prev.map((b) => (b.id === row.id ? row : b)));
     } catch (e) {
-      setBookings(bookings.map((b) => (b.id === booking.id ? booking : b)));
+      setBookings((prev) =>
+        prev.map((b) => (b.id === booking.id ? booking : b)),
+      );
     }
   };
   const onCancelBooking = async (id: string) => {
     try {
       await apiCancelBooking(id);
-      setBookings(bookings.filter((b) => b.id !== id));
+      setBookings((prev) => prev.filter((b) => b.id !== id));
     } catch (e) {
-      setBookings(bookings.filter((b) => b.id !== id));
+      setBookings((prev) => prev.filter((b) => b.id !== id));
     }
   };
   const onAddBookOut = async (bookOut: any) => {
@@ -17959,6 +18009,7 @@ export default function AgencyDashboard() {
               availabilitySubTab,
               "Notifications",
               "Management & Analytics",
+              "Campaigns",
             ],
           },
           { id: "payouts", label: "Payouts", icon: DollarSign },
@@ -18650,6 +18701,27 @@ export default function AgencyDashboard() {
                 </div>
               </Card>
             ))}
+            activeSubTab === "License Templates" && <LicenseTemplatesTab />}
+          {activeTab === "protection" && activeSubTab === "Protect & Usage" && (
+            <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+              <div className="text-lg font-black text-gray-900">
+                Coming soon
+              </div>
+              <div className="text-gray-500 font-medium mt-1">
+                Protection & Usage is coming soon.
+              </div>
+            </Card>
+          )}
+          {activeTab === "protection" && activeSubTab === "Compliance Hub" && (
+            <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+              <div className="text-lg font-black text-gray-900">
+                Coming soon
+              </div>
+              <div className="text-gray-500 font-medium mt-1">
+                Compliance Hub is coming soon.
+              </div>
+            </Card>
+          )}
           {activeTab === "analytics" &&
             activeSubTab === "Analytics Dashboard" &&
             (agencyMode === "IRL" ? (

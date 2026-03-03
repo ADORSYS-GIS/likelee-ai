@@ -66,7 +66,7 @@ export const CalendarScheduleTab = ({
 
   const [talentViewMode, setTalentViewMode] = useState<
     "single" | "all" | "selected"
-  >("single");
+  >("all");
   const [selectedTalentId, setSelectedTalentId] = useState<string>("");
   const [talents, setTalents] = useState<{ id: string; name: string }[]>([]);
 
@@ -110,6 +110,32 @@ export const CalendarScheduleTab = ({
   // Month Navigation for the stats/dropdowns logic if we want to change view
   const handlePrevMonth = () => setCurrentDate((prev) => subMonths(prev, 1));
   const handleNextMonth = () => setCurrentDate((prev) => addMonths(prev, 1));
+  const handleMonthChange = (monthNameLower: string) => {
+    const months = [
+      "january",
+      "february",
+      "march",
+      "april",
+      "may",
+      "june",
+      "july",
+      "august",
+      "september",
+      "october",
+      "november",
+      "december",
+    ];
+    const monthIndex = months.indexOf(monthNameLower);
+    if (monthIndex < 0) return;
+
+    setCurrentDate((prev) => {
+      const year = prev.getFullYear();
+      const currentDay = prev.getDate();
+      const maxDayInTargetMonth = getDaysInMonth(new Date(year, monthIndex, 1));
+      const nextDay = Math.min(currentDay, maxDayInTargetMonth);
+      return new Date(year, monthIndex, nextDay);
+    });
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -205,6 +231,12 @@ export const CalendarScheduleTab = ({
   });
 
   const currentMonthDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const trailingDaysCount =
+    (7 - ((firstDayOfMonth + currentMonthDays.length) % 7)) % 7;
+  const nextMonthDays = Array.from(
+    { length: trailingDaysCount },
+    (_, i) => i + 1,
+  );
 
   const countBookOutsOnDate = (dateStr: string) => {
     if (!Array.isArray(visibleBookOuts) || visibleBookOuts.length === 0)
@@ -276,9 +308,7 @@ export const CalendarScheduleTab = ({
           <div className="flex w-full xl:w-auto items-center gap-2 overflow-x-auto pb-1 flex-nowrap">
             <Select
               value={format(currentDate, "MMMM").toLowerCase()}
-              onValueChange={(val) => {
-                // Approximate set month logic if needed
-              }}
+              onValueChange={handleMonthChange}
             >
               <SelectTrigger className="w-28 sm:w-32 shrink-0">
                 <SelectValue placeholder={format(currentDate, "MMMM")} />
@@ -407,6 +437,9 @@ export const CalendarScheduleTab = ({
                     <SelectItem value="selected">
                       {`Selected ${entitySingularTitle}`}
                     </SelectItem>
+                    <SelectItem value="all">All Talent</SelectItem>
+                    <SelectItem value="single">Single View</SelectItem>
+                    <SelectItem value="selected">Selected Talent</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -491,9 +524,16 @@ export const CalendarScheduleTab = ({
                 const year = currentDate.getFullYear();
                 const month = currentDate.getMonth() + 1;
                 const dayString = `${year}-${month.toString().padStart(2, "0")}-${d.toString().padStart(2, "0")}`;
-                const dayBookings = visibleBookings.filter(
-                  (b) => b.date === dayString,
-                );
+                const dayBookings = visibleBookings.filter((b) => {
+                  // Normalize date to YYYY-MM-DD by taking first 10 chars or splitting on "T"
+                  let bDate = "";
+                  if (typeof b.date === "string") {
+                    bDate = b.date.includes("T")
+                      ? b.date.split("T")[0]
+                      : b.date.slice(0, 10);
+                  }
+                  return bDate === dayString;
+                });
                 const dayBookOutsCount = countBookOutsOnDate(dayString);
 
                 const getEventColor = (type?: string, status?: string) => {
@@ -615,6 +655,15 @@ export const CalendarScheduleTab = ({
                   </div>
                 );
               })}
+              {/* Next Month Filler */}
+              {nextMonthDays.map((d) => (
+                <div
+                  key={`next-${d}`}
+                  className="p-2 text-gray-400 text-sm font-medium bg-gray-50/20"
+                >
+                  {d}
+                </div>
+              ))}
             </div>
           </div>
         </div>
