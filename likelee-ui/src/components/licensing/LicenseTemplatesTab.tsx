@@ -74,11 +74,13 @@ export interface RenewalLaunchContext {
 interface LicenseTemplatesTabProps {
   renewalLaunchContext?: RenewalLaunchContext | null;
   onRenewalLaunchHandled?: () => void;
+  isSportsAgency?: boolean;
 }
 
 export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
   renewalLaunchContext,
   onRenewalLaunchHandled,
+  isSportsAgency = false,
 }) => {
   const [topTab, setTopTab] = useState<
     "requests" | "templates" | "submissions"
@@ -541,11 +543,11 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
         </TabsContent>
 
         <TabsContent value="submissions" className="mt-6">
-          <LicenseSubmissionsTab />
+          <LicenseSubmissionsTab isSportsAgency={isSportsAgency} />
         </TabsContent>
 
         <TabsContent value="requests" className="mt-6">
-          <LicensingRequestsTab />
+          <LicensingRequestsTab isSportsAgency={isSportsAgency} />
         </TabsContent>
       </Tabs>
 
@@ -562,6 +564,7 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
         <SendContractModal
           isOpen={isSendModalOpen}
           onClose={() => setIsSendModalOpen(false)}
+          isSportsAgency={isSportsAgency}
           templateId={sendTemplateId}
           docusealTemplateId={sendDocusealTemplateId ?? undefined}
           licenseFee={sendLicenseFee}
@@ -573,6 +576,7 @@ export const LicenseTemplatesTab: React.FC<LicenseTemplatesTabProps> = ({
         <SubmissionWizard
           isOpen={!!wizardTemplate}
           onClose={() => setWizardTemplate(null)}
+          isSportsAgency={isSportsAgency}
           template={wizardTemplate}
           onComplete={() => {
             queryClient.invalidateQueries({ queryKey: ["license-templates"] });

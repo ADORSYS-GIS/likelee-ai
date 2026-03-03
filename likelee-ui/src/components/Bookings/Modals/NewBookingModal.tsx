@@ -52,14 +52,18 @@ export const NewBookingModal = ({
   onSave,
   initialData,
   mode = "new",
+  isSportsAgency = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (booking: any) => void;
   initialData?: any;
   mode?: "new" | "edit" | "duplicate";
+  isSportsAgency?: boolean;
 }) => {
   const { toast } = useToast();
+  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
+  const entitySingularLower = isSportsAgency ? "athlete" : "talent";
   const [talents, setTalents] = useState<any[]>([]);
   const [bookingType, setBookingType] = useState("confirmed");
   const [multiTalent, setMultiTalent] = useState(false);
@@ -381,9 +385,8 @@ export const NewBookingModal = ({
         /unavailable/i.test(String(msg));
       if (isUnavailable) {
         toast({
-          title: "Talent unavailable",
-          description:
-            "This talent is booked out during the selected date. Please choose another date or talent.",
+          title: `${entitySingularTitle} unavailable`,
+          description: `This ${entitySingularLower} is booked out during the selected date. Please choose another date or ${entitySingularLower}.`,
           variant: "destructive" as any,
         });
       } else {
@@ -409,7 +412,7 @@ export const NewBookingModal = ({
             <p className="text-sm text-gray-500">
               {mode === "edit"
                 ? "Update details for this booking"
-                : "Schedule a booking for your talent"}
+                : `Schedule a booking for your ${entitySingularLower}`}
             </p>
           </DialogHeader>
           <div className="space-y-6 py-4">
@@ -460,7 +463,7 @@ export const NewBookingModal = ({
 
             <div className="space-y-2">
               <div className="flex justify-between">
-                <Label>Talent *</Label>
+                <Label>{`${entitySingularTitle} *`}</Label>
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -475,13 +478,13 @@ export const NewBookingModal = ({
                     className="rounded border-gray-300"
                   />
                   <label htmlFor="multi" className="text-sm text-gray-600">
-                    Book multiple talent
+                    {`Book multiple ${entitySingularLower}`}
                   </label>
                 </div>
               </div>
               <div className="relative">
                 <Input
-                  placeholder="Search talent by name..."
+                  placeholder={`Search ${entitySingularLower} by name...`}
                   value={talentSearch}
                   onChange={(e) => setTalentSearch(e.target.value)}
                 />
@@ -530,8 +533,8 @@ export const NewBookingModal = ({
                 {filteredTalents.length === 0 && (
                   <div className="p-8 text-center text-gray-500 text-sm">
                     {talentSearch
-                      ? `No talent found matching "${talentSearch}"`
-                      : "No talent found"}
+                      ? `No ${entitySingularLower} found matching "${talentSearch}"`
+                      : `No ${entitySingularLower} found`}
                   </div>
                 )}
               </div>
@@ -1028,7 +1031,7 @@ export const NewBookingModal = ({
                     }
                   />
                   <label htmlFor="notify-email" className="text-sm">
-                    Email talent
+                    {`Email ${entitySingularLower}`}
                   </label>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1044,7 +1047,7 @@ export const NewBookingModal = ({
                     }
                   />
                   <label htmlFor="notify-sms" className="text-sm">
-                    SMS talent
+                    {`SMS ${entitySingularLower}`}
                   </label>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1128,7 +1131,7 @@ export const NewBookingModal = ({
               <span className="font-bold">{bookingType}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Talent</span>
+              <span className="text-gray-500">{entitySingularTitle}</span>
               <span className="font-bold">
                 {selectedTalents.map((t) => t.name).join(", ") || "—"}
               </span>

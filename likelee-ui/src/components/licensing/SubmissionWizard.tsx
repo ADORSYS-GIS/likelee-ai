@@ -62,6 +62,7 @@ interface SubmissionWizardProps {
   onClose: () => void;
   template: LicenseTemplate;
   onComplete: () => void;
+  isSportsAgency?: boolean;
 }
 
 const AVAILABLE_CONTRACT_VARIABLES = [
@@ -105,7 +106,11 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
   onClose,
   template,
   onComplete,
+  isSportsAgency = false,
 }) => {
+  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
+  const entityPluralLower = isSportsAgency ? "athletes" : "talents";
+  const entitySingularLower = isSportsAgency ? "athlete" : "talent";
   const [step, setStep] = useState(1);
   const [isSyncing, setIsSyncing] = useState(false);
   const [draftId, setDraftId] = useState<string | null>(null);
@@ -178,7 +183,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
           setTalents(res || []);
         })
         .catch((err) => {
-          console.error("Failed to fetch talents:", err);
+          console.error(`Failed to fetch ${entityPluralLower}:`, err);
         });
     }
   }, [isOpen, template, reset]);
@@ -484,7 +489,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                       </div>
                       <div className="space-y-2">
                         <Label className="text-sm font-bold text-slate-800 ml-1">
-                          Talent Name *
+                          {`${entitySingularTitle} Name *`}
                         </Label>
                         <Popover>
                           <PopoverTrigger asChild>
@@ -520,7 +525,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                     ))
                                 ) : (
                                   <span className="text-slate-400">
-                                    Select talents...
+                                    {`Select ${entityPluralLower}...`}
                                   </span>
                                 )}
                               </div>
@@ -533,12 +538,12 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                           >
                             <Command className="border-none">
                               <CommandInput
-                                placeholder="Search talent..."
+                                placeholder={`Search ${entitySingularLower}...`}
                                 className="border-none focus:ring-0 h-12"
                               />
                               <CommandList className="max-h-[300px]">
                                 <CommandEmpty className="py-6 text-center text-sm text-slate-500 font-medium">
-                                  No talent found.
+                                  {`No ${entitySingularLower} found.`}
                                 </CommandEmpty>
                                 <CommandGroup>
                                   {talents.map((t) => {
@@ -619,10 +624,11 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                                               isSelected && "text-indigo-600",
                                             )}
                                           >
-                                            {t.full_name || "Unknown Talent"}
+                                            {t.full_name ||
+                                              `Unknown ${entitySingularTitle}`}
                                           </span>
                                           <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                                            Agency Talent
+                                            {`Agency ${entitySingularTitle}`}
                                           </span>
                                         </div>
                                       </CommandItem>
@@ -635,7 +641,7 @@ export const SubmissionWizard: React.FC<SubmissionWizardProps> = ({
                         </Popover>
                         {errors.talent_name && (
                           <span className="text-red-500 text-xs font-bold px-1">
-                            Please select a talent
+                            {`Please select a ${entitySingularLower}`}
                           </span>
                         )}
                       </div>

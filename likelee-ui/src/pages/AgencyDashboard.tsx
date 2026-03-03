@@ -230,8 +230,13 @@ const STATUS_DOT_COLORS: { [key: string]: string } = {
   declined: "bg-red-500",
 };
 
-const ConnectBankView = () => {
+const ConnectBankView = ({
+  isSportsAgency = false,
+}: {
+  isSportsAgency?: boolean;
+}) => {
   const { toast } = useToast();
+  const entityPluralLower = isSportsAgency ? "athletes" : "talent";
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{
     connected: boolean;
@@ -396,7 +401,7 @@ const ConnectBankView = () => {
           </h2>
           <p className="text-gray-600 font-medium">
             Link your bank account to receive direct payments from clients and
-            manage payouts to talent
+            {`manage payouts to ${entityPluralLower}`}
           </p>
         </div>
         <Button
@@ -421,7 +426,7 @@ const ConnectBankView = () => {
             </h3>
             <p className="text-sm text-gray-600 font-medium mt-1">
               Link your bank account to receive direct payments from clients and
-              manage payouts to talent
+              {`manage payouts to ${entityPluralLower}`}
             </p>
           </div>
 
@@ -1120,8 +1125,13 @@ import { useAuth } from "@/auth/AuthProvider";
 
 // STATUS_MAP is defined earlier in this file; removing duplicate declaration here.
 
-const ConnectBankViewAlt = () => {
+const ConnectBankViewAlt = ({
+  isSportsAgency = false,
+}: {
+  isSportsAgency?: boolean;
+}) => {
   const { toast } = useToast();
+  const entityPluralLower = isSportsAgency ? "athletes" : "talent";
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{
     connected: boolean;
@@ -1195,7 +1205,7 @@ const ConnectBankViewAlt = () => {
           </h2>
           <p className="text-gray-600 font-medium">
             Link your bank account to receive direct payments from clients and
-            manage payouts to talent
+            {`manage payouts to ${entityPluralLower}`}
           </p>
         </div>
         <Button
@@ -1220,7 +1230,7 @@ const ConnectBankViewAlt = () => {
             </h3>
             <p className="text-sm text-gray-600 font-medium mt-1">
               Link your bank account to receive direct payments from clients and
-              manage payouts to talent
+              {`manage payouts to ${entityPluralLower}`}
             </p>
           </div>
 
@@ -3213,7 +3223,15 @@ const ExpenseTrackingView = () => {
   );
 };
 
-const TalentStatementsView = () => {
+const TalentStatementsView = ({
+  isSportsAgency = false,
+}: {
+  isSportsAgency?: boolean;
+}) => {
+  const navigate = useNavigate();
+  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
+  const entityPluralTitle = isSportsAgency ? "Athletes" : "Talent";
+  const entitySingularLower = isSportsAgency ? "athlete" : "talent";
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("amount-high");
   const [hasUnpaidEarnings, setHasUnpaidEarnings] = useState(false);
@@ -3272,7 +3290,7 @@ const TalentStatementsView = () => {
         setStatementLineRows(asArray((statements as any)?.lines));
       } catch (e: any) {
         toast({
-          title: "Failed to load talent statements",
+          title: `Failed to load ${entitySingularLower} statements`,
           description: String(e?.message || e),
           variant: "destructive" as any,
         });
@@ -3405,7 +3423,7 @@ const TalentStatementsView = () => {
     const a = document.createElement("a");
     const stamp = new Date().toISOString().slice(0, 10);
     a.href = url;
-    a.download = `talent-statements-${stamp}.csv`;
+    a.download = `${entitySingularLower}-statements-${stamp}.csv`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -3437,14 +3455,21 @@ const TalentStatementsView = () => {
           <div className="flex items-center gap-4">
             <Button
               variant="outline"
-              onClick={() => setSelectedTalent(null)}
+              onClick={() =>
+                navigate({
+                  pathname: "/AgencyDashboard",
+                  search: `?tab=roster&subTab=${encodeURIComponent(
+                    isSportsAgency ? "All Athletes" : "All Talent",
+                  )}`,
+                })
+              }
               className="h-10 px-4 rounded-xl border-gray-200 font-bold flex items-center gap-2"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to All Talent
+              {`Back to All ${entityPluralTitle}`}
             </Button>
             <h2 className="text-2xl font-bold text-gray-900">
-              Talent Statement - {selectedTalent.name}
+              {`${entitySingularTitle} Statement - ${selectedTalent.name}`}
             </h2>
           </div>
           <div className="flex gap-3">
@@ -3657,7 +3682,7 @@ const TalentStatementsView = () => {
             </div>
             <div className="flex justify-between items-center max-w-md ml-auto pt-3 border-t border-gray-200">
               <span className="text-lg font-bold text-gray-900">
-                Total Talent Net
+                {`Total ${entitySingularTitle} Net`}
               </span>
               <span className="text-lg font-bold text-green-600">
                 {money(totalNetCents, "USD")}
@@ -3674,10 +3699,10 @@ const TalentStatementsView = () => {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
-            Talent Earnings Statements
+            {`${entitySingularTitle} Earnings Statements`}
           </h2>
           <p className="text-gray-600 font-medium">
-            View and manage talent payment statements
+            {`View and manage ${entitySingularLower} payment statements`}
           </p>
         </div>
         <Button
@@ -3695,7 +3720,7 @@ const TalentStatementsView = () => {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
-            placeholder="Search by talent name..."
+            placeholder={`Search by ${entitySingularLower} name...`}
             className="pl-10 h-10 bg-white border-gray-200 rounded-xl text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -7654,10 +7679,15 @@ const GenerateInvoiceView = () => {
 const InvoiceManagementView = ({
   setActiveSubTab,
   activeSubTab,
+  isSportsAgency = false,
 }: {
   setActiveSubTab: (tab: string) => void;
   activeSubTab: string;
+  isSportsAgency?: boolean;
 }) => {
+  const statementsTabLabel = isSportsAgency
+    ? "Athlete Statements"
+    : "Talent Statements";
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -7946,7 +7976,7 @@ const InvoiceManagementView = ({
     { id: "Invoice Management", label: "Invoice Management", icon: FileText },
     { id: "Invoice Generation", label: "Generate Invoice", icon: Plus },
     { id: "Payment Tracking", label: "Payment Tracking", icon: DollarSign },
-    { id: "Talent Statements", label: "Talent Statements", icon: Receipt },
+    { id: statementsTabLabel, label: statementsTabLabel, icon: Receipt },
     { id: "Financial Reports", label: "Financial Reports", icon: BarChart2 },
     { id: "Expense Tracking", label: "Expense Tracking", icon: CreditCard },
     { id: "Connect Bank", label: "Connect Bank", icon: CreditCard },
@@ -9110,6 +9140,7 @@ const PerformanceTiersView = ({ onBack }: { onBack: () => void }) => {
 };
 
 const ScoutingHubView = ({
+  isSportsAgency = false,
   activeTab,
   setActiveTab,
   isEventModalOpen,
@@ -9123,6 +9154,7 @@ const ScoutingHubView = ({
   prospectToEdit,
   setProspectToEdit,
 }: {
+  isSportsAgency?: boolean;
   activeTab: string;
   setActiveTab: (tab: string) => void;
   isEventModalOpen: boolean;
@@ -9138,6 +9170,7 @@ const ScoutingHubView = ({
 }) => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const entityPluralLower = isSportsAgency ? "athlete" : "talent";
 
   const [eventForm, setEventForm] = useState<{
     name: string;
@@ -9176,7 +9209,7 @@ const ScoutingHubView = ({
             Scouting Hub
           </h1>
           <p className="text-gray-500 font-medium text-sm mt-1">
-            Discover, track, and manage talent prospects
+            {`Discover, track, and manage ${entityPluralLower} prospects`}
           </p>
         </div>
         <div className="flex w-full md:w-auto items-center gap-3 overflow-x-auto pb-1">
@@ -15681,7 +15714,13 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
-const RoyaltiesPayoutsView = () => {
+const RoyaltiesPayoutsView = ({
+  isSportsAgency = false,
+}: {
+  isSportsAgency?: boolean;
+}) => {
+  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
+  const entitySingularLower = isSportsAgency ? "athlete" : "talent";
   const [activeTab, setActiveTab] = useState("Commission Structure");
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [eventToEdit, setEventToEdit] = useState<any>(null);
@@ -15993,8 +16032,7 @@ const RoyaltiesPayoutsView = () => {
       <Card className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
         <div className="text-sm font-bold text-gray-900">Payouts and fees</div>
         <div className="text-xs text-gray-700 font-medium mt-1">
-          For licensing requests, platform fees and talent commission will be
-          deducted from the total paid amount.
+          {`For licensing requests, platform fees and ${entitySingularLower} commission will be deducted from the total paid amount.`}
         </div>
       </Card>
 
@@ -16040,7 +16078,9 @@ const RoyaltiesPayoutsView = () => {
           <h3 className="text-3xl font-bold text-gray-900 mb-1">
             {royaltiesData?.paid_ytd_formatted || "$0"}
           </h3>
-          <p className="text-xs font-bold text-gray-400">To Talent This year</p>
+          <p className="text-xs font-bold text-gray-400">
+            {`To ${entitySingularTitle} This year`}
+          </p>
         </Card>
 
         <Card className="p-5 sm:p-8 bg-indigo-50 border border-indigo-200 shadow-sm rounded-xl">
@@ -16091,9 +16131,7 @@ const RoyaltiesPayoutsView = () => {
                   Commission by Performance Tier
                 </h3>
                 <p className="text-sm font-medium text-gray-500 max-w-2xl">
-                  Set different commission rates based on talent performance
-                  tier. Higher-performing talent can earn lower commission rates
-                  as an incentive.
+                  {`Set different commission rates based on ${entitySingularLower} performance tier. Higher-performing ${entitySingularLower} can earn lower commission rates as an incentive.`}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
@@ -16218,11 +16256,11 @@ const RoyaltiesPayoutsView = () => {
             <div className="p-4 sm:p-10 border-b border-gray-100 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
               <div className="space-y-2">
                 <h3 className="text-xl font-bold text-gray-900">
-                  Talent Commission Settings
+                  {`${entitySingularTitle} Commission Settings`}
                 </h3>
                 <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  Set custom commission rates for specific talent when needed
-                  (e.g., special contracts, VIP talent)
+                  {`Set custom commission rates for specific ${entitySingularLower} when needed`}{" "}
+                  {`(e.g., special contracts, VIP ${entitySingularLower})`}
                 </p>
               </div>
               <div className="flex gap-3 w-full sm:w-auto">
@@ -16281,7 +16319,8 @@ const RoyaltiesPayoutsView = () => {
                             </div>
                             <div>
                               <p className="text-sm font-bold text-gray-900">
-                                {item.talent_name || "Unknown Talent"}
+                                {item.talent_name ||
+                                  `Unknown ${entitySingularTitle}`}
                               </p>
                               <div className="flex items-center gap-2 mt-0.5">
                                 <span className="text-[10px] text-gray-400 font-medium">
@@ -16341,7 +16380,7 @@ const RoyaltiesPayoutsView = () => {
                       onClick={() => setShowHistory(false)}
                       className="font-black uppercase tracking-widest text-[9px] h-9 px-6 text-gray-500 hover:text-indigo-600 hover:bg-white rounded-xl transition-all"
                     >
-                      Return to Talent List
+                      {`Return to ${entitySingularTitle} List`}
                     </Button>
                   </div>
                 </div>
@@ -16397,7 +16436,7 @@ const RoyaltiesPayoutsView = () => {
                           />
                         </th>
                         <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                          Talent
+                          {entitySingularTitle}
                         </th>
                         <th className="px-8 py-5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                           Tier
@@ -16578,7 +16617,7 @@ const RoyaltiesPayoutsView = () => {
                   <Calendar className="w-5 h-5" />
                 </div>
                 <p className="text-xs font-black text-indigo-200 uppercase tracking-widest">
-                  YTD Paid to Talent
+                  {`YTD Paid to ${entitySingularTitle}`}
                 </p>
               </div>
               <h3 className="text-3xl font-black text-white mb-2">
@@ -16597,7 +16636,7 @@ const RoyaltiesPayoutsView = () => {
           <Card className="bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden">
             <div className="p-8 border-b border-gray-100">
               <h3 className="text-lg font-bold text-gray-900">
-                Top Earning Talent (Last 30 Days)
+                {`Top Earning ${entitySingularTitle} (Last 30 Days)`}
               </h3>
             </div>
             <div>
@@ -16629,7 +16668,7 @@ const RoyaltiesPayoutsView = () => {
                       </h4>
                       <p className="text-[10px] font-black uppercase tracking-tight">
                         <span className="text-green-600">
-                          Talent: {row.talent_formatted}
+                          {`${entitySingularTitle}: ${row.talent_formatted}`}
                         </span>{" "}
                         •{" "}
                         <span className="text-indigo-600">
@@ -16686,7 +16725,7 @@ const RoyaltiesPayoutsView = () => {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-gray-500">
-                  How often talent receives payouts
+                  {`How often ${entitySingularLower} receives payouts`}
                 </p>
               </div>
               <div className="space-y-2">
@@ -17045,6 +17084,10 @@ export default function AgencyDashboard() {
   const [activeTab, setActiveTabState] = useState(
     searchParams.get("tab") || "dashboard",
   );
+  const normalizeSubTab = (value: string | null | undefined) =>
+    String(value || "")
+      .trim()
+      .replace(/\/+$/g, "");
 
   // Sensible default sub-tab based on tab
   const getDefaultSubTab = (tab: string) => {
@@ -17067,8 +17110,8 @@ export default function AgencyDashboard() {
         return "All Talent";
     }
   };
-  const [activeSubTab, setActiveSubTab] = useState(
-    searchParams.get("subTab") ||
+  const [activeSubTab, setActiveSubTabState] = useState(
+    normalizeSubTab(searchParams.get("subTab")) ||
       getDefaultSubTab(searchParams.get("tab") || "dashboard"),
   );
 
@@ -17094,7 +17137,7 @@ export default function AgencyDashboard() {
     });
 
     setActiveTabState("licensing");
-    setActiveSubTab("License Templates");
+    setActiveSubTabState("License Templates");
 
     toast({
       title: "Redirecting...",
@@ -17240,6 +17283,28 @@ export default function AgencyDashboard() {
     (profile as any)?.logo_url ||
     "";
 
+  const agencyTypeRaw =
+    (agencyProfileQuery.data as any)?.agency_type ||
+    (profile as any)?.agency_type ||
+    "";
+  const normalizedAgencyType = String(agencyTypeRaw)
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_");
+  const isSportsAgency = normalizedAgencyType === "sports_agency";
+  const rosterPrimarySubTab = isSportsAgency ? "All Athletes" : "All Talent";
+  const availabilitySubTab = isSportsAgency
+    ? "Athlete Availability"
+    : "Talent Availability";
+  const statementsSubTab = isSportsAgency
+    ? "Athlete Statements"
+    : "Talent Statements";
+  const packagesTabLabel = isSportsAgency
+    ? "Athlete Packages"
+    : "Talent Packages";
+  const isRosterPrimarySubTab =
+    activeSubTab === "All Talent" || activeSubTab === "All Athletes";
+
   const seatsLimit = useMemo(() => {
     return Number(
       agencyProfileQuery.data?.seats_limit ||
@@ -17266,13 +17331,58 @@ export default function AgencyDashboard() {
     agencyPlanTier === "pro" || agencyPlanTier === "enterprise";
 
   useEffect(() => {
+    if (activeSubTab === "All Talent" && isSportsAgency) {
+      setActiveSubTab("All Athletes");
+      return;
+    }
+    if (activeSubTab === "All Athletes" && !isSportsAgency) {
+      setActiveSubTab("All Talent");
+      return;
+    }
+    if (activeSubTab === "Talent Statements" && isSportsAgency) {
+      setActiveSubTab("Athlete Statements");
+      return;
+    }
+    if (activeSubTab === "Athlete Statements" && !isSportsAgency) {
+      setActiveSubTab("Talent Statements");
+      return;
+    }
+    if (activeSubTab === "Talent Availability" && isSportsAgency) {
+      setActiveSubTab("Athlete Availability");
+      return;
+    }
+    if (activeSubTab === "Athlete Availability" && !isSportsAgency) {
+      setActiveSubTab("Talent Availability");
+    }
+  }, [activeSubTab, isSportsAgency]);
+
+  useEffect(() => {
+    if (activeTab !== "roster") return;
+    const validRosterSubTabs = new Set([
+      "All Talent",
+      "All Athletes",
+      "Performance Tiers",
+    ]);
+    if (!validRosterSubTabs.has(activeSubTab)) {
+      setActiveSubTab(rosterPrimarySubTab);
+    }
+  }, [activeTab, activeSubTab, rosterPrimarySubTab]);
+
+  useEffect(() => {
     if (!user?.id) return;
     if (activeTab !== "roster") return;
-    if (activeSubTab !== "All Talent") return;
+    if (!isRosterPrimarySubTab) return;
     if (!rosterQuery.data) {
       rosterQuery.refetch();
     }
-  }, [activeTab, activeSubTab, user?.id, rosterQuery.data, rosterQuery]);
+  }, [
+    activeTab,
+    activeSubTab,
+    user?.id,
+    rosterQuery.data,
+    rosterQuery,
+    isRosterPrimarySubTab,
+  ]);
   const [activeScoutingTab, setActiveScoutingTabState] = useState(
     searchParams.get("scoutingTab") || "Prospect Pipeline",
   );
@@ -17311,8 +17421,7 @@ export default function AgencyDashboard() {
   const [showCreatePackageWizard, setShowCreatePackageWizard] = useState(false);
 
   const goToEditProfile = () => {
-    setActiveTab("settings");
-    setActiveSubTab("General Settings");
+    setActiveView("settings", "General Settings");
     setSidebarOpen(false);
   };
 
@@ -17553,7 +17662,9 @@ export default function AgencyDashboard() {
         });
         try {
           await notifyBookingCreatedEmail(booking.id);
-          toast({ title: "Talent notified via email" });
+          toast({
+            title: `${isSportsAgency ? "Athlete" : "Talent"} notified via email`,
+          });
         } catch (e) {
           const msg = (e as any)?.message || "Email notification failed";
           toast({ title: "Email notification", description: msg });
@@ -17584,7 +17695,9 @@ export default function AgencyDashboard() {
       try {
         if (row?.id) {
           await notifyBookingCreatedEmail(row.id);
-          toast({ title: "Talent notified via email" });
+          toast({
+            title: `${isSportsAgency ? "Athlete" : "Talent"} notified via email`,
+          });
         }
       } catch (e) {
         const msg = (e as any)?.message || "Email notification failed";
@@ -17595,9 +17708,8 @@ export default function AgencyDashboard() {
         typeof e === "string" ? e : e?.message || "Failed to create booking";
       if (/409/.test(msg) || /unavailable/i.test(msg)) {
         toast({
-          title: "Talent unavailable",
-          description:
-            "This talent is booked out during the selected date. Please choose another date or talent.",
+          title: `${isSportsAgency ? "Athlete" : "Talent"} unavailable`,
+          description: `This ${isSportsAgency ? "athlete" : "talent"} is booked out during the selected date. Please choose another date or ${isSportsAgency ? "athlete" : "talent"}.`,
           variant: "destructive" as any,
         });
         return;
@@ -17664,11 +17776,14 @@ export default function AgencyDashboard() {
   // Wrapper functions to update both state and URL params
   const setAgencyMode = (mode: "AI" | "IRL") => {
     setAgencyModeState(mode);
-    setSearchParams((prev) => {
-      const newParams = new URLSearchParams(prev);
-      newParams.set("mode", mode);
-      return newParams;
-    });
+    setSearchParams(
+      (prev) => {
+        const newParams = new URLSearchParams(prev);
+        newParams.set("mode", mode);
+        return newParams;
+      },
+      { replace: true, preventScrollReset: true },
+    );
   };
 
   useEffect(() => {
@@ -17679,20 +17794,21 @@ export default function AgencyDashboard() {
 
   const setActiveTab = (tab: string) => {
     setActiveTabState(tab);
-    setSearchParams((prev) => {
-      const newParams = new URLSearchParams(prev);
-      newParams.set("tab", tab);
-      return newParams;
-    });
+  };
+
+  const setActiveSubTab = (subTab: string) => {
+    const normalizedSubTab = normalizeSubTab(subTab);
+    setActiveSubTabState(normalizedSubTab);
+  };
+
+  const setActiveView = (tab: string, subTab?: string) => {
+    const resolvedSubTab = normalizeSubTab(subTab) || getDefaultSubTab(tab);
+    setActiveTabState(tab);
+    setActiveSubTabState(resolvedSubTab);
   };
 
   const setActiveScoutingTab = (tab: string) => {
     setActiveScoutingTabState(tab);
-    setSearchParams((prev) => {
-      const newParams = new URLSearchParams(prev);
-      newParams.set("scoutingTab", tab);
-      return newParams;
-    });
   };
 
   // Helper for API URLs
@@ -17808,6 +17924,7 @@ export default function AgencyDashboard() {
       "Invoice Management",
       "Payment Tracking",
       "Talent Statements",
+      "Athlete Statements",
       "Financial Reports",
       "Expense Tracking",
     ]);
@@ -17837,7 +17954,7 @@ export default function AgencyDashboard() {
             id: "roster",
             label: "Roster",
             icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
+            subItems: [rosterPrimarySubTab, "Performance Tiers"],
           },
           {
             id: "licensing",
@@ -17869,7 +17986,7 @@ export default function AgencyDashboard() {
               "Analytics Dashboard": !hasProAccess,
             },
           },
-          { id: "packages", label: "Talent Packages", icon: Package },
+          { id: "packages", label: packagesTabLabel, icon: Package },
           { id: "catalogs", label: "Catalogs", icon: Library },
           {
             id: "settings",
@@ -17885,7 +18002,7 @@ export default function AgencyDashboard() {
             id: "roster",
             label: "Roster",
             icon: Users,
-            subItems: ["All Talent", "Performance Tiers"],
+            subItems: [rosterPrimarySubTab, "Performance Tiers"],
           },
           { id: "scouting", label: "Scouting", icon: Target },
           { id: "client-crm", label: "Client CRM", icon: Building2 },
@@ -17897,7 +18014,7 @@ export default function AgencyDashboard() {
               "Calendar & Schedule",
               "Booking Requests",
               "Client Database",
-              "Talent Availability",
+              availabilitySubTab,
               "Notifications",
               "Management & Analytics",
               "Campaigns",
@@ -17912,7 +18029,7 @@ export default function AgencyDashboard() {
               "Invoice Generation",
               "Invoice Management",
               "Payment Tracking",
-              "Talent Statements",
+              statementsSubTab,
               "Financial Reports",
               "Expense Tracking",
               "Connect Bank",
@@ -17931,7 +18048,7 @@ export default function AgencyDashboard() {
               "Analytics Dashboard": !hasProAccess,
             },
           },
-          { id: "packages", label: "Talent Packages", icon: Package },
+          { id: "packages", label: packagesTabLabel, icon: Package },
           { id: "catalogs", label: "Catalogs", icon: Library },
           {
             id: "settings",
@@ -17940,6 +18057,23 @@ export default function AgencyDashboard() {
             subItems: ["General Settings", "File Storage"],
           },
         ];
+
+  useEffect(() => {
+    const validTabIds = new Set(sidebarItems.map((item) => item.id));
+    if (!validTabIds.has(activeTab)) {
+      setActiveView("dashboard", getDefaultSubTab("dashboard"));
+    }
+  }, [activeTab, sidebarItems]);
+
+  useEffect(() => {
+    const activeItem = sidebarItems.find((item) => item.id === activeTab);
+    if (!activeItem?.subItems || activeItem.subItems.length === 0) return;
+    if (activeItem.subItems.includes(activeSubTab)) return;
+    const firstEnabledSubTab =
+      activeItem.subItems.find((sub) => !activeItem.disabledSubItems?.[sub]) ||
+      activeItem.subItems[0];
+    setActiveView(activeTab, firstEnabledSubTab);
+  }, [activeTab, activeSubTab, sidebarItems]);
 
   return (
     <div className="flex h-screen min-h-[100dvh] bg-gray-50 font-sans text-slate-800">
@@ -17958,8 +18092,7 @@ export default function AgencyDashboard() {
         <div
           className="p-6 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-colors"
           onClick={() => {
-            setActiveTab("settings");
-            setActiveSubTab("General Settings");
+            setActiveView("settings", "General Settings");
             setSidebarOpen(false);
           }}
         >
@@ -18008,10 +18141,10 @@ export default function AgencyDashboard() {
                   }
                   if (item.subItems) {
                     toggleExpanded(item.id);
-                    if (item.id === "settings") {
-                      setActiveTab("settings");
-                      setActiveSubTab("General Settings");
-                    }
+                    const preferredSubTab = item.subItems.includes(activeSubTab)
+                      ? activeSubTab
+                      : item.subItems[0];
+                    setActiveView(item.id, preferredSubTab);
                   } else {
                     setActiveTab(item.id);
                     setSidebarOpen(false);
@@ -18061,8 +18194,7 @@ export default function AgencyDashboard() {
                           setSidebarOpen(false);
                           return;
                         }
-                        setActiveTab(item.id);
-                        setActiveSubTab(subItem);
+                        setActiveView(item.id, subItem);
                         setSidebarOpen(false);
                       }}
                       title={
@@ -18110,7 +18242,7 @@ export default function AgencyDashboard() {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col ml-0 md:ml-64 overflow-hidden transition-all duration-300">
+      <div className="flex-1 flex flex-col ml-0 md:ml-64 overflow-hidden">
         {/* Top Header */}
         <header className="h-16 bg-white/95 backdrop-blur border-b border-gray-200 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-30">
           <Button
@@ -18294,8 +18426,7 @@ export default function AgencyDashboard() {
                       className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group"
                       onClick={() => {
                         setShowProfileMenu(false);
-                        setActiveTab("protection");
-                        setActiveSubTab("Compliance Hub");
+                        setActiveView("protection", "Compliance Hub");
                         setSidebarOpen(false);
                       }}
                     >
@@ -18313,8 +18444,7 @@ export default function AgencyDashboard() {
                       className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group"
                       onClick={() => {
                         setShowProfileMenu(false);
-                        setActiveTab("settings");
-                        setActiveSubTab("General Settings");
+                        setActiveView("settings", "General Settings");
                         setSidebarOpen(false);
                       }}
                     >
@@ -18360,7 +18490,9 @@ export default function AgencyDashboard() {
                 autoFocus
                 value={headerSearchValue}
                 onChange={(e) => setHeaderSearchValue(e.target.value)}
-                placeholder="Search talent..."
+                placeholder={
+                  isSportsAgency ? "Search athlete..." : "Search talent..."
+                }
               />
               <div className="flex justify-end gap-2">
                 <Button
@@ -18374,8 +18506,7 @@ export default function AgencyDashboard() {
                     const q = headerSearchValue.trim();
                     setShowHeaderSearch(false);
                     if (!q) return;
-                    setActiveTab("roster");
-                    setActiveSubTab("All Talent");
+                    setActiveView("roster", rosterPrimarySubTab);
                     setSearchTerm(q);
                     setSidebarOpen(false);
                   }}
@@ -18478,9 +18609,10 @@ export default function AgencyDashboard() {
         </Dialog>
 
         {/* Dynamic Dashboard Content */}
-        <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-8 bg-gray-50">
+        <main className="flex-1 min-h-0 overflow-y-scroll overflow-x-hidden px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-8 bg-gray-50">
           {activeTab === "dashboard" && (
             <AgencyDashboardView
+              isSportsAgency={isSportsAgency}
               onKYC={handleKYC}
               agencyName={agencyName}
               rosterData={rosterTalents}
@@ -18496,7 +18628,7 @@ export default function AgencyDashboard() {
               refreshLoading={kycStatusRefreshing}
             />
           )}
-          {activeTab === "roster" && activeSubTab === "All Talent" && (
+          {activeTab === "roster" && isRosterPrimarySubTab && (
             <AgencyRosterView
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
@@ -18521,20 +18653,74 @@ export default function AgencyDashboard() {
               seatsLimit={seatsLimit}
               isLoading={rosterQuery.isLoading}
               onRosterChanged={() => rosterQuery.refetch()}
+              isSportsAgency={isSportsAgency}
             />
           )}
           {activeTab === "roster" && activeSubTab === "Performance Tiers" && (
-            <PerformanceTiers />
+            <PerformanceTiers isSportsAgency={isSportsAgency} />
           )}
           {activeTab === "licensing" &&
-            activeSubTab === "Licensing Requests" && <LicensingRequestsView />}
+            activeSubTab === "Licensing Requests" && (
+              <LicensingRequestsView isSportsAgency={isSportsAgency} />
+            )}
           {activeTab === "licensing" &&
-            activeSubTab === "License Submissions" && <LicenseSubmissionsTab />}
+            activeSubTab === "License Submissions" && (
+              <LicenseSubmissionsTab isSportsAgency={isSportsAgency} />
+            )}
           {activeTab === "licensing" && activeSubTab === "Active Licenses" && (
-            <ActiveLicensesView onRenew={handleRenew} />
+            <ActiveLicensesView
+              onRenew={handleRenew}
+              isSportsAgency={isSportsAgency}
+            />
           )}
           {activeTab === "licensing" &&
-            activeSubTab === "License Templates" && <LicenseTemplatesTab />}
+            activeSubTab === "License Templates" && (
+              <LicenseTemplatesTab isSportsAgency={isSportsAgency} />
+            )}
+          {activeTab === "protection" &&
+            activeSubTab === "Protect & Usage" &&
+            (hasProAccess ? (
+              <ProtectionUsageView />
+            ) : (
+              <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                <div className="text-lg font-black text-gray-900">
+                  Upgrade required
+                </div>
+                <div className="text-gray-500 font-medium mt-1">
+                  Protection & Usage is available on the Pro plan.
+                </div>
+                <div className="mt-4">
+                  <Button
+                    className="rounded-xl font-bold"
+                    onClick={() => navigate("/agencysubscribe")}
+                  >
+                    View plans
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          {activeTab === "protection" &&
+            activeSubTab === "Compliance Hub" &&
+            (hasProAccess ? (
+              <ComplianceHubView />
+            ) : (
+              <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
+                <div className="text-lg font-black text-gray-900">
+                  Upgrade required
+                </div>
+                <div className="text-gray-500 font-medium mt-1">
+                  Compliance Hub is available on the Pro plan.
+                </div>
+                <div className="mt-4">
+                  <Button
+                    className="rounded-xl font-bold"
+                    onClick={() => navigate("/agencysubscribe")}
+                  >
+                    View plans
+                  </Button>
+                </div>
+              </Card>
+            ))}
           {activeTab === "protection" && activeSubTab === "Protect & Usage" && (
             <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
               <div className="text-lg font-black text-gray-900">
@@ -18592,10 +18778,18 @@ export default function AgencyDashboard() {
               </Card>
             ))}
           {activeTab === "analytics" &&
-            activeSubTab === "Royalties & Payouts" && <RoyaltiesPayoutsView />}
-          {activeTab === "packages" && <PackagesView />}
-          {activeTab === "catalogs" && <CatalogsView />}
-          {activeTab === "payouts" && <ConnectBankView />}
+            activeSubTab === "Royalties & Payouts" && (
+              <RoyaltiesPayoutsView isSportsAgency={isSportsAgency} />
+            )}
+          {activeTab === "packages" && (
+            <PackagesView isSportsAgency={isSportsAgency} />
+          )}
+          {activeTab === "catalogs" && (
+            <CatalogsView isSportsAgency={isSportsAgency} />
+          )}
+          {activeTab === "payouts" && (
+            <ConnectBankView isSportsAgency={isSportsAgency} />
+          )}
           {activeTab === "settings" && activeSubTab === "General Settings" && (
             <GeneralSettingsView />
           )}
@@ -18604,6 +18798,7 @@ export default function AgencyDashboard() {
           )}
           {activeTab === "scouting" && (
             <ScoutingHubView
+              isSportsAgency={isSportsAgency}
               activeTab={activeScoutingTab}
               setActiveTab={setActiveScoutingTab}
               isEventModalOpen={isEventModalOpen}
@@ -18631,20 +18826,27 @@ export default function AgencyDashboard() {
               bookOuts={bookOuts}
               onAddBookOut={onAddBookOut}
               onRemoveBookOut={onRemoveBookOut}
+              isSportsAgency={isSportsAgency}
             />
           )}
           {activeTab === "accounting" && (
             <div>
-              {activeSubTab === "Connect Bank" && <ConnectBankView />}
+              {activeSubTab === "Connect Bank" && (
+                <ConnectBankView isSportsAgency={isSportsAgency} />
+              )}
               {activeSubTab === "Invoice Generation" && <GenerateInvoiceView />}
               {activeSubTab === "Invoice Management" && (
                 <InvoiceManagementView
                   setActiveSubTab={setActiveSubTab}
                   activeSubTab={activeSubTab}
+                  isSportsAgency={isSportsAgency}
                 />
               )}
               {activeSubTab === "Payment Tracking" && <PaymentTrackingView />}
-              {activeSubTab === "Talent Statements" && <TalentStatementsView />}
+              {(activeSubTab === "Talent Statements" ||
+                activeSubTab === "Athlete Statements") && (
+                <TalentStatementsView isSportsAgency={isSportsAgency} />
+              )}
               {activeSubTab === "Financial Reports" &&
                 (hasProAccess ? (
                   <FinancialReportsView />

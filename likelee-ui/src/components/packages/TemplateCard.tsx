@@ -22,6 +22,7 @@ interface TemplateCardProps {
   onEdit: () => void;
   onSend: () => void;
   onDelete: () => void;
+  isSportsAgency?: boolean;
 }
 
 export function TemplateCard({
@@ -29,7 +30,9 @@ export function TemplateCard({
   onEdit,
   onSend,
   onDelete,
+  isSportsAgency = false,
 }: TemplateCardProps) {
+  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const talentCount = template.items?.length || 0;
   const coverImage = template.cover_image_url;
 
@@ -84,7 +87,7 @@ export function TemplateCard({
                   variant="secondary"
                   className="bg-white/70 text-slate-700 border-white/60 font-bold text-xs mt-1 shadow-sm"
                 >
-                  {talentCount} Talent{talentCount !== 1 ? "s" : ""}
+                  {`${talentCount} ${entitySingularTitle}${talentCount !== 1 ? "s" : ""}`}
                 </Badge>
               </div>
             </div>

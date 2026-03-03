@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -130,6 +131,7 @@ const CompCardModal = ({
         data: { session },
       } = await supabase.auth.getSession();
       if (!session) {
+        await supabase.auth.signOut();
         toast({
           title: "Not signed in",
           description:
@@ -137,13 +139,6 @@ const CompCardModal = ({
           variant: "destructive",
         });
         throw new Error("Not authenticated");
-      }
-
-      // Best-effort refresh: can resolve stale sessions in long-running dev sessions.
-      try {
-        await supabase.auth.refreshSession();
-      } catch {
-        // ignore; we'll handle failures below
       }
 
       const {
@@ -364,6 +359,9 @@ const CompCardModal = ({
       cacheBust: true,
       backgroundColor: "#ffffff",
       pixelRatio,
+      // Prevent CSP-blocked Google font fetch attempts during export.
+      fontEmbedCSS: "",
+      preferredFontFormat: undefined,
     });
   };
 
@@ -410,6 +408,9 @@ const CompCardModal = ({
           <DialogTitle className="text-2xl font-bold">
             Comp Card Generator
           </DialogTitle>
+          <DialogDescription>
+            Create, export, and share comp cards with selected clients.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-1 flex-col lg:flex-row overflow-hidden">
@@ -978,6 +979,9 @@ const ShareCompCardDialog = ({
           <DialogTitle className="text-xl font-bold">
             Share Comp Card
           </DialogTitle>
+          <DialogDescription>
+            Select clients and send the comp card link.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">

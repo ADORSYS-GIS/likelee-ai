@@ -26,12 +26,16 @@ export const AddBookOutModal = ({
   onOpenChange,
   onAdd,
   fixedTalent,
+  isSportsAgency = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAdd: (bookOut: any) => void;
   fixedTalent?: { id: string; name: string };
+  isSportsAgency?: boolean;
 }) => {
+  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
+  const entitySingularLower = isSportsAgency ? "athlete" : "talent";
   const [reason, setReason] = useState("personal");
   const [talentId, setTalentId] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -103,10 +107,10 @@ export const AddBookOutModal = ({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">
-            Talent Availability & Book-Outs
+            {`${entitySingularTitle} Availability & Book-Outs`}
           </DialogTitle>
           <DialogDescription>
-            Manage when talent is unavailable for bookings
+            {`Manage when ${entitySingularLower} is unavailable for bookings`}
           </DialogDescription>
         </DialogHeader>
 
@@ -128,13 +132,13 @@ export const AddBookOutModal = ({
           </div>
 
           <div className="space-y-2">
-            <Label className="font-bold">Talent *</Label>
+            <Label className="font-bold">{`${entitySingularTitle} *`}</Label>
             {fixedTalent?.id ? (
               <Input value={fixedTalent.name} readOnly className="bg-gray-50" />
             ) : (
               <Select value={talentId} onValueChange={setTalentId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select talent" />
+                  <SelectValue placeholder={`Select ${entitySingularLower}`} />
                 </SelectTrigger>
                 <SelectContent>
                   {talents.map((talent) => (
@@ -187,7 +191,7 @@ export const AddBookOutModal = ({
             <Label htmlFor="notify" className="font-normal cursor-pointer">
               {fixedTalent?.id
                 ? "Notify agency via email"
-                : "Notify talent via email"}
+                : `Notify ${entitySingularLower} via email`}
             </Label>
           </div>
         </div>

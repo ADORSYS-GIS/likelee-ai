@@ -51,7 +51,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-export function PackagesView() {
+export function PackagesView({
+  isSportsAgency = false,
+}: {
+  isSportsAgency?: boolean;
+}) {
+  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
+  const entitySingularLower = isSportsAgency ? "athlete" : "talent";
   const [activeTab, setActiveTab] = useState<"templates" | "sent">("templates");
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 8;
@@ -254,7 +260,7 @@ export function PackagesView() {
           <p className="text-gray-500 font-medium mt-2 mb-8">
             {activeTab === "templates"
               ? "Create reusable templates to send to multiple clients."
-              : "Start by creating your first talent portfolio for a client."}
+              : `Start by creating your first ${entitySingularLower} portfolio for a client.`}
           </p>
           <Button
             onClick={() => {
@@ -274,6 +280,7 @@ export function PackagesView() {
               <TemplateCard
                 key={template.id}
                 template={template}
+                isSportsAgency={isSportsAgency}
                 onEdit={() => {
                   setWizardMode("template");
                   fetchFullPackageMutation.mutate(template.id);
@@ -375,7 +382,7 @@ export function PackagesView() {
                       </div>
                     )}
                     <div className="absolute top-2 left-2 px-2 py-1 rounded-full bg-blue-100 text-blue-800 border border-blue-200 text-[9px] font-black uppercase tracking-wider">
-                      {pkg.items?.length || 0} Talent
+                      {`${pkg.items?.length || 0} ${entitySingularTitle}`}
                     </div>
                   </div>
 
@@ -499,6 +506,7 @@ export function PackagesView() {
         }}
         packageToEdit={editingPackage}
         mode={wizardMode}
+        isSportsAgency={isSportsAgency}
         onSuccess={() => {
           setShowWizard(false);
           setEditingPackage(null);

@@ -23,9 +23,13 @@ import { ComplianceRenewableLicense } from "@/types/licensing";
 
 const ActiveLicensesView = ({
   onRenew,
+  isSportsAgency = false,
 }: {
   onRenew: (license: ComplianceRenewableLicense) => void;
+  isSportsAgency?: boolean;
 }) => {
+  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
+  const entitySingularLower = isSportsAgency ? "athlete" : "talent";
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
   const [selectedLicense, setSelectedLicense] = useState<any>(null);
@@ -87,7 +91,7 @@ const ActiveLicensesView = ({
             Active Licenses
           </h2>
           <p className="text-gray-500 font-medium">
-            Manage all talent licensing agreements
+            {`Manage all ${entitySingularLower} licensing agreements`}
           </p>
         </div>
         <Button
@@ -159,7 +163,7 @@ const ActiveLicensesView = ({
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by talent, brand, or license type..."
+              placeholder={`Search by ${entitySingularLower}, brand, or license type...`}
               className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium"
             />
           </div>
@@ -183,7 +187,7 @@ const ActiveLicensesView = ({
             <thead>
               <tr className="bg-gray-50/50 border-b border-gray-100">
                 <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  Talent
+                  {entitySingularTitle}
                 </th>
                 <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                   License Type
@@ -361,6 +365,7 @@ const ActiveLicensesView = ({
         open={isDetailsOpen}
         onClose={() => setIsDetailsOpen(false)}
         onRenew={handleRenew}
+        isSportsAgency={isSportsAgency}
       />
     </div>
   );

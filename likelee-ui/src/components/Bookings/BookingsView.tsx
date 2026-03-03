@@ -31,6 +31,7 @@ export const BookingsView = ({
   onCancelBooking,
   fixedTalent,
   disableBookingEdits,
+  isSportsAgency = false,
 }: {
   activeSubTab: string;
   bookings: any[];
@@ -42,7 +43,12 @@ export const BookingsView = ({
   onRemoveBookOut: (id: string) => void;
   fixedTalent?: { id: string; name: string };
   disableBookingEdits?: boolean;
+  isSportsAgency?: boolean;
 }) => {
+  const availabilitySubTab = isSportsAgency
+    ? "Athlete Availability"
+    : "Talent Availability";
+
   if (activeSubTab === "Calendar & Schedule")
     return (
       <CalendarScheduleTab
@@ -55,21 +61,29 @@ export const BookingsView = ({
         onRemoveBookOut={onRemoveBookOut}
         fixedTalent={fixedTalent}
         disableBookingEdits={disableBookingEdits}
+        isSportsAgency={isSportsAgency}
       />
     );
   if (activeSubTab === "Booking Requests") return <BookingRequestsTab />;
   if (activeSubTab === "Client Database") return <ClientDatabaseTab />;
-  if (activeSubTab === "Talent Availability")
+  if (
+    activeSubTab === "Talent Availability" ||
+    activeSubTab === "Athlete Availability" ||
+    activeSubTab === availabilitySubTab
+  )
     return (
       <TalentAvailabilityTab
         bookOuts={bookOuts}
         onAddBookOut={onAddBookOut}
         onRemoveBookOut={onRemoveBookOut}
         fixedTalent={fixedTalent}
+        isSportsAgency={isSportsAgency}
       />
     );
   if (activeSubTab === "Notifications")
-    return <NotificationsTab bookings={bookings} />;
+    return (
+      <NotificationsTab bookings={bookings} isSportsAgency={isSportsAgency} />
+    );
   if (activeSubTab === "Management & Analytics")
     return <ManagementAnalyticsView bookings={bookings} />;
   if (activeSubTab === "Campaigns") return <CampaignsTab />;

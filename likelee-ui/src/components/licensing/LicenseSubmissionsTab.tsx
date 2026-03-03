@@ -47,7 +47,11 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 
-export const LicenseSubmissionsTab = () => {
+export const LicenseSubmissionsTab = ({
+  isSportsAgency: _isSportsAgency = false,
+}: {
+  isSportsAgency?: boolean;
+}) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
