@@ -18701,7 +18701,6 @@ export default function AgencyDashboard() {
                 </div>
               </Card>
             ))}
-            activeSubTab === "License Templates" && <LicenseTemplatesTab />}
           {activeTab === "protection" && activeSubTab === "Protect & Usage" && (
             <Card className="p-6 bg-white border border-gray-200 rounded-2xl">
               <div className="text-lg font-black text-gray-900">

@@ -153,7 +153,9 @@ export default function AddTalent() {
     });
   }, [formData.photos]);
 
-  const roleCategories = ["Model", "Actor", "Creator", "Voice", "Athlete"];
+  const roleCategories = isSportsAgency
+    ? ["Actor", "Creator", "Voice", "Athlete"]
+    : ["Model", "Actor", "Creator", "Voice"];
 
   const fileInputRef = useRef(null);
   const photoInputRef = useRef(null);
