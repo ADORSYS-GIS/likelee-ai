@@ -79,6 +79,7 @@ export function CreatePackageWizard({
     { id: "basic", title: "Basic Info", icon: Type },
     { id: "talent", title: `Select ${entityPluralTitle}`, icon: User },
     { id: "custom", title: "Customize", icon: Palette },
+    { id: "consent", title: "Consents", icon: ShieldCheck },
     { id: "send", title: "Send", icon: Send },
   ];
   const [step, setStep] = useState(0);
@@ -95,7 +96,7 @@ export function CreatePackageWizard({
   const queryClient = useQueryClient();
   const isEditMode = !!packageToEdit && mode !== "send-from-template";
   const isTemplateMode = mode === "template";
-  const totalSteps = isTemplateMode ? 3 : 4; // Templates only have 3 steps
+  const totalSteps = isTemplateMode ? 4 : 5; // Templates end on Consents; packages add Send
 
   const initialFormData = {
     title: "",
@@ -108,10 +109,11 @@ export function CreatePackageWizard({
     allow_favorites: true,
     allow_callbacks: true,
     consent_items: [
-      "Use selected assets only for the approved campaign scope.",
-      "Do not edit assets in a misleading or defamatory way.",
-      "Do not sublicense, resell, or redistribute raw assets.",
-      "Stop usage immediately after package/license expiry.",
+      "Use each selected asset only for the approved campaign objective and channels.",
+      "Do not alter the athlete's/talent's likeness in misleading, harmful, or defamatory ways.",
+      "Do not sublicense, resell, transfer, or share raw files with third parties.",
+      "Do not use the assets for political, adult, tobacco, gambling, or illegal content.",
+      "Stop all usage immediately after package or license expiry unless renewed in writing.",
     ],
     password_protected: false,
     password: "",
@@ -227,6 +229,17 @@ export function CreatePackageWizard({
       return toast({
         title: "Empty",
         description: `Please select at least one ${entitySingularLower}`,
+        variant: "destructive",
+      });
+    if (
+      step === 3 &&
+      (formData.consent_items || [])
+        .map((item: string) => item.trim())
+        .filter(Boolean).length === 0
+    )
+      return toast({
+        title: "Consent Required",
+        description: "Add at least one consent point before continuing.",
         variant: "destructive",
       });
 
@@ -390,7 +403,7 @@ export function CreatePackageWizard({
                         {s.title}
                       </span>
                     </div>
-                    {i < steps.length - 1 && (
+                    {i < totalSteps - 1 && (
                       <div className="flex-1 mx-3 sm:mx-6 h-1 bg-gray-300 min-w-6 sm:min-w-12" />
                     )}
                   </React.Fragment>
@@ -760,6 +773,57 @@ export function CreatePackageWizard({
                 )}
 
                 {step === 3 && (
+                  <div className="max-w-2xl space-y-4 border border-gray-200 rounded-2xl p-5 bg-gray-50/40 mx-auto w-full">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest">
+                          Consent Checklist
+                        </h4>
+                        <p className="text-xs text-gray-500 font-medium mt-1">
+                          Default points are prefilled. Edit, remove, or add
+                          custom points for this package.
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        onClick={addConsentItem}
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-3 text-xs font-bold"
+                      >
+                        <Plus className="w-3.5 h-3.5 mr-1" />
+                        Add Point
+                      </Button>
+                    </div>
+                    <div className="space-y-2">
+                      {(formData.consent_items || []).map(
+                        (item: string, idx: number) => (
+                          <div key={`consent-${idx}`} className="flex gap-2">
+                            <Input
+                              value={item}
+                              onChange={(e) =>
+                                updateConsentItem(idx, e.target.value)
+                              }
+                              placeholder={`Consent point ${idx + 1}`}
+                              className="h-10 bg-white border-gray-200"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              onClick={() => removeConsentItem(idx)}
+                              className="h-10 w-10 border-gray-200"
+                            >
+                              <Trash2 className="w-4 h-4 text-red-600" />
+                            </Button>
+                          </div>
+                        ),
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {step === 4 && (
                   <div className="max-w-2xl space-y-10 py-4 mx-auto w-full">
                     <div className="space-y-6">
                       <div className="space-y-1">
@@ -804,54 +868,6 @@ export function CreatePackageWizard({
                             className="h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
                           />
                         </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4 border border-gray-200 rounded-2xl p-5 bg-gray-50/40">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest">
-                            Consent Checklist
-                          </h4>
-                          <p className="text-xs text-gray-500 font-medium mt-1">
-                            Client must check all points to complete consent.
-                          </p>
-                        </div>
-                        <Button
-                          type="button"
-                          onClick={addConsentItem}
-                          variant="outline"
-                          size="sm"
-                          className="h-8 px-3 text-xs font-bold"
-                        >
-                          <Plus className="w-3.5 h-3.5 mr-1" />
-                          Add Point
-                        </Button>
-                      </div>
-                      <div className="space-y-2">
-                        {(formData.consent_items || []).map(
-                          (item: string, idx: number) => (
-                            <div key={`${idx}-${item}`} className="flex gap-2">
-                              <Input
-                                value={item}
-                                onChange={(e) =>
-                                  updateConsentItem(idx, e.target.value)
-                                }
-                                placeholder={`Consent point ${idx + 1}`}
-                                className="h-10 bg-white border-gray-200"
-                              />
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="icon"
-                                onClick={() => removeConsentItem(idx)}
-                                className="h-10 w-10 border-gray-200"
-                              >
-                                <Trash2 className="w-4 h-4 text-red-600" />
-                              </Button>
-                            </div>
-                          ),
-                        )}
                       </div>
                     </div>
 

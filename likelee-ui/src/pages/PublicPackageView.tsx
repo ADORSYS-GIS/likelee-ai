@@ -71,11 +71,6 @@ export function PublicPackageView() {
   const [consentChecks, setConsentChecks] = useState<Record<string, boolean>>(
     {},
   );
-  const [initialConsentClientName, setInitialConsentClientName] = useState("");
-  const [initialConsentClientEmail, setInitialConsentClientEmail] =
-    useState("");
-  const [consentClientName, setConsentClientName] = useState("");
-  const [consentClientEmail, setConsentClientEmail] = useState("");
   const [pendingNotes, setPendingNotes] = useState<
     Record<string, { comment: string; clientName: string }>
   >({});
@@ -314,12 +309,6 @@ export function PublicPackageView() {
       }
       setInitialConsentChecks(nextConsent);
       setConsentChecks(nextConsent);
-      const cName = String(consentInteraction?.client_name || "");
-      const cEmail = String(consentInteraction?.client_email || "");
-      setInitialConsentClientName(cName);
-      setInitialConsentClientEmail(cEmail);
-      setConsentClientName(cName);
-      setConsentClientEmail(cEmail);
     }
   }, [packageData, consentItems, consentInteraction]);
 
@@ -472,17 +461,13 @@ export function PublicPackageView() {
     );
     const consentChecksChanged =
       JSON.stringify(initialConsentChecks) !== JSON.stringify(consentChecks);
-    const consentSignerChanged =
-      initialConsentClientName !== consentClientName ||
-      initialConsentClientEmail !== consentClientEmail;
 
     return (
       favoritesChanged ||
       callbacksChanged ||
       selectionsChanged ||
       notesChanged ||
-      consentChecksChanged ||
-      consentSignerChanged
+      consentChecksChanged
     );
   }, [
     selectedFavorites,
@@ -494,10 +479,6 @@ export function PublicPackageView() {
     initialSelections,
     initialConsentChecks,
     consentChecks,
-    initialConsentClientName,
-    consentClientName,
-    initialConsentClientEmail,
-    consentClientEmail,
   ]);
 
   const submitConsent = async () => {
@@ -520,8 +501,6 @@ export function PublicPackageView() {
           checked_count: acceptedItems.length,
           total_count: consentItems.length,
         }),
-        client_name: consentClientName.trim() || undefined,
-        client_email: consentClientEmail.trim() || undefined,
       });
       await queryClient.invalidateQueries({
         queryKey: ["public-package", token],
@@ -801,22 +780,6 @@ export function PublicPackageView() {
                   <span className="text-sm text-gray-700">{item}</span>
                 </label>
               ))}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Input
-                placeholder="Your Name (optional)"
-                value={consentClientName}
-                disabled={isPackageExpired}
-                onChange={(e) => setConsentClientName(e.target.value)}
-              />
-              <Input
-                type="email"
-                placeholder="Your Email (optional)"
-                value={consentClientEmail}
-                disabled={isPackageExpired}
-                onChange={(e) => setConsentClientEmail(e.target.value)}
-              />
             </div>
 
             <div className="flex justify-end">

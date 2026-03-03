@@ -126,6 +126,15 @@ const RosterView = ({
   const singularTitleLabel = isSportsAgency ? "Athlete" : "Talent";
   const pluralTitleLabel = isSportsAgency ? "Athletes" : "Talents";
   const allRosterFilterLabel = isSportsAgency ? "All Athletes" : "All Talent";
+  const getConsentStatus = (talent: any) => {
+    const raw = String(talent?.consent_status || talent?.consent || "")
+      .trim()
+      .toLowerCase();
+    if (raw === "complete" || raw === "missing" || raw === "expired") {
+      return raw;
+    }
+    return "missing";
+  };
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteSearch, setInviteSearch] = useState("");
@@ -1236,6 +1245,26 @@ const RosterView = ({
                             </div>
                           )}
                         </div>
+                        <div className="mt-3">
+                          <div className="text-xs text-gray-500">Consent</div>
+                          {(() => {
+                            const status = getConsentStatus(talent);
+                            const statusClasses =
+                              status === "complete"
+                                ? "bg-green-100 text-green-700"
+                                : status === "expired"
+                                  ? "bg-red-100 text-red-700"
+                                  : "bg-yellow-100 text-yellow-700";
+                            return (
+                              <Badge
+                                variant="secondary"
+                                className={`mt-1 border-none text-[10px] font-bold uppercase ${statusClasses}`}
+                              >
+                                {status}
+                              </Badge>
+                            );
+                          })()}
+                        </div>
                       </button>
                     ))
                   )}
@@ -1282,6 +1311,9 @@ const RosterView = ({
                             <ArrowUpDown className="w-3 h-3 text-gray-500" />
                           </button>
                         </th>
+                        <th className="px-6 py-4 text-xs font-bold text-gray-900 uppercase tracking-wide">
+                          Consent
+                        </th>
                         {isSportsAgency ? (
                           <>
                             <th className="px-6 py-4 text-xs font-bold text-gray-900 uppercase tracking-wide">
@@ -1325,11 +1357,11 @@ const RosterView = ({
                             colSpan={
                               agencyMode === "AI"
                                 ? isSportsAgency
-                                  ? 9
-                                  : 8
+                                  ? 10
+                                  : 9
                                 : isSportsAgency
-                                  ? 4
-                                  : 3
+                                  ? 5
+                                  : 4
                             }
                             className="px-6 py-10"
                           >
@@ -1345,11 +1377,11 @@ const RosterView = ({
                             colSpan={
                               agencyMode === "AI"
                                 ? isSportsAgency
-                                  ? 9
-                                  : 8
+                                  ? 10
+                                  : 9
                                 : isSportsAgency
-                                  ? 4
-                                  : 3
+                                  ? 5
+                                  : 4
                             }
                             className="px-6 py-10"
                           >
@@ -1436,6 +1468,25 @@ const RosterView = ({
                           )}
                           <td className="px-6 py-4 text-sm font-medium">
                             {talent.followers || "0"}
+                          </td>
+                          <td className="px-6 py-4 text-sm font-medium">
+                            {(() => {
+                              const status = getConsentStatus(talent);
+                              const statusClasses =
+                                status === "complete"
+                                  ? "bg-green-100 text-green-700"
+                                  : status === "expired"
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-yellow-100 text-yellow-700";
+                              return (
+                                <Badge
+                                  variant="secondary"
+                                  className={`border-none text-[10px] font-bold uppercase ${statusClasses}`}
+                                >
+                                  {status}
+                                </Badge>
+                              );
+                            })()}
                           </td>
                           {isSportsAgency ? (
                             <>

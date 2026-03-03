@@ -411,7 +411,7 @@ export const PackageFeedbackDialog: React.FC<PackageFeedbackDialogProps> = ({
                           </div>
                         )}
 
-                        {commentText && (
+                        {!isConsent && commentText && (
                           <div className="text-sm text-gray-600 bg-yellow-50/50 p-3 rounded-lg border border-yellow-100/50 flex gap-3 items-start">
                             <MessageSquare className="w-4 h-4 text-yellow-600 mt-0.5 shrink-0" />
                             <p className="italic">"{commentText}"</p>
