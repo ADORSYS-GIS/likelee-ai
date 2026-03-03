@@ -1856,6 +1856,18 @@ const RosterView = ({
                                 const res: any = await createAgencyTalentInvite(
                                   { email },
                                 );
+                                if (
+                                  String(res?.invite_status || "") ===
+                                  "already_connected"
+                                ) {
+                                  toast({
+                                    title: "Already connected",
+                                    description:
+                                      "This creator is already connected to your agency. No new invite was sent.",
+                                  });
+                                  await refreshTalentInvites();
+                                  return;
+                                }
                                 toast({
                                   title: "Portal invite sent",
                                   description: `Invitation sent to ${email}`,
@@ -1997,10 +2009,21 @@ const RosterView = ({
                           disabled={inviteSending}
                           onClick={async () => {
                             try {
-                              await createAgencyTalentInvite({
+                              const res: any = await createAgencyTalentInvite({
                                 email: String(inv.email || ""),
                               });
-                              toast({ title: "Re-invited" });
+                              if (
+                                String(res?.invite_status || "") ===
+                                "already_connected"
+                              ) {
+                                toast({
+                                  title: "Already connected",
+                                  description:
+                                    "This creator is already connected to your agency. No new invite was sent.",
+                                });
+                              } else {
+                                toast({ title: "Re-invited" });
+                              }
                               await refreshTalentInvites();
                             } catch (e: any) {
                               toast({

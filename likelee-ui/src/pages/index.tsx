@@ -259,6 +259,8 @@ function AppRoutes() {
   const location = useLocation();
   const isPublicPackage = location.pathname.startsWith("/share/package/");
   const isPublicCatalog = location.pathname.startsWith("/share/catalog/");
+  const isInviteFlow = location.pathname.startsWith("/invite/agency/");
+  const isPasswordRecoveryFlow = location.pathname === "/update-password";
 
   const currentPage = _getCurrentPage(location.pathname);
 
@@ -542,6 +544,10 @@ function AppRoutes() {
         <Route path="/share/package/:token" element={<PublicPackageView />} />
       </Routes>
     );
+  }
+
+  if (isInviteFlow || isPasswordRecoveryFlow) {
+    return routes;
   }
 
   return <Layout currentPageName={currentPage}>{routes}</Layout>;

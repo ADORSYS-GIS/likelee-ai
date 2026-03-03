@@ -859,34 +859,133 @@ export default function CreatorDashboard() {
     };
   }, [initialized, authenticated]);
 
-  // Helper functions to get translated arrays
+  const resolveTranslation = (key: string, fallback: string) => {
+    const resolved = t(key, { defaultValue: "" });
+    if (resolved && resolved !== key) return resolved;
+    return fallback;
+  };
+
+  // Helper functions to get translated arrays (with robust fallback chain)
   const getTranslatedContentTypes = () => [
-    t("creatorDashboard.contentTypes.socialMediaAds"),
-    t("creatorDashboard.contentTypes.webBannerCampaigns"),
-    t("creatorDashboard.contentTypes.tvStreamingCommercials"),
-    t("creatorDashboard.contentTypes.filmScriptedStreaming"),
-    t("creatorDashboard.contentTypes.printOutdoorAds"),
-    t("creatorDashboard.contentTypes.musicVideos"),
-    t("creatorDashboard.contentTypes.videoGameVRCharacters"),
-    t("creatorDashboard.contentTypes.stockPhotoVideoLibraries"),
-    t("creatorDashboard.contentTypes.educationalNonprofitSpots"),
+    resolveTranslation(
+      "creatorDashboard.contentTypes.socialMediaAds",
+      resolveTranslation(
+        "content.contentTypes.socialMediaAds",
+        CONTENT_TYPES[0],
+      ),
+    ),
+    resolveTranslation(
+      "creatorDashboard.contentTypes.webBannerCampaigns",
+      resolveTranslation(
+        "content.contentTypes.webBannerCampaigns",
+        CONTENT_TYPES[1],
+      ),
+    ),
+    resolveTranslation(
+      "creatorDashboard.contentTypes.tvStreamingCommercials",
+      resolveTranslation(
+        "content.contentTypes.tvStreamingCommercials",
+        CONTENT_TYPES[2],
+      ),
+    ),
+    resolveTranslation(
+      "creatorDashboard.contentTypes.filmScriptedStreaming",
+      resolveTranslation(
+        "content.contentTypes.filmScriptedStreaming",
+        CONTENT_TYPES[3],
+      ),
+    ),
+    resolveTranslation(
+      "creatorDashboard.contentTypes.printOutdoorAds",
+      resolveTranslation(
+        "content.contentTypes.printOutdoorAds",
+        CONTENT_TYPES[4],
+      ),
+    ),
+    resolveTranslation(
+      "creatorDashboard.contentTypes.musicVideos",
+      resolveTranslation("content.contentTypes.musicVideos", CONTENT_TYPES[5]),
+    ),
+    resolveTranslation(
+      "creatorDashboard.contentTypes.videoGameVRCharacters",
+      resolveTranslation(
+        "content.contentTypes.videoGameVRCharacters",
+        CONTENT_TYPES[6],
+      ),
+    ),
+    resolveTranslation(
+      "creatorDashboard.contentTypes.stockPhotoVideoLibraries",
+      resolveTranslation(
+        "content.contentTypes.stockPhotoVideoLibraries",
+        CONTENT_TYPES[7],
+      ),
+    ),
+    resolveTranslation(
+      "creatorDashboard.contentTypes.educationalNonprofitSpots",
+      resolveTranslation(
+        "content.contentTypes.educationalNonprofitSpots",
+        CONTENT_TYPES[8],
+      ),
+    ),
   ];
 
   const getTranslatedIndustries = () => [
-    t("creatorDashboard.industries.fashionBeauty"),
-    t("creatorDashboard.industries.techElectronics"),
-    t("creatorDashboard.industries.sportsFitness"),
-    t("creatorDashboard.industries.foodBeverage"),
-    t("creatorDashboard.industries.filmGamingMusic"),
-    t("creatorDashboard.industries.automotive"),
-    t("creatorDashboard.industries.financeFintech"),
-    t("creatorDashboard.industries.healthWellness"),
-    t("creatorDashboard.industries.luxuryLifestyle"),
-    t("creatorDashboard.industries.travelHospitality"),
-    t("creatorDashboard.industries.education"),
-    t("creatorDashboard.industries.realEstate"),
-    t("creatorDashboard.industries.entertainment"),
-    t("creatorDashboard.industries.openToAny"),
+    resolveTranslation(
+      "creatorDashboard.industries.fashionBeauty",
+      resolveTranslation("content.industries.fashionBeauty", INDUSTRIES[0]),
+    ),
+    resolveTranslation(
+      "creatorDashboard.industries.techElectronics",
+      resolveTranslation("content.industries.techElectronics", INDUSTRIES[1]),
+    ),
+    resolveTranslation(
+      "creatorDashboard.industries.sportsFitness",
+      resolveTranslation("content.industries.sportsFitness", INDUSTRIES[2]),
+    ),
+    resolveTranslation(
+      "creatorDashboard.industries.foodBeverage",
+      resolveTranslation("content.industries.foodBeverage", INDUSTRIES[3]),
+    ),
+    resolveTranslation(
+      "creatorDashboard.industries.filmGamingMusic",
+      resolveTranslation("content.industries.filmGamingMusic", INDUSTRIES[4]),
+    ),
+    resolveTranslation(
+      "creatorDashboard.industries.automotive",
+      resolveTranslation("content.industries.automotive", INDUSTRIES[5]),
+    ),
+    resolveTranslation(
+      "creatorDashboard.industries.financeFintech",
+      resolveTranslation("content.industries.financeFintech", INDUSTRIES[6]),
+    ),
+    resolveTranslation(
+      "creatorDashboard.industries.healthWellness",
+      resolveTranslation("content.industries.healthWellness", INDUSTRIES[7]),
+    ),
+    resolveTranslation(
+      "creatorDashboard.industries.luxuryLifestyle",
+      resolveTranslation("content.industries.luxuryLifestyle", INDUSTRIES[8]),
+    ),
+    resolveTranslation(
+      "creatorDashboard.industries.travelHospitality",
+      resolveTranslation("content.industries.travelHospitality", INDUSTRIES[9]),
+    ),
+    resolveTranslation(
+      "creatorDashboard.industries.education",
+      resolveTranslation("content.industries.education", INDUSTRIES[10]),
+    ),
+    resolveTranslation(
+      "creatorDashboard.industries.realEstate",
+      resolveTranslation("content.industries.realEstate", INDUSTRIES[11]),
+    ),
+    resolveTranslation(
+      "creatorDashboard.industries.entertainment",
+      resolveTranslation("content.industries.entertainment", INDUSTRIES[12]),
+    ),
+    resolveTranslation(
+      "creatorDashboard.industries.openToAny",
+      resolveTranslation("content.industries.openToAny", INDUSTRIES[13]),
+    ),
   ];
 
   const getTranslatedRestrictions = () => [
@@ -932,11 +1031,20 @@ export default function CreatorDashboard() {
     profile_photo: profile?.profile_photo_url || "",
     location: "",
     bio: "",
+    birthday: "",
+    gender: "",
+    ethnicity: "",
+    creator_type: "",
+    race: "",
+    hair_color: "",
+    eye_color: "",
+    height_cm: "",
     instagram_handle: "",
     tiktok_handle: "",
     portfolio_url: "",
     instagram_connected: false,
-    instagram_followers: 0,
+    instagram_followers: "",
+    engagement_rate: "",
     content_types: [] as string[],
     industries: [] as string[],
     content_restrictions: [] as string[],
@@ -973,7 +1081,27 @@ export default function CreatorDashboard() {
         email: profile.email || prev.email,
         profile_photo: profile.profile_photo_url || prev.profile_photo,
         kyc_status: profile.kyc_status || prev.kyc_status,
+        location: [profile.city, profile.state].filter(Boolean).join(", "),
         bio: profile.bio ?? prev.bio,
+        birthday: profile.birthday ?? prev.birthday,
+        gender: profile.gender ?? prev.gender,
+        ethnicity: profile.ethnicity ?? prev.ethnicity,
+        creator_type: profile.creator_type ?? prev.creator_type,
+        race: profile.race ?? prev.race,
+        hair_color: profile.hair_color ?? prev.hair_color,
+        eye_color: profile.eye_color ?? prev.eye_color,
+        height_cm:
+          typeof profile.height_cm === "number"
+            ? String(profile.height_cm)
+            : prev.height_cm,
+        instagram_followers:
+          typeof profile.instagram_followers === "number"
+            ? String(profile.instagram_followers)
+            : prev.instagram_followers,
+        engagement_rate:
+          typeof profile.engagement_rate === "number"
+            ? String(profile.engagement_rate)
+            : prev.engagement_rate,
         tiktok_handle: profile.tiktok_handle ?? prev.tiktok_handle,
         portfolio_url: profile.portfolio_link ?? prev.portfolio_url,
         is_public_brands: resolvePublicBrandsVisibility(profile),
@@ -1492,11 +1620,29 @@ export default function CreatorDashboard() {
           instagram_handle: profile.platform_handle
             ? `@${profile.platform_handle}`
             : prev.instagram_handle,
+          birthday: profile.birthday ?? prev.birthday,
+          gender: profile.gender ?? prev.gender,
+          ethnicity: profile.ethnicity ?? prev.ethnicity,
+          creator_type: profile.creator_type ?? prev.creator_type,
+          race: profile.race ?? prev.race,
+          hair_color: profile.hair_color ?? prev.hair_color,
+          eye_color: profile.eye_color ?? prev.eye_color,
+          height_cm:
+            typeof profile.height_cm === "number"
+              ? String(profile.height_cm)
+              : prev.height_cm,
+          instagram_followers:
+            typeof profile.instagram_followers === "number"
+              ? String(profile.instagram_followers)
+              : prev.instagram_followers,
+          engagement_rate:
+            typeof profile.engagement_rate === "number"
+              ? String(profile.engagement_rate)
+              : prev.engagement_rate,
           tiktok_handle: profile.tiktok_handle ?? prev.tiktok_handle,
           portfolio_url: profile.portfolio_link ?? prev.portfolio_url,
           is_public_brands: resolvePublicBrandsVisibility(profile),
           instagram_connected: prev.instagram_connected ?? false,
-          instagram_followers: prev.instagram_followers ?? 0,
           content_types: profile.content_types || [],
           industries: profile.industries || [],
           // Derive weekly price from monthly base (USD-only)
@@ -2151,10 +2297,16 @@ export default function CreatorDashboard() {
       first_name: fullName,
       location,
       handles,
-      followers:
-        typeof creator.instagram_followers === "number"
-          ? creator.instagram_followers.toLocaleString()
-          : "0",
+      followers: (() => {
+        if (typeof creator.instagram_followers === "number") {
+          return creator.instagram_followers.toLocaleString();
+        }
+        const parsed = Number.parseInt(
+          String(creator.instagram_followers || "").trim(),
+          10,
+        );
+        return Number.isFinite(parsed) ? parsed.toLocaleString() : "0";
+      })(),
       bio: creator.bio || profile?.bio || "",
       active_campaigns: Array.isArray(activeCampaigns)
         ? activeCampaigns.length
@@ -3296,6 +3448,20 @@ export default function CreatorDashboard() {
       typeof creator.portfolio_url === "string"
         ? creator.portfolio_url.trim()
         : "";
+    const parseOptionalInt = (raw: unknown): number | undefined => {
+      if (raw === null || raw === undefined) return undefined;
+      const text = String(raw).trim();
+      if (!text) return undefined;
+      const value = Number.parseInt(text, 10);
+      return Number.isFinite(value) ? value : undefined;
+    };
+    const parseOptionalFloat = (raw: unknown): number | undefined => {
+      if (raw === null || raw === undefined) return undefined;
+      const text = String(raw).trim();
+      if (!text) return undefined;
+      const value = Number.parseFloat(text);
+      return Number.isFinite(value) ? value : undefined;
+    };
 
     // Only send fields that exist in the profiles table
     // Apply overrides if provided (e.g. for immediate toggle updates)
@@ -3307,7 +3473,40 @@ export default function CreatorDashboard() {
       city: creator.location?.split(",")[0]?.trim(),
       state: creator.location?.split(",")[1]?.trim(),
       base_monthly_price_cents: (creator.price_per_month || 0) * 100,
+      birthday:
+        typeof creator.birthday === "string" && creator.birthday.trim().length
+          ? creator.birthday.trim()
+          : undefined,
+      gender:
+        typeof creator.gender === "string" && creator.gender.trim().length
+          ? creator.gender.trim()
+          : undefined,
+      ethnicity:
+        typeof creator.ethnicity === "string" && creator.ethnicity.trim().length
+          ? creator.ethnicity.trim()
+          : undefined,
+      creator_type:
+        typeof creator.creator_type === "string" &&
+        creator.creator_type.trim().length
+          ? creator.creator_type.trim()
+          : undefined,
+      race:
+        typeof creator.race === "string" && creator.race.trim().length
+          ? creator.race.trim()
+          : undefined,
+      hair_color:
+        typeof creator.hair_color === "string" &&
+        creator.hair_color.trim().length
+          ? creator.hair_color.trim()
+          : undefined,
+      eye_color:
+        typeof creator.eye_color === "string" && creator.eye_color.trim().length
+          ? creator.eye_color.trim()
+          : undefined,
+      height_cm: parseOptionalInt(creator.height_cm),
       platform_handle: creator.instagram_handle?.replace("@", ""),
+      instagram_followers: parseOptionalInt(creator.instagram_followers),
+      engagement_rate: parseOptionalFloat(creator.engagement_rate),
       tiktok_handle: normalizedTiktok,
       portfolio_link: normalizedPortfolio,
       accept_negotiations:
@@ -3352,6 +3551,29 @@ export default function CreatorDashboard() {
           ...prev,
           name: savedProfile.full_name || prev.name,
           bio: savedProfile.bio ?? prev.bio,
+          location:
+            [savedProfile.city, savedProfile.state]
+              .filter(Boolean)
+              .join(", ") || prev.location,
+          birthday: savedProfile.birthday ?? prev.birthday,
+          gender: savedProfile.gender ?? prev.gender,
+          ethnicity: savedProfile.ethnicity ?? prev.ethnicity,
+          creator_type: savedProfile.creator_type ?? prev.creator_type,
+          race: savedProfile.race ?? prev.race,
+          hair_color: savedProfile.hair_color ?? prev.hair_color,
+          eye_color: savedProfile.eye_color ?? prev.eye_color,
+          height_cm:
+            typeof savedProfile.height_cm === "number"
+              ? String(savedProfile.height_cm)
+              : prev.height_cm,
+          instagram_followers:
+            typeof savedProfile.instagram_followers === "number"
+              ? String(savedProfile.instagram_followers)
+              : prev.instagram_followers,
+          engagement_rate:
+            typeof savedProfile.engagement_rate === "number"
+              ? String(savedProfile.engagement_rate)
+              : prev.engagement_rate,
           tiktok_handle: savedProfile.tiktok_handle ?? prev.tiktok_handle,
           portfolio_url: savedProfile.portfolio_link ?? prev.portfolio_url,
           content_types: savedProfile.content_types ?? prev.content_types,
@@ -6783,6 +7005,182 @@ export default function CreatorDashboard() {
                     "creatorDashboard.settingsView.profile.placeholders.city",
                   )}
                 />
+              </div>
+
+              <div className="pt-2">
+                <h4 className="text-sm font-semibold text-gray-900 mb-3">
+                  Professional Details
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Creator Type
+                    </Label>
+                    <Input
+                      value={creator.creator_type || ""}
+                      onChange={(e) =>
+                        setCreator({
+                          ...creator,
+                          creator_type: e.target.value,
+                        })
+                      }
+                      className="border-2 border-gray-300"
+                      placeholder="Model / Influencer / Actor"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Date of Birth
+                    </Label>
+                    <Input
+                      type="date"
+                      value={creator.birthday || ""}
+                      onChange={(e) =>
+                        setCreator({
+                          ...creator,
+                          birthday: e.target.value,
+                        })
+                      }
+                      className="border-2 border-gray-300"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Gender
+                    </Label>
+                    <Input
+                      value={creator.gender || ""}
+                      onChange={(e) =>
+                        setCreator({
+                          ...creator,
+                          gender: e.target.value,
+                        })
+                      }
+                      className="border-2 border-gray-300"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Ethnicity
+                    </Label>
+                    <Input
+                      value={creator.ethnicity || ""}
+                      onChange={(e) =>
+                        setCreator({
+                          ...creator,
+                          ethnicity: e.target.value,
+                        })
+                      }
+                      className="border-2 border-gray-300"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Race
+                    </Label>
+                    <Input
+                      value={creator.race || ""}
+                      onChange={(e) =>
+                        setCreator({
+                          ...creator,
+                          race: e.target.value,
+                        })
+                      }
+                      className="border-2 border-gray-300"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Hair Color
+                    </Label>
+                    <Input
+                      value={creator.hair_color || ""}
+                      onChange={(e) =>
+                        setCreator({
+                          ...creator,
+                          hair_color: e.target.value,
+                        })
+                      }
+                      className="border-2 border-gray-300"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Eye Color
+                    </Label>
+                    <Input
+                      value={creator.eye_color || ""}
+                      onChange={(e) =>
+                        setCreator({
+                          ...creator,
+                          eye_color: e.target.value,
+                        })
+                      }
+                      className="border-2 border-gray-300"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Height (cm)
+                    </Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={String(creator.height_cm || "")}
+                      onChange={(e) =>
+                        setCreator({
+                          ...creator,
+                          height_cm: e.target.value,
+                        })
+                      }
+                      className="border-2 border-gray-300"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Instagram Followers
+                    </Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={String(creator.instagram_followers || "")}
+                      onChange={(e) =>
+                        setCreator({
+                          ...creator,
+                          instagram_followers: e.target.value,
+                        })
+                      }
+                      className="border-2 border-gray-300"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                      Engagement Rate (%)
+                    </Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={String(creator.engagement_rate || "")}
+                      onChange={(e) =>
+                        setCreator({
+                          ...creator,
+                          engagement_rate: e.target.value,
+                        })
+                      }
+                      className="border-2 border-gray-300"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div>

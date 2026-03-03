@@ -7,7 +7,9 @@ use axum::{
 use chrono::{DateTime, Utc};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+use serde_json::{json, Value};
+use tracing::warn;
+use urlencoding::encode;
 
 #[derive(Serialize, Deserialize)]
 pub struct AgencyTalentInvite {
@@ -59,6 +61,319 @@ fn is_expired(expires_at: &Option<String>) -> bool {
         return dt.with_timezone(&Utc) <= Utc::now();
     }
     false
+}
+
+async fn creator_profile_exists_by_email(state: &AppState, email: &str) -> bool {
+    let normalized = email.trim().to_lowercase();
+    if normalized.is_empty() {
+        return false;
+    }
+
+    let resp = match state
+        .pg
+        .from("creators")
+        .select("id")
+        .eq("email", &normalized)
+        .limit(1)
+        .execute()
+        .await
+    {
+        Ok(v) => v,
+        Err(_) => return false,
+    };
+
+    if !resp.status().is_success() {
+        return false;
+    }
+
+    let text = match resp.text().await {
+        Ok(v) => v,
+        Err(_) => return false,
+    };
+
+    let rows: Vec<Value> = serde_json::from_str(&text).unwrap_or_default();
+    !rows.is_empty()
+}
+
+async fn creator_id_by_email(state: &AppState, email: &str) -> Option<String> {
+    let normalized = email.trim().to_lowercase();
+    if normalized.is_empty() {
+        return None;
+    }
+
+    let resp = state
+        .pg
+        .from("creators")
+        .select("id")
+        .eq("email", &normalized)
+        .limit(1)
+        .execute()
+        .await
+        .ok()?;
+    if !resp.status().is_success() {
+        return None;
+    }
+    let text = resp.text().await.ok()?;
+    let rows: Vec<Value> = serde_json::from_str(&text).ok()?;
+    rows.first()
+        .and_then(|r| r.get("id"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+}
+
+fn parse_string_list(value: &Value) -> Vec<String> {
+    if let Some(arr) = value.as_array() {
+        return arr
+            .iter()
+            .filter_map(|v| v.as_str())
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect();
+    }
+
+    if let Some(s) = value.as_str() {
+        let trimmed = s.trim();
+        if trimmed.is_empty() {
+            return vec![];
+        }
+        if let Ok(parsed) = serde_json::from_str::<Vec<String>>(trimmed) {
+            return parsed
+                .into_iter()
+                .map(|x| x.trim().to_string())
+                .filter(|x| !x.is_empty())
+                .collect();
+        }
+        return trimmed
+            .split(',')
+            .map(|x| x.trim().to_string())
+            .filter(|x| !x.is_empty())
+            .collect();
+    }
+
+    vec![]
+}
+
+fn is_missing_field(row: &Value, key: &str) -> bool {
+    match row.get(key) {
+        None => true,
+        Some(v) if v.is_null() => true,
+        Some(v) if v.is_string() => v.as_str().map(|s| s.trim().is_empty()).unwrap_or(true),
+        Some(v) if v.is_array() => v.as_array().map(|a| a.is_empty()).unwrap_or(true),
+        _ => false,
+    }
+}
+
+fn parse_i32(value: Option<&Value>) -> Option<i32> {
+    value.and_then(|v| {
+        v.as_i64()
+            .map(|x| x as i32)
+            .or_else(|| v.as_f64().map(|x| x as i32))
+            .or_else(|| v.as_str().and_then(|s| s.trim().parse::<i32>().ok()))
+    })
+}
+
+fn parse_f64(value: Option<&Value>) -> Option<f64> {
+    value.and_then(|v| {
+        v.as_f64()
+            .or_else(|| v.as_i64().map(|x| x as f64))
+            .or_else(|| v.as_str().and_then(|s| s.trim().parse::<f64>().ok()))
+    })
+}
+
+fn parse_non_empty_string(value: Option<&Value>) -> Option<String> {
+    value
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+}
+
+async fn hydrate_creator_from_agency_row(
+    state: &AppState,
+    creator_id: &str,
+    invited_email: &str,
+    agency_row: &Value,
+) {
+    let creator_resp = match state
+        .pg
+        .from("creators")
+        .select("*")
+        .eq("id", creator_id)
+        .limit(1)
+        .execute()
+        .await
+    {
+        Ok(v) => v,
+        Err(e) => {
+            warn!(error = %e, creator_id, "hydrate_creator_from_agency_row: failed to read creators row");
+            return;
+        }
+    };
+
+    if !creator_resp.status().is_success() {
+        return;
+    }
+
+    let creator_text = match creator_resp.text().await {
+        Ok(v) => v,
+        Err(_) => return,
+    };
+    let creator_rows: Vec<Value> = serde_json::from_str(&creator_text).unwrap_or_default();
+    let creator_row = creator_rows.first().cloned().unwrap_or_else(|| json!({}));
+
+    let mut patch = serde_json::Map::new();
+    let mut optional_patch = serde_json::Map::new();
+
+    let full_name = parse_non_empty_string(agency_row.get("full_legal_name"))
+        .or_else(|| parse_non_empty_string(agency_row.get("stage_name")));
+    if is_missing_field(&creator_row, "full_name") {
+        if let Some(v) = full_name {
+            patch.insert("full_name".to_string(), Value::String(v));
+        }
+    }
+
+    if is_missing_field(&creator_row, "email") {
+        let email = if invited_email.trim().is_empty() {
+            parse_non_empty_string(agency_row.get("email"))
+        } else {
+            Some(invited_email.trim().to_lowercase())
+        };
+        if let Some(v) = email {
+            patch.insert("email".to_string(), Value::String(v));
+        }
+    }
+
+    if is_missing_field(&creator_row, "city") {
+        if let Some(v) = parse_non_empty_string(agency_row.get("city")) {
+            patch.insert("city".to_string(), Value::String(v));
+        }
+    }
+
+    if is_missing_field(&creator_row, "state") {
+        if let Some(v) = parse_non_empty_string(agency_row.get("state_province")) {
+            patch.insert("state".to_string(), Value::String(v));
+        }
+    }
+
+    if is_missing_field(&creator_row, "bio") {
+        if let Some(v) = parse_non_empty_string(agency_row.get("bio_notes")) {
+            patch.insert("bio".to_string(), Value::String(v));
+        }
+    }
+
+    if is_missing_field(&creator_row, "profile_photo_url") {
+        if let Some(v) = parse_non_empty_string(agency_row.get("profile_photo_url")) {
+            patch.insert("profile_photo_url".to_string(), Value::String(v));
+        }
+    }
+
+    if is_missing_field(&creator_row, "creator_type") {
+        if let Some(role_value) = agency_row.get("role_type") {
+            let role_types = parse_string_list(role_value);
+            if let Some(first_role) = role_types.first() {
+                patch.insert(
+                    "creator_type".to_string(),
+                    Value::String(first_role.clone()),
+                );
+            }
+        }
+    }
+
+    if is_missing_field(&creator_row, "race") {
+        if let Some(race_value) = agency_row.get("race_ethnicity") {
+            let races = parse_string_list(race_value);
+            if let Some(first_race) = races.first() {
+                patch.insert("race".to_string(), Value::String(first_race.clone()));
+            }
+        }
+    }
+
+    if is_missing_field(&creator_row, "hair_color") {
+        if let Some(v) = parse_non_empty_string(agency_row.get("hair_color")) {
+            patch.insert("hair_color".to_string(), Value::String(v));
+        }
+    }
+
+    if is_missing_field(&creator_row, "eye_color") {
+        if let Some(v) = parse_non_empty_string(agency_row.get("eye_color")) {
+            patch.insert("eye_color".to_string(), Value::String(v));
+        }
+    }
+
+    if is_missing_field(&creator_row, "height_cm") {
+        let feet = parse_i32(agency_row.get("height_feet")).unwrap_or(0);
+        let inches = parse_i32(agency_row.get("height_inches")).unwrap_or(0);
+        let total_inches = (feet * 12) + inches;
+        if total_inches > 0 {
+            let cm = ((total_inches as f64) * 2.54).round() as i32;
+            patch.insert("height_cm".to_string(), Value::Number(cm.into()));
+        }
+    }
+
+    if is_missing_field(&creator_row, "birthday") {
+        if let Some(v) = parse_non_empty_string(agency_row.get("date_of_birth")) {
+            optional_patch.insert("birthday".to_string(), Value::String(v));
+        }
+    }
+
+    if is_missing_field(&creator_row, "gender") {
+        if let Some(v) = parse_non_empty_string(agency_row.get("gender_identity")) {
+            optional_patch.insert("gender".to_string(), Value::String(v));
+        }
+    }
+
+    if is_missing_field(&creator_row, "ethnicity") {
+        if let Some(race_value) = agency_row.get("race_ethnicity") {
+            let races = parse_string_list(race_value);
+            if !races.is_empty() {
+                optional_patch.insert("ethnicity".to_string(), Value::String(races.join(", ")));
+            }
+        }
+    }
+
+    if is_missing_field(&creator_row, "instagram_handle") {
+        if let Some(v) = parse_non_empty_string(agency_row.get("instagram_handle")) {
+            optional_patch.insert("instagram_handle".to_string(), Value::String(v));
+        }
+    }
+
+    if is_missing_field(&creator_row, "instagram_followers") {
+        if let Some(v) = parse_i32(agency_row.get("instagram_followers")) {
+            optional_patch.insert("instagram_followers".to_string(), Value::Number(v.into()));
+        }
+    }
+
+    if is_missing_field(&creator_row, "engagement_rate") {
+        if let Some(v) = parse_f64(agency_row.get("engagement_rate")) {
+            if let Some(num) = serde_json::Number::from_f64(v) {
+                optional_patch.insert("engagement_rate".to_string(), Value::Number(num));
+            }
+        }
+    }
+
+    if !patch.is_empty() {
+        patch.insert("updated_at".to_string(), Value::String(now_rfc3339()));
+        let _ = state
+            .pg
+            .from("creators")
+            .eq("id", creator_id)
+            .update(Value::Object(patch).to_string())
+            .execute()
+            .await;
+    }
+
+    if !optional_patch.is_empty() {
+        optional_patch.insert("updated_at".to_string(), Value::String(now_rfc3339()));
+        let res = state
+            .pg
+            .from("creators")
+            .eq("id", creator_id)
+            .update(Value::Object(optional_patch).to_string())
+            .execute()
+            .await;
+        if let Err(e) = res {
+            warn!(error = %e, creator_id, "optional creator hydration skipped due to schema mismatch");
+        }
+    }
 }
 
 pub async fn list_for_agency(
@@ -150,6 +465,54 @@ pub async fn create_for_agency(
     let email = payload.email.trim().to_lowercase();
     if email.is_empty() {
         return Err((StatusCode::BAD_REQUEST, "missing email".to_string()));
+    }
+    let creator_profile_exists = creator_profile_exists_by_email(&state, &email).await;
+    let existing_creator_id = creator_id_by_email(&state, &email).await;
+
+    if let Some(creator_id) = existing_creator_id.as_ref() {
+        let active_link_resp = state
+            .pg
+            .from("agency_users")
+            .select("id")
+            .eq("agency_id", &user.id)
+            .eq("creator_id", creator_id)
+            .eq("status", "active")
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        let active_link_text = active_link_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let active_link_rows: Vec<Value> =
+            serde_json::from_str(&active_link_text).unwrap_or_default();
+
+        if !active_link_rows.is_empty() {
+            let _ = state
+                .pg
+                .from("agency_talent_invites")
+                .eq("agency_id", &user.id)
+                .eq("email", &email)
+                .eq("status", "pending")
+                .update(
+                    json!({
+                        "status": "revoked",
+                        "updated_at": now_rfc3339(),
+                    })
+                    .to_string(),
+                )
+                .execute()
+                .await;
+
+            return Ok(Json(json!({
+                "status": "ok",
+                "invite_status": "already_connected",
+                "creator_profile_exists": creator_profile_exists,
+                "requires_password_setup": false,
+            })));
+        }
     }
 
     // Re-invitation: revoke previous pending invites to same email for this agency.
@@ -245,8 +608,13 @@ pub async fn create_for_agency(
     ));
     lines.push("".to_string());
     lines.push("To accept the invitation:".to_string());
-    lines.push("1) Set your password / log in".to_string());
-    lines.push("2) Accept or decline the invitation".to_string());
+    if creator_profile_exists {
+        lines.push("1) Sign in to your creator account".to_string());
+        lines.push("2) Accept or decline the invitation".to_string());
+    } else {
+        lines.push("1) Set your password".to_string());
+        lines.push("2) Accept or decline the invitation".to_string());
+    }
     lines.push("".to_string());
     lines.push(format!("Invitation link: {}", invite_url));
     lines.push("".to_string());
@@ -263,6 +631,8 @@ pub async fn create_for_agency(
         "invite_url": invite_url,
         "agency_name": agency_name,
         "agency_logo_url": agency_logo_url,
+        "creator_profile_exists": creator_profile_exists,
+        "requires_password_setup": !creator_profile_exists,
     })))
 }
 
@@ -343,9 +713,13 @@ pub async fn get_by_token(
         inv.status = "expired".to_string();
     }
 
+    let creator_profile_exists = creator_profile_exists_by_email(&state, &inv.email).await;
+
     Ok(Json(json!({
         "status": "ok",
         "invite": inv,
+        "creator_profile_exists": creator_profile_exists,
+        "requires_password_setup": !creator_profile_exists,
     })))
 }
 
@@ -390,87 +764,99 @@ pub async fn get_magic_link_by_token(
         return Err((StatusCode::BAD_REQUEST, "missing email".to_string()));
     }
 
+    let creator_profile_exists = creator_profile_exists_by_email(&state, &email).await;
     let client = Client::new();
     let gen_link_url = format!("{}/auth/v1/admin/generate_link", state.supabase_url);
-    let redirect_to = format!(
-        "{}/update-password?next=/invite/agency/{}",
+    let invite_next = format!("/invite/agency/{}?intent=accept", token);
+    let invite_redirect_to = format!(
+        "{}/{}",
         state.frontend_url.trim_end_matches('/'),
-        token
+        invite_next.trim_start_matches('/')
     );
-    let body = json!({
-        "type": "recovery",
-        "email": email,
-        "options": {
-            "redirect_to": redirect_to
-        }
-    });
+    let recovery_redirect_to = format!(
+        "{}/update-password?next={}",
+        state.frontend_url.trim_end_matches('/'),
+        encode(&invite_next)
+    );
 
-    let mut link_resp = client
-        .post(&gen_link_url)
-        .header("apikey", state.supabase_service_key.clone())
-        .header(
-            "Authorization",
-            format!("Bearer {}", state.supabase_service_key),
-        )
-        .json(&body)
-        .send()
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let auth_headers = |rb: reqwest::RequestBuilder| {
+        rb.header("apikey", state.supabase_service_key.clone())
+            .header(
+                "Authorization",
+                format!("Bearer {}", state.supabase_service_key),
+            )
+    };
+
+    let mut link_resp = if creator_profile_exists {
+        let magic_body = json!({
+            "type": "magiclink",
+            "email": email.clone(),
+            "options": { "redirect_to": invite_redirect_to }
+        });
+        auth_headers(client.post(&gen_link_url))
+            .json(&magic_body)
+            .send()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+    } else {
+        let recovery_body = json!({
+            "type": "recovery",
+            "email": email.clone(),
+            "options": { "redirect_to": recovery_redirect_to }
+        });
+        auth_headers(client.post(&gen_link_url))
+            .json(&recovery_body)
+            .send()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
+    };
 
     if !link_resp.status().is_success() {
         let txt = link_resp.text().await.unwrap_or_default();
-        let v: serde_json::Value = serde_json::from_str(&txt).unwrap_or(json!({}));
+        let v: Value = serde_json::from_str(&txt).unwrap_or(json!({}));
         let error_code = v.get("error_code").and_then(|x| x.as_str()).unwrap_or("");
+        let can_create_user = error_code == "user_not_found";
 
-        // If the invited email doesn't exist yet in Supabase Auth, create it (temp password)
-        // then retry generate_link.
-        if error_code == "user_not_found" {
-            let create_user_url = format!("{}/auth/v1/admin/users", state.supabase_url);
-            let temp_password = format!("{}Aa1!", uuid::Uuid::new_v4());
-            let create_body = json!({
-                "email": email,
-                "password": temp_password,
-                "email_confirm": true,
-                "user_metadata": {
-                    "role": "creator"
-                }
-            });
-
-            let create_resp = client
-                .post(&create_user_url)
-                .header("apikey", state.supabase_service_key.clone())
-                .header(
-                    "Authorization",
-                    format!("Bearer {}", state.supabase_service_key),
-                )
-                .json(&create_body)
-                .send()
-                .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-            if !create_resp.status().is_success() {
-                let create_txt = create_resp.text().await.unwrap_or_default();
-                return Err((StatusCode::BAD_REQUEST, create_txt));
-            }
-
-            link_resp = client
-                .post(&gen_link_url)
-                .header("apikey", state.supabase_service_key.clone())
-                .header(
-                    "Authorization",
-                    format!("Bearer {}", state.supabase_service_key),
-                )
-                .json(&body)
-                .send()
-                .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-            if !link_resp.status().is_success() {
-                let retry_txt = link_resp.text().await.unwrap_or_default();
-                return Err((StatusCode::BAD_REQUEST, retry_txt));
-            }
-        } else {
+        if !can_create_user {
             return Err((StatusCode::BAD_REQUEST, txt));
+        }
+
+        let create_user_url = format!("{}/auth/v1/admin/users", state.supabase_url);
+        let temp_password = format!("{}Aa1!", uuid::Uuid::new_v4());
+        let create_body = json!({
+            "email": email,
+            "password": temp_password,
+            "email_confirm": true,
+            "user_metadata": {
+                "role": "creator"
+            }
+        });
+
+        let create_resp = auth_headers(client.post(&create_user_url))
+            .json(&create_body)
+            .send()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        if !create_resp.status().is_success() {
+            let create_txt = create_resp.text().await.unwrap_or_default();
+            return Err((StatusCode::BAD_REQUEST, create_txt));
+        }
+
+        let recovery_body = json!({
+            "type": "recovery",
+            "email": email,
+            "options": { "redirect_to": recovery_redirect_to }
+        });
+        link_resp = auth_headers(client.post(&gen_link_url))
+            .json(&recovery_body)
+            .send()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        if !link_resp.status().is_success() {
+            let retry_txt = link_resp.text().await.unwrap_or_default();
+            return Err((StatusCode::BAD_REQUEST, retry_txt));
         }
     }
 
@@ -491,6 +877,7 @@ pub async fn get_magic_link_by_token(
     Ok(Json(json!({
         "status": "ok",
         "action_link": action_link,
+        "requires_password_setup": !creator_profile_exists,
     })))
 }
 
@@ -575,35 +962,73 @@ pub async fn accept_by_token(
 
     ensure_creator_row_exists(&state, &user, &creator_id).await;
 
-    // Upsert / reactivate agency_users row
-    let au_resp = state
+    let mut existing_agency_user_id: Option<String> = None;
+    let mut matched_agency_row: Option<Value> = None;
+
+    let au_by_creator_resp = state
         .pg
         .from("agency_users")
-        .select("id,status")
+        .select("*")
         .eq("agency_id", &inv.agency_id)
         .eq("creator_id", &creator_id)
+        .order("updated_at.desc")
         .limit(1)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let au_text = au_resp
+    let au_by_creator_text = au_by_creator_resp
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let existing: serde_json::Value = serde_json::from_str(&au_text).unwrap_or(json!([]));
+    let au_by_creator_rows: Vec<Value> =
+        serde_json::from_str(&au_by_creator_text).unwrap_or_default();
+    if let Some(row) = au_by_creator_rows.first() {
+        if let Some(id) = row.get("id").and_then(|v| v.as_str()) {
+            existing_agency_user_id = Some(id.to_string());
+            matched_agency_row = Some(row.clone());
+        }
+    }
 
-    if existing.as_array().map(|a| !a.is_empty()).unwrap_or(false) {
+    if existing_agency_user_id.is_none() {
+        let invited_email = inv.email.trim().to_lowercase();
+        let au_by_email_resp = state
+            .pg
+            .from("agency_users")
+            .select("*")
+            .eq("agency_id", &inv.agency_id)
+            .eq("email", &invited_email)
+            .order("updated_at.desc")
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+        let au_by_email_text = au_by_email_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let au_by_email_rows: Vec<Value> =
+            serde_json::from_str(&au_by_email_text).unwrap_or_default();
+        if let Some(row) = au_by_email_rows.first() {
+            if let Some(id) = row.get("id").and_then(|v| v.as_str()) {
+                existing_agency_user_id = Some(id.to_string());
+                matched_agency_row = Some(row.clone());
+            }
+        }
+    }
+
+    if let Some(agency_user_id) = existing_agency_user_id {
         let _ = state
             .pg
             .from("agency_users")
-            .eq("agency_id", &inv.agency_id)
-            .eq("creator_id", &creator_id)
+            .eq("id", &agency_user_id)
             .update(
                 json!({
+                    "creator_id": creator_id,
                     "status": "active",
                     "role": "talent",
-                    "email": user.email,
+                    "email": user.email.clone().unwrap_or_else(|| inv.email.clone()),
                     "updated_at": now_rfc3339(),
                 })
                 .to_string(),
@@ -650,7 +1075,7 @@ pub async fn accept_by_token(
                     "agency_id": inv.agency_id,
                     "creator_id": creator_id,
                     "full_legal_name": full_legal_name,
-                    "email": user.email,
+                    "email": user.email.clone().unwrap_or_else(|| inv.email.clone()),
                     "status": "active",
                     "role": "talent",
                     "updated_at": now_rfc3339(),
@@ -659,6 +1084,10 @@ pub async fn accept_by_token(
             )
             .execute()
             .await;
+    }
+
+    if let Some(row) = matched_agency_row.as_ref() {
+        hydrate_creator_from_agency_row(&state, &creator_id, &inv.email, row).await;
     }
 
     // Mark invite accepted
