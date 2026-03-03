@@ -17084,6 +17084,10 @@ export default function AgencyDashboard() {
   const [activeTab, setActiveTabState] = useState(
     searchParams.get("tab") || "dashboard",
   );
+  const normalizeSubTab = (value: string | null | undefined) =>
+    String(value || "")
+      .trim()
+      .replace(/\/+$/g, "");
 
   // Sensible default sub-tab based on tab
   const getDefaultSubTab = (tab: string) => {
@@ -17106,8 +17110,8 @@ export default function AgencyDashboard() {
         return "All Talent";
     }
   };
-  const [activeSubTab, setActiveSubTab] = useState(
-    searchParams.get("subTab") ||
+  const [activeSubTab, setActiveSubTabState] = useState(
+    normalizeSubTab(searchParams.get("subTab")) ||
       getDefaultSubTab(searchParams.get("tab") || "dashboard"),
   );
 
@@ -17133,7 +17137,7 @@ export default function AgencyDashboard() {
     });
 
     setActiveTabState("licensing");
-    setActiveSubTab("License Templates");
+    setActiveSubTabState("License Templates");
 
     toast({
       title: "Redirecting...",
@@ -17327,17 +17331,6 @@ export default function AgencyDashboard() {
     agencyPlanTier === "pro" || agencyPlanTier === "enterprise";
 
   useEffect(() => {
-    const tabFromUrl = searchParams.get("tab");
-    if (tabFromUrl && tabFromUrl !== activeTab) {
-      setActiveTabState(tabFromUrl);
-    }
-    const subTabFromUrl = searchParams.get("subTab");
-    if (subTabFromUrl && subTabFromUrl !== activeSubTab) {
-      setActiveSubTab(subTabFromUrl);
-    }
-  }, [searchParams, activeTab, activeSubTab]);
-
-  useEffect(() => {
     if (activeSubTab === "All Talent" && isSportsAgency) {
       setActiveSubTab("All Athletes");
       return;
@@ -17362,6 +17355,18 @@ export default function AgencyDashboard() {
       setActiveSubTab("Talent Availability");
     }
   }, [activeSubTab, isSportsAgency]);
+
+  useEffect(() => {
+    if (activeTab !== "roster") return;
+    const validRosterSubTabs = new Set([
+      "All Talent",
+      "All Athletes",
+      "Performance Tiers",
+    ]);
+    if (!validRosterSubTabs.has(activeSubTab)) {
+      setActiveSubTab(rosterPrimarySubTab);
+    }
+  }, [activeTab, activeSubTab, rosterPrimarySubTab]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -17416,8 +17421,7 @@ export default function AgencyDashboard() {
   const [showCreatePackageWizard, setShowCreatePackageWizard] = useState(false);
 
   const goToEditProfile = () => {
-    setActiveTab("settings");
-    setActiveSubTab("General Settings");
+    setActiveView("settings", "General Settings");
     setSidebarOpen(false);
   };
 
@@ -17772,11 +17776,14 @@ export default function AgencyDashboard() {
   // Wrapper functions to update both state and URL params
   const setAgencyMode = (mode: "AI" | "IRL") => {
     setAgencyModeState(mode);
-    setSearchParams((prev) => {
-      const newParams = new URLSearchParams(prev);
-      newParams.set("mode", mode);
-      return newParams;
-    });
+    setSearchParams(
+      (prev) => {
+        const newParams = new URLSearchParams(prev);
+        newParams.set("mode", mode);
+        return newParams;
+      },
+      { replace: true, preventScrollReset: true },
+    );
   };
 
   useEffect(() => {
@@ -17787,20 +17794,21 @@ export default function AgencyDashboard() {
 
   const setActiveTab = (tab: string) => {
     setActiveTabState(tab);
-    setSearchParams((prev) => {
-      const newParams = new URLSearchParams(prev);
-      newParams.set("tab", tab);
-      return newParams;
-    });
+  };
+
+  const setActiveSubTab = (subTab: string) => {
+    const normalizedSubTab = normalizeSubTab(subTab);
+    setActiveSubTabState(normalizedSubTab);
+  };
+
+  const setActiveView = (tab: string, subTab?: string) => {
+    const resolvedSubTab = normalizeSubTab(subTab) || getDefaultSubTab(tab);
+    setActiveTabState(tab);
+    setActiveSubTabState(resolvedSubTab);
   };
 
   const setActiveScoutingTab = (tab: string) => {
     setActiveScoutingTabState(tab);
-    setSearchParams((prev) => {
-      const newParams = new URLSearchParams(prev);
-      newParams.set("scoutingTab", tab);
-      return newParams;
-    });
   };
 
   // Helper for API URLs
@@ -18050,6 +18058,23 @@ export default function AgencyDashboard() {
           },
         ];
 
+  useEffect(() => {
+    const validTabIds = new Set(sidebarItems.map((item) => item.id));
+    if (!validTabIds.has(activeTab)) {
+      setActiveView("dashboard", getDefaultSubTab("dashboard"));
+    }
+  }, [activeTab, sidebarItems]);
+
+  useEffect(() => {
+    const activeItem = sidebarItems.find((item) => item.id === activeTab);
+    if (!activeItem?.subItems || activeItem.subItems.length === 0) return;
+    if (activeItem.subItems.includes(activeSubTab)) return;
+    const firstEnabledSubTab =
+      activeItem.subItems.find((sub) => !activeItem.disabledSubItems?.[sub]) ||
+      activeItem.subItems[0];
+    setActiveView(activeTab, firstEnabledSubTab);
+  }, [activeTab, activeSubTab, sidebarItems]);
+
   return (
     <div className="flex h-screen min-h-[100dvh] bg-gray-50 font-sans text-slate-800">
       {/* Mobile Sidebar Overlay */}
@@ -18067,8 +18092,7 @@ export default function AgencyDashboard() {
         <div
           className="p-6 flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-colors"
           onClick={() => {
-            setActiveTab("settings");
-            setActiveSubTab("General Settings");
+            setActiveView("settings", "General Settings");
             setSidebarOpen(false);
           }}
         >
@@ -18117,10 +18141,10 @@ export default function AgencyDashboard() {
                   }
                   if (item.subItems) {
                     toggleExpanded(item.id);
-                    if (item.id === "settings") {
-                      setActiveTab("settings");
-                      setActiveSubTab("General Settings");
-                    }
+                    const preferredSubTab = item.subItems.includes(activeSubTab)
+                      ? activeSubTab
+                      : item.subItems[0];
+                    setActiveView(item.id, preferredSubTab);
                   } else {
                     setActiveTab(item.id);
                     setSidebarOpen(false);
@@ -18170,8 +18194,7 @@ export default function AgencyDashboard() {
                           setSidebarOpen(false);
                           return;
                         }
-                        setActiveTab(item.id);
-                        setActiveSubTab(subItem);
+                        setActiveView(item.id, subItem);
                         setSidebarOpen(false);
                       }}
                       title={
@@ -18219,7 +18242,7 @@ export default function AgencyDashboard() {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col ml-0 md:ml-64 overflow-hidden transition-all duration-300">
+      <div className="flex-1 flex flex-col ml-0 md:ml-64 overflow-hidden">
         {/* Top Header */}
         <header className="h-16 bg-white/95 backdrop-blur border-b border-gray-200 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-30">
           <Button
@@ -18403,8 +18426,7 @@ export default function AgencyDashboard() {
                       className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group"
                       onClick={() => {
                         setShowProfileMenu(false);
-                        setActiveTab("protection");
-                        setActiveSubTab("Compliance Hub");
+                        setActiveView("protection", "Compliance Hub");
                         setSidebarOpen(false);
                       }}
                     >
@@ -18422,8 +18444,7 @@ export default function AgencyDashboard() {
                       className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-left group"
                       onClick={() => {
                         setShowProfileMenu(false);
-                        setActiveTab("settings");
-                        setActiveSubTab("General Settings");
+                        setActiveView("settings", "General Settings");
                         setSidebarOpen(false);
                       }}
                     >
@@ -18485,8 +18506,7 @@ export default function AgencyDashboard() {
                     const q = headerSearchValue.trim();
                     setShowHeaderSearch(false);
                     if (!q) return;
-                    setActiveTab("roster");
-                    setActiveSubTab(rosterPrimarySubTab);
+                    setActiveView("roster", rosterPrimarySubTab);
                     setSearchTerm(q);
                     setSidebarOpen(false);
                   }}
@@ -18589,7 +18609,7 @@ export default function AgencyDashboard() {
         </Dialog>
 
         {/* Dynamic Dashboard Content */}
-        <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-8 bg-gray-50">
+        <main className="flex-1 min-h-0 overflow-y-scroll overflow-x-hidden px-4 py-4 sm:px-6 sm:py-6 lg:px-10 lg:py-8 bg-gray-50">
           {activeTab === "dashboard" && (
             <AgencyDashboardView
               isSportsAgency={isSportsAgency}
