@@ -152,6 +152,10 @@ export default function BrandCampaignDashboard() {
             row?.display_name || row?.full_name || "Unknown",
           ),
           rate_currency: String(row?.rate_currency || "USD"),
+          accept_negotiations:
+            typeof row?.accept_negotiations === "boolean"
+              ? row.accept_negotiations
+              : true,
         };
       },
     );
@@ -196,6 +200,10 @@ export default function BrandCampaignDashboard() {
         base_rate_weekly_cents: r.base_weekly_price_cents || 0,
         rate_currency: r.currency_code || "USD",
         rate_source_type: "creator",
+        accept_negotiations:
+          typeof r.accept_negotiations === "boolean"
+            ? r.accept_negotiations
+            : true,
       }));
       setTalentOptions(mapped);
     } catch (error: any) {
@@ -224,7 +232,10 @@ export default function BrandCampaignDashboard() {
     }
     if (requestingByTargetId.has(targetId)) return;
 
-    const offerText = String(offerByTargetId[targetId] || "").trim();
+    const canNegotiate = row?.accept_negotiations !== false;
+    const offerText = canNegotiate
+      ? String(offerByTargetId[targetId] || "").trim()
+      : "";
     const offeredRateWeeklyCents = offerText
       ? Math.round(Number(offerText) * 100)
       : undefined;
@@ -959,19 +970,27 @@ export default function BrandCampaignDashboard() {
                                 </p>
                               </div>
                               <div className="flex items-center gap-2">
-                                <Input
-                                  type="number"
-                                  min="1"
-                                  value={offerByTargetId[String(row.id)] || ""}
-                                  onChange={(e) =>
-                                    setOfferByTargetId((prev) => ({
-                                      ...prev,
-                                      [String(row.id)]: e.target.value,
-                                    }))
-                                  }
-                                  placeholder="Your offer"
-                                  className="w-32 border-2 border-gray-300 rounded-none"
-                                />
+                                {row.accept_negotiations !== false ? (
+                                  <Input
+                                    type="number"
+                                    min="1"
+                                    value={
+                                      offerByTargetId[String(row.id)] || ""
+                                    }
+                                    onChange={(e) =>
+                                      setOfferByTargetId((prev) => ({
+                                        ...prev,
+                                        [String(row.id)]: e.target.value,
+                                      }))
+                                    }
+                                    placeholder="Your offer"
+                                    className="w-32 border-2 border-gray-300 rounded-none"
+                                  />
+                                ) : (
+                                  <div className="w-32 text-xs text-gray-600 border-2 border-gray-200 rounded-none px-2 py-2 bg-gray-50">
+                                    Fixed rate
+                                  </div>
+                                )}
                                 <Button
                                   disabled={disabled || requesting}
                                   onClick={() => handleRequestLicense(row)}
