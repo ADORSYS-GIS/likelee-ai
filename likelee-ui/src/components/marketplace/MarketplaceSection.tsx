@@ -46,6 +46,10 @@ export type MarketplaceProfile = {
   skills?: string[] | null;
   followers?: number | null;
   engagement_rate?: number | null;
+  base_weekly_price_cents?: number | null;
+  base_monthly_price_cents?: number | null;
+  currency_code?: string | null;
+  accept_negotiations?: boolean | null;
   is_connected?: boolean;
   is_pending?: boolean;
   connection_status?:
@@ -265,6 +269,19 @@ export function MarketplaceSection({
         typeof row?.engagement_rate === "number"
           ? row.engagement_rate
           : Number(row?.engagement_rate || 0),
+      base_weekly_price_cents:
+        typeof row?.base_weekly_price_cents === "number"
+          ? row.base_weekly_price_cents
+          : null,
+      base_monthly_price_cents:
+        typeof row?.base_monthly_price_cents === "number"
+          ? row.base_monthly_price_cents
+          : null,
+      currency_code: row?.currency_code ?? "USD",
+      accept_negotiations:
+        typeof row?.accept_negotiations === "boolean"
+          ? row.accept_negotiations
+          : true,
       is_connected: !!row?.is_connected,
       is_pending: !!row?.is_pending,
       connection_status:
@@ -830,7 +847,13 @@ export function MarketplaceSection({
                     ? profile.industries
                     : [];
                   const baseRateCents = Number(
-                    profile?.base_monthly_price_cents || 0,
+                    profile?.base_weekly_price_cents ||
+                      (Number(profile?.base_monthly_price_cents || 0) > 0
+                        ? Math.round(
+                            Number(profile?.base_monthly_price_cents || 0) /
+                              4.345,
+                          )
+                        : 0),
                   );
                   const rateCurrency = String(profile?.currency_code || "USD");
                   const openToNegotiations = !!profile?.accept_negotiations;
@@ -907,7 +930,7 @@ export function MarketplaceSection({
                                 ? formatMoney(baseRateCents, rateCurrency)
                                 : "N/A"}
                             </p>
-                            <p className="text-xs text-gray-500">/month</p>
+                            <p className="text-xs text-gray-500">/week</p>
                           </div>
                         </div>
                       </Card>
@@ -1013,9 +1036,15 @@ export function MarketplaceSection({
                           </p>
                           <p className="text-gray-900 font-bold mt-1">
                             {formatMoney(
-                              r?.amount_cents ?? r?.price_per_month_cents,
+                              r?.amount_cents ??
+                                (typeof r?.price_per_month_cents === "number"
+                                  ? Math.round(r.price_per_month_cents / 4.345)
+                                  : undefined),
                               r?.currency || "USD",
                             )}
+                          </p>
+                          <p className="text-[11px] text-gray-500 mt-0.5">
+                            /week
                           </p>
                         </div>
                       ))}

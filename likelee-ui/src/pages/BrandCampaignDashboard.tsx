@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -47,6 +47,8 @@ import {
   Shield,
   Briefcase,
 } from "lucide-react";
+import { base44 } from "@/api/base44Client";
+import { createBrandCampaignLicenseRequest } from "@/api/functions";
 
 const mockBrand = {
   name: "Urban Apparel Co.",
@@ -99,6 +101,7 @@ export default function BrandCampaignDashboard() {
   const [hasStudioAddon, setHasStudioAddon] = useState(false);
 
   const [campaignForm, setCampaignForm] = useState({
+    existing_campaign_id: "",
     name: "",
     objective: "",
     brief_file: null,
@@ -106,6 +109,18 @@ export default function BrandCampaignDashboard() {
     collaborator_type: "",
     collaborators: [],
   });
+  const [talentSearch, setTalentSearch] = useState("");
+  const [talentOptions, setTalentOptions] = useState<any[]>([]);
+  const [loadingTalentOptions, setLoadingTalentOptions] = useState(false);
+  const [offerByTargetId, setOfferByTargetId] = useState<
+    Record<string, string>
+  >({});
+  const [requestingByTargetId, setRequestingByTargetId] = useState<Set<string>>(
+    new Set(),
+  );
+
+  const canUseCampaignLicensingApi =
+    String(campaignForm.existing_campaign_id || "").trim().length > 0;
 
   const handleCreateCampaign = () => {
     console.log("Creating campaign:", campaignForm);
@@ -113,6 +128,7 @@ export default function BrandCampaignDashboard() {
     setShowNewCampaignModal(false);
     setNewCampaignStep(1);
     setCampaignForm({
+      existing_campaign_id: "",
       name: "",
       objective: "",
       brief_file: null,
@@ -120,6 +136,145 @@ export default function BrandCampaignDashboard() {
       collaborator_type: "",
       collaborators: [],
     });
+    setTalentOptions([]);
+    setTalentSearch("");
+    setOfferByTargetId({});
+  };
+
+  const formattedTalentOptions = useMemo(() => {
+    return (Array.isArray(talentOptions) ? talentOptions : []).map(
+      (row: any) => {
+        const base = Number(row?.base_rate_weekly_cents || 0);
+        return {
+          ...row,
+          base_rate_weekly_cents: Number.isFinite(base) ? base : 0,
+          display_name: String(
+            row?.display_name || row?.full_name || "Unknown",
+          ),
+          rate_currency: String(row?.rate_currency || "USD"),
+        };
+      },
+    );
+  }, [talentOptions]);
+
+  const loadTalentOptions = async () => {
+    try {
+      setLoadingTalentOptions(true);
+      const campaignId = String(campaignForm.existing_campaign_id || "").trim();
+      if (campaignId) {
+        const response: any = await base44.get(
+          `/api/brand/campaigns/${encodeURIComponent(campaignId)}/license-requests/options`,
+          {
+            params: {
+              collaborator_type:
+                campaignForm.collaborator_type === "agency"
+                  ? "agency"
+                  : "creator",
+              q: talentSearch || undefined,
+              limit: 80,
+            },
+          },
+        );
+        setTalentOptions(Array.isArray(response?.items) ? response.items : []);
+        return;
+      }
+
+      // Fallback for demo flow before a persisted campaign id exists.
+      const rows: any = await base44.get(`/marketplace/search`, {
+        params: {
+          profile_type: "creator",
+          query: talentSearch || undefined,
+          limit: 80,
+        },
+      });
+      const mapped = (Array.isArray(rows) ? rows : []).map((r: any) => ({
+        id: r.id,
+        display_name: r.display_name || r.full_name || "Unknown",
+        creator_type: r.creator_type,
+        city: r.city,
+        state: r.state,
+        base_rate_weekly_cents: r.base_weekly_price_cents || 0,
+        rate_currency: r.currency_code || "USD",
+        rate_source_type: "creator",
+      }));
+      setTalentOptions(mapped);
+    } catch (error: any) {
+      console.error(error);
+      toast({
+        title: "Failed to load collaborators",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+      setTalentOptions([]);
+    } finally {
+      setLoadingTalentOptions(false);
+    }
+  };
+
+  const handleRequestLicense = async (row: any) => {
+    const targetId = String(row?.id || "");
+    if (!targetId) return;
+    if (!canUseCampaignLicensingApi) {
+      toast({
+        title: "Campaign ID required",
+        description:
+          "Enter a saved campaign ID to send a real license request. You can still review base rates now.",
+      });
+      return;
+    }
+    if (requestingByTargetId.has(targetId)) return;
+
+    const offerText = String(offerByTargetId[targetId] || "").trim();
+    const offeredRateWeeklyCents = offerText
+      ? Math.round(Number(offerText) * 100)
+      : undefined;
+    if (
+      offerText &&
+      (!Number.isFinite(Number(offerText)) || Number(offerText) <= 0)
+    ) {
+      toast({
+        title: "Invalid offer",
+        description: "Offer must be greater than 0.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setRequestingByTargetId((prev) => new Set(prev).add(targetId));
+    try {
+      await createBrandCampaignLicenseRequest(
+        String(campaignForm.existing_campaign_id).trim(),
+        {
+          collaborator_type:
+            campaignForm.collaborator_type === "agency" ? "agency" : "creator",
+          target_id: targetId,
+          offered_rate_weekly_cents: offeredRateWeeklyCents,
+          rate_currency: String(row?.rate_currency || "USD"),
+          campaign_title: campaignForm.name || undefined,
+          usage_scope: "brand_campaign",
+        },
+      );
+      toast({
+        title: "License request sent",
+        description: "The request has been delivered to the right recipient.",
+      });
+    } catch (error: any) {
+      console.error(error);
+      toast({
+        title: "Failed to send license request",
+        description:
+          error?.message && !String(error.message).startsWith("POST ")
+            ? String(error.message)
+            : "Please check required fields and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setRequestingByTargetId((prev) => {
+        const next = new Set(prev);
+        next.delete(targetId);
+        return next;
+      });
+    }
   };
 
   return (
@@ -448,9 +603,18 @@ export default function BrandCampaignDashboard() {
                     >
                       2
                     </div>
-                    <span className="text-sm font-medium">
-                      Assign Collaborators
-                    </span>
+                    <span className="text-sm font-medium">Collaborators</span>
+                  </div>
+                  <div className="flex-1 h-px bg-gray-300" />
+                  <div
+                    className={`flex items-center gap-2 ${newCampaignStep >= 3 ? "text-black" : "text-gray-400"}`}
+                  >
+                    <div
+                      className={`w-8 h-8 border-2 rounded-none flex items-center justify-center ${newCampaignStep >= 3 ? "border-black bg-black text-white" : "border-gray-300"}`}
+                    >
+                      3
+                    </div>
+                    <span className="text-sm font-medium">Select Talent</span>
                   </div>
                 </div>
               </div>
@@ -470,6 +634,23 @@ export default function BrandCampaignDashboard() {
                         })
                       }
                       placeholder="e.g., Spring Collection Launch"
+                      className="border-2 border-gray-300 rounded-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 block mb-2">
+                      Existing Campaign ID (for real license requests)
+                    </label>
+                    <Input
+                      value={campaignForm.existing_campaign_id}
+                      onChange={(e) =>
+                        setCampaignForm({
+                          ...campaignForm,
+                          existing_campaign_id: e.target.value,
+                        })
+                      }
+                      placeholder="Optional UUID"
                       className="border-2 border-gray-300 rounded-none"
                     />
                   </div>
@@ -701,14 +882,134 @@ export default function BrandCampaignDashboard() {
                         Save & Add Collaborators Later
                       </Button>
                       <Button
-                        onClick={handleCreateCampaign}
+                        onClick={async () => {
+                          await loadTalentOptions();
+                          setNewCampaignStep(3);
+                        }}
                         disabled={!campaignForm.collaborator_type}
                         className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
                       >
-                        <CheckCircle2 className="w-4 h-4 mr-2" />
-                        Create Campaign
+                        Next: Select Talent
                       </Button>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {newCampaignStep === 3 && (
+                <div className="space-y-6">
+                  <Alert className="bg-blue-50 border-2 border-blue-200 rounded-none">
+                    <AlertCircle className="h-5 w-5 text-blue-600" />
+                    <AlertDescription className="text-blue-900">
+                      Base rate is shown per week. You can include an optional
+                      offer.
+                    </AlertDescription>
+                  </Alert>
+
+                  <div className="flex gap-3">
+                    <Input
+                      value={talentSearch}
+                      onChange={(e) => setTalentSearch(e.target.value)}
+                      placeholder="Search talent..."
+                      className="border-2 border-gray-300 rounded-none"
+                    />
+                    <Button
+                      onClick={loadTalentOptions}
+                      className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
+                    >
+                      <Search className="w-4 h-4 mr-2" />
+                      Search
+                    </Button>
+                  </div>
+
+                  {loadingTalentOptions ? (
+                    <div className="text-sm text-gray-600">
+                      Loading talents…
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-h-[360px] overflow-y-auto border-2 border-gray-200 p-3">
+                      {formattedTalentOptions.map((row: any) => {
+                        const base = Number(row.base_rate_weekly_cents || 0);
+                        const disabled = base <= 0;
+                        const requesting = requestingByTargetId.has(
+                          String(row.id),
+                        );
+                        return (
+                          <Card
+                            key={String(row.id)}
+                            className="p-3 border-2 border-gray-200 rounded-none"
+                          >
+                            <div className="flex items-center justify-between gap-4">
+                              <div>
+                                <p className="font-bold text-gray-900">
+                                  {row.display_name}
+                                </p>
+                                <p className="text-xs text-gray-600">
+                                  {row.creator_type ||
+                                    row.role_type ||
+                                    "Creator"}
+                                </p>
+                                <p className="text-sm text-gray-700 mt-1">
+                                  Base rate:{" "}
+                                  <span className="font-semibold">
+                                    {base > 0
+                                      ? `$${Math.round(base / 100).toLocaleString()}/week`
+                                      : "Unavailable"}
+                                  </span>
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={offerByTargetId[String(row.id)] || ""}
+                                  onChange={(e) =>
+                                    setOfferByTargetId((prev) => ({
+                                      ...prev,
+                                      [String(row.id)]: e.target.value,
+                                    }))
+                                  }
+                                  placeholder="Your offer"
+                                  className="w-32 border-2 border-gray-300 rounded-none"
+                                />
+                                <Button
+                                  disabled={disabled || requesting}
+                                  onClick={() => handleRequestLicense(row)}
+                                  className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
+                                >
+                                  {requesting
+                                    ? "Sending..."
+                                    : "Request License"}
+                                </Button>
+                              </div>
+                            </div>
+                          </Card>
+                        );
+                      })}
+                      {formattedTalentOptions.length === 0 && (
+                        <p className="text-sm text-gray-500">
+                          No talent found for this collaborator type.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="flex justify-between gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => setNewCampaignStep(2)}
+                      className="border-2 border-gray-300 rounded-none bg-white text-black hover:bg-gray-50"
+                    >
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      Back
+                    </Button>
+                    <Button
+                      onClick={handleCreateCampaign}
+                      className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
+                    >
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                      Finish
+                    </Button>
                   </div>
                 </div>
               )}

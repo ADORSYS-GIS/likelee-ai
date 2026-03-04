@@ -1645,10 +1645,12 @@ export default function CreatorDashboard() {
           instagram_connected: prev.instagram_connected ?? false,
           content_types: profile.content_types || [],
           industries: profile.industries || [],
-          // Derive weekly price from monthly base (USD-only)
+          // Canonical rate is weekly; fall back to legacy monthly when needed.
           price_per_month:
-            typeof profile.base_monthly_price_cents === "number"
-              ? Math.round(profile.base_monthly_price_cents / 100)
+            typeof profile.base_weekly_price_cents === "number"
+              ? Math.round(profile.base_weekly_price_cents / 100)
+              : typeof profile.base_monthly_price_cents === "number"
+                ? Math.round(profile.base_monthly_price_cents / 100 / 4.345)
               : (prev.price_per_month ?? 0),
           royalty_percentage: prev.royalty_percentage ?? 0,
           accept_negotiations:
@@ -3472,7 +3474,10 @@ export default function CreatorDashboard() {
       bio: creator.bio,
       city: creator.location?.split(",")[0]?.trim(),
       state: creator.location?.split(",")[1]?.trim(),
-      base_monthly_price_cents: (creator.price_per_month || 0) * 100,
+      base_weekly_price_cents: (creator.price_per_month || 0) * 100,
+      base_monthly_price_cents: Math.round(
+        (creator.price_per_month || 0) * 100 * 4.345,
+      ),
       birthday:
         typeof creator.birthday === "string" && creator.birthday.trim().length
           ? creator.birthday.trim()
@@ -3585,9 +3590,12 @@ export default function CreatorDashboard() {
           accept_negotiations:
             savedProfile.accept_negotiations ?? prev.accept_negotiations,
           is_public_brands: resolvePublicBrandsVisibility(savedProfile),
-          price_per_month: savedProfile.base_monthly_price_cents
-            ? Math.round(savedProfile.base_monthly_price_cents / 100)
-            : prev.price_per_month,
+          price_per_month:
+            typeof savedProfile.base_weekly_price_cents === "number"
+              ? Math.round(savedProfile.base_weekly_price_cents / 100)
+              : savedProfile.base_monthly_price_cents
+                ? Math.round(savedProfile.base_monthly_price_cents / 100 / 4.345)
+                : prev.price_per_month,
         }));
       }
 
@@ -7587,9 +7595,7 @@ export default function CreatorDashboard() {
                   </div>
                   <div className="flex flex-col -space-y-1 text-gray-900 font-medium leading-tight">
                     <span className="text-xl">/</span>
-                    <span className="text-base">
-                      {t("creatorDashboard.settingsView.rules.month")}
-                    </span>
+                    <span className="text-base">week</span>
                   </div>
                 </div>
               </div>
