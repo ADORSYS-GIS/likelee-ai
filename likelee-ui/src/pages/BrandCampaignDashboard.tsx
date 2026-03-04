@@ -102,6 +102,7 @@ export default function BrandCampaignDashboard() {
 
   const [campaignForm, setCampaignForm] = useState({
     existing_campaign_id: "",
+    selected_agency_id: "",
     name: "",
     objective: "",
     brief_file: null,
@@ -129,6 +130,7 @@ export default function BrandCampaignDashboard() {
     setNewCampaignStep(1);
     setCampaignForm({
       existing_campaign_id: "",
+      selected_agency_id: "",
       name: "",
       objective: "",
       brief_file: null,
@@ -165,47 +167,32 @@ export default function BrandCampaignDashboard() {
     try {
       setLoadingTalentOptions(true);
       const campaignId = String(campaignForm.existing_campaign_id || "").trim();
-      if (campaignId) {
-        const response: any = await base44.get(
-          `/api/brand/campaigns/${encodeURIComponent(campaignId)}/license-requests/options`,
-          {
-            params: {
-              collaborator_type:
-                campaignForm.collaborator_type === "agency"
-                  ? "agency"
-                  : "creator",
-              q: talentSearch || undefined,
-              limit: 80,
-            },
-          },
-        );
-        setTalentOptions(Array.isArray(response?.items) ? response.items : []);
+      if (!campaignId) {
+        toast({
+          title: "Campaign ID required",
+          description: "Enter a saved campaign ID before loading collaborators.",
+          variant: "destructive",
+        });
+        setTalentOptions([]);
         return;
       }
-
-      // Fallback for demo flow before a persisted campaign id exists.
-      const rows: any = await base44.get(`/marketplace/search`, {
-        params: {
-          profile_type: "creator",
-          query: talentSearch || undefined,
-          limit: 80,
+      const response: any = await base44.get(
+        `/api/brand/campaigns/${encodeURIComponent(campaignId)}/license-requests/options`,
+        {
+          params: {
+            collaborator_type:
+              campaignForm.collaborator_type === "agency" ? "agency" : "creator",
+            agency_id:
+              campaignForm.collaborator_type === "agency"
+                ? String(campaignForm.selected_agency_id || "").trim()
+                : undefined,
+            q: talentSearch || undefined,
+            limit: 80,
+          },
         },
-      });
-      const mapped = (Array.isArray(rows) ? rows : []).map((r: any) => ({
-        id: r.id,
-        display_name: r.display_name || r.full_name || "Unknown",
-        creator_type: r.creator_type,
-        city: r.city,
-        state: r.state,
-        base_rate_weekly_cents: r.base_weekly_price_cents || 0,
-        rate_currency: r.currency_code || "USD",
-        rate_source_type: "creator",
-        accept_negotiations:
-          typeof r.accept_negotiations === "boolean"
-            ? r.accept_negotiations
-            : true,
-      }));
-      setTalentOptions(mapped);
+      );
+      setTalentOptions(Array.isArray(response?.items) ? response.items : []);
+      return;
     } catch (error: any) {
       console.error(error);
       toast({
@@ -651,23 +638,6 @@ export default function BrandCampaignDashboard() {
 
                   <div>
                     <label className="text-sm font-medium text-gray-700 block mb-2">
-                      Existing Campaign ID (for real license requests)
-                    </label>
-                    <Input
-                      value={campaignForm.existing_campaign_id}
-                      onChange={(e) =>
-                        setCampaignForm({
-                          ...campaignForm,
-                          existing_campaign_id: e.target.value,
-                        })
-                      }
-                      placeholder="Optional UUID"
-                      className="border-2 border-gray-300 rounded-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 block mb-2">
                       Campaign Objective *
                     </label>
                     <Select
@@ -837,31 +807,11 @@ export default function BrandCampaignDashboard() {
                           ? "Select Agency"
                           : "Select Creator"}
                       </label>
-                      <div className="flex gap-3 mb-4">
-                        <Input
-                          placeholder="Search by name or email..."
-                          className="flex-1 border-2 border-gray-300 rounded-none"
-                        />
-                        <Button className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none">
-                          <Search className="w-4 h-4 mr-2" />
-                          Search
-                        </Button>
-                      </div>
-
                       <div className="border-2 border-gray-200 rounded-none p-4 mb-4">
-                        <p className="text-sm text-gray-600 mb-3">
-                          Or invite via email:
+                        <p className="text-sm text-gray-700">
+                          Collaborator selection is configured by platform
+                          connection flow.
                         </p>
-                        <div className="flex gap-3">
-                          <Input
-                            placeholder="email@example.com"
-                            className="flex-1 border-2 border-gray-300 rounded-none"
-                          />
-                          <Button className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none">
-                            <Mail className="w-4 h-4 mr-2" />
-                            Send Invite
-                          </Button>
-                        </div>
                       </div>
 
                       <Alert className="bg-green-50 border-2 border-green-200 rounded-none">
@@ -967,6 +917,11 @@ export default function BrandCampaignDashboard() {
                                       ? `$${Math.round(base / 100).toLocaleString()}/week`
                                       : "Unavailable"}
                                   </span>
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {row.rate_source_type === "agency_connection"
+                                    ? "Agency-set base rate"
+                                    : "Creator-set base rate"}
                                 </p>
                               </div>
                               <div className="flex items-center gap-2">
