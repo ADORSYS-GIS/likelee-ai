@@ -172,6 +172,27 @@
   - Keep `likelee-server/.env.example` in sync.
   - Document the variables here under this section.
 
+### Studio Providers (AI Generation)
+
+- `FAL_API_KEY`
+  - API key used by the backend to submit/poll Fal Studio generation jobs.
+  - Default: empty.
+- `FAL_API_URL`
+  - Base URL for Fal API.
+  - Default: `https://api.fal.ai`.
+- `HIGGSFIELD_API_KEY`
+  - API key used by the backend to submit/poll Higgsfield generation jobs.
+  - Default: empty.
+- `HIGGSFIELD_API_URL`
+  - Base URL for Higgsfield API.
+  - Default: `https://api.higgsfield.ai`.
+- `KIVE_API_KEY`
+  - API key used by the backend to submit/poll Kive generation jobs.
+  - Default: empty.
+- `KIVE_API_URL`
+  - Base URL for Kive API.
+  - Default: `https://api.kive.ai`.
+
 ### SMTP (Admin + Sales/Contact)
 
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`
@@ -196,6 +217,27 @@
   - URL Stripe redirects to after successful checkout.
 - `STRIPE_CHECKOUT_CANCEL_URL`
   - URL Stripe redirects to after checkout is canceled.
+
+### Stripe (Studio credit packs)
+
+- `STRIPE_STUDIO_SUCCESS_URL`
+  - URL Stripe redirects to after a successful Studio credits checkout.
+  - Should include `{CHECKOUT_SESSION_ID}` so the frontend can show status.
+- `STRIPE_STUDIO_CANCEL_URL`
+  - URL Stripe redirects to after a canceled Studio credits checkout.
+
+- `STRIPE_STUDIO_LITE_PRICE_IDS`
+  - Mapping of credit amounts to Stripe Price IDs for the Lite plan.
+  - Format: `credits:price_id` pairs separated by commas.
+  - Example: `300:price_123`.
+
+- `STRIPE_STUDIO_PRO_PRICE_IDS`
+  - Mapping of credit amounts to Stripe Price IDs for the Pro plan.
+  - Format: `credits:price_id` pairs separated by commas.
+  - Example: `2000:price_123,5000:price_456,10000:price_789`.
+
+- `STRIPE_STUDIO_PRICE_IDS`
+  - Backwards-compatible fallback mapping (used if the plan-specific mapping is not set).
 
 ### Stripe Subscriptions (Client Licensing / Package Paywall)
 

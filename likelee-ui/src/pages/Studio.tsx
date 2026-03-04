@@ -28,7 +28,7 @@ const toolCards = [
   {
     title: "Generate AI Video",
     icon: Film,
-    path: "/studio/video",
+    path: createPageUrl("StudioVideo"),
     badge: null,
     color: "from-[#F18B6A] to-[#E07A5A]",
     bgColor: "bg-orange-500",
@@ -36,7 +36,7 @@ const toolCards = [
   {
     title: "Generate AI Image",
     icon: Image,
-    path: "/studio/image",
+    path: createPageUrl("StudioImage"),
     badge: null,
     color: "from-[#32C8D1] to-teal-500",
     bgColor: "bg-cyan-500",
@@ -44,7 +44,7 @@ const toolCards = [
   {
     title: "Generate AI Avatar",
     icon: Brain,
-    path: "/studio/avatar",
+    path: createPageUrl("StudioVideo"),
     badge: null,
     color: "from-purple-500 to-indigo-600",
     bgColor: "bg-purple-500",
@@ -52,7 +52,7 @@ const toolCards = [
   {
     title: "Generate AI Shorts",
     icon: Clapperboard,
-    path: "/studio/shorts",
+    path: createPageUrl("StudioVideo"),
     badge: "Beta",
     color: "from-[#F7B750] to-amber-500",
     bgColor: "bg-amber-500",
@@ -60,7 +60,7 @@ const toolCards = [
   {
     title: "Generate AI Effects",
     icon: Sparkles,
-    path: "/studio/effects",
+    path: createPageUrl("StudioImage"),
     badge: "New",
     color: "from-pink-500 to-rose-600",
     bgColor: "bg-pink-500",
@@ -386,7 +386,7 @@ export default function Studio() {
                       Image to Video AI
                     </button>
                     <button
-                      onClick={() => navigate(createPageUrl("StudioAvatar"))}
+                      onClick={() => navigate(createPageUrl("StudioVideo"))}
                       className="block w-full text-left px-3 py-2 text-sm text-white hover:bg-white/5 rounded transition-colors"
                     >
                       Photo to Video Avatar
@@ -760,7 +760,7 @@ export default function Studio() {
                       </button>
                       <button
                         onClick={() => {
-                          navigate(createPageUrl("StudioAvatar"));
+                          navigate(createPageUrl("StudioVideo"));
                           setMobileMenuOpen(false);
                         }}
                         className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5 rounded"
@@ -1299,7 +1299,7 @@ export default function Studio() {
                     className="model-card p-4 bg-white/5 border border-white/10 hover:bg-white/10 cursor-pointer transition-all rounded-lg flex items-center justify-between"
                     onClick={() =>
                       navigate(
-                        createPageUrl("StudioAvatarOptions") +
+                        createPageUrl("StudioVideoOptions") +
                           `?model=${encodeURIComponent(model.id)}&name=${encodeURIComponent(model.name)}`,
                       )
                     }

@@ -729,6 +729,34 @@ pub fn build_router(state: AppState) -> Router {
             "/api/invites/agency-talent/:token/magic-link",
             get(crate::agency_talent_invites::get_magic_link_by_token),
         )
+        // --- Studio (AI Generation) ---
+        .route("/api/studio/generate", post(crate::studio::generate))
+        .route("/api/studio/jobs/:id", get(crate::studio::job_status))
+        .route("/api/studio/wallet", get(crate::studio::get_wallet))
+        .route(
+            "/api/studio/generations",
+            get(crate::studio::list_generations),
+        )
+        .route(
+            "/api/studio/transactions",
+            get(crate::studio::list_transactions),
+        )
+        .route(
+            "/api/studio/campaigns/:campaign_id/generations",
+            get(crate::studio::list_campaign_generations),
+        )
+        .route("/api/studio/upload", post(crate::studio::upload_file))
+        .route("/api/studio/licensed-assets", get(crate::studio::list_licensed_assets))
+
+        // --- Legacy Stripe endpoint used by some UI flows ---
+        .route(
+            "/stripe/create-checkout-session",
+            post(crate::billing::create_checkout_session_legacy),
+        )
+        .route(
+            "/api/stripe/create-checkout-session",
+            post(crate::billing::create_checkout_session_legacy),
+        )
         // --- Webhooks ---
         .route("/webhooks/stripe", post(crate::payouts::stripe_webhook))
         .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))

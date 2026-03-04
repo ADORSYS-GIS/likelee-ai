@@ -122,6 +122,12 @@ async fn main() {
         stripe_checkout_cancel_url: cfg.stripe_checkout_cancel_url.clone(),
         stripe_licensing_success_url: cfg.stripe_licensing_success_url.clone(),
         stripe_licensing_cancel_url: cfg.stripe_licensing_cancel_url.clone(),
+
+        stripe_studio_success_url: cfg.stripe_studio_success_url.clone(),
+        stripe_studio_cancel_url: cfg.stripe_studio_cancel_url.clone(),
+        stripe_studio_price_ids: cfg.stripe_studio_price_ids.clone(),
+        stripe_studio_lite_price_ids: cfg.stripe_studio_lite_price_ids.clone(),
+        stripe_studio_pro_price_ids: cfg.stripe_studio_pro_price_ids.clone(),
         payouts_enabled: cfg.payouts_enabled,
         payout_auto_approve_threshold_cents: cfg.payout_auto_approve_threshold_cents,
         min_payout_amount_cents: cfg.min_payout_amount_cents,
@@ -164,6 +170,14 @@ async fn main() {
         kyc_bypass_veriff_limit: cfg.kyc_bypass_veriff_limit,
 
         frontend_url: cfg.frontend_url.clone(),
+
+        // Studio Provider API Keys
+        fal_api_key: cfg.fal_api_key.clone(),
+        fal_api_url: cfg.fal_api_url.clone(),
+        higgsfield_api_key: cfg.higgsfield_api_key.clone(),
+        higgsfield_api_url: cfg.higgsfield_api_url.clone(),
+        kive_api_key: cfg.kive_api_key.clone(),
+        kive_api_url: cfg.kive_api_url.clone(),
     };
 
     // Start background jobs

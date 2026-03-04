@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -9,6 +8,9 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { getUserFriendlyError } from "@/utils";
+import WalletTransactionsDialog from "@/components/WalletTransactionsDialog";
+import { getWallet } from "@/api/studio";
+import { createCheckoutSession } from "@/api/functions";
 
 const creditTiers = [
   { credits: 2000, price: 59, label: "2,000" },
@@ -24,40 +26,25 @@ const creditTiers = [
 export default function StudioSubscribe() {
   const [selectedTierIndex, setSelectedTierIndex] = useState(0);
   const [checkingOut, setCheckingOut] = useState(false);
+  const [showTransactions, setShowTransactions] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: user } = useQuery({
-    queryKey: ["user"],
-    queryFn: () => base44.auth.me(),
-  });
-
-  const { data: credits } = useQuery({
-    queryKey: ["credits", user?.email],
-    queryFn: async () => {
-      const result = await base44.entities.StudioCredits.filter({
-        user_email: user.email,
-      });
-      return result[0] || { credits_balance: 0, plan_type: "free" };
-    },
-    enabled: !!user,
+  const { data: wallet } = useQuery({
+    queryKey: ["studio", "wallet"],
+    queryFn: () => getWallet(),
   });
 
   const checkoutMutation = useMutation({
-    mutationFn: async ({ plan_type, credits, price }) => {
-      const { data } = await base44.functions.invoke("createCheckoutSession", {
-        plan_type,
-        credits,
-        price,
-      });
-      return data;
+    mutationFn: async (input: { plan_type: string; credits: number; price: number }) => {
+      return await createCheckoutSession(input);
     },
     onSuccess: (data) => {
       // Redirect to Stripe Checkout
       window.location.href = data.url;
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Checkout failed:", error);
       toast({
         title: "Error",
@@ -69,6 +56,10 @@ export default function StudioSubscribe() {
   });
 
   const selectedTier = creditTiers[selectedTierIndex];
+
+  const currentPlan = String(wallet?.current_plan || "")
+    .trim()
+    .toLowerCase();
 
   const handleSubscribe = (plan, creditAmount, price) => {
     setCheckingOut(true);
@@ -155,7 +146,7 @@ export default function StudioSubscribe() {
       {/* Hero */}
       <section className="px-6 pt-16 pb-12 text-center">
         <Badge className="mb-6 bg-white/10 text-white border-white/20">
-          Current Plan: {credits?.plan_type || "Free"}
+          Wallet Balance: {wallet?.balance || 0} credits
         </Badge>
         <h1 className="text-4xl md:text-6xl font-bold mb-6">
           Choose Your Plan
@@ -168,6 +159,11 @@ export default function StudioSubscribe() {
 
       {/* Pricing */}
       <section className="px-6 py-12">
+        <WalletTransactionsDialog
+          open={showTransactions}
+          onOpenChange={setShowTransactions}
+        />
+
         <div className="max-w-6xl mx-auto">
           <div className="grid md:grid-cols-2 gap-8">
             {/* Lite Plan */}
@@ -177,6 +173,11 @@ export default function StudioSubscribe() {
                 <Badge className="bg-[#32C8D1]/20 text-[#32C8D1]">
                   Most Popular
                 </Badge>
+                {currentPlan === "lite" && (
+                  <Badge className="bg-green-500/20 text-green-400 border border-green-500/30">
+                    Current plan
+                  </Badge>
+                )}
               </div>
 
               <h3 className="text-2xl font-bold text-white mb-2">Lite Plan</h3>
@@ -223,8 +224,11 @@ export default function StudioSubscribe() {
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Processing...
                   </>
-                ) : credits?.plan_type === "lite" ? (
-                  "Current Plan"
+                ) : currentPlan === "lite" ? (
+                  <>
+                    Add 300 Credits — $15
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </>
                 ) : (
                   <>
                     Subscribe to Lite
@@ -245,6 +249,11 @@ export default function StudioSubscribe() {
                 <Badge className="bg-[#F18B6A]/20 text-[#F18B6A]">
                   Best Value
                 </Badge>
+                {currentPlan === "pro" && (
+                  <Badge className="bg-green-500/20 text-green-400 border border-green-500/30">
+                    Current plan
+                  </Badge>
+                )}
               </div>
 
               <h3 className="text-2xl font-bold text-white mb-2">
@@ -330,8 +339,11 @@ export default function StudioSubscribe() {
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Processing...
                   </>
-                ) : credits?.plan_type === "pro" ? (
-                  "Current Plan"
+                ) : currentPlan === "pro" ? (
+                  <>
+                    Add {selectedTier.label} Credits — ${selectedTier.price}
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </>
                 ) : (
                   <>
                     Subscribe to Pro
@@ -343,15 +355,32 @@ export default function StudioSubscribe() {
           </div>
 
           {/* Current Credits Display */}
-          {credits && (
-            <Card className="p-6 mt-8 bg-white/5 border border-white/10 text-center">
-              <p className="text-gray-400 mb-2">Your Current Balance</p>
-              <p className="text-4xl font-bold text-white mb-2">
-                {credits.credits_balance}
+          <div className="flex items-center justify-between mb-10">
+            <div>
+              <h1 className="text-4xl font-bold text-white mb-2">
+                Studio Credits
+              </h1>
+              <p className="text-gray-400">
+                Choose a credit pack to unlock AI generation tools.
               </p>
-              <p className="text-sm text-gray-400">credits available</p>
-            </Card>
-          )}
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-gray-400 mb-1">Current Balance</p>
+              <p className="text-3xl font-bold text-white">
+                {wallet?.balance || 0}
+              </p>
+              <p className="text-sm text-gray-200/80">credits</p>
+              <div className="mt-3 flex items-center gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowTransactions(true)}
+                  className="border-white/10 hover:bg-white/5"
+                >
+                  Transactions
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </div>

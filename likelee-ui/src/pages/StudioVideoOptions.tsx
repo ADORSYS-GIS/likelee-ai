@@ -1,102 +1,123 @@
 import React, { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Film,
   ArrowLeft,
   Clock,
   Coins,
   Search,
-  Image as ImageFrame,
+  ChevronRight,
+  Sparkles,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
 
 const videoModels = [
   {
-    id: "fal-ai/runway-gen3/turbo/text-to-video",
-    name: "Runway Gen-3 Turbo",
+    id: "fal-ai/veo3.1",
+    name: "Google Veo 3.1",
     icon: "🎬",
-    description: "Fast, high-quality video generation",
-    duration: "5-10 sec",
-    credits: "15+",
-    badges: ["Hot"],
+    description: "State-of-the-art AI video with synchronized audio",
+    duration: "4–8 sec",
+    credits: "20",
+    tag: "Pro",
+    tagColor: "#EC4899",
+    capabilities: ["AI-Audio", "Quality"],
   },
   {
-    id: "fal-ai/luma-dream-machine",
-    name: "Luma Dream Machine",
-    icon: "💫",
-    description: "Cinematic AI video creation",
-    duration: "5 sec",
-    credits: "12+",
-    badges: ["New"],
-  },
-  {
-    id: "fal-ai/kling-video/v1/pro/text-to-video",
-    name: "Kling AI Pro",
-    icon: "⚡",
-    description: "Professional grade video with emotional depth",
-    duration: "5-10 sec",
-    credits: "30+",
-    badges: [],
-  },
-  {
-    id: "fal-ai/kling-video/v1/standard/text-to-video",
-    name: "Kling AI Standard",
-    icon: "⚡",
-    description: "Enhanced visual realism and motion fluidity",
-    duration: "5-10 sec",
-    credits: "20+",
-    badges: [],
-  },
-  {
-    id: "fal-ai/hunyuan-video",
-    name: "Hunyuan Video",
-    icon: "🎭",
-    description: "Tencent's powerful video model",
-    duration: "2-5 sec",
-    credits: "25+",
-    badges: ["Audio"],
-  },
-  {
-    id: "fal-ai/fast-animatediff/text-to-video",
-    name: "Fast AnimateDiff",
-    icon: "🎨",
-    description: "Quick animation generation",
-    duration: "3 sec",
-    credits: "10+",
-    badges: [],
-  },
-  {
-    id: "fal-ai/fast-svd/text-to-video",
-    name: "Stable Video Diffusion",
-    icon: "🌊",
-    description: "Stable fluid motion and lifelike dynamics",
-    duration: "3-5 sec",
-    credits: "8+",
-    badges: [],
-  },
-  {
-    id: "fal-ai/fast-svd/image-to-video",
-    name: "SVD Image-to-Video",
+    id: "fal-ai/veo3.1/image-to-video",
+    name: "Veo 3.1 · Image→Video",
     icon: "🖼️",
-    description: "Animate images into smooth videos",
-    duration: "3-5 sec",
-    credits: "8+",
-    badges: ["End frame"],
+    description: "DeepMind's flagship image-to-video with audio",
+    duration: "4–8 sec",
+    credits: "25",
+    tag: "SOTA",
+    tagColor: "#EC4899",
+    capabilities: ["AI-Audio", "Image"],
+  },
+  {
+    id: "fal-ai/kling-video/v2.5-turbo/pro/image-to-video",
+    name: "Kling 2.6 Pro",
+    icon: "🎞️",
+    description: "Top-tier fluidity with native lip-sync",
+    duration: "5–10 sec",
+    credits: "30",
+    tag: "Adv",
+    tagColor: "#6366F1",
+    capabilities: ["Fluidity", "AI-Audio"],
+  },
+  {
+    id: "fal-ai/wan/v2.2-a14b/image-to-video",
+    name: "Wan 2.1",
+    icon: "🌅",
+    description: "High motion diversity and cinematic results",
+    duration: "5 sec",
+    credits: "15",
+    tag: "Wan",
+    tagColor: "#10B981",
+    capabilities: ["Motion", "Custom-Voice"],
+  },
+  {
+    id: "fal-ai/minimax/hailuo-02/standard/image-to-video",
+    name: "MiniMax 02",
+    icon: "✨",
+    description: "Advanced motion with 768p resolution",
+    duration: "5 sec",
+    credits: "15",
+    tag: "New",
+    tagColor: "#6366F1",
+    capabilities: ["Motion", "Custom-Voice"],
+  },
+  {
+    id: "fal-ai/seedance-v2",
+    name: "Seedance 2.0",
+    icon: "🌱",
+    description: "Bytedance's cinematic model with audio",
+    duration: "5 sec",
+    credits: "20",
+    tag: "Sync",
+    tagColor: "#10B981",
+    capabilities: ["AI-Audio", "Custom-Voice"],
+  },
+  {
+    id: "fal-ai/minimax/video-01-live",
+    name: "MiniMax Video 01",
+    icon: "💫",
+    description: "Fast text-to-video with prompt optimization",
+    duration: "5 sec",
+    credits: "10",
+    tag: "Legacy",
+    tagColor: "#4B5563",
+    capabilities: ["Speed", "Quality"],
   },
 ];
+
+const capabilityColors: Record<string, { bg: string; color: string }> = {
+  Speed: { bg: "rgba(16,185,129,0.1)", color: "#10B981" },
+  Quality: { bg: "rgba(139,92,246,0.1)", color: "#C084FC" },
+  Cinematic: { bg: "rgba(236,72,153,0.1)", color: "#EC4899" },
+  Pro: { bg: "rgba(245,158,11,0.1)", color: "#F59E0B" },
+  Depth: { bg: "rgba(241,139,106,0.1)", color: "#F18B6A" },
+  Realism: { bg: "rgba(59,130,246,0.1)", color: "#60A5FA" },
+  Motion: { bg: "rgba(139,92,246,0.1)", color: "#A78BFA" },
+  Creative: { bg: "rgba(236,72,153,0.1)", color: "#F472B6" },
+  Audio: { bg: "rgba(139,92,246,0.1)", color: "#8B5CF6" },
+  Fast: { bg: "rgba(16,185,129,0.1)", color: "#34D399" },
+  Animation: { bg: "rgba(251,191,36,0.1)", color: "#FCD34D" },
+  Stable: { bg: "rgba(107,114,128,0.1)", color: "#9CA3AF" },
+  Fluid: { bg: "rgba(59,130,246,0.1)", color: "#38BDF8" },
+  Image: { bg: "rgba(139,92,246,0.1)", color: "#C084FC" },
+  Animate: { bg: "rgba(241,139,106,0.1)", color: "#F18B6A" },
+  "AI-Audio": { bg: "rgba(139,92,246,0.1)", color: "#8B5CF6" },
+  "Custom-Voice": { bg: "rgba(16,185,129,0.1)", color: "#10B981" },
+};
 
 export default function StudioVideoOptions() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [selectedModel, setSelectedModel] = useState(null);
+  const [hoveredModel, setHoveredModel] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const modelId = searchParams.get("model");
-  const modelName = searchParams.get("name");
   const mode = searchParams.get("mode") || "text-to-video";
 
   const filteredModels = videoModels.filter(
@@ -105,10 +126,10 @@ export default function StudioVideoOptions() {
       model.description.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const handleModelSelect = (model) => {
+  const handleModelSelect = (model: typeof videoModels[0]) => {
     navigate(
       createPageUrl("StudioVideo") +
-        `?model=${encodeURIComponent(model.id)}&mode=${mode}`,
+      `?model=${encodeURIComponent(model.id)}&mode=${mode}`,
     );
   };
 
@@ -120,150 +141,331 @@ export default function StudioVideoOptions() {
   };
 
   return (
-    <div style={{ background: "#0A0A0F", minHeight: "100vh", color: "#fff" }}>
-      {/* Header */}
-      <header className="px-6 py-6 border-b border-white/10 bg-[#0A0A0F]/95 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                onClick={() => navigate(createPageUrl("Studio"))}
-                className="text-gray-400 hover:text-white"
+    <div
+      style={{
+        background: "#09090F",
+        minHeight: "100vh",
+        color: "#F0F0FF",
+        fontFamily: "'Inter', system-ui, sans-serif",
+      }}
+    >
+      {/* ── HEADER ── */}
+      <header
+        style={{
+          background: "linear-gradient(90deg, #0F0F1E 0%, #120F1C 50%, #0F0F1E 100%)",
+          borderBottom: "1px solid rgba(139,92,246,0.25)",
+          position: "sticky",
+          top: 0,
+          zIndex: 50,
+          backdropFilter: "blur(12px)",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 900,
+            margin: "0 auto",
+            padding: "0 24px",
+          }}
+        >
+          <div
+            style={{
+              height: 64,
+              display: "flex",
+              alignItems: "center",
+              gap: 16,
+            }}
+          >
+            <button
+              onClick={() => navigate(createPageUrl("Studio"))}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                color: "#9CA3AF",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                fontSize: 14,
+                transition: "color 0.2s",
+                padding: 0,
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "#F0F0FF")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "#9CA3AF")}
+            >
+              <ArrowLeft size={16} />
+              Back
+            </button>
+
+            <div style={{ width: 1, height: 24, background: "rgba(255,255,255,0.1)" }} />
+
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1 }}>
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
+                  background: "linear-gradient(135deg, #8B5CF6, #F18B6A)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
               >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-              <div className="flex items-center gap-3">
-                <Film className="w-6 h-6 text-[#F18B6A]" />
-                <div>
-                  <h1 className="text-xl font-bold text-white">
-                    {getModeTitle()}
-                  </h1>
-                  <p className="text-sm text-gray-400">
-                    Choose a model to get started
-                  </p>
-                </div>
+                <Film size={18} color="#fff" />
+              </div>
+              <div>
+                <h1
+                  style={{
+                    margin: 0,
+                    fontSize: 18,
+                    fontWeight: 700,
+                    background: "linear-gradient(90deg, #C084FC, #F18B6A)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {getModeTitle()}
+                </h1>
+                <p style={{ margin: 0, fontSize: 11, color: "#6B7280" }}>
+                  Pick your AI engine
+                </p>
               </div>
             </div>
           </div>
 
-          {/* Search Bar */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
+          {/* Search */}
+          <div
+            style={{
+              paddingBottom: 16,
+              position: "relative",
+            }}
+          >
+            <Search
+              size={16}
+              color="#6B7280"
+              style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)" }}
+            />
+            <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search models..."
-              className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-gray-500"
+              placeholder="Search models…"
+              style={{
+                width: "100%",
+                padding: "11px 16px 11px 40px",
+                borderRadius: 12,
+                border: "1px solid rgba(139,92,246,0.25)",
+                background: "rgba(255,255,255,0.03)",
+                color: "#F0F0FF",
+                fontSize: 14,
+                outline: "none",
+                boxSizing: "border-box",
+                transition: "border-color 0.2s, box-shadow 0.2s",
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = "rgba(139,92,246,0.6)";
+                e.target.style.boxShadow = "0 0 0 3px rgba(139,92,246,0.1)";
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = "rgba(139,92,246,0.25)";
+                e.target.style.boxShadow = "none";
+              }}
             />
           </div>
         </div>
       </header>
 
-      {/* Model Selection Grid */}
-      <section className="px-6 py-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="space-y-3">
-            {filteredModels.map((model) => (
-              <Card
+      {/* ── INTRO BADGE ── */}
+      <div style={{ maxWidth: 900, margin: "0 auto", padding: "28px 24px 8px" }}>
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "6px 14px",
+            borderRadius: 999,
+            background: "rgba(139,92,246,0.08)",
+            border: "1px solid rgba(139,92,246,0.2)",
+            marginBottom: 4,
+          }}
+        >
+          <Sparkles size={13} color="#C084FC" />
+          <span style={{ fontSize: 12, color: "#C084FC", fontWeight: 600 }}>
+            {filteredModels.length} models available
+          </span>
+        </div>
+      </div>
+
+      {/* ── MODEL LIST ── */}
+      <section style={{ maxWidth: 900, margin: "0 auto", padding: "12px 24px 48px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {filteredModels.map((model) => {
+            const isHovered = hoveredModel === model.id;
+            return (
+              <div
                 key={model.id}
                 onClick={() => handleModelSelect(model)}
-                className={`p-6 bg-white/5 border-2 ${
-                  selectedModel?.id === model.id
-                    ? "border-[#F18B6A]"
-                    : "border-white/10"
-                } hover:border-white/30 rounded-xl cursor-pointer transition-all group`}
+                onMouseEnter={() => setHoveredModel(model.id)}
+                onMouseLeave={() => setHoveredModel(null)}
+                style={{
+                  padding: "20px 24px",
+                  background: isHovered
+                    ? "linear-gradient(135deg, #1A1A2E, #16162A)"
+                    : "#12121C",
+                  border: isHovered
+                    ? "1px solid rgba(139,92,246,0.5)"
+                    : "1px solid rgba(139,92,246,0.12)",
+                  borderRadius: 18,
+                  cursor: "pointer",
+                  transition: "all 0.22s ease",
+                  transform: isHovered ? "translateY(-2px)" : "none",
+                  boxShadow: isHovered
+                    ? "0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(139,92,246,0.1)"
+                    : "none",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 18,
+                }}
               >
-                <div className="flex items-start gap-4">
-                  {/* Radio Button */}
-                  <div
-                    className={`w-6 h-6 rounded-full border-2 ${
-                      selectedModel?.id === model.id
-                        ? "border-[#F18B6A] bg-[#F18B6A]"
-                        : "border-white/30"
-                    } flex items-center justify-center flex-shrink-0 mt-1`}
-                  >
-                    {selectedModel?.id === model.id && (
-                      <div className="w-3 h-3 rounded-full bg-white" />
+                {/* Icon */}
+                <div
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 16,
+                    background: isHovered
+                      ? "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(241,139,106,0.1))"
+                      : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${isHovered ? "rgba(139,92,246,0.3)" : "rgba(255,255,255,0.06)"}`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 26,
+                    flexShrink: 0,
+                    transition: "all 0.22s",
+                  }}
+                >
+                  {model.icon}
+                </div>
+
+                {/* Info */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                    <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#F0F0FF" }}>
+                      {model.name}
+                    </h3>
+                    {model.tag && (
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 700,
+                          padding: "2px 8px",
+                          borderRadius: 999,
+                          background: `${model.tagColor}18`,
+                          color: model.tagColor!,
+                          border: `1px solid ${model.tagColor}35`,
+                          letterSpacing: "0.04em",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        {model.tag}
+                      </span>
                     )}
                   </div>
 
-                  {/* Model Icon */}
-                  <div className="text-4xl flex-shrink-0">{model.icon}</div>
+                  <p style={{ margin: "0 0 10px", fontSize: 13, color: "#6B7280", lineHeight: 1.4 }}>
+                    {model.description}
+                  </p>
 
-                  {/* Model Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      <h3 className="text-lg font-bold text-white">
-                        {model.name}
-                      </h3>
-                      {model.badges.map((badge, idx) => (
-                        <Badge
-                          key={idx}
-                          className={
-                            badge === "Hot"
-                              ? "bg-pink-500/20 text-pink-400 border-pink-500/30"
-                              : badge === "New"
-                                ? "bg-green-500/20 text-green-400 border-green-500/30"
-                                : badge === "Audio"
-                                  ? "bg-purple-500/20 text-purple-400 border-purple-500/30"
-                                  : "bg-blue-500/20 text-blue-400 border-blue-500/30"
-                          }
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    {/* Duration */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 5,
+                        padding: "4px 10px",
+                        borderRadius: 8,
+                        background: "rgba(255,255,255,0.04)",
+                        border: "1px solid rgba(255,255,255,0.07)",
+                      }}
+                    >
+                      <Clock size={11} color="#9CA3AF" />
+                      <span style={{ fontSize: 11, color: "#9CA3AF" }}>{model.duration}</span>
+                    </div>
+                    {/* Credits */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 5,
+                        padding: "4px 10px",
+                        borderRadius: 8,
+                        background: "rgba(245,158,11,0.06)",
+                        border: "1px solid rgba(245,158,11,0.15)",
+                      }}
+                    >
+                      <Coins size={11} color="#F59E0B" />
+                      <span style={{ fontSize: 11, color: "#F59E0B", fontWeight: 600 }}>{model.credits} credits</span>
+                    </div>
+                    {/* Capabilities */}
+                    {model.capabilities.map((cap) => {
+                      const style = capabilityColors[cap] || { bg: "rgba(255,255,255,0.06)", color: "#9CA3AF" };
+                      return (
+                        <span
+                          key={cap}
+                          style={{
+                            padding: "4px 10px",
+                            borderRadius: 8,
+                            background: style.bg,
+                            color: style.color,
+                            fontSize: 11,
+                            fontWeight: 600,
+                          }}
                         >
-                          {badge}
-                        </Badge>
-                      ))}
-                    </div>
-
-                    <p className="text-gray-400 mb-4">{model.description}</p>
-
-                    {/* Model Stats */}
-                    <div className="flex items-center gap-4 flex-wrap">
-                      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 rounded-lg border border-white/10">
-                        <Clock className="w-3.5 h-3.5 text-gray-400" />
-                        <span className="text-sm text-gray-300">
-                          {model.duration}
+                          {cap}
                         </span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 rounded-lg border border-white/10">
-                        <Coins className="w-3.5 h-3.5 text-yellow-400" />
-                        <span className="text-sm text-gray-300">
-                          {model.credits} credits
-                        </span>
-                      </div>
-
-                      {model.badges.includes("End frame") && (
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 rounded-lg border border-white/10">
-                          <ImageFrame className="w-3.5 h-3.5 text-blue-400" />
-                          <span className="text-sm text-gray-300">
-                            End frame
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Arrow indicator on hover */}
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="w-8 h-8 rounded-full bg-[#F18B6A]/20 flex items-center justify-center">
-                      <ArrowLeft className="w-4 h-4 text-[#F18B6A] rotate-180" />
-                    </div>
+                      );
+                    })}
                   </div>
                 </div>
-              </Card>
-            ))}
-          </div>
 
-          {filteredModels.length === 0 && (
-            <div className="text-center py-20">
-              <p className="text-gray-400 text-lg">
-                No models found matching "{searchQuery}"
-              </p>
-            </div>
-          )}
+                {/* Arrow */}
+                <div
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 10,
+                    background: isHovered ? "rgba(139,92,246,0.2)" : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${isHovered ? "rgba(139,92,246,0.4)" : "rgba(255,255,255,0.07)"}`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    transition: "all 0.22s",
+                  }}
+                >
+                  <ChevronRight size={16} color={isHovered ? "#C084FC" : "#4B5563"} />
+                </div>
+              </div>
+            );
+          })}
         </div>
+
+        {filteredModels.length === 0 && (
+          <div
+            style={{
+              textAlign: "center",
+              padding: "80px 40px",
+              color: "#4B5563",
+            }}
+          >
+            <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
+            <p style={{ fontSize: 16, margin: 0 }}>
+              No models found for "<span style={{ color: "#9CA3AF" }}>{searchQuery}</span>"
+            </p>
+          </div>
+        )}
       </section>
     </div>
   );

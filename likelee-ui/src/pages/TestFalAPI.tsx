@@ -62,8 +62,8 @@ export default function TestFalAPI() {
       addResult("Video Generation", null, "Starting video generation test...");
       const { data } = await base44.functions.invoke("generateVideo", {
         prompt: "A serene lake with mountains in the background",
-        model: "fal-ai/fast-animatediff/text-to-video",
-        duration: 3,
+        model: "fal-ai/minimax/video-01-live",
+        duration: 5,
         aspect_ratio: "16:9",
       });
 
@@ -81,7 +81,7 @@ export default function TestFalAPI() {
           "checkJobStatus",
           {
             job_id: data.job_id,
-            model: "fal-ai/fast-animatediff/text-to-video",
+            model: "fal-ai/minimax/video-01-live",
           },
         );
 

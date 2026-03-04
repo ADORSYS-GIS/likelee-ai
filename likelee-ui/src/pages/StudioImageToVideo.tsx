@@ -29,6 +29,16 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { createPageUrl } from "@/utils";
+import { getUserFriendlyError } from "@/utils";
+import WalletTransactionsDialog from "@/components/WalletTransactionsDialog";
+import {
+  generate as studioGenerate,
+  getJobStatus,
+  getWallet,
+  inferProviderFromModel,
+  listGenerations,
+  type StudioGenerationRow,
+} from "@/api/studio";
 
 const imageToVideoModels = [
   {
@@ -102,70 +112,49 @@ export default function StudioImageToVideo() {
   const [translatePrompt, setTranslatePrompt] = useState(false);
   const [generatingJobId, setGeneratingJobId] = useState(null);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [showTransactions, setShowTransactions] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: user } = useQuery({
-    queryKey: ["user"],
-    queryFn: () => base44.auth.me(),
-  });
-
-  const { data: credits } = useQuery({
-    queryKey: ["credits", user?.email],
-    queryFn: async () => {
-      const result = await base44.entities.StudioCredits.filter({
-        user_email: user.email,
-      });
-      return result[0] || { credits_balance: 0, plan_type: "free" };
-    },
-    enabled: !!user,
+  const { data: wallet } = useQuery({
+    queryKey: ["studio", "wallet"],
+    queryFn: () => getWallet(),
   });
 
   const { data: generations } = useQuery({
-    queryKey: ["generations", user?.email],
-    queryFn: () =>
-      base44.entities.StudioGeneration.filter(
-        { user_email: user.email, generation_type: "video" },
-        "-created_date",
-        20,
-      ),
-    enabled: !!user,
+    queryKey: ["studio", "generations", "image_to_video"],
+    queryFn: () => listGenerations({ generation_type: "image_to_video", limit: 20 }),
   });
 
   const generateMutation = useMutation({
-    mutationFn: async (data) => {
-      const { data: result } = await base44.functions.invoke(
-        "imageToVideo",
-        data,
-      );
-      return result;
+    mutationFn: async (data: any) => {
+      const provider = inferProviderFromModel(selectedModel);
+      return await studioGenerate({
+        provider,
+        model: selectedModel,
+        generation_type: "image_to_video",
+        input_params: data,
+      });
     },
     onSuccess: async (result) => {
-      setGeneratingJobId(result.job_id);
-
-      await base44.entities.StudioGeneration.create({
-        user_email: user.email,
-        generation_type: "video",
-        model: selectedModel,
-        prompt: prompt,
-        input_image_url: imageUrl,
-        job_id: result.job_id,
-        status: "processing",
-        credits_used: result.credits_used || 14,
-        settings: { aspect_ratio: aspectRatio, output_number: outputNumber },
-      });
-
-      queryClient.invalidateQueries({ queryKey: ["generations"] });
-      queryClient.invalidateQueries({ queryKey: ["credits"] });
-      pollJobStatus(result.job_id);
+      setGeneratingJobId(result.generation_id);
+      queryClient.invalidateQueries({ queryKey: ["studio", "wallet"] });
+      queryClient.invalidateQueries({ queryKey: ["studio", "generations", "image_to_video"] });
+      pollJobStatus(result.generation_id);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       if (
         error.message?.includes("Insufficient credits") ||
-        error.response?.status === 402
+        error.status === 402
       ) {
         setShowSubscriptionModal(true);
+      } else {
+        toast({
+          title: "Error",
+          description: getUserFriendlyError(error),
+          variant: "destructive",
+        });
       }
     },
   });
@@ -173,32 +162,12 @@ export default function StudioImageToVideo() {
   const pollJobStatus = async (jobId) => {
     const interval = setInterval(async () => {
       try {
-        const { data: statusResult } = await base44.functions.invoke(
-          "checkJobStatus",
-          {
-            job_id: jobId,
-            model: "fal-ai/fast-svd/image-to-video",
-          },
-        );
-
-        if (statusResult.status === "completed") {
+        const statusResult = await getJobStatus(jobId);
+        if (statusResult.status === "completed" || statusResult.status === "failed") {
           clearInterval(interval);
           setGeneratingJobId(null);
-
-          const generations = await base44.entities.StudioGeneration.filter({
-            job_id: jobId,
-          });
-          if (generations[0]) {
-            await base44.entities.StudioGeneration.update(generations[0].id, {
-              status: "completed",
-              output_url: statusResult.result.video?.url,
-            });
-          }
-
-          queryClient.invalidateQueries({ queryKey: ["generations"] });
-        } else if (statusResult.status === "failed") {
-          clearInterval(interval);
-          setGeneratingJobId(null);
+          queryClient.invalidateQueries({ queryKey: ["studio", "generations", "image_to_video"] });
+          queryClient.invalidateQueries({ queryKey: ["studio", "wallet"] });
         }
       } catch (error) {
         console.error("Polling error:", error);
@@ -217,7 +186,7 @@ export default function StudioImageToVideo() {
       return;
     }
 
-    if (!credits || credits.credits_balance < 14) {
+    if (!wallet || wallet.balance < 14) {
       setShowSubscriptionModal(true);
       return;
     }
@@ -225,6 +194,8 @@ export default function StudioImageToVideo() {
     generateMutation.mutate({
       image_url: imageUrl,
       prompt: prompt || undefined,
+      aspect_ratio: aspectRatio,
+      output_number: outputNumber,
     });
   };
 
@@ -256,12 +227,24 @@ export default function StudioImageToVideo() {
             <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-lg border border-white/10">
               <Coins className="w-4 h-4 text-yellow-400" />
               <span className="text-sm font-medium">
-                {credits?.credits_balance || 0} credits
+                {wallet?.balance || 0} credits
               </span>
             </div>
+            <Button
+              variant="outline"
+              onClick={() => setShowTransactions(true)}
+              className="border-white/10 hover:bg-white/5"
+            >
+              Transactions
+            </Button>
           </div>
         </div>
       </header>
+
+      <WalletTransactionsDialog
+        open={showTransactions}
+        onOpenChange={setShowTransactions}
+      />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid lg:grid-cols-[400px_1fr] gap-8">
@@ -576,27 +559,26 @@ export default function StudioImageToVideo() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              {generations?.map((gen) => (
+              {(generations as StudioGenerationRow[] | undefined)?.map((gen) => (
                 <Card
                   key={gen.id}
                   className="p-3 bg-white/5 border border-white/10 rounded-lg hover:border-white/20 transition-all"
                 >
                   <div className="flex items-center gap-2 mb-3">
                     <div className="text-xs px-2 py-1 bg-white/10 rounded text-gray-300">
-                      Pollo.ai
+                      {gen.provider}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {new Date(gen.created_date).toLocaleDateString()}
+                      {new Date(gen.created_at).toLocaleDateString()}
                     </div>
                   </div>
 
-                  {gen.status === "completed" && gen.output_url ? (
+                  {gen.status === "completed" && gen.output_urls?.[0] ? (
                     <div className="relative aspect-video bg-black rounded-lg overflow-hidden mb-3">
                       <video
-                        src={gen.output_url}
+                        src={gen.output_urls[0]}
                         controls
                         className="w-full h-full"
-                        poster={gen.input_image_url}
                       />
                     </div>
                   ) : gen.status === "processing" ? (
@@ -609,11 +591,9 @@ export default function StudioImageToVideo() {
                     </div>
                   )}
 
-                  {gen.prompt && (
-                    <p className="text-xs text-gray-400 line-clamp-2">
-                      {gen.prompt}
-                    </p>
-                  )}
+                  <p className="text-xs text-gray-400 line-clamp-2">
+                    {gen.input_params?.prompt || ""}
+                  </p>
                 </Card>
               ))}
 
@@ -660,7 +640,7 @@ export default function StudioImageToVideo() {
                   }}
                   className="flex-1 bg-gradient-to-r from-[#F18B6A] to-[#E07A5A] hover:opacity-90"
                 >
-                  Get Credits
+                  Add Credits
                 </Button>
               </div>
             </div>

@@ -149,6 +149,21 @@ pub struct ServerConfig {
     #[envconfig(from = "STRIPE_LICENSING_CANCEL_URL", default = "")]
     pub stripe_licensing_cancel_url: String,
 
+    #[envconfig(from = "STRIPE_STUDIO_SUCCESS_URL", default = "")]
+    pub stripe_studio_success_url: String,
+
+    #[envconfig(from = "STRIPE_STUDIO_CANCEL_URL", default = "")]
+    pub stripe_studio_cancel_url: String,
+
+    #[envconfig(from = "STRIPE_STUDIO_PRICE_IDS", default = "")]
+    pub stripe_studio_price_ids: String,
+
+    #[envconfig(from = "STRIPE_STUDIO_LITE_PRICE_IDS", default = "")]
+    pub stripe_studio_lite_price_ids: String,
+
+    #[envconfig(from = "STRIPE_STUDIO_PRO_PRICE_IDS", default = "")]
+    pub stripe_studio_pro_price_ids: String,
+
     // Payout Logic
     #[envconfig(from = "PAYOUTS_ENABLED", default = "false")]
     pub payouts_enabled: bool,
@@ -204,6 +219,25 @@ pub struct ServerConfig {
 
     #[envconfig(from = "FRONTEND_URL", default = "http://localhost:5173")]
     pub frontend_url: String,
+
+    // Studio Provider API Keys
+    #[envconfig(from = "FAL_API_KEY", default = "")]
+    pub fal_api_key: String,
+
+    #[envconfig(from = "FAL_API_URL", default = "https://queue.fal.run")]
+    pub fal_api_url: String,
+
+    #[envconfig(from = "HIGGSFIELD_API_KEY", default = "")]
+    pub higgsfield_api_key: String,
+
+    #[envconfig(from = "HIGGSFIELD_API_URL", default = "https://api.higgsfield.ai")]
+    pub higgsfield_api_url: String,
+
+    #[envconfig(from = "KIVE_API_KEY", default = "")]
+    pub kive_api_key: String,
+
+    #[envconfig(from = "KIVE_API_URL", default = "https://api.kive.ai")]
+    pub kive_api_url: String,
 }
 
 #[derive(Clone)]
@@ -237,6 +271,12 @@ pub struct AppState {
     pub stripe_checkout_cancel_url: String,
     pub stripe_licensing_success_url: String,
     pub stripe_licensing_cancel_url: String,
+
+    pub stripe_studio_success_url: String,
+    pub stripe_studio_cancel_url: String,
+    pub stripe_studio_price_ids: String,
+    pub stripe_studio_lite_price_ids: String,
+    pub stripe_studio_pro_price_ids: String,
 
     // Payout Logic
     pub payouts_enabled: bool,
@@ -276,4 +316,12 @@ pub struct AppState {
 
     pub kyc_bypass_veriff_limit: bool,
     pub frontend_url: String,
+
+    // Studio Provider API Keys
+    pub fal_api_key: String,
+    pub fal_api_url: String,
+    pub higgsfield_api_key: String,
+    pub higgsfield_api_url: String,
+    pub kive_api_key: String,
+    pub kive_api_url: String,
 }

@@ -1,9 +1,165 @@
 use axum::{extract::State, http::StatusCode, Json};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::str::FromStr;
 use tracing::{info, warn};
 
 use crate::{auth::AuthUser, config::AppState};
+
+fn credits_to_price_id(raw: &str, credits: i64) -> Option<String> {
+    let raw = raw.trim();
+    if raw.is_empty() {
+        return None;
+    }
+
+    for pair in raw.split(',') {
+        let pair = pair.trim();
+        if pair.is_empty() {
+            continue;
+        }
+
+        let mut it = pair.splitn(2, ':');
+        let k = it.next().unwrap_or("").trim();
+        let v = it.next().unwrap_or("").trim();
+        if k.is_empty() || v.is_empty() {
+            continue;
+        }
+
+        if let Ok(kc) = k.parse::<i64>() {
+            if kc == credits {
+                return Some(v.to_string());
+            }
+        }
+    }
+
+    None
+}
+
+fn studio_price_id_for_plan(state: &AppState, plan_type: Option<&str>, credits: i64) -> Option<String> {
+    let p = plan_type.unwrap_or("").trim().to_lowercase();
+
+    let plan_raw = if p == "lite" {
+        state.stripe_studio_lite_price_ids.as_str()
+    } else if p == "pro" {
+        state.stripe_studio_pro_price_ids.as_str()
+    } else {
+        ""
+    };
+
+    credits_to_price_id(plan_raw, credits)
+        .or_else(|| credits_to_price_id(state.stripe_studio_price_ids.as_str(), credits))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct StudioCheckoutRequest {
+    #[serde(default)]
+    pub plan_type: Option<String>,
+    pub credits: i64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct StudioCheckoutResponse {
+    pub url: String,
+}
+
+pub async fn create_checkout_session_legacy(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<StudioCheckoutRequest>,
+) -> Result<Json<StudioCheckoutResponse>, (StatusCode, String)> {
+    if state.stripe_secret_key.trim().is_empty() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_not_configured".to_string(),
+        ));
+    }
+
+    if state.stripe_studio_success_url.trim().is_empty() || state.stripe_studio_cancel_url.trim().is_empty() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_studio_checkout_urls_not_configured".to_string(),
+        ));
+    }
+
+    if payload.credits <= 0 {
+        return Err((StatusCode::BAD_REQUEST, "invalid_credits".to_string()));
+    }
+
+    let stripe_price_id = studio_price_id_for_plan(
+        &state,
+        payload.plan_type.as_deref(),
+        payload.credits,
+    )
+        .unwrap_or_default();
+    if stripe_price_id.trim().is_empty() {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_studio_price_ids_not_configured".to_string(),
+        ));
+    }
+
+    let client = stripe_sdk::Client::new(state.stripe_secret_key.clone());
+
+    // Studio credits are sold as one-time packs (CheckoutSessionMode::Payment).
+    // A recurring price here will cause Stripe to reject the session creation.
+    let price_id = stripe_sdk::PriceId::from_str(stripe_price_id.as_str())
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
+    let price = stripe_sdk::Price::retrieve(&client, &price_id, &[])
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+    let is_recurring = price.recurring.is_some()
+        || matches!(price.type_, Some(stripe_sdk::PriceType::Recurring));
+    if is_recurring {
+        warn!(stripe_price_id = %stripe_price_id, "studio checkout configured with recurring stripe price; expected one-time price");
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            "stripe_studio_price_must_be_one_time".to_string(),
+        ));
+    }
+
+    let mut cs_params = stripe_sdk::CreateCheckoutSession::new();
+    cs_params.success_url = Some(state.stripe_studio_success_url.as_str());
+    cs_params.cancel_url = Some(state.stripe_studio_cancel_url.as_str());
+    cs_params.mode = Some(stripe_sdk::CheckoutSessionMode::Payment);
+    cs_params.client_reference_id = Some(user.id.as_str());
+    cs_params.line_items = Some(vec![stripe_sdk::CreateCheckoutSessionLineItems {
+        price: Some(stripe_price_id.clone()),
+        quantity: Some(1),
+        ..Default::default()
+    }]);
+
+    let mut md = std::collections::HashMap::new();
+    md.insert("billing_domain".to_string(), "studio".to_string());
+    md.insert("user_id".to_string(), user.id.clone());
+    md.insert("credits".to_string(), payload.credits.to_string());
+    if let Some(pt) = payload.plan_type.as_deref() {
+        let pt = pt.trim().to_lowercase();
+        if pt == "lite" || pt == "pro" {
+            md.insert("plan_type".to_string(), pt);
+        }
+    }
+    cs_params.metadata = Some(md);
+
+    let session = stripe_sdk::CheckoutSession::create(&client, cs_params)
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    let url = session
+        .url
+        .as_ref()
+        .map(|u| u.to_string())
+        .unwrap_or_default();
+    if url.is_empty() {
+        warn!("stripe checkout session missing url");
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            "stripe_checkout_missing_url".to_string(),
+        ));
+    }
+
+    info!(user_id = %user.id, credits = payload.credits, "created studio stripe checkout session");
+    Ok(Json(StudioCheckoutResponse { url }))
+}
 
 #[derive(Debug, Default, Deserialize)]
 pub struct AgencyCheckoutAddons {
