@@ -2302,10 +2302,10 @@ pub async fn accept_agency_brand_connection_request(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !connect_status.is_success() {
-        if !is_missing_relation_error(&connect_text, "brand_agency_connections") {
-            return Err(sanitize_db_error(connect_status.as_u16(), connect_text));
-        }
+    if !connect_status.is_success()
+        && !is_missing_relation_error(&connect_text, "brand_agency_connections")
+    {
+        return Err(sanitize_db_error(connect_status.as_u16(), connect_text));
     }
 
     Ok(Json(serde_json::json!({"status":"ok"})))
@@ -2733,7 +2733,7 @@ pub async fn create_brand_licensing_request(
         ));
     }
 
-    let duration_days = payload.duration_days.unwrap_or(30).max(1).min(3650);
+    let duration_days = payload.duration_days.unwrap_or(30).clamp(1, 3650);
     let usage_scope = payload.usage_scope.unwrap_or_default().trim().to_string();
     let territory = payload
         .territory
