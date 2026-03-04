@@ -34,6 +34,26 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::agency_talent_invites::list_for_talent),
         )
         .route(
+            "/api/creator/brand-connection-requests",
+            get(crate::face_profiles::list_creator_brand_connection_requests),
+        )
+        .route(
+            "/api/creator/brand-connection-requests/:id/accept",
+            post(crate::face_profiles::accept_creator_brand_connection_request),
+        )
+        .route(
+            "/api/creator/brand-connection-requests/:id/decline",
+            post(crate::face_profiles::decline_creator_brand_connection_request),
+        )
+        .route(
+            "/api/creator/brand-connections",
+            get(crate::face_profiles::list_creator_brand_connections),
+        )
+        .route(
+            "/api/creator/brand-connections/:brand_id/disconnect",
+            post(crate::face_profiles::disconnect_creator_brand_connection),
+        )
+        .route(
             "/api/talent/licensing-requests",
             get(crate::talent::list_licensing_requests),
         )
@@ -454,6 +474,38 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/marketplace/connect",
             post(crate::face_profiles::create_marketplace_connection_request),
+        )
+        .route(
+            "/api/brand/connected-agencies",
+            get(crate::face_profiles::list_brand_connected_agencies),
+        )
+        .route(
+            "/api/brand/agency-connections/:agency_id/disconnect",
+            post(crate::face_profiles::disconnect_brand_agency_connection_as_brand),
+        )
+        .route(
+            "/api/brand/licensing-requests",
+            post(crate::face_profiles::create_brand_licensing_request),
+        )
+        .route(
+            "/api/agency/brand-connection-requests",
+            get(crate::face_profiles::list_agency_brand_connection_requests),
+        )
+        .route(
+            "/api/agency/brand-connections",
+            get(crate::face_profiles::list_agency_brand_connections),
+        )
+        .route(
+            "/api/agency/brand-connection-requests/:id/accept",
+            post(crate::face_profiles::accept_agency_brand_connection_request),
+        )
+        .route(
+            "/api/agency/brand-connection-requests/:id/decline",
+            post(crate::face_profiles::decline_agency_brand_connection_request),
+        )
+        .route(
+            "/api/agency/brand-connections/:brand_id/disconnect",
+            post(crate::face_profiles::disconnect_brand_agency_connection_as_agency),
         )
         .route(
             "/api/license-submissions/draft",

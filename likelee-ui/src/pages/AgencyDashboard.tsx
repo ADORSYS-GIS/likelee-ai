@@ -140,6 +140,7 @@ import AgencyRosterView from "@/components/agency/RosterView";
 import AnalyticsDashboardView from "@/components/agency/AnalyticsDashboardView";
 import LicensingRequestsView from "@/components/agency/LicensingRequestsView";
 import ActiveLicensesView from "@/components/agency/ActiveLicensesView";
+import BrandConnectionsView from "@/components/agency/BrandConnectionsView";
 import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
 import PerformanceTiers from "@/components/dashboard/PerformanceTiers";
 import {
@@ -17239,6 +17240,28 @@ export default function AgencyDashboard() {
     return pending.length;
   }, [licensingRequestsCountQuery.data]);
 
+  const brandConnectionRequestsCountQuery = useQuery({
+    queryKey: ["agency-brand-connection-requests", user?.id],
+    queryFn: async () => {
+      const resp = await base44.get<{
+        status?: string;
+        requests?: any[];
+      }>("/api/agency/brand-connection-requests");
+      return Array.isArray(resp?.requests) ? resp.requests : [];
+    },
+    enabled: !!user?.id,
+    refetchOnWindowFocus: false,
+    staleTime: 30 * 1000,
+    refetchInterval: 15 * 1000,
+  });
+
+  const pendingBrandConnectionCount = useMemo(() => {
+    const requests = Array.isArray(brandConnectionRequestsCountQuery.data)
+      ? brandConnectionRequestsCountQuery.data
+      : [];
+    return requests.length;
+  }, [brandConnectionRequestsCountQuery.data]);
+
   const rosterTalents = useMemo(() => {
     const d: any = rosterQuery.data;
     const talents = d?.talents;
@@ -17940,6 +17963,7 @@ export default function AgencyDashboard() {
     icon: React.ElementType;
     subItems?: string[];
     badges?: Record<string, string | number>;
+    badge?: string | number;
     disabled?: boolean;
     disabledReason?: string;
     disabledSubItems?: Record<string, boolean>;
@@ -17962,10 +17986,15 @@ export default function AgencyDashboard() {
             icon: FileText,
             subItems: [
               "Licensing Requests",
+              "Brand Connections",
               "License Submissions",
               "Active Licenses",
               "License Templates",
             ],
+            badges:
+              pendingBrandConnectionCount > 0
+                ? { "Brand Connections": pendingBrandConnectionCount }
+                : undefined,
           },
           { id: "payouts", label: "Payouts", icon: DollarSign },
           {
@@ -17993,6 +18022,15 @@ export default function AgencyDashboard() {
             label: "Settings",
             icon: Settings,
             subItems: ["General Settings", "File Storage"],
+          },
+          {
+            id: "brand-connections",
+            label: "Brand Connections",
+            icon: Link,
+            badge:
+              pendingBrandConnectionCount > 0
+                ? pendingBrandConnectionCount
+                : undefined,
           },
         ]
       : [
@@ -18055,6 +18093,15 @@ export default function AgencyDashboard() {
             label: "Settings",
             icon: Settings,
             subItems: ["General Settings", "File Storage"],
+          },
+          {
+            id: "brand-connections",
+            label: "Brand Connections",
+            icon: Link,
+            badge:
+              pendingBrandConnectionCount > 0
+                ? pendingBrandConnectionCount
+                : undefined,
           },
         ];
 
@@ -18167,6 +18214,11 @@ export default function AgencyDashboard() {
                   }`}
                 />
                 <span className="flex-1 text-left">{item.label}</span>
+                {item.badge !== undefined && (
+                  <span className="bg-indigo-600 text-white text-[10px] px-1.5 py-0.5 rounded font-bold">
+                    {item.badge}
+                  </span>
+                )}
                 {item.disabled && (
                   <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold">
                     Pro
@@ -18663,6 +18715,9 @@ export default function AgencyDashboard() {
             activeSubTab === "Licensing Requests" && (
               <LicensingRequestsView isSportsAgency={isSportsAgency} />
             )}
+          {activeTab === "licensing" &&
+            activeSubTab === "Brand Connections" && <BrandConnectionsView />}
+          {activeTab === "brand-connections" && <BrandConnectionsView />}
           {activeTab === "licensing" &&
             activeSubTab === "License Submissions" && (
               <LicenseSubmissionsTab isSportsAgency={isSportsAgency} />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -49,6 +49,7 @@ import {
   CheckSquare,
   X,
   ChevronDown,
+  Mail,
 } from "lucide-react";
 import {
   Dialog,
@@ -71,6 +72,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useToast } from "@/components/ui/use-toast";
+import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
 import {
   LineChart,
   Line,
@@ -400,6 +402,38 @@ const mockActivities = [
   },
 ];
 
+const mockInboxPackages = [
+  {
+    id: "pkg-1",
+    title: "Spring Fashion Campaign - Top Talent",
+    agency: "CM Models",
+    sent_at: "2/20/2025",
+    message:
+      "Hi! We have a curated selection of models perfect for your spring campaign. All talent is verified and ready for AI licensing.",
+    talent_count: 5,
+    unread: true,
+    avatars: [
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100",
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100",
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100",
+    ],
+  },
+  {
+    id: "pkg-2",
+    title: "Beauty & Lifestyle Portfolio",
+    agency: "Elite Models LA",
+    sent_at: "2/18/2025",
+    message:
+      "Thought you'd love our beauty talent for your upcoming campaigns.",
+    talent_count: 3,
+    unread: false,
+    avatars: [
+      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100",
+      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100",
+    ],
+  },
+];
+
 const mockAssets = [
   {
     id: 1,
@@ -590,8 +624,13 @@ const mockContracts = [
 
 export default function BrandDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeSection, setActiveSection] = useState("home");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showCampaignSubtabs, setShowCampaignSubtabs] = useState(true);
+  const [inboxSubTab, setInboxSubTab] = useState<
+    "talent_packages" | "direct_requests"
+  >("talent_packages");
   const [searchQuery, setSearchQuery] = useState("");
   const [brand, setBrand] = useState(mockBrand);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -634,6 +673,13 @@ export default function BrandDashboard() {
   });
 
   useEffect(() => {
+    const sectionFromState = (location.state as any)?.activeSection;
+    if (typeof sectionFromState === "string" && sectionFromState.length > 0) {
+      setActiveSection(sectionFromState);
+    }
+  }, [location.state]);
+
+  useEffect(() => {
     const fetchCreators = async () => {
       setLoading(true);
       try {
@@ -670,11 +716,13 @@ export default function BrandDashboard() {
           const mappedData = data.map((creator: any) => ({
             ...creator,
             id: creator.id || Math.random().toString(36).substr(2, 9),
-            name: creator.full_name || creator.name || "Unknown Creator",
-            image:
-              creator.profile_photo_url ||
-              creator.image ||
-              "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ed7158e33f31b30f653449/5d413193e_Screenshot2025-10-29at63349PM.png",
+            name: getDisplayName(
+              creator.full_name ||
+                creator.display_name ||
+                creator.stage_name ||
+                creator.name,
+            ),
+            image: creator.profile_photo_url || creator.image || null,
             location:
               creator.location ||
               (creator.city && creator.state
@@ -693,16 +741,14 @@ export default function BrandDashboard() {
             verified:
               creator.kyc_status === "approved" || creator.verified || false,
           }));
-          setCreators(mappedData);
+          setCreators(mappedData.filter((creator: any) => creator.verified));
         } else {
           console.error("API returned non-array data:", data);
-          setCreators(mockCreators);
+          setCreators([]);
         }
       } catch (error) {
         console.error("Failed to fetch creators:", error);
-        setCreators((prev) =>
-          Array.isArray(prev) && prev.length > 0 ? prev : mockCreators,
-        );
+        setCreators((prev) => (Array.isArray(prev) ? prev : []));
       } finally {
         setLoading(false);
       }
@@ -734,6 +780,17 @@ export default function BrandDashboard() {
     budget: 0,
   });
 
+  const getDisplayName = (value: unknown) => {
+    const normalized = String(value ?? "").trim();
+    return normalized || "Unknown";
+  };
+
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(/\s+/).filter(Boolean).slice(0, 2);
+    if (parts.length === 0) return "UN";
+    return parts.map((part) => part.charAt(0).toUpperCase()).join("");
+  };
+
   const escrowTotal = mockCampaigns
     .filter(
       (c) => c.status === "in_progress" || c.status === "pending_approval",
@@ -754,13 +811,13 @@ export default function BrandDashboard() {
   const navigationItems = [
     { id: "home", label: "Dashboard", icon: LayoutDashboard },
     { id: "marketplace", label: "Find Creators", icon: Search },
+    { id: "marketplace-agencies", label: "Find Agencies", icon: Building2 },
     {
       id: "campaigns",
       label: "My Campaigns",
       icon: Target,
       badge: mockCampaigns.length,
     },
-    { id: "studio", label: "Asset Library", icon: ImageIcon },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     {
       id: "usage",
@@ -1149,6 +1206,8 @@ export default function BrandDashboard() {
       return renderEscrowDetails();
     }
 
+    if (campaignView === "inbox") return renderInboxSubtab();
+
     return (
       <div className="space-y-6">
         <div>
@@ -1236,7 +1295,7 @@ export default function BrandDashboard() {
           <h2 className="text-xl font-bold text-gray-900 mb-4">
             Quick Actions
           </h2>
-          <div className="grid md:grid-cols-4 gap-4">
+          <div className="grid md:grid-cols-5 gap-4">
             <Button
               onClick={() => navigate(createPageUrl("BrandCampaignDashboard"))}
               className="h-24 bg-[#F7B750] hover:bg-[#E6A640] text-white border-2 border-gray-300 flex-col gap-2"
@@ -1261,6 +1320,13 @@ export default function BrandDashboard() {
             <Button className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2">
               <Users className="w-6 h-6" />
               <span>Invite Agency</span>
+            </Button>
+            <Button
+              onClick={() => setActiveSection("marketplace-agencies")}
+              className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
+            >
+              <Users className="w-6 h-6" />
+              <span>Browse Agencies</span>
             </Button>
           </div>
         </Card>
@@ -1400,11 +1466,19 @@ export default function BrandDashboard() {
           {/* Left Column - Image & Quick Info */}
           <div className="space-y-4">
             <Card className="p-6 bg-white border border-gray-200">
-              <img
-                src={selectedCreator.image}
-                alt={selectedCreator.name}
-                className="w-full aspect-square object-cover border-2 border-gray-200 rounded-lg mb-4"
-              />
+              {selectedCreator.image ? (
+                <img
+                  src={selectedCreator.image}
+                  alt={selectedCreator.name}
+                  className="w-full aspect-square object-cover border-2 border-gray-200 rounded-lg mb-4"
+                />
+              ) : (
+                <div className="w-full aspect-square border-2 border-gray-200 rounded-lg mb-4 bg-gray-100 flex items-center justify-center">
+                  <div className="w-20 h-20 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-2xl font-semibold">
+                    {getInitials(getDisplayName(selectedCreator.name))}
+                  </div>
+                </div>
+              )}
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
                 {selectedCreator.name}
               </h2>
@@ -2115,11 +2189,19 @@ export default function BrandDashboard() {
                 className="p-6 bg-white border border-gray-200 hover:shadow-lg transition-all"
               >
                 <div className="relative mb-4">
-                  <img
-                    src={creator.image}
-                    alt={creator.name}
-                    className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
-                  />
+                  {creator.image ? (
+                    <img
+                      src={creator.image}
+                      alt={creator.name}
+                      className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
+                    />
+                  ) : (
+                    <div className="w-full h-48 border-2 border-gray-200 rounded-lg bg-gray-100 flex items-center justify-center">
+                      <div className="w-16 h-16 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-xl font-semibold">
+                        {getInitials(getDisplayName(creator.name))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <h3 className="text-xl font-bold text-gray-900 mb-1">
@@ -2200,7 +2282,138 @@ export default function BrandDashboard() {
     );
   };
 
+  const renderAgencyMarketplace = () => (
+    <MarketplaceSection
+      entityType="agency"
+      title="Agency Marketplace"
+      subtitle="Verified agencies only"
+      verifiedBadgeLabel=""
+      searchPlaceholder="Search by agency name, type, service, or location..."
+      resultLimit={60}
+      queryScope="brand-agency-marketplace"
+    />
+  );
+
+  const renderInboxSubtab = () => (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-3xl font-bold text-gray-900 mb-1">Inbox</h2>
+        <p className="text-gray-600">
+          View packages and licensing proposals from agencies
+        </p>
+      </div>
+
+      <div className="inline-flex items-center bg-gray-100 p-1 rounded-lg">
+        <button
+          onClick={() => setInboxSubTab("talent_packages")}
+          className={`px-3 py-1.5 text-sm font-semibold rounded-md ${
+            inboxSubTab === "talent_packages"
+              ? "bg-white shadow-sm text-gray-900"
+              : "text-gray-500"
+          }`}
+        >
+          Talent Packages ({mockInboxPackages.length})
+        </button>
+        <button
+          onClick={() => setInboxSubTab("direct_requests")}
+          className={`px-3 py-1.5 text-sm font-semibold rounded-md ${
+            inboxSubTab === "direct_requests"
+              ? "bg-white shadow-sm text-gray-900"
+              : "text-gray-500"
+          }`}
+        >
+          Direct Requests
+        </button>
+      </div>
+
+      {inboxSubTab === "talent_packages" ? (
+        <div className="space-y-4">
+          {mockInboxPackages.map((pkg) => (
+            <Card
+              key={pkg.id}
+              className="p-6 bg-white border border-gray-300 rounded-none"
+            >
+              <div className="flex items-start justify-between gap-4 mb-3">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="text-2xl font-bold text-gray-900">
+                      {pkg.title}
+                    </h3>
+                    {pkg.unread && (
+                      <Badge className="bg-black text-white text-[10px] uppercase rounded-sm">
+                        New
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-700 font-medium">
+                    From: {pkg.agency}
+                  </p>
+                  <p className="text-sm text-gray-500">Sent: {pkg.sent_at}</p>
+                </div>
+                <Badge className="bg-blue-100 text-blue-700 border border-blue-200 text-xs">
+                  {pkg.talent_count} talent
+                </Badge>
+              </div>
+
+              <div className="flex items-center gap-2 mb-3">
+                {pkg.avatars.map((avatar, idx) => (
+                  <img
+                    key={`${pkg.id}-avatar-${idx}`}
+                    src={avatar}
+                    alt="Talent"
+                    className="w-9 h-9 rounded-full object-cover border border-gray-200"
+                  />
+                ))}
+                {pkg.talent_count > pkg.avatars.length && (
+                  <span className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-xs font-semibold text-gray-700">
+                    +{pkg.talent_count - pkg.avatars.length}
+                  </span>
+                )}
+              </div>
+
+              <p className="text-gray-700 italic mb-4">"{pkg.message}"</p>
+
+              <div className="flex gap-2">
+                <Button className="flex-1 bg-black hover:bg-gray-800 text-white rounded-none">
+                  <Eye className="w-4 h-4 mr-2" />
+                  View Package
+                </Button>
+                <Button
+                  variant="outline"
+                  className="border border-gray-300 rounded-none"
+                >
+                  Reply
+                </Button>
+                <Button
+                  variant="outline"
+                  className="border border-gray-300 rounded-none"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Card className="border-2 border-dashed border-gray-300 bg-white rounded-none p-16 text-center">
+          <Mail className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">
+            No direct requests yet
+          </h3>
+          <p className="text-lg text-gray-600">
+            Agencies can send you direct licensing requests for specific
+            campaigns
+          </p>
+        </Card>
+      )}
+    </div>
+  );
+
   const renderCampaigns = () => {
+    if (campaignView === "inbox") {
+      return renderInboxSubtab();
+    }
+
     const filteredCampaigns = mockCampaigns.filter((c) => {
       if (campaignView === "active") return c.status === "in_progress";
       if (campaignView === "pending") return c.status === "pending_approval";
@@ -3102,9 +3315,18 @@ export default function BrandDashboard() {
           >
             Drafts ({mockCampaigns.filter((c) => c.status === "draft").length})
           </button>
+          <button
+            onClick={() => setCampaignView("inbox")}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              campaignView === "inbox"
+                ? "border-[#F7B750] text-[#F7B750]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            Inbox ({mockActivities.length})
+          </button>
         </div>
 
-        {/* Campaign Cards */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredCampaigns.map((campaign) => (
             <Card
@@ -6497,45 +6719,124 @@ export default function BrandDashboard() {
           <div className="space-y-1">
             {navigationItems.map((item) => {
               const Icon = item.icon;
-              const isActive = activeSection === item.id;
+              const isCampaignGroup = item.id === "campaigns";
+              const isActive = isCampaignGroup
+                ? activeSection === "campaigns" || activeSection === "studio"
+                : activeSection === item.id;
 
               return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setActiveSection(item.id);
-                    setShowEscrowDetails(false);
-                    setShowBriefDetails(false);
-                    setShowCreatorProfile(false);
-                    setShowContractHub(false);
-                    setSelectedContract(null);
-                  }}
-                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all ${
-                    isActive
-                      ? "bg-[#F7B750] text-white"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
-                  <Icon className="w-5 h-5 flex-shrink-0" />
-                  {sidebarOpen && (
-                    <>
-                      <span className="flex-1 text-left font-medium">
-                        {item.label}
-                      </span>
-                      {item.badge !== undefined && item.badge > 0 && (
-                        <Badge
-                          className={
-                            isActive
-                              ? "bg-white text-[#F7B750]"
-                              : "bg-gray-700 text-white"
-                          }
-                        >
-                          {item.badge}
-                        </Badge>
+                <div key={item.id}>
+                  <div
+                    className={`w-full flex items-center gap-2 rounded-lg transition-all ${
+                      isActive
+                        ? "bg-[#F7B750] text-white"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    <button
+                      onClick={() => {
+                        setActiveSection(item.id);
+                        if (item.id === "campaigns") {
+                          setCampaignView("active");
+                        }
+                        setShowEscrowDetails(false);
+                        setShowBriefDetails(false);
+                        setShowCreatorProfile(false);
+                        setShowContractHub(false);
+                        setSelectedContract(null);
+                      }}
+                      className="flex-1 flex items-center gap-3 px-3 py-3 text-left"
+                    >
+                      <Icon className="w-5 h-5 flex-shrink-0" />
+                      {sidebarOpen && (
+                        <>
+                          <span className="flex-1 text-left font-medium">
+                            {item.label}
+                          </span>
+                          {!isCampaignGroup &&
+                            item.badge !== undefined &&
+                            item.badge > 0 && (
+                              <Badge
+                                className={
+                                  isActive
+                                    ? "bg-white text-[#F7B750]"
+                                    : "bg-gray-700 text-white"
+                                }
+                              >
+                                {item.badge}
+                              </Badge>
+                            )}
+                          {isCampaignGroup &&
+                            item.badge !== undefined &&
+                            item.badge > 0 && (
+                              <Badge
+                                className={
+                                  isActive
+                                    ? "bg-white text-[#F7B750]"
+                                    : "bg-gray-700 text-white"
+                                }
+                              >
+                                {item.badge}
+                              </Badge>
+                            )}
+                        </>
                       )}
-                    </>
+                    </button>
+
+                    {sidebarOpen && isCampaignGroup && (
+                      <button
+                        type="button"
+                        aria-label={
+                          showCampaignSubtabs
+                            ? "Hide campaign subtabs"
+                            : "Show campaign subtabs"
+                        }
+                        onClick={() => setShowCampaignSubtabs((prev) => !prev)}
+                        className="inline-flex items-center justify-center px-2 mr-2"
+                      >
+                        <ChevronDown
+                          className={`w-4 h-4 transition-transform ${
+                            showCampaignSubtabs ? "rotate-0" : "-rotate-90"
+                          }`}
+                        />
+                      </button>
+                    )}
+                  </div>
+
+                  {sidebarOpen && isCampaignGroup && showCampaignSubtabs && (
+                    <div className="mt-1 ml-11 space-y-1">
+                      <button
+                        onClick={() => {
+                          setActiveSection("campaigns");
+                          setCampaignView("inbox");
+                        }}
+                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
+                          activeSection === "campaigns" &&
+                          campaignView === "inbox"
+                            ? "bg-gray-100 text-gray-900"
+                            : "text-gray-600 hover:bg-gray-100"
+                        }`}
+                      >
+                        <Mail className="w-4 h-4" />
+                        <span className="flex-1 text-left">Inbox</span>
+                        <Badge className="bg-gray-200 text-gray-700">
+                          {mockActivities.length}
+                        </Badge>
+                      </button>
+                      <button
+                        onClick={() => setActiveSection("studio")}
+                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
+                          activeSection === "studio"
+                            ? "bg-gray-100 text-gray-900"
+                            : "text-gray-600 hover:bg-gray-100"
+                        }`}
+                      >
+                        <ImageIcon className="w-4 h-4" />
+                        <span className="text-left">Asset Library</span>
+                      </button>
+                    </div>
                   )}
-                </button>
+                </div>
               );
             })}
           </div>
@@ -6564,7 +6865,16 @@ export default function BrandDashboard() {
           </Alert>
 
           {activeSection === "home" && renderHome()}
-          {activeSection === "marketplace" && renderMarketplace()}
+          {activeSection === "marketplace" && (
+            <MarketplaceSection
+              title="Likelee Marketplace"
+              subtitle="Verified creators only"
+              verifiedBadgeLabel=""
+              queryScope="brand-creator-marketplace"
+            />
+          )}
+          {activeSection === "marketplace-agencies" &&
+            renderAgencyMarketplace()}
           {activeSection === "campaigns" && renderCampaigns()}
           {activeSection === "studio" && renderStudio()}
           {activeSection === "analytics" && renderAnalytics()}
