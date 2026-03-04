@@ -1,4 +1,4 @@
-use crate::{auth::AuthUser, config::AppState};
+use crate::{auth::AuthUser, config::AppState, errors::sanitize_db_error};
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
@@ -66,6 +66,29 @@ pub struct CreateLicensingRequest {
 }
 
 #[derive(Deserialize)]
+pub struct CreateBrandCampaignLicenseRequest {
+    pub collaborator_type: String, // agency | creator
+    pub target_id: String,         // agency_users.id (agency path) or creators.id (creator path)
+    pub offered_rate_weekly_cents: Option<i64>,
+    pub rate_currency: Option<String>,
+    pub campaign_title: Option<String>,
+    pub usage_scope: Option<String>,
+    pub regions: Option<String>,
+    pub deadline: Option<String>,
+    pub license_start_date: Option<String>,
+    pub license_end_date: Option<String>,
+    pub notes: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub struct BrandCampaignLicenseOptionsQuery {
+    pub collaborator_type: Option<String>, // agency | creator
+    pub agency_id: Option<String>,
+    pub q: Option<String>,
+    pub limit: Option<usize>,
+}
+
+#[derive(Deserialize)]
 pub struct PaySplitQuery {
     pub licensing_request_ids: String,
 }
@@ -95,6 +118,26 @@ fn value_to_non_empty_string(v: Option<&serde_json::Value>) -> Option<String> {
         .map(|s| s.trim())
         .filter(|s| !s.is_empty())
         .map(|s| s.to_string())
+}
+
+fn resolve_weekly_cents(
+    weekly: Option<i64>,
+    monthly: Option<i64>,
+    legacy_weekly_like: Option<f64>,
+) -> Option<i64> {
+    if let Some(v) = weekly {
+        if v > 0 {
+            return Some(v);
+        }
+    }
+    if let Some(v) = monthly {
+        if v > 0 {
+            return Some(((v as f64) / 4.345).round() as i64);
+        }
+    }
+    legacy_weekly_like
+        .filter(|v| *v > 0.0)
+        .map(|v| (v * 100.0).round() as i64)
 }
 
 fn created_at_group_key(brand_id: &str, created_at: &str) -> String {
@@ -741,6 +784,531 @@ pub async fn create(
     }
 
     Ok(Json(json!({ "id": request_id, "ok": true })))
+}
+
+pub async fn create_for_brand_campaign(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(campaign_id): Path<String>,
+    Json(payload): Json<CreateBrandCampaignLicenseRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+
+    if payload.target_id.trim().is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "target_id is required".to_string()));
+    }
+    if let Some(offered) = payload.offered_rate_weekly_cents {
+        if offered <= 0 {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "offered_rate_weekly_cents must be greater than 0".to_string(),
+            ));
+        }
+    }
+
+    let campaign_resp = state
+        .pg
+        .from("campaigns")
+        .select("id,name,brand_id")
+        .eq("id", &campaign_id)
+        .eq("brand_id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let campaign_status = campaign_resp.status();
+    let campaign_text = campaign_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !campaign_status.is_success() {
+        return Err(sanitize_db_error(campaign_status.as_u16(), campaign_text));
+    }
+    let campaign_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&campaign_text).unwrap_or_default();
+    let campaign_row = campaign_rows
+        .first()
+        .cloned()
+        .ok_or((StatusCode::NOT_FOUND, "campaign not found".to_string()))?;
+
+    let collaborator_type = payload.collaborator_type.trim().to_lowercase();
+    if collaborator_type != "agency" && collaborator_type != "creator" {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "collaborator_type must be agency or creator".to_string(),
+        ));
+    }
+
+    let mut resolved_currency = payload
+        .rate_currency
+        .as_deref()
+        .unwrap_or("USD")
+        .trim()
+        .to_uppercase();
+
+    let (
+        resolved_agency_id,
+        resolved_talent_id,
+        resolved_talent_name,
+        resolved_source_type,
+        resolved_source_id,
+        resolved_base_rate_weekly_cents,
+    ) = if collaborator_type == "agency" {
+        let talent_resp = state
+            .pg
+            .from("agency_users")
+            .select("id,agency_id,full_legal_name,stage_name,licensing_rate_weekly_cents,rate_currency,creator_id")
+            .eq("id", payload.target_id.trim())
+            .eq("role", "talent")
+            .eq("status", "active")
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let talent_status = talent_resp.status();
+        let talent_text = talent_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !talent_status.is_success() {
+            return Err(sanitize_db_error(talent_status.as_u16(), talent_text));
+        }
+        let talent_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&talent_text).unwrap_or_default();
+        let t = talent_rows
+            .first()
+            .cloned()
+            .ok_or((StatusCode::NOT_FOUND, "agency talent not found".to_string()))?;
+
+        let resolved_talent_id = t
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let resolved_agency_id = t
+            .get("agency_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let resolved_talent_name = t
+            .get("full_legal_name")
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.trim().is_empty())
+            .or_else(|| t.get("stage_name").and_then(|v| v.as_str()))
+            .unwrap_or("Talent")
+            .to_string();
+        let resolved_base_rate_weekly_cents = resolve_weekly_cents(
+            t.get("licensing_rate_weekly_cents")
+                .and_then(|v| v.as_i64()),
+            None,
+            t.get("licensing_rate").and_then(|v| v.as_f64()),
+        );
+        if resolved_currency == "USD" {
+            resolved_currency = t
+                .get("rate_currency")
+                .and_then(|v| v.as_str())
+                .unwrap_or("USD")
+                .trim()
+                .to_uppercase();
+        }
+        (
+            resolved_agency_id,
+            resolved_talent_id.clone(),
+            resolved_talent_name,
+            "agency_talent".to_string(),
+            resolved_talent_id,
+            resolved_base_rate_weekly_cents,
+        )
+    } else {
+        let creator_resp = state
+            .pg
+            .from("creators")
+            .select("id,full_name,base_weekly_price_cents,base_monthly_price_cents,currency_code")
+            .eq("id", payload.target_id.trim())
+            .eq("role", "creator")
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let creator_status = creator_resp.status();
+        let creator_text = creator_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !creator_status.is_success() {
+            return Err(sanitize_db_error(creator_status.as_u16(), creator_text));
+        }
+        let creator_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&creator_text).unwrap_or_default();
+        let c = creator_rows
+            .first()
+            .cloned()
+            .ok_or((StatusCode::NOT_FOUND, "creator not found".to_string()))?;
+
+        let resolved_talent_name = c
+            .get("full_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Creator")
+            .to_string();
+        let resolved_base_rate_weekly_cents = resolve_weekly_cents(
+            c.get("base_weekly_price_cents").and_then(|v| v.as_i64()),
+            c.get("base_monthly_price_cents").and_then(|v| v.as_i64()),
+            None,
+        );
+        if resolved_currency == "USD" {
+            resolved_currency = c
+                .get("currency_code")
+                .and_then(|v| v.as_str())
+                .unwrap_or("USD")
+                .trim()
+                .to_uppercase();
+        }
+        let resolved_source_id = c
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+
+        let link_resp = state
+            .pg
+            .from("agency_users")
+            .select("id,agency_id")
+            .eq("creator_id", resolved_source_id.as_str())
+            .eq("role", "talent")
+            .eq("status", "active")
+            .order("updated_at.desc")
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let link_status = link_resp.status();
+        let link_text = link_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !link_status.is_success() {
+            return Err(sanitize_db_error(link_status.as_u16(), link_text));
+        }
+        let link_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&link_text).unwrap_or_default();
+        let link = link_rows.first().cloned().ok_or((
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "creator is not connected to any active agency talent record".to_string(),
+        ))?;
+        let resolved_talent_id = link
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let resolved_agency_id = link
+            .get("agency_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        (
+            resolved_agency_id,
+            resolved_talent_id,
+            resolved_talent_name,
+            "creator".to_string(),
+            resolved_source_id,
+            resolved_base_rate_weekly_cents,
+        )
+    };
+
+    let base_rate_weekly_cents = resolved_base_rate_weekly_cents.ok_or((
+        StatusCode::UNPROCESSABLE_ENTITY,
+        "base weekly rate is missing for selected collaborator".to_string(),
+    ))?;
+
+    if resolved_agency_id.is_empty() || resolved_talent_id.is_empty() {
+        return Err((
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "unable to resolve agency/talent routing for this request".to_string(),
+        ));
+    }
+
+    if resolved_currency.is_empty() {
+        resolved_currency = "USD".to_string();
+    }
+
+    let mut brand_name = "Brand".to_string();
+    if let Ok(brand_resp) = state
+        .pg
+        .from("brands")
+        .select("company_name")
+        .eq("id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+    {
+        if brand_resp.status().is_success() {
+            if let Ok(brand_text) = brand_resp.text().await {
+                let rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&brand_text).unwrap_or_default();
+                if let Some(name) = rows
+                    .first()
+                    .and_then(|r| r.get("company_name"))
+                    .and_then(|v| v.as_str())
+                    .filter(|s| !s.trim().is_empty())
+                {
+                    brand_name = name.to_string();
+                }
+            }
+        }
+    }
+
+    let request_json = json!({
+        "agency_id": resolved_agency_id,
+        "brand_id": user.id,
+        "talent_id": resolved_talent_id,
+        "status": "pending",
+        "campaign_title": payload
+            .campaign_title
+            .clone()
+            .filter(|s| !s.trim().is_empty())
+            .or_else(|| campaign_row.get("name").and_then(|v| v.as_str()).map(|s| s.to_string())),
+        "client_name": brand_name,
+        "talent_name": resolved_talent_name,
+        "usage_scope": payload.usage_scope,
+        "regions": payload.regions,
+        "deadline": payload.deadline,
+        "license_start_date": payload.license_start_date,
+        "license_end_date": payload.license_end_date,
+        "notes": payload.notes,
+        "base_rate_weekly_cents": base_rate_weekly_cents,
+        "offered_rate_weekly_cents": payload.offered_rate_weekly_cents,
+        "rate_currency": resolved_currency,
+        "rate_source_type": resolved_source_type,
+        "rate_source_id": resolved_source_id,
+    });
+
+    let insert_resp = state
+        .pg
+        .from("licensing_requests")
+        .insert(request_json.to_string())
+        .select("id,status,agency_id,brand_id,talent_id,base_rate_weekly_cents,offered_rate_weekly_cents,rate_currency,rate_source_type,rate_source_id")
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let insert_status = insert_resp.status();
+    let insert_text = insert_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !insert_status.is_success() {
+        return Err(sanitize_db_error(insert_status.as_u16(), insert_text));
+    }
+    let inserted: serde_json::Value =
+        serde_json::from_str(&insert_text).unwrap_or_else(|_| json!({"status":"pending"}));
+
+    Ok(Json(inserted))
+}
+
+pub async fn list_brand_campaign_license_options(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(campaign_id): Path<String>,
+    Query(q): Query<BrandCampaignLicenseOptionsQuery>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+
+    let campaign_resp = state
+        .pg
+        .from("campaigns")
+        .select("id")
+        .eq("id", &campaign_id)
+        .eq("brand_id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let campaign_status = campaign_resp.status();
+    let campaign_text = campaign_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !campaign_status.is_success() {
+        return Err(sanitize_db_error(campaign_status.as_u16(), campaign_text));
+    }
+    let campaign_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&campaign_text).unwrap_or_default();
+    if campaign_rows.is_empty() {
+        return Err((StatusCode::NOT_FOUND, "campaign not found".to_string()));
+    }
+
+    let collaborator_type = q
+        .collaborator_type
+        .as_deref()
+        .unwrap_or("creator")
+        .trim()
+        .to_lowercase();
+    let mut limit = q.limit.unwrap_or(80);
+    if limit == 0 {
+        limit = 1;
+    }
+    if limit > 200 {
+        limit = 200;
+    }
+    let search = q.q.as_deref().unwrap_or("").trim().to_lowercase();
+
+    if collaborator_type == "agency" {
+        let mut req = state
+            .pg
+            .from("agency_users")
+            .select("id,agency_id,full_legal_name,stage_name,city,state_province,country,profile_photo_url,role_type,licensing_rate_weekly_cents,rate_currency,accept_negotiations")
+            .eq("role", "talent")
+            .eq("status", "active")
+            .limit(limit);
+        if let Some(agency_id) = q
+            .agency_id
+            .as_deref()
+            .map(|v| v.trim())
+            .filter(|v| !v.is_empty())
+        {
+            req = req.eq("agency_id", agency_id);
+        }
+        let resp = req
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let status = resp.status();
+        let text = resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !status.is_success() {
+            return Err(sanitize_db_error(status.as_u16(), text));
+        }
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+        let mut out: Vec<serde_json::Value> = rows
+            .into_iter()
+            .filter(|r| {
+                if search.is_empty() {
+                    return true;
+                }
+                let name = r
+                    .get("full_legal_name")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_lowercase();
+                let stage = r
+                    .get("stage_name")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_lowercase();
+                name.contains(&search) || stage.contains(&search)
+            })
+            .map(|r| {
+                let base_weekly = resolve_weekly_cents(
+                    r.get("licensing_rate_weekly_cents").and_then(|v| v.as_i64()),
+                    None,
+                    r.get("licensing_rate").and_then(|v| v.as_f64()),
+                );
+                json!({
+                    "id": r.get("id").cloned().unwrap_or(serde_json::Value::Null),
+                    "display_name": r.get("full_legal_name").cloned().unwrap_or(serde_json::Value::Null),
+                    "stage_name": r.get("stage_name").cloned().unwrap_or(serde_json::Value::Null),
+                    "agency_id": r.get("agency_id").cloned().unwrap_or(serde_json::Value::Null),
+                    "city": r.get("city").cloned().unwrap_or(serde_json::Value::Null),
+                    "state": r.get("state_province").cloned().unwrap_or(serde_json::Value::Null),
+                    "country": r.get("country").cloned().unwrap_or(serde_json::Value::Null),
+                    "profile_photo_url": r.get("profile_photo_url").cloned().unwrap_or(serde_json::Value::Null),
+                    "role_type": r.get("role_type").cloned().unwrap_or(serde_json::Value::Null),
+                    "base_rate_weekly_cents": base_weekly,
+                    "rate_currency": r.get("rate_currency").cloned().unwrap_or(json!("USD")),
+                    "accept_negotiations": r.get("accept_negotiations").cloned().unwrap_or(json!(true)),
+                    "rate_source_type": "agency_talent",
+                })
+            })
+            .collect();
+        if out.len() > limit {
+            out.truncate(limit);
+        }
+        return Ok(Json(json!({
+            "collaborator_type": "agency",
+            "items": out,
+        })));
+    }
+
+    let mut req = state
+        .pg
+        .from("creators")
+        .select("id,full_name,city,state,profile_photo_url,creator_type,base_weekly_price_cents,base_monthly_price_cents,currency_code,accept_negotiations,public_profile_visible,visibility")
+        .eq("role", "creator")
+        .eq("kyc_status", "approved")
+        .limit(limit);
+    if !search.is_empty() {
+        let needle = format!("*{}*", search);
+        req = req.or(format!(
+            "full_name.ilike.{needle},creator_type.ilike.{needle},city.ilike.{needle},state.ilike.{needle}"
+        ));
+    }
+    let resp = req
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let mut out: Vec<serde_json::Value> = rows
+        .into_iter()
+        .filter(|r| {
+            let public_profile_visible = r
+                .get("public_profile_visible")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
+            let visibility = r
+                .get("visibility")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_lowercase();
+            public_profile_visible
+                || visibility.is_empty()
+                || visibility == "public"
+                || visibility == "brands"
+                || visibility == "visible_to_brands"
+                || visibility == "true"
+        })
+        .map(|r| {
+            let base_weekly = resolve_weekly_cents(
+                r.get("base_weekly_price_cents").and_then(|v| v.as_i64()),
+                r.get("base_monthly_price_cents").and_then(|v| v.as_i64()),
+                None,
+            );
+            json!({
+                "id": r.get("id").cloned().unwrap_or(serde_json::Value::Null),
+                "display_name": r.get("full_name").cloned().unwrap_or(serde_json::Value::Null),
+                "city": r.get("city").cloned().unwrap_or(serde_json::Value::Null),
+                "state": r.get("state").cloned().unwrap_or(serde_json::Value::Null),
+                "profile_photo_url": r.get("profile_photo_url").cloned().unwrap_or(serde_json::Value::Null),
+                "creator_type": r.get("creator_type").cloned().unwrap_or(serde_json::Value::Null),
+                "base_rate_weekly_cents": base_weekly,
+                "rate_currency": r.get("currency_code").cloned().unwrap_or(json!("USD")),
+                "accept_negotiations": r.get("accept_negotiations").cloned().unwrap_or(json!(true)),
+                "rate_source_type": "creator",
+            })
+        })
+        .collect();
+    if out.len() > limit {
+        out.truncate(limit);
+    }
+
+    Ok(Json(json!({
+        "collaborator_type": "creator",
+        "items": out,
+    })))
 }
 
 // ============================================================================
