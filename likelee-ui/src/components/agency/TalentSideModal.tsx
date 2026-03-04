@@ -119,6 +119,13 @@ const TalentSideModal = ({
     city: safeTalent.city || "",
     state_province: safeTalent.state_province || "",
     country: safeTalent.country || "",
+    licensing_rate_weekly_usd:
+      typeof safeTalent.licensing_rate_weekly_cents === "number" &&
+      safeTalent.licensing_rate_weekly_cents > 0
+        ? String(Math.round(safeTalent.licensing_rate_weekly_cents / 100))
+        : "",
+    accept_negotiations: safeTalent.accept_negotiations ?? true,
+    rate_currency: safeTalent.rate_currency || "USD",
   });
   const [editForm, setEditForm] = useState(buildEditForm());
 
@@ -241,6 +248,11 @@ const TalentSideModal = ({
         city: editForm.city || undefined,
         state_province: editForm.state_province || undefined,
         country: editForm.country || undefined,
+        licensing_rate_weekly_cents: editForm.licensing_rate_weekly_usd
+          ? Math.round(Number(editForm.licensing_rate_weekly_usd) * 100)
+          : undefined,
+        accept_negotiations: !!editForm.accept_negotiations,
+        rate_currency: String(editForm.rate_currency || "USD"),
       });
       setIsEditing(false);
       onSaved?.();
@@ -539,6 +551,37 @@ const TalentSideModal = ({
                       value={editForm.country}
                       onChange={(e) => setField("country", e.target.value)}
                     />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <div className="text-xs font-bold text-gray-700">
+                      Licensing rate (USD/week)
+                    </div>
+                    <Input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={editForm.licensing_rate_weekly_usd}
+                      onChange={(e) =>
+                        setField("licensing_rate_weekly_usd", e.target.value)
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-xs font-bold text-gray-700">
+                      Negotiation
+                    </div>
+                    <label className="inline-flex items-center gap-2 text-sm text-gray-700 mt-2">
+                      <input
+                        type="checkbox"
+                        checked={!!editForm.accept_negotiations}
+                        onChange={(e) =>
+                          setField("accept_negotiations", e.target.checked)
+                        }
+                      />
+                      Open to negotiations
+                    </label>
                   </div>
                 </div>
               </div>
