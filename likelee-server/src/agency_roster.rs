@@ -195,10 +195,9 @@ pub async fn get_roster(
     // Fetch all talents linked to this agency
     let resp = state
         .pg
-        .from("agency_users")
-        .select("*")
+        .from("agency_talent_lecense_rate")
+        .select("id,agency_id,talent_id,creator_id,status,licensing_rate_weekly_cents,accept_negotiations,rate_currency,agency_users(*)")
         .eq("agency_id", &user.id)
-        .eq("role", "talent")
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -219,68 +218,63 @@ pub async fn get_roster(
 
     if let Some(array) = rows.as_array() {
         for item in array {
+            let talent = item
+                .get("agency_users")
+                .cloned()
+                .unwrap_or_else(|| serde_json::json!({}));
+            let get_field = |k: &str| talent.get(k).or_else(|| item.get(k));
             let id = item
-                .get("id")
+                .get("talent_id")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
             // Try full_legal_name, then stage_name, then full_name
-            let name = item
-                .get("full_legal_name")
-                .or(item.get("stage_name"))
-                .or(item.get("full_name"))
+            let name = get_field("full_legal_name")
+                .or(get_field("stage_name"))
+                .or(get_field("full_name"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("Unknown")
                 .to_string();
 
-            let stage_name = item
-                .get("stage_name")
+            let stage_name = get_field("stage_name")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
 
-            let email = item
-                .get("email")
+            let email = get_field("email")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
-            let phone = item
-                .get("phone_number")
-                .or(item.get("phone"))
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-
-            let city = item
-                .get("city")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-            let state_province = item
-                .get("state_province")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-            let country = item
-                .get("country")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-            let organization = item
-                .get("organization")
-                .or(item.get("school"))
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-            let sports = item
-                .get("sports")
-                .or(item.get("sport"))
+            let phone = get_field("phone_number")
+                .or(get_field("phone"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
 
-            let role_types: Vec<String> = item
-                .get("role_type")
+            let city = get_field("city")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let state_province = get_field("state_province")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let country = get_field("country")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let organization = get_field("organization")
+                .or(get_field("school"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let sports = get_field("sports")
+                .or(get_field("sport"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+
+            let role_types: Vec<String> = get_field("role_type")
                 .and_then(|v| {
                     v.as_str()
                         .map(|s| {
@@ -311,14 +305,12 @@ pub async fn get_roster(
                 .and_then(|v| v.as_str())
                 .unwrap_or("inactive")
                 .to_string();
-            let consent = item
-                .get("consent_status")
+            let consent = get_field("consent_status")
                 .and_then(|v| v.as_str())
                 .unwrap_or("missing")
                 .to_string();
 
-            let ai_usage: Vec<String> = item
-                .get("ai_usage")
+            let ai_usage: Vec<String> = get_field("ai_usage")
                 .and_then(|v| v.as_array())
                 .map(|arr| {
                     arr.iter()
@@ -328,22 +320,20 @@ pub async fn get_roster(
                 .unwrap_or_default();
 
             let followers_val = item
-                .get("instagram_followers")
+                .get("agency_users")
+                .and_then(|v| v.get("instagram_followers"))
                 .and_then(|v| v.as_i64())
                 .unwrap_or(0);
             let followers = format_number(followers_val);
 
-            let assets = item
-                .get("total_assets")
+            let assets = get_field("total_assets")
                 .and_then(|v| v.as_i64())
                 .unwrap_or(0) as i32;
-            let top_brand = item
-                .get("top_brand")
+            let top_brand = get_field("top_brand")
                 .and_then(|v| v.as_str())
                 .unwrap_or("—")
                 .to_string();
-            let expiry = item
-                .get("license_expiry")
+            let expiry = get_field("license_expiry")
                 .and_then(|v| v.as_str())
                 .unwrap_or("—")
                 .to_string();
@@ -361,13 +351,13 @@ pub async fn get_roster(
             let projected = format!("${}", format_number(projected_val));
 
             let is_verified = false;
-            let img = item
-                .get("profile_photo_url")
+            let img = get_field("profile_photo_url")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
             let photo_urls: Vec<String> = item
-                .get("photo_urls")
+                .get("agency_users")
+                .and_then(|v| v.get("photo_urls"))
                 .map(parse_string_array_value)
                 .unwrap_or_default();
 
@@ -383,23 +373,19 @@ pub async fn get_roster(
                     }
                 }
             }
-            let bio = item
-                .get("bio_notes")
-                .or(item.get("bio"))
+            let bio = get_field("bio_notes")
+                .or(get_field("bio"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
-            let engagement_rate = item
-                .get("engagement_rate")
+            let engagement_rate = get_field("engagement_rate")
                 .and_then(|v| v.as_f64())
                 .unwrap_or(0.0);
-            let last_updated = item
-                .get("updated_at")
+            let last_updated = get_field("updated_at")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
-            let special_skills = item
-                .get("special_skills")
+            let special_skills = get_field("special_skills")
                 .and_then(|v| {
                     v.as_str()
                         .map(|s| {
@@ -420,45 +406,35 @@ pub async fn get_roster(
                 })
                 .unwrap_or_default();
 
-            let date_of_birth = item
-                .get("date_of_birth")
+            let date_of_birth = get_field("date_of_birth")
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string());
-            let gender_identity = item
-                .get("gender_identity")
+            let gender_identity = get_field("gender_identity")
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string());
-            let height_feet = item
-                .get("height_feet")
+            let height_feet = get_field("height_feet")
                 .and_then(|v| v.as_i64())
                 .map(|v| v as i32);
-            let height_inches = item
-                .get("height_inches")
+            let height_inches = get_field("height_inches")
                 .and_then(|v| v.as_i64())
                 .map(|v| v as i32);
-            let bust_inches = item
-                .get("bust_chest_inches")
-                .or(item.get("bust_inches"))
+            let bust_inches = get_field("bust_chest_inches")
+                .or(get_field("bust_inches"))
                 .and_then(|v| v.as_i64())
                 .map(|v| v as i32);
-            let waist_inches = item
-                .get("waist_inches")
+            let waist_inches = get_field("waist_inches")
                 .and_then(|v| v.as_i64())
                 .map(|v| v as i32);
-            let hips_inches = item
-                .get("hips_inches")
+            let hips_inches = get_field("hips_inches")
                 .and_then(|v| v.as_i64())
                 .map(|v| v as i32);
-            let hair_color = item
-                .get("hair_color")
+            let hair_color = get_field("hair_color")
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string());
-            let eye_color = item
-                .get("eye_color")
+            let eye_color = get_field("eye_color")
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string());
-            let race_ethnicity: Vec<String> = item
-                .get("race_ethnicity")
+            let race_ethnicity: Vec<String> = get_field("race_ethnicity")
                 .and_then(|v| {
                     v.as_array().map(|arr| {
                         arr.iter()
@@ -467,14 +443,14 @@ pub async fn get_roster(
                     })
                 })
                 .or_else(|| {
-                    item.get("race_ethnicity")
+                    get_field("race_ethnicity")
                         .and_then(|v| v.as_str())
                         .map(split_csv_tags)
                 })
                 .unwrap_or_default();
 
-            let tattoos = item.get("tattoos").and_then(|v| v.as_bool());
-            let piercings = item.get("piercings").and_then(|v| v.as_bool());
+            let tattoos = get_field("tattoos").and_then(|v| v.as_bool());
+            let piercings = get_field("piercings").and_then(|v| v.as_bool());
             let licensing_rate_weekly_cents = item
                 .get("licensing_rate_weekly_cents")
                 .and_then(|v| v.as_i64());
@@ -542,7 +518,11 @@ pub async fn get_roster(
             if !id.is_empty() {
                 talent_ids.push(id.clone());
             }
-            if let Some(creator_id) = item.get("creator_id").and_then(|v| v.as_str()) {
+            if let Some(creator_id) = item
+                .get("creator_id")
+                .or_else(|| get_field("creator_id"))
+                .and_then(|v| v.as_str())
+            {
                 if !creator_id.trim().is_empty() && !id.is_empty() {
                     creator_id_by_talent.insert(id.clone(), creator_id.to_string());
                 }
@@ -1237,6 +1217,40 @@ pub struct UpdateTalentRequest {
 
 use serde_json::json;
 
+async fn upsert_agency_talent_connection(
+    state: &AppState,
+    agency_id: &str,
+    talent_id: &str,
+    creator_id: Option<&str>,
+    status: &str,
+    licensing_rate_weekly_cents: Option<i64>,
+    accept_negotiations: bool,
+    rate_currency: &str,
+) -> Result<(), (StatusCode, String)> {
+    let upsert_payload = json!({
+        "agency_id": agency_id,
+        "talent_id": talent_id,
+        "creator_id": creator_id,
+        "status": status,
+        "licensing_rate_weekly_cents": licensing_rate_weekly_cents,
+        "accept_negotiations": accept_negotiations,
+        "rate_currency": rate_currency,
+        "updated_at": chrono::Utc::now().to_rfc3339(),
+    });
+    let upsert_resp = state
+        .pg
+        .from("agency_talent_lecense_rate")
+        .upsert(upsert_payload.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !upsert_resp.status().is_success() {
+        let err_text = upsert_resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err_text));
+    }
+    Ok(())
+}
+
 pub async fn create_talent(
     State(state): State<AppState>,
     user: AuthUser,
@@ -1368,10 +1382,9 @@ pub async fn create_talent(
     // 2. Check current talent count
     let count_resp = state
         .pg
-        .from("agency_users")
+        .from("agency_talent_lecense_rate")
         .select("id")
         .eq("agency_id", &user.id)
-        .eq("role", "talent")
         .execute()
         .await
         .map_err(|e| {
@@ -1394,17 +1407,48 @@ pub async fn create_talent(
         ));
     }
 
-    // 3. Insert and return the record
-    let mut v = json!({
-        "agency_id": user.id,
+    // 3. Reuse existing global talent row by email when possible, else insert identity row once.
+    let normalized_email = payload
+        .email
+        .as_deref()
+        .map(|s| s.trim().to_lowercase())
+        .filter(|s| !s.is_empty());
+
+    let existing_talent = if let Some(email) = normalized_email.as_deref() {
+        let existing_resp = state
+            .pg
+            .from("agency_users")
+            .select("id,creator_id")
+            .eq("role", "talent")
+            .ilike("email", email)
+            .order("updated_at.desc")
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let existing_status = existing_resp.status();
+        let existing_text = existing_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !existing_status.is_success() {
+            return Err((StatusCode::INTERNAL_SERVER_ERROR, existing_text));
+        }
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&existing_text).unwrap_or_default();
+        rows.first().cloned()
+    } else {
+        None
+    };
+
+    let mut identity_payload = json!({
         "full_legal_name": payload.full_name,
         "stage_name": payload.stage_name,
-        "email": payload.email,
+        "email": normalized_email,
         "phone_number": payload.phone,
         "date_of_birth": birthdate_str,
         "role": "talent",
         "role_type": role_type,
-        "status": status,
+        "status": "active",
         "profile_photo_url": payload.profile_photo_url,
         "photo_urls": payload.photo_urls,
         "bio_notes": payload.bio,
@@ -1432,12 +1476,9 @@ pub async fn create_talent(
         "country": payload.country,
         "organization": payload.organization,
         "sports": payload.sports,
-        "licensing_rate_weekly_cents": licensing_rate_weekly_cents,
-        "accept_negotiations": accept_negotiations,
-        "rate_currency": rate_currency,
     });
 
-    if let serde_json::Value::Object(ref mut map) = v {
+    if let serde_json::Value::Object(ref mut map) = identity_payload {
         let null_keys: Vec<String> = map
             .iter()
             .filter_map(|(k, val)| if val.is_null() { Some(k.clone()) } else { None })
@@ -1447,34 +1488,99 @@ pub async fn create_talent(
         }
     }
 
-    let resp = state
-        .pg
-        .from("agency_users")
-        .insert(v.to_string())
-        .execute()
-        .await
-        .map_err(|e| {
-            tracing::error!(
-                "Failed to insert talent (race_ethnicity={:?}): {}",
-                race_ethnicity,
-                e
-            );
-            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
-        })?;
+    let (talent_id, creator_id): (String, Option<String>) = if let Some(row) = existing_talent {
+        let talent_id = row
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        if talent_id.is_empty() {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "unable to resolve existing talent id".to_string(),
+            ));
+        }
+        let update_resp = state
+            .pg
+            .from("agency_users")
+            .eq("id", &talent_id)
+            .update(identity_payload.to_string())
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !update_resp.status().is_success() {
+            let err_text = update_resp.text().await.unwrap_or_default();
+            return Err((StatusCode::INTERNAL_SERVER_ERROR, err_text));
+        }
+        (
+            talent_id,
+            row.get("creator_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+        )
+    } else {
+        if let serde_json::Value::Object(ref mut map) = identity_payload {
+            map.insert("agency_id".to_string(), json!(user.id));
+        }
+        let insert_resp = state
+            .pg
+            .from("agency_users")
+            .insert(identity_payload.to_string())
+            .select("id,creator_id")
+            .single()
+            .execute()
+            .await
+            .map_err(|e| {
+                tracing::error!(
+                    "Failed to insert talent (race_ethnicity={:?}): {}",
+                    race_ethnicity,
+                    e
+                );
+                (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+            })?;
+        if !insert_resp.status().is_success() {
+            let err_text = insert_resp.text().await.unwrap_or_default();
+            return Err((StatusCode::INTERNAL_SERVER_ERROR, err_text));
+        }
+        let inserted_text = insert_resp.text().await.unwrap_or_default();
+        let inserted_val: serde_json::Value =
+            serde_json::from_str(&inserted_text).unwrap_or(json!({}));
+        (
+            inserted_val
+                .get("id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            inserted_val
+                .get("creator_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+        )
+    };
 
-    if !resp.status().is_success() {
-        let err_text = resp.text().await.unwrap_or_default();
-        tracing::error!(
-            "DB error during talent insert (race_ethnicity={:?}): {}",
-            race_ethnicity,
-            err_text
-        );
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, err_text));
+    if talent_id.is_empty() {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "failed to create or resolve talent".to_string(),
+        ));
     }
 
-    let inserted_text = resp.text().await.unwrap_or_default();
-    let inserted_val: serde_json::Value =
-        serde_json::from_str(&inserted_text).unwrap_or(json!({ "status": "ok" }));
+    upsert_agency_talent_connection(
+        &state,
+        &user.id,
+        talent_id.as_str(),
+        creator_id.as_deref(),
+        status.as_str(),
+        licensing_rate_weekly_cents,
+        accept_negotiations,
+        rate_currency.as_str(),
+    )
+    .await?;
+
+    let inserted_val = json!({
+        "id": talent_id,
+        "status": "ok"
+    });
 
     tracing::info!("Successfully created talent: {}", payload.full_name);
 
@@ -1487,6 +1593,35 @@ pub async fn update_talent(
     Path(id): Path<String>,
     Json(payload): Json<UpdateTalentRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let access_resp = state
+        .pg
+        .from("agency_talent_lecense_rate")
+        .select("id,status")
+        .eq("agency_id", &user.id)
+        .eq("talent_id", &id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let access_status = access_resp.status();
+    let access_text = access_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !access_status.is_success() {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, access_text));
+    }
+    let access_rows: Vec<serde_json::Value> = serde_json::from_str(&access_text).unwrap_or_default();
+    if access_rows.is_empty() {
+        return Err((StatusCode::FORBIDDEN, "Talent not found for this agency".to_string()));
+    }
+    let existing_connection_status = access_rows
+        .first()
+        .and_then(|r| r.get("status"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("active")
+        .to_string();
+
     if let Some(v) = payload.licensing_rate_weekly_cents {
         if v <= 0 {
             return Err((
@@ -1568,12 +1703,6 @@ pub async fn update_talent(
         "country": payload.country,
         "organization": payload.organization,
         "sports": payload.sports,
-        "licensing_rate_weekly_cents": payload.licensing_rate_weekly_cents,
-        "accept_negotiations": payload.accept_negotiations,
-        "rate_currency": payload
-            .rate_currency
-            .as_deref()
-            .map(|s| s.trim().to_uppercase()),
     });
 
     if let serde_json::Value::Object(ref mut map) = v {
@@ -1590,7 +1719,6 @@ pub async fn update_talent(
         .pg
         .from("agency_users")
         .eq("id", &id)
-        .eq("agency_id", &user.id)
         .eq("role", "talent")
         .update(v.to_string())
         .execute()
@@ -1603,7 +1731,32 @@ pub async fn update_talent(
     }
 
     let updated_text = resp.text().await.unwrap_or_default();
-    let updated_val: serde_json::Value =
-        serde_json::from_str(&updated_text).unwrap_or(json!({ "status": "ok" }));
+    let updated_val: serde_json::Value = serde_json::from_str(&updated_text).unwrap_or(json!([]));
+    if let Some(first) = updated_val.as_array().and_then(|arr| arr.first()) {
+        let creator_id = first.get("creator_id").and_then(|v| v.as_str());
+        let next_status = payload
+            .status
+            .as_deref()
+            .unwrap_or(existing_connection_status.as_str())
+            .to_string();
+        let next_accept_negotiations = payload.accept_negotiations.unwrap_or(true);
+        let next_rate_currency = payload
+            .rate_currency
+            .as_deref()
+            .unwrap_or("USD")
+            .trim()
+            .to_uppercase();
+        upsert_agency_talent_connection(
+            &state,
+            &user.id,
+            &id,
+            creator_id,
+            next_status.as_str(),
+            payload.licensing_rate_weekly_cents,
+            next_accept_negotiations,
+            next_rate_currency.as_str(),
+        )
+        .await?;
+    }
     Ok(Json(updated_val))
 }
