@@ -66,6 +66,20 @@ pub struct MarketplaceConnectPayload {
     pub message: Option<String>,
 }
 
+fn resolve_weekly_rate_cents(
+    base_weekly_price_cents: Option<i64>,
+    base_monthly_price_cents: Option<i64>,
+) -> Option<i64> {
+    if let Some(v) = base_weekly_price_cents {
+        if v > 0 {
+            return Some(v);
+        }
+    }
+    base_monthly_price_cents
+        .filter(|v| *v > 0)
+        .map(|v| ((v as f64) / 4.345).round() as i64)
+}
+
 pub async fn search_faces(
     State(state): State<AppState>,
     Query(q): Query<SearchFacesQuery>,
@@ -325,7 +339,7 @@ pub async fn search_marketplace_profiles(
         let mut request = state
             .pg
             .from("creators")
-            .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,updated_at,public_profile_visible,visibility")
+            .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,updated_at,public_profile_visible,visibility,base_weekly_price_cents,base_monthly_price_cents,currency_code,accept_negotiations")
             .eq("role", "creator")
             .eq("kyc_status", "approved")
             .limit(limit);
@@ -458,6 +472,10 @@ pub async fn search_marketplace_profiles(
             } else {
                 "none"
             };
+        let base_weekly_price_cents = resolve_weekly_rate_cents(
+            row.get("base_weekly_price_cents").and_then(|v| v.as_i64()),
+            row.get("base_monthly_price_cents").and_then(|v| v.as_i64()),
+        );
 
         results.push(serde_json::json!({
             "id": row.get("id").cloned().unwrap_or(serde_json::Value::Null),
@@ -487,6 +505,10 @@ pub async fn search_marketplace_profiles(
             "connection_status": connection_status,
             "verification_source": "kyc",
             "kyc_status": row.get("kyc_status").cloned().unwrap_or(serde_json::Value::Null),
+            "base_weekly_price_cents": base_weekly_price_cents,
+            "base_monthly_price_cents": row.get("base_monthly_price_cents").cloned().unwrap_or(serde_json::Value::Null),
+            "currency_code": row.get("currency_code").cloned().unwrap_or(serde_json::json!("USD")),
+            "accept_negotiations": row.get("accept_negotiations").cloned().unwrap_or(serde_json::json!(true)),
             "updated_at": row.get("updated_at").cloned().unwrap_or(serde_json::Value::Null),
         }));
     }
@@ -603,7 +625,7 @@ pub async fn get_marketplace_profile_details(
     let creator_resp = state
         .pg
         .from("creators")
-        .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,content_types,industries,base_monthly_price_cents,currency_code,accept_negotiations,portfolio_link,public_profile_visible,visibility")
+        .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,content_types,industries,base_weekly_price_cents,base_monthly_price_cents,currency_code,accept_negotiations,portfolio_link,public_profile_visible,visibility")
         .eq("id", &profile_id)
         .limit(1)
         .execute()
@@ -643,7 +665,15 @@ pub async fn get_marketplace_profile_details(
             "marketplace profile not found".to_string(),
         ));
     }
-    response["profile"] = row;
+    let weekly = resolve_weekly_rate_cents(
+        row.get("base_weekly_price_cents").and_then(|v| v.as_i64()),
+        row.get("base_monthly_price_cents").and_then(|v| v.as_i64()),
+    );
+    let mut normalized_row = row;
+    if let Some(v) = weekly {
+        normalized_row["base_weekly_price_cents"] = serde_json::json!(v);
+    }
+    response["profile"] = normalized_row;
 
     let rates_resp = state
         .pg

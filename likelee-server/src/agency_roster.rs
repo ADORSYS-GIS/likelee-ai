@@ -175,6 +175,9 @@ pub struct TalentRow {
     pub race_ethnicity: Vec<String>,
     pub tattoos: Option<bool>,
     pub piercings: Option<bool>,
+    pub licensing_rate_weekly_cents: Option<i64>,
+    pub accept_negotiations: bool,
+    pub rate_currency: String,
 }
 
 #[derive(Serialize)]
@@ -472,6 +475,18 @@ pub async fn get_roster(
 
             let tattoos = item.get("tattoos").and_then(|v| v.as_bool());
             let piercings = item.get("piercings").and_then(|v| v.as_bool());
+            let licensing_rate_weekly_cents = item
+                .get("licensing_rate_weekly_cents")
+                .and_then(|v| v.as_i64());
+            let accept_negotiations = item
+                .get("accept_negotiations")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(true);
+            let rate_currency = item
+                .get("rate_currency")
+                .and_then(|v| v.as_str())
+                .unwrap_or("USD")
+                .to_string();
 
             let roster_row = TalentRow {
                 id: id.clone(),
@@ -518,6 +533,9 @@ pub async fn get_roster(
                 race_ethnicity,
                 tattoos,
                 piercings,
+                licensing_rate_weekly_cents,
+                accept_negotiations,
+                rate_currency,
             };
 
             roster.push(roster_row);
@@ -1169,6 +1187,9 @@ pub struct CreateTalentRequest {
     pub country: Option<String>,
     pub organization: Option<String>,
     pub sports: Option<String>,
+    pub licensing_rate_weekly_cents: Option<i64>,
+    pub accept_negotiations: Option<bool>,
+    pub rate_currency: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -1209,6 +1230,9 @@ pub struct UpdateTalentRequest {
     pub country: Option<String>,
     pub organization: Option<String>,
     pub sports: Option<String>,
+    pub licensing_rate_weekly_cents: Option<i64>,
+    pub accept_negotiations: Option<bool>,
+    pub rate_currency: Option<String>,
 }
 
 use serde_json::json;
@@ -1218,6 +1242,30 @@ pub async fn create_talent(
     user: AuthUser,
     Json(payload): Json<CreateTalentRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let licensing_rate_weekly_cents = match payload.licensing_rate_weekly_cents {
+        Some(v) if v <= 0 => {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "licensing_rate_weekly_cents must be greater than 0".to_string(),
+            ));
+        }
+        Some(v) => Some(v),
+        None => None,
+    };
+    let accept_negotiations = payload.accept_negotiations.unwrap_or(true);
+    let rate_currency = payload
+        .rate_currency
+        .as_deref()
+        .unwrap_or("USD")
+        .trim()
+        .to_uppercase();
+    if rate_currency.is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "rate_currency is required".to_string(),
+        ));
+    }
+
     let role_types: Vec<String> = payload
         .role_type
         .clone()
@@ -1384,6 +1432,9 @@ pub async fn create_talent(
         "country": payload.country,
         "organization": payload.organization,
         "sports": payload.sports,
+        "licensing_rate_weekly_cents": licensing_rate_weekly_cents,
+        "accept_negotiations": accept_negotiations,
+        "rate_currency": rate_currency,
     });
 
     if let serde_json::Value::Object(ref mut map) = v {
@@ -1436,6 +1487,23 @@ pub async fn update_talent(
     Path(id): Path<String>,
     Json(payload): Json<UpdateTalentRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    if let Some(v) = payload.licensing_rate_weekly_cents {
+        if v <= 0 {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "licensing_rate_weekly_cents must be greater than 0".to_string(),
+            ));
+        }
+    }
+    if let Some(currency) = payload.rate_currency.as_deref() {
+        if currency.trim().is_empty() {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "rate_currency is required".to_string(),
+            ));
+        }
+    }
+
     let race_ethnicity = payload.race_ethnicity.clone().map(|v| v.into_vec());
     let role_type = payload.role_type.clone().map(|v| {
         let role_types = v
@@ -1500,6 +1568,12 @@ pub async fn update_talent(
         "country": payload.country,
         "organization": payload.organization,
         "sports": payload.sports,
+        "licensing_rate_weekly_cents": payload.licensing_rate_weekly_cents,
+        "accept_negotiations": payload.accept_negotiations,
+        "rate_currency": payload
+            .rate_currency
+            .as_deref()
+            .map(|s| s.trim().to_uppercase()),
     });
 
     if let serde_json::Value::Object(ref mut map) = v {
