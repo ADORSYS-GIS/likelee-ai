@@ -298,8 +298,7 @@ export function MarketplaceSection({
         row?.connection_status === "connected" ||
         row?.connection_status === "waiting" ||
         row?.connection_status === "pending" ||
-        row?.connection_status === "declined" ||
-        row?.connection_status === "disconnected"
+        row?.connection_status === "declined"
           ? row.connection_status
           : "none",
       updated_at: row?.updated_at ?? null,
@@ -629,16 +628,14 @@ export function MarketplaceSection({
                 | "waiting"
                 | "pending"
                 | "connected"
-                | "declined"
-                | "disconnected" = profile.is_connected
+                | "declined" = profile.is_connected
                 ? "connected"
                 : isPendingConnect
                   ? "waiting"
                   : profile.connection_status === "waiting" ||
                       profile.connection_status === "pending" ||
                       profile.connection_status === "connected" ||
-                      profile.connection_status === "declined" ||
-                      profile.connection_status === "disconnected"
+                      profile.connection_status === "declined"
                     ? profile.connection_status
                     : profile.is_pending
                       ? "waiting"
@@ -690,12 +687,6 @@ export function MarketplaceSection({
                           connectionStatus === "declined" && (
                             <Badge className="h-5 px-2 rounded-md bg-rose-50/95 text-rose-700 border border-rose-200 text-[10px] font-semibold shadow-sm">
                               Declined
-                            </Badge>
-                          )}
-                        {!profile.is_connected &&
-                          connectionStatus === "disconnected" && (
-                            <Badge className="h-5 px-2 rounded-md bg-rose-50/95 text-rose-700 border border-rose-200 text-[10px] font-semibold shadow-sm">
-                              Disconnected
                             </Badge>
                           )}
                         <div className="h-5 w-5 rounded-md bg-white/90 border border-slate-200 shadow-sm flex items-center justify-center">

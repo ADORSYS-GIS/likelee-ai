@@ -554,7 +554,6 @@ pub async fn search_marketplace_profiles(
                         .get(creator_id)
                         .map(|s| s.as_str())
                     {
-                        Some("accepted") => "disconnected",
                         Some("pending") => "waiting",
                         Some("declined") => "declined",
                         _ => "none",
@@ -1563,9 +1562,6 @@ pub async fn create_marketplace_connection_request(
                     .and_then(|v| v.as_str())
                     .unwrap_or("pending")
                     .to_lowercase();
-                if status == "accepted" {
-                    return Ok(Json(serde_json::json!({"status":"connected"})));
-                }
                 if status == "pending" {
                     return Ok(Json(serde_json::json!({"status":"waiting"})));
                 }
@@ -1574,7 +1570,7 @@ pub async fn create_marketplace_connection_request(
                     .and_then(|v| v.as_str())
                     .unwrap_or("")
                     .to_string();
-                if !request_id.is_empty() && (status == "declined") {
+                if !request_id.is_empty() && (status == "declined" || status == "accepted") {
                     let reactivate_resp = state
                         .pg
                         .from("brand_creator_connection_requests")
@@ -1850,10 +1846,9 @@ pub async fn create_marketplace_connection_request(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let mut connection_table_available = true;
     if !active_connection_status.is_success() {
         if is_missing_relation_error(&active_connection_text, "brand_agency_connections") {
-            connection_table_available = false;
+            // Migration not available yet; we'll rely on request table state.
         } else {
             return Err(sanitize_db_error(
                 active_connection_status.as_u16(),
@@ -1906,28 +1901,6 @@ pub async fn create_marketplace_connection_request(
             .and_then(|v| v.as_str())
             .unwrap_or("pending")
             .to_lowercase();
-        if invite_status == "accepted" {
-            if connection_table_available {
-                let _ = state
-                    .pg
-                    .from("brand_agency_connections")
-                    .upsert(
-                        serde_json::json!({
-                            "brand_id": user.id,
-                            "agency_id": agency_id,
-                            "status": "active",
-                            "connected_at": chrono::Utc::now().to_rfc3339(),
-                            "disconnected_at": serde_json::Value::Null,
-                            "updated_at": chrono::Utc::now().to_rfc3339(),
-                        })
-                        .to_string(),
-                    )
-                    .on_conflict("brand_id,agency_id")
-                    .execute()
-                    .await;
-            }
-            return Ok(Json(serde_json::json!({"status":"connected"})));
-        }
         if invite_status == "pending" {
             return Ok(Json(serde_json::json!({"status":"waiting"})));
         }
@@ -1937,7 +1910,7 @@ pub async fn create_marketplace_connection_request(
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string();
-        if !invite_id.is_empty() && (invite_status == "declined") {
+        if !invite_id.is_empty() && (invite_status == "declined" || invite_status == "accepted") {
             let reactivate_payload = serde_json::json!({
                 "status": "pending",
                 "responded_at": serde_json::Value::Null,
