@@ -847,7 +847,6 @@ pub async fn create_for_brand_campaign(
         .unwrap_or("USD")
         .trim()
         .to_uppercase();
-
     let (
         resolved_agency_id,
         resolved_talent_id,
@@ -855,6 +854,7 @@ pub async fn create_for_brand_campaign(
         resolved_source_type,
         resolved_source_id,
         resolved_base_rate_weekly_cents,
+        resolved_accept_negotiations,
     ) = if collaborator_type == "agency" {
         let talent_resp = state
             .pg
@@ -913,6 +913,10 @@ pub async fn create_for_brand_campaign(
                 .trim()
                 .to_uppercase();
         }
+        let resolved_accept_negotiations = t
+            .get("accept_negotiations")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(true);
         (
             resolved_agency_id,
             resolved_talent_id.clone(),
@@ -920,12 +924,13 @@ pub async fn create_for_brand_campaign(
             "agency_talent".to_string(),
             resolved_talent_id,
             resolved_base_rate_weekly_cents,
+            resolved_accept_negotiations,
         )
     } else {
         let creator_resp = state
             .pg
             .from("creators")
-            .select("id,full_name,base_weekly_price_cents,base_monthly_price_cents,currency_code")
+            .select("id,full_name,base_weekly_price_cents,base_monthly_price_cents,currency_code,accept_negotiations")
             .eq("id", payload.target_id.trim())
             .eq("role", "creator")
             .limit(1)
@@ -965,6 +970,10 @@ pub async fn create_for_brand_campaign(
                 .trim()
                 .to_uppercase();
         }
+        let resolved_accept_negotiations = c
+            .get("accept_negotiations")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(true);
         let resolved_source_id = c
             .get("id")
             .and_then(|v| v.as_str())
@@ -1014,6 +1023,7 @@ pub async fn create_for_brand_campaign(
             "creator".to_string(),
             resolved_source_id,
             resolved_base_rate_weekly_cents,
+            resolved_accept_negotiations,
         )
     };
 
@@ -1026,6 +1036,12 @@ pub async fn create_for_brand_campaign(
         return Err((
             StatusCode::UNPROCESSABLE_ENTITY,
             "unable to resolve agency/talent routing for this request".to_string(),
+        ));
+    }
+    if payload.offered_rate_weekly_cents.is_some() && !resolved_accept_negotiations {
+        return Err((
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "this collaborator does not accept custom offers".to_string(),
         ));
     }
 
