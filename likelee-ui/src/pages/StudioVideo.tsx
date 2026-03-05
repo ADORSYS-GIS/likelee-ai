@@ -1,11 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
+import {
+  StudioAssetPicker,
+  StudioAsset,
+} from "@/components/studio/StudioAssetPicker";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
@@ -13,7 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
   Film,
   Upload,
@@ -21,85 +26,247 @@ import {
   Download,
   Coins,
   ArrowLeft,
-  Play,
   Sparkles,
-  Plus,
+  Zap,
+  Image as ImageIcon,
+  ChevronDown,
+  ChevronUp,
+  X,
+  Play,
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { getUserFriendlyError } from "@/utils";
+import WalletTransactionsDialog from "@/components/WalletTransactionsDialog";
+import {
+  generate as studioGenerate,
+  getJobStatus,
+  getWallet,
+  inferProviderFromModel,
+  listGenerations,
+  type StudioGenerationRow,
+} from "@/api/studio";
 
 const videoModels = [
+  // ── TEXT-TO-VIDEO ──────────────────────────────────────────────
   {
-    id: "fal-ai/runway-gen3/turbo/text-to-video",
-    name: "Runway Gen-3 Turbo",
-    cost: 15,
-    description: "Fast, high-quality video generation",
-    duration: [5, 10],
+    id: "fal-ai/sora-2/image-to-video",
+    name: "Sora 2",
+    cost: 10,
+    description: "OpenAI's latest cinematic engine (Image-to-Video)",
+    duration: [4, 8, 12],
+    resolutions: ["auto", "720p"],
+    icon: "🎥",
+    tag: "Beta",
+    tagColor: "#F59E0B",
+    supportsImage: true,
+    requiresImage: true,
+    supportsAudio: false,
+    supportsExternalAudio: false,
   },
   {
-    id: "fal-ai/luma-dream-machine",
-    name: "Luma Dream Machine",
-    cost: 12,
-    description: "Cinematic AI video creation",
+    id: "fal-ai/veo3.1",
+    name: "Google Veo 3.1",
+    cost: 21,
+    description: "State-of-the-art video with synchronized audio",
+    duration: [4, 6, 8],
+    resolutions: ["720p"],
+    icon: "🎬",
+    tag: "Pro",
+    tagColor: "#EC4899",
+    supportsImage: false,
+    requiresImage: false,
+    supportsAudio: true,
+    supportsExternalAudio: false,
+  },
+  {
+    id: "fal-ai/minimax/video-01-live",
+    name: "MiniMax Video 01",
+    cost: 5,
+    description: "Fast text-to-video with prompt optimization",
     duration: [5],
-  },
-  {
-    id: "fal-ai/kling-video/v1/standard/text-to-video",
-    name: "Kling AI Standard",
-    cost: 20,
-    description: "High-quality Chinese model",
-    duration: [5, 10],
-  },
-  {
-    id: "fal-ai/kling-video/v1/pro/text-to-video",
-    name: "Kling AI Pro",
-    cost: 30,
-    description: "Professional grade video",
-    duration: [5, 10],
+    resolutions: ["1280x720"],
+    icon: "✨",
+    tag: "New",
+    tagColor: "#10B981",
+    supportsImage: false,
+    requiresImage: false,
+    supportsAudio: false,
+    supportsExternalAudio: false,
   },
   {
     id: "fal-ai/hunyuan-video",
     name: "Hunyuan Video",
-    cost: 25,
-    description: "Tencent's powerful video model",
+    cost: 5,
+    description: "Tencent's powerful open-source model",
     duration: [2, 5],
+    icon: "🎭",
+    tag: null,
+    tagColor: null,
+    supportsImage: false,
+    requiresImage: false,
+    supportsAudio: false,
+    supportsExternalAudio: false,
   },
   {
-    id: "fal-ai/fast-animatediff/text-to-video",
-    name: "Fast AnimateDiff",
-    cost: 10,
-    description: "Quick animation generation",
-    duration: [3],
-  },
-  {
-    id: "fal-ai/fast-svd/text-to-video",
-    name: "Stable Video Diffusion",
-    cost: 8,
-    description: "Stable and reliable",
+    id: "fal-ai/mochi-v1",
+    name: "Mochi 1",
+    cost: 5,
+    description: "Open-source video with high-fidelity motion",
     duration: [3, 5],
+    icon: "🔥",
+    tag: "Open",
+    tagColor: "#F59E0B",
+    supportsImage: false,
+    requiresImage: false,
+    supportsAudio: false,
+    supportsExternalAudio: false,
+  },
+  {
+    id: "fal-ai/ltx-video",
+    name: "LTX Video",
+    cost: 5,
+    description: "Ultra-fast open-source text-to-video",
+    duration: [3, 5],
+    icon: "⚡",
+    tag: "Fast",
+    tagColor: "#10B981",
+    supportsImage: false,
+    requiresImage: false,
+    supportsAudio: false,
+    supportsExternalAudio: false,
+  },
+  // ── IMAGE-TO-VIDEO ─────────────────────────────────────────────
+  {
+    id: "fal-ai/veo3.1/image-to-video",
+    name: "Veo 3.1 · Image→Video",
+    cost: 21,
+    description: "DeepMind's flagship image-to-video with audio",
+    duration: [4, 6, 8],
+    resolutions: ["720p"],
+    icon: "🖼️",
+    tag: "State-of-the-art",
+    tagColor: "#EC4899",
+    supportsImage: true,
+    requiresImage: true,
+    supportsAudio: true,
+    supportsExternalAudio: false,
+  },
+  {
+    id: "fal-ai/kling-video/v2.5-turbo/pro/image-to-video",
+    name: "Kling 2.6 Pro · Image→Video",
+    cost: 5,
+    description: "Top-tier fluidity with native lip-sync",
+    duration: [5, 10],
+    resolutions: ["720p", "1080p"],
+    icon: "🎞️",
+    tag: "Adv",
+    tagColor: "#6366F1",
+    supportsImage: true,
+    requiresImage: true,
+    supportsAudio: true,
+    supportsExternalAudio: false,
+  },
+  {
+    id: "fal-ai/wan/v2.2-a14b/image-to-video",
+    name: "Wan 2.1 · Image→Video",
+    cost: 5,
+    description: "High motion diversity and cinematic results",
+    duration: [5],
+    icon: "🌅",
+    tag: "Wan",
+    tagColor: "#10B981",
+    supportsImage: true,
+    requiresImage: true,
+    supportsAudio: true,
+    supportsExternalAudio: true,
+  },
+  {
+    id: "fal-ai/minimax/hailuo-02/standard/image-to-video",
+    name: "MiniMax 02 · Image→Video",
+    cost: 5,
+    description: "Advanced motion with 768p resolution",
+    duration: [5],
+    icon: "✨",
+    tag: "MiniMax",
+    tagColor: "#6366F1",
+    supportsImage: true,
+    requiresImage: true,
+    supportsAudio: true,
+    supportsExternalAudio: true,
+  },
+  {
+    id: "fal-ai/seedance-v2",
+    name: "Seedance 2.0",
+    cost: 5,
+    description: "Bytedance's cinematic model with native audio",
+    duration: [5],
+    icon: "🌱",
+    tag: "Sync",
+    tagColor: "#10B981",
+    supportsImage: true,
+    requiresImage: false,
+    supportsAudio: true,
+    supportsExternalAudio: true,
+  },
+  {
+    id: "fal-ai/luma-dream-machine",
+    name: "Luma Dream Machine",
+    cost: 10,
+    description: "Cinematic quality with high motion fidelity",
+    duration: [5],
+    resolutions: ["720p", "1080p"],
+    icon: "🎥",
+    tag: "Luma",
+    tagColor: "#F59E0B",
+    supportsImage: true,
+    requiresImage: false,
+    supportsAudio: false,
   },
 ];
 
 const aspectRatios = [
-  { value: "16:9", label: "16:9 Landscape" },
-  { value: "9:16", label: "9:16 Portrait" },
-  { value: "1:1", label: "1:1 Square" },
-  { value: "4:3", label: "4:3 Classic" },
-  { value: "21:9", label: "21:9 Cinematic" },
+  { value: "16:9", label: "16:9", shape: "w-10 h-6", hint: "Landscape" },
+  { value: "9:16", label: "9:16", shape: "w-6 h-10", hint: "Portrait" },
+  { value: "1:1", label: "1:1", shape: "w-8 h-8", hint: "Square" },
+  { value: "4:3", label: "4:3", shape: "w-10 h-8", hint: "Classic" },
+  { value: "21:9", label: "21:9", shape: "w-14 h-6", hint: "Cinematic" },
 ];
 
-export default function StudioVideo() {
+const promptSuggestions = [
+  "A drone shot flying over a neon-lit cyberpunk city at night, rain and reflections…",
+  "A lone astronaut floating through a vivid nebula of purple and gold dust…",
+  "Slow motion waves crashing on a black sand beach at golden hour…",
+  "A futuristic racing car speeding through a glowing tunnel…",
+  "Cherry blossom petals falling in slow motion over a serene Japanese garden…",
+];
+
+const StudioVideo = () => {
   const [prompt, setPrompt] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [selectedAssets, setSelectedAssets] = useState<StudioAsset[]>([]);
+  const [assetPickerOpen, setAssetPickerOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState(videoModels[0].id);
-  const [duration, setDuration] = useState(5);
+  const [duration, setDuration] = useState(videoModels[0].duration[0]);
   const [aspectRatio, setAspectRatio] = useState("16:9");
   const [fps, setFps] = useState(24);
   const [guidanceScale, setGuidanceScale] = useState(7.5);
+  const [enableAudio, setEnableAudio] = useState(true);
+  const [resolution, setResolution] = useState("720p");
   const [generatingJobId, setGeneratingJobId] = useState(null);
+
+  // Sync resolution when model changes
+  useEffect(() => {
+    const model = videoModels.find((m) => m.id === selectedModel);
+    if (model?.resolutions && !model.resolutions.includes(resolution)) {
+      setResolution(model.resolutions[0]);
+    }
+  }, [selectedModel]);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [showTransactions, setShowTransactions] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [suggestionIdx, setSuggestionIdx] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
@@ -117,69 +284,45 @@ export default function StudioVideo() {
     }
   }, [urlModel]);
 
-  const { data: user } = useQuery({
-    queryKey: ["user"],
-    queryFn: () => base44.auth.me(),
-  });
+  // Cycle prompt suggestions
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSuggestionIdx((i) => (i + 1) % promptSuggestions.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
 
-  const { data: credits } = useQuery({
-    queryKey: ["credits", user?.email],
-    queryFn: async () => {
-      const result = await base44.entities.StudioCredits.filter({
-        user_email: user.email,
-      });
-      return result[0] || { credits_balance: 0, plan_type: "free" };
-    },
-    enabled: !!user,
+  const { data: wallet } = useQuery({
+    queryKey: ["studio", "wallet"],
+    queryFn: () => getWallet(),
   });
 
   const { data: generations } = useQuery({
-    queryKey: ["generations", user?.email],
-    queryFn: () =>
-      base44.entities.StudioGeneration.filter(
-        { user_email: user.email, generation_type: "video" },
-        "-created_date",
-        20,
-      ),
-    enabled: !!user,
+    queryKey: ["studio", "generations", "video"],
+    queryFn: () => listGenerations({ generation_type: "video", limit: 20 }),
   });
 
   const generateMutation = useMutation({
-    mutationFn: async (data) => {
-      const { data: result } = await base44.functions.invoke(
-        "generateVideo",
-        data,
-      );
-      return result;
+    mutationFn: async (data: any) => {
+      const provider = inferProviderFromModel(selectedModel);
+      return await studioGenerate({
+        provider,
+        model: selectedModel,
+        generation_type: "video",
+        input_params: data,
+      });
     },
     onSuccess: async (result) => {
-      setGeneratingJobId(result.job_id);
-
-      await base44.entities.StudioGeneration.create({
-        user_email: user.email,
-        generation_type: "video",
-        model: selectedModel,
-        prompt: prompt,
-        input_image_url: imageUrl || null,
-        job_id: result.job_id,
-        status: "processing",
-        credits_used: result.credits_used,
-        settings: {
-          duration,
-          aspect_ratio: aspectRatio,
-          fps,
-          guidance_scale: guidanceScale,
-        },
+      setGeneratingJobId(result.generation_id);
+      queryClient.invalidateQueries({ queryKey: ["studio", "wallet"] });
+      queryClient.invalidateQueries({
+        queryKey: ["studio", "generations", "video"],
       });
-
-      queryClient.invalidateQueries({ queryKey: ["generations"] });
-      queryClient.invalidateQueries({ queryKey: ["credits"] });
-      pollJobStatus(result.job_id);
+      pollJobStatus(result.generation_id);
     },
-    onError: (error) => {
-      console.error("Generation error:", error);
+    onError: (error: any) => {
       const errorMessage = error.message?.toLowerCase();
-      const statusCode = error.response?.status;
+      const statusCode = error.status;
       if (
         errorMessage?.includes("insufficient credits") ||
         statusCode === 402
@@ -195,456 +338,1800 @@ export default function StudioVideo() {
     },
   });
 
+  const upscaleMutation = useMutation({
+    mutationFn: async ({ videoUrl }: { videoUrl: string }) => {
+      // Upscaling to 4K using fal-ai/crystal-video-upscaler
+      return await studioGenerate({
+        provider: "fal",
+        model: "fal-ai/crystal-video-upscaler",
+        generation_type: "video_upscale",
+        input_params: {
+          video_url: videoUrl,
+          scale_factor: 2.0, // Multiplier to get to 4K from 1080p/720p
+        },
+      });
+    },
+    onSuccess: async (result) => {
+      setGeneratingJobId(result.generation_id);
+      queryClient.invalidateQueries({ queryKey: ["studio", "wallet"] });
+      queryClient.invalidateQueries({
+        queryKey: ["studio", "generations", "video"],
+      });
+      pollJobStatus(result.generation_id);
+      toast({
+        title: "Upscaling Started",
+        description: "Your video is being enhanced to 4K quality.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Upscale Error",
+        description: getUserFriendlyError(error),
+        variant: "destructive",
+      });
+    },
+  });
+
   const pollJobStatus = async (jobId) => {
+    let retries = 0;
+    const MAX_RETRIES = 60; // 3 min cap
     const interval = setInterval(async () => {
+      retries++;
+      if (retries > MAX_RETRIES) {
+        clearInterval(interval);
+        setGeneratingJobId(null);
+        queryClient.invalidateQueries({
+          queryKey: ["studio", "generations", "video"],
+        });
+        return;
+      }
       try {
-        const { data: statusResult } = await base44.functions.invoke(
-          "checkJobStatus",
-          {
-            job_id: jobId,
-            model: selectedModel,
-          },
-        );
-
-        if (statusResult.status === "completed") {
+        const statusResult = await getJobStatus(jobId);
+        const isDone =
+          statusResult.status === "failed" ||
+          (statusResult.status === "completed" &&
+            (statusResult.output_urls ?? []).length > 0);
+        if (isDone) {
           clearInterval(interval);
           setGeneratingJobId(null);
-
-          const generations = await base44.entities.StudioGeneration.filter({
-            job_id: jobId,
+          queryClient.invalidateQueries({
+            queryKey: ["studio", "generations", "video"],
           });
-          if (generations[0]) {
-            await base44.entities.StudioGeneration.update(generations[0].id, {
-              status: "completed",
-              output_url:
-                statusResult.result.video?.url ||
-                statusResult.result.images?.[0]?.url,
-            });
-          }
-
-          queryClient.invalidateQueries({ queryKey: ["generations"] });
-        } else if (statusResult.status === "failed") {
-          clearInterval(interval);
-          setGeneratingJobId(null);
-
-          const generations = await base44.entities.StudioGeneration.filter({
-            job_id: jobId,
-          });
-          if (generations[0]) {
-            await base44.entities.StudioGeneration.update(generations[0].id, {
-              status: "failed",
-            });
-          }
-
-          queryClient.invalidateQueries({ queryKey: ["generations"] });
+          queryClient.invalidateQueries({ queryKey: ["studio", "wallet"] });
         }
       } catch (error) {
-        console.error("Polling error:", error);
         clearInterval(interval);
         setGeneratingJobId(null);
       }
     }, 3000);
   };
 
+  // Auto-poll for jobs that are in "processing" state (useful after refresh)
+  useEffect(() => {
+    const processingJob = generations?.find((g) => g.status === "processing");
+    if (processingJob && !generatingJobId) {
+      console.log(
+        "Found processing job in history, resuming poll:",
+        processingJob.id,
+      );
+      setGeneratingJobId(processingJob.id);
+      pollJobStatus(processingJob.id);
+    }
+  }, [generations, generatingJobId]);
+
   const selectedModelData = videoModels.find((m) => m.id === selectedModel);
+  const modelRequiresImage = selectedModelData?.requiresImage ?? false;
+  const modelSupportsImage = selectedModelData?.supportsImage ?? false;
+
+  // Derived from selectedAssets
+  const primaryImage = selectedAssets.find((a) => a.type === "image");
+  const audioAsset = selectedAssets.find((a) => a.type === "audio");
+  const imageUrl = primaryImage?.url ?? "";
 
   const handleGenerate = () => {
-    if (!prompt && !imageUrl) {
+    if (!prompt && !imageUrl && !modelRequiresImage) {
       toast({
         title: "Input Required",
-        description: "Please provide a prompt or a reference image.",
+        description: "Please write a prompt or add a reference image.",
         variant: "destructive",
       });
       return;
     }
-
-    if (!credits || credits.credits_balance < (selectedModelData?.cost || 10)) {
+    if (modelRequiresImage && !imageUrl) {
+      toast({
+        title: "Image Required",
+        description: `${selectedModelData?.name} needs a reference image. Add one via Assets.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!wallet || wallet.balance < (selectedModelData?.cost || 10)) {
       setShowSubscriptionModal(true);
       return;
     }
 
-    generateMutation.mutate({
-      prompt: prompt || undefined,
-      image_url: imageUrl || undefined,
-      model: selectedModel,
-      duration: duration,
-      aspect_ratio: aspectRatio,
-      fps: fps,
-      guidance_scale: guidanceScale,
-    });
+    const buildInputParams = () => {
+      const isVeo3 = selectedModel.includes("veo3");
+      const isKling = selectedModel.includes("kling-video");
+      const isWan = selectedModel.includes("wan");
+      const isMiniMax02 = selectedModel.includes("minimax/hailuo-02");
+      const isSeedance = selectedModel.includes("seedance");
+      const isVidu = selectedModel.includes("vidu");
+      const isLuma = selectedModel === "fal-ai/luma-dream-machine";
+      const isMiniMaxI2V =
+        selectedModel === "fal-ai/minimax/video-01-live/image-to-video";
+      const isVeo = selectedModel.includes("veo");
+
+      if (isVeo) {
+        const validAspect = ["16:9", "9:16"].includes(aspectRatio)
+          ? aspectRatio
+          : "16:9";
+        const durationValue =
+          typeof duration === "number" ? duration : parseInt(duration);
+        const durationEnum =
+          durationValue <= 4 ? "4s" : durationValue <= 6 ? "6s" : "8s";
+        return {
+          prompt: prompt || undefined,
+          image_url: imageUrl || undefined,
+          aspect_ratio: validAspect,
+          duration: durationEnum,
+          generate_audio: enableAudio, // Use state instead of literal true
+          auto_fix: true,
+        };
+      }
+
+      if (selectedModel.includes("sora-2")) {
+        return {
+          image_url: imageUrl || undefined,
+          prompt: prompt || undefined,
+          resolution: resolution, // Restricted to "auto" or "720p" in UI
+          aspect_ratio: aspectRatio,
+          duration_seconds: duration,
+        };
+      }
+
+      if (isKling) {
+        return {
+          image_url: imageUrl || undefined,
+          prompt: prompt || undefined,
+          duration,
+          aspect_ratio: aspectRatio,
+          generate_audio: true, // Native audio requested for v2.6+
+        };
+      }
+
+      if (isWan) {
+        return {
+          image_url: imageUrl || undefined,
+          prompt: prompt || undefined,
+          aspect_ratio: aspectRatio,
+          ...(audioAsset ? { audio_url: audioAsset.url } : {}),
+        };
+      }
+
+      if (isMiniMax02) {
+        return {
+          image_url: imageUrl,
+          prompt: prompt || undefined,
+          aspect_ratio: aspectRatio,
+          ...(audioAsset ? { audio_url: audioAsset.url } : {}),
+        };
+      }
+
+      if (isSeedance) {
+        return {
+          image_url: imageUrl || undefined,
+          prompt: prompt || undefined,
+          aspect_ratio: aspectRatio,
+          ...(audioAsset ? { audio_url: audioAsset.url } : {}),
+        };
+      }
+
+
+
+      if (isLuma) {
+        return {
+          prompt: prompt || undefined,
+          aspect_ratio: aspectRatio,
+          resolution: resolution,
+          ...(imageUrl ? { image_url: imageUrl } : {}),
+        };
+      }
+
+      if (isVidu) {
+        return {
+          prompt: prompt || undefined,
+          aspect_ratio: aspectRatio,
+          duration: `${duration}s`,
+          resolution: resolution,
+          ...(imageUrl ? { image_url: imageUrl } : {}),
+        };
+      }
+
+      return {
+        prompt: prompt || undefined,
+        image_url: imageUrl || undefined,
+        audio_url: audioAsset?.url || undefined,
+        duration,
+        aspect_ratio: aspectRatio,
+        fps,
+        guidance_scale: guidanceScale,
+        enable_audio: enableAudio,
+        resolution: resolution,
+      };
+    };
+
+    generateMutation.mutate(buildInputParams());
   };
 
-  const handleUpload = async (file) => {
-    if (!file) return;
-    try {
-      const { data } = await base44.integrations.Core.UploadFile({ file });
-      setImageUrl(data.file_url);
-    } catch (error) {
-      console.error("Error uploading file:", error);
-      toast({
-        title: "Upload Failed",
-        description: getUserFriendlyError(error),
-        variant: "destructive",
-      });
+  const handleUpscale = (videoUrl: string) => {
+    if (!wallet || wallet.balance < 15) {
+      setShowSubscriptionModal(true);
+      return;
     }
+    upscaleMutation.mutate({ videoUrl });
   };
+
+  const credits = wallet?.balance || 0;
+  const creditColor =
+    credits >= 30 ? "#10B981" : credits >= 10 ? "#F59E0B" : "#EF4444";
+
+  const isGenerating = generateMutation.isPending || !!generatingJobId;
+  const canGenerate =
+    !isGenerating && (modelRequiresImage ? !!imageUrl : !!(prompt || imageUrl));
 
   return (
-    <div style={{ background: "#0A0A0F", minHeight: "100vh", color: "#fff" }}>
-      <header className="px-6 py-6 border-b border-white/10 bg-[#0A0A0F]/95 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              onClick={() => navigate(createPageUrl("Studio"))}
-              className="text-gray-400 hover:text-white"
+    <div
+      style={{
+        background: "#0A0A0F",
+        height: "100vh",
+        overflow: "hidden",
+        color: "#fff",
+        fontFamily: "'Inter', system-ui, sans-serif",
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      {/* ── STUDIO HEADER ── */}
+      <header
+        style={{
+          height: 80,
+          background: "#0A0A0F",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+          padding: "0 32px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          zIndex: 100,
+          position: "sticky",
+          top: 0,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              cursor: "pointer",
+            }}
+            onClick={() => navigate(createPageUrl("Studio"))}
+          >
+            <div
+              style={{
+                background: "linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)",
+                width: 40,
+                height: 40,
+                borderRadius: 12,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 4px 12px rgba(139,92,246,0.3)",
+              }}
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Studio
-            </Button>
-            <div className="flex items-center gap-3">
-              <Film className="w-6 h-6 text-[#F18B6A]" />
-              <h1 className="text-2xl font-bold text-white">
-                AI Video Generator
+              <Film size={22} color="#fff" />
+            </div>
+            <div>
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: 18,
+                  fontWeight: 800,
+                  color: "#fff",
+                  letterSpacing: "-0.02em",
+                }}
+              >
+                StudioVideo
               </h1>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    background: "#10B981",
+                  }}
+                />
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "#94A3B8",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  AI Engine Active
+                </span>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-lg border border-white/10">
-              <Coins className="w-4 h-4 text-yellow-400" />
-              <span className="text-sm font-medium">
-                {credits?.credits_balance || 0} credits
-              </span>
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => navigate(createPageUrl("StudioSubscribe"))}
-              className="border-white/10 hover:bg-white/5"
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <button
+              onClick={() => setShowTransactions(true)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "8px 16px",
+                background: "rgba(255, 255, 255, 0.03)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                borderRadius: 12,
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
             >
-              Add Credits
-            </Button>
+              <Coins size={16} color="#F59E0B" />
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>
+                {credits}
+              </span>
+              <span style={{ fontSize: 11, color: "#94A3B8" }}>Credits</span>
+            </button>
+
+            <button
+              onClick={() => navigate(createPageUrl("StudioSubscribe"))}
+              style={{
+                padding: "10px 20px",
+                borderRadius: 12,
+                border: "none",
+                background: "linear-gradient(135deg, #F18B6A 0%, #E07A5A 100%)",
+                color: "#fff",
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: "pointer",
+                boxShadow: "0 4px 12px rgba(241,139,106,0.25)",
+                transition: "all 0.2s",
+              }}
+            >
+              + Add Credits
+            </button>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="grid lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1 space-y-6">
-            <Card className="p-6 bg-white/5 border border-white/10 rounded-lg">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-[#F18B6A]" />
-                Generation Settings
-              </h3>
+      <WalletTransactionsDialog
+        open={showTransactions}
+        onOpenChange={setShowTransactions}
+      />
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-300">
-                    Model
-                  </label>
-                  <Select
-                    value={selectedModel}
-                    onValueChange={setSelectedModel}
+      {/* ── SPLIT VIEW CONTAINER ── */}
+      {/* ── SPLIT VIEW CONTAINER ── */}
+      <main
+        style={{
+          flex: 1,
+          display: "flex",
+          overflow: "hidden",
+          background: "#0A0A0F",
+        }}
+      >
+        {/* ── LEFT: SIDEBAR (Scrollable CONFIG) ── */}
+        <aside
+          style={{
+            width: 420,
+            flexShrink: 0,
+            background: "#111116",
+            borderRight: "1px solid rgba(255, 255, 255, 0.08)",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+            boxShadow: "10px 0 30px rgba(0,0,0,0.2)",
+            zIndex: 10,
+          }}
+        >
+          <div
+            style={{
+              flex: 1,
+              overflowY: "auto",
+              padding: "32px 24px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 32,
+            }}
+          >
+            {/* Title */}
+            <div>
+              <h2
+                style={{
+                  fontSize: 24,
+                  fontWeight: 800,
+                  color: "#fff",
+                  marginBottom: 6,
+                  letterSpacing: "-0.02em",
+                }}
+              >
+                Configuration
+              </h2>
+              <p style={{ fontSize: 13, color: "#94A3B8", lineHeight: 1.5 }}>
+                Tweak parameters to perfect your AI generation.
+              </p>
+            </div>
+
+            {/* ── MODEL SELECTOR ── */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: "#6B7280",
+                    marginBottom: 10,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  Select AI Model
+                </label>
+                <Select
+                  value={selectedModel}
+                  onValueChange={(v) => {
+                    setSelectedModel(v);
+                    const m = videoModels.find((m) => m.id === v);
+                    if (m?.duration?.[0]) setDuration(m.duration[0]);
+                  }}
+                >
+                  <SelectTrigger
+                    style={{
+                      background: "rgba(255, 255, 255, 0.02)",
+                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                      borderRadius: 12,
+                      color: "#fff",
+                      height: 52,
+                      padding: "0 16px",
+                      boxShadow: "none",
+                    }}
                   >
-                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {videoModels.map((model) => (
-                        <SelectItem key={model.id} value={model.id}>
-                          <div>
-                            <div className="font-medium">{model.name}</div>
-                            <div className="text-xs text-gray-400">
-                              {model.cost} credits • {model.description}
+                    <div
+                      style={{ display: "flex", alignItems: "center", gap: 12 }}
+                    >
+                      <span style={{ fontSize: 20 }}>
+                        {selectedModelData?.icon}
+                      </span>
+                      <div style={{ textAlign: "left" }}>
+                        <div style={{ fontSize: 14, fontWeight: 600 }}>
+                          {selectedModelData?.name}
+                        </div>
+                        <div style={{ fontSize: 11, color: "#94A3B8" }}>
+                          {selectedModelData?.cost} credits
+                        </div>
+                      </div>
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent
+                    style={{
+                      background: "#111116",
+                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                      borderRadius: 12,
+                      boxShadow: "0 10px 25px rgba(0,0,0,0.3)",
+                    }}
+                  >
+                    {videoModels.map((model) => (
+                      <SelectItem
+                        key={model.id}
+                        value={model.id}
+                        style={{
+                          padding: "8px 12px",
+                          borderRadius: 8,
+                          color: "#fff",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 12,
+                          }}
+                        >
+                          <span style={{ fontSize: 20 }}>{model.icon}</span>
+                          <div style={{ flex: 1 }}>
+                            <div
+                              style={{
+                                fontWeight: 600,
+                                color: "#fff",
+                                fontSize: 14,
+                              }}
+                            >
+                              {model.name}
+                            </div>
+                            <div style={{ fontSize: 11, color: "#94A3B8" }}>
+                              {model.cost} credits · {model.description}
                             </div>
                           </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                          {model.tag && (
+                            <span
+                              style={{
+                                marginLeft: "auto",
+                                fontSize: 10,
+                                fontWeight: 700,
+                                padding: "2px 8px",
+                                borderRadius: 999,
+                                background: `${model.tagColor}15`,
+                                color: model.tagColor,
+                                border: `1px solid ${model.tagColor}30`,
+                              }}
+                            >
+                              {model.tag}
+                            </span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-300">
+              {/* ── PROMPT AREA ── */}
+              <div>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-end",
+                    marginBottom: 10,
+                  }}
+                >
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: "#94A3B8",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
                     Prompt
                   </label>
-                  <Textarea
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="Describe the video you want to create..."
-                    className="bg-white/5 border-white/10 text-white min-h-32 resize-none"
-                  />
+                  <span
+                    style={{ fontSize: 11, color: "#94A3B8", fontWeight: 500 }}
+                  >
+                    {prompt.length} / 1000
+                  </span>
                 </div>
+                <Textarea
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value.slice(0, 1000))}
+                  placeholder={promptSuggestions[suggestionIdx]}
+                  style={{
+                    background: "rgba(255, 255, 255, 0.02)",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    borderRadius: 14,
+                    color: "#fff",
+                    minHeight: 120,
+                    padding: "16px",
+                    fontSize: 14,
+                    lineHeight: 1.6,
+                    resize: "none",
+                    boxShadow: "none",
+                    transition: "all 0.2s",
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.background = "rgba(255, 255, 255, 0.05)";
+                    e.target.style.borderColor = "#8B5CF6";
+                    e.target.style.boxShadow =
+                      "0 0 0 4px rgba(139,92,246,0.15)";
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.background = "rgba(255, 255, 255, 0.02)";
+                    e.target.style.borderColor = "rgba(255, 255, 255, 0.1)";
+                    e.target.style.boxShadow = "none";
+                  }}
+                />
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-300">
-                    Reference Image (Optional)
-                  </label>
-                  <div className="flex gap-2">
-                    <Input
-                      value={imageUrl}
-                      onChange={(e) => setImageUrl(e.target.value)}
-                      placeholder="Image URL..."
-                      className="bg-white/5 border-white/10 text-white"
-                    />
-                    <label className="cursor-pointer">
-                      <Button
-                        variant="outline"
-                        className="border-white/10"
-                        asChild
-                      >
-                        <span>
-                          <Upload className="w-4 h-4" />
-                        </span>
-                      </Button>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) =>
-                          e.target.files?.[0] && handleUpload(e.target.files[0])
-                        }
-                      />
-                    </label>
-                  </div>
-                  {imageUrl && (
-                    <img
-                      src={imageUrl}
-                      alt="Reference"
-                      className="mt-3 w-full rounded-lg border border-white/10"
-                    />
-                  )}
-                </div>
-
-                {selectedModelData && selectedModelData.duration.length > 0 && (
-                  <div>
-                    <label className="block text-sm font-medium mb-2 text-gray-300">
-                      Duration: {duration}s
-                    </label>
-                    <Select
-                      value={duration.toString()}
-                      onValueChange={(v) => setDuration(Number(v))}
+              {/* ── ASSETS ── */}
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: "#94A3B8",
+                    marginBottom: 12,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  Assets
+                </label>
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 12 }}
+                >
+                  {selectedAssets.length > 0 ? (
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 12,
+                      }}
                     >
-                      <SelectTrigger className="bg-white/5 border-white/10 text-white">
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 8,
+                        }}
+                      >
+                        {selectedAssets.map((asset, index) => {
+                          const isImage = asset.type === "image";
+                          const label = isImage
+                            ? index === 0
+                              ? "Start Frame"
+                              : index === 1
+                                ? "End Frame"
+                                : "Reference"
+                            : "Audio";
+                          return (
+                            <div
+                              key={asset.id}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 12,
+                                padding: "10px",
+                                background: "rgba(255, 255, 255, 0.02)",
+                                border: "1px solid rgba(255, 255, 255, 0.08)",
+                                borderRadius: 12,
+                                position: "relative",
+                              }}
+                            >
+                              {isImage ? (
+                                <img
+                                  src={asset.url}
+                                  style={{
+                                    width: 44,
+                                    height: 44,
+                                    borderRadius: 8,
+                                    objectFit: "cover",
+                                  }}
+                                  alt=""
+                                />
+                              ) : (
+                                <div
+                                  style={{
+                                    width: 44,
+                                    height: 44,
+                                    borderRadius: 8,
+                                    background: "rgba(139,92,246,0.1)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                  }}
+                                >
+                                  <Film size={20} color="#8B5CF6" />
+                                </div>
+                              )}
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                  }}
+                                >
+                                  <Badge
+                                    variant="outline"
+                                    style={{
+                                      height: 18,
+                                      fontSize: 9,
+                                      fontWeight: 700,
+                                      padding: "0 6px",
+                                      background: "rgba(255, 255, 255, 0.05)",
+                                      color: "#94A3B8",
+                                      border:
+                                        "1px solid rgba(255, 255, 255, 0.1)",
+                                    }}
+                                  >
+                                    {label}
+                                  </Badge>
+                                  <p
+                                    style={{
+                                      margin: 0,
+                                      fontSize: 13,
+                                      fontWeight: 600,
+                                      color: "#fff",
+                                      whiteSpace: "nowrap",
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                    }}
+                                  >
+                                    {asset.name}
+                                  </p>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() =>
+                                  setSelectedAssets((prev) =>
+                                    prev.filter((a) => a.id !== asset.id),
+                                  )
+                                }
+                                style={{
+                                  color: "#94A3B8",
+                                  background: "none",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  padding: 4,
+                                }}
+                              >
+                                <X size={16} />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {selectedAssets.filter((a) => a.type === "image")
+                        .length === 2 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const images = selectedAssets.filter(
+                                (a) => a.type === "image",
+                              );
+                              const nonImages = selectedAssets.filter(
+                                (a) => a.type !== "image",
+                              );
+                              setSelectedAssets([
+                                ...images.reverse(),
+                                ...nonImages,
+                              ]);
+                            }}
+                            style={{
+                              height: 32,
+                              fontSize: 11,
+                              gap: 6,
+                              borderRadius: 8,
+                            }}
+                          >
+                            <Zap size={12} />
+                            Swap Frames
+                          </Button>
+                        )}
+                    </div>
+                  ) : null}
+
+                  <button
+                    onClick={() => setAssetPickerOpen(true)}
+                    style={{
+                      width: "100%",
+                      padding: "20px",
+                      background: "rgba(255, 255, 255, 0.02)",
+                      border: "2px dashed rgba(255, 255, 255, 0.1)",
+                      borderRadius: 14,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 8,
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = "#8B5CF6";
+                      e.currentTarget.style.background =
+                        "rgba(139,92,246,0.05)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor =
+                        "rgba(255, 255, 255, 0.1)";
+                      e.currentTarget.style.background =
+                        "rgba(255, 255, 255, 0.02)";
+                    }}
+                  >
+                    <Upload size={20} color="#94A3B8" />
+                    <div style={{ textAlign: "center" }}>
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: 14,
+                          fontWeight: 600,
+                          color: "#fff",
+                        }}
+                      >
+                        Add Media
+                      </p>
+                      <p style={{ margin: 0, fontSize: 11, color: "#94A3B8" }}>
+                        Upload or select legacy assets
+                      </p>
+                    </div>
+                  </button>
+                </div>
+
+                {/* ── SETTINGS: ASPECT RATIO & DURATION ── */}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 16,
+                  }}
+                >
+                  <div>
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: "#94A3B8",
+                        marginBottom: 10,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      Orientation
+                    </label>
+                    <Select value={aspectRatio} onValueChange={setAspectRatio}>
+                      <SelectTrigger
+                        style={{
+                          background: "rgba(255, 255, 255, 0.02)",
+                          border: "1px solid rgba(255, 255, 255, 0.1)",
+                          borderRadius: 12,
+                          height: 48,
+                          boxShadow: "none",
+                          color: "#fff",
+                        }}
+                      >
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        {selectedModelData.duration.map((d) => (
-                          <SelectItem key={d} value={d.toString()}>
-                            {d} seconds
+                      <SelectContent
+                        style={{
+                          background: "#111116",
+                          border: "1px solid rgba(255, 255, 255, 0.1)",
+                          borderRadius: 12,
+                        }}
+                      >
+                        {aspectRatios.map((ar) => (
+                          <SelectItem
+                            key={ar.value}
+                            value={ar.value}
+                            style={{ borderRadius: 8, color: "#fff" }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                              }}
+                            >
+                              <div
+                                className={`${ar.shape} bg-slate-700 rounded-sm border border-slate-600`}
+                              />
+                              <span>
+                                {ar.label}{" "}
+                                <span style={{ opacity: 0.5, fontSize: 11 }}>
+                                  ({ar.hint})
+                                </span>
+                              </span>
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-                )}
 
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-300">
-                    Aspect Ratio
-                  </label>
-                  <Select value={aspectRatio} onValueChange={setAspectRatio}>
-                    <SelectTrigger className="bg-white/5 border-white/10 text-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {aspectRatios.map((ar) => (
-                        <SelectItem key={ar.value} value={ar.value}>
-                          {ar.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div>
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: "#94A3B8",
+                        marginBottom: 10,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      Duration
+                    </label>
+                    {selectedModelData?.duration &&
+                      selectedModelData.duration.length > 2 ? (
+                      <div style={{ display: "flex", gap: 8 }}>
+                        {selectedModelData.duration.map((d) => (
+                          <Button
+                            key={d}
+                            variant={duration === d ? "default" : "outline"}
+                            onClick={() => setDuration(d)}
+                            style={{
+                              flex: 1,
+                              height: 48,
+                              borderRadius: 12,
+                              fontSize: 13,
+                              fontWeight: 700,
+                              background:
+                                duration === d
+                                  ? "#8B5CF6"
+                                  : "rgba(255, 255, 255, 0.02)",
+                              border: `1px solid ${duration === d ? "#8B5CF6" : "rgba(255, 255, 255, 0.1)"}`,
+                              color: "#fff",
+                            }}
+                          >
+                            {d}s
+                          </Button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
+                          height: 48,
+                          background: "rgba(255, 255, 255, 0.02)",
+                          border: "1px solid rgba(255, 255, 255, 0.1)",
+                          borderRadius: 12,
+                          padding: "0 12px",
+                        }}
+                      >
+                        <input
+                          type="range"
+                          min={selectedModelData?.duration?.[0] || 5}
+                          max={
+                            selectedModelData?.duration?.[
+                            selectedModelData.duration.length - 1
+                            ] || 10
+                          }
+                          step={1}
+                          disabled={selectedModelData?.duration?.length === 1}
+                          value={duration}
+                          onChange={(e) =>
+                            setDuration(parseInt(e.target.value))
+                          }
+                          style={{
+                            flex: 1,
+                            accentColor: "#8B5CF6",
+                            cursor:
+                              selectedModelData?.duration?.length === 1
+                                ? "not-allowed"
+                                : "pointer",
+                            opacity:
+                              selectedModelData?.duration?.length === 1
+                                ? 0.5
+                                : 1,
+                          }}
+                        />
+                        <span
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: "#fff",
+                            minWidth: 32,
+                            textAlign: "right",
+                          }}
+                        >
+                          {duration}s
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* ── ADDITIONAL CONTROLS: AUDIO & RESOLUTION ── */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 24,
+                  padding: "8px 0",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    background: "rgba(255, 255, 255, 0.02)",
+                    padding: "16px",
+                    borderRadius: 16,
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                  }}
+                >
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: 2 }}
+                  >
+                    <Label
+                      htmlFor="audio-toggle"
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: "#fff",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Generate Audio
+                    </Label>
+                    <span style={{ fontSize: 11, color: "#94A3B8" }}>
+                      Model-generated synchronized sound
+                    </span>
+                  </div>
+                  <Switch
+                    id="audio-toggle"
+                    checked={enableAudio}
+                    onCheckedChange={setEnableAudio}
+                    disabled={!selectedModelData?.supportsAudio}
+                  />
                 </div>
 
-                <details className="bg-white/5 rounded-lg p-4 border border-white/10">
-                  <summary className="cursor-pointer text-sm font-medium text-gray-300">
-                    Advanced Settings
-                  </summary>
-                  <div className="mt-4 space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2 text-gray-300">
-                        FPS: {fps}
-                      </label>
-                      <Slider
-                        value={[fps]}
-                        onValueChange={([v]) => setFps(v)}
-                        min={6}
-                        max={30}
-                        step={6}
-                        className="w-full"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-2 text-gray-300">
-                        Guidance Scale: {guidanceScale.toFixed(1)}
-                      </label>
-                      <Slider
-                        value={[guidanceScale]}
-                        onValueChange={([v]) => setGuidanceScale(v)}
-                        min={1}
-                        max={15}
-                        step={0.5}
-                        className="w-full"
-                      />
-                    </div>
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: "#94A3B8",
+                      marginBottom: 12,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    Output Quality
+                  </label>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    {(selectedModelData?.resolutions || ["480p", "720p", "1080p"]).map((res) => (
+                      <button
+                        key={res}
+                        onClick={() => setResolution(res)}
+                        style={{
+                          flex: 1,
+                          height: 40,
+                          borderRadius: 10,
+                          border:
+                            resolution === res
+                              ? "1px solid #8B5CF6"
+                              : "1px solid rgba(255,255,255,0.1)",
+                          background:
+                            resolution === res
+                              ? "rgba(139,92,246,0.15)"
+                              : "rgba(255,255,255,0.05)",
+                          color: resolution === res ? "#fff" : "#94A3B8",
+                          fontSize: 13,
+                          fontWeight: 600,
+                          transition: "all 0.2s",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {res}
+                      </button>
+                    ))}
                   </div>
-                </details>
-
-                <Button
-                  onClick={handleGenerate}
-                  disabled={
-                    (!prompt && !imageUrl) ||
-                    generateMutation.isPending ||
-                    !!generatingJobId
-                  }
-                  className="w-full h-12 bg-gradient-to-r from-[#F18B6A] to-[#E07A5A] hover:opacity-90 text-white font-medium"
-                >
-                  {generateMutation.isPending || generatingJobId ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <Play className="w-4 h-4 mr-2" />
-                      Create ({selectedModelData?.cost} credits)
-                    </>
-                  )}
-                </Button>
+                </div>
               </div>
-            </Card>
+            </div>
           </div>
 
-          <div className="lg:col-span-2">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold flex items-center gap-2">
-                <Film className="w-6 h-6 text-[#F18B6A]" />
-                Recent Generations
-              </h2>
+          {/* Sidebar Footer (Generate Button) */}
+          <div
+            style={{
+              padding: "24px",
+              borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+              background: "#111116",
+            }}
+          >
+            <div
+              style={{
+                marginBottom: 16,
+                padding: 12,
+                background: "rgba(139,92,246,0.05)",
+                border: "1px solid rgba(139,92,246,0.1)",
+                borderRadius: 12,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <span style={{ fontSize: 12, color: "#94A3B8" }}>
+                Estimated Cost
+              </span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: "#8B5CF6" }}>
+                {selectedModelData?.cost} Credits
+              </span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {generations?.map((gen) => (
-                <Card
-                  key={gen.id}
-                  className="p-4 bg-white/5 border border-white/10 rounded-lg hover:border-white/20 transition-all"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-gray-400 mb-1">
-                        {videoModels.find((m) => m.id === gen.model)?.name ||
-                          gen.model}
-                      </p>
-                      <p className="text-white font-medium line-clamp-2 text-sm">
-                        {gen.prompt}
-                      </p>
-                    </div>
-                    <Badge
-                      className={
-                        gen.status === "completed"
-                          ? "bg-green-500/20 text-green-400 border-green-500/30"
-                          : gen.status === "failed"
-                            ? "bg-red-500/20 text-red-400 border-red-500/30"
-                            : "bg-blue-500/20 text-blue-400 border-blue-500/30"
-                      }
-                    >
-                      {gen.status}
-                    </Badge>
-                  </div>
+            <button
+              onClick={handleGenerate}
+              disabled={!canGenerate}
+              style={{
+                width: "100%",
+                height: 54,
+                borderRadius: 14,
+                border: "none",
+                background: canGenerate
+                  ? "linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)"
+                  : "rgba(255, 255, 255, 0.05)",
+                color: canGenerate ? "#fff" : "#94A3B8",
+                fontSize: 16,
+                fontWeight: 700,
+                cursor: canGenerate ? "pointer" : "not-allowed",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 10,
+                boxShadow: canGenerate
+                  ? "0 4px 12px rgba(139,92,246,0.2)"
+                  : "none",
+                transition: "all 0.2s",
+              }}
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2
+                    size={18}
+                    style={{ animation: "spin 1s linear infinite" }}
+                  />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Zap size={18} />
+                  Generate Video
+                </>
+              )}
+            </button>
+          </div>
+        </aside>
 
-                  {gen.status === "completed" && gen.output_url && (
-                    <div className="mt-3">
-                      <video
-                        src={gen.output_url}
-                        controls
-                        className="w-full rounded-lg border border-white/10"
-                        poster={gen.input_image_url}
-                      />
-                      <div className="flex gap-2 mt-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 border-white/10 hover:bg-white/5"
-                          onClick={() => window.open(gen.output_url, "_blank")}
+        {/* ── RIGHT: PREVIEW AREA (The Stage) ── */}
+        <div
+          style={{
+            flex: 1,
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+            background: "#0A0A0F",
+            overflow: "hidden",
+          }}
+        >
+          {/* Header for preview */}
+          <div
+            style={{
+              height: 64,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "0 24px",
+              background: "#111116",
+              borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+            }}
+          >
+            <h3
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                color: "#fff",
+                margin: 0,
+              }}
+            >
+              Preview Output
+            </h3>
+            <div style={{ display: "flex", gap: 12 }}>
+              <Badge
+                variant="outline"
+                style={{
+                  background: "rgba(255, 255, 255, 0.05)",
+                  border: "none",
+                  color: "#94A3B8",
+                }}
+              >
+                {aspectRatio}
+              </Badge>
+              <Badge
+                variant="outline"
+                style={{
+                  background: "rgba(255, 255, 255, 0.05)",
+                  border: "none",
+                  color: "#94A3B8",
+                }}
+              >
+                {duration}s
+              </Badge>
+            </div>
+          </div>
+
+          {/* Workspace content */}
+          <div
+            style={{
+              flex: 1,
+              overflowY: "auto",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <div
+              style={{
+                flexShrink: 0,
+                padding: "40px 40px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: 450,
+              }}
+            >
+              <Card
+                style={{
+                  width: "100%",
+                  maxWidth: 800,
+                  aspectRatio:
+                    aspectRatio === "16:9"
+                      ? "16/9"
+                      : aspectRatio === "9:16"
+                        ? "9/16"
+                        : "1/1",
+                  background: "#111116",
+                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  borderRadius: 24,
+                  boxShadow: "0 20px 50px rgba(0,0,0,0.3)",
+                  overflow: "hidden",
+                  position: "relative",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {!isGenerating && !generatingJobId ? (
+                  (() => {
+                    const lastCompleted = generations?.find(
+                      (g) => g.status === "completed" && g.output_urls?.[0],
+                    );
+                    return lastCompleted ? (
+                      <div
+                        key={lastCompleted.id}
+                        className="relative group w-full h-full"
+                      >
+                        <video
+                          src={lastCompleted.output_urls[0]}
+                          controls
+                          autoPlay
+                          loop
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "contain",
+                          }}
+                        />
+                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            onClick={() =>
+                              handleUpscale(lastCompleted.output_urls[0])
+                            }
+                            disabled={upscaleMutation.isPending}
+                            className="bg-black/60 hover:bg-black/80 text-white border-white/10 backdrop-blur-md"
+                          >
+                            {upscaleMutation.isPending ? (
+                              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                            ) : (
+                              <Zap className="w-4 h-4 mr-2 text-yellow-400 fill-yellow-400" />
+                            )}
+                            Upscale to 4K
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ textAlign: "center", padding: 40 }}>
+                        <div
+                          style={{
+                            width: 80,
+                            height: 80,
+                            borderRadius: 24,
+                            background: "rgba(139,92,246,0.1)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            margin: "0 auto 24px",
+                          }}
                         >
-                          <Download className="w-4 h-4 mr-2" />
-                          Download
-                        </Button>
+                          <ImageIcon size={32} color="#8B5CF6" />
+                        </div>
+                        <h4
+                          style={{
+                            fontSize: 18,
+                            fontWeight: 700,
+                            color: "#fff",
+                            marginBottom: 8,
+                          }}
+                        >
+                          Ready to Create
+                        </h4>
+                        <p
+                          style={{
+                            fontSize: 14,
+                            color: "#94A3B8",
+                            maxWidth: 280,
+                            margin: "0 auto",
+                          }}
+                        >
+                          Configure parameters and click "Generate Video" to
+                          start.
+                        </p>
                       </div>
-                    </div>
-                  )}
-
-                  {gen.status === "processing" && (
-                    <div className="mt-3 flex items-center justify-center py-8 bg-white/5 rounded-lg border border-white/10">
-                      <div className="text-center">
-                        <Loader2 className="w-8 h-8 animate-spin text-[#F18B6A] mx-auto mb-2" />
-                        <p className="text-sm text-gray-400">Processing...</p>
+                    );
+                  })()
+                ) : (
+                  <div
+                    style={{
+                      textAlign: "center",
+                      padding: 40,
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {/* Check if the job we are waiting for is in the generations list and completed */}
+                    {generations?.find((g) => g.id === generatingJobId)
+                      ?.status === "completed" &&
+                      generations?.find((g) => g.id === generatingJobId)
+                        ?.output_urls?.[0] ? (
+                      <video
+                        src={
+                          generations?.find((g) => g.id === generatingJobId)
+                            ?.output_urls[0]
+                        }
+                        controls
+                        autoPlay
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "contain",
+                        }}
+                      />
+                    ) : (
+                      <div>
+                        <div
+                          style={{
+                            position: "relative",
+                            width: 100,
+                            height: 100,
+                            margin: "0 auto 24px",
+                          }}
+                        >
+                          <Loader2
+                            size={48}
+                            className="animate-spin"
+                            style={{
+                              position: "absolute",
+                              top: "25%",
+                              left: "25%",
+                              color: "#8B5CF6",
+                            }}
+                          />
+                          <svg
+                            style={{
+                              transform: "rotate(-90deg)",
+                              width: "100%",
+                              height: "100%",
+                            }}
+                          >
+                            <circle
+                              cx="50"
+                              cy="50"
+                              r="45"
+                              fill="none"
+                              stroke="rgba(255, 255, 255, 0.05)"
+                              strokeWidth="6"
+                            />
+                            <circle
+                              cx="50"
+                              cy="50"
+                              r="45"
+                              fill="none"
+                              stroke="#8B5CF6"
+                              strokeWidth="6"
+                              strokeDasharray="282.7"
+                              strokeDashoffset={282.7 * (1 - 0.45)}
+                              strokeLinecap="round"
+                              className="animate-pulse"
+                            />
+                          </svg>
+                        </div>
+                        <h4
+                          style={{
+                            fontSize: 18,
+                            fontWeight: 700,
+                            color: "#fff",
+                            marginBottom: 8,
+                          }}
+                        >
+                          Generating Video...
+                        </h4>
+                        <p style={{ fontSize: 13, color: "#94A3B8" }}>
+                          Processing your request on the AI cluster.
+                        </p>
                       </div>
-                    </div>
-                  )}
-
-                  {gen.status === "failed" && (
-                    <div className="mt-3 py-4 text-center text-sm text-red-400 bg-red-500/10 rounded-lg border border-red-500/20">
-                      Generation failed
-                    </div>
-                  )}
-
-                  <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between text-xs text-gray-500">
-                    <span>{gen.credits_used} credits</span>
-                    <span>{new Date(gen.created_date).toLocaleString()}</span>
+                    )}
                   </div>
-                </Card>
-              ))}
+                )}
+              </Card>
+            </div>
 
-              {!generations?.length && (
-                <div className="col-span-full text-center py-16">
-                  <Film className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                  <p className="text-gray-400 text-lg">
-                    No videos yet. Create your first one!
+            {/* ── RECENT ARTIFACTS GALLERY ── */}
+            <div style={{ padding: "0 40px 60px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: 24,
+                  paddingBottom: 16,
+                  borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
+                }}
+              >
+                <h2
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 800,
+                    color: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                  }}
+                >
+                  <Sparkles size={18} color="#8B5CF6" />
+                  Recent Artifacts
+                </h2>
+                <Badge
+                  variant="outline"
+                  style={{
+                    background: "rgba(255, 255, 255, 0.03)",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    color: "#94A3B8",
+                  }}
+                >
+                  {generations?.length || 0} Total
+                </Badge>
+              </div>
+
+              {generations && generations.length > 0 ? (
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(260px, 1fr))",
+                    gap: 20,
+                  }}
+                >
+                  {generations.map((gen) => (
+                    <Card
+                      key={gen.id}
+                      style={{
+                        background: "#16161D",
+                        border: "1px solid rgba(255,255,255,0.06)",
+                        borderRadius: 16,
+                        overflow: "hidden",
+                        transition: "transform 0.2s, border-color 0.2s",
+                        cursor:
+                          gen.status === "completed" ? "pointer" : "default",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor =
+                          "rgba(139,92,246,0.3)";
+                        e.currentTarget.style.transform = "translateY(-4px)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor =
+                          "rgba(255,255,255,0.06)";
+                        e.currentTarget.style.transform = "none";
+                      }}
+                    >
+                      <div
+                        style={{
+                          position: "relative",
+                          aspectRatio: "16/9",
+                          background: "#000",
+                        }}
+                      >
+                        {gen.status === "completed" && gen.output_urls?.[0] ? (
+                          <video
+                            src={gen.output_urls[0]}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.target as HTMLVideoElement).play()
+                            }
+                            onMouseLeave={(e) => {
+                              (e.target as HTMLVideoElement).pause();
+                              (e.target as HTMLVideoElement).currentTime = 0;
+                            }}
+                            muted
+                            loop
+                          />
+                        ) : gen.status === "processing" ? (
+                          <div
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: 12,
+                              background: "rgba(139,92,246,0.05)",
+                            }}
+                          >
+                            <Loader2
+                              size={24}
+                              className="animate-spin"
+                              color="#8B5CF6"
+                            />
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 700,
+                                color: "#8B5CF6",
+                                textTransform: "uppercase",
+                              }}
+                            >
+                              Evolving...
+                            </span>
+                          </div>
+                        ) : (
+                          <div
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: 8,
+                              background: "rgba(239, 68, 68, 0.05)",
+                            }}
+                          >
+                            <X size={24} color="#EF4444" />
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 700,
+                                color: "#EF4444",
+                                textTransform: "uppercase",
+                              }}
+                            >
+                              Failed
+                            </span>
+                          </div>
+                        )}
+
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: 8,
+                            left: 8,
+                            display: "flex",
+                            gap: 6,
+                          }}
+                        >
+                          <Badge
+                            variant="outline"
+                            style={{
+                              background: "rgba(0,0,0,0.5)",
+                              border: "none",
+                              color: "#fff",
+                              fontSize: 9,
+                            }}
+                          >
+                            {videoModels.find((m) => m.id === gen.model)
+                              ?.name || "AI Video"}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div style={{ padding: 12 }}>
+                        <p
+                          style={{
+                            margin: 0,
+                            fontSize: 12,
+                            color: "#94A3B8",
+                            lineHeight: 1.4,
+                            height: 34,
+                            overflow: "hidden",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                          }}
+                        >
+                          {gen.input_params?.prompt || "No prompt provided"}
+                        </p>
+                        <div
+                          style={{
+                            marginTop: 12,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: 10,
+                              color: "#4B5563",
+                              fontWeight: 600,
+                            }}
+                          >
+                            {new Date(gen.created_at).toLocaleDateString()}
+                          </span>
+                          {gen.status === "completed" && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(gen.output_urls?.[0], "_blank");
+                              }}
+                              style={{
+                                background: "none",
+                                border: "none",
+                                cursor: "pointer",
+                                color: "#6366F1",
+                                display: "flex",
+                                alignItems: "center",
+                              }}
+                            >
+                              <Download size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ textAlign: "center", padding: "60px 0" }}>
+                  <Film
+                    size={48}
+                    color="rgba(255,255,255,0.05)"
+                    style={{ margin: "0 auto 16px" }}
+                  />
+                  <p style={{ color: "#4B5563", fontSize: 14 }}>
+                    No generations yet. Start by creating a video.
                   </p>
                 </div>
               )}
             </div>
           </div>
         </div>
-      </div>
+      </main>
 
+      {/* ── SPIN KEYFRAMES ── */}
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+
+      {/* ── NO CREDITS MODAL ── */}
       {showSubscriptionModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-          <Card className="max-w-md w-full p-8 bg-[#1A1A1F] border-2 border-white/20 rounded-xl">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-[#F18B6A] to-[#E07A5A] rounded-full flex items-center justify-center mx-auto mb-6">
-                <Coins className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-2xl font-bold text-white mb-4">
-                No Credits Available
-              </h3>
-              <p className="text-gray-400 mb-8">
-                You need credits to generate videos. Subscribe to one of our
-                plans to start creating amazing AI content!
-              </p>
-              <div className="flex gap-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowSubscriptionModal(false)}
-                  className="flex-1 border-white/10 hover:bg-white/5"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={() => {
-                    setShowSubscriptionModal(false);
-                    navigate(createPageUrl("StudioSubscribe"));
-                  }}
-                  className="flex-1 bg-gradient-to-r from-[#F18B6A] to-[#E07A5A] hover:opacity-90"
-                >
-                  Get Credits
-                </Button>
-              </div>
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.85)",
+            backdropFilter: "blur(10px)",
+            zIndex: 100,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 24,
+          }}
+        >
+          <div
+            style={{
+              maxWidth: 420,
+              width: "100%",
+              background: "#12121C",
+              border: "1px solid rgba(139,92,246,0.3)",
+              borderRadius: 24,
+              padding: 40,
+              textAlign: "center",
+              boxShadow:
+                "0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(139,92,246,0.15)",
+            }}
+          >
+            <div
+              style={{
+                width: 72,
+                height: 72,
+                borderRadius: 20,
+                background: "linear-gradient(135deg, #7C3AED, #F18B6A)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 24px",
+                fontSize: 32,
+              }}
+            >
+              🪙
             </div>
-          </Card>
+            <h3
+              style={{
+                margin: "0 0 10px",
+                fontSize: 22,
+                fontWeight: 700,
+                color: "#F0F0FF",
+              }}
+            >
+              You're out of credits
+            </h3>
+            <p
+              style={{
+                margin: "0 0 32px",
+                fontSize: 14,
+                color: "#6B7280",
+                lineHeight: 1.6,
+              }}
+            >
+              Top up your wallet to keep creating amazing AI videos.
+            </p>
+            <div style={{ display: "flex", gap: 12 }}>
+              <button
+                onClick={() => setShowSubscriptionModal(false)}
+                style={{
+                  flex: 1,
+                  padding: "12px 0",
+                  borderRadius: 12,
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: "rgba(255,255,255,0.04)",
+                  color: "#9CA3AF",
+                  fontSize: 14,
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowSubscriptionModal(false);
+                  navigate(createPageUrl("StudioSubscribe"));
+                }}
+                style={{
+                  flex: 1,
+                  padding: "12px 0",
+                  borderRadius: 12,
+                  border: "none",
+                  background: "linear-gradient(135deg, #7C3AED, #8B5CF6)",
+                  color: "#fff",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  boxShadow: "0 4px 20px rgba(139,92,246,0.4)",
+                }}
+              >
+                Get Credits
+              </button>
+            </div>
+          </div>
         </div>
       )}
+
+      <StudioAssetPicker
+        open={assetPickerOpen}
+        onClose={() => setAssetPickerOpen(false)}
+        selectedAssets={selectedAssets}
+        onChange={setSelectedAssets}
+        allowedTypes={["image", "audio"]}
+      />
     </div>
   );
-}
+};
+
+export default StudioVideo;

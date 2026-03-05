@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { useMutation } from "@tanstack/react-query";
+import { createPageUrl, getUserFriendlyError } from "@/utils";
+import { useToast } from "@/components/ui/use-toast";
+import { createCheckoutSession } from "@/api/functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +16,6 @@ import {
 import {
   Film,
   Image,
-  Brain,
   Clapperboard,
   Sparkles,
   ArrowRight,
@@ -22,13 +24,14 @@ import {
   Menu,
   X,
   ArrowLeft,
+  Loader2,
 } from "lucide-react";
 
 const toolCards = [
   {
     title: "Generate AI Video",
     icon: Film,
-    path: "/studio/video",
+    path: createPageUrl("StudioVideo"),
     badge: null,
     color: "from-[#F18B6A] to-[#E07A5A]",
     bgColor: "bg-orange-500",
@@ -36,23 +39,15 @@ const toolCards = [
   {
     title: "Generate AI Image",
     icon: Image,
-    path: "/studio/image",
+    path: createPageUrl("StudioImage"),
     badge: null,
     color: "from-[#32C8D1] to-teal-500",
     bgColor: "bg-cyan-500",
   },
   {
-    title: "Generate AI Avatar",
-    icon: Brain,
-    path: "/studio/avatar",
-    badge: null,
-    color: "from-purple-500 to-indigo-600",
-    bgColor: "bg-purple-500",
-  },
-  {
     title: "Generate AI Shorts",
     icon: Clapperboard,
-    path: "/studio/shorts",
+    path: createPageUrl("StudioVideo"),
     badge: "Beta",
     color: "from-[#F7B750] to-amber-500",
     bgColor: "bg-amber-500",
@@ -60,7 +55,7 @@ const toolCards = [
   {
     title: "Generate AI Effects",
     icon: Sparkles,
-    path: "/studio/effects",
+    path: createPageUrl("StudioImage"),
     badge: "New",
     color: "from-pink-500 to-rose-600",
     bgColor: "bg-pink-500",
@@ -69,9 +64,9 @@ const toolCards = [
 
 // Updated model arrays to include id and name for better navigation and consistency
 const videoModels = [
+  { id: "sora2", name: "Sora 2" },
   { id: "veo3", name: "Veo 3" },
   { id: "runway", name: "Runway" },
-  { id: "sora2", name: "Sora 2" },
   { id: "klingai", name: "Kling AI" },
   { id: "seedance", name: "Seedance" },
   { id: "luma", name: "Luma" },
@@ -86,12 +81,6 @@ const imageModels = [
   { id: "dall-e", name: "DALL·E" },
   { id: "recraft", name: "Recraft" },
   { id: "seedream", name: "Seedream" },
-];
-const avatarModels = [
-  { id: "vidu", name: "Vidu" },
-  { id: "hunyuan", name: "Hunyuan" },
-  { id: "qwen", name: "Qwen" },
-  { id: "wanai", name: "Wan AI" },
 ];
 
 const creditTiers = [
@@ -150,7 +139,36 @@ export default function Studio() {
   const [hoveredTool, setHoveredTool] = useState(null);
   const [selectedTierIndex, setSelectedTierIndex] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [checkingOut, setCheckingOut] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const checkoutMutation = useMutation({
+    mutationFn: async (input: {
+      plan_type: string;
+      credits: number;
+      price: number;
+    }) => {
+      return await createCheckoutSession(input);
+    },
+    onSuccess: (data) => {
+      window.location.href = data.url;
+    },
+    onError: (error: any) => {
+      console.error("Checkout failed:", error);
+      toast({
+        title: "Error",
+        description: getUserFriendlyError(error),
+        variant: "destructive",
+      });
+      setCheckingOut(false);
+    },
+  });
+
+  const handleSubscribe = (plan, creditAmount, price) => {
+    setCheckingOut(true);
+    checkoutMutation.mutate({ plan_type: plan, credits: creditAmount, price });
+  };
 
   const scrollToSection = (id) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
@@ -386,7 +404,7 @@ export default function Studio() {
                       Image to Video AI
                     </button>
                     <button
-                      onClick={() => navigate(createPageUrl("StudioAvatar"))}
+                      onClick={() => navigate(createPageUrl("StudioVideo"))}
                       className="block w-full text-left px-3 py-2 text-sm text-white hover:bg-white/5 rounded transition-colors"
                     >
                       Photo to Video Avatar
@@ -760,7 +778,7 @@ export default function Studio() {
                       </button>
                       <button
                         onClick={() => {
-                          navigate(createPageUrl("StudioAvatar"));
+                          navigate(createPageUrl("StudioVideo"));
                           setMobileMenuOpen(false);
                         }}
                         className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5 rounded"
@@ -1142,7 +1160,7 @@ export default function Studio() {
           {/* Quick Action Cards - Horizontal Scroll */}
           <div className="mb-8">
             <div
-              className="flex gap-4 overflow-x-auto pb-4 px-2 snap-x snap-mandatory scrollbar-hide"
+              className="flex gap-4 overflow-x-auto pb-4 px-2 snap-x snap-mandatory scrollbar-hide md:justify-center"
               style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
             >
               {toolCards.map((tool, index) => (
@@ -1226,7 +1244,7 @@ export default function Studio() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 mb-8">
+          <div className="grid md:grid-cols-2 gap-12 mb-12 max-w-4xl mx-auto">
             {/* Video Models */}
             <div>
               <h3 className="text-xl font-bold mb-6 text-[#F18B6A]">
@@ -1270,36 +1288,6 @@ export default function Studio() {
                     onClick={() =>
                       navigate(
                         createPageUrl("StudioImageOptions") +
-                          `?model=${encodeURIComponent(model.id)}&name=${encodeURIComponent(model.name)}`,
-                      )
-                    }
-                  >
-                    <span className="text-white font-medium">{model.name}</span>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-gray-400 hover:text-white"
-                    >
-                      Select
-                    </Button>
-                  </Card>
-                ))}
-              </div>
-            </div>
-
-            {/* Avatars & Effects */}
-            <div>
-              <h3 className="text-xl font-bold mb-6 text-[#F7B750]">
-                Avatars & Effects
-              </h3>
-              <div className="space-y-3">
-                {avatarModels.map((model, index) => (
-                  <Card
-                    key={index}
-                    className="model-card p-4 bg-white/5 border border-white/10 hover:bg-white/10 cursor-pointer transition-all rounded-lg flex items-center justify-between"
-                    onClick={() =>
-                      navigate(
-                        createPageUrl("StudioAvatarOptions") +
                           `?model=${encodeURIComponent(model.id)}&name=${encodeURIComponent(model.name)}`,
                       )
                     }
@@ -1407,8 +1395,16 @@ export default function Studio() {
                 generation.
               </p>
 
-              <Button className="w-full h-12 text-base font-medium bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:opacity-90 text-white border-2 border-white/20 rounded-lg">
-                Subscribe Now
+              <Button
+                className="w-full h-12 text-base font-medium bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:opacity-90 text-white border-2 border-white/20 rounded-lg"
+                onClick={() => handleSubscribe("lite", 300, 15)}
+                disabled={checkingOut}
+              >
+                {checkingOut ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  "Subscribe Now"
+                )}
               </Button>
             </Card>
 
@@ -1495,8 +1491,22 @@ export default function Studio() {
                 </li>
               </ul>
 
-              <Button className="w-full h-12 text-base font-medium bg-gradient-to-r from-[#F18B6A] to-[#E07A5A] hover:opacity-90 text-white border-2 border-white/20 rounded-lg">
-                Subscribe Now
+              <Button
+                className="w-full h-12 text-base font-medium bg-gradient-to-r from-[#F18B6A] to-[#E07A5A] hover:opacity-90 text-white border-2 border-white/20 rounded-lg"
+                onClick={() =>
+                  handleSubscribe(
+                    "pro",
+                    selectedTier.credits,
+                    selectedTier.price,
+                  )
+                }
+                disabled={checkingOut}
+              >
+                {checkingOut ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  "Subscribe Now"
+                )}
               </Button>
             </Card>
           </div>

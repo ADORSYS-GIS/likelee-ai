@@ -1356,6 +1356,11 @@ pub async fn stripe_webhook(
                 .unwrap_or("")
                 .to_string();
 
+            if billing_domain == "studio" {
+                let _ = handle_studio_checkout_session_completed(&state, &obj).await;
+                return (StatusCode::OK, Json(json!({"status":"ok"})));
+            }
+
             if billing_domain == "licensing" {
                 let md = obj.get("metadata").cloned().unwrap_or(json!({}));
                 let has_request_ids = md
@@ -1620,6 +1625,71 @@ pub async fn stripe_webhook(
     }
 
     (StatusCode::OK, Json(json!({"status":"ok"})))
+}
+
+async fn handle_studio_checkout_session_completed(
+    state: &AppState,
+    obj: &serde_json::Value,
+) -> Result<(), String> {
+    let session_id = obj
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if session_id.is_empty() {
+        return Ok(());
+    }
+
+    let md = obj.get("metadata").cloned().unwrap_or(json!({}));
+    let user_id = md
+        .get("user_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let plan_type = md
+        .get("plan_type")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
+    let credits = md
+        .get("credits")
+        .and_then(|v| v.as_str())
+        .and_then(|s| s.trim().parse::<i64>().ok())
+        .unwrap_or(0);
+
+    if user_id.is_empty() || credits <= 0 {
+        return Ok(());
+    }
+
+    // Idempotency: if we've already recorded a purchase for this session, do nothing.
+    let existing_resp = state
+        .pg
+        .from("studio_credit_transactions")
+        .select("id")
+        .eq("stripe_session_id", &session_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| e.to_string())?;
+    if existing_resp.status().is_success() {
+        let text = existing_resp.text().await.unwrap_or_else(|_| "[]".into());
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+        if !rows.is_empty() {
+            return Ok(());
+        }
+    }
+
+    crate::studio::wallet::add_credits(&state.pg, &user_id, credits, Some(&session_id))
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let _ =
+        crate::studio::wallet::set_current_plan(&state.pg, &user_id, plan_type.as_deref()).await;
+
+    info!(user_id = %user_id, credits = credits, stripe_session_id = %session_id, "studio credits purchased via stripe checkout");
+    Ok(())
 }
 
 async fn handle_licensing_checkout_session_completed(
