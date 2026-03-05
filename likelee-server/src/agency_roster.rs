@@ -252,7 +252,7 @@ pub async fn get_roster(
     // Fetch all talents linked to this agency
     let resp = state
         .pg
-        .from("agency_talent_lecense_rate")
+        .from("agency_talent_relationships")
         .select("id,agency_id,talent_id,creator_id,status,licensing_rate_weekly_cents,accept_negotiations,rate_currency,agency_users(*)")
         .eq("agency_id", &user.id)
         .execute()
@@ -1296,7 +1296,7 @@ async fn upsert_agency_talent_connection(
     });
     let upsert_resp = state
         .pg
-        .from("agency_talent_lecense_rate")
+        .from("agency_talent_relationships")
         .upsert(upsert_payload.to_string())
         .on_conflict("agency_id,talent_id")
         .execute()
@@ -1441,7 +1441,7 @@ pub async fn create_talent(
     // 2. Check current talent count
     let count_resp = state
         .pg
-        .from("agency_talent_lecense_rate")
+        .from("agency_talent_relationships")
         .select("id")
         .eq("agency_id", &effective_agency_id)
         .execute()
@@ -1655,7 +1655,7 @@ pub async fn update_talent(
     let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
     let access_resp = state
         .pg
-        .from("agency_talent_lecense_rate")
+        .from("agency_talent_relationships")
         .select("id,status")
         .eq("agency_id", &effective_agency_id)
         .eq("talent_id", &id)

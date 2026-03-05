@@ -1,4 +1,5 @@
 use crate::{auth::AuthUser, auth::RoleGuard, config::AppState};
+use crate::errors::sanitize_db_error;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -142,14 +143,16 @@ async fn upsert_agency_talent_connection(
     });
     let resp = state
         .pg
-        .from("agency_talent_lecense_rate")
+        .from("agency_talent_relationships")
         .upsert(payload.to_string())
+        .on_conflict("agency_id,talent_id")
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    if !resp.status().is_success() {
+    let status = resp.status();
+    if !status.is_success() {
         let err = resp.text().await.unwrap_or_default();
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, err));
+        return Err(sanitize_db_error(status.as_u16(), err));
     }
     Ok(())
 }
@@ -374,7 +377,7 @@ pub async fn list_connections(
 
     let resp = state
         .pg
-        .from("agency_talent_lecense_rate")
+        .from("agency_talent_relationships")
         .select("agency_id,agencies(agency_name,logo_url)")
         .eq("creator_id", &creator_id)
         .eq("status", "active")
@@ -411,7 +414,7 @@ pub async fn disconnect_agency(
 
     state
         .pg
-        .from("agency_talent_lecense_rate")
+        .from("agency_talent_relationships")
         .eq("creator_id", &creator_id)
         .eq("agency_id", &agency_id)
         .update(payload.to_string())

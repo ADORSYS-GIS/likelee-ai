@@ -858,7 +858,7 @@ pub async fn create_for_brand_campaign(
     ) = if collaborator_type == "agency" {
         let connection_resp = state
             .pg
-            .from("agency_talent_lecense_rate")
+            .from("agency_talent_relationships")
             .select("id,agency_id,talent_id,status,licensing_rate_weekly_cents,accept_negotiations,rate_currency")
             .eq("id", payload.target_id.trim())
             .limit(1)
@@ -1022,7 +1022,7 @@ pub async fn create_for_brand_campaign(
 
         let link_resp = state
             .pg
-            .from("agency_talent_lecense_rate")
+            .from("agency_talent_relationships")
             .select("agency_id,talent_id")
             .eq("creator_id", resolved_source_id.as_str())
             .eq("status", "active")
@@ -1223,7 +1223,7 @@ pub async fn list_brand_campaign_license_options(
             ))?;
         let req = state
             .pg
-            .from("agency_talent_lecense_rate")
+            .from("agency_talent_relationships")
             .select("id,agency_id,talent_id,creator_id,status,licensing_rate_weekly_cents,accept_negotiations,rate_currency")
             .eq("agency_id", agency_id)
             .eq("status", "active")

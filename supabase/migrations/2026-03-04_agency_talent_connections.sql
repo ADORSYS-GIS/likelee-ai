@@ -1,6 +1,6 @@
 BEGIN;
 
-CREATE TABLE IF NOT EXISTS public.agency_talent_lecense_rate (
+CREATE TABLE IF NOT EXISTS public.agency_talent_relationships (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   agency_id uuid NOT NULL REFERENCES public.agencies(id) ON DELETE CASCADE,
   talent_id uuid NOT NULL REFERENCES public.agency_users(id) ON DELETE CASCADE,
@@ -13,41 +13,41 @@ CREATE TABLE IF NOT EXISTS public.agency_talent_lecense_rate (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS uq_agency_talent_lecense_rate_agency_talent
-  ON public.agency_talent_lecense_rate(agency_id, talent_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_agency_talent_relationships_agency_talent
+  ON public.agency_talent_relationships(agency_id, talent_id);
 
-CREATE INDEX IF NOT EXISTS idx_agency_talent_lecense_rate_agency_status
-  ON public.agency_talent_lecense_rate(agency_id, status);
+CREATE INDEX IF NOT EXISTS idx_agency_talent_relationships_agency_status
+  ON public.agency_talent_relationships(agency_id, status);
 
-CREATE INDEX IF NOT EXISTS idx_agency_talent_lecense_rate_talent_status
-  ON public.agency_talent_lecense_rate(talent_id, status);
+CREATE INDEX IF NOT EXISTS idx_agency_talent_relationships_talent_status
+  ON public.agency_talent_relationships(talent_id, status);
 
-ALTER TABLE public.agency_talent_lecense_rate ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.agency_talent_relationships ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Agencies can view their agency talent connections" ON public.agency_talent_lecense_rate;
+DROP POLICY IF EXISTS "Agencies can view their agency talent connections" ON public.agency_talent_relationships;
 CREATE POLICY "Agencies can view their agency talent connections"
-  ON public.agency_talent_lecense_rate FOR SELECT
+  ON public.agency_talent_relationships FOR SELECT
   USING (auth.uid() = agency_id);
 
-DROP POLICY IF EXISTS "Agencies can create their agency talent connections" ON public.agency_talent_lecense_rate;
+DROP POLICY IF EXISTS "Agencies can create their agency talent connections" ON public.agency_talent_relationships;
 CREATE POLICY "Agencies can create their agency talent connections"
-  ON public.agency_talent_lecense_rate FOR INSERT
+  ON public.agency_talent_relationships FOR INSERT
   WITH CHECK (auth.uid() = agency_id);
 
-DROP POLICY IF EXISTS "Agencies can update their agency talent connections" ON public.agency_talent_lecense_rate;
+DROP POLICY IF EXISTS "Agencies can update their agency talent connections" ON public.agency_talent_relationships;
 CREATE POLICY "Agencies can update their agency talent connections"
-  ON public.agency_talent_lecense_rate FOR UPDATE
+  ON public.agency_talent_relationships FOR UPDATE
   USING (auth.uid() = agency_id)
   WITH CHECK (auth.uid() = agency_id);
 
-DROP POLICY IF EXISTS "Creators can view their own active agency links" ON public.agency_talent_lecense_rate;
+DROP POLICY IF EXISTS "Creators can view their own active agency links" ON public.agency_talent_relationships;
 CREATE POLICY "Creators can view their own active agency links"
-  ON public.agency_talent_lecense_rate FOR SELECT
+  ON public.agency_talent_relationships FOR SELECT
   USING (creator_id = auth.uid());
 
-DROP POLICY IF EXISTS "Creators can update their own agency links" ON public.agency_talent_lecense_rate;
+DROP POLICY IF EXISTS "Creators can update their own agency links" ON public.agency_talent_relationships;
 CREATE POLICY "Creators can update their own agency links"
-  ON public.agency_talent_lecense_rate FOR UPDATE
+  ON public.agency_talent_relationships FOR UPDATE
   USING (creator_id = auth.uid())
   WITH CHECK (creator_id = auth.uid());
 
@@ -55,10 +55,10 @@ DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_constraint
-    WHERE conname = 'agency_talent_lecense_rate_licensing_rate_non_negative'
+    WHERE conname = 'agency_talent_relationships_licensing_rate_non_negative'
   ) THEN
-    ALTER TABLE public.agency_talent_lecense_rate
-      ADD CONSTRAINT agency_talent_lecense_rate_licensing_rate_non_negative
+    ALTER TABLE public.agency_talent_relationships
+      ADD CONSTRAINT agency_talent_relationships_licensing_rate_non_negative
       CHECK (
         licensing_rate_weekly_cents IS NULL
         OR licensing_rate_weekly_cents >= 0
@@ -114,7 +114,7 @@ BEGIN
 
   EXECUTE format(
     $sql$
-      INSERT INTO public.agency_talent_lecense_rate (
+      INSERT INTO public.agency_talent_relationships (
         agency_id,
         talent_id,
         creator_id,

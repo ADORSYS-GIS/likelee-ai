@@ -399,8 +399,8 @@ pub async fn search_marketplace_profiles(
         if user.role == "agency" {
             let resp = state
                 .pg
-                .from("agency_users")
-                .select("id,creator_id,full_legal_name,stage_name,email")
+                .from("agency_talent_relationships")
+                .select("creator_id,talent_id,status")
                 .eq("agency_id", &effective_agency_id)
                 .eq("status", "active")
                 .execute()
@@ -416,10 +416,51 @@ pub async fn search_marketplace_profiles(
             }
 
             let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+            let mut missing_creator_talent_ids: Vec<String> = Vec::new();
             for row in rows {
                 if let Some(creator_id) = row.get("creator_id").and_then(|v| v.as_str()) {
                     if !creator_id.is_empty() {
                         connected_creator_ids.insert(creator_id.to_string());
+                        continue;
+                    }
+                }
+                if let Some(talent_id) = row.get("talent_id").and_then(|v| v.as_str()) {
+                    if !talent_id.is_empty() {
+                        missing_creator_talent_ids.push(talent_id.to_string());
+                    }
+                }
+            }
+
+            // Backward compatibility: map active connection rows missing creator_id via talent row.
+            if !missing_creator_talent_ids.is_empty() {
+                missing_creator_talent_ids.sort();
+                missing_creator_talent_ids.dedup();
+                let talent_refs: Vec<&str> =
+                    missing_creator_talent_ids.iter().map(|s| s.as_str()).collect();
+                let map_resp = state
+                    .pg
+                    .from("agency_users")
+                    .select("id,creator_id")
+                    .in_("id", talent_refs)
+                    .eq("role", "talent")
+                    .limit(200)
+                    .execute()
+                    .await
+                    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                let map_status = map_resp.status();
+                let map_text = map_resp
+                    .text()
+                    .await
+                    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+                if map_status.is_success() {
+                    let map_rows: Vec<serde_json::Value> =
+                        serde_json::from_str(&map_text).unwrap_or_default();
+                    for row in map_rows {
+                        if let Some(creator_id) = row.get("creator_id").and_then(|v| v.as_str()) {
+                            if !creator_id.is_empty() {
+                                connected_creator_ids.insert(creator_id.to_string());
+                            }
+                        }
                     }
                 }
             }
@@ -2948,7 +2989,7 @@ pub async fn list_brand_agency_talent_rates(
 
     let conn_resp = state
         .pg
-        .from("agency_talent_lecense_rate")
+        .from("agency_talent_relationships")
         .select("id,agency_id,talent_id,creator_id,status,licensing_rate_weekly_cents,accept_negotiations,rate_currency")
         .eq("agency_id", &agency_id)
         .eq("status", "active")

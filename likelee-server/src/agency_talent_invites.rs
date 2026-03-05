@@ -137,7 +137,7 @@ async fn upsert_agency_talent_connection(
     });
     let resp = state
         .pg
-        .from("agency_talent_lecense_rate")
+        .from("agency_talent_relationships")
         .upsert(payload.to_string())
         .execute()
         .await
@@ -500,7 +500,7 @@ pub async fn create_for_agency(
     if let Some(creator_id) = existing_creator_id.as_ref() {
         let active_link_resp = state
             .pg
-            .from("agency_talent_lecense_rate")
+            .from("agency_talent_relationships")
             .select("id")
             .eq("agency_id", &user.id)
             .eq("creator_id", creator_id)
