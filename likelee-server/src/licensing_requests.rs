@@ -1295,7 +1295,7 @@ pub async fn list_brand_campaign_license_options(
                     .and_then(|v| v.as_str())
                     .unwrap_or("")
                     .to_lowercase();
-                if !search.is_empty() && !(name.contains(&search) || stage.contains(&search)) {
+                if !(search.is_empty() || name.contains(&search) || stage.contains(&search)) {
                     return None;
                 }
                 let base_weekly = resolve_weekly_cents(

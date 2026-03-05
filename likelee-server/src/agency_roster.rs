@@ -1277,24 +1277,28 @@ pub struct UpdateTalentRequest {
 
 use serde_json::json;
 
-async fn upsert_agency_talent_connection(
-    state: &AppState,
-    agency_id: &str,
-    talent_id: &str,
-    creator_id: Option<&str>,
-    status: &str,
+struct AgencyTalentConnectionUpsert<'a> {
+    agency_id: &'a str,
+    talent_id: &'a str,
+    creator_id: Option<&'a str>,
+    status: &'a str,
     licensing_rate_weekly_cents: Option<i64>,
     accept_negotiations: bool,
-    rate_currency: &str,
+    rate_currency: &'a str,
+}
+
+async fn upsert_agency_talent_connection(
+    state: &AppState,
+    input: AgencyTalentConnectionUpsert<'_>,
 ) -> Result<(), (StatusCode, String)> {
     let upsert_payload = json!({
-        "agency_id": agency_id,
-        "talent_id": talent_id,
-        "creator_id": creator_id,
-        "status": status,
-        "licensing_rate_weekly_cents": licensing_rate_weekly_cents,
-        "accept_negotiations": accept_negotiations,
-        "rate_currency": rate_currency,
+        "agency_id": input.agency_id,
+        "talent_id": input.talent_id,
+        "creator_id": input.creator_id,
+        "status": input.status,
+        "licensing_rate_weekly_cents": input.licensing_rate_weekly_cents,
+        "accept_negotiations": input.accept_negotiations,
+        "rate_currency": input.rate_currency,
         "updated_at": chrono::Utc::now().to_rfc3339(),
     });
     let upsert_resp = state
@@ -1629,13 +1633,15 @@ pub async fn create_talent(
 
     upsert_agency_talent_connection(
         &state,
-        &effective_agency_id,
-        talent_id.as_str(),
-        creator_id.as_deref(),
-        status.as_str(),
-        licensing_rate_weekly_cents,
-        accept_negotiations,
-        rate_currency.as_str(),
+        AgencyTalentConnectionUpsert {
+            agency_id: &effective_agency_id,
+            talent_id: talent_id.as_str(),
+            creator_id: creator_id.as_deref(),
+            status: status.as_str(),
+            licensing_rate_weekly_cents,
+            accept_negotiations,
+            rate_currency: rate_currency.as_str(),
+        },
     )
     .await?;
 
@@ -1815,13 +1821,15 @@ pub async fn update_talent(
             .to_uppercase();
         upsert_agency_talent_connection(
             &state,
-            &effective_agency_id,
-            &id,
-            creator_id,
-            next_status.as_str(),
-            payload.licensing_rate_weekly_cents,
-            next_accept_negotiations,
-            next_rate_currency.as_str(),
+            AgencyTalentConnectionUpsert {
+                agency_id: &effective_agency_id,
+                talent_id: &id,
+                creator_id,
+                status: next_status.as_str(),
+                licensing_rate_weekly_cents: payload.licensing_rate_weekly_cents,
+                accept_negotiations: next_accept_negotiations,
+                rate_currency: next_rate_currency.as_str(),
+            },
         )
         .await?;
     }
