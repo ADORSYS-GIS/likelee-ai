@@ -66,40 +66,94 @@ BEGIN
   END IF;
 END $$;
 
-INSERT INTO public.agency_talent_lecense_rate (
-  agency_id,
-  talent_id,
-  creator_id,
-  status,
-  licensing_rate_weekly_cents,
-  accept_negotiations,
-  rate_currency,
-  created_at,
-  updated_at
-)
-SELECT
-  au.agency_id,
-  au.id AS talent_id,
-  au.creator_id,
-  CASE
-    WHEN au.status IN ('active', 'inactive', 'pending') THEN au.status
-    ELSE 'active'
-  END AS status,
-  au.licensing_rate_weekly_cents,
-  COALESCE(au.accept_negotiations, true),
-  COALESCE(NULLIF(TRIM(au.rate_currency), ''), 'USD'),
-  COALESCE(au.created_at, now()),
-  COALESCE(au.updated_at, now())
-FROM public.agency_users au
-WHERE au.role = 'talent'
-  AND au.agency_id IS NOT NULL
-ON CONFLICT (agency_id, talent_id) DO UPDATE
-SET
-  creator_id = EXCLUDED.creator_id,
-  licensing_rate_weekly_cents = EXCLUDED.licensing_rate_weekly_cents,
-  accept_negotiations = EXCLUDED.accept_negotiations,
-  rate_currency = EXCLUDED.rate_currency,
-  status = EXCLUDED.status,
-  updated_at = now();
+DO $$
+DECLARE
+  has_weekly_rate boolean;
+  has_accept_negotiations boolean;
+  has_rate_currency boolean;
+  weekly_expr text;
+  accept_expr text;
+  currency_expr text;
+BEGIN
+  SELECT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'agency_users'
+      AND column_name = 'licensing_rate_weekly_cents'
+  ) INTO has_weekly_rate;
+
+  SELECT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'agency_users'
+      AND column_name = 'accept_negotiations'
+  ) INTO has_accept_negotiations;
+
+  SELECT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'agency_users'
+      AND column_name = 'rate_currency'
+  ) INTO has_rate_currency;
+
+  weekly_expr := CASE
+    WHEN has_weekly_rate THEN 'au.licensing_rate_weekly_cents'
+    ELSE 'NULL'
+  END;
+  accept_expr := CASE
+    WHEN has_accept_negotiations THEN 'COALESCE(au.accept_negotiations, true)'
+    ELSE 'true'
+  END;
+  currency_expr := CASE
+    WHEN has_rate_currency THEN 'COALESCE(NULLIF(TRIM(au.rate_currency), ''''), ''USD'')'
+    ELSE '''USD'''
+  END;
+
+  EXECUTE format(
+    $sql$
+      INSERT INTO public.agency_talent_lecense_rate (
+        agency_id,
+        talent_id,
+        creator_id,
+        status,
+        licensing_rate_weekly_cents,
+        accept_negotiations,
+        rate_currency,
+        created_at,
+        updated_at
+      )
+      SELECT
+        au.agency_id,
+        au.id AS talent_id,
+        au.creator_id,
+        CASE
+          WHEN au.status IN ('active', 'inactive', 'pending') THEN au.status
+          ELSE 'active'
+        END AS status,
+        %s,
+        %s,
+        %s,
+        COALESCE(au.created_at, now()),
+        COALESCE(au.updated_at, now())
+      FROM public.agency_users au
+      WHERE au.role = 'talent'
+        AND au.agency_id IS NOT NULL
+      ON CONFLICT (agency_id, talent_id) DO UPDATE
+      SET
+        creator_id = EXCLUDED.creator_id,
+        licensing_rate_weekly_cents = EXCLUDED.licensing_rate_weekly_cents,
+        accept_negotiations = EXCLUDED.accept_negotiations,
+        rate_currency = EXCLUDED.rate_currency,
+        status = EXCLUDED.status,
+        updated_at = now()
+    $sql$,
+    weekly_expr,
+    accept_expr,
+    currency_expr
+  );
+END $$;
 
 COMMIT;
