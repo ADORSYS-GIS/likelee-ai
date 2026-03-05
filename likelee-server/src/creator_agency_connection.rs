@@ -1,3 +1,4 @@
+use crate::errors::sanitize_db_error;
 use crate::{auth::AuthUser, auth::RoleGuard, config::AppState};
 use axum::{
     extract::{Path, State},
@@ -126,6 +127,36 @@ struct AgencyUserRow {
     id: String,
 }
 
+async fn upsert_agency_talent_connection(
+    state: &AppState,
+    agency_id: &str,
+    talent_id: &str,
+    creator_id: &str,
+    status: &str,
+) -> Result<(), (StatusCode, String)> {
+    let payload = json!({
+        "agency_id": agency_id,
+        "talent_id": talent_id,
+        "creator_id": creator_id,
+        "status": status,
+        "updated_at": chrono::Utc::now().to_rfc3339(),
+    });
+    let resp = state
+        .pg
+        .from("agency_talent_relationships")
+        .upsert(payload.to_string())
+        .on_conflict("agency_id,talent_id")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    if !status.is_success() {
+        let err = resp.text().await.unwrap_or_default();
+        return Err(sanitize_db_error(status.as_u16(), err));
+    }
+    Ok(())
+}
+
 pub async fn accept_invite(
     State(state): State<AppState>,
     user: AuthUser,
@@ -197,13 +228,13 @@ pub async fn accept_invite(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    // Ensure agency_users roster row exists for this creator + agency.
+    // Ensure a global agency_users talent identity row exists for this creator.
     let au_resp = state
         .pg
         .from("agency_users")
         .select("id")
-        .eq("agency_id", &invite.agency_id)
         .eq("creator_id", &creator_id)
+        .eq("role", "talent")
         .limit(1)
         .execute()
         .await
@@ -266,11 +297,9 @@ pub async fn accept_invite(
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     } else {
-        // Reactivate an existing row (e.g. previously disconnected).
         state
             .pg
             .from("agency_users")
-            .eq("agency_id", &invite.agency_id)
             .eq("creator_id", &creator_id)
             .update(
                 json!({
@@ -284,6 +313,31 @@ pub async fn accept_invite(
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     }
+
+    let talent_id_resp = state
+        .pg
+        .from("agency_users")
+        .select("id")
+        .eq("creator_id", &creator_id)
+        .eq("role", "talent")
+        .order("updated_at.desc")
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let talent_id_text = talent_id_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let talent_rows: Vec<AgencyUserRow> = serde_json::from_str(&talent_id_text)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let talent_id = talent_rows.first().map(|r| r.id.clone()).ok_or((
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "failed to resolve talent row".to_string(),
+    ))?;
+
+    upsert_agency_talent_connection(&state, &invite.agency_id, &talent_id, &creator_id, "active")
+        .await?;
 
     Ok(Json(ActionResponse {
         status: "ok".to_string(),
@@ -317,7 +371,7 @@ pub async fn list_connections(
 
     let resp = state
         .pg
-        .from("agency_users")
+        .from("agency_talent_relationships")
         .select("agency_id,agencies(agency_name,logo_url)")
         .eq("creator_id", &creator_id)
         .eq("status", "active")
@@ -354,7 +408,7 @@ pub async fn disconnect_agency(
 
     state
         .pg
-        .from("agency_users")
+        .from("agency_talent_relationships")
         .eq("creator_id", &creator_id)
         .eq("agency_id", &agency_id)
         .update(payload.to_string())

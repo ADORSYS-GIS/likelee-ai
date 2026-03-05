@@ -119,6 +119,8 @@ export default function AddTalent() {
     // Notes
     bio: "",
     special_skills: "",
+    licensing_rate_weekly_usd: "",
+    accept_negotiations: true,
   });
 
   const normalizedAgencyType = String((profile as any)?.agency_type || "")
@@ -417,6 +419,11 @@ export default function AddTalent() {
         country: formData.country,
         organization: formData.organization,
         sports: formData.sports,
+        licensing_rate_weekly_cents: Math.round(
+          Number(formData.licensing_rate_weekly_usd || 0) * 100,
+        ),
+        accept_negotiations: !!formData.accept_negotiations,
+        rate_currency: "USD",
       };
 
       await createAgencyTalent(payload);
@@ -460,7 +467,8 @@ export default function AddTalent() {
     formData.full_name &&
     formData.email &&
     formData.birthdate &&
-    isAtLeast18(formData.birthdate);
+    isAtLeast18(formData.birthdate) &&
+    Number(formData.licensing_rate_weekly_usd || 0) > 0;
   const canProceedStep2 =
     formData.gender &&
     formData.ethnicity.length > 0 &&
@@ -758,6 +766,48 @@ export default function AddTalent() {
                   className="border-2 border-gray-300 min-h-24"
                   placeholder={`Brief bio or internal notes about this ${entityLower}...`}
                 />
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label
+                    htmlFor="licensing_rate_weekly_usd"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Licensing Rate (USD/week){" "}
+                    <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="licensing_rate_weekly_usd"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={formData.licensing_rate_weekly_usd}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        licensing_rate_weekly_usd: e.target.value,
+                      })
+                    }
+                    className="border-2 border-gray-300"
+                    placeholder="e.g. 750"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <label className="inline-flex items-center gap-2 text-sm text-gray-700 font-medium">
+                    <input
+                      type="checkbox"
+                      checked={!!formData.accept_negotiations}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          accept_negotiations: e.target.checked,
+                        })
+                      }
+                    />
+                    Open to negotiations
+                  </label>
+                </div>
               </div>
 
               <Button

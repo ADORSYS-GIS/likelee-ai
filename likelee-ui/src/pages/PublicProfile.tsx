@@ -99,9 +99,11 @@ export default function PublicProfile() {
     [profile.industries],
   );
   const pricePerWeek =
-    typeof profile.base_monthly_price_cents === "number"
-      ? Math.round(Number(profile.base_monthly_price_cents) / 100 / 4)
-      : undefined;
+    typeof profile.base_weekly_price_cents === "number"
+      ? Math.round(Number(profile.base_weekly_price_cents) / 100)
+      : typeof profile.base_monthly_price_cents === "number"
+        ? Math.round(Number(profile.base_monthly_price_cents) / 100 / 4.345)
+        : undefined;
   const openToNegotiations = profile.accept_negotiations ?? true;
 
   return (
@@ -395,10 +397,7 @@ export default function PublicProfile() {
                     <div>
                       <div className="text-xs text-gray-500">From</div>
                       <div className="text-lg font-bold text-gray-900">
-                        $
-                        {Math.round(
-                          (Number(profile.base_monthly_price_cents) || 0) / 100,
-                        )}
+                        ${pricePerWeek}/week
                       </div>
                     </div>
                   )}
