@@ -293,11 +293,10 @@ export default function StudioImageToVideo() {
                           className="w-full px-4 py-3 hover:bg-white/5 transition-colors flex items-start gap-3 border-b border-white/5 last:border-0"
                         >
                           <div
-                            className={`w-5 h-5 rounded-full border-2 flex-shrink-0 mt-1 ${
-                              selectedModel === model.id
+                            className={`w-5 h-5 rounded-full border-2 flex-shrink-0 mt-1 ${selectedModel === model.id
                                 ? "border-[#F18B6A] bg-[#F18B6A]"
                                 : "border-white/30"
-                            }`}
+                              }`}
                           >
                             {selectedModel === model.id && (
                               <div className="w-2.5 h-2.5 rounded-full bg-white m-auto mt-0.5" />
@@ -429,11 +428,10 @@ export default function StudioImageToVideo() {
                     <button
                       key={ratio.value}
                       onClick={() => setAspectRatio(ratio.value)}
-                      className={`aspect-square rounded-lg border-2 transition-all ${
-                        aspectRatio === ratio.value
+                      className={`aspect-square rounded-lg border-2 transition-all ${aspectRatio === ratio.value
                           ? "border-[#F18B6A] bg-[#F18B6A]/20"
                           : "border-white/10 bg-white/5 hover:border-white/30"
-                      }`}
+                        }`}
                     >
                       <div className="text-xs font-medium text-white">
                         {ratio.label}
@@ -453,11 +451,10 @@ export default function StudioImageToVideo() {
                     <button
                       key={num}
                       onClick={() => setOutputNumber(num)}
-                      className={`py-3 rounded-lg border-2 transition-all text-lg font-medium ${
-                        outputNumber === num
+                      className={`py-3 rounded-lg border-2 transition-all text-lg font-medium ${outputNumber === num
                           ? "border-[#F18B6A] bg-[#F18B6A]/20 text-white"
                           : "border-white/10 bg-white/5 text-gray-400 hover:border-white/30"
-                      }`}
+                        }`}
                     >
                       {num}
                     </button>
@@ -511,7 +508,7 @@ export default function StudioImageToVideo() {
                     Credits required:
                   </span>
                   <span className="text-lg font-bold text-white">
-                    14 Credits
+                    15 Credits
                   </span>
                 </div>
                 <Button

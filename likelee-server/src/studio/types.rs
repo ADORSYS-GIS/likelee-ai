@@ -112,6 +112,7 @@ pub struct ProviderJobStatus {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct ProviderCost {
     pub provider: String,
     pub model: String,

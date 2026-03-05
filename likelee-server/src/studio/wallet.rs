@@ -1,7 +1,6 @@
+use anyhow::{anyhow, Result};
 use postgrest::Postgrest;
 use serde_json::json;
-use anyhow::{anyhow, Result};
-use chrono::Utc;
 
 /// Get or create a wallet for a user
 pub async fn get_or_create_wallet(pg: &Postgrest, user_id: &str) -> Result<(String, i64)> {
@@ -16,7 +15,7 @@ pub async fn get_or_create_wallet(pg: &Postgrest, user_id: &str) -> Result<(Stri
     if resp.status().is_success() {
         let body = resp.text().await?;
         let wallets: Vec<serde_json::Value> = serde_json::from_str(&body)?;
-        
+
         if let Some(wallet) = wallets.first() {
             let wallet_id = wallet["id"]
                 .as_str()
@@ -48,13 +47,15 @@ pub async fn get_or_create_wallet(pg: &Postgrest, user_id: &str) -> Result<(Stri
 
     let body = resp.text().await?;
     let created: Vec<serde_json::Value> = serde_json::from_str(&body)?;
-    
-    let wallet = created.first().ok_or_else(|| anyhow!("no wallet returned"))?;
+
+    let wallet = created
+        .first()
+        .ok_or_else(|| anyhow!("no wallet returned"))?;
     let wallet_id = wallet["id"]
         .as_str()
         .ok_or_else(|| anyhow!("missing wallet id"))?
         .to_string();
-    
+
     Ok((wallet_id, 0))
 }
 
@@ -111,9 +112,13 @@ pub async fn deduct_credits(
     generation_id: &str,
 ) -> Result<i64> {
     let (wallet_id, current_balance) = get_or_create_wallet(pg, user_id).await?;
-    
+
     if current_balance < amount {
-        return Err(anyhow!("insufficient credits: have {}, need {}", current_balance, amount));
+        return Err(anyhow!(
+            "insufficient credits: have {}, need {}",
+            current_balance,
+            amount
+        ));
     }
 
     let new_balance = current_balance - amount;
@@ -155,15 +160,8 @@ pub async fn deduct_credits(
     Ok(new_balance)
 }
 
-pub async fn set_current_plan(
-    pg: &Postgrest,
-    user_id: &str,
-    plan: Option<&str>,
-) -> Result<()> {
-    let plan = plan
-        .unwrap_or("")
-        .trim()
-        .to_lowercase();
+pub async fn set_current_plan(pg: &Postgrest, user_id: &str, plan: Option<&str>) -> Result<()> {
+    let plan = plan.unwrap_or("").trim().to_lowercase();
     if plan != "lite" && plan != "pro" {
         return Ok(());
     }

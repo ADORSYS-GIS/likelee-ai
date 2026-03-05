@@ -1685,7 +1685,8 @@ async fn handle_studio_checkout_session_completed(
         .await
         .map_err(|e| e.to_string())?;
 
-    let _ = crate::studio::wallet::set_current_plan(&state.pg, &user_id, plan_type.as_deref()).await;
+    let _ =
+        crate::studio::wallet::set_current_plan(&state.pg, &user_id, plan_type.as_deref()).await;
 
     info!(user_id = %user_id, credits = credits, stripe_session_id = %session_id, "studio credits purchased via stripe checkout");
     Ok(())

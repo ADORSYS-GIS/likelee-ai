@@ -746,8 +746,10 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::studio::list_campaign_generations),
         )
         .route("/api/studio/upload", post(crate::studio::upload_file))
-        .route("/api/studio/licensed-assets", get(crate::studio::list_licensed_assets))
-
+        .route(
+            "/api/studio/licensed-assets",
+            get(crate::studio::list_licensed_assets),
+        )
         // --- Legacy Stripe endpoint used by some UI flows ---
         .route(
             "/stripe/create-checkout-session",

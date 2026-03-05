@@ -35,7 +35,11 @@ fn credits_to_price_id(raw: &str, credits: i64) -> Option<String> {
     None
 }
 
-fn studio_price_id_for_plan(state: &AppState, plan_type: Option<&str>, credits: i64) -> Option<String> {
+fn studio_price_id_for_plan(
+    state: &AppState,
+    plan_type: Option<&str>,
+    credits: i64,
+) -> Option<String> {
     let p = plan_type.unwrap_or("").trim().to_lowercase();
 
     let plan_raw = if p == "lite" {
@@ -74,7 +78,9 @@ pub async fn create_checkout_session_legacy(
         ));
     }
 
-    if state.stripe_studio_success_url.trim().is_empty() || state.stripe_studio_cancel_url.trim().is_empty() {
+    if state.stripe_studio_success_url.trim().is_empty()
+        || state.stripe_studio_cancel_url.trim().is_empty()
+    {
         return Err((
             StatusCode::PRECONDITION_FAILED,
             "stripe_studio_checkout_urls_not_configured".to_string(),
@@ -85,12 +91,9 @@ pub async fn create_checkout_session_legacy(
         return Err((StatusCode::BAD_REQUEST, "invalid_credits".to_string()));
     }
 
-    let stripe_price_id = studio_price_id_for_plan(
-        &state,
-        payload.plan_type.as_deref(),
-        payload.credits,
-    )
-        .unwrap_or_default();
+    let stripe_price_id =
+        studio_price_id_for_plan(&state, payload.plan_type.as_deref(), payload.credits)
+            .unwrap_or_default();
     if stripe_price_id.trim().is_empty() {
         return Err((
             StatusCode::PRECONDITION_FAILED,
@@ -107,8 +110,8 @@ pub async fn create_checkout_session_legacy(
     let price = stripe_sdk::Price::retrieve(&client, &price_id, &[])
         .await
         .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
-    let is_recurring = price.recurring.is_some()
-        || matches!(price.type_, Some(stripe_sdk::PriceType::Recurring));
+    let is_recurring =
+        price.recurring.is_some() || matches!(price.type_, Some(stripe_sdk::PriceType::Recurring));
     let (mode, sub_data) = if is_recurring {
         let mut sub_md = std::collections::HashMap::new();
         sub_md.insert("user_id".to_string(), user.id.clone());

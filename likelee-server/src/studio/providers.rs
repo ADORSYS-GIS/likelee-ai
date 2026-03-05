@@ -56,7 +56,11 @@ pub async fn fal_submit_job(
     let status_url = result["status_url"].as_str().map(String::from);
     let response_url = result["response_url"].as_str().map(String::from);
 
-    Ok(FalSubmitResult { request_id, status_url, response_url })
+    Ok(FalSubmitResult {
+        request_id,
+        status_url,
+        response_url,
+    })
 }
 
 /// Check job status on Fal Queue API.
@@ -122,7 +126,7 @@ pub async fn fal_check_status(
         if response.status().is_success() {
             let result: JsonValue = response.json().await.unwrap_or_else(|_| json!({}));
             let urls = extract_fal_output_urls(&result);
-            
+
             // Extract billing cost from the Fal result so the caller can reconcile credits
             let (cost_credits, inference_secs) = extract_fal_cost_credits(&result);
 
@@ -142,7 +146,10 @@ pub async fn fal_check_status(
             if !urls.is_empty() {
                 parsed.output_urls = urls;
             } else if matches!(parsed.status, GenerationStatus::Completed) {
-                warn!("fal_check_status: completed but no output URLs found in result: {:?}", result);
+                warn!(
+                    "fal_check_status: completed but no output URLs found in result: {:?}",
+                    result
+                );
             }
 
             let mut meta = result.clone();
@@ -159,13 +166,23 @@ pub async fn fal_check_status(
             );
             // If we can't fetch the result (404/405/etc), we shouldn't just stay in 'Completed' with no URLs.
             // 422 Unprocessable Entity often happens when the job logic failed but the queue marked it completed.
-            if response.status() == 422 || response.status() == 404 || response.status() == 405 || response.status() == 410 {
+            if response.status() == 422
+                || response.status() == 404
+                || response.status() == 405
+                || response.status() == 410
+            {
                 let status_code = response.status();
-                let error_body = response.text().await.unwrap_or_else(|_| "unknown error body".to_string());
+                let error_body = response
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "unknown error body".to_string());
                 warn!(job_id = %job_id, error_body = %error_body, "fal_check_status: result fetch returned terminal error");
-                
+
                 parsed.status = GenerationStatus::Failed;
-                parsed.error_message = Some(format!("Failed to retrieve result ({}): {}", status_code, error_body));
+                parsed.error_message = Some(format!(
+                    "Failed to retrieve result ({}): {}",
+                    status_code, error_body
+                ));
             }
         }
     }
@@ -254,10 +271,12 @@ fn parse_fal_status(result: &JsonValue) -> Result<ProviderJobStatus> {
 ///   { data: [{ url }] }
 fn extract_fal_output_urls(result: &JsonValue) -> Vec<String> {
     let mut urls = Vec::new();
-    
+
     // Debug logging for troubleshooting missed result URLs
-    warn!("extract_fal_output_urls: checking payload keys: {:?}", 
-        result.as_object().map(|o| o.keys().collect::<Vec<_>>()));
+    warn!(
+        "extract_fal_output_urls: checking payload keys: {:?}",
+        result.as_object().map(|o| o.keys().collect::<Vec<_>>())
+    );
 
     // Helper to extract URL from a field that can be either:
     // 1. A string: "https://..."
@@ -287,7 +306,9 @@ fn extract_fal_output_urls(result: &JsonValue) -> Vec<String> {
     }
 
     // Arrays: { videos: [...] }, { images: [...] }, { outputs: [...] }, { data: [...] }
-    let array_fields = ["videos", "images", "outputs", "output", "data", "result", "results"];
+    let array_fields = [
+        "videos", "images", "outputs", "output", "data", "result", "results",
+    ];
     for field in array_fields {
         if let Some(v) = result.get(field) {
             if let Some(arr) = v.as_array() {
@@ -303,7 +324,10 @@ fn extract_fal_output_urls(result: &JsonValue) -> Vec<String> {
 
     if urls.is_empty() {
         // Log the full result if we found nothing - helps identify new response structures
-        warn!("extract_fal_output_urls: found NO URLs in payload: {}", result);
+        warn!(
+            "extract_fal_output_urls: found NO URLs in payload: {}",
+            result
+        );
     } else {
         warn!("extract_fal_output_urls: found {} URLs", urls.len());
     }
@@ -312,4 +336,3 @@ fn extract_fal_output_urls(result: &JsonValue) -> Vec<String> {
     urls.dedup();
     urls
 }
-
