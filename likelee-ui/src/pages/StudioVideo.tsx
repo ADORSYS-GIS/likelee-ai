@@ -56,6 +56,7 @@ const videoModels = [
     cost: 10,
     description: "OpenAI's latest cinematic engine (Image-to-Video)",
     duration: [4, 8, 12],
+    resolutions: ["auto", "720p"],
     icon: "🎥",
     tag: "Beta",
     tagColor: "#F59E0B",
@@ -70,6 +71,7 @@ const videoModels = [
     cost: 21,
     description: "State-of-the-art video with synchronized audio",
     duration: [4, 6, 8],
+    resolutions: ["720p"],
     icon: "🎬",
     tag: "Pro",
     tagColor: "#EC4899",
@@ -84,6 +86,7 @@ const videoModels = [
     cost: 5,
     description: "Fast text-to-video with prompt optimization",
     duration: [5],
+    resolutions: ["1280x720"],
     icon: "✨",
     tag: "New",
     tagColor: "#10B981",
@@ -141,6 +144,7 @@ const videoModels = [
     cost: 21,
     description: "DeepMind's flagship image-to-video with audio",
     duration: [4, 6, 8],
+    resolutions: ["720p"],
     icon: "🖼️",
     tag: "State-of-the-art",
     tagColor: "#EC4899",
@@ -155,6 +159,7 @@ const videoModels = [
     cost: 5,
     description: "Top-tier fluidity with native lip-sync",
     duration: [5, 10],
+    resolutions: ["720p", "1080p"],
     icon: "🎞️",
     tag: "Adv",
     tagColor: "#6366F1",
@@ -206,16 +211,17 @@ const videoModels = [
     supportsExternalAudio: true,
   },
   {
-    id: "fal-ai/kling-video/v1.6/pro/image-to-video",
-    name: "Kling 1.6 Pro",
-    cost: 18,
-    description: "Animate any photo into a fluid cinematic clip",
-    duration: [5, 10],
-    icon: "🖼️",
-    tag: "Legacy",
-    tagColor: "#4B5563",
+    id: "fal-ai/luma-dream-machine",
+    name: "Luma Dream Machine",
+    cost: 10,
+    description: "Cinematic quality with high motion fidelity",
+    duration: [5],
+    resolutions: ["720p", "1080p"],
+    icon: "🎥",
+    tag: "Luma",
+    tagColor: "#F59E0B",
     supportsImage: true,
-    requiresImage: true,
+    requiresImage: false,
     supportsAudio: false,
   },
 ];
@@ -248,6 +254,14 @@ const StudioVideo = () => {
   const [enableAudio, setEnableAudio] = useState(true);
   const [resolution, setResolution] = useState("720p");
   const [generatingJobId, setGeneratingJobId] = useState(null);
+
+  // Sync resolution when model changes
+  useEffect(() => {
+    const model = videoModels.find((m) => m.id === selectedModel);
+    if (model?.resolutions && !model.resolutions.includes(resolution)) {
+      setResolution(model.resolutions[0]);
+    }
+  }, [selectedModel]);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [showTransactions, setShowTransactions] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -321,6 +335,40 @@ const StudioVideo = () => {
           variant: "destructive",
         });
       }
+    },
+  });
+
+  const upscaleMutation = useMutation({
+    mutationFn: async ({ videoUrl }: { videoUrl: string }) => {
+      // Upscaling to 4K using fal-ai/crystal-video-upscaler
+      return await studioGenerate({
+        provider: "fal",
+        model: "fal-ai/crystal-video-upscaler",
+        generation_type: "video_upscale",
+        input_params: {
+          video_url: videoUrl,
+          scale_factor: 2.0, // Multiplier to get to 4K from 1080p/720p
+        },
+      });
+    },
+    onSuccess: async (result) => {
+      setGeneratingJobId(result.generation_id);
+      queryClient.invalidateQueries({ queryKey: ["studio", "wallet"] });
+      queryClient.invalidateQueries({
+        queryKey: ["studio", "generations", "video"],
+      });
+      pollJobStatus(result.generation_id);
+      toast({
+        title: "Upscaling Started",
+        description: "Your video is being enhanced to 4K quality.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Upscale Error",
+        description: getUserFriendlyError(error),
+        variant: "destructive",
+      });
     },
   });
 
@@ -432,6 +480,16 @@ const StudioVideo = () => {
         };
       }
 
+      if (selectedModel.includes("sora-2")) {
+        return {
+          image_url: imageUrl || undefined,
+          prompt: prompt || undefined,
+          resolution: resolution, // Restricted to "auto" or "720p" in UI
+          aspect_ratio: aspectRatio,
+          duration_seconds: duration,
+        };
+      }
+
       if (isKling) {
         return {
           image_url: imageUrl || undefined,
@@ -469,15 +527,7 @@ const StudioVideo = () => {
         };
       }
 
-      if (isVeo) {
-        return {
-          first_frame_image: imageUrl,
-          prompt: prompt || undefined,
-          generate_audio: enableAudio,
-          aspect_ratio: aspectRatio,
-          resolution: resolution,
-        };
-      }
+
 
       if (isLuma) {
         return {
@@ -512,6 +562,14 @@ const StudioVideo = () => {
     };
 
     generateMutation.mutate(buildInputParams());
+  };
+
+  const handleUpscale = (videoUrl: string) => {
+    if (!wallet || wallet.balance < 15) {
+      setShowSubscriptionModal(true);
+      return;
+    }
+    upscaleMutation.mutate({ videoUrl });
   };
 
   const credits = wallet?.balance || 0;
@@ -1027,32 +1085,32 @@ const StudioVideo = () => {
 
                       {selectedAssets.filter((a) => a.type === "image")
                         .length === 2 && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const images = selectedAssets.filter(
-                              (a) => a.type === "image",
-                            );
-                            const nonImages = selectedAssets.filter(
-                              (a) => a.type !== "image",
-                            );
-                            setSelectedAssets([
-                              ...images.reverse(),
-                              ...nonImages,
-                            ]);
-                          }}
-                          style={{
-                            height: 32,
-                            fontSize: 11,
-                            gap: 6,
-                            borderRadius: 8,
-                          }}
-                        >
-                          <Zap size={12} />
-                          Swap Frames
-                        </Button>
-                      )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const images = selectedAssets.filter(
+                                (a) => a.type === "image",
+                              );
+                              const nonImages = selectedAssets.filter(
+                                (a) => a.type !== "image",
+                              );
+                              setSelectedAssets([
+                                ...images.reverse(),
+                                ...nonImages,
+                              ]);
+                            }}
+                            style={{
+                              height: 32,
+                              fontSize: 11,
+                              gap: 6,
+                              borderRadius: 8,
+                            }}
+                          >
+                            <Zap size={12} />
+                            Swap Frames
+                          </Button>
+                        )}
                     </div>
                   ) : null}
 
@@ -1188,7 +1246,7 @@ const StudioVideo = () => {
                       Duration
                     </label>
                     {selectedModelData?.duration &&
-                    selectedModelData.duration.length > 2 ? (
+                      selectedModelData.duration.length > 2 ? (
                       <div style={{ display: "flex", gap: 8 }}>
                         {selectedModelData.duration.map((d) => (
                           <Button
@@ -1231,7 +1289,7 @@ const StudioVideo = () => {
                           min={selectedModelData?.duration?.[0] || 5}
                           max={
                             selectedModelData?.duration?.[
-                              selectedModelData.duration.length - 1
+                            selectedModelData.duration.length - 1
                             ] || 10
                           }
                           step={1}
@@ -1331,7 +1389,7 @@ const StudioVideo = () => {
                     Output Quality
                   </label>
                   <div style={{ display: "flex", gap: 8 }}>
-                    {["480p", "720p", "1080p"].map((res) => (
+                    {(selectedModelData?.resolutions || ["480p", "720p", "1080p"]).map((res) => (
                       <button
                         key={res}
                         onClick={() => setResolution(res)}
@@ -1536,18 +1594,38 @@ const StudioVideo = () => {
                       (g) => g.status === "completed" && g.output_urls?.[0],
                     );
                     return lastCompleted ? (
-                      <video
+                      <div
                         key={lastCompleted.id}
-                        src={lastCompleted.output_urls[0]}
-                        controls
-                        autoPlay
-                        loop
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "contain",
-                        }}
-                      />
+                        className="relative group w-full h-full"
+                      >
+                        <video
+                          src={lastCompleted.output_urls[0]}
+                          controls
+                          autoPlay
+                          loop
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "contain",
+                          }}
+                        />
+                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            onClick={() =>
+                              handleUpscale(lastCompleted.output_urls[0])
+                            }
+                            disabled={upscaleMutation.isPending}
+                            className="bg-black/60 hover:bg-black/80 text-white border-white/10 backdrop-blur-md"
+                          >
+                            {upscaleMutation.isPending ? (
+                              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                            ) : (
+                              <Zap className="w-4 h-4 mr-2 text-yellow-400 fill-yellow-400" />
+                            )}
+                            Upscale to 4K
+                          </Button>
+                        </div>
+                      </div>
                     ) : (
                       <div style={{ textAlign: "center", padding: 40 }}>
                         <div
@@ -1603,8 +1681,8 @@ const StudioVideo = () => {
                     {/* Check if the job we are waiting for is in the generations list and completed */}
                     {generations?.find((g) => g.id === generatingJobId)
                       ?.status === "completed" &&
-                    generations?.find((g) => g.id === generatingJobId)
-                      ?.output_urls?.[0] ? (
+                      generations?.find((g) => g.id === generatingJobId)
+                        ?.output_urls?.[0] ? (
                       <video
                         src={
                           generations?.find((g) => g.id === generatingJobId)

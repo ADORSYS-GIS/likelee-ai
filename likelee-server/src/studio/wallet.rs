@@ -83,6 +83,7 @@ pub async fn get_generation_cost(
             "video" => 5,
             "image" => 1,
             "image_to_video" => 5,
+            "video_upscale" => 15,
             _ => 5,
         });
     }

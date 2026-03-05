@@ -5,7 +5,8 @@ export type StudioGenerationType =
   | "video"
   | "image"
   | "avatar"
-  | "image_to_video";
+  | "image_to_video"
+  | "video_upscale";
 export type StudioGenerationStatus =
   | "draft"
   | "pending"
