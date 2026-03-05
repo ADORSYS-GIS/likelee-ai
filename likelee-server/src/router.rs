@@ -488,6 +488,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::face_profiles::create_brand_licensing_request),
         )
         .route(
+            "/api/brand/agency-talent-rates",
+            get(crate::face_profiles::list_brand_agency_talent_rates),
+        )
+        .route(
             "/api/agency/brand-connection-requests",
             get(crate::face_profiles::list_agency_brand_connection_requests),
         )

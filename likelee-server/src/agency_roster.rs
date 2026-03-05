@@ -188,6 +188,63 @@ pub struct AgencyRosterResponse {
     pub talents: Vec<TalentRow>,
 }
 
+async fn resolve_effective_agency_id(
+    state: &AppState,
+    user: &AuthUser,
+) -> Result<String, (StatusCode, String)> {
+    let by_id_resp = state
+        .pg
+        .from("agencies")
+        .select("id")
+        .eq("id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let by_id_status = by_id_resp.status();
+    let by_id_text = by_id_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !by_id_status.is_success() {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, by_id_text));
+    }
+    let by_id_rows: Vec<serde_json::Value> = serde_json::from_str(&by_id_text).unwrap_or_default();
+    if !by_id_rows.is_empty() {
+        return Ok(user.id.clone());
+    }
+
+    let by_user_resp = state
+        .pg
+        .from("agencies")
+        .select("id")
+        .eq("user_id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let by_user_status = by_user_resp.status();
+    let by_user_text = by_user_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !by_user_status.is_success() {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, by_user_text));
+    }
+    let by_user_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&by_user_text).unwrap_or_default();
+    let agency_id = by_user_rows
+        .first()
+        .and_then(|r| r.get("id"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    if agency_id.is_empty() {
+        return Err((StatusCode::FORBIDDEN, "Agency profile not found".to_string()));
+    }
+    Ok(agency_id)
+}
+
 pub async fn get_roster(
     State(state): State<AppState>,
     user: AuthUser,
@@ -1241,6 +1298,7 @@ async fn upsert_agency_talent_connection(
         .pg
         .from("agency_talent_lecense_rate")
         .upsert(upsert_payload.to_string())
+        .on_conflict("agency_id,talent_id")
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -1256,6 +1314,7 @@ pub async fn create_talent(
     user: AuthUser,
     Json(payload): Json<CreateTalentRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
     let licensing_rate_weekly_cents = match payload.licensing_rate_weekly_cents {
         Some(v) if v <= 0 => {
             return Err((
@@ -1346,7 +1405,7 @@ pub async fn create_talent(
         .pg
         .from("agencies")
         .select("seats_limit,plan_tier")
-        .eq("id", &user.id)
+        .eq("id", &effective_agency_id)
         .single()
         .execute()
         .await
@@ -1384,7 +1443,7 @@ pub async fn create_talent(
         .pg
         .from("agency_talent_lecense_rate")
         .select("id")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", &effective_agency_id)
         .execute()
         .await
         .map_err(|e| {
@@ -1520,7 +1579,7 @@ pub async fn create_talent(
         )
     } else {
         if let serde_json::Value::Object(ref mut map) = identity_payload {
-            map.insert("agency_id".to_string(), json!(user.id));
+            map.insert("agency_id".to_string(), json!(effective_agency_id));
         }
         let insert_resp = state
             .pg
@@ -1567,7 +1626,7 @@ pub async fn create_talent(
 
     upsert_agency_talent_connection(
         &state,
-        &user.id,
+        &effective_agency_id,
         talent_id.as_str(),
         creator_id.as_deref(),
         status.as_str(),
@@ -1593,11 +1652,12 @@ pub async fn update_talent(
     Path(id): Path<String>,
     Json(payload): Json<UpdateTalentRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
     let access_resp = state
         .pg
         .from("agency_talent_lecense_rate")
         .select("id,status")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", &effective_agency_id)
         .eq("talent_id", &id)
         .limit(1)
         .execute()
@@ -1748,7 +1808,7 @@ pub async fn update_talent(
             .to_uppercase();
         upsert_agency_talent_connection(
             &state,
-            &user.id,
+            &effective_agency_id,
             &id,
             creator_id,
             next_status.as_str(),

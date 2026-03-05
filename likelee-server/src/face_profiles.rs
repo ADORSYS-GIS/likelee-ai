@@ -83,6 +83,13 @@ pub struct BrandLicensingRequestPayload {
     pub modifications_allowed: Option<String>,
 }
 
+#[derive(Deserialize)]
+pub struct BrandAgencyTalentRatesQuery {
+    pub agency_id: String,
+    pub q: Option<String>,
+    pub limit: Option<usize>,
+}
+
 fn is_missing_relation_error(text: &str, relation_hint: &str) -> bool {
     let lower = text.to_lowercase();
     if lower.contains("pgrst205") {
@@ -97,6 +104,20 @@ fn is_missing_relation_error(text: &str, relation_hint: &str) -> bool {
             || lower.contains("schema cache");
     }
     false
+}
+
+fn resolve_weekly_rate_cents(
+    base_weekly_price_cents: Option<i64>,
+    base_monthly_price_cents: Option<i64>,
+) -> Option<i64> {
+    if let Some(v) = base_weekly_price_cents {
+        if v > 0 {
+            return Some(v);
+        }
+    }
+    base_monthly_price_cents
+        .filter(|v| *v > 0)
+        .map(|v| ((v as f64) / 4.345).round() as i64)
 }
 
 pub async fn search_faces(
@@ -446,7 +467,7 @@ pub async fn search_marketplace_profiles(
             let mut request = state
                 .pg
                 .from("creators")
-                .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,updated_at,public_profile_visible,visibility")
+                .select("id,full_name,city,state,tagline,bio,profile_photo_url,creator_type,facial_features,kyc_status,updated_at,public_profile_visible,visibility,base_weekly_price_cents,base_monthly_price_cents,currency_code,accept_negotiations")
                 .eq("role", "creator")
                 .eq("kyc_status", "approved")
                 .limit(limit);
@@ -585,6 +606,10 @@ pub async fn search_marketplace_profiles(
             } else {
                 format!("{city}, {state}")
             };
+            let base_weekly_price_cents = resolve_weekly_rate_cents(
+                row.get("base_weekly_price_cents").and_then(|v| v.as_i64()),
+                row.get("base_monthly_price_cents").and_then(|v| v.as_i64()),
+            );
 
             results.push(serde_json::json!({
                 "id": row.get("id").cloned().unwrap_or(serde_json::Value::Null),
@@ -614,6 +639,10 @@ pub async fn search_marketplace_profiles(
                 "connection_status": connection_status,
                 "verification_source": "kyc",
                 "kyc_status": row.get("kyc_status").cloned().unwrap_or(serde_json::Value::Null),
+                "base_weekly_price_cents": base_weekly_price_cents,
+                "base_monthly_price_cents": row.get("base_monthly_price_cents").cloned().unwrap_or(serde_json::Value::Null),
+                "currency_code": row.get("currency_code").cloned().unwrap_or(serde_json::json!("USD")),
+                "accept_negotiations": row.get("accept_negotiations").cloned().unwrap_or(serde_json::json!(true)),
                 "updated_at": row.get("updated_at").cloned().unwrap_or(serde_json::Value::Null),
             }));
         }
@@ -2860,6 +2889,204 @@ pub async fn create_brand_licensing_request(
     Ok(Json(serde_json::json!({
         "status": "ok",
         "licensing_request_id": created.get("id").cloned().unwrap_or(serde_json::Value::Null),
+    })))
+}
+
+pub async fn list_brand_agency_talent_rates(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Query(q): Query<BrandAgencyTalentRatesQuery>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    RoleGuard::new(vec!["brand"]).check(&user.role)?;
+
+    let agency_id = q.agency_id.trim().to_string();
+    if agency_id.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "agency_id is required".to_string()));
+    }
+    let mut limit = q.limit.unwrap_or(80);
+    if limit == 0 {
+        limit = 1;
+    }
+    if limit > 200 {
+        limit = 200;
+    }
+    let search = q
+        .q
+        .as_deref()
+        .unwrap_or("")
+        .trim()
+        .to_lowercase();
+
+    let effective_brand_id = resolve_effective_brand_id(&state, &user).await?;
+    let connected_resp = state
+        .pg
+        .from("brand_agency_connections")
+        .select("id")
+        .eq("brand_id", &effective_brand_id)
+        .eq("agency_id", &agency_id)
+        .eq("status", "active")
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let connected_status = connected_resp.status();
+    let connected_text = connected_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let connected_rows: Vec<serde_json::Value> = if connected_status.is_success() {
+        serde_json::from_str(&connected_text).unwrap_or_default()
+    } else {
+        return Err(sanitize_db_error(connected_status.as_u16(), connected_text));
+    };
+    if connected_rows.is_empty() {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "You can only view rates for connected agencies.".to_string(),
+        ));
+    }
+
+    let conn_resp = state
+        .pg
+        .from("agency_talent_lecense_rate")
+        .select("id,agency_id,talent_id,creator_id,status,licensing_rate_weekly_cents,accept_negotiations,rate_currency")
+        .eq("agency_id", &agency_id)
+        .eq("status", "active")
+        .limit(limit)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let conn_status = conn_resp.status();
+    let conn_text = conn_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !conn_status.is_success() {
+        return Err(sanitize_db_error(conn_status.as_u16(), conn_text));
+    }
+    let connections: Vec<serde_json::Value> = serde_json::from_str(&conn_text).unwrap_or_default();
+
+    let talent_ids: Vec<String> = connections
+        .iter()
+        .filter_map(|r| {
+            r.get("talent_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        })
+        .collect();
+    let talent_refs: Vec<&str> = talent_ids.iter().map(|s| s.as_str()).collect();
+
+    let talent_rows: Vec<serde_json::Value> = if talent_refs.is_empty() {
+        vec![]
+    } else {
+        let t_resp = state
+            .pg
+            .from("agency_users")
+            .select("id,creator_id,full_legal_name,stage_name,city,state_province,country,profile_photo_url,role_type")
+            .in_("id", talent_refs)
+            .eq("role", "talent")
+            .limit(limit)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let t_status = t_resp.status();
+        let t_text = t_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !t_status.is_success() {
+            return Err(sanitize_db_error(t_status.as_u16(), t_text));
+        }
+        serde_json::from_str(&t_text).unwrap_or_default()
+    };
+
+    let mut talent_by_id: HashMap<String, serde_json::Value> = HashMap::new();
+    for t in talent_rows {
+        if let Some(id) = t.get("id").and_then(|v| v.as_str()) {
+            talent_by_id.insert(id.to_string(), t);
+        }
+    }
+
+    let mut items: Vec<serde_json::Value> = Vec::new();
+    for conn in connections {
+        let talent_id = conn.get("talent_id").and_then(|v| v.as_str()).unwrap_or("");
+        if talent_id.is_empty() {
+            continue;
+        }
+        let Some(talent) = talent_by_id.get(talent_id) else {
+            continue;
+        };
+        let creator_id = conn
+            .get("creator_id")
+            .and_then(|v| v.as_str())
+            .or_else(|| talent.get("creator_id").and_then(|v| v.as_str()))
+            .unwrap_or("")
+            .to_string();
+        if creator_id.is_empty() {
+            continue;
+        }
+
+        let display_name = talent
+            .get("full_legal_name")
+            .and_then(|v| v.as_str())
+            .or_else(|| talent.get("stage_name").and_then(|v| v.as_str()))
+            .unwrap_or("Unknown Creator")
+            .to_string();
+        let stage_name = talent
+            .get("stage_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        if !search.is_empty() {
+            let name_lower = display_name.to_lowercase();
+            let stage_lower = stage_name.to_lowercase();
+            if !name_lower.contains(&search) && !stage_lower.contains(&search) {
+                continue;
+            }
+        }
+        let city = talent
+            .get("city")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        let state = talent
+            .get("state_province")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        let location = if !city.is_empty() && !state.is_empty() {
+            format!("{city}, {state}")
+        } else if !city.is_empty() {
+            city.clone()
+        } else {
+            state.clone()
+        };
+
+        items.push(serde_json::json!({
+            "id": creator_id,
+            "creator_id": creator_id,
+            "talent_id": talent_id,
+            "display_name": display_name,
+            "full_name": talent.get("full_legal_name").cloned().unwrap_or(serde_json::Value::Null),
+            "stage_name": talent.get("stage_name").cloned().unwrap_or(serde_json::Value::Null),
+            "city": talent.get("city").cloned().unwrap_or(serde_json::Value::Null),
+            "state": talent.get("state_province").cloned().unwrap_or(serde_json::Value::Null),
+            "country": talent.get("country").cloned().unwrap_or(serde_json::Value::Null),
+            "location": location,
+            "profile_photo_url": talent.get("profile_photo_url").cloned().unwrap_or(serde_json::Value::Null),
+            "creator_type": talent.get("role_type").cloned().unwrap_or(serde_json::json!("Creator")),
+            "base_rate_weekly_cents": conn.get("licensing_rate_weekly_cents").cloned().unwrap_or(serde_json::Value::Null),
+            "rate_currency": conn.get("rate_currency").cloned().unwrap_or(serde_json::json!("USD")),
+            "accept_negotiations": conn.get("accept_negotiations").cloned().unwrap_or(serde_json::json!(true)),
+            "rate_source_type": "agency_connection",
+        }));
+    }
+
+    Ok(Json(serde_json::json!({
+      "status": "ok",
+      "items": items
     })))
 }
 
