@@ -80,9 +80,9 @@ pub async fn get_generation_cost(
     if !resp.status().is_success() {
         // If cost not found in DB, return a default cost based on type
         return Ok(match generation_type {
-            "video" => 15,
-            "image" => 3,
-            "image_to_video" => 15,
+            "video" => 5,
+            "image" => 1,
+            "image_to_video" => 5,
             _ => 5,
         });
     }

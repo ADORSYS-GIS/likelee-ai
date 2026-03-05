@@ -13,14 +13,14 @@ import { getWallet } from "@/api/studio";
 import { createCheckoutSession } from "@/api/functions";
 
 const creditTiers = [
-  { credits: 200, price: 59, label: "200" },
-  { credits: 500, price: 129, label: "500" },
-  { credits: 1000, price: 239, label: "1,000" },
-  { credits: 2500, price: 519, label: "2,500" },
-  { credits: 5000, price: 999, label: "5,000" },
-  { credits: 10000, price: 1899, label: "10,000" },
-  { credits: 25000, price: 4499, label: "25,000" },
-  { credits: 50000, price: 8999, label: "50,000" },
+  { credits: 400, price: 59, label: "400" },
+  { credits: 1000, price: 129, label: "1,000" },
+  { credits: 2000, price: 239, label: "2,000" },
+  { credits: 5000, price: 519, label: "5,000" },
+  { credits: 10000, price: 999, label: "10,000" },
+  { credits: 20000, price: 1899, label: "20,000" },
+  { credits: 50000, price: 4499, label: "50,000" },
+  { credits: 100000, price: 8999, label: "100,000" },
 ];
 
 export default function StudioSubscribe() {
@@ -189,16 +189,16 @@ export default function StudioSubscribe() {
                 <span className="text-5xl font-bold text-white">$15</span>
                 <span className="text-gray-400 ml-2">/ month</span>
               </div>
-              <p className="text-gray-400 mb-6">30 credits per month</p>
+              <p className="text-gray-400 mb-6">60 credits per month</p>
 
               <ul className="space-y-3 mb-8">
                 <li className="flex items-start gap-3 text-gray-300">
                   <Check className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                  <span>6 videos / month</span>
+                  <span>12 videos / month</span>
                 </li>
                 <li className="flex items-start gap-3 text-gray-300">
                   <Check className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                  <span>30 images / month</span>
+                  <span>60 images / month</span>
                 </li>
                 <li className="flex items-start gap-3 text-gray-300">
                   <Check className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
@@ -219,7 +219,7 @@ export default function StudioSubscribe() {
               </ul>
 
               <Button
-                onClick={() => handleSubscribe("lite", 30, 15)}
+                onClick={() => handleSubscribe("lite", 60, 15)}
                 disabled={checkingOut || checkoutMutation.isPending}
                 className="w-full h-12 bg-gradient-to-r from-[#32C8D1] to-teal-500 hover:opacity-90"
               >
@@ -230,7 +230,7 @@ export default function StudioSubscribe() {
                   </>
                 ) : currentPlan === "lite" ? (
                   <>
-                    Add 30 Credits — $15
+                    Add 60 Credits — $15
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </>
                 ) : (
@@ -290,9 +290,9 @@ export default function StudioSubscribe() {
                 />
 
                 <div className="flex justify-between text-xs text-gray-400 mt-2 mb-6">
-                  <span>200</span>
+                  <span>400</span>
                   <span>10K</span>
-                  <span>50K</span>
+                  <span>100K</span>
                 </div>
 
                 <div className="pt-6 border-t border-white/10">

@@ -53,9 +53,9 @@ const videoModels = [
   {
     id: "fal-ai/sora-2/image-to-video",
     name: "Sora 2",
-    cost: 30,
+    cost: 10,
     description: "OpenAI's latest cinematic engine (Image-to-Video)",
-    duration: [5, 10],
+    duration: [4, 8, 12],
     icon: "🎥",
     tag: "Beta",
     tagColor: "#F59E0B",
@@ -67,7 +67,7 @@ const videoModels = [
   {
     id: "fal-ai/veo3.1",
     name: "Google Veo 3.1",
-    cost: 20,
+    cost: 21,
     description: "State-of-the-art video with synchronized audio",
     duration: [4, 6, 8],
     icon: "🎬",
@@ -81,7 +81,7 @@ const videoModels = [
   {
     id: "fal-ai/minimax/video-01-live",
     name: "MiniMax Video 01",
-    cost: 10,
+    cost: 5,
     description: "Fast text-to-video with prompt optimization",
     duration: [5],
     icon: "✨",
@@ -95,7 +95,7 @@ const videoModels = [
   {
     id: "fal-ai/hunyuan-video",
     name: "Hunyuan Video",
-    cost: 15,
+    cost: 5,
     description: "Tencent's powerful open-source model",
     duration: [2, 5],
     icon: "🎭",
@@ -109,7 +109,7 @@ const videoModels = [
   {
     id: "fal-ai/mochi-v1",
     name: "Mochi 1",
-    cost: 12,
+    cost: 5,
     description: "Open-source video with high-fidelity motion",
     duration: [3, 5],
     icon: "🔥",
@@ -138,7 +138,7 @@ const videoModels = [
   {
     id: "fal-ai/veo3.1/image-to-video",
     name: "Veo 3.1 · Image→Video",
-    cost: 25,
+    cost: 21,
     description: "DeepMind's flagship image-to-video with audio",
     duration: [4, 6, 8],
     icon: "🖼️",
@@ -152,7 +152,7 @@ const videoModels = [
   {
     id: "fal-ai/kling-video/v2.5-turbo/pro/image-to-video",
     name: "Kling 2.6 Pro · Image→Video",
-    cost: 30,
+    cost: 5,
     description: "Top-tier fluidity with native lip-sync",
     duration: [5, 10],
     icon: "🎞️",
@@ -166,7 +166,7 @@ const videoModels = [
   {
     id: "fal-ai/wan/v2.2-a14b/image-to-video",
     name: "Wan 2.1 · Image→Video",
-    cost: 15,
+    cost: 5,
     description: "High motion diversity and cinematic results",
     duration: [5],
     icon: "🌅",
@@ -180,7 +180,7 @@ const videoModels = [
   {
     id: "fal-ai/minimax/hailuo-02/standard/image-to-video",
     name: "MiniMax 02 · Image→Video",
-    cost: 15,
+    cost: 5,
     description: "Advanced motion with 768p resolution",
     duration: [5],
     icon: "✨",
@@ -194,7 +194,7 @@ const videoModels = [
   {
     id: "fal-ai/seedance-v2",
     name: "Seedance 2.0",
-    cost: 20,
+    cost: 5,
     description: "Bytedance's cinematic model with native audio",
     duration: [5],
     icon: "🌱",
@@ -241,7 +241,7 @@ const StudioVideo = () => {
   const [selectedAssets, setSelectedAssets] = useState<StudioAsset[]>([]);
   const [assetPickerOpen, setAssetPickerOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState(videoModels[0].id);
-  const [duration, setDuration] = useState(5);
+  const [duration, setDuration] = useState(videoModels[0].duration[0]);
   const [aspectRatio, setAspectRatio] = useState("16:9");
   const [fps, setFps] = useState(24);
   const [guidanceScale, setGuidanceScale] = useState(7.5);
@@ -526,7 +526,8 @@ const StudioVideo = () => {
     <div
       style={{
         background: "#0A0A0F",
-        minHeight: "100vh",
+        height: "100vh",
+        overflow: "hidden",
         color: "#fff",
         fontFamily: "'Inter', system-ui, sans-serif",
         display: "flex",
@@ -1186,48 +1187,85 @@ const StudioVideo = () => {
                     >
                       Duration
                     </label>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 12,
-                        height: 48,
-                        background: "rgba(255, 255, 255, 0.02)",
-                        border: "1px solid rgba(255, 255, 255, 0.1)",
-                        borderRadius: 12,
-                        padding: "0 12px",
-                      }}
-                    >
-                      <input
-                        type="range"
-                        min={
-                          videoModels.find((m) => m.id === selectedModel)
-                            ?.duration?.[0] || 5
-                        }
-                        max={
-                          videoModels.find((m) => m.id === selectedModel)
-                            ?.duration?.[1] || 10
-                        }
-                        step={1}
-                        value={duration}
-                        onChange={(e) => setDuration(parseInt(e.target.value))}
+                    {selectedModelData?.duration &&
+                    selectedModelData.duration.length > 2 ? (
+                      <div style={{ display: "flex", gap: 8 }}>
+                        {selectedModelData.duration.map((d) => (
+                          <Button
+                            key={d}
+                            variant={duration === d ? "default" : "outline"}
+                            onClick={() => setDuration(d)}
+                            style={{
+                              flex: 1,
+                              height: 48,
+                              borderRadius: 12,
+                              fontSize: 13,
+                              fontWeight: 700,
+                              background:
+                                duration === d
+                                  ? "#8B5CF6"
+                                  : "rgba(255, 255, 255, 0.02)",
+                              border: `1px solid ${duration === d ? "#8B5CF6" : "rgba(255, 255, 255, 0.1)"}`,
+                              color: "#fff",
+                            }}
+                          >
+                            {d}s
+                          </Button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div
                         style={{
-                          flex: 1,
-                          accentColor: "#8B5CF6",
-                          cursor: "pointer",
-                        }}
-                      />
-                      <span
-                        style={{
-                          fontSize: 13,
-                          fontWeight: 700,
-                          color: "#fff",
-                          minWidth: 32,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
+                          height: 48,
+                          background: "rgba(255, 255, 255, 0.02)",
+                          border: "1px solid rgba(255, 255, 255, 0.1)",
+                          borderRadius: 12,
+                          padding: "0 12px",
                         }}
                       >
-                        {duration}s
-                      </span>
-                    </div>
+                        <input
+                          type="range"
+                          min={selectedModelData?.duration?.[0] || 5}
+                          max={
+                            selectedModelData?.duration?.[
+                              selectedModelData.duration.length - 1
+                            ] || 10
+                          }
+                          step={1}
+                          disabled={selectedModelData?.duration?.length === 1}
+                          value={duration}
+                          onChange={(e) =>
+                            setDuration(parseInt(e.target.value))
+                          }
+                          style={{
+                            flex: 1,
+                            accentColor: "#8B5CF6",
+                            cursor:
+                              selectedModelData?.duration?.length === 1
+                                ? "not-allowed"
+                                : "pointer",
+                            opacity:
+                              selectedModelData?.duration?.length === 1
+                                ? 0.5
+                                : 1,
+                          }}
+                        />
+                        <span
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: "#fff",
+                            minWidth: 32,
+                            textAlign: "right",
+                          }}
+                        >
+                          {duration}s
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
