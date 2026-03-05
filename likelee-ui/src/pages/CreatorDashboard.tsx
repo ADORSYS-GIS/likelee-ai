@@ -4997,7 +4997,8 @@ export default function CreatorDashboard() {
                             toast({
                               variant: "destructive",
                               title: "Failed to decline",
-                              description: e?.message || String(e),
+                              description:
+                                "We could not decline this invitation right now. Please try again.",
                             });
                           }
                         }}
@@ -5037,7 +5038,8 @@ export default function CreatorDashboard() {
                             toast({
                               variant: "destructive",
                               title: "Failed to accept",
-                              description: e?.message || String(e),
+                              description:
+                                "We could not accept this invitation right now. Please try again.",
                             });
                           }
                         }}
