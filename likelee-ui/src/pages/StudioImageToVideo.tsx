@@ -124,7 +124,8 @@ export default function StudioImageToVideo() {
 
   const { data: generations } = useQuery({
     queryKey: ["studio", "generations", "image_to_video"],
-    queryFn: () => listGenerations({ generation_type: "image_to_video", limit: 20 }),
+    queryFn: () =>
+      listGenerations({ generation_type: "image_to_video", limit: 20 }),
   });
 
   const generateMutation = useMutation({
@@ -140,7 +141,9 @@ export default function StudioImageToVideo() {
     onSuccess: async (result) => {
       setGeneratingJobId(result.generation_id);
       queryClient.invalidateQueries({ queryKey: ["studio", "wallet"] });
-      queryClient.invalidateQueries({ queryKey: ["studio", "generations", "image_to_video"] });
+      queryClient.invalidateQueries({
+        queryKey: ["studio", "generations", "image_to_video"],
+      });
       pollJobStatus(result.generation_id);
     },
     onError: (error: any) => {
@@ -163,10 +166,15 @@ export default function StudioImageToVideo() {
     const interval = setInterval(async () => {
       try {
         const statusResult = await getJobStatus(jobId);
-        if (statusResult.status === "completed" || statusResult.status === "failed") {
+        if (
+          statusResult.status === "completed" ||
+          statusResult.status === "failed"
+        ) {
           clearInterval(interval);
           setGeneratingJobId(null);
-          queryClient.invalidateQueries({ queryKey: ["studio", "generations", "image_to_video"] });
+          queryClient.invalidateQueries({
+            queryKey: ["studio", "generations", "image_to_video"],
+          });
           queryClient.invalidateQueries({ queryKey: ["studio", "wallet"] });
         }
       } catch (error) {
@@ -293,10 +301,11 @@ export default function StudioImageToVideo() {
                           className="w-full px-4 py-3 hover:bg-white/5 transition-colors flex items-start gap-3 border-b border-white/5 last:border-0"
                         >
                           <div
-                            className={`w-5 h-5 rounded-full border-2 flex-shrink-0 mt-1 ${selectedModel === model.id
+                            className={`w-5 h-5 rounded-full border-2 flex-shrink-0 mt-1 ${
+                              selectedModel === model.id
                                 ? "border-[#F18B6A] bg-[#F18B6A]"
                                 : "border-white/30"
-                              }`}
+                            }`}
                           >
                             {selectedModel === model.id && (
                               <div className="w-2.5 h-2.5 rounded-full bg-white m-auto mt-0.5" />
@@ -428,10 +437,11 @@ export default function StudioImageToVideo() {
                     <button
                       key={ratio.value}
                       onClick={() => setAspectRatio(ratio.value)}
-                      className={`aspect-square rounded-lg border-2 transition-all ${aspectRatio === ratio.value
+                      className={`aspect-square rounded-lg border-2 transition-all ${
+                        aspectRatio === ratio.value
                           ? "border-[#F18B6A] bg-[#F18B6A]/20"
                           : "border-white/10 bg-white/5 hover:border-white/30"
-                        }`}
+                      }`}
                     >
                       <div className="text-xs font-medium text-white">
                         {ratio.label}
@@ -451,10 +461,11 @@ export default function StudioImageToVideo() {
                     <button
                       key={num}
                       onClick={() => setOutputNumber(num)}
-                      className={`py-3 rounded-lg border-2 transition-all text-lg font-medium ${outputNumber === num
+                      className={`py-3 rounded-lg border-2 transition-all text-lg font-medium ${
+                        outputNumber === num
                           ? "border-[#F18B6A] bg-[#F18B6A]/20 text-white"
                           : "border-white/10 bg-white/5 text-gray-400 hover:border-white/30"
-                        }`}
+                      }`}
                     >
                       {num}
                     </button>
@@ -556,43 +567,45 @@ export default function StudioImageToVideo() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              {(generations as StudioGenerationRow[] | undefined)?.map((gen) => (
-                <Card
-                  key={gen.id}
-                  className="p-3 bg-white/5 border border-white/10 rounded-lg hover:border-white/20 transition-all"
-                >
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="text-xs px-2 py-1 bg-white/10 rounded text-gray-300">
-                      {gen.provider}
+              {(generations as StudioGenerationRow[] | undefined)?.map(
+                (gen) => (
+                  <Card
+                    key={gen.id}
+                    className="p-3 bg-white/5 border border-white/10 rounded-lg hover:border-white/20 transition-all"
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="text-xs px-2 py-1 bg-white/10 rounded text-gray-300">
+                        {gen.provider}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {new Date(gen.created_at).toLocaleDateString()}
+                      </div>
                     </div>
-                    <div className="text-xs text-gray-500">
-                      {new Date(gen.created_at).toLocaleDateString()}
-                    </div>
-                  </div>
 
-                  {gen.status === "completed" && gen.output_urls?.[0] ? (
-                    <div className="relative aspect-video bg-black rounded-lg overflow-hidden mb-3">
-                      <video
-                        src={gen.output_urls[0]}
-                        controls
-                        className="w-full h-full"
-                      />
-                    </div>
-                  ) : gen.status === "processing" ? (
-                    <div className="aspect-video bg-white/5 rounded-lg flex items-center justify-center mb-3">
-                      <Loader2 className="w-8 h-8 animate-spin text-[#F18B6A]" />
-                    </div>
-                  ) : (
-                    <div className="aspect-video bg-white/5 rounded-lg flex items-center justify-center mb-3">
-                      <span className="text-xs text-red-400">Failed</span>
-                    </div>
-                  )}
+                    {gen.status === "completed" && gen.output_urls?.[0] ? (
+                      <div className="relative aspect-video bg-black rounded-lg overflow-hidden mb-3">
+                        <video
+                          src={gen.output_urls[0]}
+                          controls
+                          className="w-full h-full"
+                        />
+                      </div>
+                    ) : gen.status === "processing" ? (
+                      <div className="aspect-video bg-white/5 rounded-lg flex items-center justify-center mb-3">
+                        <Loader2 className="w-8 h-8 animate-spin text-[#F18B6A]" />
+                      </div>
+                    ) : (
+                      <div className="aspect-video bg-white/5 rounded-lg flex items-center justify-center mb-3">
+                        <span className="text-xs text-red-400">Failed</span>
+                      </div>
+                    )}
 
-                  <p className="text-xs text-gray-400 line-clamp-2">
-                    {gen.input_params?.prompt || ""}
-                  </p>
-                </Card>
-              ))}
+                    <p className="text-xs text-gray-400 line-clamp-2">
+                      {gen.input_params?.prompt || ""}
+                    </p>
+                  </Card>
+                ),
+              )}
 
               {!generations?.length && (
                 <div className="col-span-2 text-center py-20">

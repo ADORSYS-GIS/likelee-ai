@@ -630,7 +630,7 @@ export default function Studio() {
                             onClick={() =>
                               navigate(
                                 createPageUrl("StudioVideoOptions") +
-                                `?model=${encodeURIComponent(model.id)}&name=${encodeURIComponent(model.name)}`,
+                                  `?model=${encodeURIComponent(model.id)}&name=${encodeURIComponent(model.name)}`,
                               )
                             }
                             className="block w-full text-left px-3 py-2 text-sm text-white hover:bg-white/5 rounded transition-colors"
@@ -651,7 +651,7 @@ export default function Studio() {
                             onClick={() =>
                               navigate(
                                 createPageUrl("StudioImageOptions") +
-                                `?model=${encodeURIComponent(model.id)}&name=${encodeURIComponent(model.name)}`,
+                                  `?model=${encodeURIComponent(model.id)}&name=${encodeURIComponent(model.name)}`,
                               )
                             }
                             className="block w-full text-left px-3 py-2 text-sm text-white hover:bg-white/5 rounded transition-colors"
@@ -1043,7 +1043,7 @@ export default function Studio() {
                           onClick={() => {
                             navigate(
                               createPageUrl("StudioVideoOptions") +
-                              `?model=${encodeURIComponent(model.id)}&name=${encodeURIComponent(model.name)}`,
+                                `?model=${encodeURIComponent(model.id)}&name=${encodeURIComponent(model.name)}`,
                             );
                             setMobileMenuOpen(false);
                           }}
@@ -1061,7 +1061,7 @@ export default function Studio() {
                           onClick={() => {
                             navigate(
                               createPageUrl("StudioImageOptions") +
-                              `?model=${encodeURIComponent(model.id)}&name=${encodeURIComponent(model.name)}`,
+                                `?model=${encodeURIComponent(model.id)}&name=${encodeURIComponent(model.name)}`,
                             );
                             setMobileMenuOpen(false);
                           }}
@@ -1258,7 +1258,7 @@ export default function Studio() {
                     onClick={() =>
                       navigate(
                         createPageUrl("StudioVideoOptions") +
-                        `?model=${encodeURIComponent(model.id)}&name=${encodeURIComponent(model.name)}`,
+                          `?model=${encodeURIComponent(model.id)}&name=${encodeURIComponent(model.name)}`,
                       )
                     }
                   >
@@ -1288,7 +1288,7 @@ export default function Studio() {
                     onClick={() =>
                       navigate(
                         createPageUrl("StudioImageOptions") +
-                        `?model=${encodeURIComponent(model.id)}&name=${encodeURIComponent(model.name)}`,
+                          `?model=${encodeURIComponent(model.id)}&name=${encodeURIComponent(model.name)}`,
                       )
                     }
                   >
@@ -1304,7 +1304,6 @@ export default function Studio() {
                 ))}
               </div>
             </div>
-
           </div>
 
           <p className="text-center text-gray-400">
@@ -1495,7 +1494,11 @@ export default function Studio() {
               <Button
                 className="w-full h-12 text-base font-medium bg-gradient-to-r from-[#F18B6A] to-[#E07A5A] hover:opacity-90 text-white border-2 border-white/20 rounded-lg"
                 onClick={() =>
-                  handleSubscribe("pro", selectedTier.credits, selectedTier.price)
+                  handleSubscribe(
+                    "pro",
+                    selectedTier.credits,
+                    selectedTier.price,
+                  )
                 }
                 disabled={checkingOut}
               >

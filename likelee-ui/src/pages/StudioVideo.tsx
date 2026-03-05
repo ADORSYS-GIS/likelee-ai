@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { StudioAssetPicker, StudioAsset } from "@/components/studio/StudioAssetPicker";
+import {
+  StudioAssetPicker,
+  StudioAsset,
+} from "@/components/studio/StudioAssetPicker";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -298,13 +301,18 @@ const StudioVideo = () => {
     onSuccess: async (result) => {
       setGeneratingJobId(result.generation_id);
       queryClient.invalidateQueries({ queryKey: ["studio", "wallet"] });
-      queryClient.invalidateQueries({ queryKey: ["studio", "generations", "video"] });
+      queryClient.invalidateQueries({
+        queryKey: ["studio", "generations", "video"],
+      });
       pollJobStatus(result.generation_id);
     },
     onError: (error: any) => {
       const errorMessage = error.message?.toLowerCase();
       const statusCode = error.status;
-      if (errorMessage?.includes("insufficient credits") || statusCode === 402) {
+      if (
+        errorMessage?.includes("insufficient credits") ||
+        statusCode === 402
+      ) {
         setShowSubscriptionModal(true);
       } else {
         toast({
@@ -324,17 +332,23 @@ const StudioVideo = () => {
       if (retries > MAX_RETRIES) {
         clearInterval(interval);
         setGeneratingJobId(null);
-        queryClient.invalidateQueries({ queryKey: ["studio", "generations", "video"] });
+        queryClient.invalidateQueries({
+          queryKey: ["studio", "generations", "video"],
+        });
         return;
       }
       try {
         const statusResult = await getJobStatus(jobId);
-        const isDone = statusResult.status === "failed" ||
-          (statusResult.status === "completed" && (statusResult.output_urls ?? []).length > 0);
+        const isDone =
+          statusResult.status === "failed" ||
+          (statusResult.status === "completed" &&
+            (statusResult.output_urls ?? []).length > 0);
         if (isDone) {
           clearInterval(interval);
           setGeneratingJobId(null);
-          queryClient.invalidateQueries({ queryKey: ["studio", "generations", "video"] });
+          queryClient.invalidateQueries({
+            queryKey: ["studio", "generations", "video"],
+          });
           queryClient.invalidateQueries({ queryKey: ["studio", "wallet"] });
         }
       } catch (error) {
@@ -346,9 +360,12 @@ const StudioVideo = () => {
 
   // Auto-poll for jobs that are in "processing" state (useful after refresh)
   useEffect(() => {
-    const processingJob = generations?.find(g => g.status === "processing");
+    const processingJob = generations?.find((g) => g.status === "processing");
     if (processingJob && !generatingJobId) {
-      console.log("Found processing job in history, resuming poll:", processingJob.id);
+      console.log(
+        "Found processing job in history, resuming poll:",
+        processingJob.id,
+      );
       setGeneratingJobId(processingJob.id);
       pollJobStatus(processingJob.id);
     }
@@ -359,8 +376,8 @@ const StudioVideo = () => {
   const modelSupportsImage = selectedModelData?.supportsImage ?? false;
 
   // Derived from selectedAssets
-  const primaryImage = selectedAssets.find(a => a.type === "image");
-  const audioAsset = selectedAssets.find(a => a.type === "audio");
+  const primaryImage = selectedAssets.find((a) => a.type === "image");
+  const audioAsset = selectedAssets.find((a) => a.type === "audio");
   const imageUrl = primaryImage?.url ?? "";
 
   const handleGenerate = () => {
@@ -393,13 +410,18 @@ const StudioVideo = () => {
       const isSeedance = selectedModel.includes("seedance");
       const isVidu = selectedModel.includes("vidu");
       const isLuma = selectedModel === "fal-ai/luma-dream-machine";
-      const isMiniMaxI2V = selectedModel === "fal-ai/minimax/video-01-live/image-to-video";
+      const isMiniMaxI2V =
+        selectedModel === "fal-ai/minimax/video-01-live/image-to-video";
       const isVeo = selectedModel.includes("veo");
 
       if (isVeo) {
-        const validAspect = ["16:9", "9:16"].includes(aspectRatio) ? aspectRatio : "16:9";
-        const durationValue = typeof duration === "number" ? duration : parseInt(duration);
-        const durationEnum = durationValue <= 4 ? "4s" : durationValue <= 6 ? "6s" : "8s";
+        const validAspect = ["16:9", "9:16"].includes(aspectRatio)
+          ? aspectRatio
+          : "16:9";
+        const durationValue =
+          typeof duration === "number" ? duration : parseInt(duration);
+        const durationEnum =
+          durationValue <= 4 ? "4s" : durationValue <= 6 ? "6s" : "8s";
         return {
           prompt: prompt || undefined,
           image_url: imageUrl || undefined,
@@ -497,7 +519,8 @@ const StudioVideo = () => {
     credits >= 30 ? "#10B981" : credits >= 10 ? "#F59E0B" : "#EF4444";
 
   const isGenerating = generateMutation.isPending || !!generatingJobId;
-  const canGenerate = !isGenerating && (modelRequiresImage ? !!imageUrl : !!(prompt || imageUrl));
+  const canGenerate =
+    !isGenerating && (modelRequiresImage ? !!imageUrl : !!(prompt || imageUrl));
 
   return (
     <div
@@ -527,17 +550,60 @@ const StudioVideo = () => {
       >
         <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
           <div
-            style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              cursor: "pointer",
+            }}
             onClick={() => navigate(createPageUrl("Studio"))}
           >
-            <div style={{ background: "linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)", width: 40, height: 40, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(139,92,246,0.3)" }}>
+            <div
+              style={{
+                background: "linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)",
+                width: 40,
+                height: 40,
+                borderRadius: 12,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 4px 12px rgba(139,92,246,0.3)",
+              }}
+            >
               <Film size={22} color="#fff" />
             </div>
             <div>
-              <h1 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff", letterSpacing: "-0.02em" }}>StudioVideo</h1>
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: 18,
+                  fontWeight: 800,
+                  color: "#fff",
+                  letterSpacing: "-0.02em",
+                }}
+              >
+                StudioVideo
+              </h1>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#10B981" }} />
-                <span style={{ fontSize: 11, fontWeight: 600, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.05em" }}>AI Engine Active</span>
+                <div
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    background: "#10B981",
+                  }}
+                />
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "#94A3B8",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  AI Engine Active
+                </span>
               </div>
             </div>
           </div>
@@ -556,11 +622,13 @@ const StudioVideo = () => {
                 border: "1px solid rgba(255, 255, 255, 0.08)",
                 borderRadius: 12,
                 cursor: "pointer",
-                transition: "all 0.2s"
+                transition: "all 0.2s",
               }}
             >
               <Coins size={16} color="#F59E0B" />
-              <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{credits}</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>
+                {credits}
+              </span>
               <span style={{ fontSize: 11, color: "#94A3B8" }}>Credits</span>
             </button>
 
@@ -585,7 +653,10 @@ const StudioVideo = () => {
         </div>
       </header>
 
-      <WalletTransactionsDialog open={showTransactions} onOpenChange={setShowTransactions} />
+      <WalletTransactionsDialog
+        open={showTransactions}
+        onOpenChange={setShowTransactions}
+      />
 
       {/* ── SPLIT VIEW CONTAINER ── */}
       {/* ── SPLIT VIEW CONTAINER ── */}
@@ -611,10 +682,27 @@ const StudioVideo = () => {
             zIndex: 10,
           }}
         >
-          <div style={{ flex: 1, overflowY: "auto", padding: "32px 24px", display: "flex", flexDirection: "column", gap: 32 }}>
+          <div
+            style={{
+              flex: 1,
+              overflowY: "auto",
+              padding: "32px 24px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 32,
+            }}
+          >
             {/* Title */}
             <div>
-              <h2 style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 6, letterSpacing: "-0.02em" }}>
+              <h2
+                style={{
+                  fontSize: 24,
+                  fontWeight: 800,
+                  color: "#fff",
+                  marginBottom: 6,
+                  letterSpacing: "-0.02em",
+                }}
+              >
                 Configuration
               </h2>
               <p style={{ fontSize: 13, color: "#94A3B8", lineHeight: 1.5 }}>
@@ -625,14 +713,27 @@ const StudioVideo = () => {
             {/* ── MODEL SELECTOR ── */}
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
               <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#6B7280", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: "#6B7280",
+                    marginBottom: 10,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
                   Select AI Model
                 </label>
-                <Select value={selectedModel} onValueChange={(v) => {
-                  setSelectedModel(v);
-                  const m = videoModels.find((m) => m.id === v);
-                  if (m?.duration?.[0]) setDuration(m.duration[0]);
-                }}>
+                <Select
+                  value={selectedModel}
+                  onValueChange={(v) => {
+                    setSelectedModel(v);
+                    const m = videoModels.find((m) => m.id === v);
+                    if (m?.duration?.[0]) setDuration(m.duration[0]);
+                  }}
+                >
                   <SelectTrigger
                     style={{
                       background: "rgba(255, 255, 255, 0.02)",
@@ -644,36 +745,75 @@ const StudioVideo = () => {
                       boxShadow: "none",
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <span style={{ fontSize: 20 }}>{selectedModelData?.icon}</span>
+                    <div
+                      style={{ display: "flex", alignItems: "center", gap: 12 }}
+                    >
+                      <span style={{ fontSize: 20 }}>
+                        {selectedModelData?.icon}
+                      </span>
                       <div style={{ textAlign: "left" }}>
-                        <div style={{ fontSize: 14, fontWeight: 600 }}>{selectedModelData?.name}</div>
-                        <div style={{ fontSize: 11, color: "#94A3B8" }}>{selectedModelData?.cost} credits</div>
+                        <div style={{ fontSize: 14, fontWeight: 600 }}>
+                          {selectedModelData?.name}
+                        </div>
+                        <div style={{ fontSize: 11, color: "#94A3B8" }}>
+                          {selectedModelData?.cost} credits
+                        </div>
                       </div>
                     </div>
                   </SelectTrigger>
-                  <SelectContent style={{ background: "#111116", border: "1px solid rgba(255, 255, 255, 0.1)", borderRadius: 12, boxShadow: "0 10px 25px rgba(0,0,0,0.3)" }}>
+                  <SelectContent
+                    style={{
+                      background: "#111116",
+                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                      borderRadius: 12,
+                      boxShadow: "0 10px 25px rgba(0,0,0,0.3)",
+                    }}
+                  >
                     {videoModels.map((model) => (
-                      <SelectItem key={model.id} value={model.id} style={{ padding: "8px 12px", borderRadius: 8, color: "#fff" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <SelectItem
+                        key={model.id}
+                        value={model.id}
+                        style={{
+                          padding: "8px 12px",
+                          borderRadius: 8,
+                          color: "#fff",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 12,
+                          }}
+                        >
                           <span style={{ fontSize: 20 }}>{model.icon}</span>
                           <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 600, color: "#fff", fontSize: 14 }}>{model.name}</div>
+                            <div
+                              style={{
+                                fontWeight: 600,
+                                color: "#fff",
+                                fontSize: 14,
+                              }}
+                            >
+                              {model.name}
+                            </div>
                             <div style={{ fontSize: 11, color: "#94A3B8" }}>
                               {model.cost} credits · {model.description}
                             </div>
                           </div>
                           {model.tag && (
-                            <span style={{
-                              marginLeft: "auto",
-                              fontSize: 10,
-                              fontWeight: 700,
-                              padding: "2px 8px",
-                              borderRadius: 999,
-                              background: `${model.tagColor}15`,
-                              color: model.tagColor,
-                              border: `1px solid ${model.tagColor}30`,
-                            }}>
+                            <span
+                              style={{
+                                marginLeft: "auto",
+                                fontSize: 10,
+                                fontWeight: 700,
+                                padding: "2px 8px",
+                                borderRadius: 999,
+                                background: `${model.tagColor}15`,
+                                color: model.tagColor,
+                                border: `1px solid ${model.tagColor}30`,
+                              }}
+                            >
                               {model.tag}
                             </span>
                           )}
@@ -686,11 +826,31 @@ const StudioVideo = () => {
 
               {/* ── PROMPT AREA ── */}
               <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 10 }}>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-end",
+                    marginBottom: 10,
+                  }}
+                >
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: "#94A3B8",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
                     Prompt
                   </label>
-                  <span style={{ fontSize: 11, color: "#94A3B8", fontWeight: 500 }}>{prompt.length} / 1000</span>
+                  <span
+                    style={{ fontSize: 11, color: "#94A3B8", fontWeight: 500 }}
+                  >
+                    {prompt.length} / 1000
+                  </span>
                 </div>
                 <Textarea
                   value={prompt}
@@ -712,7 +872,8 @@ const StudioVideo = () => {
                   onFocus={(e) => {
                     e.target.style.background = "rgba(255, 255, 255, 0.05)";
                     e.target.style.borderColor = "#8B5CF6";
-                    e.target.style.boxShadow = "0 0 0 4px rgba(139,92,246,0.15)";
+                    e.target.style.boxShadow =
+                      "0 0 0 4px rgba(139,92,246,0.15)";
                   }}
                   onBlur={(e) => {
                     e.target.style.background = "rgba(255, 255, 255, 0.02)";
@@ -724,32 +885,138 @@ const StudioVideo = () => {
 
               {/* ── ASSETS ── */}
               <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#94A3B8", marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: "#94A3B8",
+                    marginBottom: 12,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
                   Assets
                 </label>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 12 }}
+                >
                   {selectedAssets.length > 0 ? (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 12,
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 8,
+                        }}
+                      >
                         {selectedAssets.map((asset, index) => {
                           const isImage = asset.type === "image";
-                          const label = isImage ? (index === 0 ? "Start Frame" : index === 1 ? "End Frame" : "Reference") : "Audio";
+                          const label = isImage
+                            ? index === 0
+                              ? "Start Frame"
+                              : index === 1
+                                ? "End Frame"
+                                : "Reference"
+                            : "Audio";
                           return (
-                            <div key={asset.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px", background: "rgba(255, 255, 255, 0.02)", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 12, position: "relative" }}>
+                            <div
+                              key={asset.id}
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 12,
+                                padding: "10px",
+                                background: "rgba(255, 255, 255, 0.02)",
+                                border: "1px solid rgba(255, 255, 255, 0.08)",
+                                borderRadius: 12,
+                                position: "relative",
+                              }}
+                            >
                               {isImage ? (
-                                <img src={asset.url} style={{ width: 44, height: 44, borderRadius: 8, objectFit: "cover" }} alt="" />
+                                <img
+                                  src={asset.url}
+                                  style={{
+                                    width: 44,
+                                    height: 44,
+                                    borderRadius: 8,
+                                    objectFit: "cover",
+                                  }}
+                                  alt=""
+                                />
                               ) : (
-                                <div style={{ width: 44, height: 44, borderRadius: 8, background: "rgba(139,92,246,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <div
+                                  style={{
+                                    width: 44,
+                                    height: 44,
+                                    borderRadius: 8,
+                                    background: "rgba(139,92,246,0.1)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                  }}
+                                >
                                   <Film size={20} color="#8B5CF6" />
                                 </div>
                               )}
                               <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                  <Badge variant="outline" style={{ height: 18, fontSize: 9, fontWeight: 700, padding: "0 6px", background: "rgba(255, 255, 255, 0.05)", color: "#94A3B8", border: "1px solid rgba(255, 255, 255, 0.1)" }}>{label}</Badge>
-                                  <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{asset.name}</p>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                  }}
+                                >
+                                  <Badge
+                                    variant="outline"
+                                    style={{
+                                      height: 18,
+                                      fontSize: 9,
+                                      fontWeight: 700,
+                                      padding: "0 6px",
+                                      background: "rgba(255, 255, 255, 0.05)",
+                                      color: "#94A3B8",
+                                      border:
+                                        "1px solid rgba(255, 255, 255, 0.1)",
+                                    }}
+                                  >
+                                    {label}
+                                  </Badge>
+                                  <p
+                                    style={{
+                                      margin: 0,
+                                      fontSize: 13,
+                                      fontWeight: 600,
+                                      color: "#fff",
+                                      whiteSpace: "nowrap",
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                    }}
+                                  >
+                                    {asset.name}
+                                  </p>
                                 </div>
                               </div>
-                              <button onClick={() => setSelectedAssets(prev => prev.filter(a => a.id !== asset.id))} style={{ color: "#94A3B8", background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+                              <button
+                                onClick={() =>
+                                  setSelectedAssets((prev) =>
+                                    prev.filter((a) => a.id !== asset.id),
+                                  )
+                                }
+                                style={{
+                                  color: "#94A3B8",
+                                  background: "none",
+                                  border: "none",
+                                  cursor: "pointer",
+                                  padding: 4,
+                                }}
+                              >
                                 <X size={16} />
                               </button>
                             </div>
@@ -757,16 +1024,29 @@ const StudioVideo = () => {
                         })}
                       </div>
 
-                      {selectedAssets.filter(a => a.type === "image").length === 2 && (
+                      {selectedAssets.filter((a) => a.type === "image")
+                        .length === 2 && (
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            const images = selectedAssets.filter(a => a.type === "image");
-                            const nonImages = selectedAssets.filter(a => a.type !== "image");
-                            setSelectedAssets([...images.reverse(), ...nonImages]);
+                            const images = selectedAssets.filter(
+                              (a) => a.type === "image",
+                            );
+                            const nonImages = selectedAssets.filter(
+                              (a) => a.type !== "image",
+                            );
+                            setSelectedAssets([
+                              ...images.reverse(),
+                              ...nonImages,
+                            ]);
                           }}
-                          style={{ height: 32, fontSize: 11, gap: 6, borderRadius: 8 }}
+                          style={{
+                            height: 32,
+                            fontSize: 11,
+                            gap: 6,
+                            borderRadius: 8,
+                          }}
                         >
                           <Zap size={12} />
                           Swap Frames
@@ -790,33 +1070,101 @@ const StudioVideo = () => {
                       cursor: "pointer",
                       transition: "all 0.2s",
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = "#8B5CF6"; e.currentTarget.style.background = "rgba(139,92,246,0.05)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.1)"; e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)"; }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = "#8B5CF6";
+                      e.currentTarget.style.background =
+                        "rgba(139,92,246,0.05)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor =
+                        "rgba(255, 255, 255, 0.1)";
+                      e.currentTarget.style.background =
+                        "rgba(255, 255, 255, 0.02)";
+                    }}
                   >
                     <Upload size={20} color="#94A3B8" />
                     <div style={{ textAlign: "center" }}>
-                      <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "#fff" }}>Add Media</p>
-                      <p style={{ margin: 0, fontSize: 11, color: "#94A3B8" }}>Upload or select legacy assets</p>
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: 14,
+                          fontWeight: 600,
+                          color: "#fff",
+                        }}
+                      >
+                        Add Media
+                      </p>
+                      <p style={{ margin: 0, fontSize: 11, color: "#94A3B8" }}>
+                        Upload or select legacy assets
+                      </p>
                     </div>
                   </button>
                 </div>
 
                 {/* ── SETTINGS: ASPECT RATIO & DURATION ── */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 16,
+                  }}
+                >
                   <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#94A3B8", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: "#94A3B8",
+                        marginBottom: 10,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
                       Orientation
                     </label>
                     <Select value={aspectRatio} onValueChange={setAspectRatio}>
-                      <SelectTrigger style={{ background: "rgba(255, 255, 255, 0.02)", border: "1px solid rgba(255, 255, 255, 0.1)", borderRadius: 12, height: 48, boxShadow: "none", color: "#fff" }}>
+                      <SelectTrigger
+                        style={{
+                          background: "rgba(255, 255, 255, 0.02)",
+                          border: "1px solid rgba(255, 255, 255, 0.1)",
+                          borderRadius: 12,
+                          height: 48,
+                          boxShadow: "none",
+                          color: "#fff",
+                        }}
+                      >
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent style={{ background: "#111116", border: "1px solid rgba(255, 255, 255, 0.1)", borderRadius: 12 }}>
-                        {aspectRatios.map(ar => (
-                          <SelectItem key={ar.value} value={ar.value} style={{ borderRadius: 8, color: "#fff" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                              <div className={`${ar.shape} bg-slate-700 rounded-sm border border-slate-600`} />
-                              <span>{ar.label} <span style={{ opacity: 0.5, fontSize: 11 }}>({ar.hint})</span></span>
+                      <SelectContent
+                        style={{
+                          background: "#111116",
+                          border: "1px solid rgba(255, 255, 255, 0.1)",
+                          borderRadius: 12,
+                        }}
+                      >
+                        {aspectRatios.map((ar) => (
+                          <SelectItem
+                            key={ar.value}
+                            value={ar.value}
+                            style={{ borderRadius: 8, color: "#fff" }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                              }}
+                            >
+                              <div
+                                className={`${ar.shape} bg-slate-700 rounded-sm border border-slate-600`}
+                              />
+                              <span>
+                                {ar.label}{" "}
+                                <span style={{ opacity: 0.5, fontSize: 11 }}>
+                                  ({ar.hint})
+                                </span>
+                              </span>
                             </div>
                           </SelectItem>
                         ))}
@@ -825,31 +1173,102 @@ const StudioVideo = () => {
                   </div>
 
                   <div>
-                    <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#94A3B8", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: "#94A3B8",
+                        marginBottom: 10,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
                       Duration
                     </label>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, height: 48, background: "rgba(255, 255, 255, 0.02)", border: "1px solid rgba(255, 255, 255, 0.1)", borderRadius: 12, padding: "0 12px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                        height: 48,
+                        background: "rgba(255, 255, 255, 0.02)",
+                        border: "1px solid rgba(255, 255, 255, 0.1)",
+                        borderRadius: 12,
+                        padding: "0 12px",
+                      }}
+                    >
                       <input
                         type="range"
-                        min={videoModels.find(m => m.id === selectedModel)?.duration?.[0] || 5}
-                        max={videoModels.find(m => m.id === selectedModel)?.duration?.[1] || 10}
+                        min={
+                          videoModels.find((m) => m.id === selectedModel)
+                            ?.duration?.[0] || 5
+                        }
+                        max={
+                          videoModels.find((m) => m.id === selectedModel)
+                            ?.duration?.[1] || 10
+                        }
                         step={1}
                         value={duration}
                         onChange={(e) => setDuration(parseInt(e.target.value))}
-                        style={{ flex: 1, accentColor: "#8B5CF6", cursor: "pointer" }}
+                        style={{
+                          flex: 1,
+                          accentColor: "#8B5CF6",
+                          cursor: "pointer",
+                        }}
                       />
-                      <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", minWidth: 32 }}>{duration}s</span>
+                      <span
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 700,
+                          color: "#fff",
+                          minWidth: 32,
+                        }}
+                      >
+                        {duration}s
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* ── ADDITIONAL CONTROLS: AUDIO & RESOLUTION ── */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 24, padding: "8px 0" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(255, 255, 255, 0.02)", padding: "16px", borderRadius: 16, border: "1px solid rgba(255, 255, 255, 0.08)" }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                    <Label htmlFor="audio-toggle" style={{ fontSize: 14, fontWeight: 700, color: "#fff", cursor: "pointer" }}>Generate Audio</Label>
-                    <span style={{ fontSize: 11, color: "#94A3B8" }}>Model-generated synchronized sound</span>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 24,
+                  padding: "8px 0",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    background: "rgba(255, 255, 255, 0.02)",
+                    padding: "16px",
+                    borderRadius: 16,
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                  }}
+                >
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: 2 }}
+                  >
+                    <Label
+                      htmlFor="audio-toggle"
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: "#fff",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Generate Audio
+                    </Label>
+                    <span style={{ fontSize: 11, color: "#94A3B8" }}>
+                      Model-generated synchronized sound
+                    </span>
                   </div>
                   <Switch
                     id="audio-toggle"
@@ -860,11 +1279,21 @@ const StudioVideo = () => {
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "#94A3B8", marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: "#94A3B8",
+                      marginBottom: 12,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
                     Output Quality
                   </label>
                   <div style={{ display: "flex", gap: 8 }}>
-                    {["480p", "720p", "1080p"].map(res => (
+                    {["480p", "720p", "1080p"].map((res) => (
                       <button
                         key={res}
                         onClick={() => setResolution(res)}
@@ -872,13 +1301,19 @@ const StudioVideo = () => {
                           flex: 1,
                           height: 40,
                           borderRadius: 10,
-                          border: resolution === res ? "1px solid #8B5CF6" : "1px solid rgba(255,255,255,0.1)",
-                          background: resolution === res ? "rgba(139,92,246,0.15)" : "rgba(255,255,255,0.05)",
+                          border:
+                            resolution === res
+                              ? "1px solid #8B5CF6"
+                              : "1px solid rgba(255,255,255,0.1)",
+                          background:
+                            resolution === res
+                              ? "rgba(139,92,246,0.15)"
+                              : "rgba(255,255,255,0.05)",
                           color: resolution === res ? "#fff" : "#94A3B8",
                           fontSize: 13,
                           fontWeight: 600,
                           transition: "all 0.2s",
-                          cursor: "pointer"
+                          cursor: "pointer",
                         }}
                       >
                         {res}
@@ -891,10 +1326,31 @@ const StudioVideo = () => {
           </div>
 
           {/* Sidebar Footer (Generate Button) */}
-          <div style={{ padding: "24px", borderTop: "1px solid rgba(255, 255, 255, 0.08)", background: "#111116" }}>
-            <div style={{ marginBottom: 16, padding: 12, background: "rgba(139,92,246,0.05)", border: "1px solid rgba(139,92,246,0.1)", borderRadius: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: 12, color: "#94A3B8" }}>Estimated Cost</span>
-              <span style={{ fontSize: 14, fontWeight: 800, color: "#8B5CF6" }}>{selectedModelData?.cost} Credits</span>
+          <div
+            style={{
+              padding: "24px",
+              borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+              background: "#111116",
+            }}
+          >
+            <div
+              style={{
+                marginBottom: 16,
+                padding: 12,
+                background: "rgba(139,92,246,0.05)",
+                border: "1px solid rgba(139,92,246,0.1)",
+                borderRadius: 12,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <span style={{ fontSize: 12, color: "#94A3B8" }}>
+                Estimated Cost
+              </span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: "#8B5CF6" }}>
+                {selectedModelData?.cost} Credits
+              </span>
             </div>
             <button
               onClick={handleGenerate}
@@ -904,7 +1360,9 @@ const StudioVideo = () => {
                 height: 54,
                 borderRadius: 14,
                 border: "none",
-                background: canGenerate ? "linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)" : "rgba(255, 255, 255, 0.05)",
+                background: canGenerate
+                  ? "linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)"
+                  : "rgba(255, 255, 255, 0.05)",
                 color: canGenerate ? "#fff" : "#94A3B8",
                 fontSize: 16,
                 fontWeight: 700,
@@ -913,13 +1371,18 @@ const StudioVideo = () => {
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 10,
-                boxShadow: canGenerate ? "0 4px 12px rgba(139,92,246,0.2)" : "none",
+                boxShadow: canGenerate
+                  ? "0 4px 12px rgba(139,92,246,0.2)"
+                  : "none",
                 transition: "all 0.2s",
               }}
             >
               {isGenerating ? (
                 <>
-                  <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />
+                  <Loader2
+                    size={18}
+                    style={{ animation: "spin 1s linear infinite" }}
+                  />
                   Generating...
                 </>
               ) : (
@@ -933,70 +1396,252 @@ const StudioVideo = () => {
         </aside>
 
         {/* ── RIGHT: PREVIEW AREA (The Stage) ── */}
-        <div style={{
-          flex: 1,
-          position: "relative",
-          display: "flex",
-          flexDirection: "column",
-          background: "#0A0A0F",
-          overflow: "hidden",
-        }}>
+        <div
+          style={{
+            flex: 1,
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+            background: "#0A0A0F",
+            overflow: "hidden",
+          }}
+        >
           {/* Header for preview */}
-          <div style={{ height: 64, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", background: "#111116", borderBottom: "1px solid rgba(255, 255, 255, 0.08)" }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: "#fff", margin: 0 }}>Preview Output</h3>
+          <div
+            style={{
+              height: 64,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "0 24px",
+              background: "#111116",
+              borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+            }}
+          >
+            <h3
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                color: "#fff",
+                margin: 0,
+              }}
+            >
+              Preview Output
+            </h3>
             <div style={{ display: "flex", gap: 12 }}>
-              <Badge variant="outline" style={{ background: "rgba(255, 255, 255, 0.05)", border: "none", color: "#94A3B8" }}>{aspectRatio}</Badge>
-              <Badge variant="outline" style={{ background: "rgba(255, 255, 255, 0.05)", border: "none", color: "#94A3B8" }}>{duration}s</Badge>
+              <Badge
+                variant="outline"
+                style={{
+                  background: "rgba(255, 255, 255, 0.05)",
+                  border: "none",
+                  color: "#94A3B8",
+                }}
+              >
+                {aspectRatio}
+              </Badge>
+              <Badge
+                variant="outline"
+                style={{
+                  background: "rgba(255, 255, 255, 0.05)",
+                  border: "none",
+                  color: "#94A3B8",
+                }}
+              >
+                {duration}s
+              </Badge>
             </div>
           </div>
 
           {/* Workspace content */}
-          <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}>
-            <div style={{ flexShrink: 0, padding: "40px 40px", display: "flex", alignItems: "center", justifyContent: "center", minHeight: 450 }}>
-              <Card style={{
-                width: "100%",
-                maxWidth: 800,
-                aspectRatio: aspectRatio === "16:9" ? "16/9" : aspectRatio === "9:16" ? "9/16" : "1/1",
-                background: "#111116",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
-                borderRadius: 24,
-                boxShadow: "0 20px 50px rgba(0,0,0,0.3)",
-                overflow: "hidden",
-                position: "relative",
+          <div
+            style={{
+              flex: 1,
+              overflowY: "auto",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <div
+              style={{
+                flexShrink: 0,
+                padding: "40px 40px",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center"
-              }}>
+                justifyContent: "center",
+                minHeight: 450,
+              }}
+            >
+              <Card
+                style={{
+                  width: "100%",
+                  maxWidth: 800,
+                  aspectRatio:
+                    aspectRatio === "16:9"
+                      ? "16/9"
+                      : aspectRatio === "9:16"
+                        ? "9/16"
+                        : "1/1",
+                  background: "#111116",
+                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  borderRadius: 24,
+                  boxShadow: "0 20px 50px rgba(0,0,0,0.3)",
+                  overflow: "hidden",
+                  position: "relative",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
                 {!isGenerating && !generatingJobId ? (
-                  <div style={{ textAlign: "center", padding: 40 }}>
-                    <div style={{ width: 80, height: 80, borderRadius: 24, background: "rgba(139,92,246,0.1)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px" }}>
-                      <ImageIcon size={32} color="#8B5CF6" />
-                    </div>
-                    <h4 style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 8 }}>Ready to Create</h4>
-                    <p style={{ fontSize: 14, color: "#94A3B8", maxWidth: 280, margin: "0 auto" }}>Configure parameters and click "Generate Video" to start.</p>
-                  </div>
-                ) : (
-                  <div style={{ textAlign: "center", padding: 40, width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    {/* Check if the job we are waiting for is in the generations list and completed */}
-                    {generations?.find(g => g.id === generatingJobId)?.status === "completed" &&
-                      generations?.find(g => g.id === generatingJobId)?.output_urls?.[0] ? (
+                  (() => {
+                    const lastCompleted = generations?.find(
+                      (g) => g.status === "completed" && g.output_urls?.[0],
+                    );
+                    return lastCompleted ? (
                       <video
-                        src={generations?.find(g => g.id === generatingJobId)?.output_urls[0]}
+                        key={lastCompleted.id}
+                        src={lastCompleted.output_urls[0]}
                         controls
                         autoPlay
-                        style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                        loop
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "contain",
+                        }}
+                      />
+                    ) : (
+                      <div style={{ textAlign: "center", padding: 40 }}>
+                        <div
+                          style={{
+                            width: 80,
+                            height: 80,
+                            borderRadius: 24,
+                            background: "rgba(139,92,246,0.1)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            margin: "0 auto 24px",
+                          }}
+                        >
+                          <ImageIcon size={32} color="#8B5CF6" />
+                        </div>
+                        <h4
+                          style={{
+                            fontSize: 18,
+                            fontWeight: 700,
+                            color: "#fff",
+                            marginBottom: 8,
+                          }}
+                        >
+                          Ready to Create
+                        </h4>
+                        <p
+                          style={{
+                            fontSize: 14,
+                            color: "#94A3B8",
+                            maxWidth: 280,
+                            margin: "0 auto",
+                          }}
+                        >
+                          Configure parameters and click "Generate Video" to
+                          start.
+                        </p>
+                      </div>
+                    );
+                  })()
+                ) : (
+                  <div
+                    style={{
+                      textAlign: "center",
+                      padding: 40,
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {/* Check if the job we are waiting for is in the generations list and completed */}
+                    {generations?.find((g) => g.id === generatingJobId)
+                      ?.status === "completed" &&
+                    generations?.find((g) => g.id === generatingJobId)
+                      ?.output_urls?.[0] ? (
+                      <video
+                        src={
+                          generations?.find((g) => g.id === generatingJobId)
+                            ?.output_urls[0]
+                        }
+                        controls
+                        autoPlay
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "contain",
+                        }}
                       />
                     ) : (
                       <div>
-                        <div style={{ position: "relative", width: 100, height: 100, margin: "0 auto 24px" }}>
-                          <Loader2 size={48} className="animate-spin" style={{ position: "absolute", top: "25%", left: "25%", color: "#8B5CF6" }} />
-                          <svg style={{ transform: "rotate(-90deg)", width: "100%", height: "100%" }}>
-                            <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="6" />
-                            <circle cx="50" cy="50" r="45" fill="none" stroke="#8B5CF6" strokeWidth="6" strokeDasharray="282.7" strokeDashoffset={282.7 * (1 - 0.45)} strokeLinecap="round" className="animate-pulse" />
+                        <div
+                          style={{
+                            position: "relative",
+                            width: 100,
+                            height: 100,
+                            margin: "0 auto 24px",
+                          }}
+                        >
+                          <Loader2
+                            size={48}
+                            className="animate-spin"
+                            style={{
+                              position: "absolute",
+                              top: "25%",
+                              left: "25%",
+                              color: "#8B5CF6",
+                            }}
+                          />
+                          <svg
+                            style={{
+                              transform: "rotate(-90deg)",
+                              width: "100%",
+                              height: "100%",
+                            }}
+                          >
+                            <circle
+                              cx="50"
+                              cy="50"
+                              r="45"
+                              fill="none"
+                              stroke="rgba(255, 255, 255, 0.05)"
+                              strokeWidth="6"
+                            />
+                            <circle
+                              cx="50"
+                              cy="50"
+                              r="45"
+                              fill="none"
+                              stroke="#8B5CF6"
+                              strokeWidth="6"
+                              strokeDasharray="282.7"
+                              strokeDashoffset={282.7 * (1 - 0.45)}
+                              strokeLinecap="round"
+                              className="animate-pulse"
+                            />
                           </svg>
                         </div>
-                        <h4 style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 8 }}>Generating Video...</h4>
-                        <p style={{ fontSize: 13, color: "#94A3B8" }}>Processing your request on the AI cluster.</p>
+                        <h4
+                          style={{
+                            fontSize: 18,
+                            fontWeight: 700,
+                            color: "#fff",
+                            marginBottom: 8,
+                          }}
+                        >
+                          Generating Video...
+                        </h4>
+                        <p style={{ fontSize: 13, color: "#94A3B8" }}>
+                          Processing your request on the AI cluster.
+                        </p>
                       </div>
                     )}
                   </div>
@@ -1006,74 +1651,224 @@ const StudioVideo = () => {
 
             {/* ── RECENT ARTIFACTS GALLERY ── */}
             <div style={{ padding: "0 40px 60px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, paddingBottom: 16, borderBottom: "1px solid rgba(255, 255, 255, 0.05)" }}>
-                <h2 style={{ fontSize: 18, fontWeight: 800, color: "#fff", display: "flex", alignItems: "center", gap: 10 }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: 24,
+                  paddingBottom: 16,
+                  borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
+                }}
+              >
+                <h2
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 800,
+                    color: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                  }}
+                >
                   <Sparkles size={18} color="#8B5CF6" />
                   Recent Artifacts
                 </h2>
-                <Badge variant="outline" style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.1)", color: "#94A3B8" }}>
+                <Badge
+                  variant="outline"
+                  style={{
+                    background: "rgba(255, 255, 255, 0.03)",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    color: "#94A3B8",
+                  }}
+                >
                   {generations?.length || 0} Total
                 </Badge>
               </div>
 
               {generations && generations.length > 0 ? (
-                <div style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-                  gap: 20
-                }}>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(260px, 1fr))",
+                    gap: 20,
+                  }}
+                >
                   {generations.map((gen) => (
-                    <Card key={gen.id} style={{
-                      background: "#16161D",
-                      border: "1px solid rgba(255,255,255,0.06)",
-                      borderRadius: 16,
-                      overflow: "hidden",
-                      transition: "transform 0.2s, border-color 0.2s",
-                      cursor: gen.status === "completed" ? "pointer" : "default"
-                    }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(139,92,246,0.3)"; e.currentTarget.style.transform = "translateY(-4px)"; }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.transform = "none"; }}
+                    <Card
+                      key={gen.id}
+                      style={{
+                        background: "#16161D",
+                        border: "1px solid rgba(255,255,255,0.06)",
+                        borderRadius: 16,
+                        overflow: "hidden",
+                        transition: "transform 0.2s, border-color 0.2s",
+                        cursor:
+                          gen.status === "completed" ? "pointer" : "default",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor =
+                          "rgba(139,92,246,0.3)";
+                        e.currentTarget.style.transform = "translateY(-4px)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor =
+                          "rgba(255,255,255,0.06)";
+                        e.currentTarget.style.transform = "none";
+                      }}
                     >
-                      <div style={{ position: "relative", aspectRatio: "16/9", background: "#000" }}>
+                      <div
+                        style={{
+                          position: "relative",
+                          aspectRatio: "16/9",
+                          background: "#000",
+                        }}
+                      >
                         {gen.status === "completed" && gen.output_urls?.[0] ? (
                           <video
                             src={gen.output_urls[0]}
-                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                            onMouseEnter={e => (e.target as HTMLVideoElement).play()}
-                            onMouseLeave={e => { (e.target as HTMLVideoElement).pause(); (e.target as HTMLVideoElement).currentTime = 0; }}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.target as HTMLVideoElement).play()
+                            }
+                            onMouseLeave={(e) => {
+                              (e.target as HTMLVideoElement).pause();
+                              (e.target as HTMLVideoElement).currentTime = 0;
+                            }}
                             muted
                             loop
                           />
                         ) : gen.status === "processing" ? (
-                          <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, background: "rgba(139,92,246,0.05)" }}>
-                            <Loader2 size={24} className="animate-spin" color="#8B5CF6" />
-                            <span style={{ fontSize: 11, fontWeight: 700, color: "#8B5CF6", textTransform: "uppercase" }}>Evolving...</span>
+                          <div
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: 12,
+                              background: "rgba(139,92,246,0.05)",
+                            }}
+                          >
+                            <Loader2
+                              size={24}
+                              className="animate-spin"
+                              color="#8B5CF6"
+                            />
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 700,
+                                color: "#8B5CF6",
+                                textTransform: "uppercase",
+                              }}
+                            >
+                              Evolving...
+                            </span>
                           </div>
                         ) : (
-                          <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, background: "rgba(239, 68, 68, 0.05)" }}>
+                          <div
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: 8,
+                              background: "rgba(239, 68, 68, 0.05)",
+                            }}
+                          >
                             <X size={24} color="#EF4444" />
-                            <span style={{ fontSize: 11, fontWeight: 700, color: "#EF4444", textTransform: "uppercase" }}>Failed</span>
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 700,
+                                color: "#EF4444",
+                                textTransform: "uppercase",
+                              }}
+                            >
+                              Failed
+                            </span>
                           </div>
                         )}
 
-                        <div style={{ position: "absolute", top: 8, left: 8, display: "flex", gap: 6 }}>
-                          <Badge variant="outline" style={{ background: "rgba(0,0,0,0.5)", border: "none", color: "#fff", fontSize: 9 }}>
-                            {videoModels.find(m => m.id === gen.model)?.name || "AI Video"}
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: 8,
+                            left: 8,
+                            display: "flex",
+                            gap: 6,
+                          }}
+                        >
+                          <Badge
+                            variant="outline"
+                            style={{
+                              background: "rgba(0,0,0,0.5)",
+                              border: "none",
+                              color: "#fff",
+                              fontSize: 9,
+                            }}
+                          >
+                            {videoModels.find((m) => m.id === gen.model)
+                              ?.name || "AI Video"}
                           </Badge>
                         </div>
                       </div>
                       <div style={{ padding: 12 }}>
-                        <p style={{ margin: 0, fontSize: 12, color: "#94A3B8", lineHeight: 1.4, height: 34, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                        <p
+                          style={{
+                            margin: 0,
+                            fontSize: 12,
+                            color: "#94A3B8",
+                            lineHeight: 1.4,
+                            height: 34,
+                            overflow: "hidden",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                          }}
+                        >
                           {gen.input_params?.prompt || "No prompt provided"}
                         </p>
-                        <div style={{ marginTop: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                          <span style={{ fontSize: 10, color: "#4B5563", fontWeight: 600 }}>
+                        <div
+                          style={{
+                            marginTop: 12,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: 10,
+                              color: "#4B5563",
+                              fontWeight: 600,
+                            }}
+                          >
                             {new Date(gen.created_at).toLocaleDateString()}
                           </span>
                           {gen.status === "completed" && (
                             <button
-                              onClick={(e) => { e.stopPropagation(); window.open(gen.output_urls?.[0], '_blank'); }}
-                              style={{ background: "none", border: "none", cursor: "pointer", color: "#6366F1", display: "flex", alignItems: "center" }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(gen.output_urls?.[0], "_blank");
+                              }}
+                              style={{
+                                background: "none",
+                                border: "none",
+                                cursor: "pointer",
+                                color: "#6366F1",
+                                display: "flex",
+                                alignItems: "center",
+                              }}
                             >
                               <Download size={14} />
                             </button>
@@ -1085,8 +1880,14 @@ const StudioVideo = () => {
                 </div>
               ) : (
                 <div style={{ textAlign: "center", padding: "60px 0" }}>
-                  <Film size={48} color="rgba(255,255,255,0.05)" style={{ margin: "0 auto 16px" }} />
-                  <p style={{ color: "#4B5563", fontSize: 14 }}>No generations yet. Start by creating a video.</p>
+                  <Film
+                    size={48}
+                    color="rgba(255,255,255,0.05)"
+                    style={{ margin: "0 auto 16px" }}
+                  />
+                  <p style={{ color: "#4B5563", fontSize: 14 }}>
+                    No generations yet. Start by creating a video.
+                  </p>
                 </div>
               )}
             </div>
@@ -1104,44 +1905,65 @@ const StudioVideo = () => {
 
       {/* ── NO CREDITS MODAL ── */}
       {showSubscriptionModal && (
-        <div style={{
-          position: "fixed",
-          inset: 0,
-          background: "rgba(0,0,0,0.85)",
-          backdropFilter: "blur(10px)",
-          zIndex: 100,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 24,
-        }}>
-          <div style={{
-            maxWidth: 420,
-            width: "100%",
-            background: "#12121C",
-            border: "1px solid rgba(139,92,246,0.3)",
-            borderRadius: 24,
-            padding: 40,
-            textAlign: "center",
-            boxShadow: "0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(139,92,246,0.15)",
-          }}>
-            <div style={{
-              width: 72,
-              height: 72,
-              borderRadius: 20,
-              background: "linear-gradient(135deg, #7C3AED, #F18B6A)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              margin: "0 auto 24px",
-              fontSize: 32,
-            }}>
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.85)",
+            backdropFilter: "blur(10px)",
+            zIndex: 100,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 24,
+          }}
+        >
+          <div
+            style={{
+              maxWidth: 420,
+              width: "100%",
+              background: "#12121C",
+              border: "1px solid rgba(139,92,246,0.3)",
+              borderRadius: 24,
+              padding: 40,
+              textAlign: "center",
+              boxShadow:
+                "0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(139,92,246,0.15)",
+            }}
+          >
+            <div
+              style={{
+                width: 72,
+                height: 72,
+                borderRadius: 20,
+                background: "linear-gradient(135deg, #7C3AED, #F18B6A)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 24px",
+                fontSize: 32,
+              }}
+            >
               🪙
             </div>
-            <h3 style={{ margin: "0 0 10px", fontSize: 22, fontWeight: 700, color: "#F0F0FF" }}>
+            <h3
+              style={{
+                margin: "0 0 10px",
+                fontSize: 22,
+                fontWeight: 700,
+                color: "#F0F0FF",
+              }}
+            >
               You're out of credits
             </h3>
-            <p style={{ margin: "0 0 32px", fontSize: 14, color: "#6B7280", lineHeight: 1.6 }}>
+            <p
+              style={{
+                margin: "0 0 32px",
+                fontSize: 14,
+                color: "#6B7280",
+                lineHeight: 1.6,
+              }}
+            >
               Top up your wallet to keep creating amazing AI videos.
             </p>
             <div style={{ display: "flex", gap: 12 }}>
@@ -1161,7 +1983,10 @@ const StudioVideo = () => {
                 Cancel
               </button>
               <button
-                onClick={() => { setShowSubscriptionModal(false); navigate(createPageUrl("StudioSubscribe")); }}
+                onClick={() => {
+                  setShowSubscriptionModal(false);
+                  navigate(createPageUrl("StudioSubscribe"));
+                }}
                 style={{
                   flex: 1,
                   padding: "12px 0",

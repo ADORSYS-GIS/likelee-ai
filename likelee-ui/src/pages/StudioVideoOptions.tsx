@@ -137,10 +137,10 @@ export default function StudioVideoOptions() {
       model.description.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const handleModelSelect = (model: typeof videoModels[0]) => {
+  const handleModelSelect = (model: (typeof videoModels)[0]) => {
     navigate(
       createPageUrl("StudioVideo") +
-      `?model=${encodeURIComponent(model.id)}&mode=${mode}`,
+        `?model=${encodeURIComponent(model.id)}&mode=${mode}`,
     );
   };
 
@@ -163,7 +163,8 @@ export default function StudioVideoOptions() {
       {/* ── HEADER ── */}
       <header
         style={{
-          background: "linear-gradient(90deg, #0F0F1E 0%, #120F1C 50%, #0F0F1E 100%)",
+          background:
+            "linear-gradient(90deg, #0F0F1E 0%, #120F1C 50%, #0F0F1E 100%)",
           borderBottom: "1px solid rgba(139,92,246,0.25)",
           position: "sticky",
           top: 0,
@@ -207,9 +208,22 @@ export default function StudioVideoOptions() {
               Back
             </button>
 
-            <div style={{ width: 1, height: 24, background: "rgba(255,255,255,0.1)" }} />
+            <div
+              style={{
+                width: 1,
+                height: 24,
+                background: "rgba(255,255,255,0.1)",
+              }}
+            />
 
-            <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                flex: 1,
+              }}
+            >
               <div
                 style={{
                   width: 36,
@@ -255,7 +269,12 @@ export default function StudioVideoOptions() {
             <Search
               size={16}
               color="#6B7280"
-              style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)" }}
+              style={{
+                position: "absolute",
+                left: 14,
+                top: "50%",
+                transform: "translateY(-50%)",
+              }}
             />
             <input
               value={searchQuery}
@@ -287,7 +306,9 @@ export default function StudioVideoOptions() {
       </header>
 
       {/* ── INTRO BADGE ── */}
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "28px 24px 8px" }}>
+      <div
+        style={{ maxWidth: 900, margin: "0 auto", padding: "28px 24px 8px" }}
+      >
         <div
           style={{
             display: "inline-flex",
@@ -308,7 +329,9 @@ export default function StudioVideoOptions() {
       </div>
 
       {/* ── MODEL LIST ── */}
-      <section style={{ maxWidth: 900, margin: "0 auto", padding: "12px 24px 48px" }}>
+      <section
+        style={{ maxWidth: 900, margin: "0 auto", padding: "12px 24px 48px" }}
+      >
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {filteredModels.map((model) => {
             const isHovered = hoveredModel === model.id;
@@ -361,8 +384,23 @@ export default function StudioVideoOptions() {
 
                 {/* Info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
-                    <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#F0F0FF" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      marginBottom: 4,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <h3
+                      style={{
+                        margin: 0,
+                        fontSize: 16,
+                        fontWeight: 700,
+                        color: "#F0F0FF",
+                      }}
+                    >
                       {model.name}
                     </h3>
                     {model.tag && (
@@ -384,11 +422,25 @@ export default function StudioVideoOptions() {
                     )}
                   </div>
 
-                  <p style={{ margin: "0 0 10px", fontSize: 13, color: "#6B7280", lineHeight: 1.4 }}>
+                  <p
+                    style={{
+                      margin: "0 0 10px",
+                      fontSize: 13,
+                      color: "#6B7280",
+                      lineHeight: 1.4,
+                    }}
+                  >
                     {model.description}
                   </p>
 
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      flexWrap: "wrap",
+                    }}
+                  >
                     {/* Duration */}
                     <div
                       style={{
@@ -402,7 +454,9 @@ export default function StudioVideoOptions() {
                       }}
                     >
                       <Clock size={11} color="#9CA3AF" />
-                      <span style={{ fontSize: 11, color: "#9CA3AF" }}>{model.duration}</span>
+                      <span style={{ fontSize: 11, color: "#9CA3AF" }}>
+                        {model.duration}
+                      </span>
                     </div>
                     {/* Credits */}
                     <div
@@ -417,11 +471,22 @@ export default function StudioVideoOptions() {
                       }}
                     >
                       <Coins size={11} color="#F59E0B" />
-                      <span style={{ fontSize: 11, color: "#F59E0B", fontWeight: 600 }}>{model.credits} credits</span>
+                      <span
+                        style={{
+                          fontSize: 11,
+                          color: "#F59E0B",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {model.credits} credits
+                      </span>
                     </div>
                     {/* Capabilities */}
                     {model.capabilities.map((cap) => {
-                      const style = capabilityColors[cap] || { bg: "rgba(255,255,255,0.06)", color: "#9CA3AF" };
+                      const style = capabilityColors[cap] || {
+                        bg: "rgba(255,255,255,0.06)",
+                        color: "#9CA3AF",
+                      };
                       return (
                         <span
                           key={cap}
@@ -447,7 +512,9 @@ export default function StudioVideoOptions() {
                     width: 36,
                     height: 36,
                     borderRadius: 10,
-                    background: isHovered ? "rgba(139,92,246,0.2)" : "rgba(255,255,255,0.04)",
+                    background: isHovered
+                      ? "rgba(139,92,246,0.2)"
+                      : "rgba(255,255,255,0.04)",
                     border: `1px solid ${isHovered ? "rgba(139,92,246,0.4)" : "rgba(255,255,255,0.07)"}`,
                     display: "flex",
                     alignItems: "center",
@@ -456,7 +523,10 @@ export default function StudioVideoOptions() {
                     transition: "all 0.22s",
                   }}
                 >
-                  <ChevronRight size={16} color={isHovered ? "#C084FC" : "#4B5563"} />
+                  <ChevronRight
+                    size={16}
+                    color={isHovered ? "#C084FC" : "#4B5563"}
+                  />
                 </div>
               </div>
             );
@@ -473,7 +543,8 @@ export default function StudioVideoOptions() {
           >
             <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
             <p style={{ fontSize: 16, margin: 0 }}>
-              No models found for "<span style={{ color: "#9CA3AF" }}>{searchQuery}</span>"
+              No models found for "
+              <span style={{ color: "#9CA3AF" }}>{searchQuery}</span>"
             </p>
           </div>
         )}

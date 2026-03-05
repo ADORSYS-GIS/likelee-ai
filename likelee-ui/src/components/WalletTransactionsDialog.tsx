@@ -33,7 +33,10 @@ function formatDate(iso: string): string {
   return d.toLocaleString();
 }
 
-export default function WalletTransactionsDialog({ open, onOpenChange }: Props) {
+export default function WalletTransactionsDialog({
+  open,
+  onOpenChange,
+}: Props) {
   const { data, isLoading, error } = useQuery({
     queryKey: ["studio", "transactions"],
     queryFn: () => listTransactions(),
@@ -49,14 +52,20 @@ export default function WalletTransactionsDialog({ open, onOpenChange }: Props) 
           <DialogTitle>Wallet Transactions</DialogTitle>
         </DialogHeader>
 
-        {isLoading && <div className="text-sm text-muted-foreground">Loading…</div>}
+        {isLoading && (
+          <div className="text-sm text-muted-foreground">Loading…</div>
+        )}
 
         {!isLoading && error && (
-          <div className="text-sm text-red-500">Failed to load transactions.</div>
+          <div className="text-sm text-red-500">
+            Failed to load transactions.
+          </div>
         )}
 
         {!isLoading && !error && rows.length === 0 && (
-          <div className="text-sm text-muted-foreground">No transactions yet.</div>
+          <div className="text-sm text-muted-foreground">
+            No transactions yet.
+          </div>
         )}
 
         {!isLoading && !error && rows.length > 0 && (
@@ -77,9 +86,13 @@ export default function WalletTransactionsDialog({ open, onOpenChange }: Props) 
                     >
                       {formatAmount(t.delta)}
                     </Badge>
-                    <span className="text-sm font-medium">{reasonLabel(t.reason)}</span>
+                    <span className="text-sm font-medium">
+                      {reasonLabel(t.reason)}
+                    </span>
                     {t.provider && (
-                      <Badge className="bg-gray-100 text-gray-700">{t.provider}</Badge>
+                      <Badge className="bg-gray-100 text-gray-700">
+                        {t.provider}
+                      </Badge>
                     )}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1 truncate">
@@ -90,7 +103,9 @@ export default function WalletTransactionsDialog({ open, onOpenChange }: Props) 
 
                 <div className="text-right">
                   <div className="text-sm font-semibold">{t.balance_after}</div>
-                  <div className="text-xs text-muted-foreground">balance after</div>
+                  <div className="text-xs text-muted-foreground">
+                    balance after
+                  </div>
                 </div>
               </div>
             ))}

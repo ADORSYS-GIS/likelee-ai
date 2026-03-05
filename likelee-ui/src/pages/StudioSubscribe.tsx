@@ -37,7 +37,11 @@ export default function StudioSubscribe() {
   });
 
   const checkoutMutation = useMutation({
-    mutationFn: async (input: { plan_type: string; credits: number; price: number }) => {
+    mutationFn: async (input: {
+      plan_type: string;
+      credits: number;
+      price: number;
+    }) => {
       return await createCheckoutSession(input);
     },
     onSuccess: (data) => {
