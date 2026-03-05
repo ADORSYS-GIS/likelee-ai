@@ -799,6 +799,10 @@ export default function CreatorDashboard() {
   const [agencyConnections, setAgencyConnections] = useState<
     CreatorAgencyConnection[]
   >([]);
+  const [brandConnectionRequests, setBrandConnectionRequests] = useState<any[]>(
+    [],
+  );
+  const [brandConnections, setBrandConnections] = useState<any[]>([]);
   const [agencyConnectionLoading, setAgencyConnectionLoading] = useState(false);
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
   const [disconnectConfirmChecked, setDisconnectConfirmChecked] =
@@ -836,16 +840,41 @@ export default function CreatorDashboard() {
     };
   };
 
+  const loadBrandConnectionData = async () => {
+    const [requestsResp, connectionsResp] = await Promise.all([
+      base44.get<{ requests?: any[] }>(
+        "/api/creator/brand-connection-requests",
+      ),
+      base44.get<{ connections?: any[] }>("/api/creator/brand-connections"),
+    ]);
+    return {
+      requests: Array.isArray(requestsResp?.requests)
+        ? requestsResp.requests
+        : [],
+      connections: Array.isArray(connectionsResp?.connections)
+        ? connectionsResp.connections
+        : [],
+    };
+  };
+
   useEffect(() => {
     if (!initialized || !authenticated) return;
     let active = true;
     (async () => {
       try {
         setAgencyConnectionLoading(true);
-        const { connections, invites } = await loadAgencyConnectionData();
+        const [
+          { connections, invites },
+          { requests, connections: brandConnected },
+        ] = await Promise.all([
+          loadAgencyConnectionData(),
+          loadBrandConnectionData(),
+        ]);
         if (!active) return;
         setAgencyConnections(connections);
         setAgencyInvites(invites);
+        setBrandConnectionRequests(requests);
+        setBrandConnections(brandConnected);
       } catch (e: any) {
         if (!active) return;
         console.error("Failed to load agency connection data", e);
@@ -856,6 +885,47 @@ export default function CreatorDashboard() {
     })();
     return () => {
       active = false;
+    };
+  }, [initialized, authenticated]);
+
+  useEffect(() => {
+    if (!initialized || !authenticated) return;
+    if (activeSection !== "brand-connection") return;
+    let active = true;
+    (async () => {
+      try {
+        const { requests, connections } = await loadBrandConnectionData();
+        if (!active) return;
+        setBrandConnectionRequests(requests);
+        setBrandConnections(connections);
+      } catch (e) {
+        if (!active) return;
+        console.error("Failed to refresh brand connection data", e);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [activeSection, initialized, authenticated]);
+
+  useEffect(() => {
+    if (!initialized || !authenticated) return;
+    let active = true;
+    const refresh = async () => {
+      try {
+        const { requests, connections } = await loadBrandConnectionData();
+        if (!active) return;
+        setBrandConnectionRequests(requests);
+        setBrandConnections(connections);
+      } catch (e) {
+        if (!active) return;
+        console.error("Failed to poll brand connection data", e);
+      }
+    };
+    const timer = setInterval(refresh, 15000);
+    return () => {
+      active = false;
+      clearInterval(timer);
     };
   }, [initialized, authenticated]);
 
@@ -1873,6 +1943,15 @@ export default function CreatorDashboard() {
       badge:
         agencyInvites.filter((i) => i.status === "pending").length > 0
           ? agencyInvites.filter((i) => i.status === "pending").length
+          : undefined,
+    },
+    {
+      id: "brand-connection",
+      label: "Brand Connection",
+      icon: LinkIcon,
+      badge:
+        brandConnectionRequests.filter((i) => i.status === "pending").length > 0
+          ? brandConnectionRequests.filter((i) => i.status === "pending").length
           : undefined,
     },
   ];
@@ -4963,6 +5042,188 @@ export default function CreatorDashboard() {
                     <span className="font-semibold">Likelee notice:</span> This
                     agency found your public profile in marketplace and sent a
                     connection invitation.
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
+    );
+  };
+
+  const renderBrandConnection = () => {
+    const pending = brandConnectionRequests.filter(
+      (i) => i.status === "pending",
+    );
+
+    const refreshBrandConnections = async () => {
+      const { requests, connections } = await loadBrandConnectionData();
+      setBrandConnectionRequests(requests);
+      setBrandConnections(connections);
+    };
+
+    const onRespond = async (id: string, action: "accept" | "decline") => {
+      try {
+        setAgencyConnectionLoading(true);
+        await base44.post(
+          `/api/creator/brand-connection-requests/${id}/${action}`,
+          {},
+        );
+        await refreshBrandConnections();
+        toast({
+          title:
+            action === "accept" ? "Connection accepted" : "Connection declined",
+        });
+      } catch (e: any) {
+        toast({
+          variant: "destructive",
+          title: "Failed to update request",
+          description: e?.message || String(e),
+        });
+      } finally {
+        setAgencyConnectionLoading(false);
+      }
+    };
+
+    const onDisconnect = async (brandId: string) => {
+      try {
+        setAgencyConnectionLoading(true);
+        await base44.post(
+          `/api/creator/brand-connections/${brandId}/disconnect`,
+          {},
+        );
+        await refreshBrandConnections();
+        toast({ title: "Disconnected from brand" });
+      } catch (e: any) {
+        toast({
+          variant: "destructive",
+          title: "Failed to disconnect",
+          description: e?.message || String(e),
+        });
+      } finally {
+        setAgencyConnectionLoading(false);
+      }
+    };
+
+    return (
+      <div className="space-y-8">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900">Brand Connection</h2>
+          <p className="text-gray-600 mt-1">
+            Manage brand connection requests and active brand connections.
+          </p>
+        </div>
+
+        <Card className="p-6">
+          <div className="text-lg font-semibold text-gray-900">
+            Connected Brands
+          </div>
+          <div className="text-sm text-gray-600 mt-1">
+            {brandConnections.length > 0
+              ? "You are connected with brands below."
+              : "You are not connected to any brands yet."}
+          </div>
+          {brandConnections.length > 0 && (
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+              {brandConnections.map((c: any) => (
+                <div
+                  key={String(c?.brand_id || c?.id)}
+                  className="flex items-center justify-between gap-3 p-4 border border-gray-200 rounded-lg bg-white"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {c?.brands?.logo_url ? (
+                        <img
+                          src={c.brands.logo_url}
+                          alt={c.brands.company_name || "Brand"}
+                          className="w-full h-full object-contain"
+                        />
+                      ) : (
+                        <Building2 className="w-5 h-5 text-gray-500" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-semibold text-gray-900 truncate">
+                        {c?.brands?.company_name || c?.brand_id}
+                      </div>
+                      <div className="text-xs text-gray-500 truncate">
+                        {c?.brands?.email || "Connected brand"}
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    disabled={agencyConnectionLoading}
+                    onClick={() => onDisconnect(String(c?.brand_id || ""))}
+                    aria-label="Disconnect from brand"
+                    title="Disconnect"
+                  >
+                    <Link2Off className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="text-lg font-semibold text-gray-900">
+                Requests
+              </div>
+              <div className="text-sm text-gray-600 mt-1">
+                {pending.length > 0
+                  ? "Respond to pending brand connection requests."
+                  : "No pending requests right now."}
+              </div>
+            </div>
+            {pending.length > 0 && (
+              <Badge className="bg-[#32C8D1] text-white">
+                {pending.length}
+              </Badge>
+            )}
+          </div>
+          {pending.length > 0 && (
+            <div className="mt-6 space-y-3">
+              {pending.map((req: any) => (
+                <div
+                  key={String(req?.id)}
+                  className="p-4 border border-gray-200 rounded-lg space-y-3"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="font-semibold text-gray-900 truncate">
+                        {req?.brands?.company_name ||
+                          "Brand connection request"}
+                      </div>
+                      <div className="text-xs text-gray-500 truncate mt-1">
+                        {req?.brands?.email || "Brand profile available"}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <Button
+                        variant="outline"
+                        className="border-gray-200"
+                        onClick={() =>
+                          onRespond(String(req?.id || ""), "decline")
+                        }
+                        disabled={agencyConnectionLoading}
+                      >
+                        Decline
+                      </Button>
+                      <Button
+                        className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                        onClick={() =>
+                          onRespond(String(req?.id || ""), "accept")
+                        }
+                        disabled={agencyConnectionLoading}
+                      >
+                        Accept
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -8070,6 +8331,7 @@ export default function CreatorDashboard() {
           {activeSection === "earnings" && renderEarnings()}
           {activeSection === "settings" && renderSettings()}
           {activeSection === "agency-connection" && renderAgencyConnection()}
+          {activeSection === "brand-connection" && renderBrandConnection()}
           {activeSection === "talent-portal" && renderTalentPortal()}
         </div>
 
