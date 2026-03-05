@@ -141,24 +141,6 @@ pub async fn generate(
                 Err(e) => Err(e),
             }
         }
-        Provider::Higgsfield => {
-            providers::higgsfield_submit_job(
-                &state.higgsfield_api_key,
-                &state.higgsfield_api_url,
-                &req.model,
-                &req.input_params,
-            )
-            .await
-        }
-        Provider::Kive => {
-            providers::kive_submit_job(
-                &state.kive_api_key,
-                &state.kive_api_url,
-                &req.model,
-                &req.input_params,
-            )
-            .await
-        }
     };
 
     match provider_job_id {
@@ -304,17 +286,6 @@ pub async fn job_status(
                 )
                 .await
             }
-            "higgsfield" => {
-                providers::higgsfield_check_status(
-                    &state.higgsfield_api_key,
-                    &state.higgsfield_api_url,
-                    provider_job_id,
-                )
-                .await
-            }
-            "kive" => {
-                providers::kive_check_status(&state.kive_api_key, &state.kive_api_url, provider_job_id).await
-            }
             _ => {
                 return Err((StatusCode::BAD_REQUEST, "Unknown provider".to_string()));
             }
@@ -344,10 +315,13 @@ pub async fn job_status(
                     })
                 } else if matches!(status.status, GenerationStatus::Completed) && status.output_urls.is_empty() {
                     // Fal says completed, but we found no URLs. 
-                    // Log a warning and keep status as 'processing' so we poll again.
+                    // This case is now mostly handled inside `fal_check_status` (returns Failed if inference time < 1s).
+                    // If we get here, it means inference time was > 1s but still no URLs.
+                    // We'll log a warning and keep it as processing for one more poll, 
+                    // but we should eventually time out (handled by frontend poll cap).
                     warn!(
                         generation_id = %job_id,
-                        "fal_check_status: reported completed but no URLs found; keeping as processing"
+                        "fal_check_status: reported completed but no URLs found (and not flagged as silent failure); keeping as processing"
                     );
                     json!({
                         "status": "processing",

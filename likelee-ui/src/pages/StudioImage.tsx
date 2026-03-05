@@ -95,6 +95,12 @@ const imageModels = [
     description: "Design-focused model",
   },
   {
+    id: "fal-ai/nano-banana-2",
+    name: "Nano Banana 2",
+    cost: 1,
+    description: "Lightning fast, lightweight generation",
+  },
+  {
     id: "fal-ai/ideogram-v2",
     name: "Ideogram v2",
     cost: 5,

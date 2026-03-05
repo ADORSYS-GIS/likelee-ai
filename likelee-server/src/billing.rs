@@ -109,18 +109,31 @@ pub async fn create_checkout_session_legacy(
         .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
     let is_recurring = price.recurring.is_some()
         || matches!(price.type_, Some(stripe_sdk::PriceType::Recurring));
-    if is_recurring {
-        warn!(stripe_price_id = %stripe_price_id, "studio checkout configured with recurring stripe price; expected one-time price");
-        return Err((
-            StatusCode::PRECONDITION_FAILED,
-            "stripe_studio_price_must_be_one_time".to_string(),
-        ));
-    }
+    let (mode, sub_data) = if is_recurring {
+        let mut sub_md = std::collections::HashMap::new();
+        sub_md.insert("user_id".to_string(), user.id.clone());
+        sub_md.insert("billing_domain".to_string(), "studio".to_string());
+        sub_md.insert("credits".to_string(), payload.credits.to_string());
+        if let Some(pt) = payload.plan_type.as_deref() {
+            sub_md.insert("plan_type".to_string(), pt.trim().to_lowercase());
+        }
+
+        (
+            stripe_sdk::CheckoutSessionMode::Subscription,
+            Some(stripe_sdk::CreateCheckoutSessionSubscriptionData {
+                metadata: Some(sub_md),
+                ..Default::default()
+            }),
+        )
+    } else {
+        (stripe_sdk::CheckoutSessionMode::Payment, None)
+    };
 
     let mut cs_params = stripe_sdk::CreateCheckoutSession::new();
     cs_params.success_url = Some(state.stripe_studio_success_url.as_str());
     cs_params.cancel_url = Some(state.stripe_studio_cancel_url.as_str());
-    cs_params.mode = Some(stripe_sdk::CheckoutSessionMode::Payment);
+    cs_params.mode = Some(mode);
+    cs_params.subscription_data = sub_data;
     cs_params.client_reference_id = Some(user.id.as_str());
     cs_params.line_items = Some(vec![stripe_sdk::CreateCheckoutSessionLineItems {
         price: Some(stripe_price_id.clone()),

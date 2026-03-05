@@ -1,7 +1,7 @@
 use super::types::{GenerationStatus, ProviderJobStatus};
 use anyhow::{anyhow, Result};
 use serde_json::{json, Value as JsonValue};
-use tracing::warn;
+use tracing::{info, warn};
 
 /// Returned from a successful Fal submission
 pub struct FalSubmitResult {
@@ -29,6 +29,7 @@ pub async fn fal_submit_job(
 
     let client = reqwest::Client::new();
     let endpoint = format!("{}/{}", api_url.trim_end_matches('/'), model);
+    info!(endpoint = %endpoint, "submitting job to fal_submit_job");
 
     let response = client
         .post(&endpoint)
@@ -40,10 +41,13 @@ pub async fn fal_submit_job(
 
     if !response.status().is_success() {
         let error_text = response.text().await?;
+        warn!(endpoint = %endpoint, error = %error_text, "fal_submit_job terminal error");
         return Err(anyhow!("Fal API error: {}", error_text));
     }
 
     let result: JsonValue = response.json().await?;
+    info!(result = ?result, "fal_submit_job response received");
+
     let request_id = result["request_id"]
         .as_str()
         .ok_or_else(|| anyhow!("missing request_id in Fal response"))?
@@ -118,14 +122,29 @@ pub async fn fal_check_status(
         if response.status().is_success() {
             let result: JsonValue = response.json().await.unwrap_or_else(|_| json!({}));
             let urls = extract_fal_output_urls(&result);
+            
+            // Extract billing cost from the Fal result so the caller can reconcile credits
+            let (cost_credits, inference_secs) = extract_fal_cost_credits(&result);
+
+            // SILENT FAILURE DETECTION:
+            // If status is completed but no URLs and very low inference time (< 1s),
+            // it's likely a prompt rejection or system error that Fal didn't report as 'failed'.
+            if urls.is_empty() && inference_secs < 1.0 {
+                warn!(
+                    job_id = %job_id,
+                    inference_time = %inference_secs,
+                    "fal_check_status: job marked COMPLETED but no URLs and low inference time; flagging as FAILED"
+                );
+                parsed.status = GenerationStatus::Failed;
+                parsed.error_message = Some("Silent failure: Job completed with no output and low inference time (likely prompt rejection)".to_string());
+            }
+
             if !urls.is_empty() {
                 parsed.output_urls = urls;
-            } else {
+            } else if matches!(parsed.status, GenerationStatus::Completed) {
                 warn!("fal_check_status: completed but no output URLs found in result: {:?}", result);
             }
 
-            // Extract billing cost from the Fal result so the caller can reconcile credits
-            let (cost_credits, inference_secs) = extract_fal_cost_credits(&result);
             let mut meta = result.clone();
             if let Some(obj) = meta.as_object_mut() {
                 obj.insert("fal_cost_credits".to_string(), json!(cost_credits));
@@ -138,6 +157,16 @@ pub async fn fal_check_status(
                 url = %derived_response_url,
                 "fal_check_status: failed to fetch result for completed job"
             );
+            // If we can't fetch the result (404/405/etc), we shouldn't just stay in 'Completed' with no URLs.
+            // 422 Unprocessable Entity often happens when the job logic failed but the queue marked it completed.
+            if response.status() == 422 || response.status() == 404 || response.status() == 405 || response.status() == 410 {
+                let status_code = response.status();
+                let error_body = response.text().await.unwrap_or_else(|_| "unknown error body".to_string());
+                warn!(job_id = %job_id, error_body = %error_body, "fal_check_status: result fetch returned terminal error");
+                
+                parsed.status = GenerationStatus::Failed;
+                parsed.error_message = Some(format!("Failed to retrieve result ({}): {}", status_code, error_body));
+            }
         }
     }
 
@@ -284,221 +313,3 @@ fn extract_fal_output_urls(result: &JsonValue) -> Vec<String> {
     urls
 }
 
-/// Submit a generation job to Higgsfield API
-pub async fn higgsfield_submit_job(
-    api_key: &str,
-    api_url: &str,
-    model: &str,
-    input_params: &JsonValue,
-) -> Result<String> {
-    if api_key.is_empty() {
-        return Err(anyhow!("HIGGSFIELD_API_KEY not configured"));
-    }
-
-    let client = reqwest::Client::new();
-    let endpoint = format!("{}/v1/generate", api_url);
-
-    let payload = json!({
-        "model": model,
-        "params": input_params
-    });
-
-    let response = client
-        .post(&endpoint)
-        .header("Authorization", format!("Bearer {}", api_key))
-        .header("Content-Type", "application/json")
-        .json(&payload)
-        .send()
-        .await?;
-
-    if !response.status().is_success() {
-        let error_text = response.text().await?;
-        return Err(anyhow!("Higgsfield API error: {}", error_text));
-    }
-
-    let result: JsonValue = response.json().await?;
-    let job_id = result["job_id"]
-        .as_str()
-        .or_else(|| result["id"].as_str())
-        .ok_or_else(|| anyhow!("missing job_id in Higgsfield response"))?
-        .to_string();
-
-    Ok(job_id)
-}
-
-/// Check job status on Higgsfield API
-pub async fn higgsfield_check_status(
-    api_key: &str,
-    api_url: &str,
-    job_id: &str,
-) -> Result<ProviderJobStatus> {
-    if api_key.is_empty() {
-        return Err(anyhow!("HIGGSFIELD_API_KEY not configured"));
-    }
-
-    let client = reqwest::Client::new();
-    let endpoint = format!("{}/v1/jobs/{}", api_url, job_id);
-
-    let response = client
-        .get(&endpoint)
-        .header("Authorization", format!("Bearer {}", api_key))
-        .send()
-        .await?;
-
-    if !response.status().is_success() {
-        let error_text = response.text().await?;
-        return Err(anyhow!("Higgsfield API error: {}", error_text));
-    }
-
-    let result: JsonValue = response.json().await?;
-    parse_higgsfield_status(&result)
-}
-
-fn parse_higgsfield_status(result: &JsonValue) -> Result<ProviderJobStatus> {
-    let status_str = result["status"]
-        .as_str()
-        .ok_or_else(|| anyhow!("missing status"))?;
-
-    let status = match status_str {
-        "pending" | "queued" | "submitted" => GenerationStatus::Pending,
-        "processing" | "running" => GenerationStatus::Processing,
-        "completed" | "success" | "done" => GenerationStatus::Completed,
-        "failed" | "error" => GenerationStatus::Failed,
-        _ => GenerationStatus::Processing,
-    };
-
-    let output_urls = if status_str == "completed" || status_str == "success" || status_str == "done" {
-        if let Some(video_url) = result["video_url"].as_str() {
-            vec![video_url.to_string()]
-        } else if let Some(arr) = result["results"].as_array() {
-            arr.iter()
-                .filter_map(|v| v["url"].as_str().map(String::from))
-                .collect()
-        } else {
-            vec![]
-        }
-    } else {
-        vec![]
-    };
-
-    let error_message = result["error"]
-        .as_str()
-        .or_else(|| result["error_message"].as_str())
-        .map(String::from);
-
-    Ok(ProviderJobStatus {
-        status,
-        output_urls,
-        output_metadata: Some(result.clone()),
-        error_message,
-    })
-}
-
-/// Submit a generation job to Kive API
-pub async fn kive_submit_job(
-    api_key: &str,
-    api_url: &str,
-    model: &str,
-    input_params: &JsonValue,
-) -> Result<String> {
-    if api_key.is_empty() {
-        return Err(anyhow!("KIVE_API_KEY not configured"));
-    }
-
-    let client = reqwest::Client::new();
-    let endpoint = format!("{}/api/generate", api_url);
-
-    let payload = json!({
-        "model": model,
-        "input": input_params
-    });
-
-    let response = client
-        .post(&endpoint)
-        .header("X-API-Key", api_key)
-        .header("Content-Type", "application/json")
-        .json(&payload)
-        .send()
-        .await?;
-
-    if !response.status().is_success() {
-        let error_text = response.text().await?;
-        return Err(anyhow!("Kive API error: {}", error_text));
-    }
-
-    let result: JsonValue = response.json().await?;
-    let job_id = result["job_id"]
-        .as_str()
-        .or_else(|| result["id"].as_str())
-        .ok_or_else(|| anyhow!("missing job_id in Kive response"))?
-        .to_string();
-
-    Ok(job_id)
-}
-
-/// Check job status on Kive API
-pub async fn kive_check_status(
-    api_key: &str,
-    api_url: &str,
-    job_id: &str,
-) -> Result<ProviderJobStatus> {
-    if api_key.is_empty() {
-        return Err(anyhow!("KIVE_API_KEY not configured"));
-    }
-
-    let client = reqwest::Client::new();
-    let endpoint = format!("{}/api/jobs/{}", api_url, job_id);
-
-    let response = client
-        .get(&endpoint)
-        .header("X-API-Key", api_key)
-        .send()
-        .await?;
-
-    if !response.status().is_success() {
-        let error_text = response.text().await?;
-        return Err(anyhow!("Kive API error: {}", error_text));
-    }
-
-    let result: JsonValue = response.json().await?;
-    parse_kive_status(&result)
-}
-
-fn parse_kive_status(result: &JsonValue) -> Result<ProviderJobStatus> {
-    let status_str = result["status"]
-        .as_str()
-        .ok_or_else(|| anyhow!("missing status"))?;
-
-    let status = match status_str {
-        "pending" | "queued" => GenerationStatus::Pending,
-        "processing" | "in_progress" => GenerationStatus::Processing,
-        "completed" | "success" => GenerationStatus::Completed,
-        "failed" | "error" => GenerationStatus::Failed,
-        _ => GenerationStatus::Processing,
-    };
-
-    let output_urls = if status_str == "completed" || status_str == "success" {
-        if let Some(output) = result["output"].as_str() {
-            vec![output.to_string()]
-        } else if let Some(arr) = result["outputs"].as_array() {
-            arr.iter()
-                .filter_map(|v| v.as_str().map(String::from))
-                .collect()
-        } else {
-            vec![]
-        }
-    } else {
-        vec![]
-    };
-
-    let error_message = result["error"]
-        .as_str()
-        .map(String::from);
-
-    Ok(ProviderJobStatus {
-        status,
-        output_urls,
-        output_metadata: Some(result.clone()),
-        error_message,
-    })
-}

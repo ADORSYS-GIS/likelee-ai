@@ -14,6 +14,17 @@ import {
 
 const videoModels = [
   {
+    id: "fal-ai/sora-2/image-to-video",
+    name: "Sora 2",
+    icon: "🎥",
+    description: "OpenAI's cinematic engine (Image-to-Video)",
+    duration: "5–10 sec",
+    credits: "30",
+    tag: "Beta",
+    tagColor: "#F59E0B",
+    capabilities: ["SOTA", "Quality", "Image"],
+  },
+  {
     id: "fal-ai/veo3.1",
     name: "Google Veo 3.1",
     icon: "🎬",

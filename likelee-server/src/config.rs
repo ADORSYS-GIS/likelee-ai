@@ -226,18 +226,6 @@ pub struct ServerConfig {
 
     #[envconfig(from = "FAL_API_URL", default = "https://queue.fal.run")]
     pub fal_api_url: String,
-
-    #[envconfig(from = "HIGGSFIELD_API_KEY", default = "")]
-    pub higgsfield_api_key: String,
-
-    #[envconfig(from = "HIGGSFIELD_API_URL", default = "https://api.higgsfield.ai")]
-    pub higgsfield_api_url: String,
-
-    #[envconfig(from = "KIVE_API_KEY", default = "")]
-    pub kive_api_key: String,
-
-    #[envconfig(from = "KIVE_API_URL", default = "https://api.kive.ai")]
-    pub kive_api_url: String,
 }
 
 #[derive(Clone)]
@@ -320,8 +308,4 @@ pub struct AppState {
     // Studio Provider API Keys
     pub fal_api_key: String,
     pub fal_api_url: String,
-    pub higgsfield_api_key: String,
-    pub higgsfield_api_url: String,
-    pub kive_api_key: String,
-    pub kive_api_url: String,
 }

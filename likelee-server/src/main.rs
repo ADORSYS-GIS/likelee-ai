@@ -174,10 +174,6 @@ async fn main() {
         // Studio Provider API Keys
         fal_api_key: cfg.fal_api_key.clone(),
         fal_api_url: cfg.fal_api_url.clone(),
-        higgsfield_api_key: cfg.higgsfield_api_key.clone(),
-        higgsfield_api_url: cfg.higgsfield_api_url.clone(),
-        kive_api_key: cfg.kive_api_key.clone(),
-        kive_api_url: cfg.kive_api_url.clone(),
     };
 
     // Start background jobs

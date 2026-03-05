@@ -342,3 +342,77 @@ The licensing flow has been simplified to use a single "License Fee" source of t
 - **Backend Resolution**: All licensing-related views (Licensing Requests, Active Licenses, Talent View) now fetch the fee directly from the linked `license_submissions` table.
 - **UI Representation**: The frontend displays a single `License Fee` instead of a `Budget Range`.
 
+
+## Studio Wallet & Transactions
+
+The Studio Wallet system manages virtual credits used for AI image and video generation. It provides a detailed ledger for all credit movements and integrates with Stripe for purchasing credit packs.
+
+### Data Model (Supabase)
+
+#### `studio_wallets`
+Stores the current credit balance and subscription plan for each user.
+- `id` (uuid, PK)
+- `user_id` (uuid, Unique): Link to the platform user.
+- `balance` (bigint): Current available credits (defaults to 0).
+- `current_plan` (text): The user's active plan (e.g., `lite`, `pro`).
+- `created_at`, `updated_at` (timestamptz)
+
+#### `studio_credit_transactions`
+Atomic ledger tracking every credit delta.
+- `id` (uuid, PK)
+- `wallet_id` (uuid, FK to `studio_wallets`): The affected wallet.
+- `delta` (bigint): Credit change (negative for deductions, positive for adds/refunds).
+- `balance_after` (bigint): The balance immediately following the transaction.
+- `reason` (text): Transaction category (`purchase`, `generation_deduction`, `generation_refund`, `generation_refund_reconcile`, `generation_extra_deduction`).
+- `provider` (text, optional): The AI provider involved.
+- `generation_id` (uuid, optional): Link to the specific generation job.
+- `stripe_session_id` (text, optional): Stripe checkout session ID for purchase transactions.
+- `metadata` (jsonb): Additional context for the transaction.
+- `created_at` (timestamptz)
+
+#### `studio_provider_costs`
+Pricing configuration for different AI models and providers.
+- `id` (uuid, PK)
+- `provider` (text): e.g., `fal`, `kling`.
+- `generation_type` (text): `image`, `video`.
+- `model` (text): Specific model identifier.
+- `cost_per_generation` (bigint): Base credit cost.
+- `cost_modifiers` (jsonb): Advanced pricing rules (e.g., duration-based).
+- `enabled` (boolean): Whether the model is available for use.
+
+### Core Workflows
+
+#### 1. Wallet Lifecycle
+Wallets are created automatically the first time a user interacts with the Studio or checks their balance. If no wallet exists for a `user_id`, a new one is initialized with 0 credits.
+
+#### 2. Purchasing Credits
+1. **Initiation**: User selects a credit pack in the UI. Frontend calls `POST /api/stripe/create-checkout-session` (`billing.rs`).
+2. **Checkout**: Backend creates a Stripe Checkout Session with `billing_domain: studio` and `credits` in metadata.
+3. **Completion**: Stripe sends a `checkout.session.completed` webhook.
+4. **Provisioning**: The webhook handler (`payouts.rs`) verifies the metadata and calls `add_credits` (`wallet.rs`), which:
+    - Increments the wallet balance.
+    - Records a `purchase` transaction with the `stripe_session_id`.
+    - Updates the `current_plan` based on the purchased tier.
+
+#### 3. Generation Flow & Deductions
+1. **Pre-check**: Before submitting a job to a provider, the backend checks if the user has enough credits (`check_balance`).
+2. **Deduction**: The estimated cost is deducted immediately (`deduct_credits`). A `generation_deduction` transaction is logged.
+3. **Failure Handling**: If the job fails locally or at the provider, credits are fully refunded (`refund_credits`) with a `generation_refund` reason.
+4. **Reconciliation**: When a job completes, if the provider returns actual billing data (e.g., exact seconds of video generated), the backend adjusts the balance (`reconcile_credits`):
+    - Overcharged: `generation_refund_reconcile` (surplus returned).
+    - Undercharged: `generation_extra_deduction` (additional credits taken).
+
+### Persistence & Identity
+
+The Studio Wallet is tied directly to the user's permanent `user_id` in the database. 
+
+- **Session Independence**: Credits and transaction history are persistent. Logging out or clearing browser sessions has no effect on the wallet balance.
+- **Identity Matching**: When a user logs back in, the system uses the unique `user_id` from their authentication token to fetch the corresponding record in `studio_wallets`.
+- **Atomic Reliability**: All credit movements are recorded as atomic deltas in `studio_credit_transactions`, ensuring that the balance remains accurate and verifiable regardless of user activity or session state.
+
+### Implementation
+
+- **Backend Logic**: `likelee-server/src/studio/wallet.rs`
+- **Pricing Configuration**: `public.studio_provider_costs` (DB)
+- **Routes**: `likelee-server/src/studio/routes.rs` (generation endpoints)
+- **Billing Integration**: `likelee-server/src/billing.rs` and `likelee-server/src/payouts.rs` (webhooks)

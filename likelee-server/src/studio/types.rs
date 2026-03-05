@@ -5,16 +5,12 @@ use serde_json::Value as JsonValue;
 #[serde(rename_all = "lowercase")]
 pub enum Provider {
     Fal,
-    Higgsfield,
-    Kive,
 }
 
 impl Provider {
     pub fn as_str(&self) -> &str {
         match self {
             Provider::Fal => "fal",
-            Provider::Higgsfield => "higgsfield",
-            Provider::Kive => "kive",
         }
     }
 }
