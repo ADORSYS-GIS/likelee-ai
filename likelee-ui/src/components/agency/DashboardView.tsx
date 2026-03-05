@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 interface DashboardViewProps {
+  isSportsAgency?: boolean;
   onKYC: () => void;
   agencyName: string;
   rosterData: any[];
@@ -32,6 +33,7 @@ interface DashboardViewProps {
 }
 
 const DashboardView = ({
+  isSportsAgency = false,
   onKYC,
   agencyName,
   rosterData,
@@ -44,6 +46,8 @@ const DashboardView = ({
   licensingPipeline,
   recentActivity,
 }: DashboardViewProps) => {
+  const entitySingularLower = isSportsAgency ? "athlete" : "talent";
+  const entityPluralLower = isSportsAgency ? "athletes" : "talent";
   const overviewRosterTotal = overview?.roster_health?.total_count;
   const overviewRosterActive = overview?.roster_health?.active_count;
   const overviewRosterPct = overview?.roster_health?.percentage;
@@ -155,7 +159,7 @@ const DashboardView = ({
               KYC Verification Required
             </h3>
             <p className="text-sm text-gray-500">
-              To enable payouts and licensing for your talent, please complete
+              {`To enable payouts and licensing for your ${entitySingularLower}, please complete`}
               your agency's ID verification.
             </p>
             <div className="mt-2 flex items-center gap-2">
@@ -363,7 +367,7 @@ const DashboardView = ({
             </div>
             {rosterData.filter((t) => t.status !== "active").length === 0 ? (
               <p className="text-sm text-gray-500 italic">
-                All talent actively earning!
+                {`All ${entityPluralLower} actively earning!`}
               </p>
             ) : (
               rosterData
@@ -444,7 +448,9 @@ const DashboardView = ({
                   </p>
                 </div>
               ) : (
-                <p className="text-sm text-gray-500 italic">No talent yet</p>
+                <p className="text-sm text-gray-500 italic">
+                  {`No ${entitySingularLower} yet`}
+                </p>
               )}
             </div>
           </div>

@@ -1041,7 +1041,7 @@ export const GenerateInvoiceViewApi = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
             Invoice Generation
@@ -1050,11 +1050,11 @@ export const GenerateInvoiceViewApi = () => {
             Create and manage client invoices
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 w-full sm:w-auto">
           <Button
             variant="outline"
             onClick={() => setShowPreview(true)}
-            className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center gap-2"
+            className="h-11 px-6 rounded-xl border-gray-200 font-bold flex items-center justify-center gap-2 w-full sm:w-auto"
           >
             <Eye className="w-5 h-5" />
             Preview
@@ -1062,16 +1062,16 @@ export const GenerateInvoiceViewApi = () => {
         </div>
       </div>
 
-      <Card className="p-6 bg-white border border-gray-100 rounded-2xl">
+      <Card className="p-4 sm:p-6 bg-white border border-gray-100 rounded-2xl">
         <div className="space-y-6">
           <div>
             <Label className="text-sm font-bold text-gray-700 mb-3 block">
               Create Invoice From
             </Label>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <Button
                 variant={createFrom === "booking" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
+                className={`h-11 px-6 rounded-xl font-bold flex items-center justify-center gap-2 w-full sm:w-auto ${
                   createFrom === "booking"
                     ? "bg-indigo-600 hover:bg-indigo-700 text-white"
                     : "border-gray-200 text-gray-700"
@@ -1083,7 +1083,7 @@ export const GenerateInvoiceViewApi = () => {
               </Button>
               <Button
                 variant={createFrom === "manual" ? "default" : "outline"}
-                className={`h-11 px-6 rounded-xl font-bold flex items-center gap-2 ${
+                className={`h-11 px-6 rounded-xl font-bold flex items-center justify-center gap-2 w-full sm:w-auto ${
                   createFrom === "manual"
                     ? "bg-indigo-600 hover:bg-indigo-700 text-white"
                     : "border-gray-200 text-gray-700"
@@ -1151,7 +1151,7 @@ export const GenerateInvoiceViewApi = () => {
               <Label className="text-sm font-bold text-gray-700 mb-2 block">
                 Due Date
               </Label>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input
                   type="date"
                   value={dueDate}
@@ -1159,7 +1159,7 @@ export const GenerateInvoiceViewApi = () => {
                   className="h-12 rounded-xl border-gray-200 flex-1"
                 />
                 <Select value={paymentTerms} onValueChange={setPaymentTerms}>
-                  <SelectTrigger className="h-12 rounded-xl border-gray-200 w-36">
+                  <SelectTrigger className="h-12 rounded-xl border-gray-200 w-full sm:w-36">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
@@ -1201,7 +1201,7 @@ export const GenerateInvoiceViewApi = () => {
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label className="text-sm font-bold text-gray-700 mb-2 block">
                 PO Number
@@ -1225,7 +1225,7 @@ export const GenerateInvoiceViewApi = () => {
           </div>
 
           <div>
-            <div className="flex justify-between items-center mb-3">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-3">
               <Label className="text-sm font-bold text-gray-700">
                 Invoice Items
               </Label>
@@ -1250,7 +1250,7 @@ export const GenerateInvoiceViewApi = () => {
                     key={it.id}
                     className="p-5 bg-gray-50 border border-gray-200 rounded-xl"
                   >
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center justify-between gap-2 mb-4">
                       <p className="text-sm font-bold text-gray-900">
                         Item #{idx + 1}
                       </p>
@@ -1390,7 +1390,7 @@ export const GenerateInvoiceViewApi = () => {
           </div>
 
           <Card className="p-5 bg-white border border-gray-100 rounded-2xl">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
               <Label className="text-sm font-bold text-gray-900">
                 Expenses (Optional)
               </Label>
@@ -1407,7 +1407,10 @@ export const GenerateInvoiceViewApi = () => {
             {expenses.length > 0 && (
               <div className="space-y-3">
                 {expenses.map((expense) => (
-                  <div key={expense.id} className="flex gap-3 items-center">
+                  <div
+                    key={expense.id}
+                    className="flex flex-col sm:flex-row gap-3 sm:items-center"
+                  >
                     <Input
                       placeholder="Expense description"
                       value={expense.description}
@@ -1427,7 +1430,7 @@ export const GenerateInvoiceViewApi = () => {
                           e.target.value,
                         )
                       }
-                      className="h-10 rounded-xl border-gray-200 w-28 text-sm"
+                      className="h-10 rounded-xl border-gray-200 w-full sm:w-28 text-sm"
                     />
                     <Checkbox
                       checked={expense.taxable}
@@ -1450,7 +1453,7 @@ export const GenerateInvoiceViewApi = () => {
             )}
           </Card>
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-4">
               <h4 className="text-sm font-bold text-gray-900">
                 Financial Settings
@@ -1682,7 +1685,7 @@ export const GenerateInvoiceViewApi = () => {
             )}
           </Card>
 
-          <div className="flex gap-3 pt-6 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-200">
             {(() => {
               const canMarkSent =
                 Boolean(invoiceId) && invoiceStatus === "draft";

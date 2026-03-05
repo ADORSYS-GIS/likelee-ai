@@ -18,6 +18,7 @@ export const ManageAvailabilityModal = ({
   onAddBookOut,
   onRemoveBookOut,
   fixedTalent,
+  isSportsAgency = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -25,7 +26,10 @@ export const ManageAvailabilityModal = ({
   onAddBookOut: (bookOut: any) => void;
   onRemoveBookOut: (id: string) => void;
   fixedTalent?: { id: string; name: string };
+  isSportsAgency?: boolean;
 }) => {
+  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
+  const entitySingularLower = isSportsAgency ? "athlete" : "talent";
   const [addOpen, setAddOpen] = useState(false);
   const [talents, setTalents] = useState<any[]>([]);
 
@@ -77,10 +81,10 @@ export const ManageAvailabilityModal = ({
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold">
-            Talent Availability & Book-Outs
+            {`${entitySingularTitle} Availability & Book-Outs`}
           </DialogTitle>
           <p className="text-sm text-gray-500">
-            Manage when talent is unavailable for bookings
+            {`Manage when ${entitySingularLower} is unavailable for bookings`}
           </p>
         </DialogHeader>
         <div className="py-6">
@@ -100,7 +104,7 @@ export const ManageAvailabilityModal = ({
                 No book-outs scheduled
               </h3>
               <p className="text-sm text-gray-500">
-                Talent will appear available for all dates
+                {`${entitySingularTitle} will appear available for all dates`}
               </p>
             </div>
           ) : (
@@ -142,6 +146,7 @@ export const ManageAvailabilityModal = ({
           onOpenChange={setAddOpen}
           onAdd={onAddBookOut}
           fixedTalent={fixedTalent}
+          isSportsAgency={isSportsAgency}
         />
       </DialogContent>
     </Dialog>

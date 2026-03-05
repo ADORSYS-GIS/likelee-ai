@@ -27,6 +27,42 @@ pub async fn upsert_profile(
     // Debug logging to inspect incoming payload
     tracing::info!(?body, "upsert_profile payload");
 
+    // Weekly is canonical. Keep monthly in sync during transition.
+    let weekly = body.get("base_weekly_price_cents").and_then(|v| v.as_i64());
+    let monthly = body
+        .get("base_monthly_price_cents")
+        .and_then(|v| v.as_i64());
+    if let Some(v) = weekly {
+        if v < 0 {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "base_weekly_price_cents must be non-negative".to_string(),
+            ));
+        }
+    }
+    if let Some(v) = monthly {
+        if v < 0 {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "base_monthly_price_cents must be non-negative".to_string(),
+            ));
+        }
+    }
+    match (weekly, monthly) {
+        (Some(w), None) => {
+            body["base_monthly_price_cents"] =
+                serde_json::Value::from(((w as f64) * 4.345).round() as i64);
+        }
+        (None, Some(m)) => {
+            body["base_weekly_price_cents"] =
+                serde_json::Value::from(((m as f64) / 4.345).round() as i64);
+        }
+        _ => {}
+    }
+    if body.get("currency_code").is_none() {
+        body["currency_code"] = serde_json::Value::String("USD".to_string());
+    }
+
     let now = chrono::Utc::now().to_rfc3339();
     if body.get("updated_at").is_none() {
         body["updated_at"] = serde_json::Value::String(now.clone());

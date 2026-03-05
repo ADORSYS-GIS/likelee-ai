@@ -83,6 +83,7 @@ interface RosterViewProps {
   seatsLimit: number;
   isLoading?: boolean;
   onRosterChanged?: () => void;
+  isSportsAgency?: boolean;
 }
 
 const RosterView = ({
@@ -109,6 +110,7 @@ const RosterView = ({
   seatsLimit,
   isLoading = false,
   onRosterChanged,
+  isSportsAgency = false,
 }: RosterViewProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -119,6 +121,20 @@ const RosterView = ({
   const [digitalsFilter, setDigitalsFilter] = useState("All Talent");
   const [showInsufficientSeatsModal, setShowInsufficientSeatsModal] =
     useState(false);
+  const singularLabel = isSportsAgency ? "athlete" : "talent";
+  const pluralLabel = isSportsAgency ? "athletes" : "talents";
+  const singularTitleLabel = isSportsAgency ? "Athlete" : "Talent";
+  const pluralTitleLabel = isSportsAgency ? "Athletes" : "Talents";
+  const allRosterFilterLabel = isSportsAgency ? "All Athletes" : "All Talent";
+  const getConsentStatus = (talent: any) => {
+    const raw = String(talent?.consent_status || talent?.consent || "")
+      .trim()
+      .toLowerCase();
+    if (raw === "complete" || raw === "missing" || raw === "expired") {
+      return raw;
+    }
+    return "missing";
+  };
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteSearch, setInviteSearch] = useState("");
@@ -394,8 +410,7 @@ const RosterView = ({
     if (!targets.length) {
       toast({
         title: "No emails found",
-        description:
-          "None of the selected talent have an email address on file.",
+        description: `None of the selected ${pluralLabel} have an email address on file.`,
         variant: "destructive",
       });
       return;
@@ -538,7 +553,7 @@ const RosterView = ({
 
       toast({
         title: "Digital uploaded successfully!",
-        description: "The talent's digitals have been updated.",
+        description: `The ${singularLabel}'s digitals have been updated.`,
       });
     } catch (e: any) {
       const msg = typeof e?.message === "string" ? e.message : "Upload failed";
@@ -970,7 +985,7 @@ const RosterView = ({
         <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold text-gray-500 mb-1">
-              Active Talent
+              Active {pluralTitleLabel}
             </p>
             <div className="text-3xl font-bold text-gray-900">
               {activeTalentCount}
@@ -1013,7 +1028,9 @@ const RosterView = ({
             <div className="text-3xl font-bold text-gray-900">
               {activeCampaigns}
             </div>
-            <p className="text-xs text-gray-400 mt-1">across all talent</p>
+            <p className="text-xs text-gray-400 mt-1">
+              across all {pluralLabel}
+            </p>
           </div>
           <Briefcase className="w-10 h-10 text-gray-100" />
         </Card>
@@ -1038,7 +1055,7 @@ const RosterView = ({
       {/* Roster Table Section */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 -mx-1 px-1">
             {[
               "Roster",
               "Digitals Tracking",
@@ -1076,25 +1093,26 @@ const RosterView = ({
               );
             })}
           </div>
-          <div className="flex gap-3">
+          <div className="flex w-full md:w-auto flex-wrap gap-3">
             <Button
               variant="outline"
-              className="gap-2 font-bold h-10 rounded-lg"
+              className="gap-2 font-bold h-10 rounded-lg w-full sm:w-auto"
             >
               <Download className="w-4 h-4" /> Export CSV
             </Button>
             <Button
               variant="outline"
               onClick={handleInviteTalentClick}
-              className="border-gray-200 gap-2 font-bold h-10 rounded-lg"
+              className="border-gray-200 gap-2 font-bold h-10 rounded-lg w-full sm:w-auto"
             >
               <Mail className="w-4 h-4" /> Send Portal Invite
             </Button>
             <Button
               onClick={handleAddTalentClick}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 font-bold h-10 rounded-lg"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 font-bold h-10 rounded-lg w-full sm:w-auto"
             >
-              <Plus className="w-4 h-4" /> Add Talent
+              <Plus className="w-4 h-4" />{" "}
+              {isSportsAgency ? "Add Athlete" : "Add Talent"}
             </Button>
           </div>
         </div>
@@ -1113,17 +1131,17 @@ const RosterView = ({
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <Input
-                      placeholder="Search talent..."
+                      placeholder={`Search ${singularLabel}...`}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-10 h-11"
                     />
                   </div>
-                  <div className="flex gap-4">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                     <select
                       value={statusFilter}
                       onChange={(e) => setStatusFilter(e.target.value)}
-                      className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
                       <option>All Status</option>
                       <option>Active</option>
@@ -1133,7 +1151,7 @@ const RosterView = ({
                     <select
                       value={categoryFilter}
                       onChange={(e) => setCategoryFilter(e.target.value)}
-                      className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
                       <option>All Categories</option>
                       <option>Model</option>
@@ -1144,7 +1162,7 @@ const RosterView = ({
                     </select>
                     <Button
                       variant="outline"
-                      className={`gap-2 font-bold h-11 rounded-lg px-6 ${showAdvancedFilters ? "bg-gray-100 border-gray-300" : ""}`}
+                      className={`gap-2 font-bold h-11 rounded-lg px-6 w-full sm:w-auto ${showAdvancedFilters ? "bg-gray-100 border-gray-300" : ""}`}
                       onClick={() =>
                         setShowAdvancedFilters(!showAdvancedFilters)
                       }
@@ -1163,7 +1181,96 @@ const RosterView = ({
                   />
                 )}
 
-                <div className="overflow-x-auto rounded-xl border border-gray-100">
+                <div className="md:hidden space-y-3">
+                  {isLoading && filteredTalent.length === 0 ? (
+                    <div className="flex items-center justify-center gap-2 text-sm text-gray-500 font-medium py-8">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      {`Loading ${pluralLabel}...`}
+                    </div>
+                  ) : filteredTalent.length === 0 ? (
+                    <div className="text-center text-sm text-gray-500 font-medium py-8">
+                      {`No ${pluralLabel} to display.`}
+                    </div>
+                  ) : (
+                    filteredTalent.map((talent) => (
+                      <button
+                        key={talent.id}
+                        type="button"
+                        className="w-full text-left bg-white border border-gray-200 rounded-xl p-4"
+                        onClick={() => setSelectedTalent(talent)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={talent.img || "https://placehold.co/150"}
+                            alt={talent.name}
+                            className="w-12 h-12 rounded-lg object-cover"
+                          />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1">
+                              <span className="font-bold text-gray-900 truncate">
+                                {talent.name}
+                              </span>
+                              {talent.is_verified && (
+                                <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                              )}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-0.5">
+                              {String(talent.role || "Model")}
+                            </div>
+                          </div>
+                        </div>
+                        <div
+                          className={`grid gap-3 mt-3 text-sm ${
+                            agencyMode === "IRL" ? "grid-cols-1" : "grid-cols-2"
+                          }`}
+                        >
+                          <div>
+                            <div className="text-xs text-gray-500">
+                              Followers
+                            </div>
+                            <div className="font-bold text-gray-900">
+                              {talent.followers || "0"}
+                            </div>
+                          </div>
+                          {agencyMode !== "IRL" && (
+                            <div>
+                              <div className="text-xs text-gray-500">
+                                Revenue
+                              </div>
+                              <div className="font-bold text-gray-900">
+                                {formatCurrency(
+                                  Number(talent?.earnings_val ?? 0),
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-3">
+                          <div className="text-xs text-gray-500">Consent</div>
+                          {(() => {
+                            const status = getConsentStatus(talent);
+                            const statusClasses =
+                              status === "complete"
+                                ? "bg-green-100 text-green-700"
+                                : status === "expired"
+                                  ? "bg-red-100 text-red-700"
+                                  : "bg-yellow-100 text-yellow-700";
+                            return (
+                              <Badge
+                                variant="secondary"
+                                className={`mt-1 border-none text-[10px] font-bold uppercase ${statusClasses}`}
+                              >
+                                {status}
+                              </Badge>
+                            );
+                          })()}
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+
+                <div className="hidden md:block overflow-x-auto rounded-xl border border-gray-100">
                   <table className="w-full text-left border-collapse min-w-[1000px]">
                     <thead>
                       <tr className="bg-gray-50 border-b border-gray-100">
@@ -1173,7 +1280,7 @@ const RosterView = ({
                             onClick={() => handleSort("name")}
                             className="flex items-center gap-1 cursor-pointer pointer-events-auto"
                           >
-                            Talent{" "}
+                            {singularTitleLabel}{" "}
                             <ArrowUpDown className="w-3 h-3 text-gray-500" />
                           </button>
                         </th>
@@ -1205,47 +1312,81 @@ const RosterView = ({
                           </button>
                         </th>
                         <th className="px-6 py-4 text-xs font-bold text-gray-900 uppercase tracking-wide">
-                          Assets
+                          Consent
                         </th>
-                        <th className="px-6 py-4 text-xs font-bold text-gray-900 uppercase tracking-wide">
-                          Top Brand
-                        </th>
-                        <th className="px-6 py-4 text-xs font-bold text-gray-900 uppercase tracking-wide">
-                          License Expiry
-                        </th>
-                        <th className="px-6 py-4 text-xs font-bold text-gray-900 uppercase tracking-wide">
-                          <button
-                            type="button"
-                            onClick={() => handleSort("earnings_val")}
-                            className="flex items-center gap-1 cursor-pointer pointer-events-auto"
-                          >
-                            30D Revenue{" "}
-                            <ArrowUpDown className="w-3 h-3 text-gray-500" />
-                          </button>
-                        </th>
+                        {isSportsAgency ? (
+                          <>
+                            <th className="px-6 py-4 text-xs font-bold text-gray-900 uppercase tracking-wide">
+                              Organization
+                            </th>
+                            <th className="px-6 py-4 text-xs font-bold text-gray-900 uppercase tracking-wide">
+                              Sports
+                            </th>
+                          </>
+                        ) : (
+                          <th className="px-6 py-4 text-xs font-bold text-gray-900 uppercase tracking-wide">
+                            Assets
+                          </th>
+                        )}
+                        {agencyMode !== "IRL" && (
+                          <>
+                            <th className="px-6 py-4 text-xs font-bold text-gray-900 uppercase tracking-wide">
+                              Top Brand
+                            </th>
+                            <th className="px-6 py-4 text-xs font-bold text-gray-900 uppercase tracking-wide">
+                              License Expiry
+                            </th>
+                            <th className="px-6 py-4 text-xs font-bold text-gray-900 uppercase tracking-wide">
+                              <button
+                                type="button"
+                                onClick={() => handleSort("earnings_val")}
+                                className="flex items-center gap-1 cursor-pointer pointer-events-auto"
+                              >
+                                30D Revenue{" "}
+                                <ArrowUpDown className="w-3 h-3 text-gray-500" />
+                              </button>
+                            </th>
+                          </>
+                        )}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50 bg-white">
                       {isLoading && filteredTalent.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={agencyMode === "AI" ? 8 : 6}
+                            colSpan={
+                              agencyMode === "AI"
+                                ? isSportsAgency
+                                  ? 10
+                                  : 9
+                                : isSportsAgency
+                                  ? 5
+                                  : 4
+                            }
                             className="px-6 py-10"
                           >
                             <div className="flex items-center justify-center gap-2 text-sm text-gray-500 font-medium">
                               <Loader2 className="w-4 h-4 animate-spin" />
-                              Loading talents…
+                              {`Loading ${pluralLabel}…`}
                             </div>
                           </td>
                         </tr>
                       ) : filteredTalent.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={agencyMode === "AI" ? 8 : 6}
+                            colSpan={
+                              agencyMode === "AI"
+                                ? isSportsAgency
+                                  ? 10
+                                  : 9
+                                : isSportsAgency
+                                  ? 5
+                                  : 4
+                            }
                             className="px-6 py-10"
                           >
                             <div className="text-center text-sm text-gray-500 font-medium">
-                              No talents to display.
+                              {`No ${pluralLabel} to display.`}
                             </div>
                           </td>
                         </tr>
@@ -1329,17 +1470,53 @@ const RosterView = ({
                             {talent.followers || "0"}
                           </td>
                           <td className="px-6 py-4 text-sm font-medium">
-                            {talent.assets || "0"}
+                            {(() => {
+                              const status = getConsentStatus(talent);
+                              const statusClasses =
+                                status === "complete"
+                                  ? "bg-green-100 text-green-700"
+                                  : status === "expired"
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-yellow-100 text-yellow-700";
+                              return (
+                                <Badge
+                                  variant="secondary"
+                                  className={`border-none text-[10px] font-bold uppercase ${statusClasses}`}
+                                >
+                                  {status}
+                                </Badge>
+                              );
+                            })()}
                           </td>
-                          <td className="px-6 py-4 text-sm font-medium">
-                            {talent.top_brand || "—"}
-                          </td>
-                          <td className="px-6 py-4 text-sm font-medium text-gray-600">
-                            {talent.expiry || "—"}
-                          </td>
-                          <td className="px-6 py-4 text-sm font-bold text-gray-900">
-                            {formatCurrency(Number(talent?.earnings_val ?? 0))}
-                          </td>
+                          {isSportsAgency ? (
+                            <>
+                              <td className="px-6 py-4 text-sm font-medium">
+                                {talent.organization || talent.school || "—"}
+                              </td>
+                              <td className="px-6 py-4 text-sm font-medium">
+                                {talent.sport || talent.sports || "—"}
+                              </td>
+                            </>
+                          ) : (
+                            <td className="px-6 py-4 text-sm font-medium">
+                              {talent.assets || "0"}
+                            </td>
+                          )}
+                          {agencyMode !== "IRL" && (
+                            <>
+                              <td className="px-6 py-4 text-sm font-medium">
+                                {talent.top_brand || "—"}
+                              </td>
+                              <td className="px-6 py-4 text-sm font-medium text-gray-600">
+                                {talent.expiry || "—"}
+                              </td>
+                              <td className="px-6 py-4 text-sm font-bold text-gray-900">
+                                {formatCurrency(
+                                  Number(talent?.earnings_val ?? 0),
+                                )}
+                              </td>
+                            </>
+                          )}
                         </tr>
                       ))}
                     </tbody>
@@ -1376,7 +1553,7 @@ const RosterView = ({
                     Digitals Tracking
                   </h3>
                   <p className="text-sm text-gray-500 mt-1">
-                    Monitor and manage talent digitals (plain photos, no makeup)
+                    {`Monitor and manage ${singularLabel} digitals (plain photos, no makeup)`}
                   </p>
                 </div>
               </div>
@@ -1530,7 +1707,8 @@ const RosterView = ({
                         : "text-gray-400"
                     }`}
                   >
-                    <Calendar className="w-4 h-4" /> Total Talent
+                    <Calendar className="w-4 h-4" />{" "}
+                    {`Total ${pluralTitleLabel}`}
                   </div>
                   <p
                     className={`text-3xl font-bold mb-1 ${
@@ -1555,13 +1733,13 @@ const RosterView = ({
 
               {/* Filter Section */}
               <div className="flex items-center gap-4">
-                <div className="w-64">
+                <div className="w-full sm:w-64">
                   <select
                     value={digitalsFilter}
                     onChange={(e) => setDigitalsFilter(e.target.value)}
                     className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
-                    <option value="All Talent">All Talent</option>
+                    <option value="All Talent">{allRosterFilterLabel}</option>
                     <option value="Current Only">Current Only</option>
                     <option value="Needs Reminder">Needs Reminder</option>
                     <option value="Outdated Only">Outdated Only</option>
@@ -1606,7 +1784,7 @@ const RosterView = ({
                   return (
                     <div
                       key={talent.id}
-                      className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between shadow-sm hover:border-gray-300 transition-colors"
+                      className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 shadow-sm hover:border-gray-300 transition-colors"
                     >
                       <div className="flex items-center gap-4">
                         <img
@@ -1621,7 +1799,7 @@ const RosterView = ({
                             </h3>
                             {statusBadge}
                           </div>
-                          <div className="flex items-center gap-4 mt-1 text-xs text-gray-500 font-medium">
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-1 text-xs text-gray-500 font-medium">
                             <span className="flex items-center gap-1.5">
                               <Clock className="w-3.5 h-3.5 text-gray-400" />
                               Last updated:{" "}
@@ -1638,7 +1816,7 @@ const RosterView = ({
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex w-full lg:w-auto flex-wrap items-center gap-2">
                         <Button
                           variant="outline"
                           size="sm"
@@ -1725,14 +1903,13 @@ const RosterView = ({
               Send Portal Invite
             </DialogTitle>
             <DialogDescription>
-              Select an existing talent in your roster to send them a portal
-              invite.
+              {`Select an existing ${singularLabel} in your roster to send them a portal invite.`}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Search talent</Label>
+              <Label>{`Search ${singularLabel}`}</Label>
               <Input
                 value={inviteSearch}
                 onChange={(e) => setInviteSearch(e.target.value)}
@@ -1757,7 +1934,7 @@ const RosterView = ({
                 if (filtered.length === 0) {
                   return (
                     <div className="text-sm text-gray-600">
-                      No matching talent.
+                      {`No matching ${singularLabel}.`}
                     </div>
                   );
                 }
@@ -1767,7 +1944,7 @@ const RosterView = ({
                     {filtered.slice(0, 30).map((t: any) => {
                       const email = String(t?.email || "").trim();
                       const name = String(
-                        t?.name || t?.full_legal_name || "Talent",
+                        t?.name || t?.full_legal_name || singularTitleLabel,
                       ).trim();
                       const rowSending =
                         !!inviteSendingEmail && inviteSendingEmail === email;
@@ -1795,6 +1972,18 @@ const RosterView = ({
                                 const res: any = await createAgencyTalentInvite(
                                   { email },
                                 );
+                                if (
+                                  String(res?.invite_status || "") ===
+                                  "already_connected"
+                                ) {
+                                  toast({
+                                    title: "Already connected",
+                                    description:
+                                      "This creator is already connected to your agency. No new invite was sent.",
+                                  });
+                                  await refreshTalentInvites();
+                                  return;
+                                }
                                 toast({
                                   title: "Portal invite sent",
                                   description: `Invitation sent to ${email}`,
@@ -1936,10 +2125,21 @@ const RosterView = ({
                           disabled={inviteSending}
                           onClick={async () => {
                             try {
-                              await createAgencyTalentInvite({
+                              const res: any = await createAgencyTalentInvite({
                                 email: String(inv.email || ""),
                               });
-                              toast({ title: "Re-invited" });
+                              if (
+                                String(res?.invite_status || "") ===
+                                "already_connected"
+                              ) {
+                                toast({
+                                  title: "Already connected",
+                                  description:
+                                    "This creator is already connected to your agency. No new invite was sent.",
+                                });
+                              } else {
+                                toast({ title: "Re-invited" });
+                              }
                               await refreshTalentInvites();
                             } catch (e: any) {
                               toast({
@@ -1969,8 +2169,7 @@ const RosterView = ({
               Send digitals reminder
             </DialogTitle>
             <DialogDescription>
-              Sends an email to the selected talent. Requires SMTP configuration
-              on the server.
+              {`Sends an email to the selected ${singularLabel}. Requires SMTP configuration on the server.`}
             </DialogDescription>
           </DialogHeader>
 
@@ -2036,7 +2235,7 @@ const RosterView = ({
                 Insufficient seats!
               </h3>
               <p className="text-gray-500 mb-8 font-medium">
-                Your current plan allows {seatsLimit || 0} talent
+                Your current plan allows {seatsLimit || 0} {singularLabel}
                 {seatsLimit === 1 ? "" : "s"}. Upgrade to add more.
               </p>
               <div className="flex flex-col w-full gap-3">

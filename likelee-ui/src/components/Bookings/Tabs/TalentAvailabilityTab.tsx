@@ -11,12 +11,16 @@ export const TalentAvailabilityTab = ({
   onAddBookOut,
   onRemoveBookOut,
   fixedTalent,
+  isSportsAgency = false,
 }: {
   bookOuts?: any[];
   onAddBookOut: (bookOut: any) => void;
   onRemoveBookOut: (id: string) => void;
   fixedTalent?: { id: string; name: string };
+  isSportsAgency?: boolean;
 }) => {
+  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
+  const entitySingularLower = isSportsAgency ? "athlete" : "talent";
   const [addBookOutOpen, setAddBookOutOpen] = useState(false);
   const { toast } = useToast();
 
@@ -54,7 +58,7 @@ export const TalentAvailabilityTab = ({
     return m;
   }, [talents]);
   const getTalentName = (id: string) =>
-    nameById.get(String(id)) || "Unknown Talent";
+    nameById.get(String(id)) || `Unknown ${entitySingularTitle}`;
 
   const fmtDate = (v?: string) => {
     if (!v) return "";
@@ -76,10 +80,10 @@ export const TalentAvailabilityTab = ({
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold text-gray-900">
-            Talent Availability
+            {`${entitySingularTitle} Availability`}
           </h2>
           <p className="text-gray-500 font-medium text-sm mt-1">
-            Manage book-outs and talent unavailability
+            {`Manage book-outs and ${entitySingularLower} unavailability`}
           </p>
         </div>
         <Button
@@ -99,7 +103,7 @@ export const TalentAvailabilityTab = ({
             No book-outs scheduled
           </h3>
           <p className="text-gray-500 max-w-md">
-            Add unavailability periods for your talent
+            {`Add unavailability periods for your ${entitySingularLower}`}
           </p>
         </div>
       ) : (
@@ -162,6 +166,7 @@ export const TalentAvailabilityTab = ({
         onOpenChange={setAddBookOutOpen}
         onAdd={onAddBookOut}
         fixedTalent={fixedTalent}
+        isSportsAgency={isSportsAgency}
       />
     </div>
   );

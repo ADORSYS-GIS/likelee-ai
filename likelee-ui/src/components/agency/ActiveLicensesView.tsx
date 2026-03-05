@@ -23,9 +23,13 @@ import { ComplianceRenewableLicense } from "@/types/licensing";
 
 const ActiveLicensesView = ({
   onRenew,
+  isSportsAgency = false,
 }: {
   onRenew: (license: ComplianceRenewableLicense) => void;
+  isSportsAgency?: boolean;
 }) => {
+  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
+  const entitySingularLower = isSportsAgency ? "athlete" : "talent";
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("All");
   const [selectedLicense, setSelectedLicense] = useState<any>(null);
@@ -81,18 +85,18 @@ const ActiveLicensesView = ({
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-start">
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
         <div>
           <h2 className="text-3xl font-black text-gray-900 mb-2">
             Active Licenses
           </h2>
           <p className="text-gray-500 font-medium">
-            Manage all talent licensing agreements
+            {`Manage all ${entitySingularLower} licensing agreements`}
           </p>
         </div>
         <Button
           variant="default"
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center gap-2 px-6 h-11 rounded-xl shadow-lg shadow-indigo-200"
+          className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center justify-center gap-2 px-6 h-11 rounded-xl shadow-lg shadow-indigo-200"
         >
           <Download className="w-4 h-4" /> Export Report
         </Button>
@@ -152,36 +156,38 @@ const ActiveLicensesView = ({
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-gray-100 bg-gray-50/50 flex items-center gap-4">
-          <div className="relative flex-1">
+        <div className="p-4 sm:p-6 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+          <div className="relative w-full flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by talent, brand, or license type..."
+              placeholder={`Search by ${entitySingularLower}, brand, or license type...`}
               className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium"
             />
           </div>
-          <div className="flex bg-gray-100 p-1 rounded-lg ml-auto">
-            {["All", "Active", "Expiring", "Expired"].map((filter) => (
-              <button
-                key={filter}
-                onClick={() => setFilterStatus(filter)}
-                className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${filterStatus === filter ? "bg-indigo-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
-              >
-                {filter}
-              </button>
-            ))}
+          <div className="w-full sm:w-auto overflow-x-auto">
+            <div className="flex w-max bg-gray-100 p-1 rounded-lg sm:ml-auto">
+              {["All", "Active", "Expiring", "Expired"].map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => setFilterStatus(filter)}
+                  className={`px-4 py-1.5 text-xs font-bold rounded-md whitespace-nowrap transition-all ${filterStatus === filter ? "bg-indigo-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-900"}`}
+                >
+                  {filter}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[980px]">
             <thead>
               <tr className="bg-gray-50/50 border-b border-gray-100">
                 <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  Talent
+                  {entitySingularTitle}
                 </th>
                 <th className="px-6 py-4 text-left text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                   License Type
@@ -359,6 +365,7 @@ const ActiveLicensesView = ({
         open={isDetailsOpen}
         onClose={() => setIsDetailsOpen(false)}
         onRenew={handleRenew}
+        isSportsAgency={isSportsAgency}
       />
     </div>
   );

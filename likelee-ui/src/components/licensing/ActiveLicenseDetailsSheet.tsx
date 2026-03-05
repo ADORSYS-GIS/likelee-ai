@@ -26,11 +26,13 @@ interface ActiveLicenseDetailsSheetProps {
   open: boolean;
   onClose: () => void;
   onRenew?: (license: ActiveLicense) => void;
+  isSportsAgency?: boolean;
 }
 
 export const ActiveLicenseDetailsSheet: React.FC<
   ActiveLicenseDetailsSheetProps
-> = ({ license, open, onClose, onRenew }) => {
+> = ({ license, open, onClose, onRenew, isSportsAgency = false }) => {
+  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   if (!license) return null;
 
   const formatCurrency = (val: number) => {
@@ -82,7 +84,9 @@ export const ActiveLicenseDetailsSheet: React.FC<
             </Avatar>
             <div>
               <h3 className="text-lg font-bold">{license.talent_name}</h3>
-              <p className="text-sm text-muted-foreground">Talent</p>
+              <p className="text-sm text-muted-foreground">
+                {entitySingularTitle}
+              </p>
             </div>
             {getStatusBadge(license.status)}
           </div>

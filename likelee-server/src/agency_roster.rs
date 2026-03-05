@@ -158,6 +158,8 @@ pub struct TalentRow {
     pub city: String,
     pub state_province: String,
     pub country: String,
+    pub organization: String,
+    pub sports: String,
     pub last_updated: String,
     pub special_skills: String,
     pub date_of_birth: Option<String>,
@@ -173,6 +175,9 @@ pub struct TalentRow {
     pub race_ethnicity: Vec<String>,
     pub tattoos: Option<bool>,
     pub piercings: Option<bool>,
+    pub licensing_rate_weekly_cents: Option<i64>,
+    pub accept_negotiations: bool,
+    pub rate_currency: String,
 }
 
 #[derive(Serialize)]
@@ -183,6 +188,66 @@ pub struct AgencyRosterResponse {
     pub talents: Vec<TalentRow>,
 }
 
+async fn resolve_effective_agency_id(
+    state: &AppState,
+    user: &AuthUser,
+) -> Result<String, (StatusCode, String)> {
+    let by_id_resp = state
+        .pg
+        .from("agencies")
+        .select("id")
+        .eq("id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let by_id_status = by_id_resp.status();
+    let by_id_text = by_id_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !by_id_status.is_success() {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, by_id_text));
+    }
+    let by_id_rows: Vec<serde_json::Value> = serde_json::from_str(&by_id_text).unwrap_or_default();
+    if !by_id_rows.is_empty() {
+        return Ok(user.id.clone());
+    }
+
+    let by_user_resp = state
+        .pg
+        .from("agencies")
+        .select("id")
+        .eq("user_id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let by_user_status = by_user_resp.status();
+    let by_user_text = by_user_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !by_user_status.is_success() {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, by_user_text));
+    }
+    let by_user_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&by_user_text).unwrap_or_default();
+    let agency_id = by_user_rows
+        .first()
+        .and_then(|r| r.get("id"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    if agency_id.is_empty() {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Agency profile not found".to_string(),
+        ));
+    }
+    Ok(agency_id)
+}
+
 pub async fn get_roster(
     State(state): State<AppState>,
     user: AuthUser,
@@ -190,10 +255,9 @@ pub async fn get_roster(
     // Fetch all talents linked to this agency
     let resp = state
         .pg
-        .from("agency_users")
-        .select("*")
+        .from("agency_talent_relationships")
+        .select("id,agency_id,talent_id,creator_id,status,licensing_rate_weekly_cents,accept_negotiations,rate_currency,agency_users(*)")
         .eq("agency_id", &user.id)
-        .eq("role", "talent")
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -210,59 +274,67 @@ pub async fn get_roster(
     let mut roster: Vec<TalentRow> = Vec::new();
     let mut talent_ids: Vec<String> = Vec::new();
     let mut asset_urls_by_talent: HashMap<String, HashSet<String>> = HashMap::new();
+    let mut creator_id_by_talent: HashMap<String, String> = HashMap::new();
 
     if let Some(array) = rows.as_array() {
         for item in array {
+            let talent = item
+                .get("agency_users")
+                .cloned()
+                .unwrap_or_else(|| serde_json::json!({}));
+            let get_field = |k: &str| talent.get(k).or_else(|| item.get(k));
             let id = item
-                .get("id")
+                .get("talent_id")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
             // Try full_legal_name, then stage_name, then full_name
-            let name = item
-                .get("full_legal_name")
-                .or(item.get("stage_name"))
-                .or(item.get("full_name"))
+            let name = get_field("full_legal_name")
+                .or(get_field("stage_name"))
+                .or(get_field("full_name"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("Unknown")
                 .to_string();
 
-            let stage_name = item
-                .get("stage_name")
+            let stage_name = get_field("stage_name")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
 
-            let email = item
-                .get("email")
+            let email = get_field("email")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
-            let phone = item
-                .get("phone_number")
-                .or(item.get("phone"))
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-
-            let city = item
-                .get("city")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-            let state_province = item
-                .get("state_province")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string();
-            let country = item
-                .get("country")
+            let phone = get_field("phone_number")
+                .or(get_field("phone"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
 
-            let role_types: Vec<String> = item
-                .get("role_type")
+            let city = get_field("city")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let state_province = get_field("state_province")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let country = get_field("country")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let organization = get_field("organization")
+                .or(get_field("school"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let sports = get_field("sports")
+                .or(get_field("sport"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+
+            let role_types: Vec<String> = get_field("role_type")
                 .and_then(|v| {
                     v.as_str()
                         .map(|s| {
@@ -293,14 +365,12 @@ pub async fn get_roster(
                 .and_then(|v| v.as_str())
                 .unwrap_or("inactive")
                 .to_string();
-            let consent = item
-                .get("consent_status")
+            let consent = get_field("consent_status")
                 .and_then(|v| v.as_str())
                 .unwrap_or("missing")
                 .to_string();
 
-            let ai_usage: Vec<String> = item
-                .get("ai_usage")
+            let ai_usage: Vec<String> = get_field("ai_usage")
                 .and_then(|v| v.as_array())
                 .map(|arr| {
                     arr.iter()
@@ -310,22 +380,20 @@ pub async fn get_roster(
                 .unwrap_or_default();
 
             let followers_val = item
-                .get("instagram_followers")
+                .get("agency_users")
+                .and_then(|v| v.get("instagram_followers"))
                 .and_then(|v| v.as_i64())
                 .unwrap_or(0);
             let followers = format_number(followers_val);
 
-            let assets = item
-                .get("total_assets")
+            let assets = get_field("total_assets")
                 .and_then(|v| v.as_i64())
                 .unwrap_or(0) as i32;
-            let top_brand = item
-                .get("top_brand")
+            let top_brand = get_field("top_brand")
                 .and_then(|v| v.as_str())
                 .unwrap_or("—")
                 .to_string();
-            let expiry = item
-                .get("license_expiry")
+            let expiry = get_field("license_expiry")
                 .and_then(|v| v.as_str())
                 .unwrap_or("—")
                 .to_string();
@@ -342,17 +410,14 @@ pub async fn get_roster(
                 .unwrap_or(0);
             let projected = format!("${}", format_number(projected_val));
 
-            let is_verified = item
-                .get("is_verified_talent")
-                .and_then(|v| v.as_bool())
-                .unwrap_or(false);
-            let img = item
-                .get("profile_photo_url")
+            let is_verified = false;
+            let img = get_field("profile_photo_url")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
             let photo_urls: Vec<String> = item
-                .get("photo_urls")
+                .get("agency_users")
+                .and_then(|v| v.get("photo_urls"))
                 .map(parse_string_array_value)
                 .unwrap_or_default();
 
@@ -368,23 +433,19 @@ pub async fn get_roster(
                     }
                 }
             }
-            let bio = item
-                .get("bio_notes")
-                .or(item.get("bio"))
+            let bio = get_field("bio_notes")
+                .or(get_field("bio"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
-            let engagement_rate = item
-                .get("engagement_rate")
+            let engagement_rate = get_field("engagement_rate")
                 .and_then(|v| v.as_f64())
                 .unwrap_or(0.0);
-            let last_updated = item
-                .get("updated_at")
+            let last_updated = get_field("updated_at")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
-            let special_skills = item
-                .get("special_skills")
+            let special_skills = get_field("special_skills")
                 .and_then(|v| {
                     v.as_str()
                         .map(|s| {
@@ -405,45 +466,35 @@ pub async fn get_roster(
                 })
                 .unwrap_or_default();
 
-            let date_of_birth = item
-                .get("date_of_birth")
+            let date_of_birth = get_field("date_of_birth")
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string());
-            let gender_identity = item
-                .get("gender_identity")
+            let gender_identity = get_field("gender_identity")
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string());
-            let height_feet = item
-                .get("height_feet")
+            let height_feet = get_field("height_feet")
                 .and_then(|v| v.as_i64())
                 .map(|v| v as i32);
-            let height_inches = item
-                .get("height_inches")
+            let height_inches = get_field("height_inches")
                 .and_then(|v| v.as_i64())
                 .map(|v| v as i32);
-            let bust_inches = item
-                .get("bust_chest_inches")
-                .or(item.get("bust_inches"))
+            let bust_inches = get_field("bust_chest_inches")
+                .or(get_field("bust_inches"))
                 .and_then(|v| v.as_i64())
                 .map(|v| v as i32);
-            let waist_inches = item
-                .get("waist_inches")
+            let waist_inches = get_field("waist_inches")
                 .and_then(|v| v.as_i64())
                 .map(|v| v as i32);
-            let hips_inches = item
-                .get("hips_inches")
+            let hips_inches = get_field("hips_inches")
                 .and_then(|v| v.as_i64())
                 .map(|v| v as i32);
-            let hair_color = item
-                .get("hair_color")
+            let hair_color = get_field("hair_color")
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string());
-            let eye_color = item
-                .get("eye_color")
+            let eye_color = get_field("eye_color")
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string());
-            let race_ethnicity: Vec<String> = item
-                .get("race_ethnicity")
+            let race_ethnicity: Vec<String> = get_field("race_ethnicity")
                 .and_then(|v| {
                     v.as_array().map(|arr| {
                         arr.iter()
@@ -452,14 +503,26 @@ pub async fn get_roster(
                     })
                 })
                 .or_else(|| {
-                    item.get("race_ethnicity")
+                    get_field("race_ethnicity")
                         .and_then(|v| v.as_str())
                         .map(split_csv_tags)
                 })
                 .unwrap_or_default();
 
-            let tattoos = item.get("tattoos").and_then(|v| v.as_bool());
-            let piercings = item.get("piercings").and_then(|v| v.as_bool());
+            let tattoos = get_field("tattoos").and_then(|v| v.as_bool());
+            let piercings = get_field("piercings").and_then(|v| v.as_bool());
+            let licensing_rate_weekly_cents = item
+                .get("licensing_rate_weekly_cents")
+                .and_then(|v| v.as_i64());
+            let accept_negotiations = item
+                .get("accept_negotiations")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(true);
+            let rate_currency = item
+                .get("rate_currency")
+                .and_then(|v| v.as_str())
+                .unwrap_or("USD")
+                .to_string();
 
             let roster_row = TalentRow {
                 id: id.clone(),
@@ -489,6 +552,8 @@ pub async fn get_roster(
                 city,
                 state_province,
                 country,
+                organization,
+                sports,
                 last_updated,
                 special_skills,
                 date_of_birth,
@@ -504,11 +569,23 @@ pub async fn get_roster(
                 race_ethnicity,
                 tattoos,
                 piercings,
+                licensing_rate_weekly_cents,
+                accept_negotiations,
+                rate_currency,
             };
 
             roster.push(roster_row);
             if !id.is_empty() {
-                talent_ids.push(id);
+                talent_ids.push(id.clone());
+            }
+            if let Some(creator_id) = item
+                .get("creator_id")
+                .or_else(|| get_field("creator_id"))
+                .and_then(|v| v.as_str())
+            {
+                if !creator_id.trim().is_empty() && !id.is_empty() {
+                    creator_id_by_talent.insert(id.clone(), creator_id.to_string());
+                }
             }
         }
     }
@@ -724,255 +801,191 @@ pub async fn get_roster(
             }
         }
 
-        // Top brand based on last-30d earnings.
-        // 30D window is based on booking date: end_at (preferred), else date.
-        // Earnings are taken from computed campaigns.talent_earnings_cents (split-based).
+        // Top brand and earnings are sourced from licensing payouts:
+        // - top_brand uses the highest paid client for each talent
+        // - earnings use paid_at windows (last 30d and previous 30d)
         let start_30d = chrono::Utc::now() - chrono::Duration::days(30);
-        let start_30d_date = start_30d.date_naive();
-        let revenue_resp = state
+        let start_60d = chrono::Utc::now() - chrono::Duration::days(60);
+        let start_30d_iso = start_30d.to_rfc3339();
+        let start_60d_iso = start_60d.to_rfc3339();
+
+        let payouts_resp = state
             .pg
-            .from("campaigns")
-            .select("talent_id,brand_id,talent_earnings_cents,date,end_at")
-            .in_("talent_id", ids.clone())
-            .eq("status", "Completed")
+            .from("licensing_payouts")
+            .select("licensing_request_id,talent_id,talent_earnings_cents,talent_splits,paid_at")
+            .eq("agency_id", &user.id)
             .execute()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let revenue_text = revenue_resp
+        let payouts_text = payouts_resp
             .text()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let revenue_rows: serde_json::Value =
-            serde_json::from_str(&revenue_text).unwrap_or(serde_json::json!([]));
+        let payouts_rows: serde_json::Value =
+            serde_json::from_str(&payouts_text).unwrap_or(serde_json::json!([]));
 
-        let mut revenue_by_talent_brand: HashMap<(String, String), i64> = HashMap::new();
-        let mut brand_ids: Vec<String> = Vec::new();
-        if let Some(arr) = revenue_rows.as_array() {
+        let mut request_ids: Vec<String> = Vec::new();
+        if let Some(arr) = payouts_rows.as_array() {
             for r in arr {
-                let t_id = r.get("talent_id").and_then(|v| v.as_str()).unwrap_or("");
-                let b_id = r.get("brand_id").and_then(|v| v.as_str()).unwrap_or("");
-                if t_id.is_empty() || b_id.is_empty() {
-                    continue;
-                }
-
-                let end_at_date = r
-                    .get("end_at")
-                    .and_then(|v| v.as_str())
-                    .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok())
-                    .map(|dt| dt.date_naive());
-                let date = r
-                    .get("date")
-                    .and_then(|v| v.as_str())
-                    .and_then(|s| chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d").ok());
-                let booking_date = end_at_date.or(date);
-                if let Some(d) = booking_date {
-                    if d < start_30d_date {
-                        continue;
+                if let Some(id) = r.get("licensing_request_id").and_then(|v| v.as_str()) {
+                    if !id.trim().is_empty() {
+                        request_ids.push(id.to_string());
                     }
-                } else {
+                }
+            }
+        }
+        request_ids.sort();
+        request_ids.dedup();
+
+        let mut client_by_request: HashMap<String, String> = HashMap::new();
+        if !request_ids.is_empty() {
+            let req_refs: Vec<&str> = request_ids.iter().map(|s| s.as_str()).collect();
+            let req_resp = state
+                .pg
+                .from("licensing_requests")
+                .select("id,client_name")
+                .in_("id", req_refs)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let req_text = req_resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let req_rows: serde_json::Value =
+                serde_json::from_str(&req_text).unwrap_or(serde_json::json!([]));
+            if let Some(arr) = req_rows.as_array() {
+                for r in arr {
+                    let id = r.get("id").and_then(|v| v.as_str()).unwrap_or("");
+                    let client_name = r
+                        .get("client_name")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("—")
+                        .trim()
+                        .to_string();
+                    if !id.is_empty() {
+                        client_by_request.insert(
+                            id.to_string(),
+                            if client_name.is_empty() {
+                                "—".to_string()
+                            } else {
+                                client_name
+                            },
+                        );
+                    }
+                }
+            }
+        }
+
+        let roster_id_set: HashSet<String> = talent_ids.iter().cloned().collect();
+        let mut top_client_cents_by_talent: HashMap<(String, String), i64> = HashMap::new();
+
+        let mut apply_amount = |talent_id: &str, cents: i64, paid_at: &str, client_name: &str| {
+            if talent_id.trim().is_empty() || !roster_id_set.contains(talent_id) {
+                return;
+            }
+            if client_name != "—" && !client_name.trim().is_empty() {
+                *top_client_cents_by_talent
+                    .entry((talent_id.to_string(), client_name.to_string()))
+                    .or_insert(0) += cents;
+            }
+            if paid_at >= start_30d_iso.as_str() {
+                *earnings_30d_by_talent
+                    .entry(talent_id.to_string())
+                    .or_insert(0) += cents;
+                earnings_30d_total_cents += cents;
+            } else if paid_at >= start_60d_iso.as_str() {
+                *earnings_prev_30d_by_talent
+                    .entry(talent_id.to_string())
+                    .or_insert(0) += cents;
+                earnings_prev_30d_total_cents += cents;
+            }
+        };
+
+        if let Some(arr) = payouts_rows.as_array() {
+            for r in arr {
+                let paid_at = r.get("paid_at").and_then(|v| v.as_str()).unwrap_or("");
+                if paid_at.is_empty() {
+                    continue;
+                }
+                let request_id = r
+                    .get("licensing_request_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let client_name = client_by_request
+                    .get(request_id)
+                    .cloned()
+                    .unwrap_or_else(|| "—".to_string());
+
+                let mut had_split = false;
+                if let Some(splits) = r.get("talent_splits").and_then(|v| v.as_array()) {
+                    for split in splits {
+                        let split_talent_id = split
+                            .get("talent_id")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .trim()
+                            .to_string();
+                        let split_cents = split
+                            .get("amount_cents")
+                            .and_then(|v| {
+                                v.as_i64()
+                                    .or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok()))
+                            })
+                            .unwrap_or(0);
+                        if !split_talent_id.is_empty() && split_cents > 0 {
+                            had_split = true;
+                            apply_amount(
+                                &split_talent_id,
+                                split_cents,
+                                paid_at,
+                                client_name.as_str(),
+                            );
+                        }
+                    }
+                }
+
+                if had_split {
                     continue;
                 }
 
-                let amount_cents: i64 = r
+                let fallback_talent_id = r
+                    .get("talent_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .trim()
+                    .to_string();
+                let fallback_cents = r
                     .get("talent_earnings_cents")
                     .and_then(|v| {
                         v.as_i64()
                             .or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok()))
                     })
                     .unwrap_or(0);
-                *revenue_by_talent_brand
-                    .entry((t_id.to_string(), b_id.to_string()))
-                    .or_insert(0) += amount_cents;
-                brand_ids.push(b_id.to_string());
-            }
-        }
-
-        brand_ids.sort();
-        brand_ids.dedup();
-        let mut brand_name_by_id: HashMap<String, String> = HashMap::new();
-        if !brand_ids.is_empty() {
-            let ids_brands: Vec<&str> = brand_ids.iter().map(|s| s.as_str()).collect();
-            let brands_resp = state
-                .pg
-                .from("brands")
-                .select("id,company_name")
-                .in_("id", ids_brands)
-                .execute()
-                .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-            let brands_text = brands_resp
-                .text()
-                .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-            let brands_rows: serde_json::Value =
-                serde_json::from_str(&brands_text).unwrap_or(serde_json::json!([]));
-            if let Some(arr) = brands_rows.as_array() {
-                for r in arr {
-                    let id = r.get("id").and_then(|v| v.as_str()).unwrap_or("");
-                    let name = r
-                        .get("company_name")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or("")
-                        .to_string();
-                    if !id.is_empty() && !name.is_empty() {
-                        brand_name_by_id.insert(id.to_string(), name);
-                    }
+                if !fallback_talent_id.is_empty() && fallback_cents > 0 {
+                    apply_amount(
+                        &fallback_talent_id,
+                        fallback_cents,
+                        paid_at,
+                        client_name.as_str(),
+                    );
                 }
             }
         }
 
         for t_id in talent_ids.iter() {
             let mut best: Option<(String, i64)> = None;
-            for ((tid, bid), cents) in revenue_by_talent_brand.iter() {
+            for ((tid, client), cents) in top_client_cents_by_talent.iter() {
                 if tid != t_id {
                     continue;
                 }
                 match best {
                     Some((_, best_cents)) if *cents <= best_cents => {}
-                    _ => best = Some((bid.clone(), *cents)),
+                    _ => best = Some((client.clone(), *cents)),
                 }
             }
-            if let Some((bid, _)) = best {
-                let name = brand_name_by_id
-                    .get(&bid)
-                    .cloned()
-                    .unwrap_or_else(|| "—".to_string());
-                top_brand_by_talent.insert(t_id.clone(), name);
-            }
-        }
-
-        // Earnings per talent: computed from campaigns split fields.
-        // We use a 60D lookback so we can show the previous 30D period.
-        let start_30d = chrono::Utc::now() - chrono::Duration::days(30);
-        let start_60d = chrono::Utc::now() - chrono::Duration::days(60);
-        let start_30d_date = start_30d.date_naive();
-        let start_60d_date = start_60d.date_naive();
-
-        let earnings_resp = state
-            .pg
-            .from("campaigns")
-            .select("talent_id,talent_earnings_cents,date,end_at")
-            .in_("talent_id", ids.clone())
-            .eq("status", "Completed")
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let earnings_text = earnings_resp
-            .text()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let earnings_rows: serde_json::Value =
-            serde_json::from_str(&earnings_text).unwrap_or(serde_json::json!([]));
-
-        if let Some(arr) = earnings_rows.as_array() {
-            for r in arr {
-                let t_id = r.get("talent_id").and_then(|v| v.as_str()).unwrap_or("");
-                if t_id.is_empty() {
-                    continue;
-                }
-
-                let end_at_date = r
-                    .get("end_at")
-                    .and_then(|v| v.as_str())
-                    .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok())
-                    .map(|dt| dt.date_naive());
-                let date = r
-                    .get("date")
-                    .and_then(|v| v.as_str())
-                    .and_then(|s| chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d").ok());
-                let booking_date = end_at_date.or(date);
-                let Some(d) = booking_date else {
-                    continue;
-                };
-                if d < start_60d_date {
-                    continue;
-                }
-
-                let cents: i64 = r
-                    .get("talent_earnings_cents")
-                    .and_then(|v| {
-                        v.as_i64()
-                            .or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok()))
-                    })
-                    .unwrap_or(0);
-
-                if d >= start_30d_date {
-                    let entry = earnings_30d_by_talent.entry(t_id.to_string()).or_insert(0);
-                    *entry += cents;
-                    earnings_30d_total_cents += cents;
-                } else {
-                    let entry = earnings_prev_30d_by_talent
-                        .entry(t_id.to_string())
-                        .or_insert(0);
-                    *entry += cents;
-                    earnings_prev_30d_total_cents += cents;
-                }
-            }
-        }
-
-        let bookings_resp = state
-            .pg
-            .from("bookings")
-            .select("talent_id,rate_cents,currency,date,status")
-            .eq("agency_user_id", &user.id)
-            .eq("status", "completed")
-            .in_("talent_id", ids.clone())
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let bookings_text = bookings_resp
-            .text()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let bookings_rows: serde_json::Value =
-            serde_json::from_str(&bookings_text).unwrap_or(serde_json::json!([]));
-
-        if let Some(arr) = bookings_rows.as_array() {
-            for r in arr {
-                let t_id = r.get("talent_id").and_then(|v| v.as_str()).unwrap_or("");
-                if t_id.is_empty() {
-                    continue;
-                }
-
-                let date = r
-                    .get("date")
-                    .and_then(|v| v.as_str())
-                    .and_then(|s| chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d").ok());
-                let Some(d) = date else {
-                    continue;
-                };
-                if d < start_60d_date {
-                    continue;
-                }
-
-                let currency = r
-                    .get("currency")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("USD")
-                    .to_uppercase();
-                if currency != "USD" {
-                    continue;
-                }
-
-                let cents: i64 = r
-                    .get("rate_cents")
-                    .and_then(|v| {
-                        v.as_i64()
-                            .or_else(|| v.as_str().and_then(|s| s.parse::<i64>().ok()))
-                    })
-                    .unwrap_or(0);
-
-                if d >= start_30d_date {
-                    let entry = earnings_30d_by_talent.entry(t_id.to_string()).or_insert(0);
-                    *entry += cents;
-                    earnings_30d_total_cents += cents;
-                } else {
-                    let entry = earnings_prev_30d_by_talent
-                        .entry(t_id.to_string())
-                        .or_insert(0);
-                    *entry += cents;
-                    earnings_prev_30d_total_cents += cents;
-                }
+            if let Some((client, _)) = best {
+                top_brand_by_talent.insert(t_id.clone(), client);
             }
         }
 
@@ -1042,6 +1055,51 @@ pub async fn get_roster(
         }
         if let Some(exp) = license_expiry_by_talent.get(&t.id) {
             t.expiry = exp.clone();
+        }
+    }
+
+    let mut creator_ids: Vec<String> = creator_id_by_talent.values().cloned().collect();
+    creator_ids.sort();
+    creator_ids.dedup();
+    if !creator_ids.is_empty() {
+        let creator_refs: Vec<&str> = creator_ids.iter().map(|s| s.as_str()).collect();
+        let creators_resp = state
+            .pg
+            .from("creators")
+            .select("id,kyc_status")
+            .in_("id", creator_refs)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let creators_text = creators_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let creators_rows: serde_json::Value =
+            serde_json::from_str(&creators_text).unwrap_or(serde_json::json!([]));
+
+        let mut verified_creator_ids: HashSet<String> = HashSet::new();
+        if let Some(arr) = creators_rows.as_array() {
+            for c in arr {
+                let cid = c.get("id").and_then(|v| v.as_str()).unwrap_or("");
+                let kyc = c
+                    .get("kyc_status")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_lowercase();
+                if !cid.is_empty() && (kyc == "approved" || kyc == "verified" || kyc == "complete")
+                {
+                    verified_creator_ids.insert(cid.to_string());
+                }
+            }
+        }
+
+        for t in roster.iter_mut() {
+            let creator_id = creator_id_by_talent
+                .get(&t.id)
+                .map(|s| s.as_str())
+                .unwrap_or("");
+            t.is_verified = !creator_id.is_empty() && verified_creator_ids.contains(creator_id);
         }
     }
 
@@ -1167,6 +1225,11 @@ pub struct CreateTalentRequest {
     pub city: Option<String>,
     pub state_province: Option<String>,
     pub country: Option<String>,
+    pub organization: Option<String>,
+    pub sports: Option<String>,
+    pub licensing_rate_weekly_cents: Option<i64>,
+    pub accept_negotiations: Option<bool>,
+    pub rate_currency: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -1205,15 +1268,84 @@ pub struct UpdateTalentRequest {
     pub city: Option<String>,
     pub state_province: Option<String>,
     pub country: Option<String>,
+    pub organization: Option<String>,
+    pub sports: Option<String>,
+    pub licensing_rate_weekly_cents: Option<i64>,
+    pub accept_negotiations: Option<bool>,
+    pub rate_currency: Option<String>,
 }
 
 use serde_json::json;
+
+struct AgencyTalentConnectionUpsert<'a> {
+    agency_id: &'a str,
+    talent_id: &'a str,
+    creator_id: Option<&'a str>,
+    status: &'a str,
+    licensing_rate_weekly_cents: Option<i64>,
+    accept_negotiations: bool,
+    rate_currency: &'a str,
+}
+
+async fn upsert_agency_talent_connection(
+    state: &AppState,
+    input: AgencyTalentConnectionUpsert<'_>,
+) -> Result<(), (StatusCode, String)> {
+    let upsert_payload = json!({
+        "agency_id": input.agency_id,
+        "talent_id": input.talent_id,
+        "creator_id": input.creator_id,
+        "status": input.status,
+        "licensing_rate_weekly_cents": input.licensing_rate_weekly_cents,
+        "accept_negotiations": input.accept_negotiations,
+        "rate_currency": input.rate_currency,
+        "updated_at": chrono::Utc::now().to_rfc3339(),
+    });
+    let upsert_resp = state
+        .pg
+        .from("agency_talent_relationships")
+        .upsert(upsert_payload.to_string())
+        .on_conflict("agency_id,talent_id")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !upsert_resp.status().is_success() {
+        let err_text = upsert_resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, err_text));
+    }
+    Ok(())
+}
 
 pub async fn create_talent(
     State(state): State<AppState>,
     user: AuthUser,
     Json(payload): Json<CreateTalentRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
+    let licensing_rate_weekly_cents = match payload.licensing_rate_weekly_cents {
+        Some(v) if v <= 0 => {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "licensing_rate_weekly_cents must be greater than 0".to_string(),
+            ));
+        }
+        Some(v) => Some(v),
+        None => None,
+    };
+    let accept_negotiations = payload.accept_negotiations.unwrap_or(true);
+    let rate_currency = payload
+        .rate_currency
+        .as_deref()
+        .unwrap_or("USD")
+        .trim()
+        .to_uppercase();
+    if rate_currency.is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "rate_currency is required".to_string(),
+        ));
+    }
+
     let role_types: Vec<String> = payload
         .role_type
         .clone()
@@ -1280,7 +1412,7 @@ pub async fn create_talent(
         .pg
         .from("agencies")
         .select("seats_limit,plan_tier")
-        .eq("id", &user.id)
+        .eq("id", &effective_agency_id)
         .single()
         .execute()
         .await
@@ -1316,10 +1448,9 @@ pub async fn create_talent(
     // 2. Check current talent count
     let count_resp = state
         .pg
-        .from("agency_users")
+        .from("agency_talent_relationships")
         .select("id")
-        .eq("agency_id", &user.id)
-        .eq("role", "talent")
+        .eq("agency_id", &effective_agency_id)
         .execute()
         .await
         .map_err(|e| {
@@ -1342,17 +1473,48 @@ pub async fn create_talent(
         ));
     }
 
-    // 3. Insert and return the record
-    let mut v = json!({
-        "agency_id": user.id,
+    // 3. Reuse existing global talent row by email when possible, else insert identity row once.
+    let normalized_email = payload
+        .email
+        .as_deref()
+        .map(|s| s.trim().to_lowercase())
+        .filter(|s| !s.is_empty());
+
+    let existing_talent = if let Some(email) = normalized_email.as_deref() {
+        let existing_resp = state
+            .pg
+            .from("agency_users")
+            .select("id,creator_id")
+            .eq("role", "talent")
+            .ilike("email", email)
+            .order("updated_at.desc")
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let existing_status = existing_resp.status();
+        let existing_text = existing_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !existing_status.is_success() {
+            return Err((StatusCode::INTERNAL_SERVER_ERROR, existing_text));
+        }
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&existing_text).unwrap_or_default();
+        rows.first().cloned()
+    } else {
+        None
+    };
+
+    let mut identity_payload = json!({
         "full_legal_name": payload.full_name,
         "stage_name": payload.stage_name,
-        "email": payload.email,
+        "email": normalized_email,
         "phone_number": payload.phone,
         "date_of_birth": birthdate_str,
         "role": "talent",
         "role_type": role_type,
-        "status": status,
+        "status": "active",
         "profile_photo_url": payload.profile_photo_url,
         "photo_urls": payload.photo_urls,
         "bio_notes": payload.bio,
@@ -1378,9 +1540,11 @@ pub async fn create_talent(
         "city": payload.city,
         "state_province": payload.state_province,
         "country": payload.country,
+        "organization": payload.organization,
+        "sports": payload.sports,
     });
 
-    if let serde_json::Value::Object(ref mut map) = v {
+    if let serde_json::Value::Object(ref mut map) = identity_payload {
         let null_keys: Vec<String> = map
             .iter()
             .filter_map(|(k, val)| if val.is_null() { Some(k.clone()) } else { None })
@@ -1390,34 +1554,101 @@ pub async fn create_talent(
         }
     }
 
-    let resp = state
-        .pg
-        .from("agency_users")
-        .insert(v.to_string())
-        .execute()
-        .await
-        .map_err(|e| {
-            tracing::error!(
-                "Failed to insert talent (race_ethnicity={:?}): {}",
-                race_ethnicity,
-                e
-            );
-            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
-        })?;
+    let (talent_id, creator_id): (String, Option<String>) = if let Some(row) = existing_talent {
+        let talent_id = row
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        if talent_id.is_empty() {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "unable to resolve existing talent id".to_string(),
+            ));
+        }
+        let update_resp = state
+            .pg
+            .from("agency_users")
+            .eq("id", &talent_id)
+            .update(identity_payload.to_string())
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !update_resp.status().is_success() {
+            let err_text = update_resp.text().await.unwrap_or_default();
+            return Err((StatusCode::INTERNAL_SERVER_ERROR, err_text));
+        }
+        (
+            talent_id,
+            row.get("creator_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+        )
+    } else {
+        if let serde_json::Value::Object(ref mut map) = identity_payload {
+            map.insert("agency_id".to_string(), json!(effective_agency_id));
+        }
+        let insert_resp = state
+            .pg
+            .from("agency_users")
+            .insert(identity_payload.to_string())
+            .select("id,creator_id")
+            .single()
+            .execute()
+            .await
+            .map_err(|e| {
+                tracing::error!(
+                    "Failed to insert talent (race_ethnicity={:?}): {}",
+                    race_ethnicity,
+                    e
+                );
+                (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+            })?;
+        if !insert_resp.status().is_success() {
+            let err_text = insert_resp.text().await.unwrap_or_default();
+            return Err((StatusCode::INTERNAL_SERVER_ERROR, err_text));
+        }
+        let inserted_text = insert_resp.text().await.unwrap_or_default();
+        let inserted_val: serde_json::Value =
+            serde_json::from_str(&inserted_text).unwrap_or(json!({}));
+        (
+            inserted_val
+                .get("id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+            inserted_val
+                .get("creator_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
+        )
+    };
 
-    if !resp.status().is_success() {
-        let err_text = resp.text().await.unwrap_or_default();
-        tracing::error!(
-            "DB error during talent insert (race_ethnicity={:?}): {}",
-            race_ethnicity,
-            err_text
-        );
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, err_text));
+    if talent_id.is_empty() {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "failed to create or resolve talent".to_string(),
+        ));
     }
 
-    let inserted_text = resp.text().await.unwrap_or_default();
-    let inserted_val: serde_json::Value =
-        serde_json::from_str(&inserted_text).unwrap_or(json!({ "status": "ok" }));
+    upsert_agency_talent_connection(
+        &state,
+        AgencyTalentConnectionUpsert {
+            agency_id: &effective_agency_id,
+            talent_id: talent_id.as_str(),
+            creator_id: creator_id.as_deref(),
+            status: status.as_str(),
+            licensing_rate_weekly_cents,
+            accept_negotiations,
+            rate_currency: rate_currency.as_str(),
+        },
+    )
+    .await?;
+
+    let inserted_val = json!({
+        "id": talent_id,
+        "status": "ok"
+    });
 
     tracing::info!("Successfully created talent: {}", payload.full_name);
 
@@ -1430,6 +1661,57 @@ pub async fn update_talent(
     Path(id): Path<String>,
     Json(payload): Json<UpdateTalentRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let effective_agency_id = resolve_effective_agency_id(&state, &user).await?;
+    let access_resp = state
+        .pg
+        .from("agency_talent_relationships")
+        .select("id,status")
+        .eq("agency_id", &effective_agency_id)
+        .eq("talent_id", &id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let access_status = access_resp.status();
+    let access_text = access_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !access_status.is_success() {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, access_text));
+    }
+    let access_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&access_text).unwrap_or_default();
+    if access_rows.is_empty() {
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Talent not found for this agency".to_string(),
+        ));
+    }
+    let existing_connection_status = access_rows
+        .first()
+        .and_then(|r| r.get("status"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("active")
+        .to_string();
+
+    if let Some(v) = payload.licensing_rate_weekly_cents {
+        if v <= 0 {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "licensing_rate_weekly_cents must be greater than 0".to_string(),
+            ));
+        }
+    }
+    if let Some(currency) = payload.rate_currency.as_deref() {
+        if currency.trim().is_empty() {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "rate_currency is required".to_string(),
+            ));
+        }
+    }
+
     let race_ethnicity = payload.race_ethnicity.clone().map(|v| v.into_vec());
     let role_type = payload.role_type.clone().map(|v| {
         let role_types = v
@@ -1492,6 +1774,8 @@ pub async fn update_talent(
         "city": payload.city,
         "state_province": payload.state_province,
         "country": payload.country,
+        "organization": payload.organization,
+        "sports": payload.sports,
     });
 
     if let serde_json::Value::Object(ref mut map) = v {
@@ -1508,7 +1792,6 @@ pub async fn update_talent(
         .pg
         .from("agency_users")
         .eq("id", &id)
-        .eq("agency_id", &user.id)
         .eq("role", "talent")
         .update(v.to_string())
         .execute()
@@ -1521,7 +1804,34 @@ pub async fn update_talent(
     }
 
     let updated_text = resp.text().await.unwrap_or_default();
-    let updated_val: serde_json::Value =
-        serde_json::from_str(&updated_text).unwrap_or(json!({ "status": "ok" }));
+    let updated_val: serde_json::Value = serde_json::from_str(&updated_text).unwrap_or(json!([]));
+    if let Some(first) = updated_val.as_array().and_then(|arr| arr.first()) {
+        let creator_id = first.get("creator_id").and_then(|v| v.as_str());
+        let next_status = payload
+            .status
+            .as_deref()
+            .unwrap_or(existing_connection_status.as_str())
+            .to_string();
+        let next_accept_negotiations = payload.accept_negotiations.unwrap_or(true);
+        let next_rate_currency = payload
+            .rate_currency
+            .as_deref()
+            .unwrap_or("USD")
+            .trim()
+            .to_uppercase();
+        upsert_agency_talent_connection(
+            &state,
+            AgencyTalentConnectionUpsert {
+                agency_id: &effective_agency_id,
+                talent_id: &id,
+                creator_id,
+                status: next_status.as_str(),
+                licensing_rate_weekly_cents: payload.licensing_rate_weekly_cents,
+                accept_negotiations: next_accept_negotiations,
+                rate_currency: next_rate_currency.as_str(),
+            },
+        )
+        .await?;
+    }
     Ok(Json(updated_val))
 }

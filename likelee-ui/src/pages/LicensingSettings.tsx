@@ -16,7 +16,7 @@ export default function LicensingSettings() {
   const { user, initialized, authenticated } = useAuth();
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
-  const [monthlyUsd, setMonthlyUsd] = React.useState<string>("");
+  const [weeklyUsd, setWeeklyUsd] = React.useState<string>("");
   const { toast } = useToast();
 
   React.useEffect(() => {
@@ -26,14 +26,20 @@ export default function LicensingSettings() {
         setLoading(true);
         const { data, error } = await supabase
           .from("creators")
-          .select("base_monthly_price_cents, currency_code")
+          .select(
+            "base_weekly_price_cents, base_monthly_price_cents, currency_code",
+          )
           .eq("id", user.id)
           .maybeSingle();
         if (error) throw error;
         if (data) {
-          if (typeof data.base_monthly_price_cents === "number") {
-            setMonthlyUsd(
-              String(Math.round(data.base_monthly_price_cents / 100)),
+          if (typeof data.base_weekly_price_cents === "number") {
+            setWeeklyUsd(
+              String(Math.round(data.base_weekly_price_cents / 100)),
+            );
+          } else if (typeof data.base_monthly_price_cents === "number") {
+            setWeeklyUsd(
+              String(Math.round(data.base_monthly_price_cents / 100 / 4.345)),
             );
           }
         }
@@ -47,8 +53,8 @@ export default function LicensingSettings() {
 
   const save = async () => {
     if (!user) return;
-    const monthly = Number(monthlyUsd);
-    if (!Number.isFinite(monthly) || monthly < 150) {
+    const weekly = Number(weeklyUsd);
+    if (!Number.isFinite(weekly) || weekly <= 0) {
       toast({
         title: t("licensingSettingsPage.invalidPriceTitle"),
         description: t("licensingSettingsPage.invalidPriceDesc"),
@@ -59,7 +65,8 @@ export default function LicensingSettings() {
       setSaving(true);
       const payload: any = {
         id: user.id,
-        base_monthly_price_cents: Math.round(monthly * 100),
+        base_weekly_price_cents: Math.round(weekly * 100),
+        base_monthly_price_cents: Math.round(weekly * 100 * 4.345),
         currency_code: "USD",
         pricing_updated_at: new Date().toISOString(),
       };
@@ -83,7 +90,7 @@ export default function LicensingSettings() {
   };
 
   const completion = (() => {
-    const mOk = Number(monthlyUsd) >= 150;
+    const mOk = Number(weeklyUsd) > 0;
     return mOk ? 100 : 0;
   })();
 
@@ -111,26 +118,24 @@ export default function LicensingSettings() {
             htmlFor="monthly"
             className="text-sm font-medium text-gray-700 mb-2 block"
           >
-            {t("licensingSettingsPage.basePriceLabel")}
+            {t("licensingSettingsPage.basePriceLabel")} (per week)
           </Label>
           <div className="flex items-center gap-2">
             <span className="text-gray-700">$</span>
             <Input
               id="monthly"
               type="number"
-              min={150}
+              min={1}
               step={1}
-              value={monthlyUsd}
+              value={weeklyUsd}
               onChange={(e: any) => {
                 const v = String(e.target.value || "").replace(/[^0-9.]/g, "");
-                setMonthlyUsd(v);
+                setWeeklyUsd(v);
               }}
               className="border-2 border-gray-300 rounded-none"
-              placeholder="150"
+              placeholder="50"
             />
-            <span className="text-sm text-gray-600">
-              {t("licensingSettingsPage.perMonth")}
-            </span>
+            <span className="text-sm text-gray-600">/week</span>
           </div>
           <p className="text-xs text-gray-500 mt-1">
             {t("licensingSettingsPage.minimumHint")}

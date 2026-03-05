@@ -43,6 +43,9 @@ export const packageApi = {
 
   deleteInteraction: (
     token: string,
-    data: { talent_id: string; type: "favorite" | "callback" | "selected" },
+    data: {
+      talent_id: string;
+      type: "favorite" | "callback" | "selected" | "consent";
+    },
   ) => base44Client.delete(`/public/packages/${token}/interactions`, { data }),
 };

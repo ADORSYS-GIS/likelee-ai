@@ -95,7 +95,8 @@ const TIER_CONFIG: Record<string, any> = {
     modalInputBg: "bg-gray-100/30",
     recommendation:
       "Requires immediate action. Consider portfolio refresh, marketing push, or roster review.",
-    thresholds: "Includes all talent that don't meet Tier 3 requirements",
+    thresholds:
+      "Includes all roster profiles that don't meet Tier 3 requirements",
     id: "Inactive",
   },
 };
@@ -141,9 +142,13 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
-export const PerformanceTiers: React.FC = () => {
+export const PerformanceTiers: React.FC<{ isSportsAgency?: boolean }> = ({
+  isSportsAgency = false,
+}) => {
   const queryClient = useQueryClient();
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const entitySingular = isSportsAgency ? "athlete" : "talent";
+  const entityPlural = isSportsAgency ? "Athletes" : "Talent";
 
   const [configForm, setConfigForm] = useState<
     Record<string, { min_earnings: number; min_bookings: number }>
@@ -267,21 +272,21 @@ export const PerformanceTiers: React.FC = () => {
   };
 
   return (
-    <div className="p-10 animate-in fade-in duration-500 space-y-12">
+    <div className="p-4 sm:p-6 lg:p-10 animate-in fade-in duration-500 space-y-8 sm:space-y-12">
       <div className="mb-12">
-        <div className="flex justify-between items-start mb-10">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
               Performance Tiers
             </h1>
             <p className="text-gray-500 font-medium text-sm mt-1">
-              Talent segmented by earnings and activity levels
+              {`${entityPlural} segmented by earnings and activity levels`}
             </p>
           </div>
           <Button
             variant="outline"
             onClick={() => setIsConfigModalOpen(true)}
-            className="flex items-center gap-2 border-gray-200 font-bold text-gray-700 bg-white hover:bg-gray-50 transition-colors rounded-none shadow-sm"
+            className="w-full sm:w-auto flex items-center gap-2 border-gray-200 font-bold text-gray-700 bg-white hover:bg-gray-50 transition-colors rounded-none shadow-sm"
           >
             <Settings className="w-4 h-4 text-gray-400" /> Configure Tiers
           </Button>
@@ -310,7 +315,7 @@ export const PerformanceTiers: React.FC = () => {
                       {group.talents.length}
                     </span>
                     <span className="text-xs text-gray-500 font-medium pb-1">
-                      talent
+                      {entitySingular}
                     </span>
                   </div>
                 </div>
@@ -347,13 +352,13 @@ export const PerformanceTiers: React.FC = () => {
             thresholdStr = `≥ ${currencyFormatter.format(c.min_earnings)}/mo • ≥ ${c.min_bookings} bookings`;
           } else if (group.name === "Inactive") {
             thresholdStr =
-              "Includes all talent that don't meet Tier 3 requirements";
+              "Includes all roster profiles that don't meet Tier 3 requirements";
           }
 
           return (
             <div
               key={group.name}
-              className="bg-white rounded-none border border-gray-200 shadow-sm overflow-hidden p-8"
+              className="bg-white rounded-none border border-gray-200 shadow-sm overflow-hidden p-4 sm:p-6 lg:p-8"
             >
               <div className="flex items-center gap-4 mb-8">
                 <div
@@ -441,7 +446,7 @@ export const PerformanceTiers: React.FC = () => {
                       <Users className={cn("w-4 h-4", cfg.brandColor)} />
                     </div>
                     <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                      Total Talent
+                      {`Total ${entityPlural}`}
                     </span>
                   </div>
                   <div className="text-2xl font-bold text-gray-900">
@@ -470,7 +475,7 @@ export const PerformanceTiers: React.FC = () => {
               <div>
                 <div className="flex items-center justify-between mb-6">
                   <h4 className="text-sm font-bold text-gray-900 font-bold">
-                    Talent in This Tier
+                    {`${entityPlural} in This Tier`}
                   </h4>
                 </div>
                 <div className="space-y-3">
@@ -478,7 +483,7 @@ export const PerformanceTiers: React.FC = () => {
                     group.talents.map((talent) => (
                       <div
                         key={talent.id}
-                        className="flex items-center gap-4 p-5 border border-gray-100 rounded-none bg-white shadow-sm hover:shadow-md transition-all group"
+                        className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 sm:p-5 border border-gray-100 rounded-none bg-white shadow-sm hover:shadow-md transition-all group"
                       >
                         <Avatar className="w-14 h-14 rounded-none object-cover bg-gray-50 shadow-sm border border-gray-200">
                           <AvatarImage
@@ -489,14 +494,14 @@ export const PerformanceTiers: React.FC = () => {
                             {talent.name.substring(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="font-bold text-gray-900 text-[15px]">
+                            <span className="font-bold text-gray-900 text-[15px] truncate">
                               {talent.name}
                             </span>
                             <CheckCircle2 className="w-4 h-4 text-green-500 fill-green-500/10" />
                           </div>
-                          <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400">
+                          <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold text-gray-400">
                             <span className="text-gray-900 font-bold">
                               {currencyFormatter.format(talent.earnings_30d)}/mo
                             </span>
@@ -525,7 +530,7 @@ export const PerformanceTiers: React.FC = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-10 font-bold text-gray-700 bg-white border-gray-200 px-6 rounded-none hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                          className="w-full sm:w-auto h-10 font-bold text-gray-700 bg-white border-gray-200 px-6 rounded-none hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
                         >
                           View
                         </Button>
@@ -537,7 +542,7 @@ export const PerformanceTiers: React.FC = () => {
                         <Users className="w-12 h-12 text-gray-100" />
                       </div>
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-widest leading-relaxed">
-                        No talent assigned to
+                        {`No ${entitySingular} assigned to`}
                         <br />
                         this performance tier yet
                       </p>
@@ -579,7 +584,7 @@ export const PerformanceTiers: React.FC = () => {
                     {TIER_CONFIG[tier].label}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                   <div className="space-y-3">
                     <Label className="text-[13px] font-bold text-gray-600 ml-1">
                       Min Monthly Earnings ($)
@@ -629,7 +634,7 @@ export const PerformanceTiers: React.FC = () => {
             ))}
             <p className="text-[13px] text-gray-500 font-medium pl-1 py-2">
               <span className="font-bold">Note:</span> Tier 4 includes all
-              talent that don't meet Tier 3 requirements.
+              roster profiles that don't meet Tier 3 requirements.
             </p>
           </div>
 
