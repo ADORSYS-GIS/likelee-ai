@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -66,7 +65,7 @@ export default function AddTalent() {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const queryClient = useQueryClient();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -105,6 +104,8 @@ export default function AddTalent() {
     city: "",
     state: "",
     country: "",
+    organization: "",
+    sports: "",
 
     // Media
     hero_media: null,
@@ -118,7 +119,18 @@ export default function AddTalent() {
     // Notes
     bio: "",
     special_skills: "",
+    licensing_rate_weekly_usd: "",
+    accept_negotiations: true,
   });
+
+  const normalizedAgencyType = String((profile as any)?.agency_type || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_");
+  const isSportsAgency = normalizedAgencyType === "sports_agency";
+  const entityTitle = isSportsAgency ? "Athlete" : "Talent";
+  const entityTitlePlural = isSportsAgency ? "Athletes" : "Talent";
+  const entityLower = isSportsAgency ? "athlete" : "talent";
 
   useEffect(() => {
     const prospect = (location as any)?.state?.prospect;
@@ -143,7 +155,9 @@ export default function AddTalent() {
     });
   }, [formData.photos]);
 
-  const roleCategories = ["Model", "Actor", "Creator", "Voice", "Athlete"];
+  const roleCategories = isSportsAgency
+    ? ["Actor", "Creator", "Voice", "Athlete"]
+    : ["Model", "Actor", "Creator", "Voice"];
 
   const fileInputRef = useRef(null);
   const photoInputRef = useRef(null);
@@ -295,7 +309,7 @@ export default function AddTalent() {
       if (!isAtLeast18(formData.birthdate)) {
         toast({
           title: "Invalid date of birth",
-          description: "Talent must be at least 18 years old.",
+          description: `${entityTitle} must be at least 18 years old.`,
           variant: "destructive",
         });
         return;
@@ -344,8 +358,7 @@ export default function AddTalent() {
           console.error("Photo upload failed:", e);
           toast({
             title: "Upload failed",
-            description:
-              "Could not upload photos. Talent will be created without photos.",
+            description: `Could not upload photos. ${entityTitle} will be created without photos.`,
             variant: "destructive",
           });
         }
@@ -404,6 +417,13 @@ export default function AddTalent() {
         city: formData.city,
         state_province: formData.state,
         country: formData.country,
+        organization: formData.organization,
+        sports: formData.sports,
+        licensing_rate_weekly_cents: Math.round(
+          Number(formData.licensing_rate_weekly_usd || 0) * 100,
+        ),
+        accept_negotiations: !!formData.accept_negotiations,
+        rate_currency: "USD",
       };
 
       await createAgencyTalent(payload);
@@ -419,13 +439,15 @@ export default function AddTalent() {
 
       toast({
         title: "Success",
-        description: "Talent added successfully!",
+        description: `${entityTitle} added successfully!`,
       });
       {
-        const base = createPageUrl("AgencyDashboard");
-        const hasQuery = base.includes("?");
+        const rosterSubTab = isSportsAgency ? "All Athletes" : "All Talent";
         navigate(
-          `${base}${hasQuery ? "&" : "?"}tab=roster&subTab=${encodeURIComponent("All Talent")}`,
+          {
+            pathname: "/AgencyDashboard",
+            search: `?tab=roster&subTab=${encodeURIComponent(rosterSubTab)}`,
+          },
           { replace: true },
         );
       }
@@ -433,7 +455,7 @@ export default function AddTalent() {
       console.error(error);
       toast({
         title: "Error",
-        description: "Failed to create talent. Please try again.",
+        description: `Failed to create ${entityLower}. Please try again.`,
         variant: "destructive",
       });
     } finally {
@@ -445,7 +467,8 @@ export default function AddTalent() {
     formData.full_name &&
     formData.email &&
     formData.birthdate &&
-    isAtLeast18(formData.birthdate);
+    isAtLeast18(formData.birthdate) &&
+    Number(formData.licensing_rate_weekly_usd || 0) > 0;
   const canProceedStep2 =
     formData.gender &&
     formData.ethnicity.length > 0 &&
@@ -462,21 +485,25 @@ export default function AddTalent() {
           <Button
             variant="ghost"
             onClick={() => {
-              const base = createPageUrl("AgencyDashboard");
-              const hasQuery = base.includes("?");
-              navigate(`${base}${hasQuery ? "&" : "?"}tab=roster`);
+              const rosterSubTab = isSportsAgency
+                ? "All Athletes"
+                : "All Talent";
+              navigate({
+                pathname: "/AgencyDashboard",
+                search: `?tab=roster&subTab=${encodeURIComponent(rosterSubTab)}`,
+              });
             }}
             className="mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to All Talent
+            {`Back to All ${entityTitlePlural}`}
           </Button>
 
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Add New Talent
+            {`Add New ${entityTitle}`}
           </h1>
           <p className="text-gray-600">
-            Add a new talent to your agency roster
+            {`Add a new ${entityLower} to your agency roster`}
           </p>
         </div>
 
@@ -581,7 +608,7 @@ export default function AddTalent() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="talent@example.com"
+                    placeholder={`${entityLower}@example.com`}
                     value={formData.email}
                     onChange={(e) =>
                       setFormData({ ...formData, email: e.target.value })
@@ -628,12 +655,12 @@ export default function AddTalent() {
                 />
                 {formData.birthdate && !isAtLeast18(formData.birthdate) && (
                   <p className="text-sm text-red-600 mt-2 font-medium">
-                    Talent must be at least 18 years old.
+                    {`${entityTitle} must be at least 18 years old.`}
                   </p>
                 )}
               </div>
 
-              <div className="grid md:grid-cols-3 gap-4">
+              <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <Label
                     htmlFor="city"
@@ -687,6 +714,40 @@ export default function AddTalent() {
                     placeholder="USA"
                   />
                 </div>
+                <div>
+                  <Label
+                    htmlFor="organization"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Organization
+                  </Label>
+                  <Input
+                    id="organization"
+                    value={formData.organization}
+                    onChange={(e) =>
+                      setFormData({ ...formData, organization: e.target.value })
+                    }
+                    className="border-2 border-gray-300"
+                    placeholder="e.g. UCLA"
+                  />
+                </div>
+                <div>
+                  <Label
+                    htmlFor="sports"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Sports
+                  </Label>
+                  <Input
+                    id="sports"
+                    value={formData.sports}
+                    onChange={(e) =>
+                      setFormData({ ...formData, sports: e.target.value })
+                    }
+                    className="border-2 border-gray-300"
+                    placeholder="e.g. Basketball"
+                  />
+                </div>
               </div>
 
               <div>
@@ -703,8 +764,50 @@ export default function AddTalent() {
                     setFormData({ ...formData, bio: e.target.value })
                   }
                   className="border-2 border-gray-300 min-h-24"
-                  placeholder="Brief bio or internal notes about this talent..."
+                  placeholder={`Brief bio or internal notes about this ${entityLower}...`}
                 />
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label
+                    htmlFor="licensing_rate_weekly_usd"
+                    className="text-sm font-medium text-gray-700 mb-2 block"
+                  >
+                    Licensing Rate (USD/week){" "}
+                    <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="licensing_rate_weekly_usd"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={formData.licensing_rate_weekly_usd}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        licensing_rate_weekly_usd: e.target.value,
+                      })
+                    }
+                    className="border-2 border-gray-300"
+                    placeholder="e.g. 750"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <label className="inline-flex items-center gap-2 text-sm text-gray-700 font-medium">
+                    <input
+                      type="checkbox"
+                      checked={!!formData.accept_negotiations}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          accept_negotiations: e.target.checked,
+                        })
+                      }
+                    />
+                    Open to negotiations
+                  </label>
+                </div>
               </div>
 
               <Button
@@ -1384,12 +1487,12 @@ export default function AddTalent() {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Adding talent...
+                      {`Adding ${entityLower}...`}
                     </>
                   ) : (
                     <>
                       <CheckCircle2 className="w-5 h-5 mr-2" />
-                      Add Talent to Roster
+                      {`Add ${entityTitle} to Roster`}
                     </>
                   )}
                 </Button>

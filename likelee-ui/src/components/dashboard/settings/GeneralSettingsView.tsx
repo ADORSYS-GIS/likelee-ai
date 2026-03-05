@@ -111,7 +111,7 @@ const InviteTeamMemberModal = ({
                   Accountant - View/create invoices, reports
                 </SelectItem>
                 <SelectItem value="coordinator">
-                  Talent Coordinator - Manage talent profiles
+                  Roster Coordinator - Manage roster profiles
                 </SelectItem>
                 <SelectItem value="readonly">
                   Read-Only - View everything
@@ -174,10 +174,10 @@ const EditPermissionsModal = ({
       ],
     },
     {
-      title: "Talent Roster",
+      title: "Roster",
       permissions: [
         { label: "Can view roster", default: true },
-        { label: "Can edit talent profiles", default: false },
+        { label: "Can edit roster profiles", default: false },
         { label: "Can add prospects", default: true },
       ],
     },
@@ -253,7 +253,7 @@ const ActivityLogModal = ({
       color: "text-blue-600 bg-blue-50",
     },
     {
-      action: "Updated talent profile",
+      action: "Updated roster profile",
       details: "Milan Anderson - Added new headshots",
       time: "Jan 12, 2024 9:45 AM",
       icon: User,
@@ -335,6 +335,23 @@ const ActivityLogModal = ({
 const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
   const { profile, refreshProfile } = useAuth();
   const { toast } = useToast();
+  const normalizedAgencyType = String((profile as any)?.agency_type || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_");
+  const isSportsAgency = normalizedAgencyType === "sports_agency";
+  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
+  const entitySingularLower = isSportsAgency ? "athlete" : "talent";
+  const entityPluralLower = isSportsAgency ? "athletes" : "talent";
+  const entityNameToken = isSportsAgency ? "{athlete_name}" : "{talent_name}";
+  const templateValueForDisplay = (value: string) =>
+    isSportsAgency
+      ? String(value || "").replaceAll("{talent_name}", "{athlete_name}")
+      : String(value || "");
+  const templateValueForStorage = (value: string) =>
+    isSportsAgency
+      ? String(value || "").replaceAll("{athlete_name}", "{talent_name}")
+      : String(value || "");
   const [activeTab, setActiveTab] = useState("Profile");
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
@@ -469,14 +486,14 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
     },
     {
       key: "talent_book_out",
-      title: "Talent Book Out",
-      desc: "When talent marks themselves unavailable",
+      title: `${entitySingularTitle} Book Out`,
+      desc: `When ${entitySingularLower} marks themselves unavailable`,
       channels: { email: true, sms: false, push: false },
     },
     {
       key: "license_expiring",
       title: "License Expiring",
-      desc: "When a talent license is about to expire",
+      desc: `When a ${entitySingularLower} license is about to expire`,
       channels: { email: true, sms: false, push: false },
     },
   ] as {
@@ -790,8 +807,8 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
               id: t.id,
               template_key: t.template_key,
               name: t.name,
-              subject: t.subject,
-              body: t.body,
+              subject: templateValueForDisplay(t.subject),
+              body: templateValueForDisplay(t.body),
               is_active: !!t.is_active,
             }));
             const order = new Map<string, number>([
@@ -816,7 +833,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
               template_key: "booking_confirmation",
               name: "Booking Confirmation",
               subject: "Booking Confirmed - {client_name}",
-              body: "Hi {talent_name},\n\nYour booking with {client_name} on {booking_date} at {call_time} has been confirmed.\n\nLocation: {location}\nRate: {rate}\n\nBest regards,\n{agency_name}",
+              body: `Hi ${entityNameToken},\n\nYour booking with {client_name} on {booking_date} at {call_time} has been confirmed.\n\nLocation: {location}\nRate: {rate}\n\nBest regards,\n{agency_name}`,
               is_active: true,
             },
             {
@@ -839,8 +856,8 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
             agency_id: profile.id,
             template_key: t.template_key,
             name: t.name,
-            subject: t.subject,
-            body: t.body,
+            subject: templateValueForStorage(t.subject),
+            body: templateValueForStorage(t.body),
             is_active: t.is_active,
             updated_at: new Date().toISOString(),
           }));
@@ -1078,8 +1095,8 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
         agency_id: profile.id,
         template_key: t.template_key,
         name: t.name,
-        subject: t.subject,
-        body: t.body,
+        subject: templateValueForStorage(t.subject),
+        body: templateValueForStorage(t.body),
         is_active: t.is_active,
         updated_at: new Date().toISOString(),
       }));
@@ -1794,7 +1811,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                         {division.name}
                       </p>
                       <p className="text-xs text-gray-500 font-medium">
-                        {division.count} talent
+                        {`${division.count} ${entityPluralLower}`}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 sm:gap-4">
@@ -1855,11 +1872,10 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
             {/* Per-Talent Custom Commissions */}
             <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
               <h3 className="text-lg font-bold text-gray-900 mb-2 tracking-tight">
-                Per-Talent Custom Commissions
+                {`Per-${entitySingularTitle} Custom Commissions`}
               </h3>
               <p className="text-sm text-gray-500 font-medium mb-8">
-                Override commission rates for specific talent (edit from talent
-                profile)
+                {`Override commission rates for specific ${entitySingularLower} (edit from ${entitySingularLower} profile)`}
               </p>
               <div className="flex flex-col items-center justify-center py-12 bg-gray-50/50 border border-dashed border-gray-200 rounded-xl">
                 <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-4">
@@ -1920,7 +1936,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                 </h4>
                 <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-y-3 gap-x-8">
                   {[
-                    "{talent_name}",
+                    entityNameToken,
                     "{client_name}",
                     "{booking_date}",
                     "{call_time}",
@@ -2149,8 +2165,8 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                         {pref.desc}
                       </p>
                     </div>
-                    <div className="flex items-center gap-6">
-                      <div className="flex items-center gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full sm:w-auto">
+                      <div className="flex items-center justify-between sm:justify-start gap-2">
                         <Switch
                           checked={pref.channels.email}
                           onCheckedChange={(checked) =>
@@ -2173,7 +2189,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                           Email
                         </span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-between sm:justify-start gap-2">
                         <Switch checked={false} disabled />
                         <span className="text-xs font-bold text-gray-900 opacity-60">
                           SMS
@@ -2182,7 +2198,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                           Coming Soon
                         </span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-between sm:justify-start gap-2">
                         <Switch checked={false} disabled />
                         <span className="text-xs font-bold text-gray-900 opacity-60">
                           Push
@@ -2475,7 +2491,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                       Divisions / Boards
                     </h3>
                     <p className="text-sm text-gray-500 font-medium">
-                      Organize your talent into divisions
+                      {`Organize your ${entityPluralLower} into divisions`}
                     </p>
                   </div>
                 </div>
@@ -2503,7 +2519,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
                       </Badge>
                     </div>
                     <p className="text-sm text-gray-500 font-medium">
-                      {division.count} talent assigned
+                      {`${division.count} ${entityPluralLower} assigned`}
                     </p>
                     <div className="flex items-end justify-between pt-2">
                       <div className="space-y-1">
@@ -2566,7 +2582,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-sm font-bold text-gray-900">
-                    Talent Count
+                    {`${entitySingularTitle} Count`}
                   </Label>
                   <Input
                     value={String(divisionDraft.count)}
@@ -2619,7 +2635,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
 
         {activeTab === "Team" && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <h3 className="text-xl font-bold text-gray-900">
                   Team Management
@@ -2630,7 +2646,7 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
               </div>
               <Button
                 disabled
-                className="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center gap-2 shrink-0"
+                className="h-9 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 shrink-0 w-full sm:w-auto"
               >
                 <Plus className="w-4 h-4" />
                 Invite User

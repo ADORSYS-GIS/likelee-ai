@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Filter, CheckCircle2, Send, RefreshCw } from "lucide-react";
+import { Filter, CheckCircle2, Send, RefreshCw, Eye } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,13 @@ import {
   sendLicensingRequestPaymentLink,
 } from "@/api/functions";
 
-const LicensingRequestsView = () => {
+const LicensingRequestsView = ({
+  isSportsAgency = false,
+}: {
+  isSportsAgency?: boolean;
+}) => {
+  const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
+  const entityPluralLower = isSportsAgency ? "athlete" : "talent";
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -137,7 +143,7 @@ const LicensingRequestsView = () => {
           typeof parsed === "object" &&
           parsed.code === "MISSING_TALENT_STRIPE_CONNECT"
         ) {
-          friendlyTitle = "Action required: connect talent payouts";
+          friendlyTitle = `Action required: connect ${entityPluralLower} payouts`;
           const missingList = Array.isArray(parsed.missing)
             ? parsed.missing
             : [];
@@ -168,6 +174,19 @@ const LicensingRequestsView = () => {
     );
     return activeRequestTab === "Active" ? !isArchived : isArchived;
   });
+
+  const getRequestDetails = (group: any) => {
+    const rawNotes = String(group?.notes || "").trim();
+    if (!rawNotes) return {};
+    try {
+      const parsed = JSON.parse(rawNotes);
+      if (parsed && typeof parsed === "object")
+        return parsed as Record<string, any>;
+      return {};
+    } catch {
+      return {};
+    }
+  };
 
   return (
     <>
@@ -254,7 +273,7 @@ const LicensingRequestsView = () => {
                       key={`${t.licensing_request_id}-${i}`}
                       className="px-3 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded uppercase"
                     >
-                      {name || "Talent"}
+                      {name || entitySingularTitle}
                     </span>
                   ));
                 })}
@@ -303,6 +322,17 @@ const LicensingRequestsView = () => {
                     </p>
                   </div>
                 </div>
+              </div>
+
+              <div className="mb-6">
+                <Button
+                  variant="outline"
+                  onClick={() => setSelectedGroup(group)}
+                  className="border-gray-300 text-gray-700 font-bold h-10 rounded-md flex items-center gap-2"
+                >
+                  <Eye className="w-4 h-4" />
+                  View details
+                </Button>
               </div>
 
               {group.status === "approved" ? (
@@ -438,6 +468,78 @@ const LicensingRequestsView = () => {
                 Send Counter Offer
               </Button>
             </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog
+          open={!!selectedGroup}
+          onOpenChange={(open) => {
+            if (!open) setSelectedGroup(null);
+          }}
+        >
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Licensing Request Details</DialogTitle>
+              <DialogDescription>
+                Additional campaign context for contract preparation.
+              </DialogDescription>
+            </DialogHeader>
+
+            {selectedGroup && (
+              <div className="space-y-4 py-2">
+                {(() => {
+                  const details = getRequestDetails(selectedGroup);
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-gray-500">Campaign</p>
+                        <p className="font-semibold text-gray-900">
+                          {selectedGroup?.campaign_title || "—"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Category</p>
+                        <p className="font-semibold text-gray-900">
+                          {String(details?.category || "—")}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Exclusivity</p>
+                        <p className="font-semibold text-gray-900">
+                          {String(details?.exclusivity || "—")}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Offer Amount</p>
+                        <p className="font-semibold text-gray-900">
+                          {typeof details?.offer_amount === "number"
+                            ? `$${details.offer_amount.toLocaleString()}`
+                            : "—"}
+                        </p>
+                      </div>
+                      <div className="md:col-span-2">
+                        <p className="text-gray-500">Description</p>
+                        <p className="font-medium text-gray-900 whitespace-pre-wrap">
+                          {String(details?.description || "—")}
+                        </p>
+                      </div>
+                      <div className="md:col-span-2">
+                        <p className="text-gray-500">Custom Terms</p>
+                        <p className="font-medium text-gray-900 whitespace-pre-wrap">
+                          {String(details?.custom_terms || "—")}
+                        </p>
+                      </div>
+                      <div className="md:col-span-2">
+                        <p className="text-gray-500">Modifications Allowed</p>
+                        <p className="font-medium text-gray-900">
+                          {String(details?.modifications_allowed || "—")}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>

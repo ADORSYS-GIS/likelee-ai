@@ -31,6 +31,8 @@ export const ContractEditor: React.FC<ContractEditorProps> = ({
   placeholder,
   readOnly = false,
 }) => {
+  const markdownTextareaRef = React.useRef<HTMLTextAreaElement | null>(null);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -56,7 +58,23 @@ export const ContractEditor: React.FC<ContractEditorProps> = ({
       editor.commands.focus();
       editor.commands.insertContent(variable);
     } else {
-      onChangeBody(body + variable);
+      const textarea = markdownTextareaRef.current;
+      if (!textarea) {
+        onChangeBody(body + variable);
+        return;
+      }
+
+      const start = textarea.selectionStart ?? body.length;
+      const end = textarea.selectionEnd ?? body.length;
+      const nextBody = `${body.slice(0, start)}${variable}${body.slice(end)}`;
+      const nextCursor = start + variable.length;
+
+      onChangeBody(nextBody);
+
+      requestAnimationFrame(() => {
+        markdownTextareaRef.current?.focus();
+        markdownTextareaRef.current?.setSelectionRange(nextCursor, nextCursor);
+      });
     }
   };
 
@@ -173,6 +191,7 @@ export const ContractEditor: React.FC<ContractEditorProps> = ({
           </div>
         ) : (
           <Textarea
+            ref={markdownTextareaRef}
             value={body}
             onChange={(e) => onChangeBody(e.target.value)}
             readOnly={readOnly}

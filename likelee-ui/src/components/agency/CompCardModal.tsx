@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -130,6 +131,7 @@ const CompCardModal = ({
         data: { session },
       } = await supabase.auth.getSession();
       if (!session) {
+        await supabase.auth.signOut();
         toast({
           title: "Not signed in",
           description:
@@ -137,13 +139,6 @@ const CompCardModal = ({
           variant: "destructive",
         });
         throw new Error("Not authenticated");
-      }
-
-      // Best-effort refresh: can resolve stale sessions in long-running dev sessions.
-      try {
-        await supabase.auth.refreshSession();
-      } catch {
-        // ignore; we'll handle failures below
       }
 
       const {
@@ -364,6 +359,9 @@ const CompCardModal = ({
       cacheBust: true,
       backgroundColor: "#ffffff",
       pixelRatio,
+      // Prevent CSP-blocked Google font fetch attempts during export.
+      fontEmbedCSS: "",
+      preferredFontFormat: undefined,
     });
   };
 
@@ -405,16 +403,19 @@ const CompCardModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl h-[80vh] flex flex-col p-0 overflow-hidden">
-        <DialogHeader className="p-6 pb-2">
+      <DialogContent className="max-w-[96vw] lg:max-w-5xl h-[92vh] lg:h-[80vh] flex flex-col p-0 overflow-hidden">
+        <DialogHeader className="p-4 sm:p-6 pb-2">
           <DialogTitle className="text-2xl font-bold">
             Comp Card Generator
           </DialogTitle>
+          <DialogDescription>
+            Create, export, and share comp cards with selected clients.
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 flex-col lg:flex-row overflow-hidden">
           {/* Left Panel: Controls */}
-          <div className="w-1/3 border-r border-gray-200 flex flex-col p-6 space-y-6 overflow-y-auto">
+          <div className="w-full lg:w-1/3 border-b lg:border-b-0 lg:border-r border-gray-200 flex flex-col p-4 sm:p-6 space-y-6 overflow-y-auto">
             {/* Template Selection */}
             <div className="space-y-3">
               <label className="text-sm font-bold text-gray-900">
@@ -520,7 +521,7 @@ const CompCardModal = ({
                 </div>
               </div>
 
-              <ScrollArea className="h-64 rounded-xl border border-gray-200 p-2">
+              <ScrollArea className="h-56 sm:h-64 rounded-xl border border-gray-200 p-2">
                 <div className="space-y-1">
                   {talents.map((talent) => (
                     <div
@@ -643,8 +644,8 @@ const CompCardModal = ({
           </div>
 
           {/* Right Panel: Preview */}
-          <div className="flex-1 bg-gray-50 p-8 flex flex-col items-center justify-center overflow-y-auto">
-            <div className="flex justify-between w-full max-w-md mb-4">
+          <div className="w-full lg:flex-1 bg-gray-50 p-4 sm:p-6 lg:p-8 flex flex-col items-center justify-center overflow-y-auto">
+            <div className="flex justify-between w-full max-w-md mb-3 sm:mb-4">
               <h3 className="font-bold text-gray-500 text-sm">Preview</h3>
             </div>
 
@@ -978,6 +979,9 @@ const ShareCompCardDialog = ({
           <DialogTitle className="text-xl font-bold">
             Share Comp Card
           </DialogTitle>
+          <DialogDescription>
+            Select clients and send the comp card link.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">

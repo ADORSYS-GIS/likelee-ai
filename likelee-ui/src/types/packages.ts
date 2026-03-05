@@ -10,6 +10,7 @@ export interface TalentPackage {
   allow_comments: boolean;
   allow_favorites: boolean;
   allow_callbacks: boolean;
+  consent_items?: string[];
   expires_at?: string;
   access_token: string;
   created_at: string;
@@ -49,7 +50,7 @@ export interface TalentPackageInteraction {
   id: string;
   package_id: string;
   talent_id?: string;
-  type: "favorite" | "comment" | "callback" | "selected";
+  type: "favorite" | "comment" | "callback" | "selected" | "consent";
   content?: string;
   client_name?: string;
   client_email?: string;

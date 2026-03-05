@@ -35,7 +35,7 @@ import { useToast } from "@/components/ui/use-toast";
 
 export type MarketplaceProfile = {
   id: string;
-  profile_type: "creator";
+  profile_type: "creator" | "agency";
   display_name: string;
   full_name?: string | null;
   location?: string | null;
@@ -50,6 +50,7 @@ export type MarketplaceProfile = {
   is_pending?: boolean;
   connection_status?:
     | "none"
+    | "waiting"
     | "pending"
     | "connected"
     | "declined"
@@ -58,23 +59,34 @@ export type MarketplaceProfile = {
 };
 
 type MarketplaceProfileDetails = {
-  profile_type: "creator";
+  profile_type: "creator" | "agency";
   profile: Record<string, any> | null;
   availability: Record<string, any>;
   rates: Array<Record<string, any>>;
   portfolio: Array<Record<string, any>>;
   campaigns: Array<Record<string, any>>;
-  connection_status: "none" | "pending" | "connected";
+  connection_status:
+    | "none"
+    | "waiting"
+    | "pending"
+    | "connected"
+    | "declined"
+    | "disconnected";
 };
 
 type MarketplaceSectionProps = {
+  entityType?: "creator" | "agency";
   title?: string;
   subtitle?: string;
   verifiedBadgeLabel?: string;
   searchPlaceholder?: string;
   searchEndpoint?: string;
   connectEndpoint?: string;
-  detailsEndpointBuilder?: (profileType: "creator", id: string) => string;
+  resultLimit?: number;
+  detailsEndpointBuilder?: (
+    profileType: "creator" | "agency",
+    id: string,
+  ) => string;
   queryScope?: string;
 };
 
@@ -116,31 +128,37 @@ const parseApiErrorPayload = (error: any) => {
   return { code: "", message: "", raw };
 };
 
-const parseApiErrorMessage = (error: any, fallback: string) => {
+const parseApiErrorMessage = (
+  error: any,
+  fallback: string,
+  waitingLabel = "creator",
+) => {
   const parsed = parseApiErrorPayload(error);
   const message = parsed.message || parsed.raw;
   if (parsed.code === "23505" || /already exists/i.test(message)) {
-    return "Connection request already exists. Waiting for creator response.";
+    return `Connection request already exists. Waiting for ${waitingLabel} response.`;
   }
-  if (/^(GET|POST|PUT|PATCH|DELETE)\s/i.test(message)) {
-    return fallback;
-  }
-  return message || fallback;
+  // Always keep connection-request failures UX-safe; never surface raw backend errors.
+  return fallback;
 };
 
 export function MarketplaceSection({
+  entityType = "creator",
   title = "Likelee Marketplace",
   subtitle = "Verified creators only",
   verifiedBadgeLabel = "Verified Profiles",
   searchPlaceholder = "Search by name, role, bio, or skills...",
   searchEndpoint = "marketplace/search",
   connectEndpoint = "marketplace/connect",
+  resultLimit = 120,
   detailsEndpointBuilder = (profileType, id) =>
     `marketplace/${profileType}/${id}/details`,
   queryScope = "scouting-marketplace",
 }: MarketplaceSectionProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const entityLabel = entityType === "agency" ? "agency" : "creator";
+  const entityLabelTitle = entityType === "agency" ? "Agency" : "Creator";
   const [searchInput, setSearchInput] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [pendingConnectKeys, setPendingConnectKeys] = useState<Set<string>>(
@@ -151,20 +169,18 @@ export function MarketplaceSection({
   >(new Set());
   const [selectedProfile, setSelectedProfile] =
     useState<MarketplaceProfile | null>(null);
-  const [categoryFilter, setCategoryFilter] = useState<
-    "all" | "models" | "actors" | "influencers" | "athletes"
-  >("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [profileType, setProfileType] = useState<
-    "all" | "creator" | "connected" | "waiting"
+    "all" | "creator" | "agency" | "connected" | "waiting"
   >("all");
   const [sortBy, setSortBy] = useState<"recent" | "name" | "followers">(
-    "followers",
+    entityType === "agency" ? "recent" : "followers",
   );
 
   const activeFilterCount =
     Number(categoryFilter !== "all") +
     Number(profileType !== "all") +
-    Number(sortBy !== "followers");
+    Number(sortBy !== (entityType === "agency" ? "recent" : "followers"));
   const hasActiveFilters = activeFilterCount > 0;
   const marketplaceSelectItemClass =
     "rounded-lg py-2.5 pl-3 pr-8 text-[15px] font-medium text-slate-700 hover:bg-slate-50 focus:bg-slate-50 focus:text-slate-700 data-[state=checked]:bg-blue-50 data-[state=checked]:text-blue-700";
@@ -188,7 +204,12 @@ export function MarketplaceSection({
   };
 
   const marketplaceQuery = useQuery({
-    queryKey: [queryScope, profileType, debouncedSearch.trim().toLowerCase()],
+    queryKey: [
+      queryScope,
+      entityType,
+      profileType,
+      debouncedSearch.trim().toLowerCase(),
+    ],
     queryFn: async () =>
       await base44.get<MarketplaceProfile[]>(searchEndpoint, {
         params: {
@@ -196,8 +217,9 @@ export function MarketplaceSection({
             profileType === "connected" || profileType === "waiting"
               ? "all"
               : profileType,
+          entity_type: entityType,
           query: debouncedSearch.trim() || undefined,
-          limit: 120,
+          limit: resultLimit,
         },
       }),
     staleTime: 60_000,
@@ -211,7 +233,10 @@ export function MarketplaceSection({
     ],
     queryFn: async () =>
       await base44.get<MarketplaceProfileDetails>(
-        detailsEndpointBuilder("creator", selectedProfile?.id || ""),
+        detailsEndpointBuilder(
+          selectedProfile?.profile_type || entityType,
+          selectedProfile?.id || "",
+        ),
       ),
     enabled: !!selectedProfile,
     staleTime: 30_000,
@@ -224,10 +249,11 @@ export function MarketplaceSection({
       description: parseApiErrorMessage(
         marketplaceQuery.error,
         "Please try again.",
+        entityLabel,
       ),
       variant: "destructive" as any,
     });
-  }, [marketplaceQuery.error, toast]);
+  }, [marketplaceQuery.error, toast, entityLabel]);
 
   useEffect(() => {
     if (!detailsQuery.error) return;
@@ -236,10 +262,11 @@ export function MarketplaceSection({
       description: parseApiErrorMessage(
         detailsQuery.error,
         "Please try again.",
+        entityLabel,
       ),
       variant: "destructive" as any,
     });
-  }, [detailsQuery.error, toast]);
+  }, [detailsQuery.error, toast, entityLabel]);
 
   const profiles = useMemo(() => {
     const rows = Array.isArray(marketplaceQuery.data)
@@ -248,7 +275,7 @@ export function MarketplaceSection({
 
     const normalized = rows.map((row: any) => ({
       id: String(row?.id || Math.random().toString(36).slice(2)),
-      profile_type: "creator",
+      profile_type: row?.profile_type === "agency" ? "agency" : "creator",
       display_name: String(row?.display_name || row?.full_name || "Unknown"),
       full_name: row?.full_name ?? null,
       location: row?.location ?? null,
@@ -269,18 +296,33 @@ export function MarketplaceSection({
       is_pending: !!row?.is_pending,
       connection_status:
         row?.connection_status === "connected" ||
+        row?.connection_status === "waiting" ||
         row?.connection_status === "pending" ||
-        row?.connection_status === "declined" ||
-        row?.connection_status === "disconnected"
+        row?.connection_status === "declined"
           ? row.connection_status
           : "none",
       updated_at: row?.updated_at ?? null,
     })) as MarketplaceProfile[];
 
+    const creatorCategories = ["models", "actors", "influencers", "athletes"];
+    const agencyCategories = ["talent_agency", "sports_agency"];
+
     const matchesCategory = (profile: MarketplaceProfile) => {
       if (categoryFilter === "all") return true;
-      if (profile.profile_type !== "creator") return false;
+      if (profile.profile_type !== entityType) return false;
       const creatorType = String(profile.creator_type || "").toLowerCase();
+      if (
+        entityType === "agency" &&
+        agencyCategories.includes(categoryFilter)
+      ) {
+        return creatorType === categoryFilter;
+      }
+      if (
+        entityType === "creator" &&
+        !creatorCategories.includes(categoryFilter)
+      ) {
+        return true;
+      }
       if (categoryFilter === "models") return creatorType.includes("model");
       if (categoryFilter === "actors") return creatorType.includes("actor");
       if (categoryFilter === "influencers")
@@ -290,10 +332,13 @@ export function MarketplaceSection({
     };
 
     const filtered = normalized.filter(matchesCategory).filter((profile) => {
+      if (profile.profile_type !== entityType) return false;
       if (profileType === "connected") return !!profile.is_connected;
       if (profileType === "waiting")
         return (
-          profile.connection_status === "pending" || profile.is_pending === true
+          profile.connection_status === "waiting" ||
+          profile.connection_status === "pending" ||
+          profile.is_pending === true
         );
       return true;
     });
@@ -313,7 +358,7 @@ export function MarketplaceSection({
     return [...filtered].sort((a, b) =>
       String(b.updated_at || "").localeCompare(String(a.updated_at || "")),
     );
-  }, [marketplaceQuery.data, categoryFilter, profileType, sortBy]);
+  }, [marketplaceQuery.data, categoryFilter, profileType, sortBy, entityType]);
 
   return (
     <Card className="p-8 bg-white border border-gray-200 shadow-sm rounded-3xl">
@@ -322,10 +367,12 @@ export function MarketplaceSection({
           <h2 className="text-xl font-bold text-gray-900">{title}</h2>
           <p className="text-sm text-gray-500 font-medium">{subtitle}</p>
         </div>
-        <Badge className="h-10 px-4 rounded-lg bg-green-50 text-green-700 border border-green-200">
-          <ShieldCheck className="w-4 h-4 mr-2" />
-          {verifiedBadgeLabel}
-        </Badge>
+        {verifiedBadgeLabel?.trim() ? (
+          <Badge className="h-10 px-4 rounded-lg bg-green-50 text-green-700 border border-green-200">
+            <ShieldCheck className="w-4 h-4 mr-2" />
+            {verifiedBadgeLabel}
+          </Badge>
+        ) : null}
       </div>
 
       <div className="flex flex-col gap-6">
@@ -375,7 +422,7 @@ export function MarketplaceSection({
                   setSearchInput("");
                   setCategoryFilter("all");
                   setProfileType("all");
-                  setSortBy("followers");
+                  setSortBy(entityType === "agency" ? "recent" : "followers");
                 }}
               >
                 <X className="h-3 w-3" />
@@ -397,7 +444,7 @@ export function MarketplaceSection({
                   onClick={() => {
                     setCategoryFilter("all");
                     setProfileType("all");
-                    setSortBy("followers");
+                    setSortBy(entityType === "agency" ? "recent" : "followers");
                   }}
                 >
                   Reset filters
@@ -407,16 +454,7 @@ export function MarketplaceSection({
             <div className="flex flex-wrap gap-3">
               <Select
                 value={categoryFilter}
-                onValueChange={(v) =>
-                  setCategoryFilter(
-                    (v as
-                      | "all"
-                      | "models"
-                      | "actors"
-                      | "influencers"
-                      | "athletes") || "all",
-                  )
-                }
+                onValueChange={(v) => setCategoryFilter(v || "all")}
               >
                 <SelectTrigger className="h-10 w-[190px] border-blue-300 bg-white rounded-lg text-sm font-medium text-slate-800 focus:ring-blue-300 focus:border-blue-400">
                   <SelectValue placeholder="All Categories" />
@@ -428,37 +466,61 @@ export function MarketplaceSection({
                   >
                     All Categories
                   </SelectItem>
-                  <SelectItem
-                    className={marketplaceSelectItemClass}
-                    value="models"
-                  >
-                    Models
-                  </SelectItem>
-                  <SelectItem
-                    className={marketplaceSelectItemClass}
-                    value="actors"
-                  >
-                    Actors
-                  </SelectItem>
-                  <SelectItem
-                    className={marketplaceSelectItemClass}
-                    value="influencers"
-                  >
-                    Influencers
-                  </SelectItem>
-                  <SelectItem
-                    className={marketplaceSelectItemClass}
-                    value="athletes"
-                  >
-                    Athletes
-                  </SelectItem>
+                  {entityType === "creator" ? (
+                    <>
+                      <SelectItem
+                        className={marketplaceSelectItemClass}
+                        value="models"
+                      >
+                        Models
+                      </SelectItem>
+                      <SelectItem
+                        className={marketplaceSelectItemClass}
+                        value="actors"
+                      >
+                        Actors
+                      </SelectItem>
+                      <SelectItem
+                        className={marketplaceSelectItemClass}
+                        value="influencers"
+                      >
+                        Influencers
+                      </SelectItem>
+                      <SelectItem
+                        className={marketplaceSelectItemClass}
+                        value="athletes"
+                      >
+                        Athletes
+                      </SelectItem>
+                    </>
+                  ) : (
+                    <>
+                      <SelectItem
+                        className={marketplaceSelectItemClass}
+                        value="talent_agency"
+                      >
+                        Talent Agencies
+                      </SelectItem>
+                      <SelectItem
+                        className={marketplaceSelectItemClass}
+                        value="sports_agency"
+                      >
+                        Sports Agencies
+                      </SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
               <Select
                 value={profileType}
                 onValueChange={(v) =>
                   setProfileType(
-                    (v as "all" | "creator" | "connected" | "waiting") || "all",
+                    (v as
+                      | "all"
+                      | "creator"
+                      | "agency"
+                      | "connected"
+                      | "waiting") || "all",
                   )
                 }
               >
@@ -474,9 +536,9 @@ export function MarketplaceSection({
                   </SelectItem>
                   <SelectItem
                     className={marketplaceSelectItemClass}
-                    value="creator"
+                    value={entityType}
                   >
-                    Verified Creators
+                    {`Verified ${entityType === "agency" ? "Agencies" : "Creators"}`}
                   </SelectItem>
                   <SelectItem
                     className={marketplaceSelectItemClass}
@@ -496,20 +558,27 @@ export function MarketplaceSection({
                 value={sortBy}
                 onValueChange={(v) =>
                   setSortBy(
-                    (v as "recent" | "name" | "followers") || "followers",
+                    (v as "recent" | "name" | "followers") ||
+                      (entityType === "agency" ? "recent" : "followers"),
                   )
                 }
               >
                 <SelectTrigger className="h-10 w-[190px] border-blue-300 bg-white rounded-lg text-sm font-medium text-slate-800 focus:ring-blue-300 focus:border-blue-400">
-                  <SelectValue placeholder="Followers" />
+                  <SelectValue
+                    placeholder={
+                      entityType === "agency" ? "Recently Updated" : "Followers"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border border-blue-100 bg-white p-1 shadow-xl">
-                  <SelectItem
-                    className={marketplaceSelectItemClass}
-                    value="followers"
-                  >
-                    Followers
-                  </SelectItem>
+                  {entityType === "creator" && (
+                    <SelectItem
+                      className={marketplaceSelectItemClass}
+                      value="followers"
+                    >
+                      Followers
+                    </SelectItem>
+                  )}
                   <SelectItem
                     className={marketplaceSelectItemClass}
                     value="name"
@@ -532,7 +601,7 @@ export function MarketplaceSection({
           <div className="border border-dashed border-gray-200 rounded-2xl p-16 flex flex-col items-center justify-center text-center mt-4">
             <Loader2 className="w-6 h-6 text-gray-400 animate-spin mb-4" />
             <p className="text-sm text-gray-500 font-medium">
-              Loading verified marketplace profiles...
+              {`Loading verified ${entityLabel}s...`}
             </p>
           </div>
         ) : profiles.length === 0 ? (
@@ -545,7 +614,7 @@ export function MarketplaceSection({
             </h3>
             <p className="text-gray-500 max-w-md font-medium">
               Try adjusting your search terms or filters to discover more
-              creators.
+              {entityType === "agency" ? " agencies." : " creators."}
             </p>
           </div>
         ) : (
@@ -556,26 +625,28 @@ export function MarketplaceSection({
               const isRequestingConnect = requestingConnectKeys.has(profileKey);
               const connectionStatus:
                 | "none"
+                | "waiting"
                 | "pending"
                 | "connected"
-                | "declined"
-                | "disconnected" = profile.is_connected
+                | "declined" = profile.is_connected
                 ? "connected"
                 : isPendingConnect
-                  ? "pending"
-                  : profile.connection_status === "pending" ||
+                  ? "waiting"
+                  : profile.connection_status === "waiting" ||
+                      profile.connection_status === "pending" ||
                       profile.connection_status === "connected" ||
-                      profile.connection_status === "declined" ||
-                      profile.connection_status === "disconnected"
+                      profile.connection_status === "declined"
                     ? profile.connection_status
                     : profile.is_pending
-                      ? "pending"
+                      ? "waiting"
                       : "none";
               const disableConnectAction =
-                connectionStatus === "pending" || isRequestingConnect;
+                connectionStatus === "waiting" ||
+                connectionStatus === "pending" ||
+                isRequestingConnect;
               const followers = Number(profile.followers || 0);
               const engagement = Number(profile.engagement_rate || 0);
-              const roleLabel = `Verified Creator${profile.creator_type ? ` • ${profile.creator_type}` : ""}`;
+              const roleLabel = `Verified ${entityLabelTitle}${profile.creator_type ? ` • ${profile.creator_type}` : ""}`;
 
               return (
                 <Card
@@ -597,7 +668,7 @@ export function MarketplaceSection({
                     )}
                     <div className="absolute inset-x-0 top-0 p-1.5 flex items-center justify-between">
                       <Badge className="h-5 px-2 rounded-md bg-white/90 text-slate-700 border border-slate-200 text-[10px] font-semibold shadow-sm">
-                        Creator
+                        {entityLabelTitle}
                       </Badge>
                       <div className="flex items-center gap-1.5">
                         {profile.is_connected && (
@@ -606,7 +677,8 @@ export function MarketplaceSection({
                           </Badge>
                         )}
                         {!profile.is_connected &&
-                          connectionStatus === "pending" && (
+                          (connectionStatus === "waiting" ||
+                            connectionStatus === "pending") && (
                             <Badge className="h-5 px-2 rounded-md bg-amber-50/95 text-amber-700 border border-amber-200 text-[10px] font-semibold shadow-sm">
                               Waiting
                             </Badge>
@@ -615,12 +687,6 @@ export function MarketplaceSection({
                           connectionStatus === "declined" && (
                             <Badge className="h-5 px-2 rounded-md bg-rose-50/95 text-rose-700 border border-rose-200 text-[10px] font-semibold shadow-sm">
                               Declined
-                            </Badge>
-                          )}
-                        {!profile.is_connected &&
-                          connectionStatus === "disconnected" && (
-                            <Badge className="h-5 px-2 rounded-md bg-rose-50/95 text-rose-700 border border-rose-200 text-[10px] font-semibold shadow-sm">
-                              Disconnected
                             </Badge>
                           )}
                         <div className="h-5 w-5 rounded-md bg-white/90 border border-slate-200 shadow-sm flex items-center justify-center">
@@ -670,18 +736,28 @@ export function MarketplaceSection({
                     <div className="grid grid-cols-2 gap-1.5 mt-2">
                       <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1">
                         <p className="text-slate-500 text-[11px] font-medium">
-                          Followers
+                          {entityType === "agency"
+                            ? "Agency Type"
+                            : "Followers"}
                         </p>
                         <p className="text-slate-900 text-sm font-bold mt-0.5 leading-none">
-                          {followers > 0 ? followers.toLocaleString() : "N/A"}
+                          {entityType === "agency"
+                            ? profile.creator_type || "N/A"
+                            : followers > 0
+                              ? followers.toLocaleString()
+                              : "N/A"}
                         </p>
                       </div>
                       <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1">
                         <p className="text-slate-500 text-[11px] font-medium">
-                          Engagement
+                          {entityType === "agency" ? "Services" : "Engagement"}
                         </p>
                         <p className="text-slate-900 text-sm font-bold mt-0.5 leading-none">
-                          {engagement > 0 ? `${engagement.toFixed(1)}%` : "N/A"}
+                          {entityType === "agency"
+                            ? (profile.skills || []).length || "N/A"
+                            : engagement > 0
+                              ? `${engagement.toFixed(1)}%`
+                              : "N/A"}
                         </p>
                       </div>
                     </div>
@@ -690,6 +766,7 @@ export function MarketplaceSection({
                       <div className="mt-2.5 flex items-center gap-2">
                         <Button
                           className={`h-6 px-2 text-xs rounded-md ${
+                            connectionStatus === "waiting" ||
                             connectionStatus === "pending"
                               ? "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-50"
                               : "bg-indigo-600 hover:bg-indigo-700 text-white"
@@ -711,13 +788,12 @@ export function MarketplaceSection({
                                 },
                               );
                               const status = String(
-                                result?.status || "pending",
+                                result?.status || "waiting",
                               );
                               if (status === "declined") {
                                 toast({
                                   title: "Request already declined",
-                                  description:
-                                    "This connection was declined previously. Please contact the creator directly to reconnect.",
+                                  description: `This connection was declined previously. You can re-invite this ${entityLabel}.`,
                                 });
                               } else if (status === "connected") {
                                 toast({
@@ -728,8 +804,7 @@ export function MarketplaceSection({
                               } else {
                                 toast({
                                   title: "Connection request sent",
-                                  description:
-                                    "Waiting for creator response. You will be notified after they accept or decline.",
+                                  description: `Waiting for ${entityLabel} response. You will be notified after they accept or decline.`,
                                 });
                                 setPendingConnectKeys((prev) =>
                                   new Set(prev).add(profileKey),
@@ -754,8 +829,7 @@ export function MarketplaceSection({
                                 );
                                 toast({
                                   title: "Request already pending",
-                                  description:
-                                    "Waiting for creator response. You can track updates in Agency Connection.",
+                                  description: `Waiting for ${entityLabel} response.`,
                                 });
                                 await queryClient.invalidateQueries({
                                   queryKey: [queryScope],
@@ -767,6 +841,7 @@ export function MarketplaceSection({
                                 description: parseApiErrorMessage(
                                   e,
                                   "Unable to send connection request right now.",
+                                  entityLabel,
                                 ),
                                 variant: "destructive" as any,
                               });
@@ -781,8 +856,9 @@ export function MarketplaceSection({
                         >
                           {isRequestingConnect
                             ? "Sending..."
-                            : connectionStatus === "pending"
-                              ? "Waiting for creator response"
+                            : connectionStatus === "pending" ||
+                                connectionStatus === "waiting"
+                              ? `Waiting for ${entityLabel} response`
                               : "Connect"}
                         </Button>
                       </div>
@@ -807,7 +883,9 @@ export function MarketplaceSection({
               {selectedProfile?.display_name || "Marketplace Profile"}
             </SheetTitle>
             <SheetDescription>
-              Availability, rates, portfolio, and campaign history
+              {selectedProfile?.profile_type === "agency"
+                ? "Agency profile and connection status"
+                : "Availability, rates, portfolio, and campaign history"}
             </SheetDescription>
           </SheetHeader>
           <div className="mt-6 space-y-6">
@@ -834,6 +912,57 @@ export function MarketplaceSection({
                   );
                   const rateCurrency = String(profile?.currency_code || "USD");
                   const openToNegotiations = !!profile?.accept_negotiations;
+                  const isAgencyProfile =
+                    selectedProfile?.profile_type === "agency";
+
+                  if (isAgencyProfile) {
+                    const services = Array.isArray(profile?.services_offered)
+                      ? profile.services_offered
+                      : Array.isArray(selectedProfile?.skills)
+                        ? selectedProfile.skills
+                        : [];
+                    return (
+                      <Card className="p-4 border border-gray-200 rounded-xl">
+                        <div className="space-y-4">
+                          <div>
+                            <h4 className="text-sm font-bold text-gray-900 mb-2">
+                              Services
+                            </h4>
+                            {services.length ? (
+                              <div className="flex flex-wrap gap-2">
+                                {services.map((tag: string) => (
+                                  <Badge
+                                    key={tag}
+                                    className="bg-cyan-50 text-cyan-700 border border-cyan-200 hover:bg-cyan-100"
+                                  >
+                                    {String(tag)}
+                                  </Badge>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-gray-500">
+                                No services shared yet.
+                              </p>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                            <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                              <p className="text-gray-500">Website</p>
+                              <p className="font-semibold text-gray-900 mt-1 break-all">
+                                {profile?.website || "Not specified"}
+                              </p>
+                            </div>
+                            <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                              <p className="text-gray-500">Connection Status</p>
+                              <p className="font-semibold text-gray-900 mt-1 capitalize">
+                                {detailsQuery.data?.connection_status || "none"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  }
 
                   return (
                     <>
@@ -937,24 +1066,33 @@ export function MarketplaceSection({
                       <div className="grid grid-cols-2 gap-3 mt-4 text-xs">
                         <div className="rounded-lg border border-slate-100 bg-white/80 px-3 py-2">
                           <p className="text-slate-500 font-medium">
-                            Followers
+                            {selectedProfile?.profile_type === "agency"
+                              ? "Agency Type"
+                              : "Followers"}
                           </p>
                           <p className="text-slate-900 font-bold mt-0.5">
-                            {Number(selectedProfile?.followers || 0) > 0
-                              ? Number(
-                                  selectedProfile?.followers || 0,
-                                ).toLocaleString()
-                              : "N/A"}
+                            {selectedProfile?.profile_type === "agency"
+                              ? selectedProfile?.creator_type || "N/A"
+                              : Number(selectedProfile?.followers || 0) > 0
+                                ? Number(
+                                    selectedProfile?.followers || 0,
+                                  ).toLocaleString()
+                                : "N/A"}
                           </p>
                         </div>
                         <div className="rounded-lg border border-slate-100 bg-white/80 px-3 py-2">
                           <p className="text-slate-500 font-medium">
-                            Engagement
+                            {selectedProfile?.profile_type === "agency"
+                              ? "Services"
+                              : "Engagement"}
                           </p>
                           <p className="text-slate-900 font-bold mt-0.5">
-                            {Number(selectedProfile?.engagement_rate || 0) > 0
-                              ? `${Number(selectedProfile?.engagement_rate || 0).toFixed(1)}%`
-                              : "N/A"}
+                            {selectedProfile?.profile_type === "agency"
+                              ? (selectedProfile?.skills || []).length || "N/A"
+                              : Number(selectedProfile?.engagement_rate || 0) >
+                                  0
+                                ? `${Number(selectedProfile?.engagement_rate || 0).toFixed(1)}%`
+                                : "N/A"}
                           </p>
                         </div>
                       </div>
@@ -977,145 +1115,151 @@ export function MarketplaceSection({
                   </div>
                 </Card>
 
-                <Card className="p-4 border border-gray-200 rounded-xl">
-                  <h4 className="text-sm font-bold text-gray-900 mb-3">
-                    Availability & Rates
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                    <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                      <p className="text-gray-500">Willing to Travel</p>
-                      <p className="font-semibold text-gray-900 mt-1">
-                        {typeof detailsQuery.data?.availability
-                          ?.willing_to_travel === "boolean"
-                          ? detailsQuery.data?.availability?.willing_to_travel
-                            ? "Yes"
-                            : "No"
-                          : "Not specified"}
-                      </p>
+                {selectedProfile?.profile_type === "creator" && (
+                  <Card className="p-4 border border-gray-200 rounded-xl">
+                    <h4 className="text-sm font-bold text-gray-900 mb-3">
+                      Availability & Rates
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                      <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                        <p className="text-gray-500">Willing to Travel</p>
+                        <p className="font-semibold text-gray-900 mt-1">
+                          {typeof detailsQuery.data?.availability
+                            ?.willing_to_travel === "boolean"
+                            ? detailsQuery.data?.availability?.willing_to_travel
+                              ? "Yes"
+                              : "No"
+                            : "Not specified"}
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
+                        <p className="text-gray-500">Connection Status</p>
+                        <p className="font-semibold text-gray-900 mt-1 capitalize">
+                          {detailsQuery.data?.connection_status || "none"}
+                        </p>
+                      </div>
                     </div>
-                    <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                      <p className="text-gray-500">Connection Status</p>
-                      <p className="font-semibold text-gray-900 mt-1 capitalize">
-                        {detailsQuery.data?.connection_status || "none"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {(detailsQuery.data?.rates || [])
-                      .slice(0, 6)
-                      .map((r, i) => (
-                        <div
-                          key={`${r?.label || r?.rate_name || "rate"}-${i}`}
-                          className="rounded-lg border border-indigo-100 bg-indigo-50/40 p-3 text-sm"
-                        >
-                          <p className="text-indigo-700 font-semibold">
-                            {String(r?.label || r?.rate_name || "Rate")}
-                          </p>
-                          <p className="text-gray-900 font-bold mt-1">
-                            {formatMoney(
-                              r?.amount_cents ?? r?.price_per_month_cents,
-                              r?.currency || "USD",
-                            )}
-                          </p>
-                        </div>
-                      ))}
-                    {(detailsQuery.data?.rates || []).length === 0 && (
-                      <p className="text-sm text-gray-500">
-                        No rates published yet.
-                      </p>
-                    )}
-                  </div>
-                </Card>
-
-                <Card className="p-4 border border-gray-200 rounded-xl">
-                  <h4 className="text-sm font-bold text-gray-900 mb-3">
-                    Portfolio
-                  </h4>
-                  {!!detailsQuery.data?.profile?.portfolio_link && (
-                    <a
-                      href={String(detailsQuery.data.profile.portfolio_link)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mb-3 inline-flex items-center rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-700 hover:bg-cyan-100"
-                    >
-                      Open portfolio link
-                    </a>
-                  )}
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {(detailsQuery.data?.portfolio || [])
-                      .slice(0, 9)
-                      .map((item, i) => (
-                        <a
-                          key={`${item?.id || i}`}
-                          href={String(item?.media_url || "#")}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="rounded-lg border border-gray-100 p-2 bg-white hover:border-indigo-200 transition-colors"
-                        >
-                          <div className="aspect-square rounded-md bg-gray-100 overflow-hidden">
-                            {item?.media_url ? (
-                              <img
-                                src={String(item.media_url)}
-                                alt={String(item?.title || "Portfolio item")}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-slate-100 flex items-center justify-center">
-                                <ImageIcon className="w-8 h-8 text-slate-400" />
-                              </div>
-                            )}
-                          </div>
-                          <p className="text-xs font-medium text-gray-700 mt-2 truncate">
-                            {String(item?.title || "Portfolio")}
-                          </p>
-                        </a>
-                      ))}
-                    {(detailsQuery.data?.portfolio || []).length === 0 && (
-                      <p className="text-sm text-gray-500">
-                        {detailsQuery.data?.profile?.portfolio_link
-                          ? "No uploaded portfolio media yet."
-                          : "No portfolio items yet."}
-                      </p>
-                    )}
-                  </div>
-                </Card>
-
-                <Card className="p-4 border border-gray-200 rounded-xl">
-                  <h4 className="text-sm font-bold text-gray-900 mb-3">
-                    Past Campaigns
-                  </h4>
-                  <div className="space-y-2">
-                    {(detailsQuery.data?.campaigns || [])
-                      .slice(0, 8)
-                      .map((c, i) => (
-                        <div
-                          key={`${c?.id || i}`}
-                          className="rounded-lg border border-gray-100 p-3 bg-white"
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <p className="text-sm font-semibold text-gray-900 truncate">
-                              {String(c?.name || "Campaign")}
+                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {(detailsQuery.data?.rates || [])
+                        .slice(0, 6)
+                        .map((r, i) => (
+                          <div
+                            key={`${r?.label || r?.rate_name || "rate"}-${i}`}
+                            className="rounded-lg border border-indigo-100 bg-indigo-50/40 p-3 text-sm"
+                          >
+                            <p className="text-indigo-700 font-semibold">
+                              {String(r?.label || r?.rate_name || "Rate")}
                             </p>
-                            <Badge
-                              variant="secondary"
-                              className="text-[10px] bg-gray-100 text-gray-700"
-                            >
-                              {String(c?.status || "Unknown")}
-                            </Badge>
+                            <p className="text-gray-900 font-bold mt-1">
+                              {formatMoney(
+                                r?.amount_cents ?? r?.price_per_month_cents,
+                                r?.currency || "USD",
+                              )}
+                            </p>
                           </div>
-                          <p className="text-xs text-gray-500 mt-1">
-                            {String(c?.campaign_type || "Type not set")}{" "}
-                            {c?.date ? `• ${String(c?.date)}` : ""}
-                          </p>
-                        </div>
-                      ))}
-                    {(detailsQuery.data?.campaigns || []).length === 0 && (
-                      <p className="text-sm text-gray-500">
-                        No campaign history yet.
-                      </p>
+                        ))}
+                      {(detailsQuery.data?.rates || []).length === 0 && (
+                        <p className="text-sm text-gray-500">
+                          No rates published yet.
+                        </p>
+                      )}
+                    </div>
+                  </Card>
+                )}
+
+                {selectedProfile?.profile_type === "creator" && (
+                  <Card className="p-4 border border-gray-200 rounded-xl">
+                    <h4 className="text-sm font-bold text-gray-900 mb-3">
+                      Portfolio
+                    </h4>
+                    {!!detailsQuery.data?.profile?.portfolio_link && (
+                      <a
+                        href={String(detailsQuery.data.profile.portfolio_link)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mb-3 inline-flex items-center rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-semibold text-cyan-700 hover:bg-cyan-100"
+                      >
+                        Open portfolio link
+                      </a>
                     )}
-                  </div>
-                </Card>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {(detailsQuery.data?.portfolio || [])
+                        .slice(0, 9)
+                        .map((item, i) => (
+                          <a
+                            key={`${item?.id || i}`}
+                            href={String(item?.media_url || "#")}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="rounded-lg border border-gray-100 p-2 bg-white hover:border-indigo-200 transition-colors"
+                          >
+                            <div className="aspect-square rounded-md bg-gray-100 overflow-hidden">
+                              {item?.media_url ? (
+                                <img
+                                  src={String(item.media_url)}
+                                  alt={String(item?.title || "Portfolio item")}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-slate-100 flex items-center justify-center">
+                                  <ImageIcon className="w-8 h-8 text-slate-400" />
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-xs font-medium text-gray-700 mt-2 truncate">
+                              {String(item?.title || "Portfolio")}
+                            </p>
+                          </a>
+                        ))}
+                      {(detailsQuery.data?.portfolio || []).length === 0 && (
+                        <p className="text-sm text-gray-500">
+                          {detailsQuery.data?.profile?.portfolio_link
+                            ? "No uploaded portfolio media yet."
+                            : "No portfolio items yet."}
+                        </p>
+                      )}
+                    </div>
+                  </Card>
+                )}
+
+                {selectedProfile?.profile_type === "creator" && (
+                  <Card className="p-4 border border-gray-200 rounded-xl">
+                    <h4 className="text-sm font-bold text-gray-900 mb-3">
+                      Past Campaigns
+                    </h4>
+                    <div className="space-y-2">
+                      {(detailsQuery.data?.campaigns || [])
+                        .slice(0, 8)
+                        .map((c, i) => (
+                          <div
+                            key={`${c?.id || i}`}
+                            className="rounded-lg border border-gray-100 p-3 bg-white"
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="text-sm font-semibold text-gray-900 truncate">
+                                {String(c?.name || "Campaign")}
+                              </p>
+                              <Badge
+                                variant="secondary"
+                                className="text-[10px] bg-gray-100 text-gray-700"
+                              >
+                                {String(c?.status || "Unknown")}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {String(c?.campaign_type || "Type not set")}{" "}
+                              {c?.date ? `• ${String(c?.date)}` : ""}
+                            </p>
+                          </div>
+                        ))}
+                      {(detailsQuery.data?.campaigns || []).length === 0 && (
+                        <p className="text-sm text-gray-500">
+                          No campaign history yet.
+                        </p>
+                      )}
+                    </div>
+                  </Card>
+                )}
               </>
             )}
           </div>

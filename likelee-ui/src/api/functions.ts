@@ -142,6 +142,27 @@ export const createAgencySubscriptionCheckout = (data: {
 export const updateBrandProfile = (data: any) =>
   base44Client.post(`/brand-profile`, data);
 
+export const createBrandCampaignLicenseRequest = (
+  campaignId: string,
+  data: {
+    collaborator_type: "agency" | "creator";
+    target_id: string;
+    offered_rate_weekly_cents?: number;
+    rate_currency?: string;
+    campaign_title?: string;
+    usage_scope?: string;
+    regions?: string;
+    deadline?: string;
+    license_start_date?: string;
+    license_end_date?: string;
+    notes?: string;
+  },
+) =>
+  base44Client.post(
+    `/api/brand/campaigns/${encodeURIComponent(campaignId)}/license-requests`,
+    data,
+  );
+
 export const updateAgencyProfile = (data: any) =>
   base44Client.post(`/agency-profile`, data);
 
@@ -716,3 +737,15 @@ export const sendEmail = (data: {
     content_base64: string;
   }>;
 }) => base44Client.post(`/integrations/core/send-email`, data);
+
+export const getBookingsCampaigns = () =>
+  base44Client.get("/bookings-campaigns");
+
+export const createBookingsCampaign = (data: any) =>
+  base44Client.post("/bookings-campaigns", data);
+
+export const updateBookingsCampaign = (id: string, data: any) =>
+  base44Client.post(`/bookings-campaigns/${id}`, data);
+
+export const deleteBookingsCampaign = (id: string) =>
+  base44Client.delete(`/bookings-campaigns/${id}`);

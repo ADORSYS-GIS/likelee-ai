@@ -87,22 +87,24 @@ export const ClientDatabaseTab = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900">Client Database</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+            Client Database
+          </h2>
           <p className="text-gray-500 font-medium text-sm mt-1">
             Manage your client relationships and booking history
           </p>
         </div>
         <Button
-          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold w-full sm:w-auto"
           onClick={() => setAddClientOpen(true)}
         >
           <Plus className="w-4 h-4 mr-2" /> Add Client
         </Button>
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         {stats.map((s) => (
           <Card
             key={s.label}
@@ -116,8 +118,8 @@ export const ClientDatabaseTab = () => {
         ))}
       </div>
 
-      <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-xl space-y-6">
-        <div className="flex gap-4">
+      <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-xl space-y-6">
+        <div className="flex flex-col md:flex-row gap-3 md:gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
@@ -128,7 +130,7 @@ export const ClientDatabaseTab = () => {
             />
           </div>
           <Select defaultValue="all">
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full md:w-[180px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -144,7 +146,7 @@ export const ClientDatabaseTab = () => {
             </SelectContent>
           </Select>
           <Select defaultValue="name">
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full md:w-[180px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -156,7 +158,7 @@ export const ClientDatabaseTab = () => {
           </Select>
           <Button
             variant="outline"
-            className="font-bold text-gray-700"
+            className="font-bold text-gray-700 w-full md:w-auto"
             onClick={() => setMergeOpen(true)}
           >
             Merge Duplicates
@@ -165,95 +167,136 @@ export const ClientDatabaseTab = () => {
 
         <div className="overflow-hidden">
           {clients.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-gray-100">
-                    <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                      Company
-                    </th>
-                    <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                      Contact
-                    </th>
-                    <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                      Industries
-                    </th>
-                    <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                      Bookings
-                    </th>
-                    <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                      Revenue
-                    </th>
-                    <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {clients
-                    .filter((c) =>
-                      c.company
-                        ?.toLowerCase()
-                        .includes(search.trim().toLowerCase()),
-                    )
-                    .map((client) => (
-                      <tr
-                        key={client.id}
-                        className="hover:bg-gray-50/50 cursor-pointer group transition-colors"
-                        onClick={() => setSelectedClient(client)}
-                      >
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <div className="font-bold text-gray-900">
+            <>
+              <div className="space-y-3 md:hidden">
+                {clients
+                  .filter((c) =>
+                    c.company
+                      ?.toLowerCase()
+                      .includes(search.trim().toLowerCase()),
+                  )
+                  .map((client) => (
+                    <Card
+                      key={client.id}
+                      className="p-4 border border-gray-100 rounded-lg cursor-pointer"
+                      onClick={() => setSelectedClient(client)}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="font-bold text-gray-900 truncate">
                             {client.company}
                           </div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-gray-500 truncate">
                             {client.email}
                           </div>
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-700">
+                          <div className="text-sm text-gray-700 mt-1 truncate">
                             {client.contact}
                           </div>
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <div className="flex gap-1">
-                            {(client.industryTags || [])
-                              .slice(0, 2)
-                              .map((t: string) => (
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
+                      </div>
+                      <div className="flex items-center justify-between mt-3 text-xs">
+                        <span className="font-semibold text-gray-700">
+                          {client.bookings_count || 0} bookings
+                        </span>
+                        <span className="font-bold text-green-600">
+                          ${(client.revenue || 0).toLocaleString()}
+                        </span>
+                      </div>
+                    </Card>
+                  ))}
+              </div>
+
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-gray-100">
+                      <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                        Company
+                      </th>
+                      <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                        Contact
+                      </th>
+                      <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                        Industries
+                      </th>
+                      <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                        Bookings
+                      </th>
+                      <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                        Revenue
+                      </th>
+                      <th className="px-4 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {clients
+                      .filter((c) =>
+                        c.company
+                          ?.toLowerCase()
+                          .includes(search.trim().toLowerCase()),
+                      )
+                      .map((client) => (
+                        <tr
+                          key={client.id}
+                          className="hover:bg-gray-50/50 cursor-pointer group transition-colors"
+                          onClick={() => setSelectedClient(client)}
+                        >
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div className="font-bold text-gray-900">
+                              {client.company}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {client.email}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-700">
+                              {client.contact}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div className="flex gap-1">
+                              {(client.industryTags || [])
+                                .slice(0, 2)
+                                .map((t: string) => (
+                                  <Badge
+                                    key={t}
+                                    variant="secondary"
+                                    className="text-[10px] bg-indigo-50 text-indigo-700 border-none font-bold"
+                                  >
+                                    {t}
+                                  </Badge>
+                                ))}
+                              {(client.industryTags || []).length > 2 && (
                                 <Badge
-                                  key={t}
                                   variant="secondary"
-                                  className="text-[10px] bg-indigo-50 text-indigo-700 border-none font-bold"
+                                  className="text-[10px] bg-gray-50 text-gray-500 border-none font-bold"
                                 >
-                                  {t}
+                                  +{(client.industryTags || []).length - 2}
                                 </Badge>
-                              ))}
-                            {(client.industryTags || []).length > 2 && (
-                              <Badge
-                                variant="secondary"
-                                className="text-[10px] bg-gray-50 text-gray-500 border-none font-bold"
-                              >
-                                +{(client.industryTags || []).length - 2}
-                              </Badge>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <div className="text-sm font-bold text-gray-900">
-                            {client.bookings_count || 0}
-                          </div>
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <div className="text-sm font-extrabold text-green-600">
-                            ${(client.revenue || 0).toLocaleString()}
-                          </div>
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-right">
-                          <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-600 transition-colors inline" />
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div className="text-sm font-bold text-gray-900">
+                              {client.bookings_count || 0}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div className="text-sm font-extrabold text-green-600">
+                              ${(client.revenue || 0).toLocaleString()}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-right">
+                            <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-600 transition-colors inline" />
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           ) : (
             <div className="border border-dashed border-gray-300 rounded-xl p-12 flex flex-col items-center justify-center text-center h-[300px]">
               <div className="bg-gray-50 p-4 rounded-full mb-4">

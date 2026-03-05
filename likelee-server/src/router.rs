@@ -34,6 +34,26 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::agency_talent_invites::list_for_talent),
         )
         .route(
+            "/api/creator/brand-connection-requests",
+            get(crate::face_profiles::list_creator_brand_connection_requests),
+        )
+        .route(
+            "/api/creator/brand-connection-requests/:id/accept",
+            post(crate::face_profiles::accept_creator_brand_connection_request),
+        )
+        .route(
+            "/api/creator/brand-connection-requests/:id/decline",
+            post(crate::face_profiles::decline_creator_brand_connection_request),
+        )
+        .route(
+            "/api/creator/brand-connections",
+            get(crate::face_profiles::list_creator_brand_connections),
+        )
+        .route(
+            "/api/creator/brand-connections/:brand_id/disconnect",
+            post(crate::face_profiles::disconnect_creator_brand_connection),
+        )
+        .route(
             "/api/talent/licensing-requests",
             get(crate::talent::list_licensing_requests),
         )
@@ -456,6 +476,42 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::face_profiles::create_marketplace_connection_request),
         )
         .route(
+            "/api/brand/connected-agencies",
+            get(crate::face_profiles::list_brand_connected_agencies),
+        )
+        .route(
+            "/api/brand/agency-connections/:agency_id/disconnect",
+            post(crate::face_profiles::disconnect_brand_agency_connection_as_brand),
+        )
+        .route(
+            "/api/brand/licensing-requests",
+            post(crate::face_profiles::create_brand_licensing_request),
+        )
+        .route(
+            "/api/brand/agency-talent-rates",
+            get(crate::face_profiles::list_brand_agency_talent_rates),
+        )
+        .route(
+            "/api/agency/brand-connection-requests",
+            get(crate::face_profiles::list_agency_brand_connection_requests),
+        )
+        .route(
+            "/api/agency/brand-connections",
+            get(crate::face_profiles::list_agency_brand_connections),
+        )
+        .route(
+            "/api/agency/brand-connection-requests/:id/accept",
+            post(crate::face_profiles::accept_agency_brand_connection_request),
+        )
+        .route(
+            "/api/agency/brand-connection-requests/:id/decline",
+            post(crate::face_profiles::decline_agency_brand_connection_request),
+        )
+        .route(
+            "/api/agency/brand-connections/:brand_id/disconnect",
+            post(crate::face_profiles::disconnect_brand_agency_connection_as_agency),
+        )
+        .route(
             "/api/license-submissions/draft",
             post(crate::license_submissions::create_draft),
         )
@@ -595,6 +651,15 @@ pub fn build_router(state: AppState) -> Router {
             "/api/bookings/with-files",
             post(crate::bookings::create_with_files),
         )
+        .route(
+            "/api/bookings-campaigns",
+            get(crate::bookings_campaigns::list).post(crate::bookings_campaigns::create),
+        )
+        .route(
+            "/api/bookings-campaigns/:id",
+            post(crate::bookings_campaigns::update)
+                .delete(crate::bookings_campaigns::delete_campaign),
+        )
         .route("/api/bookings/:id", post(crate::bookings::update))
         .route(
             "/api/bookings/:id/files/upload",
@@ -613,6 +678,14 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/brand-register", post(crate::brands::register))
         .route("/api/brand-profile", post(crate::brands::update))
         .route("/api/brand-profile/user", get(crate::brands::get_by_user))
+        .route(
+            "/api/brand/campaigns/:campaign_id/license-requests",
+            post(crate::licensing_requests::create_for_brand_campaign),
+        )
+        .route(
+            "/api/brand/campaigns/:campaign_id/license-requests/options",
+            get(crate::licensing_requests::list_brand_campaign_license_options),
+        )
         .route(
             "/api/brand/voice-folders",
             get(crate::licenses::list_brand_voice_folders),
