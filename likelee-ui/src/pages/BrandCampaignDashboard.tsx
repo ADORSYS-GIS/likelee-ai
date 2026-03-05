@@ -1235,7 +1235,10 @@ export default function BrandCampaignDashboard() {
                                             <Input
                                               type="number"
                                               min="1"
-                                              value={offerByCreatorId[creatorId] || ""}
+                                              value={
+                                                offerByCreatorId[creatorId] ||
+                                                ""
+                                              }
                                               onChange={(e) =>
                                                 setOfferByCreatorId((prev) => ({
                                                   ...prev,

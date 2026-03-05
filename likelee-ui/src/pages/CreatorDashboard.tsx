@@ -1721,7 +1721,7 @@ export default function CreatorDashboard() {
               ? Math.round(profile.base_weekly_price_cents / 100)
               : typeof profile.base_monthly_price_cents === "number"
                 ? Math.round(profile.base_monthly_price_cents / 100 / 4.345)
-              : (prev.price_per_month ?? 0),
+                : (prev.price_per_month ?? 0),
           royalty_percentage: prev.royalty_percentage ?? 0,
           accept_negotiations:
             profile.accept_negotiations ?? prev.accept_negotiations ?? true,
@@ -3673,7 +3673,9 @@ export default function CreatorDashboard() {
             typeof savedProfile.base_weekly_price_cents === "number"
               ? Math.round(savedProfile.base_weekly_price_cents / 100)
               : savedProfile.base_monthly_price_cents
-                ? Math.round(savedProfile.base_monthly_price_cents / 100 / 4.345)
+                ? Math.round(
+                    savedProfile.base_monthly_price_cents / 100 / 4.345,
+                  )
                 : prev.price_per_month,
         }));
       }
