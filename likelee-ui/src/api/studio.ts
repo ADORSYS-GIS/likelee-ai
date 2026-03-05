@@ -1,7 +1,11 @@
 import { base44 } from "./base44Client";
 
 export type StudioProvider = "fal" | "higgsfield" | "kive";
-export type StudioGenerationType = "video" | "image" | "avatar" | "image_to_video";
+export type StudioGenerationType =
+  | "video"
+  | "image"
+  | "avatar"
+  | "image_to_video";
 export type StudioGenerationStatus =
   | "draft"
   | "pending"
@@ -91,6 +95,8 @@ export async function generate(input: {
   return await base44.post("/studio/generate", input);
 }
 
-export async function getJobStatus(generationId: string): Promise<StudioJobStatusResponse> {
+export async function getJobStatus(
+  generationId: string,
+): Promise<StudioJobStatusResponse> {
   return await base44.get(`/studio/jobs/${generationId}`);
 }
