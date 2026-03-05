@@ -878,10 +878,10 @@ pub async fn create_for_brand_campaign(
         }
         let connection_rows: Vec<serde_json::Value> =
             serde_json::from_str(&connection_text).unwrap_or_default();
-        let conn = connection_rows
-            .first()
-            .cloned()
-            .ok_or((StatusCode::NOT_FOUND, "agency connection not found".to_string()))?;
+        let conn = connection_rows.first().cloned().ok_or((
+            StatusCode::NOT_FOUND,
+            "agency connection not found".to_string(),
+        ))?;
         let connection_status = conn
             .get("status")
             .and_then(|v| v.as_str())
@@ -1240,7 +1240,8 @@ pub async fn list_brand_campaign_license_options(
         if !status.is_success() {
             return Err(sanitize_db_error(status.as_u16(), text));
         }
-        let connection_rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+        let connection_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&text).unwrap_or_default();
         let talent_ids: Vec<String> = connection_rows
             .iter()
             .filter_map(|r| {

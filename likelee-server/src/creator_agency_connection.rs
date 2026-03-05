@@ -1,5 +1,5 @@
-use crate::{auth::AuthUser, auth::RoleGuard, config::AppState};
 use crate::errors::sanitize_db_error;
+use crate::{auth::AuthUser, auth::RoleGuard, config::AppState};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -331,19 +331,13 @@ pub async fn accept_invite(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     let talent_rows: Vec<AgencyUserRow> = serde_json::from_str(&talent_id_text)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let talent_id = talent_rows
-        .first()
-        .map(|r| r.id.clone())
-        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "failed to resolve talent row".to_string()))?;
+    let talent_id = talent_rows.first().map(|r| r.id.clone()).ok_or((
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "failed to resolve talent row".to_string(),
+    ))?;
 
-    upsert_agency_talent_connection(
-        &state,
-        &invite.agency_id,
-        &talent_id,
-        &creator_id,
-        "active",
-    )
-    .await?;
+    upsert_agency_talent_connection(&state, &invite.agency_id, &talent_id, &creator_id, "active")
+        .await?;
 
     Ok(Json(ActionResponse {
         status: "ok".to_string(),

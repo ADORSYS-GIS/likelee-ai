@@ -435,8 +435,10 @@ pub async fn search_marketplace_profiles(
             if !missing_creator_talent_ids.is_empty() {
                 missing_creator_talent_ids.sort();
                 missing_creator_talent_ids.dedup();
-                let talent_refs: Vec<&str> =
-                    missing_creator_talent_ids.iter().map(|s| s.as_str()).collect();
+                let talent_refs: Vec<&str> = missing_creator_talent_ids
+                    .iter()
+                    .map(|s| s.as_str())
+                    .collect();
                 let map_resp = state
                     .pg
                     .from("agency_users")
@@ -2951,12 +2953,7 @@ pub async fn list_brand_agency_talent_rates(
     if limit > 200 {
         limit = 200;
     }
-    let search = q
-        .q
-        .as_deref()
-        .unwrap_or("")
-        .trim()
-        .to_lowercase();
+    let search = q.q.as_deref().unwrap_or("").trim().to_lowercase();
 
     let effective_brand_id = resolve_effective_brand_id(&state, &user).await?;
     let connected_resp = state

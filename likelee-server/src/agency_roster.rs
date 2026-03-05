@@ -240,7 +240,10 @@ async fn resolve_effective_agency_id(
         .unwrap_or("")
         .to_string();
     if agency_id.is_empty() {
-        return Err((StatusCode::FORBIDDEN, "Agency profile not found".to_string()));
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Agency profile not found".to_string(),
+        ));
     }
     Ok(agency_id)
 }
@@ -1671,9 +1674,13 @@ pub async fn update_talent(
     if !access_status.is_success() {
         return Err((StatusCode::INTERNAL_SERVER_ERROR, access_text));
     }
-    let access_rows: Vec<serde_json::Value> = serde_json::from_str(&access_text).unwrap_or_default();
+    let access_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&access_text).unwrap_or_default();
     if access_rows.is_empty() {
-        return Err((StatusCode::FORBIDDEN, "Talent not found for this agency".to_string()));
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Talent not found for this agency".to_string(),
+        ));
     }
     let existing_connection_status = access_rows
         .first()
