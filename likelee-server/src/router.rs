@@ -488,6 +488,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::face_profiles::create_brand_licensing_request),
         )
         .route(
+            "/api/brand/agency-talent-rates",
+            get(crate::face_profiles::list_brand_agency_talent_rates),
+        )
+        .route(
             "/api/agency/brand-connection-requests",
             get(crate::face_profiles::list_agency_brand_connection_requests),
         )
@@ -674,6 +678,14 @@ pub fn build_router(state: AppState) -> Router {
         .route("/api/brand-register", post(crate::brands::register))
         .route("/api/brand-profile", post(crate::brands::update))
         .route("/api/brand-profile/user", get(crate::brands::get_by_user))
+        .route(
+            "/api/brand/campaigns/:campaign_id/license-requests",
+            post(crate::licensing_requests::create_for_brand_campaign),
+        )
+        .route(
+            "/api/brand/campaigns/:campaign_id/license-requests/options",
+            get(crate::licensing_requests::list_brand_campaign_license_options),
+        )
         .route(
             "/api/brand/voice-folders",
             get(crate::licenses::list_brand_voice_folders),

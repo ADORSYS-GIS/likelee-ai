@@ -121,6 +121,34 @@ async fn creator_id_by_email(state: &AppState, email: &str) -> Option<String> {
         .map(|s| s.to_string())
 }
 
+async fn upsert_agency_talent_connection(
+    state: &AppState,
+    agency_id: &str,
+    talent_id: &str,
+    creator_id: Option<&str>,
+    status: &str,
+) -> Result<(), (StatusCode, String)> {
+    let payload = json!({
+        "agency_id": agency_id,
+        "talent_id": talent_id,
+        "creator_id": creator_id,
+        "status": status,
+        "updated_at": now_rfc3339(),
+    });
+    let resp = state
+        .pg
+        .from("agency_talent_relationships")
+        .upsert(payload.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !resp.status().is_success() {
+        let txt = resp.text().await.unwrap_or_default();
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, txt));
+    }
+    Ok(())
+}
+
 fn parse_string_list(value: &Value) -> Vec<String> {
     if let Some(arr) = value.as_array() {
         return arr
@@ -472,7 +500,7 @@ pub async fn create_for_agency(
     if let Some(creator_id) = existing_creator_id.as_ref() {
         let active_link_resp = state
             .pg
-            .from("agency_users")
+            .from("agency_talent_relationships")
             .select("id")
             .eq("agency_id", &user.id)
             .eq("creator_id", creator_id)
@@ -969,8 +997,8 @@ pub async fn accept_by_token(
         .pg
         .from("agency_users")
         .select("*")
-        .eq("agency_id", &inv.agency_id)
         .eq("creator_id", &creator_id)
+        .eq("role", "talent")
         .order("updated_at.desc")
         .limit(1)
         .execute()
@@ -996,8 +1024,8 @@ pub async fn accept_by_token(
             .pg
             .from("agency_users")
             .select("*")
-            .eq("agency_id", &inv.agency_id)
             .eq("email", &invited_email)
+            .eq("role", "talent")
             .order("updated_at.desc")
             .limit(1)
             .execute()
@@ -1018,7 +1046,7 @@ pub async fn accept_by_token(
         }
     }
 
-    if let Some(agency_user_id) = existing_agency_user_id {
+    if let Some(agency_user_id) = existing_agency_user_id.clone() {
         let _ = state
             .pg
             .from("agency_users")
@@ -1035,6 +1063,7 @@ pub async fn accept_by_token(
             )
             .execute()
             .await;
+        existing_agency_user_id = Some(agency_user_id);
     } else {
         // Compute full_legal_name
         let creator_resp = state
@@ -1084,6 +1113,43 @@ pub async fn accept_by_token(
             )
             .execute()
             .await;
+
+        let lookup_resp = state
+            .pg
+            .from("agency_users")
+            .select("id")
+            .eq("creator_id", &creator_id)
+            .eq("role", "talent")
+            .order("updated_at.desc")
+            .limit(1)
+            .execute()
+            .await
+            .ok();
+        if let Some(lookup_resp) = lookup_resp {
+            if lookup_resp.status().is_success() {
+                if let Ok(lookup_text) = lookup_resp.text().await {
+                    let rows: Vec<Value> = serde_json::from_str(&lookup_text).unwrap_or_default();
+                    if let Some(id) = rows
+                        .first()
+                        .and_then(|r| r.get("id"))
+                        .and_then(|v| v.as_str())
+                    {
+                        existing_agency_user_id = Some(id.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    if let Some(agency_user_id) = existing_agency_user_id.as_deref() {
+        let _ = upsert_agency_talent_connection(
+            &state,
+            &inv.agency_id,
+            agency_user_id,
+            Some(&creator_id),
+            "active",
+        )
+        .await;
     }
 
     if let Some(row) = matched_agency_row.as_ref() {

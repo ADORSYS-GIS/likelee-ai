@@ -146,6 +146,20 @@ export default function BrandCampaignDashboard() {
     return parts.map((part) => part.charAt(0).toUpperCase()).join("");
   };
 
+  const isNegotiationEnabled = (value: unknown): boolean => {
+    if (value === false) return false;
+    if (typeof value === "string") {
+      const normalized = value.trim().toLowerCase();
+      if (normalized === "false" || normalized === "0" || normalized === "no")
+        return false;
+      return true;
+    }
+    if (typeof value === "number") {
+      return value !== 0;
+    }
+    return true;
+  };
+
   useEffect(() => {
     const loadConnectedAgencies = async () => {
       setLoadingConnectedAgencies(true);
@@ -195,15 +209,36 @@ export default function BrandCampaignDashboard() {
     const timer = setTimeout(async () => {
       setLoadingMarketplaceCreators(true);
       try {
-        const rows = await base44.get<any[]>("/api/marketplace/search", {
-          params: {
-            entity_type: "creator",
-            profile_type: "all",
-            query: creatorSearch.trim() || undefined,
-            limit: 60,
-          },
-        });
-        setMarketplaceCreators(Array.isArray(rows) ? rows : []);
+        if (campaignForm.collaborator_type === "agency") {
+          const agencyId = String(campaignForm.collaborators?.[0] || "").trim();
+          if (!agencyId) {
+            setMarketplaceCreators([]);
+            return;
+          }
+          const resp = await base44.get<any>("/api/brand/agency-talent-rates", {
+            params: {
+              agency_id: agencyId,
+              q: creatorSearch.trim() || undefined,
+              limit: 80,
+            },
+          });
+          const rows = Array.isArray(resp?.items)
+            ? resp.items
+            : Array.isArray(resp)
+              ? resp
+              : [];
+          setMarketplaceCreators(rows);
+        } else {
+          const rows = await base44.get<any[]>("/api/marketplace/search", {
+            params: {
+              entity_type: "creator",
+              profile_type: "all",
+              query: creatorSearch.trim() || undefined,
+              limit: 60,
+            },
+          });
+          setMarketplaceCreators(Array.isArray(rows) ? rows : []);
+        }
       } catch {
         setMarketplaceCreators([]);
       } finally {
@@ -217,6 +252,7 @@ export default function BrandCampaignDashboard() {
     showNewCampaignModal,
     newCampaignStep,
     campaignForm.collaborator_type,
+    campaignForm.collaborators,
   ]);
 
   const handleCreateCampaign = () => {
@@ -1133,32 +1169,94 @@ export default function BrandCampaignDashboard() {
                                 const location = String(
                                   creator?.location || "",
                                 ).trim();
+                                const baseRateWeeklyCents = Number(
+                                  creator?.base_rate_weekly_cents ??
+                                    creator?.base_weekly_price_cents ??
+                                    creator?.licensing_rate_weekly_cents ??
+                                    0,
+                                );
+                                const hasBaseRate =
+                                  Number.isFinite(baseRateWeeklyCents) &&
+                                  baseRateWeeklyCents > 0;
+                                const rateCurrency = String(
+                                  creator?.rate_currency ||
+                                    creator?.currency_code ||
+                                    "USD",
+                                );
+                                const canNegotiate = isNegotiationEnabled(
+                                  creator?.accept_negotiations,
+                                );
                                 return (
-                                  <button
+                                  <div
                                     key={creatorId}
-                                    type="button"
-                                    onClick={() =>
-                                      setCampaignForm((prev) => ({
-                                        ...prev,
-                                        collaborators: creatorId
-                                          ? [creatorId]
-                                          : prev.collaborators,
-                                      }))
-                                    }
-                                    className={`w-full text-left border-2 p-3 rounded-none transition-colors ${
+                                    className={`w-full border-2 p-3 rounded-none transition-colors ${
                                       selected
                                         ? "border-black bg-gray-50"
                                         : "border-gray-200 hover:border-gray-400"
                                     }`}
                                   >
-                                    <p className="font-semibold text-gray-900">
-                                      {creatorName}
-                                    </p>
-                                    <p className="text-xs text-gray-600 mt-1">
-                                      {creatorType}
-                                      {location ? ` • ${location}` : ""}
-                                    </p>
-                                  </button>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setCampaignForm((prev) => ({
+                                          ...prev,
+                                          collaborators: creatorId
+                                            ? [creatorId]
+                                            : prev.collaborators,
+                                        }))
+                                      }
+                                      className="w-full text-left"
+                                    >
+                                      <p className="font-semibold text-gray-900">
+                                        {creatorName}
+                                      </p>
+                                      <p className="text-xs text-gray-600 mt-1">
+                                        {creatorType}
+                                        {location ? ` • ${location}` : ""}
+                                      </p>
+                                      <p className="text-xs text-gray-700 mt-1">
+                                        Base rate:{" "}
+                                        <span className="font-semibold">
+                                          {hasBaseRate
+                                            ? `${rateCurrency} ${Math.round(baseRateWeeklyCents / 100).toLocaleString()}/week`
+                                            : "Unavailable"}
+                                        </span>
+                                      </p>
+                                    </button>
+                                    {selected && (
+                                      <div className="mt-3 flex items-center justify-between gap-3 border-t border-gray-200 pt-3">
+                                        <div className="text-xs text-gray-600 font-medium">
+                                          {canNegotiate
+                                            ? "Brand offer (optional)"
+                                            : "Pricing model"}
+                                        </div>
+                                        <div className="flex items-center justify-end">
+                                          {canNegotiate ? (
+                                            <Input
+                                              type="number"
+                                              min="1"
+                                              value={
+                                                offerByCreatorId[creatorId] ||
+                                                ""
+                                              }
+                                              onChange={(e) =>
+                                                setOfferByCreatorId((prev) => ({
+                                                  ...prev,
+                                                  [creatorId]: e.target.value,
+                                                }))
+                                              }
+                                              placeholder="Your offer"
+                                              className="w-56 border-2 border-gray-300 rounded-none h-9 text-right"
+                                            />
+                                          ) : (
+                                            <div className="h-9 border-2 border-gray-200 bg-gray-50 rounded-none px-3 text-xs text-gray-600 flex items-center">
+                                              Fixed rate
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
                                 );
                               })
                             )}
@@ -1297,6 +1395,23 @@ export default function BrandCampaignDashboard() {
                           const creatorType = String(
                             creator?.creator_type || "Creator",
                           );
+                          const baseRateWeeklyCents = Number(
+                            creator?.base_rate_weekly_cents ??
+                              creator?.licensing_rate_weekly_cents ??
+                              creator?.base_weekly_price_cents ??
+                              0,
+                          );
+                          const hasBaseRate =
+                            Number.isFinite(baseRateWeeklyCents) &&
+                            baseRateWeeklyCents > 0;
+                          const rateCurrency = String(
+                            creator?.rate_currency ||
+                              creator?.currency_code ||
+                              "USD",
+                          );
+                          const canNegotiate = isNegotiationEnabled(
+                            creator?.accept_negotiations,
+                          );
                           const requested =
                             requestedLicenseCreatorIds.has(creatorId);
                           const requesting =
@@ -1327,32 +1442,50 @@ export default function BrandCampaignDashboard() {
                                   <p className="text-sm text-gray-600 truncate">
                                     {creatorType}
                                   </p>
+                                  <p className="text-xs text-gray-700 mt-1">
+                                    Base rate:{" "}
+                                    <span className="font-semibold">
+                                      {hasBaseRate
+                                        ? `${rateCurrency} ${Math.round(baseRateWeeklyCents / 100).toLocaleString()}/week`
+                                        : "Unavailable"}
+                                    </span>
+                                  </p>
                                 </div>
                                 <div className="w-36">
-                                  <Input
-                                    placeholder="Your offer"
-                                    value={offerByCreatorId[creatorId] || ""}
-                                    onChange={(e) =>
-                                      setOfferByCreatorId((prev) => ({
-                                        ...prev,
-                                        [creatorId]: e.target.value,
-                                      }))
-                                    }
-                                    className="border-2 border-gray-300 rounded-none h-10"
-                                  />
+                                  {canNegotiate ? (
+                                    <Input
+                                      placeholder="Your offer"
+                                      value={offerByCreatorId[creatorId] || ""}
+                                      onChange={(e) =>
+                                        setOfferByCreatorId((prev) => ({
+                                          ...prev,
+                                          [creatorId]: e.target.value,
+                                        }))
+                                      }
+                                      className="border-2 border-gray-300 rounded-none h-10"
+                                    />
+                                  ) : (
+                                    <div className="h-10 border-2 border-gray-200 bg-gray-50 rounded-none px-3 text-xs text-gray-600 flex items-center">
+                                      Fixed rate
+                                    </div>
+                                  )}
                                 </div>
                                 <Button
                                   onClick={() =>
                                     requestLicenseForCreator(creator)
                                   }
-                                  disabled={requested || requesting}
+                                  disabled={
+                                    requested || requesting || !hasBaseRate
+                                  }
                                   className="h-10 bg-black hover:bg-gray-800 text-white rounded-none"
                                 >
                                   {requesting
                                     ? "Requesting..."
                                     : requested
                                       ? "Requested"
-                                      : "Request License"}
+                                      : hasBaseRate
+                                        ? "Request License"
+                                        : "Rate unavailable"}
                                 </Button>
                               </div>
                             </div>
