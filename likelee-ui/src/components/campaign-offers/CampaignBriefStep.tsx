@@ -398,6 +398,10 @@ export default function CampaignBriefStep({
               Campaign Duration
             </p>
             <Input
+              type="number"
+              min={1}
+              step={1}
+              inputMode="numeric"
               value={campaignBrief.overview_campaign_duration}
               onChange={(e) =>
                 setCampaignBrief((prev) => ({
@@ -405,13 +409,14 @@ export default function CampaignBriefStep({
                   overview_campaign_duration: e.target.value,
                 }))
               }
-              placeholder="90 days"
+              placeholder="90"
               className="border-2 border-gray-300 rounded-none"
             />
           </div>
           <div className="space-y-2">
             <p className="text-sm font-medium text-gray-700">Launch Date</p>
             <Input
+              type="date"
               value={campaignBrief.overview_launch_date}
               onChange={(e) =>
                 setCampaignBrief((prev) => ({
@@ -430,6 +435,10 @@ export default function CampaignBriefStep({
           <div className="space-y-2">
             <p className="text-sm font-medium text-gray-700">Total Budget</p>
             <Input
+              type="number"
+              min={1}
+              step={1}
+              inputMode="numeric"
               value={campaignBrief.budget_total}
               onChange={(e) =>
                 setCampaignBrief((prev) => ({
@@ -437,13 +446,17 @@ export default function CampaignBriefStep({
                   budget_total: e.target.value,
                 }))
               }
-              placeholder="$5,000"
+              placeholder="5000"
               className="border-2 border-gray-300 rounded-none"
             />
           </div>
           <div className="space-y-2">
             <p className="text-sm font-medium text-gray-700">Creator Payment</p>
             <Input
+              type="number"
+              min={1}
+              step={1}
+              inputMode="numeric"
               value={campaignBrief.budget_creator_payment}
               onChange={(e) =>
                 setCampaignBrief((prev) => ({
@@ -451,13 +464,17 @@ export default function CampaignBriefStep({
                   budget_creator_payment: e.target.value,
                 }))
               }
-              placeholder="$4,500"
+              placeholder="4500"
               className="border-2 border-gray-300 rounded-none"
             />
           </div>
           <div className="space-y-2">
             <p className="text-sm font-medium text-gray-700">Platform Fee</p>
             <Input
+              type="number"
+              min={1}
+              step={1}
+              inputMode="numeric"
               value={campaignBrief.budget_platform_fee}
               onChange={(e) =>
                 setCampaignBrief((prev) => ({
@@ -465,7 +482,7 @@ export default function CampaignBriefStep({
                   budget_platform_fee: e.target.value,
                 }))
               }
-              placeholder="$500 (10%)"
+              placeholder="500"
               className="border-2 border-gray-300 rounded-none"
             />
           </div>
@@ -474,6 +491,7 @@ export default function CampaignBriefStep({
               Submission Deadline
             </p>
             <Input
+              type="date"
               value={campaignBrief.budget_submission_deadline}
               onChange={(e) =>
                 setCampaignBrief((prev) => ({

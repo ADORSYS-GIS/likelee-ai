@@ -105,6 +105,7 @@ export default function BrandCampaignDashboard({
   const [showStudioUpgradeModal, setShowStudioUpgradeModal] = useState(false);
   const [showPostJobModal, setShowPostJobModal] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState(null);
+  const [brandCampaignId, setBrandCampaignId] = useState<string>("");
   const [campaignCards, setCampaignCards] = useState<any[]>(mockCampaigns);
   const [campaignListTab, setCampaignListTab] = useState<
     "active" | "pending_approval" | "completed" | "inbox"
@@ -122,12 +123,18 @@ export default function BrandCampaignDashboard({
   const [offerByCreatorId, setOfferByCreatorId] = useState<
     Record<string, string>
   >({});
+  const [contractDraft, setContractDraft] = useState({
+    title: "",
+    file_url: "",
+    docuseal_template_id: "",
+  });
   const [selectedCreatorsById, setSelectedCreatorsById] = useState<
     Record<string, any>
   >({});
   const [selectedTalentCreatorIds, setSelectedTalentCreatorIds] = useState<
     Set<string>
   >(new Set());
+  const [savingCampaign, setSavingCampaign] = useState(false);
   const creatorFetchRequestIdRef = useRef(0);
   const connectedCreatorCacheRef = useRef<Record<string, any[]>>({});
   const agencyTalentCacheRef = useRef<Record<string, any[]>>({});
@@ -216,6 +223,101 @@ export default function BrandCampaignDashboard({
     return true;
   };
 
+  const parseBudgetRange = (value: string): { min: string; max: string } => {
+    const clean = String(value || "").trim();
+    if (!clean) return { min: "", max: "" };
+    const match = clean.match(/^\s*(\d+)\s*-\s*(\d+)\s*$/);
+    if (!match) return { min: "", max: "" };
+    return { min: match[1], max: match[2] };
+  };
+
+  const budgetParts = parseBudgetRange(campaignForm.budget_range);
+
+  const setBudgetPart = (part: "min" | "max", nextValue: string) => {
+    const normalized = String(nextValue || "").replace(/[^\d]/g, "");
+    const min = part === "min" ? normalized : budgetParts.min;
+    const max = part === "max" ? normalized : budgetParts.max;
+    if (!min && !max) {
+      setCampaignForm((prev) => ({ ...prev, budget_range: "" }));
+      return;
+    }
+    setCampaignForm((prev) => ({
+      ...prev,
+      budget_range: `${min || "0"}-${max || "0"}`,
+    }));
+  };
+
+  const validateStep1Form = (): { ok: boolean; message?: string } => {
+    if (!campaignForm.name.trim()) return { ok: false, message: "Campaign name is required." };
+    if (!campaignForm.objective.trim()) return { ok: false, message: "Campaign objective is required." };
+    if (!campaignForm.category.trim()) return { ok: false, message: "Category is required." };
+    if (!campaignForm.description.trim()) return { ok: false, message: "Description is required." };
+    if (!campaignForm.start_date.trim()) return { ok: false, message: "Start date is required." };
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(campaignForm.start_date.trim())) {
+      return { ok: false, message: "Start date must be a valid date." };
+    }
+    const min = Number.parseInt(budgetParts.min, 10);
+    const max = Number.parseInt(budgetParts.max, 10);
+    if (!Number.isFinite(min) || min <= 0 || !Number.isFinite(max) || max <= 0) {
+      return { ok: false, message: "Budget min and max must be greater than zero." };
+    }
+    if (max < min) {
+      return { ok: false, message: "Budget max must be greater than or equal to budget min." };
+    }
+    const duration = Number.parseInt(String(campaignForm.duration_days || "").trim(), 10);
+    if (!Number.isFinite(duration) || duration <= 0) {
+      return { ok: false, message: "Duration must be at least 1 day." };
+    }
+    return { ok: true };
+  };
+
+  const isValidDateString = (value: string): boolean =>
+    /^\d{4}-\d{2}-\d{2}$/.test(String(value || "").trim());
+
+  const parsePositiveNumber = (value: unknown): number | null => {
+    if (value === null || value === undefined) return null;
+    const normalized = String(value).replace(/[$,\s]/g, "").trim();
+    if (!normalized) return null;
+    const num = Number(normalized);
+    if (!Number.isFinite(num) || num <= 0) return null;
+    return num;
+  };
+
+  const validateStep2Brief = (): { ok: boolean; message?: string } => {
+    const duration = Number.parseInt(
+      String(campaignBrief.overview_campaign_duration || "").trim(),
+      10,
+    );
+    if (!Number.isFinite(duration) || duration <= 0) {
+      return {
+        ok: false,
+        message: "Campaign duration must be a valid number of days.",
+      };
+    }
+    if (!isValidDateString(String(campaignBrief.overview_launch_date || ""))) {
+      return { ok: false, message: "Launch date must be a valid date." };
+    }
+    if (!isValidDateString(String(campaignBrief.budget_submission_deadline || ""))) {
+      return {
+        ok: false,
+        message: "Submission deadline must be a valid date.",
+      };
+    }
+    if (!parsePositiveNumber(campaignBrief.budget_total)) {
+      return { ok: false, message: "Total budget must be a valid amount." };
+    }
+    if (!parsePositiveNumber(campaignBrief.budget_creator_payment)) {
+      return {
+        ok: false,
+        message: "Creator payment must be a valid amount.",
+      };
+    }
+    if (!parsePositiveNumber(campaignBrief.budget_platform_fee)) {
+      return { ok: false, message: "Platform fee must be a valid amount." };
+    }
+    return { ok: true };
+  };
+
   useEffect(() => {
     const loadConnectedAgencies = async () => {
       setLoadingConnectedAgencies(true);
@@ -266,6 +368,11 @@ export default function BrandCampaignDashboard({
       setLoadingMarketplaceCreators(false);
       return;
     }
+    if (!brandCampaignId) {
+      setMarketplaceCreators([]);
+      setLoadingMarketplaceCreators(false);
+      return;
+    }
 
     const requestId = ++creatorFetchRequestIdRef.current;
     const collaboratorType = campaignForm.collaborator_type;
@@ -287,16 +394,19 @@ export default function BrandCampaignDashboard({
 
     const timer = setTimeout(async () => {
       try {
-        const rows = await base44.get<any[]>("/api/marketplace/search", {
+        const response = await base44.get<{
+          items?: any[];
+        }>(`/api/brand/campaigns/${brandCampaignId}/offer-options`, {
           params: {
-            entity_type: "creator",
-            profile_type: "connected",
-            query: creatorSearch.trim() || undefined,
+            target_type: "creator",
+            q: creatorSearch.trim() || undefined,
             limit: 60,
           },
         });
         if (creatorFetchRequestIdRef.current !== requestId) return;
-        const normalizedRows = Array.isArray(rows) ? rows : [];
+        const normalizedRows = Array.isArray(response?.items)
+          ? response.items
+          : [];
         connectedCreatorCacheRef.current[creatorCacheKey] = normalizedRows;
         setMarketplaceCreators(normalizedRows);
       } catch {
@@ -311,6 +421,7 @@ export default function BrandCampaignDashboard({
     return () => clearTimeout(timer);
   }, [
     creatorSearch,
+    brandCampaignId,
     showNewCampaignModal,
     newCampaignStep,
     campaignForm.collaborator_type,
@@ -397,13 +508,10 @@ export default function BrandCampaignDashboard({
     });
   };
 
-  const handleCreateCampaign = () => {
-    toast({
-      title: "Campaign created",
-      description: "Frontend demo action completed (no backend request sent).",
-    });
+  const resetCampaignBuilder = () => {
     setShowNewCampaignModal(false);
     setNewCampaignStep(1);
+    setBrandCampaignId("");
     setCampaignForm({
       name: "",
       objective: "",
@@ -455,10 +563,119 @@ export default function BrandCampaignDashboard({
       legal_terms: "",
     });
     setOfferByCreatorId({});
+    setContractDraft({
+      title: "",
+      file_url: "",
+      docuseal_template_id: "",
+    });
     setSelectedCreatorsById({});
     setSelectedTalentCreatorIds(new Set());
     setMarketplaceCreators([]);
     setCreatorSearch("");
+  };
+
+  const ensureCampaignDraft = async (): Promise<string | null> => {
+    try {
+      setSavingCampaign(true);
+      const durationDays = Number.parseInt(
+        String(campaignForm.duration_days || "").trim(),
+        10,
+      );
+      const normalizedDurationDays =
+        Number.isFinite(durationDays) && durationDays > 0 ? durationDays : null;
+      const normalizedBudgetRange = campaignForm.budget_range.trim();
+      const normalizedStartDate = campaignForm.start_date.trim();
+      if (!brandCampaignId) {
+        const created = await base44.post<any>("/api/brand/campaigns", {
+          name: campaignForm.name,
+          objective: campaignForm.objective,
+          category: campaignForm.category,
+          description: campaignForm.description,
+          usage_scope: campaignForm.usage_scope || null,
+          duration_days: normalizedDurationDays,
+          territory: campaignForm.territory || null,
+          exclusivity: campaignForm.exclusivity || null,
+          budget_range: normalizedBudgetRange,
+          start_date: normalizedStartDate,
+          custom_terms: campaignForm.custom_terms || null,
+          brief_snapshot: campaignBrief,
+        });
+        const id = String(created?.id || "").trim();
+        if (!id) {
+          throw new Error("Campaign ID missing in create response");
+        }
+        setBrandCampaignId(id);
+        return id;
+      }
+      await base44.post(`/api/brand/campaigns/${brandCampaignId}`, {
+        name: campaignForm.name,
+        objective: campaignForm.objective,
+        category: campaignForm.category,
+        description: campaignForm.description,
+        usage_scope: campaignForm.usage_scope || null,
+        duration_days: normalizedDurationDays,
+        territory: campaignForm.territory || null,
+        exclusivity: campaignForm.exclusivity || null,
+        budget_range: normalizedBudgetRange,
+        start_date: normalizedStartDate,
+        custom_terms: campaignForm.custom_terms || null,
+      });
+      return brandCampaignId;
+    } catch (e: any) {
+      toast({
+        title: "Unable to save campaign",
+        description: e?.message || "Please check fields and try again.",
+        variant: "destructive" as any,
+      });
+      return null;
+    } finally {
+      setSavingCampaign(false);
+    }
+  };
+
+  const handleStep1Next = async () => {
+    const validation = validateStep1Form();
+    if (!validation.ok) {
+      toast({
+        title: "Please correct the form",
+        description: validation.message || "Some fields are invalid.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    const id = await ensureCampaignDraft();
+    if (!id) return;
+    setNewCampaignStep(2);
+  };
+
+  const handleStep2Next = async () => {
+    const validation = validateStep2Brief();
+    if (!validation.ok) {
+      toast({
+        title: "Please correct the campaign brief",
+        description: validation.message || "Some brief fields are invalid.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    const id = await ensureCampaignDraft();
+    if (!id) return;
+    try {
+      setSavingCampaign(true);
+      await base44.post(`/api/brand/campaigns/${id}`, {
+        brief_snapshot: campaignBrief,
+      });
+      setNewCampaignStep(3);
+    } catch (e: any) {
+      toast({
+        title: "Unable to save brief",
+        description:
+          e?.message || "We could not save step 2 data. Please try again.",
+        variant: "destructive" as any,
+      });
+    } finally {
+      setSavingCampaign(false);
+    }
   };
 
   const handleReferenceImageUpload = (
@@ -494,7 +711,16 @@ export default function BrandCampaignDashboard({
     event.target.value = "";
   };
 
-  const handleSendOffer = () => {
+  const handleSendOffer = async () => {
+    if (!brandCampaignId) {
+      toast({
+        title: "Campaign not ready",
+        description: "Please save campaign details first.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+
     if (campaignForm.collaborator_type === "creator") {
       const creatorIds = selectedCreatorIdsForRequest.filter(Boolean);
       if (creatorIds.length === 0) {
@@ -506,11 +732,64 @@ export default function BrandCampaignDashboard({
         return;
       }
 
+      try {
+        const created = await base44.post<{ offers?: any[] }>(
+          `/api/brand/campaigns/${brandCampaignId}/offers`,
+          {
+            target_type: "creator",
+            target_ids: creatorIds,
+            brief_snapshot: campaignBrief,
+            message: campaignForm.custom_terms || null,
+          },
+        );
+
+        const createdOffers = Array.isArray(created?.offers)
+          ? created.offers
+          : [];
+
+        const shouldCreateContract =
+          newCampaignStep >= 5 &&
+          (contractDraft.file_url.trim() ||
+            contractDraft.docuseal_template_id.trim());
+
+        if (shouldCreateContract && createdOffers.length > 0) {
+          await Promise.all(
+            createdOffers.map(async (offer: any) => {
+              const offerId = String(offer?.id || "").trim();
+              if (!offerId) return;
+              const contractResp = await base44.post<{ contract?: any }>(
+                `/api/campaign-offers/${offerId}/contracts`,
+                {
+                  title:
+                    contractDraft.title.trim() ||
+                    `${campaignForm.name || "Campaign"} Contract`,
+                  file_url: contractDraft.file_url.trim() || null,
+                  docuseal_template_id: contractDraft.docuseal_template_id
+                    ? Number(contractDraft.docuseal_template_id)
+                    : null,
+                },
+              );
+              const contractId = String(contractResp?.contract?.id || "").trim();
+              await base44.post(`/api/campaign-offers/${offerId}/contracts/send`, {
+                contract_id: contractId || undefined,
+              });
+            }),
+          );
+        }
+      } catch (e: any) {
+        toast({
+          title: "Failed to send offers",
+          description: e?.message || "Please try again.",
+          variant: "destructive" as any,
+        });
+        return;
+      }
+
       toast({
-        title: "Offer sent",
-        description: `Frontend demo only. ${creatorIds.length} creator offer${creatorIds.length > 1 ? "s" : ""} prepared.`,
+        title: "Offers sent",
+        description: `${creatorIds.length} creator offer${creatorIds.length > 1 ? "s were" : " was"} sent successfully.`,
       });
-      handleCreateCampaign();
+      resetCampaignBuilder();
       return;
     }
 
@@ -523,11 +802,25 @@ export default function BrandCampaignDashboard({
       });
       return;
     }
-    toast({
-      title: "Offer sent",
-      description: "Offer sent to the selected agency (frontend demo).",
-    });
-    handleCreateCampaign();
+    try {
+      await base44.post(`/api/brand/campaigns/${brandCampaignId}/offers`, {
+        target_type: "agency",
+        target_ids: [agencyId],
+        brief_snapshot: campaignBrief,
+        message: campaignForm.custom_terms || null,
+      });
+      toast({
+        title: "Offer sent",
+        description: "Offer sent to the selected agency.",
+      });
+      resetCampaignBuilder();
+    } catch (e: any) {
+      toast({
+        title: "Failed to send offer",
+        description: e?.message || "Please try again.",
+        variant: "destructive" as any,
+      });
+    }
   };
 
   return (
@@ -888,7 +1181,7 @@ export default function BrandCampaignDashboard({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setShowNewCampaignModal(false)}
+                  onClick={resetCampaignBuilder}
                   className="rounded-none"
                 >
                   <X className="w-5 h-5" />
@@ -1060,17 +1353,35 @@ export default function BrandCampaignDashboard({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium text-gray-700 block mb-2">
-                        Budget Range *
+                        Budget Min (USD) *
                       </label>
                       <Input
-                        value={campaignForm.budget_range}
+                        type="number"
+                        min={1}
+                        step={1}
+                        inputMode="numeric"
+                        value={budgetParts.min}
                         onChange={(e) =>
-                          setCampaignForm({
-                            ...campaignForm,
-                            budget_range: e.target.value,
-                          })
+                          setBudgetPart("min", e.target.value)
                         }
-                        placeholder="$5,000 - $10,000"
+                        placeholder="5000"
+                        className="border-2 border-gray-300 rounded-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-2">
+                        Budget Max (USD) *
+                      </label>
+                      <Input
+                        type="number"
+                        min={1}
+                        step={1}
+                        inputMode="numeric"
+                        value={budgetParts.max}
+                        onChange={(e) =>
+                          setBudgetPart("max", e.target.value)
+                        }
+                        placeholder="10000"
                         className="border-2 border-gray-300 rounded-none"
                       />
                     </div>
@@ -1194,24 +1505,26 @@ export default function BrandCampaignDashboard({
                   <div className="flex justify-end gap-3">
                     <Button
                       variant="outline"
-                      onClick={() => setShowNewCampaignModal(false)}
+                      onClick={resetCampaignBuilder}
                       className="border-2 border-gray-300 rounded-none bg-white text-black hover:bg-gray-50"
                     >
                       Cancel
                     </Button>
                     <Button
-                      onClick={() => setNewCampaignStep(2)}
+                      onClick={handleStep1Next}
                       disabled={
+                        savingCampaign ||
                         !campaignForm.name ||
                         !campaignForm.objective ||
                         !campaignForm.category ||
                         !campaignForm.description.trim() ||
-                        !campaignForm.budget_range.trim() ||
-                        !campaignForm.start_date
+                        !campaignForm.start_date ||
+                        !budgetParts.min ||
+                        !budgetParts.max
                       }
                       className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
                     >
-                      Next
+                      {savingCampaign ? "Saving..." : "Next"}
                     </Button>
                   </div>
                 </div>
@@ -1224,7 +1537,7 @@ export default function BrandCampaignDashboard({
                   onReferenceImagesUpload={handleReferenceImageUpload}
                   onBrandAssetsUpload={handleBrandAssetsUpload}
                   onBack={() => setNewCampaignStep(1)}
-                  onNext={() => setNewCampaignStep(3)}
+                  onNext={handleStep2Next}
                 />
               )}
 
@@ -1751,17 +2064,61 @@ export default function BrandCampaignDashboard({
                     <Alert className="bg-blue-50 border-2 border-blue-200 rounded-none">
                       <AlertCircle className="h-5 w-5 text-blue-700" />
                       <AlertDescription className="text-blue-900">
-                        Contract upload step (DocuSeal) will be implemented
-                        next.
+                        Optional contract setup. If provided, a contract is
+                        created and sent with each creator offer.
                       </AlertDescription>
                     </Alert>
-                    <div className="border-2 border-dashed border-gray-300 rounded-none p-6 text-center">
-                      <p className="text-gray-700 font-medium">
-                        Step 5: Contract Upload
-                      </p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Placeholder for DocuSeal integration.
-                      </p>
+                    <div className="border-2 border-gray-200 rounded-none p-4 space-y-4">
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 block mb-1">
+                          Contract title
+                        </label>
+                        <Input
+                          value={contractDraft.title}
+                          onChange={(e) =>
+                            setContractDraft((prev) => ({
+                              ...prev,
+                              title: e.target.value,
+                            }))
+                          }
+                          placeholder="Campaign Master Service Contract"
+                          className="border-2 border-gray-300 rounded-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 block mb-1">
+                          Contract file URL (optional)
+                        </label>
+                        <Input
+                          value={contractDraft.file_url}
+                          onChange={(e) =>
+                            setContractDraft((prev) => ({
+                              ...prev,
+                              file_url: e.target.value,
+                            }))
+                          }
+                          placeholder="https://.../contract.pdf"
+                          className="border-2 border-gray-300 rounded-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 block mb-1">
+                          DocuSeal template ID (optional)
+                        </label>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={contractDraft.docuseal_template_id}
+                          onChange={(e) =>
+                            setContractDraft((prev) => ({
+                              ...prev,
+                              docuseal_template_id: e.target.value,
+                            }))
+                          }
+                          placeholder="12345"
+                          className="border-2 border-gray-300 rounded-none"
+                        />
+                      </div>
                     </div>
                     <div className="flex justify-between gap-3">
                       <Button
