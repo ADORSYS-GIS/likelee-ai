@@ -5,12 +5,19 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
-import { Link2Off } from "lucide-react";
+import { Link2Off, Eye } from "lucide-react";
 
 const BrandConnectionsView = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<
+    "connections" | "requests" | "offers" | "contract_hub" | "deliverables" | "feedback"
+  >("connections");
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
+  const [selectedOfferId, setSelectedOfferId] = useState<string>("");
+  const [packageDraftByOffer, setPackageDraftByOffer] = useState<
+    Record<string, { title: string; message: string; packageId?: string }>
+  >({});
 
   const requestsQuery = useQuery({
     queryKey: ["agency", "brand-connection-requests"],
@@ -34,6 +41,48 @@ const BrandConnectionsView = () => {
     },
   });
 
+  const offersQuery = useQuery({
+    queryKey: ["agency", "campaign-offers-my"],
+    queryFn: async () => {
+      const resp = await base44.get<{ offers?: any[] }>("/api/campaign-offers/my", {
+        params: { limit: 80 },
+      });
+      return Array.isArray(resp?.offers) ? resp.offers : [];
+    },
+  });
+
+  const feedbackQuery = useQuery({
+    queryKey: ["agency", "package-feedback"],
+    queryFn: async () => {
+      const resp = await base44.get<{ items?: any[] }>(
+        "/api/agency/brand-offers/package-feedback",
+      );
+      return Array.isArray(resp?.items) ? resp.items : [];
+    },
+  });
+
+  const offerContractsQuery = useQuery({
+    queryKey: ["agency", "offer-contracts", selectedOfferId],
+    enabled: !!selectedOfferId,
+    queryFn: async () => {
+      const resp = await base44.get<{ contracts?: any[] }>(
+        `/api/campaign-offers/${selectedOfferId}/contracts`,
+      );
+      return Array.isArray(resp?.contracts) ? resp.contracts : [];
+    },
+  });
+
+  const offerDeliverablesQuery = useQuery({
+    queryKey: ["agency", "offer-deliverables", selectedOfferId],
+    enabled: !!selectedOfferId,
+    queryFn: async () => {
+      const resp = await base44.get<{ deliverables?: any[] }>(
+        `/api/campaign-offers/${selectedOfferId}/deliverables`,
+      );
+      return Array.isArray(resp?.deliverables) ? resp.deliverables : [];
+    },
+  });
+
   const requests = useMemo(() => {
     if (!Array.isArray(requestsQuery.data)) return [];
     return requestsQuery.data;
@@ -43,6 +92,14 @@ const BrandConnectionsView = () => {
     if (!Array.isArray(connectionsQuery.data)) return [];
     return connectionsQuery.data;
   }, [connectionsQuery.data]);
+  const offers = useMemo(() => {
+    if (!Array.isArray(offersQuery.data)) return [];
+    return offersQuery.data;
+  }, [offersQuery.data]);
+  const feedbackItems = useMemo(() => {
+    if (!Array.isArray(feedbackQuery.data)) return [];
+    return feedbackQuery.data;
+  }, [feedbackQuery.data]);
 
   const updateStatus = async (id: string, action: "accept" | "decline") => {
     if (!id || busyIds.has(id)) return;
@@ -120,6 +177,78 @@ const BrandConnectionsView = () => {
     }
   };
 
+  const respondToOffer = async (offerId: string, action: "accept" | "decline") => {
+    if (!offerId || busyIds.has(offerId)) return;
+    setBusyIds((prev) => new Set(prev).add(offerId));
+    try {
+      await base44.post(`/api/campaign-offers/${offerId}/respond`, { action });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["agency", "campaign-offers-my"] }),
+        queryClient.invalidateQueries({ queryKey: ["agency", "offer-contracts", offerId] }),
+      ]);
+      toast({
+        title: action === "accept" ? "Offer accepted" : "Offer declined",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Action failed",
+        description: e?.message || "Please try again.",
+        variant: "destructive" as any,
+      });
+    } finally {
+      setBusyIds((prev) => {
+        const next = new Set(prev);
+        next.delete(offerId);
+        return next;
+      });
+    }
+  };
+
+  const createAndSendPackage = async (offerId: string) => {
+    if (!offerId || busyIds.has(offerId)) return;
+    const draft = packageDraftByOffer[offerId] || { title: "", message: "" };
+    setBusyIds((prev) => new Set(prev).add(offerId));
+    try {
+      const createResp = await base44.post<{ package?: any }>(
+        `/api/campaign-offers/${offerId}/packages`,
+        {
+          title: draft.title || "Talent Package",
+          message: draft.message || "",
+          package_snapshot: { talents: [] },
+        },
+      );
+      const packageId = String(createResp?.package?.id || "").trim();
+      if (!packageId) throw new Error("Package was not created");
+      await base44.post(`/api/campaign-offers/${offerId}/packages/send`, {
+        package_id: packageId,
+      });
+      setPackageDraftByOffer((prev) => ({
+        ...prev,
+        [offerId]: { ...draft, packageId },
+      }));
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["agency", "campaign-offers-my"] }),
+        queryClient.invalidateQueries({ queryKey: ["agency", "package-feedback"] }),
+      ]);
+      toast({
+        title: "Package sent",
+        description: "Talent package has been sent to the brand inbox.",
+      });
+    } catch (e: any) {
+      toast({
+        title: "Package send failed",
+        description: e?.message || "Please try again.",
+        variant: "destructive" as any,
+      });
+    } finally {
+      setBusyIds((prev) => {
+        const next = new Set(prev);
+        next.delete(offerId);
+        return next;
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -129,7 +258,47 @@ const BrandConnectionsView = () => {
         </p>
       </div>
 
-      <Card className="p-6 border border-gray-200 rounded-xl">
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant={activeTab === "connections" ? "default" : "outline"}
+          onClick={() => setActiveTab("connections")}
+        >
+          Connected Brands
+        </Button>
+        <Button
+          variant={activeTab === "requests" ? "default" : "outline"}
+          onClick={() => setActiveTab("requests")}
+        >
+          Requests
+        </Button>
+        <Button
+          variant={activeTab === "offers" ? "default" : "outline"}
+          onClick={() => setActiveTab("offers")}
+        >
+          Brand Offers
+        </Button>
+        <Button
+          variant={activeTab === "contract_hub" ? "default" : "outline"}
+          onClick={() => setActiveTab("contract_hub")}
+        >
+          Contract Hub
+        </Button>
+        <Button
+          variant={activeTab === "deliverables" ? "default" : "outline"}
+          onClick={() => setActiveTab("deliverables")}
+        >
+          Deliverables
+        </Button>
+        <Button
+          variant={activeTab === "feedback" ? "default" : "outline"}
+          onClick={() => setActiveTab("feedback")}
+        >
+          Package Feedback
+        </Button>
+      </div>
+
+      {activeTab === "connections" && (
+        <Card className="p-6 border border-gray-200 rounded-xl">
         <h3 className="text-lg font-bold text-gray-900 mb-3">
           Connected Brands
         </h3>
@@ -202,9 +371,11 @@ const BrandConnectionsView = () => {
               })}
             </div>
           )}
-      </Card>
+        </Card>
+      )}
 
-      <Card className="p-6 border border-gray-200 rounded-xl">
+      {activeTab === "requests" && (
+        <Card className="p-6 border border-gray-200 rounded-xl">
         <h3 className="text-lg font-bold text-gray-900 mb-3">Requests</h3>
         {requestsQuery.isLoading && (
           <p className="text-sm text-gray-500">Loading requests...</p>
@@ -294,7 +465,263 @@ const BrandConnectionsView = () => {
               })}
             </div>
           )}
-      </Card>
+        </Card>
+      )}
+
+      {activeTab === "offers" && (
+        <Card className="p-6 border border-gray-200 rounded-xl space-y-4">
+          <h3 className="text-lg font-bold text-gray-900">Brand Offers</h3>
+          {offersQuery.isLoading && (
+            <p className="text-sm text-gray-500">Loading offers...</p>
+          )}
+          {!offersQuery.isLoading && offers.length === 0 && (
+            <p className="text-sm text-gray-500">No campaign offers yet.</p>
+          )}
+          {offers.map((offer: any) => {
+            const offerId = String(offer?.id || "");
+            const status = String(offer?.status || "sent");
+            const isPending = ["sent", "viewed"].includes(status);
+            return (
+              <div
+                key={offerId}
+                className="border border-gray-200 rounded-lg p-4 space-y-3"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-gray-900">
+                      {offer?.brand_campaigns?.name || "Campaign offer"}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {offer?.offer_title || "Offer"} • {status}
+                    </p>
+                  </div>
+                  <Badge variant="outline" className="capitalize">
+                    {status.replace(/_/g, " ")}
+                  </Badge>
+                </div>
+                {offer?.message && (
+                  <p className="text-sm text-gray-700">{String(offer.message)}</p>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  {isPending && (
+                    <>
+                      <Button
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                        disabled={busyIds.has(offerId)}
+                        onClick={() => respondToOffer(offerId, "accept")}
+                      >
+                        Accept
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-red-300 text-red-600 hover:bg-red-50"
+                        disabled={busyIds.has(offerId)}
+                        onClick={() => respondToOffer(offerId, "decline")}
+                      >
+                        Decline
+                      </Button>
+                    </>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setSelectedOfferId((prev) => (prev === offerId ? "" : offerId))
+                    }
+                  >
+                    <Eye className="h-4 w-4 mr-1" />
+                    {selectedOfferId === offerId ? "Hide details" : "View details"}
+                  </Button>
+                </div>
+                {selectedOfferId === offerId && (
+                  <div className="space-y-3 pt-2">
+                    <div className="rounded-md border border-gray-200 p-3 space-y-2">
+                      <p className="text-xs text-gray-500">Package Builder</p>
+                      <input
+                        value={packageDraftByOffer[offerId]?.title || ""}
+                        onChange={(e) =>
+                          setPackageDraftByOffer((prev) => ({
+                            ...prev,
+                            [offerId]: {
+                              ...(prev[offerId] || { title: "", message: "" }),
+                              title: e.target.value,
+                            },
+                          }))
+                        }
+                        placeholder="Package title"
+                        className="w-full h-9 px-2 border border-gray-300 rounded text-sm"
+                      />
+                      <input
+                        value={packageDraftByOffer[offerId]?.message || ""}
+                        onChange={(e) =>
+                          setPackageDraftByOffer((prev) => ({
+                            ...prev,
+                            [offerId]: {
+                              ...(prev[offerId] || { title: "", message: "" }),
+                              message: e.target.value,
+                            },
+                          }))
+                        }
+                        placeholder="Message to brand"
+                        className="w-full h-9 px-2 border border-gray-300 rounded text-sm"
+                      />
+                      <Button
+                        size="sm"
+                        className="bg-black hover:bg-gray-800 text-white"
+                        disabled={busyIds.has(offerId)}
+                        onClick={() => createAndSendPackage(offerId)}
+                      >
+                        Create + Send Package
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="rounded-md border border-gray-200 p-3">
+                      <p className="text-xs text-gray-500 mb-2">Contracts</p>
+                      {(offerContractsQuery.data || []).length === 0 ? (
+                        <p className="text-xs text-gray-500">No contracts yet.</p>
+                      ) : (
+                        (offerContractsQuery.data || []).slice(0, 3).map((c: any) => (
+                          <div key={String(c?.id)} className="text-xs text-gray-700 mb-1">
+                            {String(c?.title || "Contract")} • {String(c?.docuseal_status || "draft")}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    <div className="rounded-md border border-gray-200 p-3">
+                      <p className="text-xs text-gray-500 mb-2">Deliverables</p>
+                      {(offerDeliverablesQuery.data || []).length === 0 ? (
+                        <p className="text-xs text-gray-500">No deliverables yet.</p>
+                      ) : (
+                        (offerDeliverablesQuery.data || []).slice(0, 3).map((d: any) => (
+                          <div key={String(d?.id)} className="text-xs text-gray-700 mb-1">
+                            {String(d?.asset_type || "file")} • {String(d?.status || "submitted")}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </Card>
+      )}
+
+      {activeTab === "feedback" && (
+        <Card className="p-6 border border-gray-200 rounded-xl">
+          <h3 className="text-lg font-bold text-gray-900 mb-3">Package Feedback</h3>
+          {feedbackQuery.isLoading && (
+            <p className="text-sm text-gray-500">Loading package feedback...</p>
+          )}
+          {!feedbackQuery.isLoading && feedbackItems.length === 0 && (
+            <p className="text-sm text-gray-500">No package feedback yet.</p>
+          )}
+          {feedbackItems.length > 0 && (
+            <div className="space-y-3">
+              {feedbackItems.map((item: any) => (
+                <div key={String(item?.id)} className="border border-gray-200 rounded-lg p-4">
+                  <p className="font-semibold text-gray-900">
+                    {String(item?.title || "Talent package")}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Status: {String(item?.status || "feedback_received")}
+                  </p>
+                  {item?.meta?.feedback_note && (
+                    <p className="text-sm text-gray-700 mt-2">
+                      {String(item.meta.feedback_note)}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
+
+      {activeTab === "contract_hub" && (
+        <Card className="p-6 border border-gray-200 rounded-xl space-y-4">
+          <h3 className="text-lg font-bold text-gray-900">Contract Hub</h3>
+          {offers.length === 0 && (
+            <p className="text-sm text-gray-500">No offers available.</p>
+          )}
+          {offers.map((offer: any) => {
+            const offerId = String(offer?.id || "");
+            return (
+              <div key={offerId} className="border border-gray-200 rounded-lg p-4 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-semibold text-gray-900">
+                    {String(offer?.brand_campaigns?.name || "Campaign offer")}
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setSelectedOfferId((prev) => (prev === offerId ? "" : offerId))}
+                  >
+                    {selectedOfferId === offerId ? "Hide" : "Open"}
+                  </Button>
+                </div>
+                {selectedOfferId === offerId && (
+                  <div className="rounded-md border border-gray-200 p-3">
+                    {(offerContractsQuery.data || []).length === 0 ? (
+                      <p className="text-xs text-gray-500">No contracts yet.</p>
+                    ) : (
+                      (offerContractsQuery.data || []).map((c: any) => (
+                        <div key={String(c?.id)} className="text-xs text-gray-700 mb-1">
+                          {String(c?.title || "Contract")} • {String(c?.docuseal_status || "draft")}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </Card>
+      )}
+
+      {activeTab === "deliverables" && (
+        <Card className="p-6 border border-gray-200 rounded-xl space-y-4">
+          <h3 className="text-lg font-bold text-gray-900">Deliverables</h3>
+          {offers.length === 0 && (
+            <p className="text-sm text-gray-500">No offers available.</p>
+          )}
+          {offers.map((offer: any) => {
+            const offerId = String(offer?.id || "");
+            return (
+              <div key={offerId} className="border border-gray-200 rounded-lg p-4 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-semibold text-gray-900">
+                    {String(offer?.brand_campaigns?.name || "Campaign offer")}
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setSelectedOfferId((prev) => (prev === offerId ? "" : offerId))}
+                  >
+                    {selectedOfferId === offerId ? "Hide" : "Open"}
+                  </Button>
+                </div>
+                {selectedOfferId === offerId && (
+                  <div className="rounded-md border border-gray-200 p-3">
+                    {(offerDeliverablesQuery.data || []).length === 0 ? (
+                      <p className="text-xs text-gray-500">No deliverables yet.</p>
+                    ) : (
+                      (offerDeliverablesQuery.data || []).map((d: any) => (
+                        <div key={String(d?.id)} className="text-xs text-gray-700 mb-1">
+                          {String(d?.asset_type || "file")} • {String(d?.status || "submitted")}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </Card>
+      )}
     </div>
   );
 };

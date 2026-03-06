@@ -803,9 +803,15 @@ export default function CreatorDashboard() {
     [],
   );
   const [brandConnections, setBrandConnections] = useState<any[]>([]);
+  const [brandOffers, setBrandOffers] = useState<any[]>([]);
   const [brandConnectionSubTab, setBrandConnectionSubTab] = useState<
-    "connections" | "requests" | "offers"
+    "connections" | "requests" | "offers" | "contract_hub" | "deliverables"
   >("connections");
+  const [selectedBrandOfferId, setSelectedBrandOfferId] = useState<string>("");
+  const [selectedOfferContracts, setSelectedOfferContracts] = useState<any[]>([]);
+  const [selectedOfferDeliverables, setSelectedOfferDeliverables] = useState<any[]>([]);
+  const [deliverableUrlByOffer, setDeliverableUrlByOffer] = useState<Record<string, string>>({});
+  const [offerActionLoading, setOfferActionLoading] = useState(false);
   const [agencyConnectionLoading, setAgencyConnectionLoading] = useState(false);
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
   const [disconnectConfirmChecked, setDisconnectConfirmChecked] =
@@ -860,6 +866,33 @@ export default function CreatorDashboard() {
     };
   };
 
+  const loadBrandOffers = async () => {
+    const offersResp = await base44.get<{ offers?: any[] }>("/api/campaign-offers/my", {
+      params: { limit: 80 },
+    });
+    return Array.isArray(offersResp?.offers) ? offersResp.offers : [];
+  };
+
+  const loadOfferDetails = async (offerId: string) => {
+    if (!offerId) {
+      setSelectedOfferContracts([]);
+      setSelectedOfferDeliverables([]);
+      return;
+    }
+    const [contractsResp, deliverablesResp] = await Promise.all([
+      base44.get<{ contracts?: any[] }>(`/api/campaign-offers/${offerId}/contracts`),
+      base44.get<{ deliverables?: any[] }>(
+        `/api/campaign-offers/${offerId}/deliverables`,
+      ),
+    ]);
+    setSelectedOfferContracts(
+      Array.isArray(contractsResp?.contracts) ? contractsResp.contracts : [],
+    );
+    setSelectedOfferDeliverables(
+      Array.isArray(deliverablesResp?.deliverables) ? deliverablesResp.deliverables : [],
+    );
+  };
+
   useEffect(() => {
     if (!initialized || !authenticated) return;
     let active = true;
@@ -869,15 +902,18 @@ export default function CreatorDashboard() {
         const [
           { connections, invites },
           { requests, connections: brandConnected },
+          offers,
         ] = await Promise.all([
           loadAgencyConnectionData(),
           loadBrandConnectionData(),
+          loadBrandOffers().catch(() => []),
         ]);
         if (!active) return;
         setAgencyConnections(connections);
         setAgencyInvites(invites);
         setBrandConnectionRequests(requests);
         setBrandConnections(brandConnected);
+        setBrandOffers(Array.isArray(offers) ? offers : []);
       } catch (e: any) {
         if (!active) return;
         console.error("Failed to load agency connection data", e);
@@ -898,9 +934,11 @@ export default function CreatorDashboard() {
     (async () => {
       try {
         const { requests, connections } = await loadBrandConnectionData();
+        const offers = await loadBrandOffers().catch(() => []);
         if (!active) return;
         setBrandConnectionRequests(requests);
         setBrandConnections(connections);
+        setBrandOffers(Array.isArray(offers) ? offers : []);
       } catch (e) {
         if (!active) return;
         console.error("Failed to refresh brand connection data", e);
@@ -917,9 +955,11 @@ export default function CreatorDashboard() {
     const refresh = async () => {
       try {
         const { requests, connections } = await loadBrandConnectionData();
+        const offers = await loadBrandOffers().catch(() => []);
         if (!active) return;
         setBrandConnectionRequests(requests);
         setBrandConnections(connections);
+        setBrandOffers(Array.isArray(offers) ? offers : []);
       } catch (e) {
         if (!active) return;
         console.error("Failed to poll brand connection data", e);
@@ -5072,9 +5112,13 @@ export default function CreatorDashboard() {
       (i) => i.status === "pending",
     );
     const refreshBrandConnections = async () => {
-      const { requests, connections } = await loadBrandConnectionData();
+      const [{ requests, connections }, offers] = await Promise.all([
+        loadBrandConnectionData(),
+        loadBrandOffers().catch(() => []),
+      ]);
       setBrandConnectionRequests(requests);
       setBrandConnections(connections);
+      setBrandOffers(Array.isArray(offers) ? offers : []);
     };
 
     const onRespond = async (id: string, action: "accept" | "decline") => {
@@ -5117,6 +5161,61 @@ export default function CreatorDashboard() {
         });
       } finally {
         setAgencyConnectionLoading(false);
+      }
+    };
+
+    const respondToOffer = async (
+      offerId: string,
+      action: "accept" | "decline",
+    ) => {
+      try {
+        setOfferActionLoading(true);
+        await base44.post(`/api/campaign-offers/${offerId}/respond`, { action });
+        await refreshBrandConnections();
+        toast({
+          title: action === "accept" ? "Offer accepted" : "Offer declined",
+        });
+      } catch (e: any) {
+        toast({
+          variant: "destructive",
+          title: "Failed to update offer",
+          description: e?.message || String(e),
+        });
+      } finally {
+        setOfferActionLoading(false);
+      }
+    };
+
+    const submitDeliverable = async (offerId: string) => {
+      const assetUrl = String(deliverableUrlByOffer[offerId] || "").trim();
+      if (!assetUrl) {
+        toast({
+          variant: "destructive",
+          title: "Asset URL required",
+          description: "Provide an asset URL before submitting deliverable.",
+        });
+        return;
+      }
+      try {
+        setOfferActionLoading(true);
+        await base44.post(`/api/campaign-offers/${offerId}/deliverables`, {
+          asset_url: assetUrl,
+          asset_type: "file",
+        });
+        await loadOfferDetails(offerId);
+        setDeliverableUrlByOffer((prev) => ({ ...prev, [offerId]: "" }));
+        toast({
+          title: "Deliverable submitted",
+          description: "Your deliverable was sent for review.",
+        });
+      } catch (e: any) {
+        toast({
+          variant: "destructive",
+          title: "Submit failed",
+          description: e?.message || String(e),
+        });
+      } finally {
+        setOfferActionLoading(false);
       }
     };
 
@@ -5171,6 +5270,28 @@ export default function CreatorDashboard() {
             onClick={() => setBrandConnectionSubTab("offers")}
           >
             My Offers
+          </Button>
+          <Button
+            variant={brandConnectionSubTab === "contract_hub" ? "default" : "outline"}
+            className={
+              brandConnectionSubTab === "contract_hub"
+                ? "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                : "border-gray-300"
+            }
+            onClick={() => setBrandConnectionSubTab("contract_hub")}
+          >
+            Contract Hub
+          </Button>
+          <Button
+            variant={brandConnectionSubTab === "deliverables" ? "default" : "outline"}
+            className={
+              brandConnectionSubTab === "deliverables"
+                ? "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                : "border-gray-300"
+            }
+            onClick={() => setBrandConnectionSubTab("deliverables")}
+          >
+            Deliverables
           </Button>
         </div>
 
@@ -5296,10 +5417,251 @@ export default function CreatorDashboard() {
 
         {brandConnectionSubTab === "offers" && (
           <Card className="p-6">
-            <p className="text-sm text-gray-600">
-              Offer integration is temporarily disabled while connection logic
-              is being finalized.
-            </p>
+            <div className="space-y-4">
+              <div className="text-lg font-semibold text-gray-900">My Offers</div>
+              {brandOffers.length === 0 && (
+                <p className="text-sm text-gray-600">
+                  No campaign offers available yet.
+                </p>
+              )}
+              {brandOffers.map((offer: any) => {
+                const offerId = String(offer?.id || "");
+                const status = String(offer?.status || "sent");
+                const isPending = ["sent", "viewed"].includes(status);
+                const expanded = selectedBrandOfferId === offerId;
+                return (
+                  <div
+                    key={offerId}
+                    className="p-4 border border-gray-200 rounded-lg space-y-3"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="font-semibold text-gray-900">
+                          {offer?.brand_campaigns?.name || "Campaign offer"}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {offer?.brands?.company_name || "Brand"} •{" "}
+                          {status.replace(/_/g, " ")}
+                        </div>
+                      </div>
+                      <Badge variant="outline" className="capitalize">
+                        {status.replace(/_/g, " ")}
+                      </Badge>
+                    </div>
+                    {offer?.message && (
+                      <p className="text-sm text-gray-700">{String(offer.message)}</p>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      {isPending && (
+                        <>
+                          <Button
+                            className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                            disabled={offerActionLoading}
+                            onClick={() => respondToOffer(offerId, "accept")}
+                          >
+                            Accept
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="border-gray-200"
+                            disabled={offerActionLoading}
+                            onClick={() => respondToOffer(offerId, "decline")}
+                          >
+                            Decline
+                          </Button>
+                        </>
+                      )}
+                      <Button
+                        variant="outline"
+                        className="border-gray-200"
+                        onClick={async () => {
+                          const next = expanded ? "" : offerId;
+                          setSelectedBrandOfferId(next);
+                          if (next) {
+                            try {
+                              await loadOfferDetails(next);
+                            } catch {
+                              setSelectedOfferContracts([]);
+                              setSelectedOfferDeliverables([]);
+                            }
+                          } else {
+                            setSelectedOfferContracts([]);
+                            setSelectedOfferDeliverables([]);
+                          }
+                        }}
+                      >
+                        {expanded ? "Hide details" : "View details"}
+                      </Button>
+                    </div>
+                    {expanded && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                        <div className="rounded-md border border-gray-200 p-3">
+                          <div className="text-xs font-semibold text-gray-700 mb-2">
+                            Contracts
+                          </div>
+                          {selectedOfferContracts.length === 0 ? (
+                            <div className="text-xs text-gray-500">
+                              No contracts yet.
+                            </div>
+                          ) : (
+                            selectedOfferContracts.slice(0, 4).map((contract: any) => (
+                              <div
+                                key={String(contract?.id)}
+                                className="text-xs text-gray-700 mb-1"
+                              >
+                                {String(contract?.title || "Contract")} •{" "}
+                                {String(contract?.docuseal_status || "draft")}
+                              </div>
+                            ))
+                          )}
+                        </div>
+                        <div className="rounded-md border border-gray-200 p-3">
+                          <div className="text-xs font-semibold text-gray-700 mb-2">
+                            Deliverables
+                          </div>
+                          <div className="flex gap-2 mb-3">
+                            <Input
+                              value={deliverableUrlByOffer[offerId] || ""}
+                              onChange={(e) =>
+                                setDeliverableUrlByOffer((prev) => ({
+                                  ...prev,
+                                  [offerId]: e.target.value,
+                                }))
+                              }
+                              placeholder="https://... asset URL"
+                              className="h-8 text-xs"
+                            />
+                            <Button
+                              size="sm"
+                              className="h-8"
+                              disabled={offerActionLoading}
+                              onClick={() => submitDeliverable(offerId)}
+                            >
+                              Upload
+                            </Button>
+                          </div>
+                          {selectedOfferDeliverables.length === 0 ? (
+                            <div className="text-xs text-gray-500">
+                              No deliverables yet.
+                            </div>
+                          ) : (
+                            selectedOfferDeliverables
+                              .slice(0, 4)
+                              .map((deliverable: any) => (
+                                <div
+                                  key={String(deliverable?.id)}
+                                  className="text-xs text-gray-700 mb-1"
+                                >
+                                  {String(deliverable?.asset_type || "file")} •{" "}
+                                  {String(deliverable?.status || "submitted")}
+                                </div>
+                              ))
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        )}
+
+        {brandConnectionSubTab === "contract_hub" && (
+          <Card className="p-6">
+            <div className="space-y-4">
+              <div className="text-lg font-semibold text-gray-900">Contract Hub</div>
+              {brandOffers.length === 0 && (
+                <p className="text-sm text-gray-600">No offers with contracts yet.</p>
+              )}
+              {brandOffers.map((offer: any) => {
+                const offerId = String(offer?.id || "");
+                const expanded = selectedBrandOfferId === offerId;
+                return (
+                  <div key={offerId} className="p-4 border border-gray-200 rounded-lg space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-semibold text-gray-900">
+                        {offer?.brand_campaigns?.name || "Campaign offer"}
+                      </p>
+                      <Button
+                        variant="outline"
+                        className="border-gray-200"
+                        onClick={async () => {
+                          const next = expanded ? "" : offerId;
+                          setSelectedBrandOfferId(next);
+                          if (next) await loadOfferDetails(next);
+                        }}
+                      >
+                        {expanded ? "Hide" : "Open"}
+                      </Button>
+                    </div>
+                    {expanded && (
+                      <div className="rounded-md border border-gray-200 p-3">
+                        {selectedOfferContracts.length === 0 ? (
+                          <div className="text-xs text-gray-500">No contracts yet.</div>
+                        ) : (
+                          selectedOfferContracts.map((contract: any) => (
+                            <div key={String(contract?.id)} className="text-xs text-gray-700 mb-1">
+                              {String(contract?.title || "Contract")} •{" "}
+                              {String(contract?.docuseal_status || "draft")}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        )}
+
+        {brandConnectionSubTab === "deliverables" && (
+          <Card className="p-6">
+            <div className="space-y-4">
+              <div className="text-lg font-semibold text-gray-900">Deliverables</div>
+              {brandOffers.length === 0 && (
+                <p className="text-sm text-gray-600">No deliverables yet.</p>
+              )}
+              {brandOffers.map((offer: any) => {
+                const offerId = String(offer?.id || "");
+                const expanded = selectedBrandOfferId === offerId;
+                return (
+                  <div key={offerId} className="p-4 border border-gray-200 rounded-lg space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-semibold text-gray-900">
+                        {offer?.brand_campaigns?.name || "Campaign offer"}
+                      </p>
+                      <Button
+                        variant="outline"
+                        className="border-gray-200"
+                        onClick={async () => {
+                          const next = expanded ? "" : offerId;
+                          setSelectedBrandOfferId(next);
+                          if (next) await loadOfferDetails(next);
+                        }}
+                      >
+                        {expanded ? "Hide" : "Open"}
+                      </Button>
+                    </div>
+                    {expanded && (
+                      <div className="rounded-md border border-gray-200 p-3">
+                        {selectedOfferDeliverables.length === 0 ? (
+                          <div className="text-xs text-gray-500">No deliverables yet.</div>
+                        ) : (
+                          selectedOfferDeliverables.map((deliverable: any) => (
+                            <div key={String(deliverable?.id)} className="text-xs text-gray-700 mb-1">
+                              {String(deliverable?.asset_type || "file")} •{" "}
+                              {String(deliverable?.status || "submitted")}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </Card>
         )}
       </div>

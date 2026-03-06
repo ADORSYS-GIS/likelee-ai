@@ -403,38 +403,6 @@ const mockActivities = [
   },
 ];
 
-const mockInboxPackages = [
-  {
-    id: "pkg-1",
-    title: "Spring Fashion Campaign - Top Talent",
-    agency: "CM Models",
-    sent_at: "2/20/2025",
-    message:
-      "Hi! We have a curated selection of models perfect for your spring campaign. All talent is verified and ready for AI licensing.",
-    talent_count: 5,
-    unread: true,
-    avatars: [
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100",
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100",
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100",
-    ],
-  },
-  {
-    id: "pkg-2",
-    title: "Beauty & Lifestyle Portfolio",
-    agency: "Elite Models LA",
-    sent_at: "2/18/2025",
-    message:
-      "Thought you'd love our beauty talent for your upcoming campaigns.",
-    talent_count: 3,
-    unread: false,
-    avatars: [
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100",
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100",
-    ],
-  },
-];
-
 const mockAssets = [
   {
     id: 1,
@@ -658,6 +626,15 @@ export default function BrandDashboard() {
   const [contractHubTab, setContractHubTab] = useState("active");
   const [contractDetailTab, setContractDetailTab] = useState("summary");
   const { toast } = useToast();
+  const [inboxPackages, setInboxPackages] = useState<any[]>([]);
+  const [loadingInboxPackages, setLoadingInboxPackages] = useState(false);
+  const [brandOfferItems, setBrandOfferItems] = useState<any[]>([]);
+  const [selectedOfferHubId, setSelectedOfferHubId] = useState<string>("");
+  const [selectedOfferHubContracts, setSelectedOfferHubContracts] = useState<any[]>(
+    [],
+  );
+  const [selectedOfferHubDeliverables, setSelectedOfferHubDeliverables] =
+    useState<any[]>([]);
   const [usageRightsTab, setUsageRightsTab] = useState("licenses");
   const [creators, setCreators] = useState(mockCreators);
   const [loading, setLoading] = useState(false);
@@ -687,6 +664,61 @@ export default function BrandDashboard() {
       setActiveSection(sectionFromState);
     }
   }, [location.state]);
+
+  useEffect(() => {
+    if (activeSection !== "campaigns-inbox") return;
+    let mounted = true;
+    const loadPackages = async () => {
+      try {
+        setLoadingInboxPackages(true);
+        const response = await base44.get<{ packages?: any[] }>(
+          "/api/brand/inbox/packages",
+        );
+        if (!mounted) return;
+        setInboxPackages(Array.isArray(response?.packages) ? response.packages : []);
+      } catch (e) {
+        if (!mounted) return;
+        setInboxPackages([]);
+      } finally {
+        if (!mounted) return;
+        setLoadingInboxPackages(false);
+      }
+    };
+    loadPackages();
+    const timer = setInterval(loadPackages, 15000);
+    return () => {
+      mounted = false;
+      clearInterval(timer);
+    };
+  }, [activeSection]);
+
+  useEffect(() => {
+    if (
+      activeSection !== "campaign-offers" &&
+      activeSection !== "campaigns-contract-hub" &&
+      activeSection !== "campaigns-deliverables"
+    ) {
+      return;
+    }
+    let mounted = true;
+    const loadMyOffers = async () => {
+      try {
+        const response = await base44.get<{ offers?: any[] }>(
+          "/api/campaign-offers/my",
+          { params: { limit: 120 } },
+        );
+        if (!mounted) return;
+        setBrandOfferItems(Array.isArray(response?.offers) ? response.offers : []);
+      } catch {
+        if (!mounted) return;
+        setBrandOfferItems([]);
+      }
+    };
+    loadMyOffers();
+    return () => {
+      mounted = false;
+    };
+  }, [activeSection]);
 
   useEffect(() => {
     const fetchCreators = async () => {
@@ -2318,7 +2350,7 @@ export default function BrandDashboard() {
               : "text-gray-500"
           }`}
         >
-          Talent Packages ({mockInboxPackages.length})
+          Talent Packages ({inboxPackages.length})
         </button>
         <button
           onClick={() => setInboxSubTab("direct_requests")}
@@ -2334,7 +2366,17 @@ export default function BrandDashboard() {
 
       {inboxSubTab === "talent_packages" ? (
         <div className="space-y-4">
-          {mockInboxPackages.map((pkg) => (
+          {loadingInboxPackages && (
+            <Card className="p-6 bg-white border border-gray-300 rounded-none">
+              <p className="text-sm text-gray-500">Loading packages...</p>
+            </Card>
+          )}
+          {!loadingInboxPackages && inboxPackages.length === 0 && (
+            <Card className="p-6 bg-white border border-gray-300 rounded-none">
+              <p className="text-sm text-gray-500">No packages received yet.</p>
+            </Card>
+          )}
+          {inboxPackages.map((pkg: any) => (
             <Card
               key={pkg.id}
               className="p-6 bg-white border border-gray-300 rounded-none"
@@ -2343,52 +2385,75 @@ export default function BrandDashboard() {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="text-2xl font-bold text-gray-900">
-                      {pkg.title}
+                      {pkg.title || pkg.campaign_offers?.offer_title || "Talent package"}
                     </h3>
-                    {pkg.unread && (
+                    {String(pkg?.status || "") === "sent" && (
                       <Badge className="bg-black text-white text-[10px] uppercase rounded-sm">
                         New
                       </Badge>
                     )}
                   </div>
                   <p className="text-sm text-gray-700 font-medium">
-                    From: {pkg.agency}
+                    From: {pkg?.agency_id || "Agency"}
                   </p>
-                  <p className="text-sm text-gray-500">Sent: {pkg.sent_at}</p>
+                  <p className="text-sm text-gray-500">
+                    Sent:{" "}
+                    {pkg?.sent_at
+                      ? new Date(String(pkg.sent_at)).toLocaleString()
+                      : "—"}
+                  </p>
                 </div>
                 <Badge className="bg-blue-100 text-blue-700 border border-blue-200 text-xs">
-                  {pkg.talent_count} talent
+                  {Array.isArray(pkg?.meta?.selected_talent_ids)
+                    ? pkg.meta.selected_talent_ids.length
+                    : 0}{" "}
+                  talent
                 </Badge>
               </div>
-
-              <div className="flex items-center gap-2 mb-3">
-                {pkg.avatars.map((avatar, idx) => (
-                  <img
-                    key={`${pkg.id}-avatar-${idx}`}
-                    src={avatar}
-                    alt="Talent"
-                    className="w-9 h-9 rounded-full object-cover border border-gray-200"
-                  />
-                ))}
-                {pkg.talent_count > pkg.avatars.length && (
-                  <span className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-xs font-semibold text-gray-700">
-                    +{pkg.talent_count - pkg.avatars.length}
-                  </span>
-                )}
-              </div>
-
-              <p className="text-gray-700 italic mb-4">"{pkg.message}"</p>
+              {pkg?.message && (
+                <p className="text-gray-700 italic mb-4">"{String(pkg.message)}"</p>
+              )}
 
               <div className="flex gap-2">
-                <Button className="flex-1 bg-black hover:bg-gray-800 text-white rounded-none">
+                <Button
+                  className="flex-1 bg-black hover:bg-gray-800 text-white rounded-none"
+                  onClick={async () => {
+                    try {
+                      await base44.post(
+                        `/api/campaign-offers/${encodeURIComponent(String(pkg?.offer_id || ""))}/packages/brand-done`,
+                        {
+                          package_id: String(pkg?.id || ""),
+                          feedback_note: "Brand completed package selection.",
+                        },
+                      );
+                      const response = await base44.get<{ packages?: any[] }>(
+                        "/api/brand/inbox/packages",
+                      );
+                      setInboxPackages(
+                        Array.isArray(response?.packages) ? response.packages : [],
+                      );
+                      toast({
+                        title: "Package submitted",
+                        description:
+                          "Your package selection was submitted to the agency.",
+                      });
+                    } catch (e: any) {
+                      toast({
+                        title: "Unable to submit package",
+                        description: e?.message || "Please try again.",
+                        variant: "destructive" as any,
+                      });
+                    }
+                  }}
+                >
                   <Eye className="w-4 h-4 mr-2" />
-                  View Package
+                  Mark Done
                 </Button>
                 <Button
                   variant="outline"
                   className="border border-gray-300 rounded-none"
                 >
-                  Reply
+                  View Details
                 </Button>
                 <Button
                   variant="outline"
@@ -2415,8 +2480,205 @@ export default function BrandDashboard() {
     </div>
   );
 
+  const loadOfferHubDetails = async (offerId: string) => {
+    if (!offerId) {
+      setSelectedOfferHubContracts([]);
+      setSelectedOfferHubDeliverables([]);
+      return;
+    }
+    try {
+      const [contractsResp, deliverablesResp] = await Promise.all([
+        base44.get<{ contracts?: any[] }>(`/api/campaign-offers/${offerId}/contracts`),
+        base44.get<{ deliverables?: any[] }>(
+          `/api/campaign-offers/${offerId}/deliverables`,
+        ),
+      ]);
+      setSelectedOfferHubContracts(
+        Array.isArray(contractsResp?.contracts) ? contractsResp.contracts : [],
+      );
+      setSelectedOfferHubDeliverables(
+        Array.isArray(deliverablesResp?.deliverables)
+          ? deliverablesResp.deliverables
+          : [],
+      );
+    } catch {
+      setSelectedOfferHubContracts([]);
+      setSelectedOfferHubDeliverables([]);
+    }
+  };
+
+  const renderCampaignContractHub = () => (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-3xl font-bold text-gray-900 mb-1">Contract Hub</h2>
+        <p className="text-gray-600">Review contracts sent for campaign offers.</p>
+      </div>
+      <div className="space-y-3">
+        {brandOfferItems.length === 0 && (
+          <Card className="p-6 bg-white border border-gray-300 rounded-none">
+            <p className="text-sm text-gray-500">No offer contracts available yet.</p>
+          </Card>
+        )}
+        {brandOfferItems.map((offer: any) => {
+          const offerId = String(offer?.id || "");
+          const expanded = selectedOfferHubId === offerId;
+          return (
+            <Card
+              key={offerId}
+              className="p-4 bg-white border border-gray-300 rounded-none space-y-2"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <p className="font-semibold text-gray-900">
+                    {offer?.brand_campaigns?.name || "Campaign offer"}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {String(offer?.status || "sent").replace(/_/g, " ")}
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  className="border border-gray-300 rounded-none"
+                  onClick={async () => {
+                    const next = expanded ? "" : offerId;
+                    setSelectedOfferHubId(next);
+                    await loadOfferHubDetails(next);
+                  }}
+                >
+                  {expanded ? "Hide" : "View Contracts"}
+                </Button>
+              </div>
+              {expanded && (
+                <div className="border border-gray-200 rounded-none p-3 bg-gray-50">
+                  {selectedOfferHubContracts.length === 0 ? (
+                    <p className="text-xs text-gray-500">No contracts found.</p>
+                  ) : (
+                    selectedOfferHubContracts.map((contract: any) => (
+                      <div key={String(contract?.id)} className="text-xs text-gray-700 mb-1">
+                        {String(contract?.title || "Contract")} •{" "}
+                        {String(contract?.docuseal_status || "draft")}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const renderCampaignDeliverablesHub = () => (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-3xl font-bold text-gray-900 mb-1">Deliverables</h2>
+        <p className="text-gray-600">Track deliverables submitted for campaign offers.</p>
+      </div>
+      <div className="space-y-3">
+        {brandOfferItems.length === 0 && (
+          <Card className="p-6 bg-white border border-gray-300 rounded-none">
+            <p className="text-sm text-gray-500">No deliverables available yet.</p>
+          </Card>
+        )}
+        {brandOfferItems.map((offer: any) => {
+          const offerId = String(offer?.id || "");
+          const expanded = selectedOfferHubId === offerId;
+          return (
+            <Card
+              key={offerId}
+              className="p-4 bg-white border border-gray-300 rounded-none space-y-2"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <p className="font-semibold text-gray-900">
+                    {offer?.brand_campaigns?.name || "Campaign offer"}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {String(offer?.status || "sent").replace(/_/g, " ")}
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  className="border border-gray-300 rounded-none"
+                  onClick={async () => {
+                    const next = expanded ? "" : offerId;
+                    setSelectedOfferHubId(next);
+                    await loadOfferHubDetails(next);
+                  }}
+                >
+                  {expanded ? "Hide" : "View Deliverables"}
+                </Button>
+              </div>
+              {expanded && (
+                <div className="border border-gray-200 rounded-none p-3 bg-gray-50">
+                  {selectedOfferHubDeliverables.length === 0 ? (
+                    <p className="text-xs text-gray-500">No deliverables found.</p>
+                  ) : (
+                    selectedOfferHubDeliverables.map((deliverable: any) => (
+                      <div
+                        key={String(deliverable?.id)}
+                        className="text-xs text-gray-700 mb-1"
+                      >
+                        {String(deliverable?.asset_type || "file")} •{" "}
+                        {String(deliverable?.status || "submitted")}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+
   const renderCampaigns = () => {
-    const filteredCampaigns = mockCampaigns.filter((c) => {
+    const campaignsForOffers = brandOfferItems.map((offer: any) => {
+      const statusRaw = String(offer?.status || "sent").toLowerCase();
+      const mappedStatus =
+        statusRaw === "completed" || statusRaw === "signed"
+          ? "completed"
+          : statusRaw === "pending_approval"
+            ? "pending_approval"
+            : statusRaw === "draft"
+              ? "draft"
+              : "in_progress";
+      const campaignName =
+        String(offer?.brand_campaigns?.name || "").trim() ||
+        String(offer?.offer_title || "").trim() ||
+        "Campaign Offer";
+      const startDate =
+        String(offer?.brand_campaigns?.start_date || "").trim() ||
+        new Date().toISOString().slice(0, 10);
+      const collaboratorLabel =
+        offer?.target_type === "agency"
+          ? "Agency"
+          : offer?.target_type === "creator"
+            ? "Creator"
+            : "Collaborator";
+      return {
+        id: String(offer?.id || Math.random()),
+        offer_id: String(offer?.id || ""),
+        name: campaignName,
+        status: mappedStatus,
+        objective:
+          String(offer?.brand_campaigns?.objective || "").trim() ||
+          "Campaign offer",
+        budget: 0,
+        creators: [collaboratorLabel],
+        creatorAvatars: ["/favicon.svg"],
+        channels: [],
+        due_date: startDate,
+        assets_delivered: 0,
+        last_update: offer?.updated_at
+          ? new Date(String(offer.updated_at)).toLocaleString()
+          : "Recently",
+      };
+    });
+
+    const filteredCampaigns = campaignsForOffers.filter((c) => {
       if (campaignView === "active") return c.status === "in_progress";
       if (campaignView === "pending") return c.status === "pending_approval";
       if (campaignView === "completed") return c.status === "completed";
@@ -2425,7 +2687,7 @@ export default function BrandDashboard() {
     });
 
     if (selectedCampaign) {
-      const campaign = mockCampaigns.find((c) => c.id === selectedCampaign);
+      const campaign = campaignsForOffers.find((c) => c.id === selectedCampaign);
       if (!campaign) {
         return (
           <div className="space-y-6">
@@ -2822,14 +3084,16 @@ export default function BrandDashboard() {
                         <strong>Approved Channels:</strong>
                       </p>
                       <div className="flex gap-2">
-                        {campaign.channels.map((channel) => (
-                          <Badge
-                            key={channel}
-                            className="bg-blue-100 text-blue-700 border border-blue-300"
-                          >
-                            {channel}
-                          </Badge>
-                        ))}
+                        {Array.isArray(campaign.channels)
+                          ? campaign.channels.map((channel) => (
+                              <Badge
+                                key={channel}
+                                className="bg-blue-100 text-blue-700 border border-blue-300"
+                              >
+                                {channel}
+                              </Badge>
+                            ))
+                          : null}
                       </div>
                     </div>
 
@@ -3240,7 +3504,8 @@ export default function BrandDashboard() {
             }`}
           >
             Active (
-            {mockCampaigns.filter((c) => c.status === "in_progress").length})
+            {campaignsForOffers.filter((c) => c.status === "in_progress").length}
+            )
           </button>
           <button
             onClick={() => setCampaignView("pending")}
@@ -3250,7 +3515,9 @@ export default function BrandDashboard() {
                 : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
           >
-            Pending Approval ({pendingApprovalCount})
+            Pending Approval (
+            {campaignsForOffers.filter((c) => c.status === "pending_approval").length}
+            )
           </button>
           <button
             onClick={() => setCampaignView("completed")}
@@ -3261,7 +3528,8 @@ export default function BrandDashboard() {
             }`}
           >
             Completed (
-            {mockCampaigns.filter((c) => c.status === "completed").length})
+            {campaignsForOffers.filter((c) => c.status === "completed").length}
+            )
           </button>
           <button
             onClick={() => setCampaignView("drafts")}
@@ -3271,7 +3539,7 @@ export default function BrandDashboard() {
                 : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
           >
-            Drafts ({mockCampaigns.filter((c) => c.status === "draft").length})
+            Drafts ({campaignsForOffers.filter((c) => c.status === "draft").length})
           </button>
         </div>
 
@@ -6816,6 +7084,8 @@ export default function BrandDashboard() {
                 ? activeSection === "campaigns-hub" ||
                   activeSection === "campaigns-inbox" ||
                   activeSection === "campaign-offers" ||
+                  activeSection === "campaigns-contract-hub" ||
+                  activeSection === "campaigns-deliverables" ||
                   activeSection === "studio"
                 : activeSection === item.id;
 
@@ -6933,6 +7203,32 @@ export default function BrandDashboard() {
                         </Badge>
                       </button>
                       <button
+                        onClick={() => {
+                          setActiveSection("campaigns-contract-hub");
+                        }}
+                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
+                          activeSection === "campaigns-contract-hub"
+                            ? "bg-gray-100 text-gray-900"
+                            : "text-gray-600 hover:bg-gray-100"
+                        }`}
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span className="flex-1 text-left">Contract Hub</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setActiveSection("campaigns-deliverables");
+                        }}
+                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
+                          activeSection === "campaigns-deliverables"
+                            ? "bg-gray-100 text-gray-900"
+                            : "text-gray-600 hover:bg-gray-100"
+                        }`}
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span className="flex-1 text-left">Deliverables</span>
+                      </button>
+                      <button
                         onClick={() => setActiveSection("studio")}
                         className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
                           activeSection === "studio"
@@ -6984,6 +7280,10 @@ export default function BrandDashboard() {
           )}
           {activeSection === "campaigns-inbox" && renderInboxSubtab()}
           {activeSection === "campaign-offers" && renderCampaigns()}
+          {activeSection === "campaigns-contract-hub" &&
+            renderCampaignContractHub()}
+          {activeSection === "campaigns-deliverables" &&
+            renderCampaignDeliverablesHub()}
           {activeSection === "studio" && renderStudio()}
           {activeSection === "analytics" && renderAnalytics()}
           {activeSection === "usage" && renderUsageRights()}
