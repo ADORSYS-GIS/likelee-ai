@@ -803,6 +803,9 @@ export default function CreatorDashboard() {
     [],
   );
   const [brandConnections, setBrandConnections] = useState<any[]>([]);
+  const [brandConnectionSubTab, setBrandConnectionSubTab] = useState<
+    "connections" | "requests" | "offers"
+  >("connections");
   const [agencyConnectionLoading, setAgencyConnectionLoading] = useState(false);
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
   const [disconnectConfirmChecked, setDisconnectConfirmChecked] =
@@ -5068,7 +5071,6 @@ export default function CreatorDashboard() {
     const pending = brandConnectionRequests.filter(
       (i) => i.status === "pending",
     );
-
     const refreshBrandConnections = async () => {
       const { requests, connections } = await loadBrandConnectionData();
       setBrandConnectionRequests(requests);
@@ -5123,125 +5125,183 @@ export default function CreatorDashboard() {
         <div>
           <h2 className="text-3xl font-bold text-gray-900">Brand Connection</h2>
           <p className="text-gray-600 mt-1">
-            Manage brand connection requests and active brand connections.
+            Manage connections, requests, and incoming campaign offers.
           </p>
         </div>
 
-        <Card className="p-6">
-          <div className="text-lg font-semibold text-gray-900">
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant={
+              brandConnectionSubTab === "connections" ? "default" : "outline"
+            }
+            className={
+              brandConnectionSubTab === "connections"
+                ? "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                : "border-gray-300"
+            }
+            onClick={() => setBrandConnectionSubTab("connections")}
+          >
             Connected Brands
-          </div>
-          <div className="text-sm text-gray-600 mt-1">
-            {brandConnections.length > 0
-              ? "You are connected with brands below."
-              : "You are not connected to any brands yet."}
-          </div>
-          {brandConnections.length > 0 && (
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-              {brandConnections.map((c: any) => (
-                <div
-                  key={String(c?.brand_id || c?.id)}
-                  className="flex items-center justify-between gap-3 p-4 border border-gray-200 rounded-lg bg-white"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
-                      {c?.brands?.logo_url ? (
-                        <img
-                          src={c.brands.logo_url}
-                          alt={c.brands.company_name || "Brand"}
-                          className="w-full h-full object-contain"
-                        />
-                      ) : (
-                        <Building2 className="w-5 h-5 text-gray-500" />
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-semibold text-gray-900 truncate">
-                        {c?.brands?.company_name || c?.brand_id}
-                      </div>
-                      <div className="text-xs text-gray-500 truncate">
-                        {c?.brands?.email || "Connected brand"}
-                      </div>
-                    </div>
-                  </div>
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    disabled={agencyConnectionLoading}
-                    onClick={() => onDisconnect(String(c?.brand_id || ""))}
-                    aria-label="Disconnect from brand"
-                    title="Disconnect"
-                  >
-                    <Link2Off className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
+          </Button>
+          <Button
+            variant={
+              brandConnectionSubTab === "requests" ? "default" : "outline"
+            }
+            className={
+              brandConnectionSubTab === "requests"
+                ? "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                : "border-gray-300"
+            }
+            onClick={() => setBrandConnectionSubTab("requests")}
+          >
+            Requests
+            {pending.length > 0 && (
+              <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-white/20 px-1 text-xs">
+                {pending.length}
+              </span>
+            )}
+          </Button>
+          <Button
+            variant={brandConnectionSubTab === "offers" ? "default" : "outline"}
+            className={
+              brandConnectionSubTab === "offers"
+                ? "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                : "border-gray-300"
+            }
+            onClick={() => setBrandConnectionSubTab("offers")}
+          >
+            My Offers
+          </Button>
+        </div>
 
-        <Card className="p-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <div className="text-lg font-semibold text-gray-900">
-                Requests
+        {brandConnectionSubTab === "connections" && (
+          <Card className="p-6">
+            <div className="text-lg font-semibold text-gray-900">
+              Connected Brands
+            </div>
+            <div className="text-sm text-gray-600 mt-1">
+              {brandConnections.length > 0
+                ? "You are connected with brands below."
+                : "You are not connected to any brands yet."}
+            </div>
+            {brandConnections.length > 0 && (
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                {brandConnections.map((c: any) => (
+                  <div
+                    key={String(c?.brand_id || c?.id)}
+                    className="flex items-center justify-between gap-3 p-4 border border-gray-200 rounded-lg bg-white"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {c?.brands?.logo_url ? (
+                          <img
+                            src={c.brands.logo_url}
+                            alt={c.brands.company_name || "Brand"}
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <Building2 className="w-5 h-5 text-gray-500" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-semibold text-gray-900 truncate">
+                          {c?.brands?.company_name || c?.brand_id}
+                        </div>
+                        <div className="text-xs text-gray-500 truncate">
+                          {c?.brands?.email || "Connected brand"}
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      disabled={agencyConnectionLoading}
+                      onClick={() => onDisconnect(String(c?.brand_id || ""))}
+                      aria-label="Disconnect from brand"
+                      title="Disconnect"
+                    >
+                      <Link2Off className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
               </div>
-              <div className="text-sm text-gray-600 mt-1">
-                {pending.length > 0
-                  ? "Respond to pending brand connection requests."
-                  : "No pending requests right now."}
+            )}
+          </Card>
+        )}
+
+        {brandConnectionSubTab === "requests" && (
+          <Card className="p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="text-lg font-semibold text-gray-900">
+                  Requests
+                </div>
+                <div className="text-sm text-gray-600 mt-1">
+                  {pending.length > 0
+                    ? "Respond to pending brand connection requests."
+                    : "No pending requests right now."}
+                </div>
               </div>
+              {pending.length > 0 && (
+                <Badge className="bg-[#32C8D1] text-white">
+                  {pending.length}
+                </Badge>
+              )}
             </div>
             {pending.length > 0 && (
-              <Badge className="bg-[#32C8D1] text-white">
-                {pending.length}
-              </Badge>
-            )}
-          </div>
-          {pending.length > 0 && (
-            <div className="mt-6 space-y-3">
-              {pending.map((req: any) => (
-                <div
-                  key={String(req?.id)}
-                  className="p-4 border border-gray-200 rounded-lg space-y-3"
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="min-w-0">
-                      <div className="font-semibold text-gray-900 truncate">
-                        {req?.brands?.company_name ||
-                          "Brand connection request"}
+              <div className="mt-6 space-y-3">
+                {pending.map((req: any) => (
+                  <div
+                    key={String(req?.id)}
+                    className="p-4 border border-gray-200 rounded-lg space-y-3"
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <div className="font-semibold text-gray-900 truncate">
+                          {req?.brands?.company_name ||
+                            "Brand connection request"}
+                        </div>
+                        <div className="text-xs text-gray-500 truncate mt-1">
+                          {req?.brands?.email || "Brand profile available"}
+                        </div>
                       </div>
-                      <div className="text-xs text-gray-500 truncate mt-1">
-                        {req?.brands?.email || "Brand profile available"}
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <Button
+                          variant="outline"
+                          className="border-gray-200"
+                          onClick={() =>
+                            onRespond(String(req?.id || ""), "decline")
+                          }
+                          disabled={agencyConnectionLoading}
+                        >
+                          Decline
+                        </Button>
+                        <Button
+                          className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                          onClick={() =>
+                            onRespond(String(req?.id || ""), "accept")
+                          }
+                          disabled={agencyConnectionLoading}
+                        >
+                          Accept
+                        </Button>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <Button
-                        variant="outline"
-                        className="border-gray-200"
-                        onClick={() =>
-                          onRespond(String(req?.id || ""), "decline")
-                        }
-                        disabled={agencyConnectionLoading}
-                      >
-                        Decline
-                      </Button>
-                      <Button
-                        className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                        onClick={() =>
-                          onRespond(String(req?.id || ""), "accept")
-                        }
-                        disabled={agencyConnectionLoading}
-                      >
-                        Accept
-                      </Button>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
+                ))}
+              </div>
+            )}
+          </Card>
+        )}
+
+        {brandConnectionSubTab === "offers" && (
+          <Card className="p-6">
+            <p className="text-sm text-gray-600">
+              Offer integration is temporarily disabled while connection logic
+              is being finalized.
+            </p>
+          </Card>
+        )}
       </div>
     );
   };

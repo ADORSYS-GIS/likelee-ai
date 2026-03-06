@@ -73,6 +73,7 @@ import {
 } from "@/components/ui/popover";
 import { useToast } from "@/components/ui/use-toast";
 import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
+import BrandCampaignDashboard from "@/pages/BrandCampaignDashboard";
 import {
   LineChart,
   Line,
@@ -635,6 +636,10 @@ export default function BrandDashboard() {
   const [brand, setBrand] = useState(mockBrand);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [campaignView, setCampaignView] = useState("active");
+  const [openCampaignModalSignal, setOpenCampaignModalSignal] = useState(0);
+  const [campaignHubTab, setCampaignHubTab] = useState<
+    "active" | "pending_approval" | "completed" | "inbox"
+  >("active");
   const [selectedCampaign, setSelectedCampaign] = useState(null);
   const [viewMode, setViewMode] = useState("grid");
   const [showEscrowDetails, setShowEscrowDetails] = useState(false);
@@ -675,6 +680,10 @@ export default function BrandDashboard() {
   useEffect(() => {
     const sectionFromState = (location.state as any)?.activeSection;
     if (typeof sectionFromState === "string" && sectionFromState.length > 0) {
+      if (sectionFromState === "campaigns") {
+        setActiveSection("campaigns-hub");
+        return;
+      }
       setActiveSection(sectionFromState);
     }
   }, [location.state]);
@@ -816,7 +825,6 @@ export default function BrandDashboard() {
       id: "campaigns",
       label: "My Campaigns",
       icon: Target,
-      badge: mockCampaigns.length,
     },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     {
@@ -1095,7 +1103,7 @@ export default function BrandDashboard() {
                       size="sm"
                       className="border-2 border-gray-300"
                       onClick={() => {
-                        setActiveSection("campaigns");
+                        setActiveSection("campaign-offers");
                         setSelectedCampaign(project.id);
                         setShowEscrowDetails(false);
                       }}
@@ -1206,8 +1214,6 @@ export default function BrandDashboard() {
       return renderEscrowDetails();
     }
 
-    if (campaignView === "inbox") return renderInboxSubtab();
-
     return (
       <div className="space-y-6">
         <div>
@@ -1311,7 +1317,7 @@ export default function BrandDashboard() {
               <span>Browse Creators</span>
             </Button>
             <Button
-              onClick={() => setActiveSection("campaigns")}
+              onClick={() => navigate(createPageUrl("BrandCampaignDashboard"))}
               className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
               <CheckCircle2 className="w-6 h-6" />
@@ -2410,10 +2416,6 @@ export default function BrandDashboard() {
   );
 
   const renderCampaigns = () => {
-    if (campaignView === "inbox") {
-      return renderInboxSubtab();
-    }
-
     const filteredCampaigns = mockCampaigns.filter((c) => {
       if (campaignView === "active") return c.status === "in_progress";
       if (campaignView === "pending") return c.status === "pending_approval";
@@ -3188,39 +3190,6 @@ export default function BrandDashboard() {
             </Card>
           )}
 
-          {/* License & Usage Rights */}
-          <Card className="p-6 bg-white border border-gray-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">
-              License & Usage Rights
-            </h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <Label className="text-sm font-semibold text-gray-700 block mb-2">
-                  Territory
-                </Label>
-                <p className="text-gray-900">{campaign.territory}</p>
-              </div>
-              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <Label className="text-sm font-semibold text-gray-700 block mb-2">
-                  Duration
-                </Label>
-                <p className="text-gray-900">{campaign.duration}</p>
-              </div>
-              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <Label className="text-sm font-semibold text-gray-700 block mb-2">
-                  Channels
-                </Label>
-                <p className="text-gray-900">{campaign.channels.join(", ")}</p>
-              </div>
-              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <Label className="text-sm font-semibold text-gray-700 block mb-2">
-                  Valid Until
-                </Label>
-                <p className="text-gray-900">{campaign.license_expiry}</p>
-              </div>
-            </div>
-          </Card>
-
           {/* Contract Update Section */}
           <Card className="p-6 bg-white border border-gray-200">
             <h3 className="text-xl font-bold text-gray-900 mb-4">
@@ -3253,22 +3222,11 @@ export default function BrandDashboard() {
 
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              My Campaigns
-            </h1>
-            <p className="text-gray-600">
-              Create, manage, and track all projects from brief to completion
-            </p>
-          </div>
-          <Button
-            onClick={() => navigate(createPageUrl("BrandCampaignDashboard"))}
-            className="h-12 px-6 bg-[#F7B750] hover:bg-[#E6A640] text-white"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            New Campaign
-          </Button>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Offers</h1>
+          <p className="text-gray-600">
+            Review and manage campaign offers and ongoing collaborations
+          </p>
         </div>
 
         {/* Campaign Tabs */}
@@ -3314,16 +3272,6 @@ export default function BrandDashboard() {
             }`}
           >
             Drafts ({mockCampaigns.filter((c) => c.status === "draft").length})
-          </button>
-          <button
-            onClick={() => setCampaignView("inbox")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              campaignView === "inbox"
-                ? "border-[#F7B750] text-[#F7B750]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Inbox ({mockActivities.length})
           </button>
         </div>
 
@@ -3404,15 +3352,159 @@ export default function BrandDashboard() {
             <p className="text-gray-600 mb-6">
               Start a new campaign to get creators working on your content
             </p>
-            <Button
-              onClick={() => navigate(createPageUrl("BrandCampaignDashboard"))}
-              className="bg-[#F7B750] hover:bg-[#E6A640] text-white"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Create New Campaign
-            </Button>
           </Card>
         )}
+      </div>
+    );
+  };
+
+  const renderCampaignHub = () => {
+    const campaignsForHub = mockCampaigns.filter((campaign) => {
+      if (campaignHubTab === "inbox") return false;
+      const mappedStatus =
+        campaign.status === "in_progress"
+          ? "active"
+          : campaign.status === "pending_approval"
+            ? "pending_approval"
+            : campaign.status === "completed"
+              ? "completed"
+              : "draft";
+      return mappedStatus === campaignHubTab;
+    });
+
+    return (
+      <div className="space-y-8">
+        <div className="grid md:grid-cols-4 gap-6">
+          <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
+            <DollarSign className="w-8 h-8 text-[#F7B750] mb-4" />
+            <p className="text-sm text-gray-600 mb-1">Total Spend (30d)</p>
+            <p className="text-3xl font-bold text-gray-900">$12.4K</p>
+          </Card>
+          <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
+            <Users className="w-8 h-8 text-[#F7B750] mb-4" />
+            <p className="text-sm text-gray-600 mb-1">Active Collaborators</p>
+            <p className="text-3xl font-bold text-gray-900">8</p>
+          </Card>
+          <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
+            <FileText className="w-8 h-8 text-[#F7B750] mb-4" />
+            <p className="text-sm text-gray-600 mb-1">Campaigns Launched</p>
+            <p className="text-3xl font-bold text-gray-900">12</p>
+          </Card>
+          <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
+            <TrendingUp className="w-8 h-8 text-[#F7B750] mb-4" />
+            <p className="text-sm text-gray-600 mb-1">Avg ROI</p>
+            <p className="text-3xl font-bold text-gray-900">3.2x</p>
+          </Card>
+        </div>
+
+        <div className="grid md:grid-cols-5 gap-6">
+          <Card className="p-6 bg-white border-2 border-[#F7B750] rounded-none">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              Collaborate with Agency
+            </h3>
+            <Button className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none">
+              Invite Agency
+            </Button>
+          </Card>
+          <Card className="p-6 bg-white border-2 border-[#FAD54C]/60 opacity-70 rounded-none">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              Add AI Creator
+            </h3>
+            <Button
+              disabled
+              className="w-full bg-[#FAD54C] text-white rounded-none cursor-not-allowed"
+            >
+              Coming Soon
+            </Button>
+          </Card>
+          <Card className="p-6 bg-white border-2 border-amber-600/60 opacity-70 rounded-none">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              Invite Company Seat
+            </h3>
+            <Button
+              disabled
+              className="w-full bg-amber-600 text-white rounded-none cursor-not-allowed"
+            >
+              Coming Soon
+            </Button>
+          </Card>
+          <Card className="p-6 bg-white border-2 border-orange-600 rounded-none">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              AI Studio Add-On
+            </h3>
+            <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-none">
+              Enable Add-On
+            </Button>
+          </Card>
+          <Card className="p-6 bg-white border-2 border-blue-600 rounded-none">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Post a Job</h3>
+            <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-none">
+              Post Job
+            </Button>
+          </Card>
+        </div>
+
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-gray-900">Your Campaigns</h2>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setCampaignHubTab("active")}
+                className={`border-2 rounded-none ${campaignHubTab === "active" ? "border-black bg-black text-white" : "border-gray-300"}`}
+              >
+                Active
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setCampaignHubTab("pending_approval")}
+                className={`border-2 rounded-none ${campaignHubTab === "pending_approval" ? "border-black bg-black text-white" : "border-gray-300"}`}
+              >
+                Pending Approval
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setCampaignHubTab("completed")}
+                className={`border-2 rounded-none ${campaignHubTab === "completed" ? "border-black bg-black text-white" : "border-gray-300"}`}
+              >
+                Completed
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setCampaignHubTab("inbox")}
+                className={`border-2 rounded-none ${campaignHubTab === "inbox" ? "border-black bg-black text-white" : "border-gray-300"}`}
+              >
+                Inbox
+              </Button>
+            </div>
+          </div>
+          {campaignHubTab === "inbox" ? (
+            renderInboxSubtab()
+          ) : (
+            <div className="space-y-4">
+              {campaignsForHub.map((campaign) => (
+                <Card
+                  key={campaign.id}
+                  className="p-6 bg-white border-2 border-gray-200 rounded-none"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900">
+                        {campaign.name}
+                      </h3>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {campaign.creators.join(", ")}
+                      </p>
+                    </div>
+                    <Button variant="outline" className="border-2 rounded-none">
+                      View Details
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     );
   };
@@ -6721,7 +6813,10 @@ export default function BrandDashboard() {
               const Icon = item.icon;
               const isCampaignGroup = item.id === "campaigns";
               const isActive = isCampaignGroup
-                ? activeSection === "campaigns" || activeSection === "studio"
+                ? activeSection === "campaigns-hub" ||
+                  activeSection === "campaigns-inbox" ||
+                  activeSection === "campaign-offers" ||
+                  activeSection === "studio"
                 : activeSection === item.id;
 
               return (
@@ -6735,10 +6830,12 @@ export default function BrandDashboard() {
                   >
                     <button
                       onClick={() => {
-                        setActiveSection(item.id);
                         if (item.id === "campaigns") {
-                          setCampaignView("active");
+                          setActiveSection("campaigns-hub");
+                          setSelectedCampaign(null);
+                          return;
                         }
+                        setActiveSection(item.id);
                         setShowEscrowDetails(false);
                         setShowBriefDetails(false);
                         setShowCreatorProfile(false);
@@ -6807,12 +6904,24 @@ export default function BrandDashboard() {
                     <div className="mt-1 ml-11 space-y-1">
                       <button
                         onClick={() => {
-                          setActiveSection("campaigns");
-                          setCampaignView("inbox");
+                          setActiveSection("campaign-offers");
+                          setCampaignView("active");
                         }}
                         className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
-                          activeSection === "campaigns" &&
-                          campaignView === "inbox"
+                          activeSection === "campaign-offers"
+                            ? "bg-gray-100 text-gray-900"
+                            : "text-gray-600 hover:bg-gray-100"
+                        }`}
+                      >
+                        <Target className="w-4 h-4" />
+                        <span className="flex-1 text-left">My Offers</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setActiveSection("campaigns-inbox");
+                        }}
+                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
+                          activeSection === "campaigns-inbox"
                             ? "bg-gray-100 text-gray-900"
                             : "text-gray-600 hover:bg-gray-100"
                         }`}
@@ -6856,14 +6965,6 @@ export default function BrandDashboard() {
         className={`flex-1 ${sidebarOpen ? "ml-64" : "ml-20"} transition-all duration-300 overflow-y-auto`}
       >
         <div className="p-8">
-          <Alert className="mb-6 bg-amber-50 border border-amber-200">
-            <AlertCircle className="h-5 w-5 text-amber-600" />
-            <AlertDescription className="text-amber-900 font-medium">
-              <strong>Demo Mode:</strong> This is a preview of the Brand
-              Dashboard for companies and brands.
-            </AlertDescription>
-          </Alert>
-
           {activeSection === "home" && renderHome()}
           {activeSection === "marketplace" && (
             <MarketplaceSection
@@ -6875,7 +6976,14 @@ export default function BrandDashboard() {
           )}
           {activeSection === "marketplace-agencies" &&
             renderAgencyMarketplace()}
-          {activeSection === "campaigns" && renderCampaigns()}
+          {activeSection === "campaigns-hub" && (
+            <BrandCampaignDashboard
+              embedded
+              openNewCampaignSignal={openCampaignModalSignal}
+            />
+          )}
+          {activeSection === "campaigns-inbox" && renderInboxSubtab()}
+          {activeSection === "campaign-offers" && renderCampaigns()}
           {activeSection === "studio" && renderStudio()}
           {activeSection === "analytics" && renderAnalytics()}
           {activeSection === "usage" && renderUsageRights()}

@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
+import CampaignBriefStep from "@/components/campaign-offers/CampaignBriefStep";
 import {
   X,
   ArrowLeft,
@@ -86,7 +87,15 @@ const mockMetrics = {
   roi: 3.2,
 };
 
-export default function BrandCampaignDashboard() {
+type BrandCampaignDashboardProps = {
+  embedded?: boolean;
+  openNewCampaignSignal?: number;
+};
+
+export default function BrandCampaignDashboard({
+  embedded = false,
+  openNewCampaignSignal = 0,
+}: BrandCampaignDashboardProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showNewCampaignModal, setShowNewCampaignModal] = useState(false);
@@ -96,6 +105,7 @@ export default function BrandCampaignDashboard() {
   const [showStudioUpgradeModal, setShowStudioUpgradeModal] = useState(false);
   const [showPostJobModal, setShowPostJobModal] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState(null);
+  const [campaignCards, setCampaignCards] = useState<any[]>(mockCampaigns);
   const [campaignListTab, setCampaignListTab] = useState<
     "active" | "pending_approval" | "completed" | "inbox"
   >("active");
@@ -118,11 +128,6 @@ export default function BrandCampaignDashboard() {
   const [selectedTalentCreatorIds, setSelectedTalentCreatorIds] = useState<
     Set<string>
   >(new Set());
-  const [requestedLicenseCreatorIds, setRequestedLicenseCreatorIds] = useState<
-    Set<string>
-  >(new Set());
-  const [requestingLicenseCreatorIds, setRequestingLicenseCreatorIds] =
-    useState<Set<string>>(new Set());
   const creatorFetchRequestIdRef = useRef(0);
   const connectedCreatorCacheRef = useRef<Record<string, any[]>>({});
   const agencyTalentCacheRef = useRef<Record<string, any[]>>({});
@@ -138,10 +143,53 @@ export default function BrandCampaignDashboard() {
     duration_days: "30",
     territory: "Global",
     exclusivity: "Non-exclusive",
+    budget_range: "",
+    start_date: "",
     custom_terms: "",
     collaborator_type: "",
     collaborators: [],
   });
+  const [campaignBrief, setCampaignBrief] = useState({
+    voice: "",
+    tone: "",
+    personality: "",
+    key_messages: "",
+    script_opening: "",
+    script_middle: "",
+    script_closing: "",
+    dos: "",
+    donts: "",
+    deliverables_reels: "",
+    deliverables_hero_image: "",
+    visual_color_palette: "",
+    visual_setting: "",
+    visual_framing: "",
+    visual_editing: "",
+    reference_images: [] as { name: string; url: string }[],
+    brand_assets: [] as { name: string; size: number; url: string }[],
+    overview_objective: "",
+    overview_target_audience: "",
+    overview_campaign_duration: "",
+    overview_launch_date: "",
+    budget_total: "",
+    budget_creator_payment: "",
+    budget_platform_fee: "",
+    budget_submission_deadline: "",
+    budget_renewal_terms: "",
+    revision_included: "",
+    revision_major_changes: "",
+    revision_turnaround: "",
+    approval_process: "",
+    watermark_protection: "",
+    legal_terms: "",
+  });
+
+  useEffect(() => {
+    if (!embedded) return;
+    if (!openNewCampaignSignal) return;
+    setNewCampaignStep(1);
+    setShowNewCampaignModal(true);
+  }, [embedded, openNewCampaignSignal]);
 
   const getDisplayName = (value: unknown) => {
     const normalized = String(value ?? "").trim();
@@ -209,14 +257,11 @@ export default function BrandCampaignDashboard() {
   useEffect(() => {
     if (
       !showNewCampaignModal ||
-      (newCampaignStep !== 2 && newCampaignStep !== 3)
+      (newCampaignStep !== 3 && newCampaignStep !== 4)
     ) {
       return;
     }
-    if (
-      campaignForm.collaborator_type !== "agency" &&
-      campaignForm.collaborator_type !== "creator"
-    ) {
+    if (campaignForm.collaborator_type !== "creator") {
       setMarketplaceCreators([]);
       setLoadingMarketplaceCreators(false);
       return;
@@ -225,25 +270,13 @@ export default function BrandCampaignDashboard() {
     const requestId = ++creatorFetchRequestIdRef.current;
     const collaboratorType = campaignForm.collaborator_type;
     const normalizedQuery = creatorSearch.trim().toLowerCase();
-    const agencyId = String(campaignForm.collaborators?.[0] || "").trim();
     const creatorCacheKey = `connected::${normalizedQuery}`;
-    const agencyCacheKey = `${agencyId}::${normalizedQuery}`;
 
-    if (collaboratorType === "creator") {
-      const cached = connectedCreatorCacheRef.current[creatorCacheKey];
-      if (cached) {
-        setMarketplaceCreators(cached);
-        setLoadingMarketplaceCreators(false);
-        return;
-      }
-    }
-    if (collaboratorType === "agency" && agencyId) {
-      const cached = agencyTalentCacheRef.current[agencyCacheKey];
-      if (cached) {
-        setMarketplaceCreators(cached);
-        setLoadingMarketplaceCreators(false);
-        return;
-      }
+    const cached = connectedCreatorCacheRef.current[creatorCacheKey];
+    if (cached) {
+      setMarketplaceCreators(cached);
+      setLoadingMarketplaceCreators(false);
+      return;
     }
 
     if (previousCollaboratorTypeRef.current !== collaboratorType) {
@@ -254,42 +287,18 @@ export default function BrandCampaignDashboard() {
 
     const timer = setTimeout(async () => {
       try {
-        if (campaignForm.collaborator_type === "agency") {
-          if (!agencyId) {
-            if (creatorFetchRequestIdRef.current !== requestId) return;
-            setMarketplaceCreators([]);
-            setLoadingMarketplaceCreators(false);
-            return;
-          }
-          const resp = await base44.get<any>("/api/brand/agency-talent-rates", {
-            params: {
-              agency_id: agencyId,
-              q: creatorSearch.trim() || undefined,
-              limit: 80,
-            },
-          });
-          const rows = Array.isArray(resp?.items)
-            ? resp.items
-            : Array.isArray(resp)
-              ? resp
-              : [];
-          if (creatorFetchRequestIdRef.current !== requestId) return;
-          agencyTalentCacheRef.current[agencyCacheKey] = rows;
-          setMarketplaceCreators(rows);
-        } else {
-          const rows = await base44.get<any[]>("/api/marketplace/search", {
-            params: {
-              entity_type: "creator",
-              profile_type: "connected",
-              query: creatorSearch.trim() || undefined,
-              limit: 60,
-            },
-          });
-          if (creatorFetchRequestIdRef.current !== requestId) return;
-          const normalizedRows = Array.isArray(rows) ? rows : [];
-          connectedCreatorCacheRef.current[creatorCacheKey] = normalizedRows;
-          setMarketplaceCreators(normalizedRows);
-        }
+        const rows = await base44.get<any[]>("/api/marketplace/search", {
+          params: {
+            entity_type: "creator",
+            profile_type: "connected",
+            query: creatorSearch.trim() || undefined,
+            limit: 60,
+          },
+        });
+        if (creatorFetchRequestIdRef.current !== requestId) return;
+        const normalizedRows = Array.isArray(rows) ? rows : [];
+        connectedCreatorCacheRef.current[creatorCacheKey] = normalizedRows;
+        setMarketplaceCreators(normalizedRows);
       } catch {
         if (creatorFetchRequestIdRef.current !== requestId) return;
         setMarketplaceCreators([]);
@@ -305,9 +314,6 @@ export default function BrandCampaignDashboard() {
     showNewCampaignModal,
     newCampaignStep,
     campaignForm.collaborator_type,
-    campaignForm.collaborator_type === "agency"
-      ? String(campaignForm.collaborators?.[0] || "")
-      : "",
   ]);
 
   const step3Creators = useMemo(() => {
@@ -326,7 +332,7 @@ export default function BrandCampaignDashboard() {
 
   const selectedCreatorIdsForRequest = useMemo(() => {
     if (campaignForm.collaborator_type === "agency") {
-      return Array.from(selectedTalentCreatorIds);
+      return (campaignForm.collaborators || []).map((id) => String(id));
     }
     return (campaignForm.collaborators || []).map((id) => String(id));
   }, [
@@ -335,22 +341,36 @@ export default function BrandCampaignDashboard() {
     selectedTalentCreatorIds,
   ]);
 
-  const isRequestingSelectedLicenses = useMemo(
-    () =>
-      selectedCreatorIdsForRequest.some((creatorId) =>
-        requestingLicenseCreatorIds.has(creatorId),
-      ),
-    [selectedCreatorIdsForRequest, requestingLicenseCreatorIds],
-  );
-
-  const hasRequestedSelectedLicenses = useMemo(
-    () =>
-      selectedCreatorIdsForRequest.length > 0 &&
-      selectedCreatorIdsForRequest.every((creatorId) =>
-        requestedLicenseCreatorIds.has(creatorId),
-      ),
-    [selectedCreatorIdsForRequest, requestedLicenseCreatorIds],
-  );
+  const summaryCreatorNames = useMemo(() => {
+    if (campaignForm.collaborator_type === "agency") {
+      const agencyId = String(campaignForm.collaborators?.[0] || "");
+      const selectedAgency = connectedAgencies.find(
+        (agency) => String(agency?.agency_id || agency?.id || "") === agencyId,
+      );
+      if (!selectedAgency) return "N/A";
+      return getDisplayName(
+        selectedAgency?.display_name || selectedAgency?.agency_name,
+      );
+    }
+    const names = selectedCreatorIdsForRequest
+      .map((creatorId) => {
+        const creator =
+          selectedCreatorsById[creatorId] ||
+          step3Creators.find((c) => String(c?.id || "") === creatorId);
+        return getDisplayName(
+          creator?.display_name || creator?.full_name || creator?.name,
+        );
+      })
+      .filter(Boolean);
+    return names.length > 0 ? names.join(", ") : "N/A";
+  }, [
+    campaignForm.collaborator_type,
+    campaignForm.collaborators,
+    connectedAgencies,
+    selectedCreatorIdsForRequest,
+    selectedCreatorsById,
+    step3Creators,
+  ]);
 
   const toggleCreatorCollaborator = (creator: any) => {
     const creatorId = String(creator?.id || "");
@@ -394,85 +414,165 @@ export default function BrandCampaignDashboard() {
       duration_days: "30",
       territory: "Global",
       exclusivity: "Non-exclusive",
+      budget_range: "",
+      start_date: "",
       custom_terms: "",
       collaborator_type: "",
       collaborators: [],
     });
+    setCampaignBrief({
+      voice: "",
+      tone: "",
+      personality: "",
+      key_messages: "",
+      script_opening: "",
+      script_middle: "",
+      script_closing: "",
+      dos: "",
+      donts: "",
+      deliverables_reels: "",
+      deliverables_hero_image: "",
+      visual_color_palette: "",
+      visual_setting: "",
+      visual_framing: "",
+      visual_editing: "",
+      reference_images: [],
+      brand_assets: [],
+      overview_objective: "",
+      overview_target_audience: "",
+      overview_campaign_duration: "",
+      overview_launch_date: "",
+      budget_total: "",
+      budget_creator_payment: "",
+      budget_platform_fee: "",
+      budget_submission_deadline: "",
+      budget_renewal_terms: "",
+      revision_included: "",
+      revision_major_changes: "",
+      revision_turnaround: "",
+      approval_process: "",
+      watermark_protection: "",
+      legal_terms: "",
+    });
     setOfferByCreatorId({});
     setSelectedCreatorsById({});
     setSelectedTalentCreatorIds(new Set());
-    setRequestedLicenseCreatorIds(new Set());
-    setRequestingLicenseCreatorIds(new Set());
     setMarketplaceCreators([]);
     setCreatorSearch("");
   };
 
-  const requestLicensesForSelectedCreators = async () => {
-    const creatorIds = selectedCreatorIdsForRequest.filter(Boolean);
-    if (creatorIds.length === 0) {
+  const handleReferenceImageUpload = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+    const next = files.map((file) => ({
+      name: file.name,
+      url: URL.createObjectURL(file),
+    }));
+    setCampaignBrief((prev) => ({
+      ...prev,
+      reference_images: [...prev.reference_images, ...next],
+    }));
+    event.target.value = "";
+  };
+
+  const handleBrandAssetsUpload = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+    const next = files.map((file) => ({
+      name: file.name,
+      size: file.size,
+      url: URL.createObjectURL(file),
+    }));
+    setCampaignBrief((prev) => ({
+      ...prev,
+      brand_assets: [...prev.brand_assets, ...next],
+    }));
+    event.target.value = "";
+  };
+
+  const handleSendOffer = () => {
+    if (campaignForm.collaborator_type === "creator") {
+      const creatorIds = selectedCreatorIdsForRequest.filter(Boolean);
+      if (creatorIds.length === 0) {
+        toast({
+          title: "Select at least one creator",
+          description: "Choose one or more creators before sending offer.",
+          variant: "destructive" as any,
+        });
+        return;
+      }
+
       toast({
-        title:
-          campaignForm.collaborator_type === "agency"
-            ? "Select at least one talent"
-            : "Select at least one creator",
-        description:
-          campaignForm.collaborator_type === "agency"
-            ? "Choose one or more talents before requesting licenses."
-            : "Choose one or more creators before requesting licenses.",
-        variant: "destructive" as any,
+        title: "Offer sent",
+        description: `Frontend demo only. ${creatorIds.length} creator offer${creatorIds.length > 1 ? "s" : ""} prepared.`,
       });
+      handleCreateCampaign();
       return;
     }
 
-    if (
-      campaignForm.collaborator_type === "agency" &&
-      !String(campaignForm.collaborators?.[0] || "")
-    ) {
+    const agencyId = String(campaignForm.collaborators?.[0] || "");
+    if (!agencyId) {
       toast({
-        title: "Select an agency first",
-        description: "Choose a connected agency before requesting a license.",
+        title: "Select an agency",
+        description: "Choose a connected agency before sending offer.",
         variant: "destructive" as any,
       });
       return;
     }
-    setRequestedLicenseCreatorIds((prev) => {
-      const next = new Set(prev);
-      creatorIds.forEach((id) => next.add(id));
-      return next;
-    });
     toast({
-      title: "License requested",
-      description: "Frontend demo action completed (no backend request sent).",
+      title: "Offer sent",
+      description: "Offer sent to the selected agency (frontend demo).",
     });
+    handleCreateCampaign();
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`${embedded ? "bg-gray-50" : "min-h-screen bg-gray-50"}`}>
       {/* Top Navigation */}
-      <nav className="bg-white border-b-2 border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                onClick={() => navigate(createPageUrl("BrandDashboard"))}
-                className="rounded-none"
-              >
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                Back to Dashboard
-              </Button>
-              <div className="flex items-center gap-3">
-                <img
-                  src={mockBrand.logo}
-                  alt="Brand"
-                  className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
-                />
-                <span className="text-xl font-bold text-gray-900">
-                  {mockBrand.name}
-                </span>
+      {!embedded && (
+        <nav className="bg-white border-b-2 border-gray-200 sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="ghost"
+                  onClick={() => navigate(createPageUrl("BrandDashboard"))}
+                  className="rounded-none"
+                >
+                  <ArrowLeft className="w-5 h-5 mr-2" />
+                  Back to Dashboard
+                </Button>
+                <div className="flex items-center gap-3">
+                  <img
+                    src={mockBrand.logo}
+                    alt="Brand"
+                    className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                  />
+                  <span className="text-xl font-bold text-gray-900">
+                    {mockBrand.name}
+                  </span>
+                </div>
               </div>
-            </div>
 
+              <Button
+                onClick={() => setShowNewCampaignModal(true)}
+                className="bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Campaign
+              </Button>
+            </div>
+          </div>
+        </nav>
+      )}
+
+      <div className={`${embedded ? "" : "max-w-7xl mx-auto"} px-6 py-8`}>
+        {embedded && (
+          <div className="flex justify-end mb-3">
             <Button
               onClick={() => setShowNewCampaignModal(true)}
               className="bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none"
@@ -481,18 +581,7 @@ export default function BrandCampaignDashboard() {
               New Campaign
             </Button>
           </div>
-        </div>
-      </nav>
-
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <Alert className="mb-8 bg-amber-50 border-2 border-amber-600 rounded-none">
-          <AlertCircle className="h-5 w-5 text-amber-600" />
-          <AlertDescription className="text-amber-900 font-medium">
-            <strong>Demo Mode:</strong> This is a preview of the Brand Campaign
-            Hub for companies and brands.
-          </AlertDescription>
-        </Alert>
-
+        )}
         {/* Metrics Overview */}
         <div className="grid md:grid-cols-4 gap-6 mb-8">
           <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
@@ -705,7 +794,7 @@ export default function BrandCampaignDashboard() {
               ))}
             </div>
           ) : (
-            mockCampaigns
+            campaignCards
               .filter((campaign) => campaign.status === campaignListTab)
               .map((campaign) => (
                 <Card
@@ -791,7 +880,7 @@ export default function BrandCampaignDashboard() {
       {showNewCampaignModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 overflow-y-auto">
           <div className="min-h-screen flex items-center justify-center p-6">
-            <Card className="w-full max-w-3xl bg-white p-8 border-2 border-black rounded-none">
+            <Card className="w-full max-w-6xl bg-white p-8 border-2 border-black rounded-none">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">
                   Create New Campaign
@@ -827,9 +916,7 @@ export default function BrandCampaignDashboard() {
                     >
                       2
                     </div>
-                    <span className="text-sm font-medium">
-                      Collaborators (Optional)
-                    </span>
+                    <span className="text-sm font-medium">Campaign Brief</span>
                   </div>
                   <div className="flex-1 h-px bg-gray-300" />
                   <div
@@ -842,10 +929,38 @@ export default function BrandCampaignDashboard() {
                     </div>
                     <span className="text-sm font-medium">
                       {campaignForm.collaborator_type === "creator"
-                        ? "Select Creators (Optional)"
-                        : "Select Talents (Optional)"}
+                        ? "Collaborators"
+                        : "Collaborators"}
                     </span>
                   </div>
+                  <div className="flex-1 h-px bg-gray-300" />
+                  <div
+                    className={`flex items-center gap-2 ${newCampaignStep >= 4 ? "text-black" : "text-gray-400"}`}
+                  >
+                    <div
+                      className={`w-8 h-8 border-2 rounded-none flex items-center justify-center ${newCampaignStep >= 4 ? "border-black bg-black text-white" : "border-gray-300"}`}
+                    >
+                      4
+                    </div>
+                    <span className="text-sm font-medium">Offer Summary</span>
+                  </div>
+                  {campaignForm.collaborator_type === "creator" && (
+                    <>
+                      <div className="flex-1 h-px bg-gray-300" />
+                      <div
+                        className={`flex items-center gap-2 ${newCampaignStep >= 5 ? "text-black" : "text-gray-400"}`}
+                      >
+                        <div
+                          className={`w-8 h-8 border-2 rounded-none flex items-center justify-center ${newCampaignStep >= 5 ? "border-black bg-black text-white" : "border-gray-300"}`}
+                        >
+                          5
+                        </div>
+                        <span className="text-sm font-medium">
+                          Contract Upload
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -940,6 +1055,41 @@ export default function BrandCampaignDashboard() {
                       placeholder="Describe campaign goals and licensing context..."
                       className="border-2 border-gray-300 rounded-none min-h-[90px]"
                     />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-2">
+                        Budget Range *
+                      </label>
+                      <Input
+                        value={campaignForm.budget_range}
+                        onChange={(e) =>
+                          setCampaignForm({
+                            ...campaignForm,
+                            budget_range: e.target.value,
+                          })
+                        }
+                        placeholder="$5,000 - $10,000"
+                        className="border-2 border-gray-300 rounded-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-2">
+                        Start Date *
+                      </label>
+                      <Input
+                        type="date"
+                        value={campaignForm.start_date}
+                        onChange={(e) =>
+                          setCampaignForm({
+                            ...campaignForm,
+                            start_date: e.target.value,
+                          })
+                        }
+                        className="border-2 border-gray-300 rounded-none"
+                      />
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1055,7 +1205,9 @@ export default function BrandCampaignDashboard() {
                         !campaignForm.name ||
                         !campaignForm.objective ||
                         !campaignForm.category ||
-                        !campaignForm.description.trim()
+                        !campaignForm.description.trim() ||
+                        !campaignForm.budget_range.trim() ||
+                        !campaignForm.start_date
                       }
                       className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
                     >
@@ -1066,12 +1218,26 @@ export default function BrandCampaignDashboard() {
               )}
 
               {newCampaignStep === 2 && (
+                <CampaignBriefStep
+                  campaignBrief={campaignBrief}
+                  setCampaignBrief={setCampaignBrief}
+                  onReferenceImagesUpload={handleReferenceImageUpload}
+                  onBrandAssetsUpload={handleBrandAssetsUpload}
+                  onBack={() => setNewCampaignStep(1)}
+                  onNext={() => setNewCampaignStep(3)}
+                />
+              )}
+
+              {newCampaignStep === 3 && (
                 <div className="space-y-6">
                   <Alert className="bg-blue-50 border-2 border-blue-200 rounded-none">
                     <AlertCircle className="h-5 w-5 text-blue-600" />
                     <AlertDescription className="text-blue-900">
-                      Campaigns require an assigned agency or creator for
-                      production. You can invite one now or return later.
+                      Select your collaborator type, then choose connected{" "}
+                      {campaignForm.collaborator_type === "agency"
+                        ? "talents"
+                        : "creators"}
+                      .
                     </AlertDescription>
                   </Alert>
 
@@ -1079,7 +1245,7 @@ export default function BrandCampaignDashboard() {
                     <label className="text-sm font-medium text-gray-700 block mb-3">
                       Select Collaborator Type
                     </label>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Card
                         className={`p-4 border-2 cursor-pointer transition-all rounded-none ${
                           campaignForm.collaborator_type === "agency"
@@ -1094,7 +1260,7 @@ export default function BrandCampaignDashboard() {
                           }));
                           setSelectedCreatorsById({});
                           setSelectedTalentCreatorIds(new Set());
-                          setRequestedLicenseCreatorIds(new Set());
+                          setCreatorSearch("");
                         }}
                       >
                         <Building2 className="w-8 h-8 text-black mb-2" />
@@ -1102,10 +1268,9 @@ export default function BrandCampaignDashboard() {
                           Marketing Agency
                         </h4>
                         <p className="text-xs text-gray-600">
-                          Full campaign management
+                          Select talents from a connected agency
                         </p>
                       </Card>
-
                       <Card
                         className={`p-4 border-2 cursor-pointer transition-all rounded-none ${
                           campaignForm.collaborator_type === "creator"
@@ -1118,10 +1283,10 @@ export default function BrandCampaignDashboard() {
                             collaborator_type: "creator",
                             collaborators: [],
                           }));
+                          setSelectedCreatorsById({});
                           setMarketplaceCreators([]);
-                          setCreatorSearch("");
                           setSelectedTalentCreatorIds(new Set());
-                          setRequestedLicenseCreatorIds(new Set());
+                          setCreatorSearch("");
                         }}
                       >
                         <Sparkles className="w-8 h-8 text-black mb-2" />
@@ -1129,71 +1294,50 @@ export default function BrandCampaignDashboard() {
                           AI Creator
                         </h4>
                         <p className="text-xs text-gray-600">
-                          Task-specific work
+                          Work directly with connected creators
                         </p>
                       </Card>
                     </div>
                   </div>
 
-                  {campaignForm.collaborator_type && (
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 block mb-3">
-                        {campaignForm.collaborator_type === "agency"
-                          ? "Select Agency"
-                          : "Select Creator(s)"}
+                  {campaignForm.collaborator_type === "agency" && (
+                    <div className="space-y-4">
+                      <label className="text-sm font-medium text-gray-700 block">
+                        Select Agency
                       </label>
-                      {campaignForm.collaborator_type === "agency" ? (
-                        <>
-                          <div className="flex gap-3 mb-4">
-                            <Input
-                              value={agencySearch}
-                              onChange={(e) => setAgencySearch(e.target.value)}
-                              placeholder="Search connected agencies..."
-                              className="flex-1 border-2 border-gray-300 rounded-none"
-                            />
-                          </div>
-                          <div className="border-2 border-gray-200 rounded-none p-4 mb-4 space-y-3">
-                            <p className="text-sm text-gray-600">
-                              Connected agencies
-                            </p>
-                            {loadingConnectedAgencies ? (
-                              <p className="text-sm text-gray-500">
-                                Loading connected agencies...
-                              </p>
-                            ) : filteredConnectedAgencies.length === 0 ? (
-                              <p className="text-sm text-gray-500">
-                                No connected agencies found. Connect from Brand
-                                Dashboard {"->"} Find Agencies.
-                              </p>
-                            ) : (
-                              filteredConnectedAgencies.map((agency) => {
-                                const agencyId = String(
-                                  agency?.agency_id || agency?.id || "",
-                                );
-                                const selected =
-                                  campaignForm.collaborators?.includes(
-                                    agencyId,
-                                  );
-                                return (
-                                  <button
-                                    key={agencyId}
-                                    type="button"
-                                    onClick={() => {
-                                      setCampaignForm((prev) => ({
-                                        ...prev,
-                                        collaborators: agencyId
-                                          ? [agencyId]
-                                          : prev.collaborators,
-                                      }));
-                                      setSelectedTalentCreatorIds(new Set());
-                                      setRequestedLicenseCreatorIds(new Set());
-                                    }}
-                                    className={`w-full text-left border-2 p-3 rounded-none transition-colors ${
-                                      selected
-                                        ? "border-black bg-gray-50"
-                                        : "border-gray-200 hover:border-gray-400"
-                                    }`}
-                                  >
+                      <Input
+                        value={agencySearch}
+                        onChange={(e) => setAgencySearch(e.target.value)}
+                        placeholder="Search connected agencies..."
+                        className="border-2 border-gray-300 rounded-none"
+                      />
+                      <div className="border-2 border-gray-200 rounded-none p-3 space-y-3">
+                        {loadingConnectedAgencies ? (
+                          <p className="text-sm text-gray-500">
+                            Loading connected agencies...
+                          </p>
+                        ) : filteredConnectedAgencies.length === 0 ? (
+                          <p className="text-sm text-gray-500">
+                            No connected agencies found.
+                          </p>
+                        ) : (
+                          filteredConnectedAgencies.map((agency) => {
+                            const agencyId = String(
+                              agency?.agency_id || agency?.id || "",
+                            );
+                            const selected =
+                              campaignForm.collaborators?.includes(agencyId);
+                            return (
+                              <div
+                                key={agencyId}
+                                className={`w-full border-2 p-3 rounded-none transition-colors ${
+                                  selected
+                                    ? "border-black bg-gray-50"
+                                    : "border-gray-200 hover:border-gray-400"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between gap-3">
+                                  <div>
                                     <p className="font-semibold text-gray-900">
                                       {agency?.display_name ||
                                         agency?.agency_name ||
@@ -1201,296 +1345,128 @@ export default function BrandCampaignDashboard() {
                                     </p>
                                     <p className="text-xs text-gray-600 mt-1">
                                       {agency?.agency_type || "Agency"}
-                                      {agency?.location
-                                        ? ` • ${agency.location}`
-                                        : ""}
                                     </p>
-                                  </button>
-                                );
-                              })
-                            )}
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="flex gap-3 mb-4">
-                            <Input
-                              value={creatorSearch}
-                              onChange={(e) => setCreatorSearch(e.target.value)}
-                              placeholder="Search verified creators..."
-                              className="flex-1 border-2 border-gray-300 rounded-none"
-                            />
-                          </div>
-                          <div className="border-2 border-gray-200 rounded-none p-4 mb-4 space-y-3">
-                            <p className="text-sm text-gray-600">
-                              Verified creators
-                            </p>
-                            {loadingMarketplaceCreators ? (
-                              <p className="text-sm text-gray-500">
-                                Loading creators...
-                              </p>
-                            ) : marketplaceCreators.length === 0 ? (
-                              <p className="text-sm text-gray-500">
-                                No verified creators found for this search.
-                              </p>
-                            ) : (
-                              marketplaceCreators.map((creator) => {
-                                const creatorId = String(creator?.id || "");
-                                const selected =
-                                  campaignForm.collaborators?.includes(
-                                    creatorId,
-                                  );
-                                const creatorName = getDisplayName(
-                                  creator?.display_name ||
-                                    creator?.full_name ||
-                                    creator?.name,
-                                );
-                                const creatorType = String(
-                                  creator?.creator_type || "Creator",
-                                );
-                                const location = String(
-                                  creator?.location || "",
-                                ).trim();
-                                const baseRateWeeklyCents = Number(
-                                  creator?.base_rate_weekly_cents ??
-                                    creator?.base_weekly_price_cents ??
-                                    creator?.licensing_rate_weekly_cents ??
-                                    0,
-                                );
-                                const hasBaseRate =
-                                  Number.isFinite(baseRateWeeklyCents) &&
-                                  baseRateWeeklyCents > 0;
-                                const rateCurrency = String(
-                                  creator?.rate_currency ||
-                                    creator?.currency_code ||
-                                    "USD",
-                                );
-                                const canNegotiate = isNegotiationEnabled(
-                                  creator?.accept_negotiations,
-                                );
-                                return (
-                                  <div
-                                    key={creatorId}
-                                    className={`w-full border-2 p-3 rounded-none transition-colors ${
-                                      selected
-                                        ? "border-black bg-gray-50"
-                                        : "border-gray-200 hover:border-gray-400"
-                                    }`}
-                                  >
-                                    <div className="flex items-center justify-between gap-4">
-                                      <button
-                                        type="button"
-                                        onClick={() =>
-                                          toggleCreatorCollaborator(creator)
-                                        }
-                                        className="flex-1 text-left"
-                                      >
-                                        <p className="font-semibold text-gray-900">
-                                          {creatorName}
-                                        </p>
-                                        <p className="text-xs text-gray-600 mt-1">
-                                          {creatorType}
-                                          {location ? ` • ${location}` : ""}
-                                        </p>
-                                        {selected && (
-                                          <p className="mt-2 text-xs font-semibold text-black">
-                                            Selected
-                                          </p>
-                                        )}
-                                      </button>
-                                      <div className="w-56 shrink-0 text-right">
-                                        <p className="text-xs text-gray-600">
-                                          License rate
-                                        </p>
-                                        <p className="text-sm font-semibold text-gray-900 mt-1">
-                                          {hasBaseRate
-                                            ? `${rateCurrency} ${Math.round(baseRateWeeklyCents / 100).toLocaleString()}/week`
-                                            : "Unavailable"}
-                                        </p>
-                                        {canNegotiate && (
-                                          <Input
-                                            type="number"
-                                            min="1"
-                                            placeholder="My offer"
-                                            value={
-                                              offerByCreatorId[creatorId] || ""
-                                            }
-                                            onChange={(e) =>
-                                              setOfferByCreatorId((prev) => ({
-                                                ...prev,
-                                                [creatorId]: e.target.value,
-                                              }))
-                                            }
-                                            className="mt-2 border-2 border-gray-300 rounded-none h-9 text-right"
-                                          />
-                                        )}
-                                        {!canNegotiate && (
-                                          <p className="text-xs text-gray-500 mt-2">
-                                            Fixed rate only
-                                          </p>
-                                        )}
-                                      </div>
-                                    </div>
                                   </div>
-                                );
-                              })
-                            )}
-                          </div>
-                        </>
-                      )}
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="h-10 border-2 border-gray-300 rounded-none"
+                                    onClick={() =>
+                                      setCampaignForm((prev) => ({
+                                        ...prev,
+                                        collaborators: agencyId
+                                          ? [agencyId]
+                                          : [],
+                                      }))
+                                    }
+                                  >
+                                    {selected ? "Selected" : "Select"}
+                                  </Button>
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
                     </div>
                   )}
 
-                  <div className="flex justify-between gap-3">
-                    <Button
-                      variant="outline"
-                      onClick={() => setNewCampaignStep(1)}
-                      className="border-2 border-gray-300 rounded-none bg-white text-black hover:bg-gray-50"
-                    >
-                      <ArrowLeft className="w-4 h-4 mr-2" />
-                      Back
-                    </Button>
-                    <div className="flex gap-3">
-                      <Button
-                        variant="outline"
-                        onClick={handleCreateCampaign}
-                        className="border-2 border-gray-300 rounded-none bg-white text-black hover:bg-gray-50"
-                      >
-                        Save & Add Collaborators Later
-                      </Button>
-                      <Button
-                        onClick={() => setNewCampaignStep(3)}
-                        disabled={
-                          !campaignForm.collaborator_type ||
-                          (campaignForm.collaborators || []).length === 0
-                        }
-                        className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
-                      >
-                        Next
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {newCampaignStep === 3 && (
-                <div className="space-y-6">
-                  <Alert className="bg-blue-50 border-2 border-blue-200 rounded-none">
-                    <AlertCircle className="h-5 w-5 text-blue-700" />
-                    <AlertDescription className="text-blue-900">
-                      {campaignForm.collaborator_type === "agency"
-                        ? "Select one or more talents under your chosen agency and request licenses in one action."
-                        : "Review selected creators and request their licenses before creating your campaign."}
-                    </AlertDescription>
-                  </Alert>
-
-                  {campaignForm.collaborator_type === "agency" && (
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 block mb-2">
-                        Search Talent by Name
+                  {campaignForm.collaborator_type === "creator" && (
+                    <div className="space-y-3">
+                      <label className="text-sm font-medium text-gray-700 block">
+                        {campaignForm.collaborator_type === "agency"
+                          ? "Select Talents"
+                          : "Select Creators"}
                       </label>
                       <Input
                         value={creatorSearch}
                         onChange={(e) => setCreatorSearch(e.target.value)}
-                        placeholder="Type model or talent name..."
+                        placeholder={
+                          campaignForm.collaborator_type === "agency"
+                            ? "Search talents..."
+                            : "Search creators..."
+                        }
                         className="border-2 border-gray-300 rounded-none"
                       />
-                    </div>
-                  )}
+                      <div className="border-2 border-gray-200 rounded-none p-3 max-h-[340px] overflow-y-auto space-y-3">
+                        {loadingMarketplaceCreators ? (
+                          <p className="text-sm text-gray-500">
+                            {campaignForm.collaborator_type === "agency"
+                              ? "Loading talents..."
+                              : "Loading creators..."}
+                          </p>
+                        ) : marketplaceCreators.length === 0 ? (
+                          <p className="text-sm text-gray-500">
+                            {campaignForm.collaborator_type === "agency"
+                              ? "No talents found for this agency."
+                              : "No connected creators found."}
+                          </p>
+                        ) : (
+                          marketplaceCreators.map((creator) => {
+                            const creatorId = String(creator?.id || "");
+                            const selected =
+                              campaignForm.collaborator_type === "agency"
+                                ? selectedTalentCreatorIds.has(creatorId)
+                                : campaignForm.collaborators?.includes(
+                                    creatorId,
+                                  );
+                            const name = getDisplayName(
+                              creator?.display_name ||
+                                creator?.full_name ||
+                                creator?.name,
+                            );
+                            const creatorType = String(
+                              creator?.creator_type ||
+                                (campaignForm.collaborator_type === "agency"
+                                  ? "Talent"
+                                  : "Creator"),
+                            );
+                            const baseRateWeeklyCents = Number(
+                              creator?.base_rate_weekly_cents ??
+                                creator?.base_weekly_price_cents ??
+                                creator?.licensing_rate_weekly_cents ??
+                                0,
+                            );
+                            const hasBaseRate =
+                              Number.isFinite(baseRateWeeklyCents) &&
+                              baseRateWeeklyCents > 0;
+                            const rateCurrency = String(
+                              creator?.rate_currency ||
+                                creator?.currency_code ||
+                                "USD",
+                            );
+                            const canNegotiate = isNegotiationEnabled(
+                              creator?.accept_negotiations,
+                            );
 
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 block mb-3">
-                      {campaignForm.collaborator_type === "agency"
-                        ? "Available Talent"
-                        : "Selected Creators"}
-                    </label>
-                    <div className="border-2 border-gray-200 rounded-none max-h-[320px] overflow-y-auto p-3 space-y-3">
-                      {loadingMarketplaceCreators ? (
-                        <p className="text-sm text-gray-500">
-                          {campaignForm.collaborator_type === "agency"
-                            ? "Loading talents..."
-                            : "Loading creators..."}
-                        </p>
-                      ) : step3Creators.length === 0 ? (
-                        <p className="text-sm text-gray-500">
-                          {campaignForm.collaborator_type === "agency"
-                            ? "No talents available under this agency."
-                            : "No creators selected. Go back to step 2 and select creators."}
-                        </p>
-                      ) : (
-                        step3Creators.map((creator) => {
-                          const creatorId = String(creator?.id || "");
-                          const name = getDisplayName(
-                            creator?.display_name ||
-                              creator?.full_name ||
-                              creator?.name,
-                          );
-                          const creatorType = String(
-                            creator?.creator_type || "Creator",
-                          );
-                          const baseRateWeeklyCents = Number(
-                            creator?.base_rate_weekly_cents ??
-                              creator?.licensing_rate_weekly_cents ??
-                              creator?.base_weekly_price_cents ??
-                              0,
-                          );
-                          const hasBaseRate =
-                            Number.isFinite(baseRateWeeklyCents) &&
-                            baseRateWeeklyCents > 0;
-                          const rateCurrency = String(
-                            creator?.rate_currency ||
-                              creator?.currency_code ||
-                              "USD",
-                          );
-                          const canNegotiate = isNegotiationEnabled(
-                            creator?.accept_negotiations,
-                          );
-                          const selectedForRequest =
-                            campaignForm.collaborator_type === "agency"
-                              ? selectedTalentCreatorIds.has(creatorId)
-                              : true;
-                          return (
-                            <div
-                              key={creatorId}
-                              className={`border rounded-none p-3 bg-white ${
-                                selectedForRequest
-                                  ? "border-black"
-                                  : "border-gray-300"
-                              }`}
-                            >
-                              <div className="flex items-center gap-3 flex-wrap">
-                                <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
-                                  {creator?.profile_photo_url ? (
-                                    <img
-                                      src={String(creator.profile_photo_url)}
-                                      alt={name}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  ) : (
-                                    <span className="text-xs font-semibold text-gray-600">
-                                      {getInitials(name)}
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <p className="font-semibold text-gray-900 truncate">
-                                    {name}
-                                  </p>
-                                  <p className="text-sm text-gray-600 truncate">
-                                    {creatorType}
-                                  </p>
-                                  <p className="text-xs text-gray-700 mt-1">
-                                    License rate:{" "}
-                                    <span className="font-semibold">
+                            return (
+                              <div
+                                key={creatorId}
+                                className={`border-2 p-3 rounded-none ${
+                                  selected
+                                    ? "border-black bg-gray-50"
+                                    : "border-gray-200"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between gap-4">
+                                  <div className="min-w-0 flex-1">
+                                    <p className="font-semibold text-gray-900 truncate">
+                                      {name}
+                                    </p>
+                                    <p className="text-xs text-gray-600 mt-1">
+                                      {creatorType}
+                                    </p>
+                                  </div>
+                                  <div className="w-56 shrink-0 text-right">
+                                    <p className="text-xs text-gray-600">
+                                      License rate
+                                    </p>
+                                    <p className="text-sm font-semibold text-gray-900 mt-1">
                                       {hasBaseRate
                                         ? `${rateCurrency} ${Math.round(baseRateWeeklyCents / 100).toLocaleString()}/week`
                                         : "Unavailable"}
-                                    </span>
-                                  </p>
-                                </div>
-                                {campaignForm.collaborator_type === "agency" &&
-                                  canNegotiate && (
-                                    <div className="w-40">
+                                    </p>
+                                    {canNegotiate && (
                                       <Input
                                         type="number"
                                         min="1"
@@ -1504,74 +1480,52 @@ export default function BrandCampaignDashboard() {
                                             [creatorId]: e.target.value,
                                           }))
                                         }
-                                        className="border-2 border-gray-300 rounded-none h-10"
+                                        className="mt-2 border-2 border-gray-300 rounded-none h-9 text-right"
                                       />
-                                    </div>
-                                  )}
-                                {campaignForm.collaborator_type === "creator" &&
-                                  canNegotiate && (
-                                    <p className="text-xs text-gray-700">
-                                      My offer:{" "}
-                                      <span className="font-semibold">
-                                        {offerByCreatorId[creatorId]
-                                          ? `${rateCurrency} ${Number(offerByCreatorId[creatorId]).toLocaleString()}/week`
-                                          : "Not set"}
-                                      </span>
-                                    </p>
-                                  )}
-                                {!canNegotiate && (
-                                  <p className="text-xs text-gray-500">
-                                    Fixed rate only
-                                  </p>
-                                )}
-                                {campaignForm.collaborator_type ===
-                                  "agency" && (
+                                    )}
+                                    {!canNegotiate && (
+                                      <p className="text-xs text-gray-500 mt-2">
+                                        Fixed rate only
+                                      </p>
+                                    )}
+                                  </div>
                                   <Button
                                     type="button"
                                     variant="outline"
-                                    onClick={() =>
-                                      setSelectedTalentCreatorIds((prev) => {
-                                        const next = new Set(prev);
-                                        if (next.has(creatorId)) {
-                                          next.delete(creatorId);
-                                        } else {
-                                          next.add(creatorId);
-                                        }
-                                        return next;
-                                      })
-                                    }
                                     className="h-10 border-2 border-gray-300 rounded-none"
+                                    onClick={() => {
+                                      if (
+                                        campaignForm.collaborator_type ===
+                                        "agency"
+                                      ) {
+                                        setSelectedTalentCreatorIds((prev) => {
+                                          const next = new Set(prev);
+                                          if (next.has(creatorId)) {
+                                            next.delete(creatorId);
+                                          } else {
+                                            next.add(creatorId);
+                                          }
+                                          return next;
+                                        });
+                                        setSelectedCreatorsById((prev) => ({
+                                          ...prev,
+                                          [creatorId]: creator,
+                                        }));
+                                        return;
+                                      }
+                                      toggleCreatorCollaborator(creator);
+                                    }}
                                   >
-                                    {selectedForRequest ? "Selected" : "Select"}
+                                    {selected ? "Selected" : "Select"}
                                   </Button>
-                                )}
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })
-                      )}
+                            );
+                          })
+                        )}
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm text-gray-600">
-                      {selectedCreatorIdsForRequest.length} selected
-                    </p>
-                    <Button
-                      onClick={requestLicensesForSelectedCreators}
-                      disabled={
-                        selectedCreatorIdsForRequest.length === 0 ||
-                        isRequestingSelectedLicenses
-                      }
-                      className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
-                    >
-                      {isRequestingSelectedLicenses
-                        ? "Requesting..."
-                        : hasRequestedSelectedLicenses
-                          ? "License Requested"
-                          : "Request License"}
-                    </Button>
-                  </div>
+                  )}
 
                   <div className="flex justify-between gap-3">
                     <Button
@@ -1583,15 +1537,251 @@ export default function BrandCampaignDashboard() {
                       Back
                     </Button>
                     <Button
-                      onClick={handleCreateCampaign}
+                      onClick={() => setNewCampaignStep(4)}
+                      disabled={
+                        !campaignForm.collaborator_type ||
+                        selectedCreatorIdsForRequest.length === 0
+                      }
                       className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
                     >
-                      <CheckCircle2 className="w-4 h-4 mr-2" />
-                      Create Campaign
+                      Next
                     </Button>
                   </div>
                 </div>
               )}
+
+              {newCampaignStep === 4 && (
+                <div className="space-y-6">
+                  <Alert className="bg-blue-50 border-2 border-blue-200 rounded-none">
+                    <CheckCircle2 className="h-5 w-5 text-blue-700" />
+                    <AlertDescription className="text-blue-900">
+                      {campaignForm.collaborator_type === "agency"
+                        ? "Summary of selected agency. Send this offer to continue."
+                        : "Summary of selected creators. Continue to contract upload."}
+                    </AlertDescription>
+                  </Alert>
+
+                  <div className="border-2 border-gray-200 rounded-none p-4 space-y-3">
+                    <p className="text-sm text-gray-600">Campaign name</p>
+                    <p className="font-semibold text-gray-900">
+                      {campaignForm.name || "Untitled Campaign"}
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-700">
+                      <p>
+                        {campaignForm.collaborator_type === "agency"
+                          ? "Agency name(s): "
+                          : "Creator name(s): "}
+                        <span className="font-semibold text-gray-900">
+                          {summaryCreatorNames}
+                        </span>
+                      </p>
+                      <p>
+                        Category:{" "}
+                        <span className="font-semibold text-gray-900">
+                          {campaignForm.category || "N/A"}
+                        </span>
+                      </p>
+                      <p>
+                        Budget range:{" "}
+                        <span className="font-semibold text-gray-900">
+                          {campaignForm.budget_range || "N/A"}
+                        </span>
+                      </p>
+                      <p>
+                        Usage scope:{" "}
+                        <span className="font-semibold text-gray-900">
+                          {campaignForm.usage_scope || "N/A"}
+                        </span>
+                      </p>
+                      <p>
+                        Territory:{" "}
+                        <span className="font-semibold text-gray-900">
+                          {campaignForm.territory || "N/A"}
+                        </span>
+                      </p>
+                      <p>
+                        Start date:{" "}
+                        <span className="font-semibold text-gray-900">
+                          {campaignForm.start_date || "N/A"}
+                        </span>
+                      </p>
+                      <p>
+                        Duration:{" "}
+                        <span className="font-semibold text-gray-900">
+                          {campaignForm.duration_days
+                            ? `${campaignForm.duration_days} days`
+                            : "N/A"}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {campaignForm.collaborator_type === "agency" ? (
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-gray-700">
+                        Selected agency
+                      </p>
+                      <div className="border border-gray-200 rounded-none p-3 bg-white">
+                        <p className="font-semibold text-gray-900">
+                          {(() => {
+                            const agencyId = String(
+                              campaignForm.collaborators?.[0] || "",
+                            );
+                            const selectedAgency = connectedAgencies.find(
+                              (agency) =>
+                                String(
+                                  agency?.agency_id || agency?.id || "",
+                                ) === agencyId,
+                            );
+                            return (
+                              selectedAgency?.display_name ||
+                              selectedAgency?.agency_name ||
+                              "Agency"
+                            );
+                          })()}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-gray-700">
+                        Selected creators ({selectedCreatorIdsForRequest.length}
+                        )
+                      </p>
+                      <div className="border-2 border-gray-200 rounded-none p-3 max-h-[320px] overflow-y-auto space-y-3">
+                        {selectedCreatorIdsForRequest.map((creatorId) => {
+                          const creator =
+                            selectedCreatorsById[creatorId] ||
+                            step3Creators.find(
+                              (c) => String(c?.id || "") === creatorId,
+                            );
+                          const name = getDisplayName(
+                            creator?.display_name ||
+                              creator?.full_name ||
+                              creator?.name,
+                          );
+                          const baseRateWeeklyCents = Number(
+                            creator?.base_rate_weekly_cents ??
+                              creator?.base_weekly_price_cents ??
+                              creator?.licensing_rate_weekly_cents ??
+                              0,
+                          );
+                          const hasBaseRate =
+                            Number.isFinite(baseRateWeeklyCents) &&
+                            baseRateWeeklyCents > 0;
+                          const rateCurrency = String(
+                            creator?.rate_currency ||
+                              creator?.currency_code ||
+                              "USD",
+                          );
+                          const canNegotiate = isNegotiationEnabled(
+                            creator?.accept_negotiations,
+                          );
+
+                          return (
+                            <div
+                              key={creatorId}
+                              className="border border-gray-200 rounded-none p-3 bg-white"
+                            >
+                              <div className="flex items-center justify-between gap-3">
+                                <p className="font-semibold text-gray-900">
+                                  {name}
+                                </p>
+                                <div className="text-right">
+                                  <p className="text-xs text-gray-600">
+                                    License rate
+                                  </p>
+                                  <p className="text-sm font-semibold text-gray-900">
+                                    {hasBaseRate
+                                      ? `${rateCurrency} ${Math.round(baseRateWeeklyCents / 100).toLocaleString()}/week`
+                                      : "Unavailable"}
+                                  </p>
+                                </div>
+                              </div>
+                              {canNegotiate && (
+                                <p className="text-xs text-gray-600 mt-2">
+                                  My offer:{" "}
+                                  <span className="font-semibold text-gray-900">
+                                    {offerByCreatorId[creatorId]
+                                      ? `${rateCurrency} ${Number(offerByCreatorId[creatorId]).toLocaleString()}/week`
+                                      : "Not set"}
+                                  </span>
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => setNewCampaignStep(3)}
+                      className="border-2 border-gray-300 rounded-none bg-white text-black hover:bg-gray-50"
+                    >
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      Back
+                    </Button>
+                    {campaignForm.collaborator_type === "creator" ? (
+                      <Button
+                        type="button"
+                        onClick={() => setNewCampaignStep(5)}
+                        className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
+                      >
+                        Next
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        onClick={handleSendOffer}
+                        className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
+                      >
+                        Send Offer
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {newCampaignStep === 5 &&
+                campaignForm.collaborator_type === "creator" && (
+                  <div className="space-y-6">
+                    <Alert className="bg-blue-50 border-2 border-blue-200 rounded-none">
+                      <AlertCircle className="h-5 w-5 text-blue-700" />
+                      <AlertDescription className="text-blue-900">
+                        Contract upload step (DocuSeal) will be implemented
+                        next.
+                      </AlertDescription>
+                    </Alert>
+                    <div className="border-2 border-dashed border-gray-300 rounded-none p-6 text-center">
+                      <p className="text-gray-700 font-medium">
+                        Step 5: Contract Upload
+                      </p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Placeholder for DocuSeal integration.
+                      </p>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <Button
+                        variant="outline"
+                        onClick={() => setNewCampaignStep(4)}
+                        className="border-2 border-gray-300 rounded-none bg-white text-black hover:bg-gray-50"
+                      >
+                        <ArrowLeft className="w-4 h-4 mr-2" />
+                        Back
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleSendOffer}
+                        className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
+                      >
+                        Send Offer
+                      </Button>
+                    </div>
+                  </div>
+                )}
             </Card>
           </div>
         </div>
@@ -1666,18 +1856,6 @@ export default function BrandCampaignDashboard() {
                     </Card>
                   </div>
                 </div>
-
-                <Alert className="bg-blue-50 border-2 border-blue-200 rounded-none">
-                  <FileText className="h-5 w-5 text-blue-600" />
-                  <AlertDescription className="text-blue-900">
-                    <strong>Agency Agreement Preview:</strong> Standard 10%
-                    platform fee on payments, campaign-level data access only,
-                    and full rights transparency.
-                    <button className="text-blue-700 underline ml-1">
-                      View full terms
-                    </button>
-                  </AlertDescription>
-                </Alert>
               </div>
             </Card>
           </div>
