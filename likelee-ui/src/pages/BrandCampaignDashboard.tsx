@@ -19,11 +19,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import CampaignBriefStep from "@/components/campaign-offers/CampaignBriefStep";
 import {
-  type StoredCreatorOffer,
-  readStoredCreatorOffers,
-  writeStoredCreatorOffers,
-} from "@/components/campaign-offers/storage";
-import {
   X,
   ArrowLeft,
   CheckCircle2,
@@ -511,39 +506,9 @@ export default function BrandCampaignDashboard({
         return;
       }
 
-      const campaignId = `cmp-${Date.now()}`;
-      const nowIso = new Date().toISOString();
-      const existingOffers = readStoredCreatorOffers();
-      const nextOffers: StoredCreatorOffer[] = creatorIds.map((creatorId) => {
-        const creator =
-          selectedCreatorsById[creatorId] ||
-          step3Creators.find((c) => String(c?.id || "") === creatorId) ||
-          {};
-        return {
-          id: `offer-${campaignId}-${creatorId}`,
-          campaign_id: campaignId,
-          campaign_name: campaignForm.name || "Untitled Campaign",
-          brand_name: mockBrand.name,
-          creator_id: creatorId,
-          creator_name: getDisplayName(
-            creator?.display_name || creator?.full_name || creator?.name,
-          ),
-          creator_avatar_url: creator?.profile_photo_url
-            ? String(creator.profile_photo_url)
-            : undefined,
-          status: "pending",
-          created_at: nowIso,
-          due_date: campaignBrief.budget_submission_deadline || undefined,
-          brief: campaignBrief,
-          campaign_details: campaignForm,
-          offer_amount: offerByCreatorId[creatorId] || undefined,
-        };
-      });
-      writeStoredCreatorOffers([...existingOffers, ...nextOffers]);
-
       toast({
         title: "Offer sent",
-        description: `Offer sent to ${creatorIds.length} creator${creatorIds.length > 1 ? "s" : ""}.`,
+        description: `Frontend demo only. ${creatorIds.length} creator offer${creatorIds.length > 1 ? "s" : ""} prepared.`,
       });
       handleCreateCampaign();
       return;

@@ -123,7 +123,6 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
-import CreatorOffersPanel from "@/components/campaign-offers/CreatorOffersPanel";
 
 import { useTranslation } from "react-i18next";
 
@@ -5072,13 +5071,6 @@ export default function CreatorDashboard() {
     const pending = brandConnectionRequests.filter(
       (i) => i.status === "pending",
     );
-    const creatorIdCandidates = [
-      String((profile as any)?.id || ""),
-      String((profile as any)?.creator_id || ""),
-      String((creator as any)?.id || ""),
-      String((user as any)?.id || ""),
-    ].filter(Boolean);
-
     const refreshBrandConnections = async () => {
       const { requests, connections } = await loadBrandConnectionData();
       setBrandConnectionRequests(requests);
@@ -5303,7 +5295,12 @@ export default function CreatorDashboard() {
         )}
 
         {brandConnectionSubTab === "offers" && (
-          <CreatorOffersPanel creatorIdCandidates={creatorIdCandidates} />
+          <Card className="p-6">
+            <p className="text-sm text-gray-600">
+              Offer integration is temporarily disabled while connection logic
+              is being finalized.
+            </p>
+          </Card>
         )}
       </div>
     );
