@@ -605,6 +605,7 @@ export default function BrandDashboard() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [campaignView, setCampaignView] = useState("active");
   const [openCampaignModalSignal, setOpenCampaignModalSignal] = useState(0);
+  const [campaignBuilderContext, setCampaignBuilderContext] = useState<any>(null);
   const [campaignHubTab, setCampaignHubTab] = useState<
     "active" | "pending_approval" | "completed" | "inbox"
   >("active");
@@ -2635,6 +2636,33 @@ export default function BrandDashboard() {
   );
 
   const renderCampaigns = () => {
+    const openAddCollaboratorFlow = (campaign: any) => {
+      const campaignId = String(campaign?.brand_campaign_id || "").trim();
+      if (!campaignId) {
+        toast({
+          title: "Campaign ID missing",
+          description:
+            "This offer is not linked to a campaign yet. Please create a campaign first.",
+          variant: "destructive" as any,
+        });
+        return;
+      }
+
+      setCampaignBuilderContext({
+        brandCampaignId: campaignId,
+        name: campaign?.name || "",
+        objective: campaign?.objective || "",
+        start_date: campaign?.due_date || "",
+        brief_snapshot:
+          campaign?.brief_snapshot && typeof campaign.brief_snapshot === "object"
+            ? campaign.brief_snapshot
+            : {},
+        startStep: 3,
+      });
+      setActiveSection("campaigns-hub");
+      setOpenCampaignModalSignal((prev) => prev + 1);
+    };
+
     const campaignsForOffers = brandOfferItems.map((offer: any) => {
       const statusRaw = String(offer?.status || "sent").toLowerCase();
       const mappedStatus =
@@ -2661,6 +2689,8 @@ export default function BrandDashboard() {
       return {
         id: String(offer?.id || Math.random()),
         offer_id: String(offer?.id || ""),
+        brand_campaign_id:
+          String(offer?.brand_campaign_id || offer?.brand_campaigns?.id || "").trim(),
         name: campaignName,
         status: mappedStatus,
         objective:
@@ -2675,6 +2705,11 @@ export default function BrandDashboard() {
         last_update: offer?.updated_at
           ? new Date(String(offer.updated_at)).toLocaleString()
           : "Recently",
+        brief_snapshot:
+          offer?.brief_snapshot && typeof offer.brief_snapshot === "object"
+            ? offer.brief_snapshot
+            : {},
+        message: typeof offer?.message === "string" ? offer.message : "",
       };
     });
 
@@ -2707,6 +2742,31 @@ export default function BrandDashboard() {
       }
 
       if (showBriefDetails) {
+        const brief =
+          campaign?.brief_snapshot && typeof campaign.brief_snapshot === "object"
+            ? campaign.brief_snapshot
+            : {};
+        const briefValue = (key: string, fallback = "Not specified") => {
+          const value = brief?.[key];
+          if (value === null || value === undefined) return fallback;
+          const text = String(value).trim();
+          return text.length > 0 ? text : fallback;
+        };
+        const briefLines = (key: string): string[] => {
+          const raw = briefValue(key, "");
+          if (!raw) return [];
+          return raw
+            .split("\n")
+            .map((line) => line.trim())
+            .filter(Boolean);
+        };
+        const referenceImages = Array.isArray(brief?.reference_images)
+          ? brief.reference_images
+          : [];
+        const brandAssets = Array.isArray(brief?.brand_assets)
+          ? brief.brand_assets
+          : [];
+
         return (
           <div className="space-y-6">
             <div className="flex items-center gap-4">
@@ -2725,524 +2785,294 @@ export default function BrandDashboard() {
               </div>
             </div>
 
-            {/* Share Brief */}
-            <Card className="p-6 bg-blue-50 border-2 border-blue-300">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-1">
-                    Share with Talent
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Send this brief and contract to {campaign.creators[0]}
+            <Card className="p-6 bg-white border border-gray-200 space-y-6">
+              <h2 className="text-2xl font-bold text-slate-900">
+                General Dialogue &amp; Voice Direction
+              </h2>
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-slate-800">
+                  Brand Voice &amp; Tone
+                </h3>
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Voice:</span>{" "}
+                    {briefValue("voice")}
+                  </p>
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Tone:</span>{" "}
+                    {briefValue("tone")}
+                  </p>
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Personality:</span>{" "}
+                    {briefValue("personality")}
                   </p>
                 </div>
-                <Button
-                  onClick={() => handleShareBrief(campaign.id)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <Users className="w-4 h-4 mr-2" />
-                  Share Brief
-                </Button>
               </div>
-            </Card>
 
-            {/* General Dialogue & Voice Direction */}
-            <Card className="p-6 bg-white border border-gray-200">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">
-                General Dialogue & Voice Direction
-              </h3>
-
-              <div className="space-y-6">
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-3">
-                    Brand Voice & Tone
-                  </Label>
-                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                    <p className="text-gray-900 mb-3">
-                      <strong>Voice:</strong> Friendly, authentic, approachable
-                    </p>
-                    <p className="text-gray-900 mb-3">
-                      <strong>Tone:</strong> Upbeat and energetic, but not
-                      over-the-top. Natural enthusiasm that feels genuine.
-                    </p>
-                    <p className="text-gray-900">
-                      <strong>Personality:</strong> Think "your stylish friend
-                      giving honest recommendations" rather than polished
-                      influencer.
-                    </p>
-                  </div>
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-slate-800">Key Messages</h3>
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                  {briefLines("key_messages").length > 0 ? (
+                    <ul className="list-disc pl-5 space-y-1 text-slate-900">
+                      {briefLines("key_messages").map((line, idx) => (
+                        <li key={`key-message-${idx}`}>{line.replace(/^[•-]\s*/, "")}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-slate-500">Not specified</p>
+                  )}
                 </div>
+              </div>
 
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-3">
-                    Key Messages
-                  </Label>
-                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
-                    <p className="text-gray-900">
-                      • "Spring collection drops next week - these pieces are
-                      incredible"
-                    </p>
-                    <p className="text-gray-900">
-                      • "Quality you can feel, style you can trust"
-                    </p>
-                    <p className="text-gray-900">
-                      • "Perfect for everyday wear or special occasions"
-                    </p>
-                    <p className="text-gray-900">
-                      • Call to action: "Shop now at urbanapparel.com"
-                    </p>
-                  </div>
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-slate-800">
+                  Script Guidelines (For Video/Audio)
+                </h3>
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Opening (0-5s):</span>{" "}
+                    {briefValue("script_opening")}
+                  </p>
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Middle (5-20s):</span>{" "}
+                    {briefValue("script_middle")}
+                  </p>
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Closing (20-30s):</span>{" "}
+                    {briefValue("script_closing")}
+                  </p>
                 </div>
+              </div>
 
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-3">
-                    Script Guidelines (For Video/Audio)
-                  </Label>
-                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                    <p className="text-gray-900 mb-3">
-                      <strong>Opening (0-5s):</strong> Hook viewer with energy -
-                      "You guys! I just got early access to Urban Apparel's
-                      spring line..."
-                    </p>
-                    <p className="text-gray-900 mb-3">
-                      <strong>Middle (5-20s):</strong> Show product features,
-                      talk about quality, fit, versatility. Be specific about
-                      what you love.
-                    </p>
-                    <p className="text-gray-900">
-                      <strong>Closing (20-30s):</strong> Clear CTA - "Link in
-                      bio to shop" or "Head to urbanapparel.com before it sells
-                      out"
-                    </p>
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-3">
-                    Do's & Don'ts
-                  </Label>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                      <p className="font-semibold text-green-900 mb-2">✓ DO:</p>
-                      <ul className="text-sm text-green-800 space-y-1">
-                        <li>• Be authentic and natural</li>
-                        <li>• Show product in real-life settings</li>
-                        <li>• Speak to camera directly</li>
-                        <li>• Mention brand name at least once</li>
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-slate-800">Do&apos;s &amp; Don&apos;ts</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+                    <p className="font-semibold text-emerald-900 mb-2">✓ DO:</p>
+                    {briefLines("dos").length > 0 ? (
+                      <ul className="list-disc pl-5 space-y-1 text-emerald-900">
+                        {briefLines("dos").map((line, idx) => (
+                          <li key={`dos-${idx}`}>{line.replace(/^[•-]\s*/, "")}</li>
+                        ))}
                       </ul>
-                    </div>
-                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="font-semibold text-red-900 mb-2">
-                        ✗ DON'T:
-                      </p>
-                      <ul className="text-sm text-red-800 space-y-1">
-                        <li>• Use competitor brands in frame</li>
-                        <li>• Over-script - keep it natural</li>
-                        <li>• Include controversial topics</li>
-                        <li>• Disparage other brands</li>
+                    ) : (
+                      <p className="text-emerald-700">Not specified</p>
+                    )}
+                  </div>
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="font-semibold text-red-900 mb-2">✗ DON&apos;T:</p>
+                    {briefLines("donts").length > 0 ? (
+                      <ul className="list-disc pl-5 space-y-1 text-red-900">
+                        {briefLines("donts").map((line, idx) => (
+                          <li key={`donts-${idx}`}>{line.replace(/^[•-]\s*/, "")}</li>
+                        ))}
                       </ul>
-                    </div>
+                    ) : (
+                      <p className="text-red-700">Not specified</p>
+                    )}
                   </div>
                 </div>
               </div>
             </Card>
 
-            {/* Visual Requirements */}
-            <Card className="p-6 bg-white border border-gray-200">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">
-                Visual Requirements & Style Guide
-              </h3>
-
-              <div className="space-y-6">
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-3">
-                    Required Deliverables
-                  </Label>
-                  <div className="space-y-3">
-                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="font-semibold text-gray-900">
-                          3x Instagram Reels (15-30 seconds each)
-                        </p>
-                        <Badge className="bg-blue-100 text-blue-700 border border-blue-300">
-                          Video
-                        </Badge>
+            <Card className="p-6 bg-white border border-gray-200 space-y-6">
+              <h2 className="text-2xl font-bold text-slate-900">
+                Visual Requirements &amp; Style Guide
+              </h2>
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-slate-800">Required Deliverables</h3>
+                <div className="space-y-3">
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                    <p className="font-semibold text-slate-900 mb-1">Instagram Reels</p>
+                    <p className="text-slate-900 whitespace-pre-wrap">
+                      {briefValue("deliverables_reels")}
+                    </p>
+                  </div>
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                    <p className="font-semibold text-slate-900 mb-1">Hero Image</p>
+                    <p className="text-slate-900 whitespace-pre-wrap">
+                      {briefValue("deliverables_hero_image")}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-slate-800">Visual Style &amp; Aesthetic</h3>
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Color Palette:</span>{" "}
+                    {briefValue("visual_color_palette")}
+                  </p>
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Setting:</span>{" "}
+                    {briefValue("visual_setting")}
+                  </p>
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Framing:</span>{" "}
+                    {briefValue("visual_framing")}
+                  </p>
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Editing:</span>{" "}
+                    {briefValue("visual_editing")}
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-slate-800">Reference Images</h3>
+                {referenceImages.length > 0 ? (
+                  <div className="grid md:grid-cols-3 gap-3">
+                    {referenceImages.map((img: any, idx: number) => (
+                      <div key={`ref-img-${idx}`} className="border border-gray-200 rounded-lg overflow-hidden">
+                        <img
+                          src={String(img?.url || "")}
+                          alt={`Ref ${idx + 1}`}
+                          className="w-full h-40 object-cover bg-gray-100"
+                        />
+                        <div className="p-2 text-xs text-gray-700 truncate">
+                          {`Ref ${idx + 1}`}
+                        </div>
                       </div>
-                      <p className="text-sm text-gray-700 mb-2">
-                        Format: 9:16 vertical, 1080x1920, MP4
-                      </p>
-                      <p className="text-sm text-gray-700">
-                        Content: Product showcase, try-on, styling tips
-                      </p>
-                    </div>
-                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="font-semibold text-gray-900">
-                          1x Hero Image
-                        </p>
-                        <Badge className="bg-purple-100 text-purple-700 border border-purple-300">
-                          Image
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-gray-700 mb-2">
-                        Format: 1920x1080, JPG/PNG, high resolution
-                      </p>
-                      <p className="text-sm text-gray-700">
-                        Content: Lifestyle shot wearing spring collection piece
-                      </p>
-                    </div>
+                    ))}
                   </div>
-                </div>
-
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-3">
-                    Visual Style & Aesthetic
-                  </Label>
-                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-3">
-                    <p className="text-gray-900">
-                      <strong>Color Palette:</strong> Warm earth tones, natural
-                      lighting, bright but not oversaturated
-                    </p>
-                    <p className="text-gray-900">
-                      <strong>Setting:</strong> Indoor/outdoor lifestyle
-                      settings - coffee shop, park, urban backdrop, home
-                    </p>
-                    <p className="text-gray-900">
-                      <strong>Framing:</strong> Mix of close-ups and full-body
-                      shots. Show product clearly.
-                    </p>
-                    <p className="text-gray-900">
-                      <strong>Editing:</strong> Clean, minimal cuts. Trendy but
-                      not overly filtered. Authentic feel.
-                    </p>
+                ) : (
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg text-slate-500">
+                    No reference images provided.
                   </div>
-                </div>
-
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-3">
-                    Reference Images
-                  </Label>
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div className="relative">
-                      <img
-                        src="https://images.unsplash.com/photo-1483985988355-763728e1935b?w=400"
-                        alt="Reference 1"
-                        className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
-                      />
-                      <Badge className="absolute top-2 left-2 bg-white text-gray-900 border border-gray-300">
-                        Style Ref 1
-                      </Badge>
-                    </div>
-                    <div className="relative">
-                      <img
-                        src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400"
-                        alt="Reference 2"
-                        className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
-                      />
-                      <Badge className="absolute top-2 left-2 bg-white text-gray-900 border border-gray-300">
-                        Style Ref 2
-                      </Badge>
-                    </div>
-                    <div className="relative">
-                      <img
-                        src="https://images.unsplash.com/photo-1445205170230-053b83016050?w=400"
-                        alt="Reference 3"
-                        className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
-                      />
-                      <Badge className="absolute top-2 left-2 bg-white text-gray-900 border border-gray-300">
-                        Vibe Ref
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-3">
-                    Brand Assets Provided
-                  </Label>
+                )}
+              </div>
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-slate-800">Brand Assets Provided</h3>
+                {brandAssets.length > 0 ? (
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <FileText className="w-5 h-5 text-gray-600" />
-                        <span className="text-gray-900">
-                          Brand_Guidelines.pdf
-                        </span>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-2 border-gray-300"
+                    {brandAssets.map((asset: any, idx: number) => (
+                      <div
+                        key={`asset-${idx}`}
+                        className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 flex items-center justify-between gap-3"
                       >
-                        <Download className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <ImageIcon className="w-5 h-5 text-gray-600" />
-                        <span className="text-gray-900">
-                          Product_Photos_SpringCollection.zip
+                        <span className="truncate">
+                          {String(asset?.name || `Asset ${idx + 1}`)}
                         </span>
+                        {asset?.url ? (
+                          <a
+                            href={String(asset.url)}
+                            target="_blank"
+                            rel="noreferrer"
+                            download={String(asset?.name || `asset-${idx + 1}`)}
+                            title="Download file"
+                            className="inline-flex items-center justify-center w-9 h-9 border border-slate-300 rounded-md hover:bg-slate-100 transition-colors"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <Download className="w-4 h-4" />
+                          </a>
+                        ) : (
+                          <span className="text-xs text-slate-500">No file URL</span>
+                        )}
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-2 border-gray-300"
-                      >
-                        <Download className="w-4 h-4" />
-                      </Button>
-                    </div>
+                    ))}
                   </div>
-                </div>
+                ) : (
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg text-slate-500">
+                    No brand assets provided.
+                  </div>
+                )}
               </div>
             </Card>
 
-            {/* Campaign Scope & Details */}
-            <Card className="p-6 bg-white border border-gray-200">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">
-                Campaign Scope & Contract Details
-              </h3>
-
-              <div className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <Label className="text-base font-semibold text-gray-900 block mb-3">
-                      Campaign Overview
-                    </Label>
-                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-2 text-sm">
-                      <p className="text-gray-900">
-                        <strong>Objective:</strong> Drive awareness and sales
-                        for Spring 2025 collection launch
-                      </p>
-                      <p className="text-gray-900">
-                        <strong>Target Audience:</strong> Women 25-40,
-                        fashion-conscious, urban lifestyle
-                      </p>
-                      <p className="text-gray-900">
-                        <strong>Campaign Duration:</strong> {campaign.duration}
-                      </p>
-                      <p className="text-gray-900">
-                        <strong>Launch Date:</strong> {campaign.go_live}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-base font-semibold text-gray-900 block mb-3">
-                      Budget & Timeline
-                    </Label>
-                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-2 text-sm">
-                      <p className="text-gray-900">
-                        <strong>Total Budget:</strong> $
-                        {campaign.budget.toLocaleString()}
-                      </p>
-                      <p className="text-gray-900">
-                        <strong>Creator Payment:</strong> $
-                        {(campaign.budget * 0.9).toFixed(0)}
-                      </p>
-                      <p className="text-gray-900">
-                        <strong>Platform Fee:</strong> $
-                        {(campaign.budget * 0.1).toFixed(0)} (10%)
-                      </p>
-                      <p className="text-gray-900">
-                        <strong>Submission Deadline:</strong>{" "}
-                        {new Date(campaign.due_date).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
+            <Card className="p-6 bg-white border border-gray-200 space-y-6">
+              <h2 className="text-2xl font-bold text-slate-900">
+                Campaign Scope &amp; Contract Details
+              </h2>
+              <div className="grid md:grid-cols-2 gap-4 text-sm">
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Objective:</span>{" "}
+                    {briefValue("overview_objective")}
+                  </p>
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Target Audience:</span>{" "}
+                    {briefValue("overview_target_audience")}
+                  </p>
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Campaign Duration:</span>{" "}
+                    {briefValue("overview_campaign_duration")}
+                  </p>
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Launch Date:</span>{" "}
+                    {briefValue("overview_launch_date")}
+                  </p>
                 </div>
-
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-3">
-                    Usage Rights & Licensing
-                  </Label>
-                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-3">
-                    <div className="grid md:grid-cols-3 gap-4">
-                      <div className="p-3 bg-white border border-gray-200 rounded-lg">
-                        <p className="text-sm text-gray-600 mb-1">Territory</p>
-                        <p className="font-semibold text-gray-900">
-                          {campaign.territory}
-                        </p>
-                      </div>
-                      <div className="p-3 bg-white border border-gray-200 rounded-lg">
-                        <p className="text-sm text-gray-600 mb-1">Duration</p>
-                        <p className="font-semibold text-gray-900">
-                          {campaign.duration}
-                        </p>
-                      </div>
-                      <div className="p-3 bg-white border border-gray-200 rounded-lg">
-                        <p className="text-sm text-gray-600 mb-1">
-                          License Expiry
-                        </p>
-                        <p className="font-semibold text-gray-900">
-                          {campaign.license_expiry}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="pt-3 border-t border-gray-300">
-                      <p className="text-sm text-gray-700 mb-2">
-                        <strong>Approved Channels:</strong>
-                      </p>
-                      <div className="flex gap-2">
-                        {Array.isArray(campaign.channels)
-                          ? campaign.channels.map((channel) => (
-                              <Badge
-                                key={channel}
-                                className="bg-blue-100 text-blue-700 border border-blue-300"
-                              >
-                                {channel}
-                              </Badge>
-                            ))
-                          : null}
-                      </div>
-                    </div>
-
-                    <div className="pt-3 border-t border-gray-300">
-                      <p className="text-sm text-gray-700 mb-2">
-                        <strong>Exclusivity:</strong>
-                      </p>
-                      <p className="text-gray-900">
-                        Non-exclusive. Creator may work with non-competing
-                        brands in same category.
-                      </p>
-                    </div>
-
-                    <div className="pt-3 border-t border-gray-300">
-                      <p className="text-sm text-gray-700 mb-2">
-                        <strong>Renewal Terms:</strong>
-                      </p>
-                      <p className="text-gray-900">
-                        Auto-renewal available at end of term. Brand must notify
-                        14 days prior if not renewing.
-                      </p>
-                    </div>
-                  </div>
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Total Budget:</span>{" "}
+                    {briefValue("budget_total")}
+                  </p>
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Creator Payment:</span>{" "}
+                    {briefValue("budget_creator_payment")}
+                  </p>
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Platform Fee:</span>{" "}
+                    {briefValue("budget_platform_fee")}
+                  </p>
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Submission Deadline:</span>{" "}
+                    {briefValue("budget_submission_deadline")}
+                  </p>
                 </div>
-
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-3">
-                    Revision Policy
-                  </Label>
-                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-gray-900 mb-2">
-                      <strong>Included Revisions:</strong> 2 rounds of minor
-                      edits (color correction, text changes, music swaps)
-                    </p>
-                    <p className="text-gray-900 mb-2">
-                      <strong>Major Changes:</strong> Require new brief and
-                      additional budget (e.g., re-shoot, complete re-edit)
-                    </p>
-                    <p className="text-gray-900">
-                      <strong>Turnaround for Revisions:</strong> 24-48 hours
-                      depending on scope
-                    </p>
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-3">
-                    Approval Process
-                  </Label>
-                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                    <div className="space-y-3 text-sm">
-                      <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 bg-[#F7B750] text-white rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold">
-                          1
-                        </div>
-                        <p className="text-gray-900">
-                          Creator submits deliverables to platform
-                        </p>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 bg-[#F7B750] text-white rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold">
-                          2
-                        </div>
-                        <p className="text-gray-900">
-                          Brand has 48 hours to review and approve/request
-                          revisions
-                        </p>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 bg-[#F7B750] text-white rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold">
-                          3
-                        </div>
-                        <p className="text-gray-900">
-                          Once approved, funds release from escrow to creator (3
-                          business days)
-                        </p>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 bg-[#F7B750] text-white rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold">
-                          4
-                        </div>
-                        <p className="text-gray-900">
-                          If no action taken, payment auto-releases after 48
-                          hours
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-3">
-                    Watermark & Protection
-                  </Label>
-                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                    <p className="text-gray-900 mb-2">
-                      All delivered assets include embedded Likelee watermark
-                      for license verification and usage tracking.
-                    </p>
-                    <p className="text-gray-900">
-                      <strong>DMCA Protection:</strong> Automatic takedown
-                      notices if assets used outside approved scope.
-                    </p>
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-3">
-                    Legal Terms
-                  </Label>
-                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 space-y-2">
-                    <p>
-                      • Creator retains copyright; Brand receives usage license
-                      as specified
-                    </p>
-                    <p>
-                      • SAG-AFTRA compliant terms and fair compensation
-                      standards
-                    </p>
-                    <p>
-                      • Creator has right to approve final usage before
-                      publishing
-                    </p>
-                    <p>• Brand cannot sublicense without creator consent</p>
-                    <p>
-                      • Usage limited to approved channels, territories, and
-                      duration
-                    </p>
-                  </div>
-                </div>
+              </div>
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                <p className="text-slate-900">
+                  <span className="font-semibold">Renewal Terms:</span>{" "}
+                  {briefValue("budget_renewal_terms")}
+                </p>
+              </div>
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg space-y-2">
+                <p className="text-slate-900">
+                  <span className="font-semibold">Included Revisions:</span>{" "}
+                  {briefValue("revision_included")}
+                </p>
+                <p className="text-slate-900">
+                  <span className="font-semibold">Major Changes:</span>{" "}
+                  {briefValue("revision_major_changes")}
+                </p>
+                <p className="text-slate-900">
+                  <span className="font-semibold">Turnaround for Revisions:</span>{" "}
+                  {briefValue("revision_turnaround")}
+                </p>
+              </div>
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                <p className="font-semibold text-slate-900 mb-2">Approval Process</p>
+                {briefLines("approval_process").length > 0 ? (
+                  <ol className="list-decimal pl-5 space-y-1 text-slate-900">
+                    {briefLines("approval_process").map((line, idx) => (
+                      <li key={`approval-${idx}`}>{line.replace(/^[•-]?\s*\d*\s*/, "")}</li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className="text-slate-500">Not specified</p>
+                )}
+              </div>
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                <p className="font-semibold text-slate-900 mb-1">Watermark &amp; Protection</p>
+                <p className="text-slate-900 whitespace-pre-wrap">
+                  {briefValue("watermark_protection")}
+                </p>
+              </div>
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                <p className="font-semibold text-slate-900 mb-1">Legal Terms</p>
+                {briefLines("legal_terms").length > 0 ? (
+                  <ul className="list-disc pl-5 space-y-1 text-slate-900">
+                    {briefLines("legal_terms").map((line, idx) => (
+                      <li key={`legal-${idx}`}>{line.replace(/^[•-]\s*/, "")}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-slate-500">Not specified</p>
+                )}
               </div>
             </Card>
 
-            {/* Contract Actions */}
             <div className="flex gap-4">
-              <Button
-                onClick={() => handleShareBrief(campaign.id)}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-12"
-              >
-                <Users className="w-5 h-5 mr-2" />
-                Share Full Brief with Talent
-              </Button>
-              <Button
-                variant="outline"
-                className="flex-1 border-2 border-gray-300 h-12"
-              >
-                <Download className="w-5 h-5 mr-2" />
-                Download Contract PDF
-              </Button>
               <Button
                 variant="outline"
                 className="border-2 border-gray-300 h-12"
@@ -3601,12 +3431,28 @@ export default function BrandDashboard() {
                 </div>
               </div>
 
-              <Button
-                variant="outline"
-                className="w-full border-2 border-gray-300"
-              >
-                View Details
-              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  className="w-full border-2 border-gray-300"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setSelectedCampaign(campaign.id);
+                  }}
+                >
+                  View Details
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full border-2 border-gray-300"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    openAddCollaboratorFlow(campaign);
+                  }}
+                >
+                  Add Collaborator
+                </Button>
+              </div>
             </Card>
           ))}
         </div>
@@ -7276,6 +7122,7 @@ export default function BrandDashboard() {
             <BrandCampaignDashboard
               embedded
               openNewCampaignSignal={openCampaignModalSignal}
+              prefillCampaignContext={campaignBuilderContext}
             />
           )}
           {activeSection === "campaigns-inbox" && renderInboxSubtab()}
