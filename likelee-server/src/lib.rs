@@ -12,6 +12,7 @@ pub mod billing;
 pub mod book_outs;
 pub mod bookings;
 pub mod bookings_campaigns;
+pub mod brand_campaigns;
 pub mod brands;
 pub mod campaigns;
 pub mod catalogs;
