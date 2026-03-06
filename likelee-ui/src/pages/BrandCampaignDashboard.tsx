@@ -90,11 +90,28 @@ const mockMetrics = {
 type BrandCampaignDashboardProps = {
   embedded?: boolean;
   openNewCampaignSignal?: number;
+  prefillCampaignContext?: {
+    brandCampaignId?: string;
+    name?: string;
+    objective?: string;
+    category?: string;
+    description?: string;
+    usage_scope?: string;
+    duration_days?: string | number;
+    territory?: string;
+    exclusivity?: string;
+    budget_range?: string;
+    start_date?: string;
+    custom_terms?: string;
+    brief_snapshot?: Record<string, any>;
+    startStep?: number;
+  } | null;
 };
 
 export default function BrandCampaignDashboard({
   embedded = false,
   openNewCampaignSignal = 0,
+  prefillCampaignContext = null,
 }: BrandCampaignDashboardProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -194,9 +211,58 @@ export default function BrandCampaignDashboard({
   useEffect(() => {
     if (!embedded) return;
     if (!openNewCampaignSignal) return;
-    setNewCampaignStep(1);
+    const context = prefillCampaignContext || {};
+    const hasPrefillCampaignId = Boolean(
+      String(context?.brandCampaignId || "").trim(),
+    );
+
+    if (hasPrefillCampaignId) {
+      const nextStep = Number(context?.startStep || 3);
+      const safeStep = Number.isFinite(nextStep) ? Math.max(1, nextStep) : 3;
+      const brandCampaignId = String(context?.brandCampaignId || "").trim();
+
+      setBrandCampaignId(brandCampaignId);
+      setCampaignForm((prev) => ({
+        ...prev,
+        name: String(context?.name || prev.name || "").trim(),
+        objective: String(context?.objective || prev.objective || "").trim(),
+        category: String(context?.category || prev.category || "").trim(),
+        description: String(context?.description || prev.description || "").trim(),
+        usage_scope: String(context?.usage_scope || prev.usage_scope || "").trim(),
+        duration_days: String(
+          context?.duration_days || prev.duration_days || "30",
+        ).trim(),
+        territory: String(context?.territory || prev.territory || "Global").trim(),
+        exclusivity: String(
+          context?.exclusivity || prev.exclusivity || "Non-exclusive",
+        ).trim(),
+        budget_range: String(
+          context?.budget_range || prev.budget_range || "",
+        ).trim(),
+        start_date: String(context?.start_date || prev.start_date || "").trim(),
+        custom_terms: String(
+          context?.custom_terms || prev.custom_terms || "",
+        ).trim(),
+      }));
+
+      if (
+        context?.brief_snapshot &&
+        typeof context.brief_snapshot === "object" &&
+        !Array.isArray(context.brief_snapshot)
+      ) {
+        setCampaignBrief((prev) => ({
+          ...prev,
+          ...context.brief_snapshot,
+        }));
+      }
+
+      setNewCampaignStep(safeStep);
+    } else {
+      setNewCampaignStep(1);
+    }
+
     setShowNewCampaignModal(true);
-  }, [embedded, openNewCampaignSignal]);
+  }, [embedded, openNewCampaignSignal, prefillCampaignContext]);
 
   const getDisplayName = (value: unknown) => {
     const normalized = String(value ?? "").trim();
