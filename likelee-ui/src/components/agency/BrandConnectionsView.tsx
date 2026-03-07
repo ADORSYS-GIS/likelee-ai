@@ -8,6 +8,8 @@ import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { Link2Off, Eye, CheckCircle2, ArrowLeft, FileText } from "lucide-react";
 import { CampaignBriefView } from "@/components/campaign-offers/CampaignBriefView";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader2, Plus, RefreshCw, Trash2, Send, Wand2 } from "lucide-react";
 
 const BrandConnectionsView = () => {
   const { toast } = useToast();
@@ -21,6 +23,20 @@ const BrandConnectionsView = () => {
   const [packageDraftByOffer, setPackageDraftByOffer] = useState<
     Record<string, { title: string; message: string; packageId?: string }>
   >({});
+  const [builderToken, setBuilderToken] = useState<string | null>(null);
+  const [builderOpen, setBuilderOpen] = useState(false);
+  const [currentContractId, setCurrentContractId] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  // Load DocuSeal Builder script
+  const loadDocuSealBuilder = () => {
+    if (document.getElementById("docuseal-builder-script")) return;
+    const script = document.createElement("script");
+    script.id = "docuseal-builder-script";
+    script.src = "https://cdn.docuseal.com/js/builder.js";
+    script.async = true;
+    document.head.appendChild(script);
+  };
 
   const requestsQuery = useQuery({
     queryKey: ["agency", "brand-connection-requests"],
@@ -212,6 +228,135 @@ const BrandConnectionsView = () => {
       setBusyIds((prev) => {
         const next = new Set(prev);
         next.delete(offerId);
+        return next;
+      });
+    }
+  };
+
+  const handleUploadContract = async (offerId: string, file: File) => {
+    if (!offerId || isUploading) return;
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const resp = await base44.post<{ id: string; slug: string }>(
+        `/api/campaign-offers/${offerId}/contracts/upload`,
+        formData,
+      );
+      toast({
+        title: "Contract uploaded",
+        description: "Draft created successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["agency", "offer-contracts", offerId] });
+      // Automatically open builder for the new contract
+      handlePrepareContract(offerId, String(resp.id));
+    } catch (err: any) {
+      toast({
+        title: "Upload failed",
+        description: err.message || "Failed to upload contract.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handlePrepareContract = async (offerId: string, contractId: string) => {
+    try {
+      loadDocuSealBuilder();
+      const resp = await base44.get<{ token: string }>(
+        `/api/campaign-offers/${offerId}/contracts/${contractId}/builder-token`,
+      );
+      setBuilderToken(resp.token);
+      setCurrentContractId(contractId);
+      setBuilderOpen(true);
+    } catch (err: any) {
+      toast({
+        title: "Failed to load builder",
+        description: err.message || "Failed to get builder token.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSendContract = async (offerId: string, contractId: string) => {
+    if (busyIds.has(contractId)) return;
+    setBusyIds((prev) => new Set(prev).add(contractId));
+    try {
+      await base44.post(`/api/campaign-offers/${offerId}/contracts/send`, {
+        contract_id: contractId,
+      });
+      toast({
+        title: "Contract sent",
+        description: "The contract has been sent to the brand.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["agency", "offer-contracts", offerId] });
+      queryClient.invalidateQueries({ queryKey: ["agency", "campaign-offers-my"] });
+    } catch (err: any) {
+      toast({
+        title: "Send failed",
+        description: err.message || "Failed to send contract.",
+        variant: "destructive",
+      });
+    } finally {
+      setBusyIds((prev) => {
+        const next = new Set(prev);
+        next.delete(contractId);
+        return next;
+      });
+    }
+  };
+
+  const handleSyncContract = async (offerId: string, contractId: string) => {
+    if (busyIds.has(contractId)) return;
+    setBusyIds((prev) => new Set(prev).add(contractId));
+    try {
+      await base44.post(`/api/campaign-offers/${offerId}/contracts/sync`, {
+        contract_id: contractId,
+      });
+      toast({
+        title: "Status synced",
+        description: "Contract status updated from DocuSeal.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["agency", "offer-contracts", offerId] });
+      queryClient.invalidateQueries({ queryKey: ["agency", "campaign-offers-my"] });
+    } catch (err: any) {
+      toast({
+        title: "Sync failed",
+        description: err.message || "Failed to sync status.",
+        variant: "destructive",
+      });
+    } finally {
+      setBusyIds((prev) => {
+        const next = new Set(prev);
+        next.delete(contractId);
+        return next;
+      });
+    }
+  };
+
+  const handleDeleteContract = async (offerId: string, contractId: string) => {
+    if (!confirm("Are you sure you want to delete this contract draft?")) return;
+    if (busyIds.has(contractId)) return;
+    setBusyIds((prev) => new Set(prev).add(contractId));
+    try {
+      await base44.delete(`/api/campaign-offers/${offerId}/contracts/${contractId}`);
+      toast({
+        title: "Contract deleted",
+        description: "Draft removed successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["agency", "offer-contracts", offerId] });
+    } catch (err: any) {
+      toast({
+        title: "Delete failed",
+        description: err.message || "Failed to delete contract.",
+        variant: "destructive",
+      });
+    } finally {
+      setBusyIds((prev) => {
+        const next = new Set(prev);
+        next.delete(contractId);
         return next;
       });
     }
@@ -882,48 +1027,260 @@ const BrandConnectionsView = () => {
         )
       }
 
-      {
-        activeTab === "contract_hub" && (
-          <Card className="p-6 border border-gray-200 rounded-xl space-y-4">
-            <h3 className="text-lg font-bold text-gray-900">Contract Hub</h3>
-            {offers.length === 0 && (
-              <p className="text-sm text-gray-500">No offers available.</p>
-            )}
-            {offers.map((offer: any) => {
-              const offerId = String(offer?.id || "");
-              return (
-                <div key={offerId} className="border border-gray-200 rounded-lg p-4 space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="font-semibold text-gray-900">
-                      {String(offer?.brand_campaigns?.name || "Campaign offer")}
-                    </p>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setSelectedOfferId((prev) => (prev === offerId ? "" : offerId))}
-                    >
-                      {selectedOfferId === offerId ? "Hide" : "Open"}
-                    </Button>
-                  </div>
-                  {selectedOfferId === offerId && (
-                    <div className="rounded-md border border-gray-200 p-3">
-                      {(offerContractsQuery.data || []).length === 0 ? (
-                        <p className="text-xs text-gray-500">No contracts yet.</p>
-                      ) : (
-                        (offerContractsQuery.data || []).map((c: any) => (
-                          <div key={String(c?.id)} className="text-xs text-gray-700 mb-1">
-                            {String(c?.title || "Contract")} • {String(c?.docuseal_status || "draft")}
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  )}
+      {activeTab === "contract_hub" && (
+        <Card className="p-6 border border-gray-200 rounded-xl space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-bold text-gray-900">Contract Hub</h3>
+            <div className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+              Agency Management
+            </div>
+          </div>
+
+          {offers.length === 0 ? (
+            <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+              <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <p className="text-sm text-gray-500 font-medium">No active campaign offers to manage contracts for.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Sidebar: Offer List */}
+              <div className="md:col-span-1 space-y-3">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Campaign Offers</p>
+                <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                  {offers.map((offer: any) => {
+                    const offerId = String(offer?.id || "");
+                    const isSelected = selectedOfferId === offerId;
+                    return (
+                      <div
+                        key={offerId}
+                        onClick={() => setSelectedOfferId(offerId)}
+                        className={`p-4 rounded-xl border transition-all cursor-pointer ${isSelected
+                          ? "border-blue-500 bg-blue-50 shadow-sm"
+                          : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 bg-white"
+                          }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <p className={`font-bold text-sm ${isSelected ? "text-blue-900" : "text-gray-900"}`}>
+                            {String(offer?.brand_campaigns?.name || "Campaign offer")}
+                          </p>
+                          {isSelected && <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5" />}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1 truncate">
+                          Brand: {String(offer?.brand_campaigns?.brands?.name || "Unknown")}
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
-          </Card>
-        )
-      }
+              </div>
+
+              {/* Main: Contract Management */}
+              <div className="md:col-span-2">
+                {!selectedOfferId ? (
+                  <div className="h-full flex flex-col items-center justify-center text-center p-8 bg-gray-50 rounded-2xl border border-gray-200">
+                    <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
+                      <ArrowLeft className="w-6 h-6 text-gray-400" />
+                    </div>
+                    <h4 className="text-lg font-bold text-gray-900 mb-1">Select an offer</h4>
+                    <p className="text-sm text-gray-500 max-w-xs">
+                      Choose an offer from the sidebar to manage its contracts.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <Tabs defaultValue="submissions" className="w-full">
+                      <div className="flex items-center justify-between mb-4">
+                        <TabsList className="bg-gray-100 p-1 rounded-lg">
+                          <TabsTrigger value="submissions" className="px-6 py-2 rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                            Submissions
+                          </TabsTrigger>
+                          <TabsTrigger value="upload" className="px-6 py-2 rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                            New Contract
+                          </TabsTrigger>
+                        </TabsList>
+                      </div>
+
+                      <TabsContent value="submissions" className="space-y-4 m-0">
+                        {offerContractsQuery.isLoading ? (
+                          <div className="flex items-center justify-center py-20">
+                            <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+                          </div>
+                        ) : (offerContractsQuery.data || []).length === 0 ? (
+                          <div className="text-center py-20 bg-white border border-gray-200 rounded-2xl shadow-sm">
+                            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                              <FileText className="w-8 h-8 text-gray-300" />
+                            </div>
+                            <p className="text-gray-500 font-medium mb-4">No contracts found for this offer.</p>
+                            <TabsTrigger value="upload" asChild>
+                              <Button variant="outline" className="border-blue-200 text-blue-600 hover:bg-blue-50">
+                                <Plus className="w-4 h-4 mr-2" />
+                                Create First Contract
+                              </Button>
+                            </TabsTrigger>
+                          </div>
+                        ) : (
+                          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                            <table className="w-full text-left">
+                              <thead className="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Title</th>
+                                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Status</th>
+                                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-gray-100">
+                                {(offerContractsQuery.data || []).map((c: any) => {
+                                  const cId = String(c?.id);
+                                  const isBusy = busyIds.has(cId);
+                                  return (
+                                    <tr key={cId} className="hover:bg-gray-50/50 transition-colors">
+                                      <td className="px-6 py-4">
+                                        <div className="flex items-center gap-3">
+                                          <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                                            <FileText className="w-5 h-5 text-blue-500" />
+                                          </div>
+                                          <div>
+                                            <p className="text-sm font-bold text-gray-900">
+                                              {String(c?.title || "Contract Draft")}
+                                            </p>
+                                            <p className="text-[10px] text-gray-400 mt-0.5">
+                                              ID: {cId.slice(0, 8)}...
+                                            </p>
+                                          </div>
+                                        </div>
+                                      </td>
+                                      <td className="px-6 py-4">
+                                        <Badge
+                                          variant="secondary"
+                                          className={`capitalize ${c?.docuseal_status === "completed" || c?.docuseal_status === "fully_signed"
+                                            ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                            : c?.docuseal_status === "sent"
+                                              ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                            }`}
+                                        >
+                                          {String(c?.docuseal_status || "draft")}
+                                        </Badge>
+                                      </td>
+                                      <td className="px-6 py-4 text-right">
+                                        <div className="flex items-center justify-end gap-2">
+                                          {(c?.docuseal_status === "draft" || !c?.docuseal_status) && (
+                                            <>
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                onClick={() => handlePrepareContract(selectedOfferId, cId)}
+                                                disabled={isBusy}
+                                              >
+                                                <Wand2 className="w-4 h-4 mr-2" />
+                                                Prepare
+                                              </Button>
+                                              <Button
+                                                size="sm"
+                                                variant="default"
+                                                className="bg-blue-600 hover:bg-blue-700 h-9"
+                                                onClick={() => handleSendContract(selectedOfferId, cId)}
+                                                disabled={isBusy}
+                                              >
+                                                {isBusy ? (
+                                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                                ) : (
+                                                  <>
+                                                    <Send className="w-4 h-4 mr-2" />
+                                                    Send
+                                                  </>
+                                                )}
+                                              </Button>
+                                            </>
+                                          )}
+                                          {c?.docuseal_status !== "draft" && (
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              className="border-gray-200 hover:bg-gray-50"
+                                              onClick={() => handleSyncContract(selectedOfferId, cId)}
+                                              disabled={isBusy}
+                                            >
+                                              {isBusy ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                              ) : (
+                                                <>
+                                                  <RefreshCw className="w-4 h-4 mr-2" />
+                                                  Sync
+                                                </>
+                                              )}
+                                            </Button>
+                                          )}
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                            onClick={() => handleDeleteContract(selectedOfferId, cId)}
+                                            disabled={isBusy}
+                                          >
+                                            <Trash2 className="w-4 h-4" />
+                                          </Button>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </TabsContent>
+
+                      <TabsContent value="upload" className="m-0">
+                        <div className="bg-white border-2 border-dashed border-gray-200 rounded-2xl p-12 text-center hover:border-blue-400 transition-all group overflow-hidden relative">
+                          {isUploading ? (
+                            <div className="space-y-4">
+                              <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto" />
+                              <p className="text-gray-900 font-bold">Uploading PDF...</p>
+                              <p className="text-xs text-gray-500">Creating your DocuSeal template draft</p>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
+                                <Plus className="w-10 h-10 text-blue-500" />
+                              </div>
+                              <h4 className="text-xl font-bold text-gray-900 mb-2">Upload Contract PDF</h4>
+                              <p className="text-gray-500 mb-8 max-w-sm mx-auto text-sm leading-relaxed">
+                                Upload a PDF contract to create a new signature request. You can place fields in the builder afterwards.
+                              </p>
+                              <div className="flex items-center justify-center gap-4">
+                                <input
+                                  type="file"
+                                  id="contract-pdf-upload"
+                                  className="hidden"
+                                  accept=".pdf"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) handleUploadContract(selectedOfferId, file);
+                                    e.target.value = "";
+                                  }}
+                                />
+                                <label
+                                  htmlFor="contract-pdf-upload"
+                                  className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all cursor-pointer shadow-md hover:shadow-lg active:scale-95 flex items-center"
+                                >
+                                  <FileText className="w-5 h-5 mr-3" />
+                                  Choose PDF File
+                                </label>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </TabsContent>
+                    </Tabs>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </Card>
+      )}
 
       {
         activeTab === "deliverables" && (
@@ -967,7 +1324,62 @@ const BrandConnectionsView = () => {
           </Card>
         )
       }
-    </div >
+      {/* DocuSeal Builder Modal */}
+      {builderOpen && builderToken && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-200">
+          <div className="bg-white w-full h-full rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-blue-500" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900">Prepare Contract</h3>
+                  <p className="text-xs text-gray-500">Place signature fields and save to finish</p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setBuilderOpen(false);
+                  setBuilderToken(null);
+                  if (selectedOfferId) {
+                    queryClient.invalidateQueries({ queryKey: ["agency", "offer-contracts", selectedOfferId] });
+                  }
+                }}
+                className="hover:bg-red-50 hover:text-red-500 rounded-full w-10 h-10 p-0"
+              >
+                ✕
+              </Button>
+            </div>
+            <div className="flex-1 bg-gray-50 relative">
+              {/* @ts-ignore */}
+              <docuseal-builder
+                data-token={builderToken}
+                data-autosave="true"
+                style={{ height: "100%", width: "100%", display: "block" }}
+                ref={(el: any) => {
+                  if (el && !el._hasSaveListener) {
+                    el.addEventListener("save", () => {
+                      if (selectedOfferId) {
+                        queryClient.invalidateQueries({
+                          queryKey: ["agency", "offer-contracts", selectedOfferId],
+                        });
+                      }
+                      toast({
+                        title: "Contract saved",
+                        description: "Your changes have been saved successfully.",
+                      });
+                    });
+                    el._hasSaveListener = true;
+                  }
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
