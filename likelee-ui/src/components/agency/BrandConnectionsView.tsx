@@ -27,6 +27,7 @@ const BrandConnectionsView = () => {
   const [builderOpen, setBuilderOpen] = useState(false);
   const [currentContractId, setCurrentContractId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [contractTab, setContractTab] = useState("submissions");
 
   // Load DocuSeal Builder script
   const loadDocuSealBuilder = () => {
@@ -250,7 +251,7 @@ const BrandConnectionsView = () => {
       });
       queryClient.invalidateQueries({ queryKey: ["agency", "offer-contracts", offerId] });
       // Automatically open builder for the new contract
-      handlePrepareContract(offerId, String(resp.id));
+      handlePrepareContract(offerId, resp.id);
     } catch (err: any) {
       toast({
         title: "Upload failed",
@@ -1088,7 +1089,7 @@ const BrandConnectionsView = () => {
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    <Tabs defaultValue="submissions" className="w-full">
+                    <Tabs value={contractTab} onValueChange={setContractTab} className="w-full">
                       <div className="flex items-center justify-between mb-4">
                         <TabsList className="bg-gray-100 p-1 rounded-lg">
                           <TabsTrigger value="submissions" className="px-6 py-2 rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm">
@@ -1105,129 +1106,189 @@ const BrandConnectionsView = () => {
                           <div className="flex items-center justify-center py-20">
                             <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
                           </div>
-                        ) : (offerContractsQuery.data || []).length === 0 ? (
+                                                {(offerContractsQuery.data || []).length === 0 ? (
                           <div className="text-center py-20 bg-white border border-gray-200 rounded-2xl shadow-sm">
                             <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                               <FileText className="w-8 h-8 text-gray-300" />
                             </div>
                             <p className="text-gray-500 font-medium mb-4">No contracts found for this offer.</p>
-                            <TabsTrigger value="upload" asChild>
-                              <Button variant="outline" className="border-blue-200 text-blue-600 hover:bg-blue-50">
-                                <Plus className="w-4 h-4 mr-2" />
-                                Create First Contract
-                              </Button>
-                            </TabsTrigger>
+                            <Button
+                              variant="outline"
+                              className="border-blue-200 text-blue-600 hover:bg-blue-50"
+                              onClick={() => setContractTab("upload")}
+                            >
+                              <Plus className="w-4 h-4 mr-2" />
+                              Create First Contract
+                            </Button>
                           </div>
                         ) : (
-                          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                            <table className="w-full text-left">
-                              <thead className="bg-gray-50 border-b border-gray-200">
-                                <tr>
-                                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Title</th>
-                                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Status</th>
-                                  <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">Actions</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-gray-100">
-                                {(offerContractsQuery.data || []).map((c: any) => {
-                                  const cId = String(c?.id);
-                                  const isBusy = busyIds.has(cId);
-                                  return (
-                                    <tr key={cId} className="hover:bg-gray-50/50 transition-colors">
-                                      <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                          <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                                            <FileText className="w-5 h-5 text-blue-500" />
-                                          </div>
-                                          <div>
-                                            <p className="text-sm font-bold text-gray-900">
-                                              {String(c?.title || "Contract Draft")}
-                                            </p>
-                                            <p className="text-[10px] text-gray-400 mt-0.5">
-                                              ID: {cId.slice(0, 8)}...
-                                            </p>
-                                          </div>
-                                        </div>
-                                      </td>
-                                      <td className="px-6 py-4">
-                                        <Badge
-                                          variant="secondary"
-                                          className={`capitalize ${c?.docuseal_status === "completed" || c?.docuseal_status === "fully_signed"
-                                            ? "bg-green-100 text-green-700 hover:bg-green-200"
-                                            : c?.docuseal_status === "sent"
-                                              ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                                              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                                            }`}
-                                        >
-                                          {String(c?.docuseal_status || "draft")}
-                                        </Badge>
-                                      </td>
-                                      <td className="px-6 py-4 text-right">
-                                        <div className="flex items-center justify-end gap-2">
-                                          {(c?.docuseal_status === "draft" || !c?.docuseal_status) && (
-                                            <>
-                                              <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                                onClick={() => handlePrepareContract(selectedOfferId, cId)}
-                                                disabled={isBusy}
-                                              >
-                                                <Wand2 className="w-4 h-4 mr-2" />
-                                                Prepare
-                                              </Button>
-                                              <Button
-                                                size="sm"
-                                                variant="default"
-                                                className="bg-blue-600 hover:bg-blue-700 h-9"
-                                                onClick={() => handleSendContract(selectedOfferId, cId)}
-                                                disabled={isBusy}
-                                              >
-                                                {isBusy ? (
-                                                  <Loader2 className="w-4 h-4 animate-spin" />
-                                                ) : (
-                                                  <>
-                                                    <Send className="w-4 h-4 mr-2" />
-                                                    Send
-                                                  </>
-                                                )}
-                                              </Button>
-                                            </>
-                                          )}
-                                          {c?.docuseal_status !== "draft" && (
-                                            <Button
-                                              size="sm"
-                                              variant="outline"
-                                              className="border-gray-200 hover:bg-gray-50"
-                                              onClick={() => handleSyncContract(selectedOfferId, cId)}
-                                              disabled={isBusy}
-                                            >
-                                              {isBusy ? (
-                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                              ) : (
-                                                <>
-                                                  <RefreshCw className="w-4 h-4 mr-2" />
-                                                  Sync
-                                                </>
-                                              )}
-                                            </Button>
-                                          )}
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                            onClick={() => handleDeleteContract(selectedOfferId, cId)}
-                                            disabled={isBusy}
-                                          >
-                                            <Trash2 className="w-4 h-4" />
-                                          </Button>
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
+                          <div className="space-y-8">
+                            {/* Templates Section */}
+                            {(offerContractsQuery.data || []).some((c: any) => c?.docuseal_status === "draft" || !c?.docuseal_status) && (
+                              <section className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                  <h5 className="text-sm font-bold text-gray-500 uppercase tracking-wider">Contract Templates</h5>
+                                  <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium">Ready to Prepare</span>
+                                </div>
+                                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                                  <table className="w-full text-left">
+                                    <thead className="bg-gray-50 border-b border-gray-200">
+                                      <tr>
+                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Title</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">Actions</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                      {(offerContractsQuery.data || [])
+                                        .filter((c: any) => c?.docuseal_status === "draft" || !c?.docuseal_status)
+                                        .map((c: any) => {
+                                          const cId = String(c?.id);
+                                          const isBusy = busyIds.has(cId);
+                                          return (
+                                            <tr key={cId} className="hover:bg-gray-50/50 transition-colors">
+                                              <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                  <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                                                    <FileText className="w-5 h-5 text-blue-500" />
+                                                  </div>
+                                                  <div>
+                                                    <p className="text-sm font-bold text-gray-900">
+                                                      {String(c?.title || "Contract Draft")}
+                                                    </p>
+                                                    <p className="text-[10px] text-gray-400 mt-0.5">
+                                                      Template ID: {String(c?.docuseal_template_id || "N/A")}
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                              </td>
+                                              <td className="px-6 py-4 text-right">
+                                                <div className="flex items-center justify-end gap-2">
+                                                  <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                    onClick={() => handlePrepareContract(selectedOfferId, cId)}
+                                                    disabled={isBusy}
+                                                  >
+                                                    <Wand2 className="w-4 h-4 mr-2" />
+                                                    Prepare
+                                                  </Button>
+                                                  <Button
+                                                    size="sm"
+                                                    variant="default"
+                                                    className="bg-blue-600 hover:bg-blue-700 h-9"
+                                                    onClick={() => handleSendContract(selectedOfferId, cId)}
+                                                    disabled={isBusy}
+                                                  >
+                                                    {isBusy ? (
+                                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                                    ) : (
+                                                      <>
+                                                        <Send className="w-4 h-4 mr-2" />
+                                                        Send
+                                                      </>
+                                                    )}
+                                                  </Button>
+                                                  <Button
+                                                    size="icon"
+                                                    variant="ghost"
+                                                    className="text-red-400 hover:text-red-500 hover:bg-red-50"
+                                                    onClick={() => handleDeleteContract(selectedOfferId, cId)}
+                                                    disabled={isBusy}
+                                                  >
+                                                    <Trash2 className="w-4 h-4" />
+                                                  </Button>
+                                                </div>
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </section>
+                            )}
+
+                            {/* Submissions Section */}
+                            {(offerContractsQuery.data || []).some((c: any) => c?.docuseal_status && c?.docuseal_status !== "draft") && (
+                              <section className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                  <h5 className="text-sm font-bold text-gray-500 uppercase tracking-wider">Sent Submissions</h5>
+                                  <span className="text-[10px] bg-green-50 text-green-600 px-2 py-0.5 rounded-full font-medium">Active Submissions</span>
+                                </div>
+                                <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                                  <table className="w-full text-left">
+                                    <thead className="bg-gray-50 border-b border-gray-200">
+                                      <tr>
+                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Title</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Status</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">Actions</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                      {(offerContractsQuery.data || [])
+                                        .filter((c: any) => c?.docuseal_status && c?.docuseal_status !== "draft")
+                                        .map((c: any) => {
+                                          const cId = String(c?.id);
+                                          const isBusy = busyIds.has(cId);
+                                          return (
+                                            <tr key={cId} className="hover:bg-gray-50/50 transition-colors">
+                                              <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                  <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                                                    <FileText className="w-5 h-5 text-green-500" />
+                                                  </div>
+                                                  <div>
+                                                    <p className="text-sm font-bold text-gray-900">
+                                                      {String(c?.title || "Contract Submission")}
+                                                    </p>
+                                                    <p className="text-[10px] text-gray-400 mt-0.5">
+                                                      ID: {cId.slice(0, 8)}...
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                              </td>
+                                              <td className="px-6 py-4">
+                                                <Badge
+                                                  variant="secondary"
+                                                  className={`capitalize ${c?.docuseal_status === "completed" || c?.docuseal_status === "fully_signed"
+                                                    ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                                    : c?.docuseal_status === "sent"
+                                                      ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                                    }`}
+                                                >
+                                                  {String(c?.docuseal_status || "sent")}
+                                                </Badge>
+                                              </td>
+                                              <td className="px-6 py-4 text-right">
+                                                <div className="flex items-center justify-end gap-2">
+                                                  <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="border-gray-200 hover:bg-gray-50"
+                                                    onClick={() => handleSyncContract(selectedOfferId, cId)}
+                                                    disabled={isBusy}
+                                                  >
+                                                    {isBusy ? (
+                                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                                    ) : (
+                                                      <>
+                                                        <RefreshCw className="w-4 h-4 mr-2" />
+                                                        Sync Status
+                                                      </>
+                                                    )}
+                                                  </Button>
+                                                </div>
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </section>
+                            )}
                           </div>
                         )}
                       </TabsContent>
@@ -1273,13 +1334,13 @@ const BrandConnectionsView = () => {
                           )}
                         </div>
                       </TabsContent>
-                    </Tabs>
-                  </div>
+                    </Tabs >
+                  </div >
                 )}
-              </div>
-            </div>
+              </div >
+            </div >
           )}
-        </Card>
+        </Card >
       )}
 
       {
@@ -1325,61 +1386,62 @@ const BrandConnectionsView = () => {
         )
       }
       {/* DocuSeal Builder Modal */}
-      {builderOpen && builderToken && (
-        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-200">
-          <div className="bg-white w-full h-full rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-blue-500" />
+      {
+        builderOpen && builderToken && (
+          <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-200">
+            <div className="bg-white w-full h-full rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+              <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900">Prepare Contract</h3>
+                    <p className="text-xs text-gray-500">Place signature fields and save to finish</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">Prepare Contract</h3>
-                  <p className="text-xs text-gray-500">Place signature fields and save to finish</p>
-                </div>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setBuilderOpen(false);
+                    setBuilderToken(null);
+                    if (selectedOfferId) {
+                      queryClient.invalidateQueries({ queryKey: ["agency", "offer-contracts", selectedOfferId] });
+                    }
+                  }}
+                  className="hover:bg-red-50 hover:text-red-500 rounded-full w-10 h-10 p-0"
+                >
+                  ✕
+                </Button>
               </div>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setBuilderOpen(false);
-                  setBuilderToken(null);
-                  if (selectedOfferId) {
-                    queryClient.invalidateQueries({ queryKey: ["agency", "offer-contracts", selectedOfferId] });
-                  }
-                }}
-                className="hover:bg-red-50 hover:text-red-500 rounded-full w-10 h-10 p-0"
-              >
-                ✕
-              </Button>
-            </div>
-            <div className="flex-1 bg-gray-50 relative">
-              {/* @ts-ignore */}
-              <docuseal-builder
-                data-token={builderToken}
-                data-autosave="true"
-                style={{ height: "100%", width: "100%", display: "block" }}
-                ref={(el: any) => {
-                  if (el && !el._hasSaveListener) {
-                    el.addEventListener("save", () => {
-                      if (selectedOfferId) {
-                        queryClient.invalidateQueries({
-                          queryKey: ["agency", "offer-contracts", selectedOfferId],
+              <div className="flex-1 bg-gray-50 relative">
+                <docuseal-builder
+                  data-token={builderToken}
+                  data-autosave={true}
+                  className="w-full h-full block"
+                  ref={(el: any) => {
+                    if (el && !el._hasSaveListener) {
+                      el.addEventListener("save", () => {
+                        if (selectedOfferId) {
+                          queryClient.invalidateQueries({
+                            queryKey: ["agency", "offer-contracts", selectedOfferId],
+                          });
+                        }
+                        toast({
+                          title: "Contract saved",
+                          description: "Your changes have been saved successfully.",
                         });
-                      }
-                      toast({
-                        title: "Contract saved",
-                        description: "Your changes have been saved successfully.",
                       });
-                    });
-                    el._hasSaveListener = true;
-                  }
-                }}
-              />
+                      el._hasSaveListener = true;
+                    }
+                  }}
+                ></docuseal-builder>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 };
 
