@@ -746,10 +746,19 @@ export default function BrandDashboard() {
       }
     };
     loadMyOffers();
+
+    // Auto-refresh expanded offer details every 5 seconds
+    const hubRefreshTimer = setInterval(() => {
+      if (mounted && selectedOfferHubId && activeSection === "campaigns-contract-hub") {
+        loadOfferHubDetails(selectedOfferHubId);
+      }
+    }, 5000);
+
     return () => {
       mounted = false;
+      clearInterval(hubRefreshTimer);
     };
-  }, [activeSection]);
+  }, [activeSection, selectedOfferHubId]);
 
   useEffect(() => {
     const fetchCreators = async () => {
