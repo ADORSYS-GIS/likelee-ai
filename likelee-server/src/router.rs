@@ -738,6 +738,10 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::brand_campaigns::list_agency_package_feedback),
         )
         .route(
+            "/api/agency/brand-offers/packages",
+            get(crate::brand_campaigns::list_agency_offer_packages),
+        )
+        .route(
             "/api/campaign-offers/:offer_id/deliverables",
             post(crate::brand_campaigns::submit_offer_deliverable)
                 .get(crate::brand_campaigns::list_offer_deliverables),
