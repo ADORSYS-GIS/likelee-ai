@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
+import { CampaignBriefView } from "@/components/campaign-offers/CampaignBriefView";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -71,6 +72,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/components/ui/use-toast";
 import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
 import BrandCampaignDashboard from "@/pages/BrandCampaignDashboard";
@@ -594,6 +605,7 @@ const mockContracts = [
 export default function BrandDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeSection, setActiveSection] = useState("home");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showCampaignSubtabs, setShowCampaignSubtabs] = useState(true);
@@ -626,14 +638,15 @@ export default function BrandDashboard() {
   const [selectedContract, setSelectedContract] = useState(null);
   const [contractHubTab, setContractHubTab] = useState("active");
   const [contractDetailTab, setContractDetailTab] = useState("summary");
-  const { toast } = useToast();
+  const [showSettings, setShowSettings] = useState(false);
   const [inboxPackages, setInboxPackages] = useState<any[]>([]);
+  const [confirmingDonePkg, setConfirmingDonePkg] = useState<any>(null);
+  const { toast } = useToast();
   const [loadingInboxPackages, setLoadingInboxPackages] = useState(false);
+  const [expandedInboxPackageId, setExpandedInboxPackageId] = useState<string>("");
   const [brandOfferItems, setBrandOfferItems] = useState<any[]>([]);
   const [selectedOfferHubId, setSelectedOfferHubId] = useState<string>("");
-  const [selectedOfferHubContracts, setSelectedOfferHubContracts] = useState<any[]>(
-    [],
-  );
+  const [selectedOfferHubContracts, setSelectedOfferHubContracts] = useState<any[]>([]);
   const [selectedOfferHubDeliverables, setSelectedOfferHubDeliverables] =
     useState<any[]>([]);
   const [usageRightsTab, setUsageRightsTab] = useState("licenses");
@@ -656,6 +669,16 @@ export default function BrandDashboard() {
   });
 
   useEffect(() => {
+    const sectionFromQuery = String(searchParams.get("section") || "").trim();
+    if (sectionFromQuery) {
+      if (sectionFromQuery === "campaigns") {
+        setActiveSection("campaigns-hub");
+      } else {
+        setActiveSection(sectionFromQuery);
+      }
+      return;
+    }
+
     const sectionFromState = (location.state as any)?.activeSection;
     if (typeof sectionFromState === "string" && sectionFromState.length > 0) {
       if (sectionFromState === "campaigns") {
@@ -664,7 +687,13 @@ export default function BrandDashboard() {
       }
       setActiveSection(sectionFromState);
     }
-  }, [location.state]);
+  }, [location.state, searchParams]);
+
+  useEffect(() => {
+    const pkgId = String(searchParams.get("package_id") || "").trim();
+    if (!pkgId) return;
+    setExpandedInboxPackageId(pkgId);
+  }, [searchParams]);
 
   useEffect(() => {
     if (activeSection !== "campaigns-inbox") return;
@@ -760,9 +789,9 @@ export default function BrandDashboard() {
             id: creator.id || Math.random().toString(36).substr(2, 9),
             name: getDisplayName(
               creator.full_name ||
-                creator.display_name ||
-                creator.stage_name ||
-                creator.name,
+              creator.display_name ||
+              creator.stage_name ||
+              creator.name,
             ),
             image: creator.profile_photo_url || creator.image || null,
             location:
@@ -1429,17 +1458,15 @@ export default function BrandDashboard() {
               {mockActivities.map((activity, index) => (
                 <div
                   key={index}
-                  className={`p-3 rounded-lg border ${
-                    activity.urgent
-                      ? "bg-yellow-50 border-yellow-300"
-                      : "bg-gray-50 border-gray-200"
-                  }`}
+                  className={`p-3 rounded-lg border ${activity.urgent
+                    ? "bg-yellow-50 border-yellow-300"
+                    : "bg-gray-50 border-gray-200"
+                    }`}
                 >
                   <div className="flex items-start gap-3">
                     <div
-                      className={`w-2 h-2 rounded-full mt-2 ${
-                        activity.urgent ? "bg-yellow-500" : "bg-gray-400"
-                      }`}
+                      className={`w-2 h-2 rounded-full mt-2 ${activity.urgent ? "bg-yellow-500" : "bg-gray-400"
+                        }`}
                     />
                     <div className="flex-1">
                       <p className="text-sm text-gray-900 font-medium">
@@ -1562,51 +1589,51 @@ export default function BrandDashboard() {
             {(selectedCreator.instagram ||
               selectedCreator.tiktok ||
               selectedCreator.portfolio_url) && (
-              <Card className="p-6 bg-white border border-gray-200">
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Links</h3>
-                <div className="space-y-2">
-                  {selectedCreator.instagram && (
-                    <a
-                      href={selectedCreator.instagram}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-gray-700 hover:text-[#F7B750] transition-colors"
-                    >
-                      <Globe className="w-4 h-4" />
-                      <span>Instagram</span>
-                    </a>
-                  )}
-                  {selectedCreator.tiktok && (
-                    <a
-                      href={selectedCreator.tiktok}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-gray-700 hover:text-[#F7B750] transition-colors"
-                    >
-                      <Globe className="w-4 h-4" />
-                      <span>TikTok</span>
-                    </a>
-                  )}
-                  {selectedCreator.portfolio_url && (
-                    <a
-                      href={selectedCreator.portfolio_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-gray-700 hover:text-[#F7B750] transition-colors"
-                    >
-                      <Globe className="w-4 h-4" />
-                      <span>Portfolio</span>
-                    </a>
-                  )}
-                  {selectedCreator.sport && (
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <Star className="w-4 h-4" />
-                      <span>Sport: {selectedCreator.sport}</span>
-                    </div>
-                  )}
-                </div>
-              </Card>
-            )}
+                <Card className="p-6 bg-white border border-gray-200">
+                  <h3 className="text-lg font-bold text-gray-900 mb-4">Links</h3>
+                  <div className="space-y-2">
+                    {selectedCreator.instagram && (
+                      <a
+                        href={selectedCreator.instagram}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-gray-700 hover:text-[#F7B750] transition-colors"
+                      >
+                        <Globe className="w-4 h-4" />
+                        <span>Instagram</span>
+                      </a>
+                    )}
+                    {selectedCreator.tiktok && (
+                      <a
+                        href={selectedCreator.tiktok}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-gray-700 hover:text-[#F7B750] transition-colors"
+                      >
+                        <Globe className="w-4 h-4" />
+                        <span>TikTok</span>
+                      </a>
+                    )}
+                    {selectedCreator.portfolio_url && (
+                      <a
+                        href={selectedCreator.portfolio_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-gray-700 hover:text-[#F7B750] transition-colors"
+                      >
+                        <Globe className="w-4 h-4" />
+                        <span>Portfolio</span>
+                      </a>
+                    )}
+                    {selectedCreator.sport && (
+                      <div className="flex items-center gap-2 text-gray-700">
+                        <Star className="w-4 h-4" />
+                        <span>Sport: {selectedCreator.sport}</span>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              )}
           </div>
 
           {/* Right Column - Details */}
@@ -2131,38 +2158,38 @@ export default function BrandDashboard() {
               {/* Model Measurements */}
               {(filters.creator_types.length === 0 ||
                 filters.creator_types.includes("model")) && (
-                <div className="pt-4 border-t border-gray-100">
-                  <Label className="text-sm font-semibold text-gray-900 mb-3 block">
-                    Model Measurements (inches)
-                  </Label>
-                  <div className="flex gap-4 max-w-md">
-                    <Input
-                      placeholder="Bust"
-                      value={filters.bust}
-                      onChange={(e) =>
-                        setFilters({ ...filters, bust: e.target.value })
-                      }
-                      className="border-2 border-gray-300"
-                    />
-                    <Input
-                      placeholder="Waist"
-                      value={filters.waist}
-                      onChange={(e) =>
-                        setFilters({ ...filters, waist: e.target.value })
-                      }
-                      className="border-2 border-gray-300"
-                    />
-                    <Input
-                      placeholder="Hips"
-                      value={filters.hips}
-                      onChange={(e) =>
-                        setFilters({ ...filters, hips: e.target.value })
-                      }
-                      className="border-2 border-gray-300"
-                    />
+                  <div className="pt-4 border-t border-gray-100">
+                    <Label className="text-sm font-semibold text-gray-900 mb-3 block">
+                      Model Measurements (inches)
+                    </Label>
+                    <div className="flex gap-4 max-w-md">
+                      <Input
+                        placeholder="Bust"
+                        value={filters.bust}
+                        onChange={(e) =>
+                          setFilters({ ...filters, bust: e.target.value })
+                        }
+                        className="border-2 border-gray-300"
+                      />
+                      <Input
+                        placeholder="Waist"
+                        value={filters.waist}
+                        onChange={(e) =>
+                          setFilters({ ...filters, waist: e.target.value })
+                        }
+                        className="border-2 border-gray-300"
+                      />
+                      <Input
+                        placeholder="Hips"
+                        value={filters.hips}
+                        onChange={(e) =>
+                          setFilters({ ...filters, hips: e.target.value })
+                        }
+                        className="border-2 border-gray-300"
+                      />
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
           </Card>
         )}
@@ -2345,21 +2372,19 @@ export default function BrandDashboard() {
       <div className="inline-flex items-center bg-gray-100 p-1 rounded-lg">
         <button
           onClick={() => setInboxSubTab("talent_packages")}
-          className={`px-3 py-1.5 text-sm font-semibold rounded-md ${
-            inboxSubTab === "talent_packages"
-              ? "bg-white shadow-sm text-gray-900"
-              : "text-gray-500"
-          }`}
+          className={`px-3 py-1.5 text-sm font-semibold rounded-md ${inboxSubTab === "talent_packages"
+            ? "bg-white shadow-sm text-gray-900"
+            : "text-gray-500"
+            }`}
         >
           Talent Packages ({inboxPackages.length})
         </button>
         <button
           onClick={() => setInboxSubTab("direct_requests")}
-          className={`px-3 py-1.5 text-sm font-semibold rounded-md ${
-            inboxSubTab === "direct_requests"
-              ? "bg-white shadow-sm text-gray-900"
-              : "text-gray-500"
-          }`}
+          className={`px-3 py-1.5 text-sm font-semibold rounded-md ${inboxSubTab === "direct_requests"
+            ? "bg-white shadow-sm text-gray-900"
+            : "text-gray-500"
+            }`}
         >
           Direct Requests
         </button>
@@ -2377,94 +2402,90 @@ export default function BrandDashboard() {
               <p className="text-sm text-gray-500">No packages received yet.</p>
             </Card>
           )}
-          {inboxPackages.map((pkg: any) => (
-            <Card
-              key={pkg.id}
-              className="p-6 bg-white border border-gray-300 rounded-none"
-            >
-              <div className="flex items-start justify-between gap-4 mb-3">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-2xl font-bold text-gray-900">
-                      {pkg.title || pkg.campaign_offers?.offer_title || "Talent package"}
-                    </h3>
-                    {String(pkg?.status || "") === "sent" && (
-                      <Badge className="bg-black text-white text-[10px] uppercase rounded-sm">
-                        New
-                      </Badge>
+          {inboxPackages.map((pkg: any) => {
+            const expiresAt = pkg?.expires_at ? new Date(pkg.expires_at) : null;
+            const isExpired = expiresAt ? expiresAt.getTime() < Date.now() : false;
+            const isDone = pkg?.status === "feedback_received" || pkg?.status === "completed";
+
+            return (
+              <Card
+                key={pkg.id}
+                className="p-6 bg-white border border-gray-300 rounded-none"
+              >
+                <div className="flex items-start justify-between gap-4 mb-3">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-2xl font-bold text-gray-900">
+                        {pkg.title || pkg.campaign_offers?.offer_title || "Talent package"}
+                      </h3>
+                      {String(pkg?.status || "") === "sent" && (
+                        <Badge className="bg-black text-white text-[10px] uppercase rounded-sm">
+                          New
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-700 font-medium">
+                      From: {pkg?.agencies?.agency_name || pkg?.agency_id || "Agency"}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Sent:{" "}
+                      {pkg?.sent_at
+                        ? new Date(String(pkg.sent_at)).toLocaleString()
+                        : "—"}
+                    </p>
+                    {pkg?.expires_at && (
+                      <p className={`text-sm ${isExpired ? 'text-red-600 font-bold' : 'text-gray-500'}`}>
+                        Expires: {new Date(pkg.expires_at).toLocaleDateString()}
+                        {isExpired && " (Expired)"}
+                      </p>
                     )}
                   </div>
-                  <p className="text-sm text-gray-700 font-medium">
-                    From: {pkg?.agency_id || "Agency"}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Sent:{" "}
-                    {pkg?.sent_at
-                      ? new Date(String(pkg.sent_at)).toLocaleString()
-                      : "—"}
-                  </p>
+                  <Badge className="bg-blue-100 text-blue-700 border border-blue-200 text-xs">
+                    {Array.isArray(pkg?.meta?.selected_talent_ids)
+                      ? pkg.meta.selected_talent_ids.length
+                      : 0}{" "}
+                    talent
+                  </Badge>
                 </div>
-                <Badge className="bg-blue-100 text-blue-700 border border-blue-200 text-xs">
-                  {Array.isArray(pkg?.meta?.selected_talent_ids)
-                    ? pkg.meta.selected_talent_ids.length
-                    : 0}{" "}
-                  talent
-                </Badge>
-              </div>
-              {pkg?.message && (
-                <p className="text-gray-700 italic mb-4">"{String(pkg.message)}"</p>
-              )}
+                {pkg?.message && (
+                  <p className="text-gray-700 italic mb-4">"{String(pkg.message)}"</p>
+                )}
 
-              <div className="flex gap-2">
-                <Button
-                  className="flex-1 bg-black hover:bg-gray-800 text-white rounded-none"
-                  onClick={async () => {
-                    try {
-                      await base44.post(
-                        `/api/campaign-offers/${encodeURIComponent(String(pkg?.offer_id || ""))}/packages/brand-done`,
-                        {
-                          package_id: String(pkg?.id || ""),
-                          feedback_note: "Brand completed package selection.",
-                        },
-                      );
-                      const response = await base44.get<{ packages?: any[] }>(
-                        "/api/brand/inbox/packages",
-                      );
-                      setInboxPackages(
-                        Array.isArray(response?.packages) ? response.packages : [],
-                      );
-                      toast({
-                        title: "Package submitted",
-                        description:
-                          "Your package selection was submitted to the agency.",
-                      });
-                    } catch (e: any) {
-                      toast({
-                        title: "Unable to submit package",
-                        description: e?.message || "Please try again.",
-                        variant: "destructive" as any,
-                      });
-                    }
-                  }}
-                >
-                  <Eye className="w-4 h-4 mr-2" />
-                  Mark Done
-                </Button>
-                <Button
-                  variant="outline"
-                  className="border border-gray-300 rounded-none"
-                >
-                  View Details
-                </Button>
-                <Button
-                  variant="outline"
-                  className="border border-gray-300 rounded-none"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </Card>
-          ))}
+                <div className="flex gap-2">
+                  <Button
+                    className={`flex-1 rounded-none ${isExpired ? 'bg-gray-400 cursor-not-allowed' : 'bg-black hover:bg-gray-800 text-white'}`}
+                    disabled={isExpired || isDone}
+                    onClick={() => setConfirmingDonePkg(pkg)}
+                  >
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    {isDone ? "Done" : isExpired ? "Expired" : "Mark Done"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="border border-gray-300 rounded-none"
+                    disabled={isDone || isExpired}
+                    onClick={() => {
+                      const token = pkg?.meta?.agency_package_token;
+                      const id = String(pkg?.id || "");
+                      if (token) {
+                        window.open(`/share/package/${token}`, "_blank");
+                      } else if (id) {
+                        window.open(`/share/package/${id}`, "_blank");
+                      }
+                    }}
+                  >
+                    Open Package
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="border border-gray-300 rounded-none"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       ) : (
         <Card className="border-2 border-dashed border-gray-300 bg-white rounded-none p-16 text-center">
@@ -2701,6 +2722,7 @@ export default function BrandDashboard() {
         creatorAvatars: ["/favicon.svg"],
         channels: [],
         due_date: startDate,
+        go_live: startDate,
         assets_delivered: 0,
         last_update: offer?.updated_at
           ? new Date(String(offer.updated_at)).toLocaleString()
@@ -2746,26 +2768,6 @@ export default function BrandDashboard() {
           campaign?.brief_snapshot && typeof campaign.brief_snapshot === "object"
             ? campaign.brief_snapshot
             : {};
-        const briefValue = (key: string, fallback = "Not specified") => {
-          const value = brief?.[key];
-          if (value === null || value === undefined) return fallback;
-          const text = String(value).trim();
-          return text.length > 0 ? text : fallback;
-        };
-        const briefLines = (key: string): string[] => {
-          const raw = briefValue(key, "");
-          if (!raw) return [];
-          return raw
-            .split("\n")
-            .map((line) => line.trim())
-            .filter(Boolean);
-        };
-        const referenceImages = Array.isArray(brief?.reference_images)
-          ? brief.reference_images
-          : [];
-        const brandAssets = Array.isArray(brief?.brand_assets)
-          ? brief.brand_assets
-          : [];
 
         return (
           <div className="space-y-6">
@@ -2785,292 +2787,7 @@ export default function BrandDashboard() {
               </div>
             </div>
 
-            <Card className="p-6 bg-white border border-gray-200 space-y-6">
-              <h2 className="text-2xl font-bold text-slate-900">
-                General Dialogue &amp; Voice Direction
-              </h2>
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-slate-800">
-                  Brand Voice &amp; Tone
-                </h3>
-                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
-                  <p className="text-slate-900">
-                    <span className="font-semibold">Voice:</span>{" "}
-                    {briefValue("voice")}
-                  </p>
-                  <p className="text-slate-900">
-                    <span className="font-semibold">Tone:</span>{" "}
-                    {briefValue("tone")}
-                  </p>
-                  <p className="text-slate-900">
-                    <span className="font-semibold">Personality:</span>{" "}
-                    {briefValue("personality")}
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-slate-800">Key Messages</h3>
-                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                  {briefLines("key_messages").length > 0 ? (
-                    <ul className="list-disc pl-5 space-y-1 text-slate-900">
-                      {briefLines("key_messages").map((line, idx) => (
-                        <li key={`key-message-${idx}`}>{line.replace(/^[•-]\s*/, "")}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-slate-500">Not specified</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-slate-800">
-                  Script Guidelines (For Video/Audio)
-                </h3>
-                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
-                  <p className="text-slate-900">
-                    <span className="font-semibold">Opening (0-5s):</span>{" "}
-                    {briefValue("script_opening")}
-                  </p>
-                  <p className="text-slate-900">
-                    <span className="font-semibold">Middle (5-20s):</span>{" "}
-                    {briefValue("script_middle")}
-                  </p>
-                  <p className="text-slate-900">
-                    <span className="font-semibold">Closing (20-30s):</span>{" "}
-                    {briefValue("script_closing")}
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-slate-800">Do&apos;s &amp; Don&apos;ts</h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
-                    <p className="font-semibold text-emerald-900 mb-2">✓ DO:</p>
-                    {briefLines("dos").length > 0 ? (
-                      <ul className="list-disc pl-5 space-y-1 text-emerald-900">
-                        {briefLines("dos").map((line, idx) => (
-                          <li key={`dos-${idx}`}>{line.replace(/^[•-]\s*/, "")}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-emerald-700">Not specified</p>
-                    )}
-                  </div>
-                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="font-semibold text-red-900 mb-2">✗ DON&apos;T:</p>
-                    {briefLines("donts").length > 0 ? (
-                      <ul className="list-disc pl-5 space-y-1 text-red-900">
-                        {briefLines("donts").map((line, idx) => (
-                          <li key={`donts-${idx}`}>{line.replace(/^[•-]\s*/, "")}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-red-700">Not specified</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            <Card className="p-6 bg-white border border-gray-200 space-y-6">
-              <h2 className="text-2xl font-bold text-slate-900">
-                Visual Requirements &amp; Style Guide
-              </h2>
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-slate-800">Required Deliverables</h3>
-                <div className="space-y-3">
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                    <p className="font-semibold text-slate-900 mb-1">Instagram Reels</p>
-                    <p className="text-slate-900 whitespace-pre-wrap">
-                      {briefValue("deliverables_reels")}
-                    </p>
-                  </div>
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                    <p className="font-semibold text-slate-900 mb-1">Hero Image</p>
-                    <p className="text-slate-900 whitespace-pre-wrap">
-                      {briefValue("deliverables_hero_image")}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-slate-800">Visual Style &amp; Aesthetic</h3>
-                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
-                  <p className="text-slate-900">
-                    <span className="font-semibold">Color Palette:</span>{" "}
-                    {briefValue("visual_color_palette")}
-                  </p>
-                  <p className="text-slate-900">
-                    <span className="font-semibold">Setting:</span>{" "}
-                    {briefValue("visual_setting")}
-                  </p>
-                  <p className="text-slate-900">
-                    <span className="font-semibold">Framing:</span>{" "}
-                    {briefValue("visual_framing")}
-                  </p>
-                  <p className="text-slate-900">
-                    <span className="font-semibold">Editing:</span>{" "}
-                    {briefValue("visual_editing")}
-                  </p>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-slate-800">Reference Images</h3>
-                {referenceImages.length > 0 ? (
-                  <div className="grid md:grid-cols-3 gap-3">
-                    {referenceImages.map((img: any, idx: number) => (
-                      <div key={`ref-img-${idx}`} className="border border-gray-200 rounded-lg overflow-hidden">
-                        <img
-                          src={String(img?.url || "")}
-                          alt={`Ref ${idx + 1}`}
-                          className="w-full h-40 object-cover bg-gray-100"
-                        />
-                        <div className="p-2 text-xs text-gray-700 truncate">
-                          {`Ref ${idx + 1}`}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg text-slate-500">
-                    No reference images provided.
-                  </div>
-                )}
-              </div>
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-slate-800">Brand Assets Provided</h3>
-                {brandAssets.length > 0 ? (
-                  <div className="space-y-2">
-                    {brandAssets.map((asset: any, idx: number) => (
-                      <div
-                        key={`asset-${idx}`}
-                        className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 flex items-center justify-between gap-3"
-                      >
-                        <span className="truncate">
-                          {String(asset?.name || `Asset ${idx + 1}`)}
-                        </span>
-                        {asset?.url ? (
-                          <a
-                            href={String(asset.url)}
-                            target="_blank"
-                            rel="noreferrer"
-                            download={String(asset?.name || `asset-${idx + 1}`)}
-                            title="Download file"
-                            className="inline-flex items-center justify-center w-9 h-9 border border-slate-300 rounded-md hover:bg-slate-100 transition-colors"
-                            onClick={(event) => event.stopPropagation()}
-                          >
-                            <Download className="w-4 h-4" />
-                          </a>
-                        ) : (
-                          <span className="text-xs text-slate-500">No file URL</span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg text-slate-500">
-                    No brand assets provided.
-                  </div>
-                )}
-              </div>
-            </Card>
-
-            <Card className="p-6 bg-white border border-gray-200 space-y-6">
-              <h2 className="text-2xl font-bold text-slate-900">
-                Campaign Scope &amp; Contract Details
-              </h2>
-              <div className="grid md:grid-cols-2 gap-4 text-sm">
-                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
-                  <p className="text-slate-900">
-                    <span className="font-semibold">Objective:</span>{" "}
-                    {briefValue("overview_objective")}
-                  </p>
-                  <p className="text-slate-900">
-                    <span className="font-semibold">Target Audience:</span>{" "}
-                    {briefValue("overview_target_audience")}
-                  </p>
-                  <p className="text-slate-900">
-                    <span className="font-semibold">Campaign Duration:</span>{" "}
-                    {briefValue("overview_campaign_duration")}
-                  </p>
-                  <p className="text-slate-900">
-                    <span className="font-semibold">Launch Date:</span>{" "}
-                    {briefValue("overview_launch_date")}
-                  </p>
-                </div>
-                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
-                  <p className="text-slate-900">
-                    <span className="font-semibold">Total Budget:</span>{" "}
-                    {briefValue("budget_total")}
-                  </p>
-                  <p className="text-slate-900">
-                    <span className="font-semibold">Creator Payment:</span>{" "}
-                    {briefValue("budget_creator_payment")}
-                  </p>
-                  <p className="text-slate-900">
-                    <span className="font-semibold">Platform Fee:</span>{" "}
-                    {briefValue("budget_platform_fee")}
-                  </p>
-                  <p className="text-slate-900">
-                    <span className="font-semibold">Submission Deadline:</span>{" "}
-                    {briefValue("budget_submission_deadline")}
-                  </p>
-                </div>
-              </div>
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                <p className="text-slate-900">
-                  <span className="font-semibold">Renewal Terms:</span>{" "}
-                  {briefValue("budget_renewal_terms")}
-                </p>
-              </div>
-              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg space-y-2">
-                <p className="text-slate-900">
-                  <span className="font-semibold">Included Revisions:</span>{" "}
-                  {briefValue("revision_included")}
-                </p>
-                <p className="text-slate-900">
-                  <span className="font-semibold">Major Changes:</span>{" "}
-                  {briefValue("revision_major_changes")}
-                </p>
-                <p className="text-slate-900">
-                  <span className="font-semibold">Turnaround for Revisions:</span>{" "}
-                  {briefValue("revision_turnaround")}
-                </p>
-              </div>
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                <p className="font-semibold text-slate-900 mb-2">Approval Process</p>
-                {briefLines("approval_process").length > 0 ? (
-                  <ol className="list-decimal pl-5 space-y-1 text-slate-900">
-                    {briefLines("approval_process").map((line, idx) => (
-                      <li key={`approval-${idx}`}>{line.replace(/^[•-]?\s*\d*\s*/, "")}</li>
-                    ))}
-                  </ol>
-                ) : (
-                  <p className="text-slate-500">Not specified</p>
-                )}
-              </div>
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                <p className="font-semibold text-slate-900 mb-1">Watermark &amp; Protection</p>
-                <p className="text-slate-900 whitespace-pre-wrap">
-                  {briefValue("watermark_protection")}
-                </p>
-              </div>
-              <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                <p className="font-semibold text-slate-900 mb-1">Legal Terms</p>
-                {briefLines("legal_terms").length > 0 ? (
-                  <ul className="list-disc pl-5 space-y-1 text-slate-900">
-                    {briefLines("legal_terms").map((line, idx) => (
-                      <li key={`legal-${idx}`}>{line.replace(/^[•-]\s*/, "")}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-slate-500">Not specified</p>
-                )}
-              </div>
-            </Card>
+            <CampaignBriefView brief={brief} />
 
             <div className="flex gap-4">
               <Button
@@ -3180,7 +2897,7 @@ export default function BrandDashboard() {
                     <Label className="text-sm font-semibold text-gray-700 block mb-2">
                       Timeline
                     </Label>
-                    <p className="text-gray-900">Start: {campaign.go_live}</p>
+                    <p className="text-gray-900">Start: {(campaign as any)?.go_live || "—"}</p>
                     <p className="text-gray-900">
                       Due: {new Date(campaign.due_date).toLocaleDateString()}
                     </p>
@@ -3327,11 +3044,10 @@ export default function BrandDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setCampaignView("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              campaignView === "active"
-                ? "border-[#F7B750] text-[#F7B750]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${campaignView === "active"
+              ? "border-[#F7B750] text-[#F7B750]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Active (
             {campaignsForOffers.filter((c) => c.status === "in_progress").length}
@@ -3339,11 +3055,10 @@ export default function BrandDashboard() {
           </button>
           <button
             onClick={() => setCampaignView("pending")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              campaignView === "pending"
-                ? "border-[#F7B750] text-[#F7B750]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${campaignView === "pending"
+              ? "border-[#F7B750] text-[#F7B750]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Pending Approval (
             {campaignsForOffers.filter((c) => c.status === "pending_approval").length}
@@ -3351,11 +3066,10 @@ export default function BrandDashboard() {
           </button>
           <button
             onClick={() => setCampaignView("completed")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              campaignView === "completed"
-                ? "border-[#F7B750] text-[#F7B750]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${campaignView === "completed"
+              ? "border-[#F7B750] text-[#F7B750]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Completed (
             {campaignsForOffers.filter((c) => c.status === "completed").length}
@@ -3363,11 +3077,10 @@ export default function BrandDashboard() {
           </button>
           <button
             onClick={() => setCampaignView("drafts")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              campaignView === "drafts"
-                ? "border-[#F7B750] text-[#F7B750]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${campaignView === "drafts"
+              ? "border-[#F7B750] text-[#F7B750]"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Drafts ({campaignsForOffers.filter((c) => c.status === "draft").length})
           </button>
@@ -4123,31 +3836,28 @@ export default function BrandDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setContractDetailTab("summary")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractDetailTab === "summary"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractDetailTab === "summary"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Summary
           </button>
           <button
             onClick={() => setContractDetailTab("full_text")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractDetailTab === "full_text"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractDetailTab === "full_text"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Full Text
           </button>
           <button
             onClick={() => setContractDetailTab("custom")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractDetailTab === "custom"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractDetailTab === "custom"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Custom Clauses{" "}
             {contract.custom_clauses.length > 0 &&
@@ -4155,11 +3865,10 @@ export default function BrandDashboard() {
           </button>
           <button
             onClick={() => setContractDetailTab("history")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractDetailTab === "history"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractDetailTab === "history"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             History
           </button>
@@ -4676,31 +4385,28 @@ export default function BrandDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setContractHubTab("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractHubTab === "active"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractHubTab === "active"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Active ({activeContracts.length})
           </button>
           <button
             onClick={() => setContractHubTab("pending")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractHubTab === "pending"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractHubTab === "pending"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Pending Signature ({pendingContracts.length})
           </button>
           <button
             onClick={() => setContractHubTab("all")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              contractHubTab === "all"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractHubTab === "all"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             All Contracts ({mockContracts.length})
           </button>
@@ -4893,11 +4599,10 @@ export default function BrandDashboard() {
             {mockContracts.map((contract) => (
               <Card
                 key={contract.id}
-                className={`p-6 border ${
-                  contract.status === "signed"
-                    ? "bg-white border-gray-200"
-                    : "bg-yellow-50 border-yellow-300"
-                }`}
+                className={`p-6 border ${contract.status === "signed"
+                  ? "bg-white border-gray-200"
+                  : "bg-yellow-50 border-yellow-300"
+                  }`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
@@ -4983,42 +4688,38 @@ export default function BrandDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setUsageRightsTab("licenses")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              usageRightsTab === "licenses"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${usageRightsTab === "licenses"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Active Licenses
           </button>
           <button
             onClick={() => setUsageRightsTab("expiring")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              usageRightsTab === "expiring"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${usageRightsTab === "expiring"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Expiring Soon{" "}
             {expiringLicenses.length > 0 && `(${expiringLicenses.length})`}
           </button>
           <button
             onClick={() => setUsageRightsTab("contracts")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              usageRightsTab === "contracts"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${usageRightsTab === "contracts"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Contract Hub
           </button>
           <button
             onClick={() => setUsageRightsTab("compliance")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              usageRightsTab === "compliance"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${usageRightsTab === "compliance"
+              ? "border-blue-600 text-blue-600"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+              }`}
           >
             Compliance
           </button>
@@ -5202,16 +4903,16 @@ export default function BrandDashboard() {
                   ))}
                 {mockLicenses.filter((l) => l.status === "expiring_soon")
                   .length === 0 && (
-                  <div className="col-span-3 text-center py-12">
-                    <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      No licenses expiring soon
-                    </h3>
-                    <p className="text-gray-600">
-                      All your licenses are active for 30+ days
-                    </p>
-                  </div>
-                )}
+                    <div className="col-span-3 text-center py-12">
+                      <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                        No licenses expiring soon
+                      </h3>
+                      <p className="text-gray-600">
+                        All your licenses are active for 30+ days
+                      </p>
+                    </div>
+                  )}
               </div>
             </Card>
           </div>
@@ -6837,26 +6538,26 @@ export default function BrandDashboard() {
                     contractData.add_restrictions ||
                     contractData.add_liability ||
                     contractData.add_special_terms) && (
-                    <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="font-semibold text-yellow-900 mb-2">
-                        Custom Terms Added:
-                      </p>
-                      <ul className="text-sm text-yellow-800 space-y-1">
-                        {contractData.add_disclaimer && (
-                          <li>• Required disclaimer included</li>
-                        )}
-                        {contractData.add_restrictions && (
-                          <li>• Content restrictions added</li>
-                        )}
-                        {contractData.add_liability && (
-                          <li>• Liability waiver included</li>
-                        )}
-                        {contractData.add_special_terms && (
-                          <li>• Special terms added</li>
-                        )}
-                      </ul>
-                    </div>
-                  )}
+                      <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <p className="font-semibold text-yellow-900 mb-2">
+                          Custom Terms Added:
+                        </p>
+                        <ul className="text-sm text-yellow-800 space-y-1">
+                          {contractData.add_disclaimer && (
+                            <li>• Required disclaimer included</li>
+                          )}
+                          {contractData.add_restrictions && (
+                            <li>• Content restrictions added</li>
+                          )}
+                          {contractData.add_liability && (
+                            <li>• Liability waiver included</li>
+                          )}
+                          {contractData.add_special_terms && (
+                            <li>• Special terms added</li>
+                          )}
+                        </ul>
+                      </div>
+                    )}
                 </Card>
 
                 <Card className="p-6 bg-green-50 border-2 border-green-300">
@@ -6928,21 +6629,20 @@ export default function BrandDashboard() {
               const isCampaignGroup = item.id === "campaigns";
               const isActive = isCampaignGroup
                 ? activeSection === "campaigns-hub" ||
-                  activeSection === "campaigns-inbox" ||
-                  activeSection === "campaign-offers" ||
-                  activeSection === "campaigns-contract-hub" ||
-                  activeSection === "campaigns-deliverables" ||
-                  activeSection === "studio"
+                activeSection === "campaigns-inbox" ||
+                activeSection === "campaign-offers" ||
+                activeSection === "campaigns-contract-hub" ||
+                activeSection === "campaigns-deliverables" ||
+                activeSection === "studio"
                 : activeSection === item.id;
 
               return (
                 <div key={item.id}>
                   <div
-                    className={`w-full flex items-center gap-2 rounded-lg transition-all ${
-                      isActive
-                        ? "bg-[#F7B750] text-white"
-                        : "text-gray-700 hover:bg-gray-100"
-                    }`}
+                    className={`w-full flex items-center gap-2 rounded-lg transition-all ${isActive
+                      ? "bg-[#F7B750] text-white"
+                      : "text-gray-700 hover:bg-gray-100"
+                      }`}
                   >
                     <button
                       onClick={() => {
@@ -7008,9 +6708,8 @@ export default function BrandDashboard() {
                         className="inline-flex items-center justify-center px-2 mr-2"
                       >
                         <ChevronDown
-                          className={`w-4 h-4 transition-transform ${
-                            showCampaignSubtabs ? "rotate-0" : "-rotate-90"
-                          }`}
+                          className={`w-4 h-4 transition-transform ${showCampaignSubtabs ? "rotate-0" : "-rotate-90"
+                            }`}
                         />
                       </button>
                     )}
@@ -7023,11 +6722,10 @@ export default function BrandDashboard() {
                           setActiveSection("campaign-offers");
                           setCampaignView("active");
                         }}
-                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
-                          activeSection === "campaign-offers"
-                            ? "bg-gray-100 text-gray-900"
-                            : "text-gray-600 hover:bg-gray-100"
-                        }`}
+                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${activeSection === "campaign-offers"
+                          ? "bg-gray-100 text-gray-900"
+                          : "text-gray-600 hover:bg-gray-100"
+                          }`}
                       >
                         <Target className="w-4 h-4" />
                         <span className="flex-1 text-left">My Offers</span>
@@ -7036,11 +6734,10 @@ export default function BrandDashboard() {
                         onClick={() => {
                           setActiveSection("campaigns-inbox");
                         }}
-                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
-                          activeSection === "campaigns-inbox"
-                            ? "bg-gray-100 text-gray-900"
-                            : "text-gray-600 hover:bg-gray-100"
-                        }`}
+                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${activeSection === "campaigns-inbox"
+                          ? "bg-gray-100 text-gray-900"
+                          : "text-gray-600 hover:bg-gray-100"
+                          }`}
                       >
                         <Mail className="w-4 h-4" />
                         <span className="flex-1 text-left">Inbox</span>
@@ -7052,11 +6749,10 @@ export default function BrandDashboard() {
                         onClick={() => {
                           setActiveSection("campaigns-contract-hub");
                         }}
-                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
-                          activeSection === "campaigns-contract-hub"
-                            ? "bg-gray-100 text-gray-900"
-                            : "text-gray-600 hover:bg-gray-100"
-                        }`}
+                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${activeSection === "campaigns-contract-hub"
+                          ? "bg-gray-100 text-gray-900"
+                          : "text-gray-600 hover:bg-gray-100"
+                          }`}
                       >
                         <FileText className="w-4 h-4" />
                         <span className="flex-1 text-left">Contract Hub</span>
@@ -7065,22 +6761,20 @@ export default function BrandDashboard() {
                         onClick={() => {
                           setActiveSection("campaigns-deliverables");
                         }}
-                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
-                          activeSection === "campaigns-deliverables"
-                            ? "bg-gray-100 text-gray-900"
-                            : "text-gray-600 hover:bg-gray-100"
-                        }`}
+                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${activeSection === "campaigns-deliverables"
+                          ? "bg-gray-100 text-gray-900"
+                          : "text-gray-600 hover:bg-gray-100"
+                          }`}
                       >
                         <CheckCircle2 className="w-4 h-4" />
                         <span className="flex-1 text-left">Deliverables</span>
                       </button>
                       <button
                         onClick={() => setActiveSection("studio")}
-                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
-                          activeSection === "studio"
-                            ? "bg-gray-100 text-gray-900"
-                            : "text-gray-600 hover:bg-gray-100"
-                        }`}
+                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${activeSection === "studio"
+                          ? "bg-gray-100 text-gray-900"
+                          : "text-gray-600 hover:bg-gray-100"
+                          }`}
                       >
                         <ImageIcon className="w-4 h-4" />
                         <span className="text-left">Asset Library</span>
@@ -7138,6 +6832,91 @@ export default function BrandDashboard() {
           {activeSection === "settings" && renderSettings()}
         </div>
       </main>
+      {/* Confirmation Dialog for Mark Done */}
+      <AlertDialog
+        open={!!confirmingDonePkg}
+        onOpenChange={(open) => !open && setConfirmingDonePkg(null)}
+      >
+        <AlertDialogContent className="bg-white rounded-none border border-gray-300 shadow-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-2xl font-bold text-gray-900">
+              Confirm Selection
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-600 space-y-4">
+              <p>
+                You are about to finalize your talent selection for{" "}
+                <strong>{confirmingDonePkg?.title}</strong>.
+              </p>
+              <div className="bg-gray-50 p-4 border border-gray-100">
+                <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
+                  Selected Talents:
+                </p>
+                <ul className="space-y-1">
+                  {(() => {
+                    const selectedIds = confirmingDonePkg?.meta?.selected_talent_ids || [];
+                    const items = confirmingDonePkg?.package_snapshot?.items || [];
+                    const selectedNames = items
+                      .filter((item: any) => selectedIds.includes(String(item.talent_id || item.id)))
+                      .map((item: any) => item.talent_name || "Unnamed Talent");
+
+                    if (selectedNames.length === 0) return <li className="text-sm italic">No talent selected</li>;
+                    return selectedNames.map((name: string, idx: number) => (
+                      <li key={idx} className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                        <CheckCircle2 className="w-3 h-3 text-green-600" />
+                        {name}
+                      </li>
+                    ));
+                  })()}
+                </ul>
+              </div>
+              <p className="text-sm font-medium text-red-600 bg-red-50 p-3 border border-red-100 italic">
+                Note: Once you click "Confirm", you will not be able to modify your selection again. The agency will be notified of your final choice.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-none border-gray-300">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-none bg-black hover:bg-gray-800 text-white"
+              onClick={async () => {
+                const pkg = confirmingDonePkg;
+                if (!pkg) return;
+                try {
+                  await base44.post(
+                    `/api/campaign-offers/${encodeURIComponent(String(pkg?.offer_id || ""))}/packages/brand-done`,
+                    {
+                      package_id: String(pkg?.id || ""),
+                      feedback_note: "Brand completed package selection.",
+                      selected_talent_ids: pkg?.meta?.selected_talent_ids || [],
+                    },
+                  );
+                  const response = await base44.get<{ packages?: any[] }>(
+                    "/api/brand/inbox/packages",
+                  );
+                  setInboxPackages(
+                    Array.isArray(response?.packages) ? response.packages : [],
+                  );
+                  toast({
+                    title: "Package submitted",
+                    description:
+                      "Your package selection was submitted to the agency.",
+                  });
+                } catch (e: any) {
+                  toast({
+                    title: "Unable to submit package",
+                    description: e?.message || "Please try again.",
+                    variant: "destructive" as any,
+                  });
+                } finally {
+                  setConfirmingDonePkg(null);
+                }
+              }}
+            >
+              Confirm Selection
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
