@@ -736,7 +736,7 @@ const BrandConnectionsView = () => {
                                 <div className="flex items-center gap-2">
                                   <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-1.5 px-3 py-1">
                                     <CheckCircle2 className="h-3 w-3" />
-                                    Sent
+                                    Package Sent
                                   </Badge>
                                   {token && (
                                     <Button
