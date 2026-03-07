@@ -789,7 +789,11 @@ const BrandConnectionsView = () => {
                       {/* Full brief — shown directly, no duplicate summary */}
                       {offer?.brief_snapshot && typeof offer.brief_snapshot === "object" ? (
                         <div className="rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                          <CampaignBriefView brief={offer.brief_snapshot} />
+                          <CampaignBriefView
+                            brief={offer.brief_snapshot}
+                            brandName={String(offer?.brand_campaigns?.brands?.name || "Brand")}
+                            campaignName={String(offer?.brand_campaigns?.name || "Campaign")}
+                          />
                         </div>
                       ) : offer?.message ? (
                         <div className="bg-slate-50 p-6 rounded-2xl border-l-4 border-indigo-400 italic text-gray-700 text-lg leading-relaxed">
