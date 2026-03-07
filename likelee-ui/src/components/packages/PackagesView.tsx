@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
@@ -24,6 +24,7 @@ import {
   Activity,
   MessageSquare,
 } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,7 +36,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { CreatePackageWizard } from "./CreatePackageWizard";
+import { CreatePackageWizard, type CreatePackageWizardMode } from "./CreatePackageWizard";
 import { TemplateCard } from "./TemplateCard";
 import { PackageFeedbackDialog } from "./PackageFeedbackDialog";
 import { useToast } from "@/components/ui/use-toast";
@@ -58,22 +59,47 @@ export function PackagesView({
 }) {
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entitySingularLower = isSportsAgency ? "athlete" : "talent";
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState<"templates" | "sent">("templates");
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 8;
 
   const [searchTerm, setSearchTerm] = useState("");
   const [showWizard, setShowWizard] = useState(false);
-  const [wizardMode, setWizardMode] = useState<
-    "template" | "package" | "send-from-template"
-  >("template");
+  const [wizardMode, setWizardMode] = useState<CreatePackageWizardMode>("template");
   const [editingPackage, setEditingPackage] = useState<any | null>(null);
+  const [offerContext, setOfferContext] = useState<{
+    offerId: string;
+    offerBrandId?: string;
+  } | null>(null);
+  const [offerSendChoice, setOfferSendChoice] = useState<
+    "none" | "existing" | "new"
+  >("none");
   const [selectedFeedbackPackage, setSelectedFeedbackPackage] = useState<
     string | null
   >(null);
   const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const state = (location.state as any) || {};
+
+    // Handle opening wizard from an offer
+    const offerId = String(state?.fromOfferId || "").trim();
+    if (offerId) {
+      const offerBrandId = String(state?.fromOfferBrandId || "").trim();
+      setOfferContext({ offerId, offerBrandId: offerBrandId || undefined });
+      setOfferSendChoice("none");
+    }
+
+    // Handle deep-linking to a specific package's feedback activity
+    const feedbackPkgId = String(state?.openFeedbackForPackageId || "").trim();
+    if (feedbackPkgId) {
+      setActiveTab("sent");
+      setSelectedFeedbackPackage(feedbackPkgId);
+    }
+  }, [location.state]);
 
   const { data: templates, isLoading: isTemplatesLoading } = useQuery({
     queryKey: ["agency-package-templates"],
@@ -111,6 +137,8 @@ export function PackagesView({
     },
   });
 
+  const chooserVisible = !!offerContext && offerSendChoice === "none";
+
   const copyToClipboard = (token: string) => {
     const url = `${window.location.origin}/share/package/${token}`;
     navigator.clipboard.writeText(url);
@@ -132,9 +160,9 @@ export function PackagesView({
   const paginatedTemplates =
     activeTab === "templates"
       ? filteredPackages.slice(
-          (currentPage - 1) * ITEMS_PER_PAGE,
-          currentPage * ITEMS_PER_PAGE,
-        )
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE,
+      )
       : [];
 
   const realStats = (statsData as any) || {
@@ -169,6 +197,52 @@ export function PackagesView({
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+      {chooserVisible && (
+        <Card className="p-6 bg-white border border-indigo-200 shadow-sm">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-widest text-indigo-700">
+                Sending for offer
+              </p>
+              <p className="text-sm text-gray-700 font-medium mt-1">
+                Choose whether to send an existing package/template or create a new one.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button
+                variant="outline"
+                className="border-indigo-200 text-indigo-700"
+                onClick={() => {
+                  setOfferSendChoice("existing");
+                  setActiveTab("templates");
+                }}
+              >
+                Use Existing
+              </Button>
+              <Button
+                className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                onClick={() => {
+                  setOfferSendChoice("new");
+                  setWizardMode("offer-send");
+                  setShowWizard(true);
+                }}
+              >
+                Create New
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {offerContext && offerSendChoice === "existing" && (
+        <Card className="p-4 bg-indigo-50 border border-indigo-100">
+          <p className="text-sm text-indigo-900 font-semibold">
+            Pick a template (or resend an existing package) below, then click
+            "Send" to send it to the brand inbox for this offer.
+          </p>
+        </Card>
+      )}
+
       {/* Stats Row */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {stats.map((s, i) => (
@@ -198,21 +272,19 @@ export function PackagesView({
         <div className="flex gap-2 min-w-max">
           <button
             onClick={() => setActiveTab("templates")}
-            className={`px-6 py-3 font-bold text-sm uppercase tracking-wider transition-all whitespace-nowrap ${
-              activeTab === "templates"
-                ? "border-b-2 border-indigo-600 text-indigo-600"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
+            className={`px-6 py-3 font-bold text-sm uppercase tracking-wider transition-all whitespace-nowrap ${activeTab === "templates"
+              ? "border-b-2 border-indigo-600 text-indigo-600"
+              : "text-gray-500 hover:text-gray-700"
+              }`}
           >
             Templates
           </button>
           <button
             onClick={() => setActiveTab("sent")}
-            className={`px-6 py-3 font-bold text-sm uppercase tracking-wider transition-all whitespace-nowrap ${
-              activeTab === "sent"
-                ? "border-b-2 border-indigo-600 text-indigo-600"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
+            className={`px-6 py-3 font-bold text-sm uppercase tracking-wider transition-all whitespace-nowrap ${activeTab === "sent"
+              ? "border-b-2 border-indigo-600 text-indigo-600"
+              : "text-gray-500 hover:text-gray-700"
+              }`}
           >
             Packages Sent
           </button>
@@ -233,6 +305,12 @@ export function PackagesView({
         <div className="flex gap-3 w-full sm:w-auto">
           <Button
             onClick={() => {
+              if (offerContext) {
+                setOfferSendChoice("new");
+                setWizardMode("offer-send");
+                setShowWizard(true);
+                return;
+              }
               setWizardMode(activeTab === "templates" ? "template" : "package");
               setShowWizard(true);
             }}
@@ -286,7 +364,11 @@ export function PackagesView({
                   fetchFullPackageMutation.mutate(template.id);
                 }}
                 onSend={() => {
-                  setWizardMode("send-from-template");
+                  if (offerContext) {
+                    setWizardMode("offer-send-from-template");
+                  } else {
+                    setWizardMode("send-from-template");
+                  }
                   fetchFullPackageMutation.mutate(template.id);
                 }}
                 onDelete={() => setDeleteTarget(template)}
@@ -313,11 +395,10 @@ export function PackagesView({
                       key={page}
                       variant={currentPage === page ? "default" : "outline"}
                       onClick={() => setCurrentPage(page)}
-                      className={`w-10 h-10 p-0 rounded-lg font-bold text-sm transition-all ${
-                        currentPage === page
-                          ? "bg-gray-900 text-white shadow-md hover:bg-gray-800"
-                          : "text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900"
-                      }`}
+                      className={`w-10 h-10 p-0 rounded-lg font-bold text-sm transition-all ${currentPage === page
+                        ? "bg-gray-900 text-white shadow-md hover:bg-gray-800"
+                        : "text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900"
+                        }`}
                     >
                       {page}
                     </Button>
@@ -345,8 +426,8 @@ export function PackagesView({
             const now = new Date();
             const daysRemaining = expiresAt
               ? Math.ceil(
-                  (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
-                )
+                (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+              )
               : null;
             const isExpired = expiresAt
               ? expiresAt.getTime() < now.getTime()
@@ -359,6 +440,8 @@ export function PackagesView({
               : isExpiringSoon
                 ? "bg-yellow-100 text-yellow-800 border-yellow-200"
                 : "bg-blue-100 text-blue-700 border-blue-200";
+
+            const isOffer = pkg.meta?.wizard_source === "talent_packages" || !!pkg.meta?.selected_brand_id;
 
             return (
               <Card
@@ -391,6 +474,11 @@ export function PackagesView({
                       <h4 className="text-lg font-black text-gray-900 uppercase tracking-tight truncate">
                         {pkg.title}
                       </h4>
+                      {isOffer && (
+                        <Badge className="bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200 transition-colors">
+                          Campaign Offer
+                        </Badge>
+                      )}
                       <Badge className={statusClass}>{statusLabel}</Badge>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-500 font-bold uppercase tracking-widest">
@@ -506,6 +594,7 @@ export function PackagesView({
         }}
         packageToEdit={editingPackage}
         mode={wizardMode}
+        offerContext={offerContext}
         isSportsAgency={isSportsAgency}
         onSuccess={() => {
           setShowWizard(false);
