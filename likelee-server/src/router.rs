@@ -710,6 +710,18 @@ pub fn build_router(state: AppState) -> Router {
                 .get(crate::brand_campaigns::list_offer_contracts),
         )
         .route(
+            "/api/campaign-offers/:offer_id/contracts/upload",
+            post(crate::brand_campaigns::upload_offer_contract),
+        )
+        .route(
+            "/api/campaign-offers/:offer_id/contracts/:contract_id/builder-token",
+            get(crate::brand_campaigns::get_offer_contract_builder_token),
+        )
+        .route(
+            "/api/campaign-offers/:offer_id/contracts/:contract_id",
+            delete(crate::brand_campaigns::delete_offer_contract),
+        )
+        .route(
             "/api/campaign-offers/:offer_id/contracts/send",
             post(crate::brand_campaigns::send_offer_contract),
         )
