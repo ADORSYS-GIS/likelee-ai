@@ -1237,7 +1237,7 @@ pub async fn list_brand_inbox_packages(
     let resp = state
         .pg
         .from("campaign_offer_packages")
-        .select("*,campaign_offers(id,status,target_type,target_id,offer_title)")
+        .select("*,campaign_offers(id,status,target_type,target_id,offer_title),agencies(id,agency_name)")
         .eq("brand_id", &user.id)
         .order("created_at.desc")
         .execute()
@@ -1269,11 +1269,32 @@ pub async fn mark_brand_package_done(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
     let now = chrono::Utc::now().to_rfc3339();
-    let meta = json!({
-        "selected_talent_ids": payload.selected_talent_ids.unwrap_or_default(),
-        "feedback_note": payload.feedback_note.as_deref().map(str::trim).filter(|s| !s.is_empty()),
-        "done_by_brand_id": user.id,
-    });
+    let current_resp = state
+        .pg
+        .from("campaign_offer_packages")
+        .eq("id", &payload.package_id)
+        .eq("offer_id", &offer_id)
+        .eq("brand_id", &user.id)
+        .select("meta")
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let current_text = current_resp.text().await.unwrap_or_default();
+    let current_row: serde_json::Value = serde_json::from_str(&current_text).unwrap_or_default();
+    let mut current_meta = current_row.get("meta").cloned().unwrap_or_else(|| json!({}));
+
+    if let Some(obj) = current_meta.as_object_mut() {
+        if let Some(ids) = payload.selected_talent_ids {
+            obj.insert("selected_talent_ids".to_string(), json!(ids));
+        }
+        if let Some(note) = payload.feedback_note.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+            obj.insert("feedback_note".to_string(), json!(note));
+        }
+        obj.insert("done_by_brand_id".to_string(), json!(user.id));
+    }
+
     let resp = state
         .pg
         .from("campaign_offer_packages")
@@ -1284,7 +1305,7 @@ pub async fn mark_brand_package_done(
             json!({
                 "status": "feedback_received",
                 "decided_at": now,
-                "meta": meta,
+                "meta": current_meta,
                 "updated_at": now,
             })
             .to_string(),
@@ -1304,6 +1325,34 @@ pub async fn mark_brand_package_done(
     }
     let row: serde_json::Value = serde_json::from_str(&text).unwrap_or_default();
     Ok(Json(json!({"status":"ok","package": row})))
+}
+
+pub async fn list_agency_offer_packages(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    if user.role != "agency" {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+    let resp = state
+        .pg
+        .from("campaign_offer_packages")
+        .select("*")
+        .eq("agency_id", &user.id)
+        .order("created_at.desc")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    Ok(Json(json!({"items": rows})))
 }
 
 pub async fn list_agency_package_feedback(
