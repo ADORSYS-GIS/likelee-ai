@@ -638,119 +638,21 @@ const BrandConnectionsView = () => {
                       </div>
 
 
-                      {/* Brief & Scope Card */}
-                      {(() => {
-                        const bs = offer?.brief_snapshot && typeof offer.brief_snapshot === "object" ? offer.brief_snapshot : null;
-                        const briefVal = (key: string, fallback = "—") => {
-                          if (!bs) return fallback;
-                          const v = bs[key];
-                          const t = v !== null && v !== undefined ? String(v).trim() : "";
-                          return t || fallback;
-                        };
+                      {/* Full brief — shown directly, no duplicate summary */}
+                      {offer?.brief_snapshot && typeof offer.brief_snapshot === "object" ? (
+                        <div className="rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                          <CampaignBriefView brief={offer.brief_snapshot} />
+                        </div>
+                      ) : offer?.message ? (
+                        <div className="bg-slate-50 p-6 rounded-2xl border-l-4 border-indigo-400 italic text-gray-700 text-lg leading-relaxed">
+                          "{String(offer.message)}"
+                        </div>
+                      ) : (
+                        <div className="p-12 text-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                          <p className="text-gray-400 font-medium">No detailed brief attached to this offer.</p>
+                        </div>
+                      )}
 
-                        // Deliverables summary from brief or message fallback
-                        const reels = briefVal("deliverables_reels", "");
-                        const heroImg = briefVal("deliverables_hero_image", "");
-                        const deliverablesSummary = [reels, heroImg].filter(Boolean).join(", ") || "—";
-
-                        // Timeline
-                        const launchDate = briefVal("overview_launch_date", "");
-                        const deadlineDate = briefVal("budget_submission_deadline", "");
-
-                        // Budget
-                        const budgetTotal = briefVal("budget_total", "");
-                        const budgetCreator = briefVal("budget_creator_payment", "");
-                        const budgetFee = briefVal("budget_platform_fee", "");
-
-                        return (
-                          <div className="space-y-6">
-                            {/* Brief & Scope Card — matches the screenshot */}
-                            <div className="rounded-xl border-2 border-blue-200 bg-white p-6 space-y-6 shadow-sm">
-                              <div className="flex items-center justify-between gap-4">
-                                <h3 className="text-xl font-extrabold text-gray-900 tracking-tight">
-                                  Brief &amp; Scope
-                                </h3>
-                                {bs && (
-                                  <button
-                                    onClick={() => {
-                                      const el = document.getElementById(`full-brief-${selectedOfferId}`);
-                                      if (el) el.classList.toggle("hidden");
-                                    }}
-                                    className="text-sm font-semibold text-blue-600 border border-blue-300 rounded-lg px-4 py-1.5 hover:bg-blue-50 transition-colors whitespace-nowrap"
-                                  >
-                                    View Full Details →
-                                  </button>
-                                )}
-                              </div>
-
-                              {/* Deliverables */}
-                              <div>
-                                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Deliverables</p>
-                                <p className="text-sm text-gray-800">{deliverablesSummary}</p>
-                              </div>
-
-                              {/* Timeline + Budget row */}
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* Timeline */}
-                                <div>
-                                  <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Timeline</p>
-                                  {launchDate && (
-                                    <p className="text-sm text-gray-800">Start: {launchDate}</p>
-                                  )}
-                                  {deadlineDate && (
-                                    <p className="text-sm text-gray-800">Due: {deadlineDate}</p>
-                                  )}
-                                  {!launchDate && !deadlineDate && offer?.message && (
-                                    <p className="text-sm text-gray-500 italic">See offer message for timeline details.</p>
-                                  )}
-                                  {!launchDate && !deadlineDate && !offer?.message && (
-                                    <p className="text-sm text-gray-400">Not specified</p>
-                                  )}
-                                </div>
-
-                                {/* Budget */}
-                                <div>
-                                  <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Budget</p>
-                                  {budgetTotal && (
-                                    <p className="text-sm font-bold text-gray-900">Total: {budgetTotal}</p>
-                                  )}
-                                  {budgetCreator && (
-                                    <p className="text-sm text-gray-700">Creator: {budgetCreator}</p>
-                                  )}
-                                  {budgetFee && (
-                                    <p className="text-sm text-gray-500">Likelee Fee: {budgetFee}</p>
-                                  )}
-                                  {!budgetTotal && !budgetCreator && !budgetFee && (
-                                    <p className="text-sm text-gray-400">Not specified</p>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Offer message / teaser */}
-                              {offer?.message && (
-                                <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl p-4 cursor-pointer hover:bg-blue-100/50 transition-colors"
-                                  onClick={() => {
-                                    const el = document.getElementById(`full-brief-${selectedOfferId}`);
-                                    if (el) el.classList.toggle("hidden");
-                                  }}
-                                >
-                                  <span className="text-blue-500 mt-0.5 shrink-0">ⓘ</span>
-                                  <p className="text-sm font-medium text-blue-700">
-                                    Click to view complete brief with dialogue, visuals, and contract details
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Full expandable CampaignBriefView */}
-                            {bs && (
-                              <div id={`full-brief-${selectedOfferId}`} className="hidden rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                                <CampaignBriefView brief={bs} />
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })()}
 
                     </div>
                   </div>
@@ -875,17 +777,12 @@ const BrandConnectionsView = () => {
                           <h3 className="text-base font-extrabold text-gray-900 tracking-tight">
                             Brief &amp; Scope
                           </h3>
-                          {bs && (
-                            <button
-                              onClick={() => {
-                                const el = document.getElementById(`full-brief-list-${offerId}`);
-                                if (el) el.classList.toggle("hidden");
-                              }}
-                              className="text-sm font-semibold text-blue-600 border border-blue-300 rounded-lg px-4 py-1.5 hover:bg-blue-50 transition-colors whitespace-nowrap"
-                            >
-                              View Full Details →
-                            </button>
-                          )}
+                          <button
+                            onClick={() => setSelectedOfferId(offerId)}
+                            className="text-sm font-semibold text-blue-600 border border-blue-300 rounded-lg px-4 py-1.5 hover:bg-blue-50 transition-colors whitespace-nowrap"
+                          >
+                            View Full Details →
+                          </button>
                         </div>
 
                         {/* Deliverables */}
@@ -913,26 +810,16 @@ const BrandConnectionsView = () => {
                           </div>
                         </div>
 
-                        {/* Click-to-expand teaser */}
+                        {/* Teaser — navigates to full-page detail */}
                         {(bs || offer?.message) && (
                           <div
                             className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl p-4 cursor-pointer hover:bg-blue-100/50 transition-colors"
-                            onClick={() => {
-                              const el = document.getElementById(`full-brief-list-${offerId}`);
-                              if (el) el.classList.toggle("hidden");
-                            }}
+                            onClick={() => setSelectedOfferId(offerId)}
                           >
                             <span className="text-blue-500 mt-0.5 shrink-0">ⓘ</span>
                             <p className="text-sm font-medium text-blue-700">
                               Click to view complete brief with dialogue, visuals, and contract details
                             </p>
-                          </div>
-                        )}
-
-                        {/* Expandable full brief */}
-                        {bs && (
-                          <div id={`full-brief-list-${offerId}`} className="hidden rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                            <CampaignBriefView brief={bs} />
                           </div>
                         )}
                       </div>
