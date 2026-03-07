@@ -948,6 +948,7 @@ pub async fn create_offer_contract(
     Ok(Json(json!({"status":"ok","contract": row})))
 }
 
+#[axum::debug_handler]
 pub async fn send_offer_contract(
     State(state): State<AppState>,
     user: AuthUser,
@@ -988,11 +989,81 @@ pub async fn send_offer_contract(
             .to_string()
     };
 
+    // Fetch the contract and related offer details
+    let contract_req = state
+        .pg
+        .from("campaign_offer_contracts")
+        .select("*, offer:campaign_offers(*, brand:brands(*))")
+        .eq("id", &contract_id)
+        .eq("offer_id", &offer_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let contract_status = contract_req.status();
+    let contract_text = contract_req
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !contract_status.is_success() {
+        return Err(sanitize_db_error(contract_status.as_u16(), contract_text));
+    }
+
+    let contract_data: serde_json::Value = serde_json::from_str(&contract_text).unwrap_or_default();
+    
+    // Create DocuSeal submission if not already created
+    if contract_data.get("docuseal_submission_id").is_none() || contract_data["docuseal_submission_id"].is_null() {
+        if let Some(template_id_val) = contract_data.get("docuseal_template_id").and_then(|v| v.as_i64()) {
+            let template_id = template_id_val as i32;
+            
+            let brand = contract_data.get("offer").and_then(|o| o.get("brand")).unwrap_or(&serde_json::Value::Null);
+            
+            let brand_name = brand.get("company_name").and_then(|v| v.as_str())
+                                 .or_else(|| brand.get("contact_name").and_then(|v| v.as_str()))
+                                 .unwrap_or("Brand Contact").to_string();
+            
+            let brand_email = brand.get("email").and_then(|v| v.as_str()).unwrap_or("").to_string();
+
+            if !brand_email.is_empty() {
+                let docuseal_client = crate::services::docuseal::DocuSealClient::new(
+                    state.docuseal_api_key.clone(),
+                    state.docuseal_api_url.clone(),
+                );
+
+                let submission_result = docuseal_client.create_submission(template_id, brand_name, brand_email).await.map_err(|e| e.to_string());
+                
+                if let Ok(submission) = submission_result {
+                    let now = chrono::Utc::now().to_rfc3339();
+                    let _ = state
+                        .pg
+                        .from("campaign_offer_contracts")
+                        .eq("id", &contract_id)
+                        .update(
+                            json!({
+                                "docuseal_status": "sent",
+                                "docuseal_submission_id": submission.id,
+                                "sent_at": now,
+                                "updated_at": now,
+                            })
+                            .to_string(),
+                        )
+                        .execute()
+                        .await;
+                } else if let Err(e) = submission_result {
+                    tracing::error!("Failed to create DocuSeal submission: {}", e);
+                }
+            }
+        }
+    }
+
     let now = chrono::Utc::now().to_rfc3339();
     let resp = state
         .pg
         .from("campaign_offer_contracts")
         .eq("id", &contract_id)
+
         .eq("offer_id", &offer_id)
         .update(
             json!({
@@ -1236,6 +1307,11 @@ pub async fn upload_offer_contract(
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
 
     let inserted_contract: serde_json::Value = serde_json::from_str(&text).unwrap_or_default();
     let contract_id = inserted_contract
