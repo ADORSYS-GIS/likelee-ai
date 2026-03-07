@@ -100,6 +100,7 @@ const BrandConnectionsView = () => {
       );
       return Array.isArray(resp?.contracts) ? resp.contracts : [];
     },
+    refetchInterval: 5000,
   });
 
   const offerDeliverablesQuery = useQuery({
@@ -111,6 +112,7 @@ const BrandConnectionsView = () => {
       );
       return Array.isArray(resp?.deliverables) ? resp.deliverables : [];
     },
+    refetchInterval: 5000,
   });
 
   const requests = useMemo(() => {
