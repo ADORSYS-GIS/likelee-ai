@@ -9,7 +9,7 @@ use base64::{engine::general_purpose, Engine as _};
 use postgrest::Postgrest;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tracing::error;
+use tracing::{error, info};
 
 #[derive(Debug, Deserialize)]
 pub struct CreateBrandCampaignRequest {
@@ -1144,38 +1144,102 @@ pub async fn sync_offer_contract(
     }
     let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
 
+    // 1. Fetch the current contract record to get its docuseal_submission_id
+    let contract_resp = state
+        .pg
+        .from("campaign_offer_contracts")
+        .select("*")
+        .eq("id", &payload.contract_id)
+        .eq("offer_id", &offer_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !contract_resp.status().is_success() {
+        let text = contract_resp.text().await.unwrap_or_default();
+        return Err(sanitize_db_error(404, text));
+    }
+
+    let contract_text = contract_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let contract_record: serde_json::Value =
+        serde_json::from_str(&contract_text).unwrap_or_default();
+
+    let submission_id = contract_record
+        .get("docuseal_submission_id")
+        .and_then(|v| v.as_i64());
+
+    let now = chrono::Utc::now().to_rfc3339();
     let mut update = serde_json::Map::new();
-    if let Some(v) = payload
-        .docuseal_status
-        .as_deref()
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-    {
-        update.insert("docuseal_status".to_string(), json!(v));
+    update.insert("last_synced_at".to_string(), json!(now));
+    update.insert("updated_at".to_string(), json!(now));
+
+    // 2. If we have a submission_id, fetch live status from DocuSeal
+    if let Some(sid) = submission_id {
+        let docuseal_client = DocuSealClient::new(
+            state.docuseal_api_key.clone(),
+            state.docuseal_base_url.clone(),
+        );
+
+        match docuseal_client.get_submission(sid as i32).await {
+            Ok(ds_submission) => {
+                info!(
+                    submission_id = sid,
+                    docuseal_status = %ds_submission.status,
+                    "Fetched live DocuSeal status during sync"
+                );
+                let live_status = match ds_submission.status.as_str() {
+                    "completed" => "completed",
+                    "declined" => "declined",
+                    "pending" | "sent" => "sent",
+                    "opened" | "viewed" => "opened",
+                    other => other,
+                };
+                update.insert("docuseal_status".to_string(), json!(live_status));
+
+                // Pull slug from first submitter if we don't have one stored yet
+                let stored_slug = contract_record
+                    .get("docuseal_slug")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                if stored_slug.is_empty() {
+                    if let Some(first_submitter) = ds_submission.submitters.first() {
+                        update.insert(
+                            "docuseal_slug".to_string(),
+                            json!(first_submitter.slug),
+                        );
+                    }
+                }
+
+                // If completed, capture the signed document URL
+                if live_status == "completed" {
+                    if let Some(url) = ds_submission.documents.first().map(|d| d.url.clone()) {
+                        update.insert("signed_document_url".to_string(), json!(url));
+                    }
+                }
+            }
+            Err(e) => {
+                tracing::warn!(
+                    submission_id = sid,
+                    error = %e,
+                    "Could not reach DocuSeal during sync; updating timestamp only"
+                );
+            }
+        }
     }
-    if let Some(v) = payload.docuseal_submission_id {
-        update.insert("docuseal_submission_id".to_string(), json!(v));
-    }
-    if let Some(v) = payload
-        .docuseal_slug
-        .as_deref()
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-    {
+
+    // Allow the client to override slug / meta if provided
+    if let Some(v) = payload.docuseal_slug.as_deref().filter(|s| !s.is_empty()) {
         update.insert("docuseal_slug".to_string(), json!(v));
     }
     if let Some(meta) = payload.meta {
         update.insert("meta".to_string(), meta);
     }
-    update.insert(
-        "last_synced_at".to_string(),
-        json!(chrono::Utc::now().to_rfc3339()),
-    );
-    update.insert(
-        "updated_at".to_string(),
-        json!(chrono::Utc::now().to_rfc3339()),
-    );
 
+    // 3. Write the update back to the database
     let resp = state
         .pg
         .from("campaign_offer_contracts")
@@ -1197,11 +1261,12 @@ pub async fn sync_offer_contract(
     }
     let contract: serde_json::Value = serde_json::from_str(&text).unwrap_or_default();
 
+    // 4. Propagate status change to the parent campaign offer
     if let Some(ds) = contract.get("docuseal_status").and_then(|v| v.as_str()) {
         let mapped = match ds {
             "completed" | "fully_signed" => Some("contract_fully_signed"),
             "partially_signed" => Some("contract_partially_signed"),
-            "sent" | "pending" => Some("contract_sent"),
+            "sent" | "pending" | "opened" | "viewed" => Some("contract_sent"),
             _ => None,
         };
         if let Some(status_value) = mapped {
@@ -1221,8 +1286,9 @@ pub async fn sync_offer_contract(
         }
     }
 
-    Ok(Json(json!({"status":"ok","contract": contract})))
+    Ok(Json(json!({"status": "ok", "contract": contract})))
 }
+
 
 pub async fn upload_offer_contract(
     State(state): State<AppState>,
@@ -1878,4 +1944,125 @@ pub async fn review_offer_deliverable(
         .await;
 
     Ok(Json(json!({"status":"ok","deliverable": row})))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DocuSealWebhookEvent {
+    pub event_type: String,
+    pub timestamp: String,
+    pub data: serde_json::Value,
+}
+
+/// POST /webhooks/brand-contracts
+pub async fn handle_webhook(
+    State(state): State<AppState>,
+    Json(payload): Json<DocuSealWebhookEvent>,
+) -> Result<StatusCode, (StatusCode, String)> {
+    info!(
+        event_type = %payload.event_type,
+        "Received DocuSeal brand campaign webhook"
+    );
+
+    let status_update = match payload.event_type.as_str() {
+        "submission.started" | "submission.opened" | "submission.viewed" | "form.started"
+        | "form.viewed" => Some("opened"),
+        "submission.completed" | "form.completed" => Some("completed"),
+        "submission.declined" | "form.declined" => Some("declined"),
+        _ => None,
+    };
+
+    if status_update.is_none() {
+        return Ok(StatusCode::OK);
+    }
+
+    let new_status = status_update.unwrap();
+
+    let submission_id = payload.data["submission_id"]
+        .as_i64()
+        .or_else(|| payload.data["id"].as_i64())
+        .ok_or_else(|| {
+            error!("Missing submission id in DocuSeal webhook");
+            (StatusCode::BAD_REQUEST, "Missing submission id".to_string())
+        })?;
+
+    info!(submission_id, new_status, "Processing DocuSeal status update for brand contracts");
+
+    // 1. Find and update the campaign_offer_contracts record
+    let resp = state
+        .pg
+        .from("campaign_offer_contracts")
+        .select("id, offer_id")
+        .eq("docuseal_submission_id", submission_id.to_string())
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        info!("No brand campaign contract found for submission_id: {}", submission_id);
+        return Ok(StatusCode::OK); // Not our concern, might belong to another module
+    }
+
+    let contract_text = resp.text().await.unwrap_or_default();
+    let contract: serde_json::Value = serde_json::from_str(&contract_text).unwrap_or_default();
+    let contract_id = contract["id"].as_str().unwrap_or_default();
+    let offer_id = contract["offer_id"].as_str().unwrap_or_default();
+
+    if contract_id.is_empty() {
+        return Ok(StatusCode::OK);
+    }
+
+    // Prepare update data
+    let mut update_json = json!({
+        "docuseal_status": new_status,
+        "updated_at": chrono::Utc::now().to_rfc3339(),
+    });
+
+    // If completed, capture the signed document URL
+    if new_status == "completed" {
+        if let Some(url) = payload.data["documents"]
+            .as_array()
+            .and_then(|docs| docs.first())
+            .and_then(|doc| doc["url"].as_str())
+        {
+            update_json["signed_document_url"] = json!(url);
+        }
+    }
+
+    // Update contract
+    let _ = state
+        .pg
+        .from("campaign_offer_contracts")
+        .update(update_json.to_string())
+        .eq("id", contract_id)
+        .execute()
+        .await;
+
+    // 2. If completed, also update the parent campaign_offers status
+    if new_status == "completed" && !offer_id.is_empty() {
+        info!(offer_id, "Updating campaign offer status to contract_fully_signed via webhook");
+        let _ = state
+            .pg
+            .from("campaign_offers")
+            .update(json!({
+                "status": "contract_fully_signed",
+                "updated_at": chrono::Utc::now().to_rfc3339(),
+            }).to_string())
+            .eq("id", offer_id)
+            .execute()
+            .await;
+    } else if new_status == "opened" && !offer_id.is_empty() {
+        let _ = state
+            .pg
+            .from("campaign_offers")
+            .update(json!({
+                "status": "contract_sent",
+                "updated_at": chrono::Utc::now().to_rfc3339(),
+            }).to_string())
+            .eq("id", offer_id)
+            .execute()
+            .await;
+    }
+
+    Ok(StatusCode::OK)
 }

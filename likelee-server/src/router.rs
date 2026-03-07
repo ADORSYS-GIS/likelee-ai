@@ -894,6 +894,10 @@ pub fn build_router(state: AppState) -> Router {
             "/api/webhooks/licenseContract",
             post(crate::license_submissions::handle_webhook),
         )
+        .route(
+            "/webhooks/brand-contracts",
+            post(crate::brand_campaigns::handle_webhook),
+        )
         // --- Integrations & Misc ---
         .route(
             "/api/integrations/core/send-email",
