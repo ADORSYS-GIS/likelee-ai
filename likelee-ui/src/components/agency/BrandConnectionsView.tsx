@@ -683,7 +683,7 @@ const BrandConnectionsView = () => {
                   const budgetFee = briefVal("budget_platform_fee");
 
                   return (
-                    <div key={offerId} className="rounded-xl border-2 border-blue-200 bg-white shadow-sm overflow-hidden">
+                    <div key={offerId} className="rounded-xl border-2 border-blue-200 bg-white shadow-sm overflow-hidden cursor-pointer hover:border-blue-400 hover:shadow-md transition-all" onClick={() => setSelectedOfferId(offerId)}>
                       {/* Row header */}
                       <div className="flex items-center justify-between px-6 py-4 border-b border-blue-100 bg-white gap-4">
                         <div className="flex items-center gap-4 min-w-0">
@@ -711,7 +711,7 @@ const BrandConnectionsView = () => {
                                 size="sm"
                                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
                                 disabled={busyIds.has(offerId)}
-                                onClick={() => respondToOffer(offerId, "accept")}
+                                onClick={(e) => { e.stopPropagation(); respondToOffer(offerId, "accept"); }}
                               >
                                 Accept
                               </Button>
@@ -720,7 +720,7 @@ const BrandConnectionsView = () => {
                                 variant="outline"
                                 className="border-red-200 text-red-600 hover:bg-red-50 font-bold"
                                 disabled={busyIds.has(offerId)}
-                                onClick={() => respondToOffer(offerId, "decline")}
+                                onClick={(e) => { e.stopPropagation(); respondToOffer(offerId, "decline"); }}
                               >
                                 Decline
                               </Button>
@@ -743,7 +743,7 @@ const BrandConnectionsView = () => {
                                       size="sm"
                                       variant="outline"
                                       className="font-bold text-xs"
-                                      onClick={() => window.open(`/share/package/${token}`, "_blank")}
+                                      onClick={(e) => { e.stopPropagation(); window.open(`/share/package/${token}`, "_blank"); }}
                                     >
                                       View Package
                                     </Button>
@@ -755,7 +755,8 @@ const BrandConnectionsView = () => {
                               <Button
                                 size="sm"
                                 className="bg-black hover:bg-gray-800 text-white font-bold"
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   navigate("/AgencyDashboard?tab=packages", {
                                     state: {
                                       fromOfferId: offerId,
