@@ -559,8 +559,8 @@ const BrandConnectionsView = () => {
                         <div className="flex items-center gap-3">
                           <Badge
                             className={`px-3 py-1 text-xs font-bold uppercase tracking-wider ${isAccepted
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                : "bg-indigo-50 text-indigo-700 border-indigo-200"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : "bg-indigo-50 text-indigo-700 border-indigo-200"
                               }`}
                           >
                             {status.replace(/_/g, " ")}
@@ -637,80 +637,121 @@ const BrandConnectionsView = () => {
                         )}
                       </div>
 
-                      {/* Content Section */}
-                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div className="lg:col-span-2 space-y-6">
-                          <div className="space-y-4">
-                            <h3 className="text-lg font-black text-gray-900 border-b-4 border-indigo-600 inline-block pb-1 uppercase tracking-wider">
-                              Campaign Brief
-                            </h3>
-                            {offer?.message && (
-                              <div className="bg-slate-50 p-6 rounded-2xl border-l-4 border-indigo-400 italic text-gray-700 text-lg leading-relaxed">
-                                "{String(offer.message)}"
-                              </div>
-                            )}
-                            {offer?.brief_snapshot && typeof offer.brief_snapshot === "object" ? (
-                              <div className="rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                                <CampaignBriefView brief={offer.brief_snapshot} />
-                              </div>
-                            ) : (
-                              !offer?.message && (
-                                <div className="p-12 text-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
-                                  <p className="text-gray-400 font-medium">No detailed brief attached to this offer.</p>
-                                </div>
-                              )
-                            )}
-                          </div>
-                        </div>
 
-                        <div className="space-y-8">
-                          {/* Contracts Column */}
-                          <div className="space-y-4">
-                            <h3 className="text-lg font-black text-gray-900 border-b-4 border-emerald-500 inline-block pb-1 uppercase tracking-wider">
-                              Contracts
-                            </h3>
-                            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-2">
-                              {offerContractsQuery.isLoading ? (
-                                <p className="p-4 text-xs text-gray-500">Loading contracts...</p>
-                              ) : (offerContractsQuery.data || []).length === 0 ? (
-                                <div className="p-6 text-center">
-                                  <p className="text-xs text-gray-400">No contracts linked yet.</p>
+                      {/* Brief & Scope Card */}
+                      {(() => {
+                        const bs = offer?.brief_snapshot && typeof offer.brief_snapshot === "object" ? offer.brief_snapshot : null;
+                        const briefVal = (key: string, fallback = "—") => {
+                          if (!bs) return fallback;
+                          const v = bs[key];
+                          const t = v !== null && v !== undefined ? String(v).trim() : "";
+                          return t || fallback;
+                        };
+
+                        // Deliverables summary from brief or message fallback
+                        const reels = briefVal("deliverables_reels", "");
+                        const heroImg = briefVal("deliverables_hero_image", "");
+                        const deliverablesSummary = [reels, heroImg].filter(Boolean).join(", ") || "—";
+
+                        // Timeline
+                        const launchDate = briefVal("overview_launch_date", "");
+                        const deadlineDate = briefVal("budget_submission_deadline", "");
+
+                        // Budget
+                        const budgetTotal = briefVal("budget_total", "");
+                        const budgetCreator = briefVal("budget_creator_payment", "");
+                        const budgetFee = briefVal("budget_platform_fee", "");
+
+                        return (
+                          <div className="space-y-6">
+                            {/* Brief & Scope Card — matches the screenshot */}
+                            <div className="rounded-xl border-2 border-blue-200 bg-white p-6 space-y-6 shadow-sm">
+                              <div className="flex items-center justify-between gap-4">
+                                <h3 className="text-xl font-extrabold text-gray-900 tracking-tight">
+                                  Brief &amp; Scope
+                                </h3>
+                                {bs && (
+                                  <button
+                                    onClick={() => {
+                                      const el = document.getElementById(`full-brief-${selectedOfferId}`);
+                                      if (el) el.classList.toggle("hidden");
+                                    }}
+                                    className="text-sm font-semibold text-blue-600 border border-blue-300 rounded-lg px-4 py-1.5 hover:bg-blue-50 transition-colors whitespace-nowrap"
+                                  >
+                                    View Full Details →
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* Deliverables */}
+                              <div>
+                                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Deliverables</p>
+                                <p className="text-sm text-gray-800">{deliverablesSummary}</p>
+                              </div>
+
+                              {/* Timeline + Budget row */}
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Timeline */}
+                                <div>
+                                  <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Timeline</p>
+                                  {launchDate && (
+                                    <p className="text-sm text-gray-800">Start: {launchDate}</p>
+                                  )}
+                                  {deadlineDate && (
+                                    <p className="text-sm text-gray-800">Due: {deadlineDate}</p>
+                                  )}
+                                  {!launchDate && !deadlineDate && offer?.message && (
+                                    <p className="text-sm text-gray-500 italic">See offer message for timeline details.</p>
+                                  )}
+                                  {!launchDate && !deadlineDate && !offer?.message && (
+                                    <p className="text-sm text-gray-400">Not specified</p>
+                                  )}
                                 </div>
-                              ) : (
-                                (offerContractsQuery.data || []).map((contract: any) => (
-                                  <div key={contract.id} className="p-4 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer border-b last:border-0 border-gray-50">
-                                    <p className="text-sm font-bold text-gray-900">{contract.title || "License Agreement"}</p>
-                                    <p className="text-xs text-gray-500 mt-1 uppercase tracking-widest">{contract.status}</p>
-                                  </div>
-                                ))
+
+                                {/* Budget */}
+                                <div>
+                                  <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Budget</p>
+                                  {budgetTotal && (
+                                    <p className="text-sm font-bold text-gray-900">Total: {budgetTotal}</p>
+                                  )}
+                                  {budgetCreator && (
+                                    <p className="text-sm text-gray-700">Creator: {budgetCreator}</p>
+                                  )}
+                                  {budgetFee && (
+                                    <p className="text-sm text-gray-500">Likelee Fee: {budgetFee}</p>
+                                  )}
+                                  {!budgetTotal && !budgetCreator && !budgetFee && (
+                                    <p className="text-sm text-gray-400">Not specified</p>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Offer message / teaser */}
+                              {offer?.message && (
+                                <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl p-4 cursor-pointer hover:bg-blue-100/50 transition-colors"
+                                  onClick={() => {
+                                    const el = document.getElementById(`full-brief-${selectedOfferId}`);
+                                    if (el) el.classList.toggle("hidden");
+                                  }}
+                                >
+                                  <span className="text-blue-500 mt-0.5 shrink-0">ⓘ</span>
+                                  <p className="text-sm font-medium text-blue-700">
+                                    Click to view complete brief with dialogue, visuals, and contract details
+                                  </p>
+                                </div>
                               )}
                             </div>
-                          </div>
 
-                          {/* Deliverables Column */}
-                          <div className="space-y-4">
-                            <h3 className="text-lg font-black text-gray-900 border-b-4 border-orange-400 inline-block pb-1 uppercase tracking-wider">
-                              Deliverables
-                            </h3>
-                            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-                              {offerDeliverablesQuery.isLoading ? (
-                                <p className="text-xs text-gray-500">Loading...</p>
-                              ) : (offerDeliverablesQuery.data || []).length === 0 ? (
-                                <p className="text-xs text-gray-400">No specific deliverables set.</p>
-                              ) : (
-                                <ul className="space-y-3">
-                                  {(offerDeliverablesQuery.data || []).map((d: any) => (
-                                    <li key={d.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                                      <div className="h-2 w-2 rounded-full bg-orange-400" />
-                                      <span className="text-sm font-medium text-gray-700">{d.title}</span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              )}
-                            </div>
+                            {/* Full expandable CampaignBriefView */}
+                            {bs && (
+                              <div id={`full-brief-${selectedOfferId}`} className="hidden rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                                <CampaignBriefView brief={bs} />
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      </div>
+                        );
+                      })()}
+
                     </div>
                   </div>
                 );
@@ -739,8 +780,8 @@ const BrandConnectionsView = () => {
                           </div>
                           <Badge
                             className={`px-2 py-0.5 text-[10px] uppercase font-black tracking-tighter ${isAccepted
-                                ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-                                : "bg-indigo-100 text-indigo-700 border-indigo-200"
+                              ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                              : "bg-indigo-100 text-indigo-700 border-indigo-200"
                               }`}
                           >
                             {status.replace(/_/g, " ")}
