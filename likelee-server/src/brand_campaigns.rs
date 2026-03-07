@@ -1,11 +1,15 @@
-use crate::{auth::AuthUser, config::AppState, errors::sanitize_db_error};
+use crate::{auth::AuthUser, config::AppState, errors::sanitize_db_error, services::docuseal::DocuSealClient};
 use axum::{
-    extract::{Path, Query, State},
+    extract::{Multipart, Path, Query, State},
     http::StatusCode,
+    response::IntoResponse,
     Json,
 };
-use serde::Deserialize;
+use base64::{engine::general_purpose, Engine as _};
+use postgrest::Postgrest;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
+use tracing::error;
 
 #[derive(Debug, Deserialize)]
 pub struct CreateBrandCampaignRequest {
@@ -96,6 +100,24 @@ pub struct SyncOfferContractRequest {
     pub docuseal_submission_id: Option<i64>,
     pub docuseal_slug: Option<String>,
     pub meta: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CreateTemplateFromPdfResponse {
+    pub id: i64,
+    pub slug: String,
+    pub name: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ContractPath {
+    pub offer_id: String,
+    pub contract_id: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GetOfferBuilderTokenRequest {
+    pub template_id: Option<i32>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1128,6 +1150,215 @@ pub async fn sync_offer_contract(
     }
 
     Ok(Json(json!({"status":"ok","contract": contract})))
+}
+
+pub async fn upload_offer_contract(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(OfferPath { offer_id }): Path<OfferPath>,
+    mut multipart: Multipart,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    if user.role != "agency" {
+        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
+    }
+    let offer = ensure_offer_access(&state, &user, &offer_id).await?;
+
+    let mut file_name = String::new();
+    let mut file_data = Vec::new();
+
+    while let Some(field) = multipart.next_field().await.map_err(|e| {
+        error!(error = %e, "Failed to get next field from multipart");
+        (StatusCode::BAD_REQUEST, e.to_string())
+    })? {
+        let name = field.name().unwrap_or("").to_string();
+        if name == "file" {
+            file_name = field.file_name().unwrap_or("document.pdf").to_string();
+            file_data = field.bytes().await.map_err(|e| {
+                error!(error = %e, "Failed to read bytes from multipart field");
+                (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+            })?.to_vec();
+        }
+    }
+
+    if file_data.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "No file provided".to_string()));
+    }
+
+    // Convert to base64 with Data URI prefix
+    let base64_content = format!(
+        "data:application/pdf;base64,{}",
+        general_purpose::STANDARD.encode(file_data)
+    );
+
+    let docuseal_client = DocuSealClient::new(
+        state.docuseal_api_key.clone(),
+        state.docuseal_api_url.clone(),
+    );
+
+    // Create template in DocuSeal
+    let template = docuseal_client
+        .create_template(file_name.clone(), file_name.clone(), base64_content)
+        .await
+        .map_err(|e| {
+            error!(error = %e, "Failed to create template in DocuSeal");
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+        })?;
+
+    // Create contract record in database
+    let pg = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
+        .insert_header("apikey", &state.supabase_service_key)
+        .insert_header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        );
+
+    let target_type = offer.get("target_type").and_then(|v| v.as_str()).unwrap_or("");
+    let target_id = offer.get("target_id").and_then(|v| v.as_str()).unwrap_or("");
+
+    let insert_payload = json!({
+        "offer_id": offer_id,
+        "brand_campaign_id": offer.get("brand_campaign_id").cloned().unwrap_or(serde_json::Value::Null),
+        "brand_id": offer.get("brand_id").cloned().unwrap_or(serde_json::Value::Null),
+        "target_type": target_type,
+        "target_id": target_id,
+        "owner_role": user.role,
+        "title": file_name,
+        "docuseal_template_id": template.id,
+        "docuseal_status": "draft",
+        "created_by": user.id,
+    });
+
+    let resp = pg
+        .from("campaign_offer_contracts")
+        .insert(insert_payload.to_string())
+        .select("*")
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
+    let text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
+
+    Ok(Json(CreateTemplateFromPdfResponse {
+        id: template.id as i64,
+        slug: template.slug,
+        name: template.name,
+    }))
+}
+
+pub async fn get_offer_contract_builder_token(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(ContractPath { offer_id, contract_id }): Path<ContractPath>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    if user.role != "agency" {
+        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
+    }
+    let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
+
+    // Fetch contract to get docuseal_template_id
+    let pg = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
+        .insert_header("apikey", &state.supabase_service_key)
+        .insert_header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        );
+
+    let resp = pg
+        .from("campaign_offer_contracts")
+        .select("docuseal_template_id")
+        .eq("id", &contract_id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let contract_text = resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let contract: serde_json::Value = serde_json::from_str(&contract_text).unwrap_or_default();
+    let template_id = contract.get("docuseal_template_id").and_then(|v| v.as_i64());
+
+    if template_id.is_none() {
+        return Err((StatusCode::NOT_FOUND, "Contract template not found".to_string()));
+    }
+
+    // Fetch agency details
+    let agency_resp = pg
+        .from("agencies")
+        .select("contact_email:email,name:agency_name")
+        .eq("id", &user.id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let agency_text = agency_resp.text().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let agency: serde_json::Value = serde_json::from_str(&agency_text).unwrap_or_default();
+
+    if state.docuseal_user_email.is_empty() {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, "DocuSeal admin email not configured".to_string()));
+    }
+
+    let user_email = state.docuseal_user_email.clone();
+    let name = agency["name"].as_str().unwrap_or("Agency User").to_string();
+    let integration_email = agency["contact_email"].as_str().unwrap_or("agency@example.com").to_string();
+
+    let docuseal_client = DocuSealClient::new(
+        state.docuseal_api_key.clone(),
+        state.docuseal_api_url.clone(),
+    );
+
+    let token = docuseal_client
+        .create_builder_token(
+            user_email,
+            name,
+            integration_email,
+            Some(template_id.unwrap() as i32),
+            None,
+        )
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(Json(json!({ "token": token })))
+}
+
+pub async fn delete_offer_contract(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(ContractPath { offer_id, contract_id }): Path<ContractPath>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    if user.role != "agency" {
+        return Err((StatusCode::FORBIDDEN, "agency_only".to_string()));
+    }
+    let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
+
+    // Check if contract exists and is a draft
+    let pg = Postgrest::new(format!("{}/rest/v1", state.supabase_url))
+        .insert_header("apikey", &state.supabase_service_key)
+        .insert_header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        );
+
+    let resp = pg
+        .from("campaign_offer_contracts")
+        .delete()
+        .eq("id", &contract_id)
+        .eq("offer_id", &offer_id)
+        .eq("docuseal_status", "draft")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let status = resp.status();
+    if !status.is_success() {
+        let text = resp.text().await.unwrap_or_default();
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
+
+    Ok(StatusCode::NO_CONTENT)
 }
 
 pub async fn create_offer_package(
