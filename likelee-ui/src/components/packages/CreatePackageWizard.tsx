@@ -53,14 +53,23 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { AssetSelector } from "./AssetSelector";
 import { ensureHexColor } from "@/utils/color";
+import { base44 } from "@/api/base44Client";
+
+export type CreatePackageWizardMode =
+  | "template"
+  | "package"
+  | "send-from-template"
+  | "offer-send"
+  | "offer-send-from-template";
 
 interface CreatePackageWizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   packageToEdit?: any;
   onSuccess?: () => void;
-  mode?: "template" | "package" | "send-from-template";
+  mode?: CreatePackageWizardMode;
   isSportsAgency?: boolean;
+  offerContext?: { offerId: string; offerBrandId?: string } | null;
 }
 
 export function CreatePackageWizard({
@@ -70,6 +79,7 @@ export function CreatePackageWizard({
   onSuccess,
   mode = "package",
   isSportsAgency = false,
+  offerContext = null,
 }: CreatePackageWizardProps) {
   const entitySingularTitle = isSportsAgency ? "Athlete" : "Talent";
   const entityPluralTitle = isSportsAgency ? "Athletes" : "Talents";
@@ -96,6 +106,7 @@ export function CreatePackageWizard({
   const queryClient = useQueryClient();
   const isEditMode = !!packageToEdit && mode !== "send-from-template";
   const isTemplateMode = mode === "template";
+  const isOfferMode = mode === "offer-send" || mode === "offer-send-from-template";
   const totalSteps = isTemplateMode ? 4 : 5; // Templates end on Consents; packages add Send
 
   const initialFormData = {
@@ -124,6 +135,9 @@ export function CreatePackageWizard({
   };
 
   const [formData, setFormData] = useState(initialFormData);
+  const [selectedBrandId, setSelectedBrandId] = useState<string>(
+    offerContext?.offerBrandId ? String(offerContext.offerBrandId) : "",
+  );
 
   useEffect(() => {
     if (open && packageToEdit) {
@@ -140,7 +154,7 @@ export function CreatePackageWizard({
         allow_callbacks: packageToEdit.allow_callbacks ?? true,
         consent_items:
           Array.isArray(packageToEdit.consent_items) &&
-          packageToEdit.consent_items.length > 0
+            packageToEdit.consent_items.length > 0
             ? packageToEdit.consent_items
             : initialFormData.consent_items,
         password_protected: packageToEdit.password_protected || false,
@@ -148,11 +162,11 @@ export function CreatePackageWizard({
         expires_at: packageToEdit.expires_at
           ? format(new Date(packageToEdit.expires_at), "yyyy-MM-dd")
           : "",
-        // Clear client details if we are sending from a template
+        // Clear client details if we are sending from a template or in offer mode
         client_name:
-          mode === "send-from-template" ? "" : packageToEdit.client_name || "",
+          mode === "send-from-template" || isOfferMode ? "" : packageToEdit.client_name || "",
         client_email:
-          mode === "send-from-template" ? "" : packageToEdit.client_email || "",
+          mode === "send-from-template" || isOfferMode ? "" : packageToEdit.client_email || "",
         items: packageToEdit.items || [],
       });
     } else if (open && !isEditMode && mode !== "send-from-template") {
@@ -161,6 +175,25 @@ export function CreatePackageWizard({
       resetForm();
     }
   }, [packageToEdit, open, isEditMode, mode]);
+
+  useEffect(() => {
+    if (!open) return;
+    if (!isOfferMode) return;
+    setSelectedBrandId(
+      offerContext?.offerBrandId ? String(offerContext.offerBrandId) : "",
+    );
+  }, [open, isOfferMode, offerContext?.offerBrandId]);
+
+  const { data: connectedBrands } = useQuery({
+    queryKey: ["agency", "brand-connections", "wizard"],
+    queryFn: async () => {
+      const resp = await base44.get<{ connections?: any[] }>(
+        "/api/agency/brand-connections",
+      );
+      return Array.isArray(resp?.connections) ? resp.connections : [];
+    },
+    enabled: open && isOfferMode,
+  });
 
   const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -207,6 +240,46 @@ export function CreatePackageWizard({
       queryClient.invalidateQueries({ queryKey: ["agency-package-templates"] });
       queryClient.invalidateQueries({ queryKey: ["agency-sent-packages"] });
       queryClient.invalidateQueries({ queryKey: ["agency-package-stats"] });
+      if (onSuccess) onSuccess();
+    },
+  });
+
+  const offerSendMutation = useMutation({
+    mutationFn: async (data: any) => {
+      if (!offerContext?.offerId) throw new Error("Missing offerId");
+      const offerId = String(offerContext.offerId);
+
+      // 1. Create the real linked agency package
+      const standardPkgResp = await packageApi.createPackage(data.standard_package_payload);
+
+      // 2. Prepare the payload for the campaign offer package, linking the real package
+      const offerPayload = {
+        ...data,
+        meta: {
+          ...data.meta,
+          agency_package_id: standardPkgResp.id,
+          agency_package_token: standardPkgResp.access_token,
+        },
+      };
+      delete offerPayload.standard_package_payload;
+
+      const createResp = await base44.post<{ package?: any }>(
+        `/api/campaign-offers/${encodeURIComponent(offerId)}/packages`,
+        offerPayload,
+      );
+      const packageId = String(createResp?.package?.id || "").trim();
+      if (!packageId) throw new Error("Package was not created");
+      await base44.post(
+        `/api/campaign-offers/${encodeURIComponent(offerId)}/packages/send`,
+        { package_id: packageId },
+      );
+      return createResp?.package;
+    },
+    onSuccess: (pkg: any) => {
+      setCreatedPackage(pkg);
+      setShowSuccess(true);
+      queryClient.invalidateQueries({ queryKey: ["agency-packages"] });
+      queryClient.invalidateQueries({ queryKey: ["agency-sent-packages"] });
       if (onSuccess) onSuccess();
     },
   });
@@ -308,7 +381,7 @@ export function CreatePackageWizard({
 
   const handleSubmit = () => {
     // For templates, client details are optional. For packages, they're required.
-    if (!isTemplateMode) {
+    if (!isTemplateMode && !isOfferMode) {
       if (!formData.client_name.trim()) {
         return toast({
           title: "Required",
@@ -333,15 +406,97 @@ export function CreatePackageWizard({
       }
     }
 
+    if (isOfferMode) {
+      if (!offerContext?.offerId) {
+        return toast({
+          title: "Missing offer",
+          description: "This package is not linked to an offer.",
+          variant: "destructive",
+        });
+      }
+      if (!selectedBrandId.trim()) {
+        return toast({
+          title: "Required",
+          description: "Please select a connected brand.",
+          variant: "destructive",
+        });
+      }
+    }
+
     const itemsArray = Array.isArray(formData.items)
       ? formData.items
       : [formData.items];
+
+    const normalizedConsentItems = (formData.consent_items || [])
+      .map((item: string) => item.trim())
+      .filter(Boolean);
+
+    if (isOfferMode) {
+      const selectedTalentIds = itemsArray
+        .map((it: any) => String(it?.talent_id || it?.id || "").trim())
+        .filter(Boolean);
+
+      const standardPackagePayload = {
+        ...formData,
+        is_template: false,
+        consent_items: normalizedConsentItems,
+        items: itemsArray.map(({ talent, assets, ...item }) => ({
+          ...item,
+          asset_ids: assets.map((asset: any) => ({
+            asset_id: asset.asset_id || asset.id,
+            asset_type: asset.asset_type || asset.type,
+          })),
+        })),
+        meta: {
+          selected_talent_ids: selectedTalentIds,
+          selected_brand_id: selectedBrandId,
+          wizard_source: "talent_packages",
+          offer_id: offerContext.offerId,
+        },
+        // Offer mode: bypass legacy email system and set neutral client name for logs
+        client_email: "",
+        client_name: "Brand Portal",
+      };
+
+      const offerPayload = {
+        title: formData.title,
+        message: formData.description || formData.custom_message || "",
+        expires_at: formData.expires_at ? new Date(formData.expires_at).toISOString() : null,
+        meta: {
+          selected_talent_ids: selectedTalentIds,
+          selected_brand_id: selectedBrandId,
+          wizard_source: "talent_packages",
+        },
+        package_snapshot: {
+          title: formData.title,
+          description: formData.description,
+          cover_image_url: formData.cover_image_url,
+          primary_color: formData.primary_color,
+          secondary_color: formData.secondary_color,
+          custom_message: formData.custom_message,
+          allow_comments: formData.allow_comments,
+          allow_favorites: formData.allow_favorites,
+          allow_callbacks: formData.allow_callbacks,
+          consent_items: normalizedConsentItems,
+          items: itemsArray.map((item: any) => ({
+            talent_id: item.talent_id || item.id,
+            talent_name: item?.talent?.name || item?.talent?.full_name,
+            asset_ids: (item.assets || []).map((asset: any) => ({
+              asset_id: asset.asset_id || asset.id,
+              asset_type: asset.asset_type || asset.type || "image",
+            })),
+          })),
+        },
+        standard_package_payload: standardPackagePayload,
+      };
+      offerSendMutation.mutate(offerPayload);
+      return;
+    }
+
     const finalData = {
       ...formData,
       is_template: isTemplateMode,
-      consent_items: (formData.consent_items || [])
-        .map((item: string) => item.trim())
-        .filter(Boolean),
+      consent_items: normalizedConsentItems,
       items: itemsArray.map(({ talent, assets, ...item }) => ({
         ...item,
         asset_ids: assets.map((asset: any) => ({
@@ -831,43 +986,133 @@ export function CreatePackageWizard({
                           Ready to send?
                         </h3>
                         <p className="text-sm text-gray-500 font-medium">
-                          Complete the recipient details to publish the package
+                          {isOfferMode
+                            ? "Confirm the brand recipient for this offer package"
+                            : "Complete the recipient details to publish the package"}
                         </p>
                       </div>
+                      {isOfferMode && (
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+                            Recipient Brand *
+                          </Label>
+                          <select
+                            value={selectedBrandId}
+                            onChange={(e) => setSelectedBrandId(e.target.value)}
+                            className="w-full h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
+                          >
+                            <option value="">Select a brand…</option>
+                            {(Array.isArray(connectedBrands) ? connectedBrands : []).map(
+                              (c: any) => {
+                                const id = String(c?.brand_id || "").trim();
+                                const label =
+                                  String(c?.brands?.company_name || "").trim() ||
+                                  String(c?.brands?.email || "").trim() ||
+                                  id;
+                                if (!id) return null;
+                                return (
+                                  <option key={id} value={id}>
+                                    {label}
+                                  </option>
+                                );
+                              },
+                            )}
+                          </select>
+                          <p className="text-xs text-gray-500 font-medium">
+                            This package will be delivered to the brand’s dashboard inbox for this offer.
+                          </p>
+                        </div>
+                      )}
+
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div className="space-y-3">
-                          <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">
-                            Client Contact *
-                          </Label>
-                          <Input
-                            placeholder="e.g. John Doe"
-                            value={formData.client_name}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                client_name: e.target.value,
-                              })
-                            }
-                            className="h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
-                          />
-                        </div>
-                        <div className="space-y-3">
-                          <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">
-                            Delivery Email *
-                          </Label>
-                          <Input
-                            type="email"
-                            placeholder="client@company.com"
-                            value={formData.client_email}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                client_email: e.target.value,
-                              })
-                            }
-                            className="h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
-                          />
-                        </div>
+                        {isOfferMode ? (
+                          <>
+                            <div className="space-y-3">
+                              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+                                Client Contact
+                              </Label>
+                              <Input
+                                readOnly
+                                value={(() => {
+                                  const list = Array.isArray(connectedBrands)
+                                    ? connectedBrands
+                                    : [];
+                                  const match = list.find(
+                                    (c: any) =>
+                                      String(c?.brand_id || "").trim() ===
+                                      String(selectedBrandId || "").trim(),
+                                  );
+                                  return (
+                                    String(match?.brands?.company_name || "").trim() ||
+                                    String(match?.brands?.email || "").trim() ||
+                                    ""
+                                  );
+                                })()}
+                                className="h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
+                              />
+                            </div>
+                            <div className="space-y-3">
+                              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+                                Delivery Email
+                              </Label>
+                              <Input
+                                readOnly
+                                type="email"
+                                value={(() => {
+                                  const list = Array.isArray(connectedBrands)
+                                    ? connectedBrands
+                                    : [];
+                                  const match = list.find(
+                                    (c: any) =>
+                                      String(c?.brand_id || "").trim() ===
+                                      String(selectedBrandId || "").trim(),
+                                  );
+                                  return String(match?.brands?.email || "").trim();
+                                })()}
+                                className="h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
+                              />
+                              <p className="text-xs text-gray-500 font-medium">
+                                Delivered via inbox (email is informational).
+                              </p>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="space-y-3">
+                              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+                                Client Contact *
+                              </Label>
+                              <Input
+                                placeholder="e.g. John Doe"
+                                value={formData.client_name}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    client_name: e.target.value,
+                                  })
+                                }
+                                className="h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
+                              />
+                            </div>
+                            <div className="space-y-3">
+                              <Label className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+                                Delivery Email *
+                              </Label>
+                              <Input
+                                type="email"
+                                placeholder="client@company.com"
+                                value={formData.client_email}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    client_email: e.target.value,
+                                  })
+                                }
+                                className="h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
+                              />
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
 
@@ -1001,41 +1246,45 @@ export function CreatePackageWizard({
                       </h2>
                       <p className="text-gray-500 font-medium mt-2 max-w-sm mx-auto">
                         Your curated selection is now live and{" "}
-                        {formData.client_email
-                          ? `an invitation has been sent to ${formData.client_email}.`
-                          : "is ready to be shared."}
+                        {isOfferMode
+                          ? "has been sent to the brand inbox."
+                          : formData.client_email
+                            ? `an invitation has been sent to ${formData.client_email}.`
+                            : "is ready to be shared."}
                       </p>
                     </div>
 
-                    <div className="w-full max-w-md p-6 bg-gray-50 rounded-2xl border border-gray-100 space-y-4">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
-                        Shareable Link
-                      </p>
-                      <div className="flex gap-2">
-                        <Input
-                          readOnly
-                          value={`${window.location.origin}/share/package/${createdPackage.access_token}`}
-                          className="bg-white border-gray-200 font-bold text-indigo-600 h-12"
-                        />
-                        <Button
-                          onClick={() => {
-                            navigator.clipboard.writeText(
-                              `${window.location.origin}/share/package/${createdPackage.access_token}`,
-                            );
-                            toast({
-                              title: "Link Copied",
-                              description:
-                                "The portal address is now in your clipboard.",
-                            });
-                          }}
-                          className="bg-white border-2 border-indigo-100 text-indigo-600 hover:bg-white h-12 w-12 p-0"
-                        >
-                          <Badge className="bg-indigo-50 text-indigo-600 border-none">
-                            Copy
-                          </Badge>
-                        </Button>
+                    {!isOfferMode && (
+                      <div className="w-full max-w-md p-6 bg-gray-50 rounded-2xl border border-gray-100 space-y-4">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+                          Shareable Link
+                        </p>
+                        <div className="flex gap-2">
+                          <Input
+                            readOnly
+                            value={`${window.location.origin}/share/package/${createdPackage.access_token}`}
+                            className="bg-white border-gray-200 font-bold text-indigo-600 h-12"
+                          />
+                          <Button
+                            onClick={() => {
+                              navigator.clipboard.writeText(
+                                `${window.location.origin}/share/package/${createdPackage.access_token}`,
+                              );
+                              toast({
+                                title: "Link Copied",
+                                description:
+                                  "The portal address is now in your clipboard.",
+                              });
+                            }}
+                            className="bg-white border-2 border-indigo-100 text-indigo-600 hover:bg-white h-12 w-12 p-0"
+                          >
+                            <Badge className="bg-indigo-50 text-indigo-600 border-none">
+                              Copy
+                            </Badge>
+                          </Button>
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     <Button
                       onClick={() => {
@@ -1091,10 +1340,10 @@ export function CreatePackageWizard({
                 ) : (
                   <Button
                     onClick={handleSubmit}
-                    disabled={mutation.isPending}
+                    disabled={mutation.isPending || offerSendMutation.isPending}
                     className="h-10 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-300 rounded-lg group flex items-center justify-center gap-2 w-full sm:w-auto"
                   >
-                    {mutation.isPending ? (
+                    {mutation.isPending || offerSendMutation.isPending ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
                     ) : isTemplateMode ? (
                       <Check className="w-5 h-5" />
