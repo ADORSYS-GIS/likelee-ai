@@ -5,11 +5,14 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
-import { Link2Off, Eye } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Link2Off, Eye, CheckCircle2 } from "lucide-react";
+import { CampaignBriefView } from "@/components/campaign-offers/CampaignBriefView";
 
 const BrandConnectionsView = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<
     "connections" | "requests" | "offers" | "contract_hub" | "deliverables" | "feedback"
   >("connections");
@@ -56,6 +59,16 @@ const BrandConnectionsView = () => {
     queryFn: async () => {
       const resp = await base44.get<{ items?: any[] }>(
         "/api/agency/brand-offers/package-feedback",
+      );
+      return Array.isArray(resp?.items) ? resp.items : [];
+    },
+  });
+
+  const offerPackagesQuery = useQuery({
+    queryKey: ["agency", "offer-packages", "all"],
+    queryFn: async () => {
+      const resp = await base44.get<{ items?: any[] }>(
+        "/api/agency/brand-offers/packages",
       );
       return Array.isArray(resp?.items) ? resp.items : [];
     },
@@ -232,7 +245,21 @@ const BrandConnectionsView = () => {
       ]);
       toast({
         title: "Package sent",
-        description: "Talent package has been sent to the brand inbox.",
+        description: (
+          <div className="flex items-center gap-2">
+            <span>Talent package has been sent to the brand inbox.</span>
+            <Button
+              variant="link"
+              className="p-0 h-auto text-sm"
+              onClick={() => {
+                const shareLink = `${window.location.origin}/share/package/${packageId}`;
+                window.open(shareLink, "_blank");
+              }}
+            >
+              View
+            </Button>
+          </div>
+        ),
       });
     } catch (e: any) {
       toast({
@@ -299,172 +326,172 @@ const BrandConnectionsView = () => {
 
       {activeTab === "connections" && (
         <Card className="p-6 border border-gray-200 rounded-xl">
-        <h3 className="text-lg font-bold text-gray-900 mb-3">
-          Connected Brands
-        </h3>
-        {connectionsQuery.isLoading && (
-          <p className="text-sm text-gray-500">Loading connected brands...</p>
-        )}
-        {!connectionsQuery.isLoading && connectionsQuery.error && (
-          <p className="text-sm text-red-600">
-            Failed to load connected brands.
-          </p>
-        )}
-        {!connectionsQuery.isLoading &&
-          !connectionsQuery.error &&
-          connections.length === 0 && (
-            <p className="text-sm text-gray-500">No connected brands yet.</p>
+          <h3 className="text-lg font-bold text-gray-900 mb-3">
+            Connected Brands
+          </h3>
+          {connectionsQuery.isLoading && (
+            <p className="text-sm text-gray-500">Loading connected brands...</p>
           )}
-        {!connectionsQuery.isLoading &&
-          !connectionsQuery.error &&
-          connections.length > 0 && (
-            <div className="space-y-3">
-              {connections.map((connection: any) => {
-                const companyName = String(
-                  connection?.brands?.company_name || "Brand",
-                );
-                const email = String(connection?.brands?.email || "").trim();
-                const brandId = String(connection?.brand_id || "").trim();
-                const connectedAt = connection?.connected_at
-                  ? new Date(
+          {!connectionsQuery.isLoading && connectionsQuery.error && (
+            <p className="text-sm text-red-600">
+              Failed to load connected brands.
+            </p>
+          )}
+          {!connectionsQuery.isLoading &&
+            !connectionsQuery.error &&
+            connections.length === 0 && (
+              <p className="text-sm text-gray-500">No connected brands yet.</p>
+            )}
+          {!connectionsQuery.isLoading &&
+            !connectionsQuery.error &&
+            connections.length > 0 && (
+              <div className="space-y-3">
+                {connections.map((connection: any) => {
+                  const companyName = String(
+                    connection?.brands?.company_name || "Brand",
+                  );
+                  const email = String(connection?.brands?.email || "").trim();
+                  const brandId = String(connection?.brand_id || "").trim();
+                  const connectedAt = connection?.connected_at
+                    ? new Date(
                       String(connection.connected_at),
                     ).toLocaleDateString()
-                  : "—";
-                const isBusy = busyIds.has(brandId);
-                return (
-                  <div
-                    key={String(
-                      connection?.id || `${companyName}-${connectedAt}`,
-                    )}
-                    className="border border-gray-200 rounded-lg p-4 flex items-center justify-between gap-4"
-                  >
-                    <div>
-                      <p className="font-semibold text-gray-900">
-                        {companyName}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        {email || "No email provided"}
-                      </p>
-                    </div>
-                    <div className="text-right flex items-center gap-3">
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        disabled={!brandId || isBusy}
-                        onClick={() => disconnectBrand(brandId)}
-                        aria-label="Disconnect from brand"
-                        title="Disconnect"
-                      >
-                        <Link2Off className="h-4 w-4" />
-                      </Button>
+                    : "—";
+                  const isBusy = busyIds.has(brandId);
+                  return (
+                    <div
+                      key={String(
+                        connection?.id || `${companyName}-${connectedAt}`,
+                      )}
+                      className="border border-gray-200 rounded-lg p-4 flex items-center justify-between gap-4"
+                    >
                       <div>
-                        <Badge className="bg-green-100 text-green-700 border border-green-300">
-                          Connected
-                        </Badge>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Since {connectedAt}
+                        <p className="font-semibold text-gray-900">
+                          {companyName}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {email || "No email provided"}
                         </p>
                       </div>
+                      <div className="text-right flex items-center gap-3">
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          disabled={!brandId || isBusy}
+                          onClick={() => disconnectBrand(brandId)}
+                          aria-label="Disconnect from brand"
+                          title="Disconnect"
+                        >
+                          <Link2Off className="h-4 w-4" />
+                        </Button>
+                        <div>
+                          <Badge className="bg-green-100 text-green-700 border border-green-300">
+                            Connected
+                          </Badge>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Since {connectedAt}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            )}
         </Card>
       )}
 
       {activeTab === "requests" && (
         <Card className="p-6 border border-gray-200 rounded-xl">
-        <h3 className="text-lg font-bold text-gray-900 mb-3">Requests</h3>
-        {requestsQuery.isLoading && (
-          <p className="text-sm text-gray-500">Loading requests...</p>
-        )}
-        {!requestsQuery.isLoading && requestsQuery.error && (
-          <p className="text-sm text-red-600">Failed to load requests.</p>
-        )}
-        {!requestsQuery.isLoading &&
-          !requestsQuery.error &&
-          requests.length === 0 && (
-            <p className="text-sm text-gray-500">
-              No pending requests right now.
-            </p>
+          <h3 className="text-lg font-bold text-gray-900 mb-3">Requests</h3>
+          {requestsQuery.isLoading && (
+            <p className="text-sm text-gray-500">Loading requests...</p>
           )}
-        {!requestsQuery.isLoading &&
-          !requestsQuery.error &&
-          requests.length > 0 && (
-            <div className="space-y-4">
-              {requests.map((req: any) => {
-                const requestId = String(req?.id || "");
-                const isBusy = busyIds.has(requestId);
-                const companyName = String(
-                  req?.brands?.company_name || req?.brand_name || "Brand",
-                );
-                const email = String(req?.brands?.email || "").trim();
-                const message = String(req?.message || "").trim();
-                const createdAt = req?.created_at
-                  ? new Date(String(req.created_at)).toLocaleDateString()
-                  : "—";
-                const requestType = String(req?.request_type || "connection")
-                  .replace(/_/g, " ")
-                  .replace(/\b\w/g, (m) => m.toUpperCase());
+          {!requestsQuery.isLoading && requestsQuery.error && (
+            <p className="text-sm text-red-600">Failed to load requests.</p>
+          )}
+          {!requestsQuery.isLoading &&
+            !requestsQuery.error &&
+            requests.length === 0 && (
+              <p className="text-sm text-gray-500">
+                No pending requests right now.
+              </p>
+            )}
+          {!requestsQuery.isLoading &&
+            !requestsQuery.error &&
+            requests.length > 0 && (
+              <div className="space-y-4">
+                {requests.map((req: any) => {
+                  const requestId = String(req?.id || "");
+                  const isBusy = busyIds.has(requestId);
+                  const companyName = String(
+                    req?.brands?.company_name || req?.brand_name || "Brand",
+                  );
+                  const email = String(req?.brands?.email || "").trim();
+                  const message = String(req?.message || "").trim();
+                  const createdAt = req?.created_at
+                    ? new Date(String(req.created_at)).toLocaleDateString()
+                    : "—";
+                  const requestType = String(req?.request_type || "connection")
+                    .replace(/_/g, " ")
+                    .replace(/\b\w/g, (m) => m.toUpperCase());
 
-                return (
-                  <div
-                    key={requestId}
-                    className="border border-gray-200 rounded-lg p-4 bg-white"
-                  >
-                    <div className="flex items-start justify-between gap-4 mb-3">
-                      <div>
-                        <h4 className="font-semibold text-gray-900">
-                          {companyName}
-                        </h4>
-                        <p className="text-sm text-gray-600">
-                          {email || "No email provided"}
-                        </p>
+                  return (
+                    <div
+                      key={requestId}
+                      className="border border-gray-200 rounded-lg p-4 bg-white"
+                    >
+                      <div className="flex items-start justify-between gap-4 mb-3">
+                        <div>
+                          <h4 className="font-semibold text-gray-900">
+                            {companyName}
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            {email || "No email provided"}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-amber-100 text-amber-700 border border-amber-300">
+                            Pending
+                          </Badge>
+                          <Badge
+                            variant="outline"
+                            className="border-gray-300 text-gray-700"
+                          >
+                            {requestType}
+                          </Badge>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge className="bg-amber-100 text-amber-700 border border-amber-300">
-                          Pending
-                        </Badge>
-                        <Badge
-                          variant="outline"
-                          className="border-gray-300 text-gray-700"
-                        >
-                          {requestType}
-                        </Badge>
-                      </div>
-                    </div>
-                    <p className="text-xs text-gray-500 mb-2">
-                      Requested on: {createdAt}
-                    </p>
-                    {message && (
-                      <p className="text-sm text-gray-800 mb-4 italic">
-                        "{message}"
+                      <p className="text-xs text-gray-500 mb-2">
+                        Requested on: {createdAt}
                       </p>
-                    )}
-                    <div className="flex gap-3">
-                      <Button
-                        onClick={() => updateStatus(requestId, "accept")}
-                        disabled={isBusy}
-                        className="bg-green-600 hover:bg-green-700 text-white"
-                      >
-                        {isBusy ? "Working..." : "Accept"}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => updateStatus(requestId, "decline")}
-                        disabled={isBusy}
-                        className="border-red-300 text-red-600 hover:bg-red-50"
-                      >
-                        Decline
-                      </Button>
+                      {message && (
+                        <p className="text-sm text-gray-800 mb-4 italic">
+                          "{message}"
+                        </p>
+                      )}
+                      <div className="flex gap-3">
+                        <Button
+                          onClick={() => updateStatus(requestId, "accept")}
+                          disabled={isBusy}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          {isBusy ? "Working..." : "Accept"}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => updateStatus(requestId, "decline")}
+                          disabled={isBusy}
+                          className="border-red-300 text-red-600 hover:bg-red-50"
+                        >
+                          Decline
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            )}
         </Card>
       )}
 
@@ -481,6 +508,7 @@ const BrandConnectionsView = () => {
             const offerId = String(offer?.id || "");
             const status = String(offer?.status || "sent");
             const isPending = ["sent", "viewed"].includes(status);
+            const isAccepted = status === "accepted";
             return (
               <div
                 key={offerId}
@@ -524,6 +552,57 @@ const BrandConnectionsView = () => {
                       </Button>
                     </>
                   )}
+                  {isAccepted && (
+                    <>
+                      {(() => {
+                        const offerPkg = (offerPackagesQuery.data || []).find(
+                          (p: any) => String(p.offer_id) === offerId
+                        );
+                        if (offerPkg) {
+                          const token = offerPkg.meta?.agency_package_token;
+                          return (
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled
+                                className="bg-gray-50 border-gray-200 text-gray-400"
+                              >
+                                <CheckCircle2 className="h-4 w-4 mr-1 text-green-500" />
+                                Package Sent
+                              </Button>
+                              {token && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-indigo-600 hover:text-indigo-700"
+                                  onClick={() => window.open(`/share/package/${token}`, "_blank")}
+                                >
+                                  View
+                                </Button>
+                              )}
+                            </div>
+                          );
+                        }
+                        return (
+                          <Button
+                            size="sm"
+                            className="bg-black hover:bg-gray-800 text-white"
+                            onClick={() => {
+                              navigate("/AgencyDashboard?tab=packages", {
+                                state: {
+                                  fromOfferId: offerId,
+                                  fromOfferBrandId: String(offer?.brand_id || "").trim(),
+                                },
+                              });
+                            }}
+                          >
+                            Build/Send Package
+                          </Button>
+                        );
+                      })()}
+                    </>
+                  )}
                   <Button
                     size="sm"
                     variant="outline"
@@ -538,70 +617,50 @@ const BrandConnectionsView = () => {
                 {selectedOfferId === offerId && (
                   <div className="space-y-3 pt-2">
                     <div className="rounded-md border border-gray-200 p-3 space-y-2">
-                      <p className="text-xs text-gray-500">Package Builder</p>
-                      <input
-                        value={packageDraftByOffer[offerId]?.title || ""}
-                        onChange={(e) =>
-                          setPackageDraftByOffer((prev) => ({
-                            ...prev,
-                            [offerId]: {
-                              ...(prev[offerId] || { title: "", message: "" }),
-                              title: e.target.value,
-                            },
-                          }))
-                        }
-                        placeholder="Package title"
-                        className="w-full h-9 px-2 border border-gray-300 rounded text-sm"
-                      />
-                      <input
-                        value={packageDraftByOffer[offerId]?.message || ""}
-                        onChange={(e) =>
-                          setPackageDraftByOffer((prev) => ({
-                            ...prev,
-                            [offerId]: {
-                              ...(prev[offerId] || { title: "", message: "" }),
-                              message: e.target.value,
-                            },
-                          }))
-                        }
-                        placeholder="Message to brand"
-                        className="w-full h-9 px-2 border border-gray-300 rounded text-sm"
-                      />
-                      <Button
-                        size="sm"
-                        className="bg-black hover:bg-gray-800 text-white"
-                        disabled={busyIds.has(offerId)}
-                        onClick={() => createAndSendPackage(offerId)}
-                      >
-                        Create + Send Package
-                      </Button>
+                      <p className="text-xs text-gray-500">Offer brief</p>
+                      {offer?.message && (
+                        <p className="text-sm text-gray-700 italic">
+                          {String(offer.message)}
+                        </p>
+                      )}
+                      {offer?.brief_snapshot && typeof offer.brief_snapshot === "object" && (
+                        <div className="mt-4 border border-gray-200">
+                          <CampaignBriefView brief={offer.brief_snapshot} />
+                        </div>
+                      )}
+                      {!offer?.message &&
+                        !(offer?.brief_snapshot && typeof offer.brief_snapshot === "object") && (
+                          <p className="text-xs text-gray-500">
+                            No brief details attached to this offer.
+                          </p>
+                        )}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="rounded-md border border-gray-200 p-3">
-                      <p className="text-xs text-gray-500 mb-2">Contracts</p>
-                      {(offerContractsQuery.data || []).length === 0 ? (
-                        <p className="text-xs text-gray-500">No contracts yet.</p>
-                      ) : (
-                        (offerContractsQuery.data || []).slice(0, 3).map((c: any) => (
-                          <div key={String(c?.id)} className="text-xs text-gray-700 mb-1">
-                            {String(c?.title || "Contract")} • {String(c?.docuseal_status || "draft")}
-                          </div>
-                        ))
-                      )}
+                      <div className="rounded-md border border-gray-200 p-3">
+                        <p className="text-xs text-gray-500 mb-2">Contracts</p>
+                        {(offerContractsQuery.data || []).length === 0 ? (
+                          <p className="text-xs text-gray-500">No contracts yet.</p>
+                        ) : (
+                          (offerContractsQuery.data || []).slice(0, 3).map((c: any) => (
+                            <div key={String(c?.id)} className="text-xs text-gray-700 mb-1">
+                              {String(c?.title || "Contract")} • {String(c?.docuseal_status || "draft")}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                      <div className="rounded-md border border-gray-200 p-3">
+                        <p className="text-xs text-gray-500 mb-2">Deliverables</p>
+                        {(offerDeliverablesQuery.data || []).length === 0 ? (
+                          <p className="text-xs text-gray-500">No deliverables yet.</p>
+                        ) : (
+                          (offerDeliverablesQuery.data || []).slice(0, 3).map((d: any) => (
+                            <div key={String(d?.id)} className="text-xs text-gray-700 mb-1">
+                              {String(d?.asset_type || "file")} • {String(d?.status || "submitted")}
+                            </div>
+                          ))
+                        )}
+                      </div>
                     </div>
-                    <div className="rounded-md border border-gray-200 p-3">
-                      <p className="text-xs text-gray-500 mb-2">Deliverables</p>
-                      {(offerDeliverablesQuery.data || []).length === 0 ? (
-                        <p className="text-xs text-gray-500">No deliverables yet.</p>
-                      ) : (
-                        (offerDeliverablesQuery.data || []).slice(0, 3).map((d: any) => (
-                          <div key={String(d?.id)} className="text-xs text-gray-700 mb-1">
-                            {String(d?.asset_type || "file")} • {String(d?.status || "submitted")}
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
                   </div>
                 )}
               </div>
@@ -629,11 +688,27 @@ const BrandConnectionsView = () => {
                   <p className="text-xs text-gray-500">
                     Status: {String(item?.status || "feedback_received")}
                   </p>
-                  {item?.meta?.feedback_note && (
-                    <p className="text-sm text-gray-700 mt-2">
-                      {String(item.meta.feedback_note)}
+                  <div className="flex items-center justify-between mt-2">
+                    <p className="text-sm text-gray-700">
+                      {item?.meta?.feedback_note ? String(item.meta.feedback_note) : ""}
                     </p>
-                  )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs font-bold border-gray-300 h-8"
+                      onClick={() => {
+                        // Navigate to packages tab and pass the package ID
+                        navigate("/AgencyDashboard?tab=packages", {
+                          state: {
+                            openFeedbackForPackageId: String(item?.meta?.agency_package_id || item?.id || ""),
+                          },
+                        });
+                      }}
+                    >
+                      <Eye className="w-3 h-3 mr-2" />
+                      View Activity
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
