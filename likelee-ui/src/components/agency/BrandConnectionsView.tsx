@@ -1106,7 +1106,7 @@ const BrandConnectionsView = () => {
                           <div className="flex items-center justify-center py-20">
                             <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
                           </div>
-                                                {(offerContractsQuery.data || []).length === 0 ? (
+                        ) : (offerContractsQuery.data || []).length === 0 ? (
                           <div className="text-center py-20 bg-white border border-gray-200 rounded-2xl shadow-sm">
                             <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                               <FileText className="w-8 h-8 text-gray-300" />
@@ -1267,6 +1267,32 @@ const BrandConnectionsView = () => {
                                                     size="sm"
                                                     variant="outline"
                                                     className="border-gray-200 hover:bg-gray-50"
+                                                    onClick={() => {
+                                                      const subId = c?.docuseal_slug || c?.docuseal_submission_id;
+                                                      if (subId) {
+                                                        const url = `https://docuseal.com/s/${subId}`;
+                                                        navigator.clipboard.writeText(url);
+                                                        toast({
+                                                          title: "Link Copied",
+                                                          description: "Signing link copied to clipboard.",
+                                                        });
+                                                      } else {
+                                                        toast({
+                                                          title: "Link Unavailable",
+                                                          description: "No submission found for this contract.",
+                                                          variant: "destructive"
+                                                        });
+                                                      }
+                                                    }}
+                                                    disabled={isBusy || (!c?.docuseal_slug && !c?.docuseal_submission_id)}
+                                                  >
+                                                    <FileText className="w-4 h-4 mr-2" />
+                                                    Copy Link
+                                                  </Button>
+                                                  <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="border-gray-200 hover:bg-gray-50"
                                                     onClick={() => handleSyncContract(selectedOfferId, cId)}
                                                     disabled={isBusy}
                                                   >
@@ -1275,7 +1301,7 @@ const BrandConnectionsView = () => {
                                                     ) : (
                                                       <>
                                                         <RefreshCw className="w-4 h-4 mr-2" />
-                                                        Sync Status
+                                                        Sync
                                                       </>
                                                     )}
                                                   </Button>
@@ -1341,7 +1367,8 @@ const BrandConnectionsView = () => {
             </div >
           )}
         </Card >
-      )}
+      )
+      }
 
       {
         activeTab === "deliverables" && (

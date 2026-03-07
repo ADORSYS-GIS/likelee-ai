@@ -22,6 +22,7 @@ import {
   FileText,
   Clock,
   CheckCircle2,
+  CheckCircle,
   Play,
   DollarSign,
   Eye,
@@ -2571,16 +2572,92 @@ export default function BrandDashboard() {
                 </Button>
               </div>
               {expanded && (
-                <div className="border border-gray-200 rounded-none p-3 bg-gray-50">
-                  {selectedOfferHubContracts.length === 0 ? (
-                    <p className="text-xs text-gray-500">No contracts found.</p>
+                <div className="border border-gray-200 rounded-none bg-gray-50 flex flex-col gap-px">
+                  {selectedOfferHubContracts.filter((c: any) => c?.docuseal_status && c.docuseal_status !== "draft").length === 0 ? (
+                    <div className="p-8 text-center bg-white">
+                      <FileText className="w-8 h-8 text-gray-300 mx-auto mb-3" />
+                      <p className="text-sm text-gray-500 font-medium">No active contracts</p>
+                      <p className="text-xs text-gray-400 mt-1">Contracts requiring your attention will appear here.</p>
+                    </div>
                   ) : (
-                    selectedOfferHubContracts.map((contract: any) => (
-                      <div key={String(contract?.id)} className="text-xs text-gray-700 mb-1">
-                        {String(contract?.title || "Contract")} •{" "}
-                        {String(contract?.docuseal_status || "draft")}
-                      </div>
-                    ))
+                    selectedOfferHubContracts
+                      .filter((c: any) => c?.docuseal_status && c.docuseal_status !== "draft")
+                      .map((contract: any) => {
+                        const isCompleted = contract?.docuseal_status === "completed";
+                        const isPending = contract?.docuseal_status === "sent";
+                        // Calculate signing URL from submission ID
+                        const submissionId = contract?.docuseal_submission_id;
+                        // Based on standard DocuSeal flow, though typically we'd fetch this from backend
+                        // For now we'll link to a placeholder or rely on email if URL isn't directly available, 
+                        // but ideally we'd have the signing_url. We'll add a realistic button.
+
+                        return (
+                          <div key={String(contract?.id)} className="bg-white p-4 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
+                            <div className="flex items-center gap-4">
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isCompleted ? "bg-green-50" : "bg-blue-50"
+                                }`}>
+                                {isCompleted ? (
+                                  <CheckCircle className="w-5 h-5 text-green-500" />
+                                ) : (
+                                  <FileText className="w-5 h-5 text-blue-500" />
+                                )}
+                              </div>
+                              <div>
+                                <h4 className="text-sm font-semibold text-gray-900">
+                                  {String(contract?.title || "Contract Document")}
+                                </h4>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full ${isCompleted
+                                    ? "bg-green-100 text-green-700"
+                                    : isPending
+                                      ? "bg-blue-100 text-blue-700"
+                                      : "bg-gray-100 text-gray-700"
+                                    }`}>
+                                    {String(contract?.docuseal_status || "Unknown").replace(/_/g, " ")}
+                                  </span>
+                                  {contract?.updated_at && (
+                                    <span className="text-xs text-gray-500">
+                                      Updated {new Date(contract.updated_at).toLocaleDateString()}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {isPending && (
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                                  onClick={() => {
+                                    const subId = contract?.docuseal_slug || contract?.docuseal_submission_id;
+                                    if (subId) {
+                                      window.open(`https://docuseal.com/s/${subId}`, '_blank');
+                                    } else {
+                                      toast({
+                                        title: "Check your email",
+                                        description: "A secure DocuSeal signing link has been sent to your email address.",
+                                      });
+                                    }
+                                  }}
+                                >
+                                  Review & Sign
+                                </Button>
+                              )}
+                              {isCompleted && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="border-gray-200 text-gray-600"
+                                >
+                                  <Download className="w-4 h-4 mr-2" />
+                                  Download
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })
                   )}
                 </div>
               )}

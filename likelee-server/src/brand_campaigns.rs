@@ -1044,6 +1044,7 @@ pub async fn send_offer_contract(
                             json!({
                                 "docuseal_status": "sent",
                                 "docuseal_submission_id": submission.id,
+                                "docuseal_slug": submission.slug,
                                 "sent_at": now,
                                 "updated_at": now,
                             })

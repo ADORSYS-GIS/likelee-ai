@@ -101,7 +101,7 @@ impl DocuSealClient {
 
     fn map_submitters_response(
         body_text: &str,
-    ) -> Result<CreateSubmissionResponse, Box<dyn std::error::Error>> {
+    ) -> Result<CreateSubmissionResponse, Box<dyn std::error::Error + Send + Sync>> {
         let submitters: Vec<DocuSealSubmitter> = serde_json::from_str(body_text)?;
         let first = submitters
             .first()
@@ -132,7 +132,7 @@ impl DocuSealClient {
         template_id: i32,
         submitter_name: String,
         submitter_email: String,
-    ) -> Result<CreateSubmissionResponse, Box<dyn std::error::Error>> {
+    ) -> Result<CreateSubmissionResponse, Box<dyn std::error::Error + Send + Sync>> {
         self.create_submission_with_values(template_id, submitter_name, submitter_email, None, None)
             .await
     }
@@ -145,7 +145,7 @@ impl DocuSealClient {
         submitter_email: String,
         role: String,
         values: Option<serde_json::Value>,
-    ) -> Result<CreateSubmissionResponse, Box<dyn std::error::Error>> {
+    ) -> Result<CreateSubmissionResponse, Box<dyn std::error::Error + Send + Sync>> {
         self.create_submission_with_values(
             template_id,
             submitter_name,
@@ -165,7 +165,7 @@ impl DocuSealClient {
         role: String,
         values: Option<serde_json::Value>,
         send_email: bool,
-    ) -> Result<CreateSubmissionResponse, Box<dyn std::error::Error>> {
+    ) -> Result<CreateSubmissionResponse, Box<dyn std::error::Error + Send + Sync>> {
         self.create_submission_with_values_and_send_email(
             template_id,
             submitter_name,
@@ -185,7 +185,7 @@ impl DocuSealClient {
         submitter_email: String,
         values: Option<serde_json::Value>,
         role: Option<String>,
-    ) -> Result<CreateSubmissionResponse, Box<dyn std::error::Error>> {
+    ) -> Result<CreateSubmissionResponse, Box<dyn std::error::Error + Send + Sync>> {
         self.create_submission_with_values_and_send_email(
             template_id,
             submitter_name,
@@ -206,7 +206,7 @@ impl DocuSealClient {
         role: String,
         fields: Vec<SubmitterField>,
         send_email: bool,
-    ) -> Result<CreateSubmissionResponse, Box<dyn std::error::Error>> {
+    ) -> Result<CreateSubmissionResponse, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!("{}/submissions", self.base_url);
 
         let request_body = CreateSubmissionRequest {
@@ -273,7 +273,7 @@ impl DocuSealClient {
         values: Option<serde_json::Value>,
         role: Option<String>,
         send_email: bool,
-    ) -> Result<CreateSubmissionResponse, Box<dyn std::error::Error>> {
+    ) -> Result<CreateSubmissionResponse, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!("{}/submissions", self.base_url);
 
         let submitter_values = values.clone().and_then(|v| {
@@ -374,7 +374,7 @@ impl DocuSealClient {
         template_id: i32,
         submitters: Vec<Submitter>,
         send_email: bool,
-    ) -> Result<CreateSubmissionResponse, Box<dyn std::error::Error>> {
+    ) -> Result<CreateSubmissionResponse, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!("{}/submissions", self.base_url);
         let request_body = CreateSubmissionRequest {
             template_id,
@@ -406,7 +406,7 @@ impl DocuSealClient {
     pub async fn get_submission(
         &self,
         submission_id: i32,
-    ) -> Result<GetSubmissionResponse, Box<dyn std::error::Error>> {
+    ) -> Result<GetSubmissionResponse, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!("{}/submissions/{}", self.base_url, submission_id);
 
         info!(submission_id, url = %url, "Fetching DocuSeal submission");
@@ -450,7 +450,7 @@ impl DocuSealClient {
     pub async fn archive_submission(
         &self,
         submission_id: i32,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let url = format!("{}/submissions/{}/archive", self.base_url, submission_id);
 
         info!(submission_id, url = %url, "Archiving DocuSeal submission");
@@ -486,7 +486,7 @@ impl DocuSealClient {
         integration_email: String,
         template_id: Option<i32>,
         values: Option<serde_json::Value>,
-    ) -> Result<String, Box<dyn std::error::Error>> {
+    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
         self.create_builder_token_with_external_id(
             user_email,
             user_name,
@@ -509,7 +509,7 @@ impl DocuSealClient {
         external_id: Option<String>,
         values: Option<serde_json::Value>,
         submitters: Option<serde_json::Value>,
-    ) -> Result<String, Box<dyn std::error::Error>> {
+    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
         use jsonwebtoken::{encode, EncodingKey, Header};
 
         #[derive(Debug, Serialize)]
@@ -565,7 +565,7 @@ impl DocuSealClient {
     pub async fn list_templates(
         &self,
         limit: Option<i32>,
-    ) -> Result<ListTemplatesResponse, Box<dyn std::error::Error>> {
+    ) -> Result<ListTemplatesResponse, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!("{}/templates", self.base_url);
         let limit = limit.unwrap_or(100);
 
@@ -602,7 +602,7 @@ impl DocuSealClient {
         name: String,
         document_name: String,
         document_base64: String,
-    ) -> Result<CreateTemplateResponse, Box<dyn std::error::Error>> {
+    ) -> Result<CreateTemplateResponse, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!("{}/templates/pdf", self.base_url);
 
         let request_body = CreateTemplateRequest {
@@ -645,7 +645,7 @@ impl DocuSealClient {
     pub async fn get_template(
         &self,
         template_id: i32,
-    ) -> Result<TemplateDetails, Box<dyn std::error::Error>> {
+    ) -> Result<TemplateDetails, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!("{}/templates/{}", self.base_url, template_id);
 
         info!(template_id, url = %url, "Fetching DocuSeal template details");
@@ -687,7 +687,7 @@ impl DocuSealClient {
         template_id: i32,
         document_name: String,
         document_base64: String,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let url = format!("{}/templates/{}/documents", self.base_url, template_id);
 
         let request_body = json!({
@@ -728,7 +728,7 @@ impl DocuSealClient {
         &self,
         template_id: i32,
         name: String,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let url = format!("{}/templates/{}", self.base_url, template_id);
 
         let request_body = json!({
@@ -765,7 +765,7 @@ impl DocuSealClient {
     pub async fn delete_template(
         &self,
         template_id: i32,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let url = format!("{}/templates/{}", self.base_url, template_id);
 
         info!(template_id, url = %url, "Deleting DocuSeal template");
@@ -869,7 +869,7 @@ impl DocuSealClient {
         &self,
         name: String,
         html: String,
-    ) -> Result<CreateTemplateResponse, Box<dyn std::error::Error>> {
+    ) -> Result<CreateTemplateResponse, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!("{}/templates/html", self.base_url);
 
         let request_body = CreateTemplateFromHtmlRequest { name, html };
@@ -911,7 +911,7 @@ impl DocuSealClient {
         template_id: i32,
         _name: String,
         html: String,
-    ) -> Result<CreateTemplateResponse, Box<dyn std::error::Error>> {
+    ) -> Result<CreateTemplateResponse, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!("{}/templates/{}/documents", self.base_url, template_id);
 
         let request_body = UpdateTemplateFromHtmlRequest {
