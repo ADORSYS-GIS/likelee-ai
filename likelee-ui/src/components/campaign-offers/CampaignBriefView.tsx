@@ -1,8 +1,17 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
-import { Download } from "lucide-react";
+import { Download, FileDown } from "lucide-react";
+import { generateBriefPDF } from "@/services/BriefPDFService";
 
-export function CampaignBriefView({ brief }: { brief: any }) {
+export function CampaignBriefView({
+    brief,
+    brandName = "Brand",
+    campaignName = "Campaign Brief",
+}: {
+    brief: any;
+    brandName?: string;
+    campaignName?: string;
+}) {
     const briefValue = (key: string, fallback = "Not specified") => {
         const value = brief?.[key];
         if (value === null || value === undefined) return fallback;
@@ -311,7 +320,16 @@ export function CampaignBriefView({ brief }: { brief: any }) {
                         <p className="text-slate-500">Not specified</p>
                     )}
                 </div>
-            </Card>
+                <div className="pt-6 border-t border-gray-100 flex justify-center">
+                    <button
+                        onClick={() => generateBriefPDF(brief, brandName, campaignName)}
+                        className="flex items-center gap-2 px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-all shadow-md hover:shadow-lg active:scale-95"
+                    >
+                        <FileDown className="w-5 h-5" />
+                        Download Full Campaign Brief (PDF)
+                    </button>
+                </div>
+            </Card >
         </>
     );
 }
