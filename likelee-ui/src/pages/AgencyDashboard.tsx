@@ -17116,6 +17116,20 @@ export default function AgencyDashboard() {
       getDefaultSubTab(searchParams.get("tab") || "dashboard"),
   );
 
+  useEffect(() => {
+    const nextTab = String(searchParams.get("tab") || "").trim();
+    if (nextTab && nextTab !== activeTab) {
+      setActiveTabState(nextTab);
+      const nextSubTab =
+        normalizeSubTab(searchParams.get("subTab")) || getDefaultSubTab(nextTab);
+      setActiveSubTabState(nextSubTab);
+      setExpandedItems((prev) => {
+        if (prev.includes(nextTab)) return prev;
+        return [...prev, nextTab];
+      });
+    }
+  }, [searchParams, activeTab]);
+
   const [expandedItems, setExpandedItems] = useState<string[]>(() => {
     const tabFromUrl = searchParams.get("tab");
     return tabFromUrl ? [tabFromUrl] : ["dashboard"];
@@ -17817,17 +17831,45 @@ export default function AgencyDashboard() {
 
   const setActiveTab = (tab: string) => {
     setActiveTabState(tab);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("tab", tab);
+        if (!next.get("subTab")) {
+          next.set("subTab", getDefaultSubTab(tab));
+        }
+        return next;
+      },
+      { replace: true, preventScrollReset: true },
+    );
   };
 
   const setActiveSubTab = (subTab: string) => {
     const normalizedSubTab = normalizeSubTab(subTab);
     setActiveSubTabState(normalizedSubTab);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("subTab", normalizedSubTab);
+        return next;
+      },
+      { replace: true, preventScrollReset: true },
+    );
   };
 
   const setActiveView = (tab: string, subTab?: string) => {
     const resolvedSubTab = normalizeSubTab(subTab) || getDefaultSubTab(tab);
     setActiveTabState(tab);
     setActiveSubTabState(resolvedSubTab);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("tab", tab);
+        next.set("subTab", resolvedSubTab);
+        return next;
+      },
+      { replace: true, preventScrollReset: true },
+    );
   };
 
   const setActiveScoutingTab = (tab: string) => {
