@@ -25,6 +25,7 @@ pub struct TalentPackage {
     pub access_token: String,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
+    pub meta: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -47,6 +48,7 @@ pub struct CreatePackageRequest {
     pub template_id: Option<String>,
     pub password: Option<String>,
     pub password_protected: Option<bool>,
+    pub meta: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -147,6 +149,7 @@ pub async fn create_package(
         } else {
             None
         },
+        "meta": payload.meta.clone().unwrap_or_else(|| serde_json::json!({})),
     });
 
     let resp = state
