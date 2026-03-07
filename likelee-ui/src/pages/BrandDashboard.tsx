@@ -2584,7 +2584,7 @@ export default function BrandDashboard() {
                       .filter((c: any) => c?.docuseal_status && c.docuseal_status !== "draft")
                       .map((contract: any) => {
                         const isCompleted = contract?.docuseal_status === "completed";
-                        const isPending = contract?.docuseal_status === "sent";
+                        const isPending = contract?.docuseal_status === "sent" || contract?.docuseal_status === "opened";
                         // Calculate signing URL from submission ID
                         const submissionId = contract?.docuseal_submission_id;
                         // Based on standard DocuSeal flow, though typically we'd fetch this from backend
@@ -2649,6 +2649,17 @@ export default function BrandDashboard() {
                                   variant="outline"
                                   size="sm"
                                   className="border-gray-200 text-gray-600"
+                                  onClick={() => {
+                                    if (contract?.signed_document_url) {
+                                      window.open(contract.signed_document_url, '_blank');
+                                    } else {
+                                      toast({
+                                        title: "Download Unavailable",
+                                        description: "The signed document URL is not available yet.",
+                                        variant: "destructive"
+                                      });
+                                    }
+                                  }}
                                 >
                                   <Download className="w-4 h-4 mr-2" />
                                   Download
@@ -2660,12 +2671,13 @@ export default function BrandDashboard() {
                       })
                   )}
                 </div>
-              )}
+              )
+              }
             </Card>
           );
         })}
       </div>
-    </div>
+    </div >
   );
 
   const renderCampaignDeliverablesHub = () => (
