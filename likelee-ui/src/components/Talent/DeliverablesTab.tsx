@@ -55,6 +55,7 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
   const [uploadingMap, setUploadingMap] = useState<Record<string, boolean>>({});
   const [submittingMap, setSubmittingMap] = useState<Record<string, boolean>>({});
   const [authToken, setAuthToken] = useState<string | null>(null);
+  const [openFeedback, setOpenFeedback] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   useEffect(() => {
@@ -326,11 +327,43 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
                                       </div>
                                     </div>
                                     {del.agency_review_note && (
-                                      <div className="p-4 bg-amber-50/80 border-t border-amber-100">
-                                        <div className="flex items-center gap-2 mb-1.5 font-bold text-[10px] text-amber-700 tracking-wider">
-                                          <MessageSquare className="w-3 h-3" /> FEEDBACK
-                                        </div>
-                                        <p className="text-[11px] text-amber-900 leading-relaxed font-medium">{del.agency_review_note}</p>
+                                      <div className="border-t border-amber-100">
+                                        <button
+                                          onClick={() => {
+                                            const next = new Set(openFeedback);
+                                            if (next.has(del.id)) next.delete(del.id);
+                                            else next.add(del.id);
+                                            setOpenFeedback(next);
+                                          }}
+                                          className="w-full p-3 flex items-center justify-between bg-amber-50/50 hover:bg-amber-100/50 transition-colors"
+                                        >
+                                          <div className="flex items-center gap-2 font-bold text-[10px] text-amber-700 tracking-wider uppercase">
+                                            <MessageSquare className="w-3.5 h-3.5" />
+                                            Agency Feedback
+                                          </div>
+                                          {openFeedback.has(del.id) ? (
+                                            <ChevronDown className="w-3.5 h-3.5 text-amber-400 rotate-180 transition-transform" />
+                                          ) : (
+                                            <ChevronDown className="w-3.5 h-3.5 text-amber-400 transition-transform" />
+                                          )}
+                                        </button>
+                                        
+                                        <AnimatePresence>
+                                          {openFeedback.has(del.id) && (
+                                            <motion.div
+                                              initial={{ height: 0, opacity: 0 }}
+                                              animate={{ height: "auto", opacity: 1 }}
+                                              exit={{ height: 0, opacity: 0 }}
+                                              className="overflow-hidden"
+                                            >
+                                              <div className="px-4 pb-4 pt-1 bg-amber-50/50">
+                                                <p className="text-[11px] text-amber-900 leading-relaxed font-medium bg-white/60 rounded-xl p-3 border border-amber-200/50 shadow-sm">
+                                                  {del.agency_review_note}
+                                                </p>
+                                              </div>
+                                            </motion.div>
+                                          )}
+                                        </AnimatePresence>
                                       </div>
                                     )}
                                   </Card>
