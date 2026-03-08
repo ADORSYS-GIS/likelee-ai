@@ -92,14 +92,17 @@ import {
   MapPin,
   Star,
   Menu,
-  Image as ImageIcon,
+  ImageIcon,
   Loader2,
   Mic,
   Link as LinkIcon,
   Pencil,
   Play,
   Library,
+  FolderCheck,
 } from "lucide-react";
+import { AgencyDeliverablesView } from "@/components/agency/AgencyDeliverablesView";
+
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { Button } from "@/components/ui/button";
 
@@ -18058,6 +18061,7 @@ export default function AgencyDashboard() {
             },
           },
           { id: "packages", label: packagesTabLabel, icon: Package },
+          { id: "deliverables", label: "Deliverables", icon: FolderCheck },
           { id: "catalogs", label: "Catalogs", icon: Library },
           {
             id: "settings",
@@ -18129,6 +18133,7 @@ export default function AgencyDashboard() {
             },
           },
           { id: "packages", label: packagesTabLabel, icon: Package },
+          { id: "deliverables", label: "Deliverables", icon: FolderCheck },
           { id: "catalogs", label: "Catalogs", icon: Library },
           {
             id: "settings",
@@ -18878,6 +18883,8 @@ export default function AgencyDashboard() {
             activeSubTab === "Royalties & Payouts" && (
               <RoyaltiesPayoutsView isSportsAgency={isSportsAgency} />
             )}
+          {activeTab === "deliverables" && <AgencyDeliverablesView />}
+
           {activeTab === "packages" && (
             <PackagesView isSportsAgency={isSportsAgency} />
           )}

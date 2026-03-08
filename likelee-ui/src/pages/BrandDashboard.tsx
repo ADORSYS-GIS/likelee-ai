@@ -26,7 +26,9 @@ import {
   Play,
   DollarSign,
   Eye,
+  ExternalLink,
   BarChart3,
+
   Download,
   Settings,
   Calendar,
@@ -66,6 +68,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { supabase } from "@/lib/supabase";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -651,7 +654,18 @@ export default function BrandDashboard() {
   const [selectedOfferHubDeliverables, setSelectedOfferHubDeliverables] =
     useState<any[]>([]);
   const [usageRightsTab, setUsageRightsTab] = useState("licenses");
+  const [authToken, setAuthToken] = useState<string | null>(null);
   const [creators, setCreators] = useState(mockCreators);
+
+  useEffect(() => {
+    const getSession = async () => {
+      if (supabase) {
+        const { data: { session } } = await supabase.auth.getSession();
+        setAuthToken(session?.access_token || null);
+      }
+    };
+    getSession();
+  }, []);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({
     creator_types: [],
@@ -2539,6 +2553,48 @@ export default function BrandDashboard() {
     }
   };
 
+  const handleDeliverableReview = async (
+    offerId: string,
+    deliverableId: string,
+    status: string,
+    note?: string,
+  ) => {
+    try {
+      await base44.post(
+        `/api/campaign-offers/${offerId}/deliverables/${deliverableId}/review`,
+        {
+          status,
+          note,
+        },
+      );
+      toast({
+        title: "Success",
+        description: `Deliverable ${status.replace(/_/g, " ")}.`,
+      });
+      await loadOfferHubDetails(offerId);
+    } catch (error: any) {
+      toast({
+        title: "Review failed",
+        description: error.message || "Failed to update deliverable status.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getPublicUrl = (del: any) => {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
+    const path = typeof del === "string" ? del : del?.asset_url;
+    if (!path) return "";
+    if (path.startsWith("http")) return path;
+
+    if (typeof del === "object" && del?.id && del?.offer_id) {
+      const proxyUrl = `/api/campaign-offers/${del.offer_id}/deliverables/${del.id}/file`;
+      return authToken ? `${proxyUrl}?token=${authToken}` : proxyUrl;
+    }
+
+    return `${baseUrl}/storage/v1/object/public/likelee-private/${path}`;
+  };
+
   const renderCampaignContractHub = () => (
     <div className="space-y-5">
       <div>
@@ -2690,64 +2746,151 @@ export default function BrandDashboard() {
   );
 
   const renderCampaignDeliverablesHub = () => (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold text-gray-900 mb-1">Deliverables</h2>
-        <p className="text-gray-600">Track deliverables submitted for campaign offers.</p>
+        <h2 className="text-3xl font-black text-gray-900 font-syne tracking-tight">
+          Deliverables
+        </h2>
+        <p className="text-gray-500 font-medium mt-1">
+          Review and approve content from your campaign creators.
+        </p>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-4">
         {brandOfferItems.length === 0 && (
-          <Card className="p-6 bg-white border border-gray-300 rounded-none">
-            <p className="text-sm text-gray-500">No deliverables available yet.</p>
+          <Card className="p-12 bg-white border border-gray-300 rounded-none text-center">
+            <p className="text-sm text-gray-500">No active campaigns available.</p>
           </Card>
         )}
         {brandOfferItems.map((offer: any) => {
           const offerId = String(offer?.id || "");
           const expanded = selectedOfferHubId === offerId;
           return (
-            <Card
+            <div
               key={offerId}
-              className="p-4 bg-white border border-gray-300 rounded-none space-y-2"
+              className="border border-gray-300 bg-white overflow-hidden"
             >
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <p className="font-semibold text-gray-900">
-                    {offer?.brand_campaigns?.name || "Campaign offer"}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {String(offer?.status || "sent").replace(/_/g, " ")}
-                  </p>
+              <div
+                className="p-5 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={async () => {
+                  const next = expanded ? "" : offerId;
+                  setSelectedOfferHubId(next);
+                  await loadOfferHubDetails(next);
+                }}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="bg-gray-100 p-2.5 rounded-none border border-gray-200">
+                    <Users className="w-5 h-5 text-gray-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900">
+                      {offer?.brand_campaigns?.name || "Campaign Asset Submission"}
+                    </h3>
+                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5">
+                      {offer.talent_name || "Creator"} • {offer.offer_title || "Offer"}
+                    </p>
+                  </div>
                 </div>
-                <Button
-                  variant="outline"
-                  className="border border-gray-300 rounded-none"
-                  onClick={async () => {
-                    const next = expanded ? "" : offerId;
-                    setSelectedOfferHubId(next);
-                    await loadOfferHubDetails(next);
-                  }}
-                >
-                  {expanded ? "Hide" : "View Deliverables"}
-                </Button>
-              </div>
-              {expanded && (
-                <div className="border border-gray-200 rounded-none p-3 bg-gray-50">
-                  {selectedOfferHubDeliverables.length === 0 ? (
-                    <p className="text-xs text-gray-500">No deliverables found.</p>
+                <div className="flex items-center gap-4">
+                  <Badge variant="outline" className="rounded-none capitalize">
+                    {String(offer?.status || "sent").replace(/_/g, " ")}
+                  </Badge>
+                  {expanded ? (
+                    <ChevronDown className="w-5 h-5 text-gray-400" />
                   ) : (
-                    selectedOfferHubDeliverables.map((deliverable: any) => (
-                      <div
-                        key={String(deliverable?.id)}
-                        className="text-xs text-gray-700 mb-1"
-                      >
-                        {String(deliverable?.asset_type || "file")} •{" "}
-                        {String(deliverable?.status || "submitted")}
-                      </div>
-                    ))
+                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                  )}
+                </div>
+              </div>
+
+              {expanded && (
+                <div className="border-t border-gray-200 bg-gray-50/50 p-6">
+                  {selectedOfferHubDeliverables.length === 0 ? (
+                    <div className="py-12 text-center">
+                      <ImageIcon className="w-12 h-12 text-gray-200 mx-auto mb-3" />
+                      <p className="text-sm text-gray-400 font-medium italic">
+                        No content has been submitted yet.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {selectedOfferHubDeliverables.map((del: any) => (
+                        <Card
+                          key={String(del.id)}
+                          className="overflow-hidden border-gray-300 rounded-none bg-white shadow-sm"
+                        >
+                          <div className="aspect-[4/3] bg-gray-100 relative group">
+                            {del.asset_type === "image" ? (
+                              <img
+                                src={getPublicUrl(del)}
+                                alt={del.caption || "Deliverable"}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-gray-900">
+                                <Video className="w-12 h-12 text-white/20" />
+                              </div>
+                            )}
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                              <Button variant="secondary" size="sm" className="rounded-none h-8" asChild>
+                                <a
+                                  href={getPublicUrl(del)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  <Eye className="w-3 h-3 mr-1.5" /> View
+                                </a>
+                              </Button>
+                            </div>
+                            <div className="absolute top-2 left-2">
+                              <Badge className={`rounded-none border-0 ${
+                                del.status === 'approved' ? 'bg-emerald-600 text-white' : 
+                                del.status === 'changes_requested' ? 'bg-rose-600 text-white' : 
+                                'bg-blue-600 text-white'
+                              }`}>
+                                {del.status === 'submitted' ? 'New' : del.status.replace(/_/g, " ")}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="p-4 space-y-4">
+                            <p className="text-xs text-gray-600 font-medium leading-relaxed line-clamp-2">
+                              {del.caption || <span className="text-gray-300 italic">No caption</span>}
+                            </p>
+                            
+                            <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+                              <Button
+                                size="sm"
+                                className="flex-1 h-8 rounded-none font-bold bg-gray-900"
+                                onClick={() => handleDeliverableReview(offerId, del.id, "approved")}
+                                disabled={del.status === "approved"}
+                              >
+                                Approve
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1 h-8 rounded-none font-bold border-gray-300"
+                                onClick={() => {
+                                  const note = prompt("Feedback for the creator:");
+                                  if (note) handleDeliverableReview(offerId, del.id, "changes_requested", note);
+                                }}
+                              >
+                                Feedback
+                              </Button>
+                            </div>
+
+                            {del.brand_review_note && (
+                              <div className="p-2 bg-gray-50 border border-gray-200 text-[10px] text-gray-600">
+                                <strong>Your feedback:</strong> {del.brand_review_note}
+                              </div>
+                            )}
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
                   )}
                 </div>
               )}
-            </Card>
+            </div>
           );
         })}
       </div>

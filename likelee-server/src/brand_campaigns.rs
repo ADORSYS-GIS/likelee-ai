@@ -1851,6 +1851,338 @@ pub async fn list_offer_deliverables(
     Ok(Json(json!({"deliverables": rows})))
 }
 
+pub async fn upload_offer_deliverable(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(OfferPath { offer_id }): Path<OfferPath>,
+    mut multipart: Multipart,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    if user.role != "agency" && !is_creator_like(&user.role) {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+    let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
+
+    let mut file_name = None;
+    let mut bytes: Vec<u8> = vec![];
+    let mut asset_type = "file".to_string();
+    let mut caption = None;
+
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?
+    {
+        match field.name() {
+            Some("file") => {
+                file_name = field.file_name().map(|s| s.to_string());
+                if let Some(ct) = field.content_type() {
+                    if ct.starts_with("image/") {
+                        asset_type = "image".to_string();
+                    } else if ct.starts_with("video/") {
+                        asset_type = "video".to_string();
+                    }
+                }
+                bytes = field
+                    .bytes()
+                    .await
+                    .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?
+                    .to_vec();
+            }
+            Some("caption") => {
+                caption = Some(
+                    field
+                        .text()
+                        .await
+                        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?,
+                );
+            }
+            _ => {}
+        }
+    }
+
+    if bytes.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "missing file".into()));
+    }
+
+    let fname = file_name.unwrap_or_else(|| "deliverable.bin".to_string());
+    let sanitized = fname
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect::<String>();
+
+    let bucket = state.supabase_bucket_private.clone();
+    let path = format!(
+        "campaigns/deliverables/{}/{}_{}",
+        offer_id,
+        chrono::Utc::now().timestamp_millis(),
+        sanitized
+    );
+
+    let storage_url = format!(
+        "{}/storage/v1/object/{}/{}",
+        state.supabase_url, bucket, path
+    );
+    let http = reqwest::Client::new();
+    let up = http
+        .post(&storage_url)
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
+        .header("apikey", state.supabase_service_key.clone())
+        .body(bytes)
+        .send()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    if !up.status().is_success() {
+        let msg = up.text().await.unwrap_or_default();
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            format!("storage upload failed: {msg}"),
+        ));
+    }
+
+    // Now insert the deliverable record
+    let insert_payload = json!({
+        "offer_id": offer_id,
+        "brand_campaign_id": _offer.get("brand_campaign_id").cloned().unwrap_or(serde_json::Value::Null),
+        "brand_id": _offer.get("brand_id").cloned().unwrap_or(serde_json::Value::Null),
+        "agency_id": if user.role == "agency" { json!(user.id.clone()) } else { serde_json::Value::Null },
+        "creator_id": if is_creator_like(&user.role) { json!(user.id.clone()) } else { serde_json::Value::Null },
+        "submitted_by": user.id,
+        "asset_url": path, // Storing path relative to bucket
+        "asset_type": asset_type,
+        "caption": caption.as_deref().map(str::trim).filter(|s| !s.is_empty()),
+        "status": "draft",
+        "meta": json!({
+            "original_filename": fname,
+            "bucket": bucket,
+        }),
+    });
+
+    let resp = state
+        .pg
+        .from("campaign_offer_deliverables")
+        .insert(insert_payload.to_string())
+        .select("*")
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        return Err(sanitize_db_error(
+            resp.status().as_u16(),
+            resp.text().await.unwrap_or_default(),
+        ));
+    }
+
+    // Update offer status
+    let _ = state
+        .pg
+        .from("campaign_offers")
+        .eq("id", &offer_id)
+        .update(
+            json!({
+                "status": "deliverables_submitted",
+                "updated_at": chrono::Utc::now().to_rfc3339(),
+            })
+            .to_string(),
+        )
+        .execute()
+        .await;
+
+    let row: serde_json::Value =
+        serde_json::from_str(&resp.text().await.unwrap_or_default()).unwrap_or_default();
+    Ok(Json(json!({"status":"ok","deliverable": row})))
+}
+
+pub async fn submit_draft_deliverables(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(OfferPath { offer_id }): Path<OfferPath>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    if user.role != "agency" && !is_creator_like(&user.role) {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+    let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
+
+    let resp = state
+        .pg
+        .from("campaign_offer_deliverables")
+        .eq("status", "draft")
+        .eq("offer_id", &offer_id)
+        .update(json!({ "status": "submitted" }).to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        return Err(sanitize_db_error(
+            resp.status().as_u16(),
+            resp.text().await.unwrap_or_default(),
+        ));
+    }
+
+    // Update offer status
+    let _ = state
+        .pg
+        .from("campaign_offers")
+        .eq("id", &offer_id)
+        .update(
+            json!({
+                "status": "deliverables_submitted",
+                "updated_at": chrono::Utc::now().to_rfc3339(),
+            })
+            .to_string(),
+        )
+        .execute()
+        .await;
+
+    Ok(Json(json!({"status":"ok"})))
+}
+
+pub async fn delete_offer_deliverable(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(OfferDeliverablePath {
+        offer_id,
+        deliverable_id,
+    }): Path<OfferDeliverablePath>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    if user.role != "agency" && !is_creator_like(&user.role) {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+    let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
+
+    // Check if it's draft or rejected and if the user owns it (if creator)
+    let del_resp = state
+        .pg
+        .from("campaign_offer_deliverables")
+        .eq("id", &deliverable_id)
+        .eq("offer_id", &offer_id)
+        .select("*")
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !del_resp.status().is_success() {
+        return Err((StatusCode::NOT_FOUND, "Deliverable not found".to_string()));
+    }
+
+    let del: serde_json::Value =
+        serde_json::from_str(&del_resp.text().await.unwrap_or_default()).unwrap_or_default();
+    let status = del.get("status").and_then(|s| s.as_str()).unwrap_or("");
+
+    if status != "draft" && status != "rejected" && status != "changes_requested" {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "Only drafts or rejected deliverables can be deleted".to_string(),
+        ));
+    }
+
+    // Actually delete
+    let resp = state
+        .pg
+        .from("campaign_offer_deliverables")
+        .eq("id", &deliverable_id)
+        .delete()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !resp.status().is_success() {
+        let status = resp.status().as_u16();
+        let msg = resp.text().await.unwrap_or_default();
+        return Err(sanitize_db_error(status, msg));
+    }
+
+    Ok(Json(json!({"status": "ok"})))
+}
+
+pub async fn serve_offer_deliverable(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(OfferDeliverablePath {
+        offer_id,
+        deliverable_id,
+    }): Path<OfferDeliverablePath>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
+
+    // Get the deliverable record
+    let del_resp = state
+        .pg
+        .from("campaign_offer_deliverables")
+        .eq("id", &deliverable_id)
+        .eq("offer_id", &offer_id)
+        .select("*")
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !del_resp.status().is_success() {
+        return Err((StatusCode::NOT_FOUND, "Deliverable not found".to_string()));
+    }
+
+    let del: serde_json::Value =
+        serde_json::from_str(&del_resp.text().await.unwrap_or_default()).unwrap_or_default();
+    let path = del.get("asset_url").and_then(|v| v.as_str()).unwrap_or("");
+    let asset_type = del.get("asset_type").and_then(|v| v.as_str()).unwrap_or("image");
+
+    if path.is_empty() {
+        return Err((StatusCode::NOT_FOUND, "Asset path is empty".to_string()));
+    }
+
+    let bucket = state.supabase_bucket_private.clone();
+    let storage_url = format!(
+        "{}/storage/v1/object/{}/{}",
+        state.supabase_url, bucket, path
+    );
+
+    let http = reqwest::Client::new();
+    let up = http
+        .get(&storage_url)
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
+        .header("apikey", state.supabase_service_key.clone())
+        .send()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, e.to_string()))?;
+
+    if !up.status().is_success() {
+        return Err((StatusCode::BAD_GATEWAY, "failed to fetch from storage".to_string()));
+    }
+
+    let content_type = up
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or(if asset_type == "video" { "video/mp4" } else { "image/jpeg" })
+        .to_string();
+
+    let bytes = up
+        .bytes()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok((
+        [(axum::http::header::CONTENT_TYPE, content_type)],
+        bytes,
+    ))
+}
+
 pub async fn review_offer_deliverable(
     State(state): State<AppState>,
     user: AuthUser,

@@ -301,3 +301,22 @@ The licensing flow has been simplified to use a single "License Fee" source of t
 - **Redundancy Removal**: The `budget_min` and `budget_max` columns in `public.licensing_requests` have been removed.
 - **Backend Resolution**: All licensing-related views (Licensing Requests, Active Licenses, Talent View) now fetch the fee directly from the linked `license_submissions` table.
 - **UI Representation**: The frontend displays a single `License Fee` instead of a `Budget Range`.
+
+## Campaign Deliverables
+
+### Goals
+- Allow creators to upload media assets (images/videos) as deliverables for campaign offers.
+- Support a multi-stage review workflow: Creator -> Agency -> Brand.
+- Ensure assets are stored securely and accessed only by authorized parties.
+
+### Workflow
+1. **Draft Stage**: Creators upload assets to their "Asset Library". These assets stay in a `draft` state and are only visible to the creator.
+2. **Submission**: Creators explicitly "Submit to Agency". This updates the deliverable status to `submitted` and notifies the agency.
+3. **Agency Review**: Agencies can `approve` or `request_changes` on deliverables.
+4. **Brand Review**: Once approved by the agency, deliverables are visible to the Brand for final approval.
+
+### Secure Media Authentication
+To protect private assets stored in Supabase, all deliverable media is accessed via a backend proxy:
+- **Proxy Endpoint**: `/api/campaign-offers/:offer_id/deliverables/:id/file`
+- **Authentication**: Since browser `<img />` and `<video />` tags do not natively support custom headers (like `Authorization: Bearer <token>`), the backend supports a fallback authentication mechanism.
+- **Token Fallback**: If the `Authorization` header is missing, the server extracts the JWT from the `token` query parameter. This allows secure, authenticated access to private media files directly within HTML media elements.

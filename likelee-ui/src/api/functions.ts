@@ -749,3 +749,60 @@ export const updateBookingsCampaign = (id: string, data: any) =>
 
 export const deleteBookingsCampaign = (id: string) =>
   base44Client.delete(`/bookings-campaigns/${id}`);
+
+// Deliverables
+export const listOfferDeliverables = (offerId: string) =>
+  base44Client.get(`/api/campaign-offers/${offerId}/deliverables`);
+
+export const uploadOfferDeliverable = (
+  offerId: string,
+  data: { file: File; caption?: string },
+) => {
+  const fd = new FormData();
+  fd.append("file", data.file);
+  if (data.caption) fd.append("caption", data.caption);
+  return base44Client.post(
+    `/api/campaign-offers/${offerId}/deliverables/upload`,
+    fd,
+  );
+};
+
+export const submitAllDraftDeliverables = (offerId: string) =>
+  base44Client.post(`/api/campaign-offers/${offerId}/deliverables/submit`);
+
+export const submitOfferDeliverable = (
+  offerId: string,
+  data: {
+    asset_url: string;
+    asset_type?: string;
+    caption?: string;
+    meta?: any;
+  },
+) => base44Client.post(`/api/campaign-offers/${offerId}/deliverables`, data);
+
+export const reviewOfferDeliverable = (
+  offerId: string,
+  deliverableId: string,
+  data: {
+    status: string;
+    note?: string;
+  },
+) =>
+  base44Client.post(
+    `/api/campaign-offers/${offerId}/deliverables/${deliverableId}/review`,
+    data,
+  );
+
+export const deleteOfferDeliverable = (
+  offerId: string,
+  deliverableId: string,
+) =>
+  base44Client.delete(
+    `/api/campaign-offers/${offerId}/deliverables/${deliverableId}`,
+  );
+
+export const listMyCampaignOffers = () =>
+  base44Client.get(`/api/campaign-offers/my`);
+
+export const listAgencyOfferPackages = () =>
+  base44Client.get(`/api/agency/brand-offers/packages`);

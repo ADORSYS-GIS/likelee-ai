@@ -759,6 +759,22 @@ pub fn build_router(state: AppState) -> Router {
                 .get(crate::brand_campaigns::list_offer_deliverables),
         )
         .route(
+            "/api/campaign-offers/:offer_id/deliverables/upload",
+            post(crate::brand_campaigns::upload_offer_deliverable),
+        )
+        .route(
+            "/api/campaign-offers/:offer_id/deliverables/submit",
+            post(crate::brand_campaigns::submit_draft_deliverables),
+        )
+        .route(
+            "/api/campaign-offers/:offer_id/deliverables/:deliverable_id",
+            delete(crate::brand_campaigns::delete_offer_deliverable),
+        )
+        .route(
+            "/api/campaign-offers/:offer_id/deliverables/:deliverable_id/file",
+            get(crate::brand_campaigns::serve_offer_deliverable),
+        )
+        .route(
             "/api/campaign-offers/:offer_id/deliverables/:deliverable_id/review",
             post(crate::brand_campaigns::review_offer_deliverable),
         )

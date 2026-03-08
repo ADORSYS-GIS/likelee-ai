@@ -65,3 +65,7 @@ trigger: always_on
 
 - Log effective AWS region at startup and warn on non‑supported or mismatched regions.
 - Include request IDs and label counts/results where helpful. Avoid logging sensitive data.
+
+## Milestones
+
+- [x] **Campaign Deliverables & Secure Media Authentication (2026-03-08)**: Implemented multi-stage deliverable review workflow (draft -> submitted -> approved) and secure media proxy with JWT token fallback in query parameters for browser-native media elements.

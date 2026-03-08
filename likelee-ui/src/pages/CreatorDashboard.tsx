@@ -123,6 +123,7 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
+import { DeliverablesTab } from "@/components/Talent/DeliverablesTab";
 
 import { useTranslation } from "react-i18next";
 
@@ -808,9 +809,15 @@ export default function CreatorDashboard() {
     "connections" | "requests" | "offers" | "contract_hub" | "deliverables"
   >("connections");
   const [selectedBrandOfferId, setSelectedBrandOfferId] = useState<string>("");
-  const [selectedOfferContracts, setSelectedOfferContracts] = useState<any[]>([]);
-  const [selectedOfferDeliverables, setSelectedOfferDeliverables] = useState<any[]>([]);
-  const [deliverableUrlByOffer, setDeliverableUrlByOffer] = useState<Record<string, string>>({});
+  const [selectedOfferContracts, setSelectedOfferContracts] = useState<any[]>(
+    [],
+  );
+  const [selectedOfferDeliverables, setSelectedOfferDeliverables] = useState<
+    any[]
+  >([]);
+  const [deliverableUrlByOffer, setDeliverableUrlByOffer] = useState<
+    Record<string, string>
+  >({});
   const [offerActionLoading, setOfferActionLoading] = useState(false);
   const [agencyConnectionLoading, setAgencyConnectionLoading] = useState(false);
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
@@ -867,9 +874,12 @@ export default function CreatorDashboard() {
   };
 
   const loadBrandOffers = async () => {
-    const offersResp = await base44.get<{ offers?: any[] }>("/api/campaign-offers/my", {
-      params: { limit: 80 },
-    });
+    const offersResp = await base44.get<{ offers?: any[] }>(
+      "/api/campaign-offers/my",
+      {
+        params: { limit: 80 },
+      },
+    );
     return Array.isArray(offersResp?.offers) ? offersResp.offers : [];
   };
 
@@ -880,7 +890,9 @@ export default function CreatorDashboard() {
       return;
     }
     const [contractsResp, deliverablesResp] = await Promise.all([
-      base44.get<{ contracts?: any[] }>(`/api/campaign-offers/${offerId}/contracts`),
+      base44.get<{ contracts?: any[] }>(
+        `/api/campaign-offers/${offerId}/contracts`,
+      ),
       base44.get<{ deliverables?: any[] }>(
         `/api/campaign-offers/${offerId}/deliverables`,
       ),
@@ -889,7 +901,9 @@ export default function CreatorDashboard() {
       Array.isArray(contractsResp?.contracts) ? contractsResp.contracts : [],
     );
     setSelectedOfferDeliverables(
-      Array.isArray(deliverablesResp?.deliverables) ? deliverablesResp.deliverables : [],
+      Array.isArray(deliverablesResp?.deliverables)
+        ? deliverablesResp.deliverables
+        : [],
     );
   };
 
@@ -5170,7 +5184,9 @@ export default function CreatorDashboard() {
     ) => {
       try {
         setOfferActionLoading(true);
-        await base44.post(`/api/campaign-offers/${offerId}/respond`, { action });
+        await base44.post(`/api/campaign-offers/${offerId}/respond`, {
+          action,
+        });
         await refreshBrandConnections();
         toast({
           title: action === "accept" ? "Offer accepted" : "Offer declined",
@@ -5272,7 +5288,9 @@ export default function CreatorDashboard() {
             My Offers
           </Button>
           <Button
-            variant={brandConnectionSubTab === "contract_hub" ? "default" : "outline"}
+            variant={
+              brandConnectionSubTab === "contract_hub" ? "default" : "outline"
+            }
             className={
               brandConnectionSubTab === "contract_hub"
                 ? "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
@@ -5283,7 +5301,9 @@ export default function CreatorDashboard() {
             Contract Hub
           </Button>
           <Button
-            variant={brandConnectionSubTab === "deliverables" ? "default" : "outline"}
+            variant={
+              brandConnectionSubTab === "deliverables" ? "default" : "outline"
+            }
             className={
               brandConnectionSubTab === "deliverables"
                 ? "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
@@ -5418,7 +5438,9 @@ export default function CreatorDashboard() {
         {brandConnectionSubTab === "offers" && (
           <Card className="p-6">
             <div className="space-y-4">
-              <div className="text-lg font-semibold text-gray-900">My Offers</div>
+              <div className="text-lg font-semibold text-gray-900">
+                My Offers
+              </div>
               {brandOffers.length === 0 && (
                 <p className="text-sm text-gray-600">
                   No campaign offers available yet.
@@ -5449,7 +5471,9 @@ export default function CreatorDashboard() {
                       </Badge>
                     </div>
                     {offer?.message && (
-                      <p className="text-sm text-gray-700">{String(offer.message)}</p>
+                      <p className="text-sm text-gray-700">
+                        {String(offer.message)}
+                      </p>
                     )}
                     <div className="flex flex-wrap gap-2">
                       {isPending && (
@@ -5504,15 +5528,17 @@ export default function CreatorDashboard() {
                               No contracts yet.
                             </div>
                           ) : (
-                            selectedOfferContracts.slice(0, 4).map((contract: any) => (
-                              <div
-                                key={String(contract?.id)}
-                                className="text-xs text-gray-700 mb-1"
-                              >
-                                {String(contract?.title || "Contract")} •{" "}
-                                {String(contract?.docuseal_status || "draft")}
-                              </div>
-                            ))
+                            selectedOfferContracts
+                              .slice(0, 4)
+                              .map((contract: any) => (
+                                <div
+                                  key={String(contract?.id)}
+                                  className="text-xs text-gray-700 mb-1"
+                                >
+                                  {String(contract?.title || "Contract")} •{" "}
+                                  {String(contract?.docuseal_status || "draft")}
+                                </div>
+                              ))
                           )}
                         </div>
                         <div className="rounded-md border border-gray-200 p-3">
@@ -5570,15 +5596,22 @@ export default function CreatorDashboard() {
         {brandConnectionSubTab === "contract_hub" && (
           <Card className="p-6">
             <div className="space-y-4">
-              <div className="text-lg font-semibold text-gray-900">Contract Hub</div>
+              <div className="text-lg font-semibold text-gray-900">
+                Contract Hub
+              </div>
               {brandOffers.length === 0 && (
-                <p className="text-sm text-gray-600">No offers with contracts yet.</p>
+                <p className="text-sm text-gray-600">
+                  No offers with contracts yet.
+                </p>
               )}
               {brandOffers.map((offer: any) => {
                 const offerId = String(offer?.id || "");
                 const expanded = selectedBrandOfferId === offerId;
                 return (
-                  <div key={offerId} className="p-4 border border-gray-200 rounded-lg space-y-2">
+                  <div
+                    key={offerId}
+                    className="p-4 border border-gray-200 rounded-lg space-y-2"
+                  >
                     <div className="flex items-center justify-between gap-2">
                       <p className="font-semibold text-gray-900">
                         {offer?.brand_campaigns?.name || "Campaign offer"}
@@ -5598,10 +5631,15 @@ export default function CreatorDashboard() {
                     {expanded && (
                       <div className="rounded-md border border-gray-200 p-3">
                         {selectedOfferContracts.length === 0 ? (
-                          <div className="text-xs text-gray-500">No contracts yet.</div>
+                          <div className="text-xs text-gray-500">
+                            No contracts yet.
+                          </div>
                         ) : (
                           selectedOfferContracts.map((contract: any) => (
-                            <div key={String(contract?.id)} className="text-xs text-gray-700 mb-1">
+                            <div
+                              key={String(contract?.id)}
+                              className="text-xs text-gray-700 mb-1"
+                            >
                               {String(contract?.title || "Contract")} •{" "}
                               {String(contract?.docuseal_status || "draft")}
                             </div>
@@ -5617,52 +5655,7 @@ export default function CreatorDashboard() {
         )}
 
         {brandConnectionSubTab === "deliverables" && (
-          <Card className="p-6">
-            <div className="space-y-4">
-              <div className="text-lg font-semibold text-gray-900">Deliverables</div>
-              {brandOffers.length === 0 && (
-                <p className="text-sm text-gray-600">No deliverables yet.</p>
-              )}
-              {brandOffers.map((offer: any) => {
-                const offerId = String(offer?.id || "");
-                const expanded = selectedBrandOfferId === offerId;
-                return (
-                  <div key={offerId} className="p-4 border border-gray-200 rounded-lg space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="font-semibold text-gray-900">
-                        {offer?.brand_campaigns?.name || "Campaign offer"}
-                      </p>
-                      <Button
-                        variant="outline"
-                        className="border-gray-200"
-                        onClick={async () => {
-                          const next = expanded ? "" : offerId;
-                          setSelectedBrandOfferId(next);
-                          if (next) await loadOfferDetails(next);
-                        }}
-                      >
-                        {expanded ? "Hide" : "Open"}
-                      </Button>
-                    </div>
-                    {expanded && (
-                      <div className="rounded-md border border-gray-200 p-3">
-                        {selectedOfferDeliverables.length === 0 ? (
-                          <div className="text-xs text-gray-500">No deliverables yet.</div>
-                        ) : (
-                          selectedOfferDeliverables.map((deliverable: any) => (
-                            <div key={String(deliverable?.id)} className="text-xs text-gray-700 mb-1">
-                              {String(deliverable?.asset_type || "file")} •{" "}
-                              {String(deliverable?.status || "submitted")}
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
+          <DeliverablesTab activeCampaigns={brandOffers} />
         )}
       </div>
     );
