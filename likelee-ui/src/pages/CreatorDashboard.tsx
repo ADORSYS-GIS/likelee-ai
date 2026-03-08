@@ -12,7 +12,7 @@ import {
   type CreatorAgencyConnection,
   type CreatorAgencyInvite,
 } from "@/api/creatorAgencyConnection";
-import { listTalentAgencyInvites } from "@/api/functions";
+import { listTalentAgencyInvites, listTalentBookings } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -805,6 +805,8 @@ export default function CreatorDashboard() {
   );
   const [brandConnections, setBrandConnections] = useState<any[]>([]);
   const [brandOffers, setBrandOffers] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [creatorCampaigns, setCreatorCampaigns] = useState<any[]>([]);
   const [brandConnectionSubTab, setBrandConnectionSubTab] = useState<
     "connections" | "requests" | "offers" | "contract_hub" | "deliverables"
   >("connections");
@@ -883,6 +885,26 @@ export default function CreatorDashboard() {
     return Array.isArray(offersResp?.offers) ? offersResp.offers : [];
   };
 
+  const loadBookings = async () => {
+    try {
+      const resp = await listTalentBookings();
+      const items = Array.isArray(resp) ? resp : [];
+      // Derive unique campaigns from bookings
+      const campaignMap = new Map<string, any>();
+      items.forEach((b: any) => {
+        const campaignId = b.campaign_id;
+        const campaignName = b.bookings_campaigns?.name;
+        if (campaignId && campaignName && !campaignMap.has(campaignId)) {
+          campaignMap.set(campaignId, { id: campaignId, name: campaignName });
+        }
+      });
+      return { bookings: items, campaigns: Array.from(campaignMap.values()) };
+    } catch (e) {
+      console.error("Failed to load bookings", e);
+      return { bookings: [], campaigns: [] };
+    }
+  };
+
   const loadOfferDetails = async (offerId: string) => {
     if (!offerId) {
       setSelectedOfferContracts([]);
@@ -917,10 +939,12 @@ export default function CreatorDashboard() {
           { connections, invites },
           { requests, connections: brandConnected },
           offers,
+          bookingsData,
         ] = await Promise.all([
           loadAgencyConnectionData(),
           loadBrandConnectionData(),
           loadBrandOffers().catch(() => []),
+          loadBookings().catch(() => ({ bookings: [], campaigns: [] })),
         ]);
         if (!active) return;
         setAgencyConnections(connections);
@@ -928,6 +952,8 @@ export default function CreatorDashboard() {
         setBrandConnectionRequests(requests);
         setBrandConnections(brandConnected);
         setBrandOffers(Array.isArray(offers) ? offers : []);
+        setBookings(Array.isArray(bookingsData.bookings) ? bookingsData.bookings : []);
+        setCreatorCampaigns(Array.isArray(bookingsData.campaigns) ? bookingsData.campaigns : []);
       } catch (e: any) {
         if (!active) return;
         console.error("Failed to load agency connection data", e);
@@ -5655,7 +5681,7 @@ export default function CreatorDashboard() {
         )}
 
         {brandConnectionSubTab === "deliverables" && (
-          <DeliverablesTab activeCampaigns={brandOffers} />
+          <DeliverablesTab activeCampaigns={creatorCampaigns} />
         )}
       </div>
     );

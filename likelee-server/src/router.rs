@@ -660,6 +660,27 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::bookings_campaigns::update)
                 .delete(crate::bookings_campaigns::delete_campaign),
         )
+        .route(
+            "/api/bookings-campaigns/:campaign_id/deliverables",
+            get(crate::booking_deliverables::list_deliverables)
+                .post(crate::booking_deliverables::upload_deliverable),
+        )
+        .route(
+            "/api/bookings-campaigns/:campaign_id/deliverables/submit",
+            post(crate::booking_deliverables::submit_deliverables),
+        )
+        .route(
+            "/api/bookings-campaigns/:campaign_id/deliverables/:deliverable_id/review",
+            post(crate::booking_deliverables::review_deliverable),
+        )
+        .route(
+            "/api/bookings-campaigns/:campaign_id/deliverables/:deliverable_id",
+            delete(crate::booking_deliverables::delete_deliverable),
+        )
+        .route(
+            "/api/bookings-campaigns/:campaign_id/deliverables/:deliverable_id/file",
+            get(crate::booking_deliverables::serve_deliverable_file),
+        )
         .route("/api/bookings/:id", post(crate::bookings::update))
         .route(
             "/api/bookings/:id/files/upload",

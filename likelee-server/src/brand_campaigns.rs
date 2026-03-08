@@ -178,6 +178,36 @@ fn is_creator_like(role: &str) -> bool {
     role == "creator" || role == "talent"
 }
 
+async fn resolve_effective_creator_id(state: &AppState, user: &AuthUser) -> String {
+    let resp = state
+        .pg
+        .from("agency_users")
+        .select("creator_id")
+        .or(format!("id.eq.{},user_id.eq.{}", user.id, user.id))
+        .order("updated_at.desc")
+        .limit(1)
+        .execute()
+        .await;
+
+    if let Ok(resp) = resp {
+        if resp.status().is_success() {
+            let text = resp.text().await.unwrap_or_default();
+            let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+            if let Some(mapped) = rows
+                .first()
+                .and_then(|r| r.get("creator_id"))
+                .and_then(|v| v.as_str())
+            {
+                let s = mapped.trim();
+                if !s.is_empty() {
+                    return s.to_string();
+                }
+            }
+        }
+    }
+    user.id.clone()
+}
+
 async fn ensure_offer_access(
     state: &AppState,
     user: &AuthUser,
@@ -811,7 +841,39 @@ pub async fn list_my_campaign_offers(
     } else if user.role == "agency" {
         req = req.eq("target_type", "agency").eq("target_id", &user.id);
     } else if is_creator_like(&user.role) {
-        req = req.eq("target_type", "creator").eq("target_id", &user.id);
+        let creator_id = resolve_effective_creator_id(&state, &user).await;
+        // Get connected agencies
+        let mut agency_ids = Vec::new();
+        let agencies_resp = state
+            .pg
+            .from("agency_talent_relationships")
+            .select("agency_id")
+            .eq("creator_id", &creator_id)
+            .eq("status", "active")
+            .execute()
+            .await;
+
+        if let Ok(resp) = agencies_resp {
+            if resp.status().is_success() {
+                let text = resp.text().await.unwrap_or_default();
+                let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+                agency_ids = rows
+                    .iter()
+                    .filter_map(|r| r.get("agency_id").and_then(|v| v.as_str()))
+                    .map(|s| s.to_string())
+                    .collect();
+            }
+        }
+
+        if !agency_ids.is_empty() {
+            let agency_in = agency_ids.join(",");
+            req = req.or(format!(
+                "and(target_type.eq.creator,target_id.eq.{}),and(target_type.eq.agency,target_id.in.({}))",
+                creator_id, agency_in
+            ));
+        } else {
+            req = req.eq("target_type", "creator").eq("target_id", creator_id);
+        }
     } else {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }

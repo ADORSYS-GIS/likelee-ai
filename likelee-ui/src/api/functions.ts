@@ -806,3 +806,42 @@ export const listMyCampaignOffers = () =>
 
 export const listAgencyOfferPackages = () =>
   base44Client.get(`/api/agency/brand-offers/packages`);
+
+// ── Booking Deliverables (rooted in bookings_campaigns) ──────────────────────
+
+export const listBookingDeliverables = (campaignId: string) =>
+  base44Client.get(`/api/bookings-campaigns/${campaignId}/deliverables`);
+
+export const uploadBookingDeliverable = (
+  campaignId: string,
+  data: { file: File; caption?: string },
+) => {
+  const form = new FormData();
+  form.append("file", data.file);
+  if (data.caption) form.append("caption", data.caption);
+  return base44Client.post(
+    `/api/bookings-campaigns/${campaignId}/deliverables`,
+    form,
+  );
+};
+
+export const submitBookingDeliverables = (campaignId: string) =>
+  base44Client.post(`/api/bookings-campaigns/${campaignId}/deliverables/submit`);
+
+export const reviewBookingDeliverable = (
+  campaignId: string,
+  deliverableId: string,
+  payload: { status: string; note?: string },
+) =>
+  base44Client.post(
+    `/api/bookings-campaigns/${campaignId}/deliverables/${deliverableId}/review`,
+    payload,
+  );
+
+export const deleteBookingDeliverable = (
+  campaignId: string,
+  deliverableId: string,
+) =>
+  base44Client.delete(
+    `/api/bookings-campaigns/${campaignId}/deliverables/${deliverableId}`,
+  );

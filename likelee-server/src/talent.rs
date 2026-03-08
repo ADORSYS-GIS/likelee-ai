@@ -2521,7 +2521,7 @@ pub async fn list_bookings(
     let req = state
         .pg
         .from("bookings")
-        .select("*,booking_files(*)")
+        .select("*,booking_files(*),bookings_campaigns(name)")
         .in_("talent_id", t_refs)
         .in_("agency_user_id", a_refs);
 
