@@ -2,7 +2,7 @@ import React, { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 
 type CampaignBrief = {
   [key: string]: any;
@@ -17,6 +17,7 @@ type Props = {
   onNext: () => void;
   onReferenceImagesUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onBrandAssetsUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  uploading?: boolean;
 };
 
 export default function CampaignBriefStep({
@@ -26,6 +27,7 @@ export default function CampaignBriefStep({
   onNext,
   onReferenceImagesUpload,
   onBrandAssetsUpload,
+  uploading = false,
 }: Props) {
   const referenceInputRef = useRef<HTMLInputElement | null>(null);
   const assetInputRef = useRef<HTMLInputElement | null>(null);
@@ -624,9 +626,17 @@ export default function CampaignBriefStep({
         </Button>
         <Button
           onClick={onNext}
-          className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
+          disabled={uploading}
+          className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none min-w-[100px]"
         >
-          Next
+          {uploading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Uploading...
+            </>
+          ) : (
+            "Next"
+          )}
         </Button>
       </div>
     </div>
