@@ -670,6 +670,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::booking_deliverables::submit_deliverables),
         )
         .route(
+            "/api/bookings-campaigns/:campaign_id/deliverables/submit-to-brand",
+            post(crate::booking_deliverables::submit_to_brand),
+        )
+        .route(
             "/api/bookings-campaigns/:campaign_id/deliverables/:deliverable_id/review",
             post(crate::booking_deliverables::review_deliverable),
         )
