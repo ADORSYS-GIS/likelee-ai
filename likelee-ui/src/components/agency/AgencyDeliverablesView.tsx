@@ -769,7 +769,9 @@ export function AgencyDeliverablesView() {
                       >
                         <div className="flex flex-col py-0.5">
                           <span className="font-semibold text-gray-900">
-                            {offer.offer_title || "Untitled Offer"}
+                            {offer.offer_title ||
+                              offer.brand_campaigns?.name ||
+                              "Untitled Campaign Offer"}
                           </span>
                           <span className="text-[10px] text-gray-400">
                             Brand: {offer.brands?.company_name || "Unknown"}
