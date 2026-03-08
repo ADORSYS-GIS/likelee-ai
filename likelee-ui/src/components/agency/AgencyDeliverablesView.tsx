@@ -16,6 +16,9 @@ import {
   Loader2,
   RefreshCw,
   FileVideo,
+  Eye,
+  Download,
+  X,
 } from "lucide-react";
 import {
   Dialog,
@@ -101,6 +104,7 @@ export function AgencyDeliverablesView() {
     offerId: string;
   }>({ open: false, delId: "", campaignId: "", offerId: "" });
   const [submitting, setSubmitting] = useState(false);
+  const [previewImage, setPreviewImage] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -537,14 +541,31 @@ export function AgencyDeliverablesView() {
                                                       del.status,
                                                     )}
                                                   </div>
-                                                  <a
-                                                    href={getFileUrl(del)}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm rounded-full p-1.5"
-                                                  >
-                                                    <ExternalLink className="w-3.5 h-3.5 text-white" />
-                                                  </a>
+                                                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                                    <Button
+                                                      variant="secondary"
+                                                      size="sm"
+                                                      className="rounded-full h-8 font-bold"
+                                                      onClick={() => setPreviewImage(del)}
+                                                    >
+                                                      <Eye className="w-3.5 h-3.5 mr-1" /> View
+                                                    </Button>
+                                                    <Button
+                                                      variant="secondary"
+                                                      size="sm"
+                                                      className="rounded-full h-8 font-bold"
+                                                      asChild
+                                                    >
+                                                      <a
+                                                        href={getFileUrl(del)}
+                                                        download
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                      >
+                                                        <Download className="w-3.5 h-3.5" />
+                                                      </a>
+                                                    </Button>
+                                                  </div>
                                                 </div>
 
                                                 {/* Review actions */}
@@ -715,6 +736,65 @@ export function AgencyDeliverablesView() {
                 )}
               </Button>
             </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Preview Dialog */}
+      <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
+        <DialogContent className="max-w-[95vw] sm:max-w-[800px] p-0 overflow-hidden border-none bg-black/95 shadow-2xl rounded-3xl">
+          <div className="relative w-full h-full flex flex-col items-center justify-center p-0">
+            <div className="w-full aspect-[4/3] relative flex items-center justify-center bg-gray-900/50">
+              {previewImage?.asset_type === "video" ? (
+                <video
+                  src={getFileUrl(previewImage)}
+                  controls
+                  className="max-w-full max-h-full"
+                  autoPlay
+                />
+              ) : (
+                <img
+                  src={previewImage ? getFileUrl(previewImage) : ""}
+                  className="max-w-full max-h-full object-contain"
+                  alt="Preview"
+                />
+              )}
+              
+              {/* Overlay controls */}
+              <div className="absolute top-6 right-6 flex gap-3">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="rounded-xl bg-white/10 hover:bg-white/20 text-white border-none backdrop-blur-xl font-bold h-10 px-4"
+                  asChild
+                >
+                  <a
+                    href={previewImage ? getFileUrl(previewImage) : ""}
+                    download
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <Download className="w-4 h-4 mr-2" /> Download
+                  </a>
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="rounded-xl bg-white/10 hover:bg-white/20 text-white border-none backdrop-blur-xl h-10 w-10 transition-all hover:rotate-90"
+                  onClick={() => setPreviewImage(null)}
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+            </div>
+            {previewImage?.caption && (
+              <div className="w-full bg-white/5 backdrop-blur-md p-8 text-white text-sm border-t border-white/5">
+                <p className="text-amber-500 text-[10px] font-black uppercase tracking-[0.2em] mb-3">
+                  Delivered Note
+                </p>
+                <p className="text-base leading-relaxed text-gray-200">{previewImage.caption}</p>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
