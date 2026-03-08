@@ -30,7 +30,16 @@ import {
   getBookingsCampaigns,
   listBookingDeliverables,
   reviewBookingDeliverable,
+  listMyCampaignOffers,
+  submitToBrand,
 } from "@/api/functions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -84,6 +93,14 @@ export function AgencyDeliverablesView() {
     campaignId: string;
     note: string;
   }>({ open: false, delId: "", campaignId: "", note: "" });
+  const [brandOffers, setBrandOffers] = useState<any[]>([]);
+  const [submitDialog, setSubmitDialog] = useState<{
+    open: boolean;
+    delId: string;
+    campaignId: string;
+    offerId: string;
+  }>({ open: false, delId: "", campaignId: "", offerId: "" });
+  const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -141,8 +158,18 @@ export function AgencyDeliverablesView() {
     }
   };
 
+  const fetchOffers = async () => {
+    try {
+      const resp = await listMyCampaignOffers();
+      setBrandOffers((resp as any)?.offers || []);
+    } catch (error) {
+      console.error("Failed to fetch brand offers", error);
+    }
+  };
+
   useEffect(() => {
     fetchHierarchy();
+    fetchOffers();
   }, []);
 
   const toggleCampaign = (id: string) => {
@@ -204,6 +231,31 @@ export function AgencyDeliverablesView() {
       });
     } finally {
       setReviewing(null);
+    }
+  };
+
+  const handleSubmitToBrand = async () => {
+    if (!submitDialog.offerId) return;
+    setSubmitting(true);
+    try {
+      await submitToBrand(submitDialog.campaignId, {
+        deliverable_ids: [submitDialog.delId],
+        brand_offer_id: submitDialog.offerId,
+      });
+      toast({
+        title: "Submitted to Brand",
+        description: "The deliverable has been sent for brand review.",
+      });
+      setSubmitDialog((prev) => ({ ...prev, open: false }));
+      fetchDeliverables(submitDialog.campaignId);
+    } catch (error: any) {
+      toast({
+        title: "Submission failed",
+        description: error.message || "Failed to submit to brand.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -543,6 +595,27 @@ export function AgencyDeliverablesView() {
                                                   </div>
                                                 )}
 
+                                                 {del.status === "approved" && (
+                                                   <div className="p-3 border-t border-gray-100">
+                                                     <Button
+                                                       size="sm"
+                                                       variant="outline"
+                                                       className="w-full h-8 border-primary/30 text-primary hover:bg-primary/5 text-xs font-semibold"
+                                                       onClick={() => {
+                                                         setSubmitDialog({
+                                                           open: true,
+                                                           delId: del.id,
+                                                           campaignId: campaign.id,
+                                                           offerId: "",
+                                                         });
+                                                       }}
+                                                     >
+                                                       <ExternalLink className="w-3 h-3 mr-1.5" />
+                                                       Submit to Brand
+                                                     </Button>
+                                                   </div>
+                                                 )}
+
                                                 {del.agency_review_note && (
                                                   <div className="px-3 pb-3">
                                                     <p className="text-[10px] text-amber-700 bg-amber-50 rounded p-2 leading-relaxed">
@@ -639,6 +712,95 @@ export function AgencyDeliverablesView() {
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   "Send Feedback"
+                )}
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Submit to Brand Dialog */}
+      <Dialog
+        open={submitDialog.open}
+        onOpenChange={(open) =>
+          setSubmitDialog((prev) => ({ ...prev, open }))
+        }
+      >
+        <DialogContent className="sm:max-w-[450px] rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+          <div className="bg-gradient-to-br from-primary via-primary/90 to-blue-600 p-8 text-white relative">
+            <DialogHeader className="space-y-1 relative z-10">
+              <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-4 border border-white/30">
+                <ExternalLink className="w-6 h-6 text-white" />
+              </div>
+              <DialogTitle className="text-2xl font-bold font-syne text-white">
+                Submit to Brand
+              </DialogTitle>
+              <p className="text-white/70 text-sm">
+                Promote this approved deliverable to an active Brand Offer.
+              </p>
+            </DialogHeader>
+          </div>
+
+          <div className="p-8 space-y-6">
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">
+                Select Brand Offer
+              </label>
+              <Select
+                value={submitDialog.offerId}
+                onValueChange={(val) =>
+                  setSubmitDialog((prev) => ({ ...prev, offerId: val }))
+                }
+              >
+                <SelectTrigger className="h-12 rounded-xl border-gray-100 bg-gray-50 focus:ring-primary/20 transition-all text-sm">
+                  <SelectValue placeholder="Choose a campaign offer..." />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-gray-100 shadow-xl">
+                  {brandOffers.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-gray-400">
+                      No active brand offers found.
+                    </div>
+                  ) : (
+                    brandOffers.map((offer) => (
+                      <SelectItem
+                        key={offer.id}
+                        value={offer.id}
+                        className="rounded-lg my-1 focus:bg-primary/5"
+                      >
+                        <div className="flex flex-col py-0.5">
+                          <span className="font-semibold text-gray-900">
+                            {offer.offer_title || "Untitled Offer"}
+                          </span>
+                          <span className="text-[10px] text-gray-400">
+                            Brand: {offer.brands?.company_name || "Unknown"}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <DialogFooter className="flex-col sm:flex-row gap-3 pt-4">
+              <Button
+                variant="outline"
+                className="flex-1 h-12 rounded-xl border-gray-100 hover:bg-gray-50 font-semibold"
+                onClick={() =>
+                  setSubmitDialog((prev) => ({ ...prev, open: false }))
+                }
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 h-12 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
+                disabled={!submitDialog.offerId || submitting}
+                onClick={handleSubmitToBrand}
+              >
+                {submitting ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  "Confirm Submission"
                 )}
               </Button>
             </DialogFooter>
