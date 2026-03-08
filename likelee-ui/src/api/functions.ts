@@ -784,7 +784,7 @@ export const reviewOfferDeliverable = (
   offerId: string,
   deliverableId: string,
   data: {
-    status: string;
+    action: string;
     note?: string;
   },
 ) =>
