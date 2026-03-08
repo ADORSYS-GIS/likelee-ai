@@ -2441,7 +2441,10 @@ export default function BrandDashboard() {
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-2xl font-bold text-gray-900">
-                        {pkg.title || pkg.campaign_offers?.offer_title || "Talent package"}
+                        {pkg.title ||
+                          pkg.campaign_offers?.offer_title ||
+                          pkg.campaign_offers?.brand_campaigns?.name ||
+                          "Talent package"}
                       </h3>
                       {String(pkg?.status || "") === "sent" && (
                         <Badge className="bg-black text-white text-[10px] uppercase rounded-sm">
@@ -2787,7 +2790,8 @@ export default function BrandDashboard() {
                       {offer?.brand_campaigns?.name || "Campaign Asset Submission"}
                     </h3>
                     <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5">
-                      {offer.talent_name || "Creator"} • {offer.offer_title || "Offer"}
+                      {offer.talent_name || "Creator"} •{" "}
+                      {offer.offer_title || offer.brand_campaigns?.name || "Offer"}
                     </p>
                   </div>
                 </div>

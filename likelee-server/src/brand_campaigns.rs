@@ -1673,7 +1673,7 @@ pub async fn list_brand_inbox_packages(
     let resp = state
         .pg
         .from("campaign_offer_packages")
-        .select("*,campaign_offers(id,status,target_type,target_id,offer_title),agencies(id,agency_name)")
+        .select("*,campaign_offers(id,status,target_type,target_id,offer_title,brand_campaigns(name)),agencies(id,agency_name)")
         .eq("brand_id", &user.id)
         .order("created_at.desc")
         .execute()
