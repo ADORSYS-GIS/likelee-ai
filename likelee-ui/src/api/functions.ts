@@ -845,3 +845,12 @@ export const deleteBookingDeliverable = (
   base44Client.delete(
     `/api/bookings-campaigns/${campaignId}/deliverables/${deliverableId}`,
   );
+
+export const submitToBrand = (
+  campaignId: string,
+  payload: { deliverable_ids: string[]; brand_offer_id: string },
+) =>
+  base44Client.post(
+    `/api/bookings-campaigns/${campaignId}/deliverables/submit-to-brand`,
+    payload,
+  );
