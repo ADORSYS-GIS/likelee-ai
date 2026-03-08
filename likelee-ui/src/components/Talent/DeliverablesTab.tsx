@@ -45,6 +45,8 @@ interface Deliverable {
   status: string;
   caption?: string;
   agency_review_note?: string;
+  brand_status?: string;
+  brand_review_note?: string;
   created_at: string;
 }
 
@@ -322,7 +324,21 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
                                         </div>
                                       )}
                                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                                      <div className="absolute top-3 left-3">{getStatusBadge(del.status)}</div>
+                                      <div className="absolute top-3 left-3">
+                                        <div className="flex flex-col gap-1.5 items-start">
+                                          {getStatusBadge(del.status)}
+                                          {del.brand_status && (
+                                            <Badge variant="outline" className={`
+                                              text-[10px] h-5 border-none shadow-sm font-bold uppercase tracking-tight
+                                              ${del.brand_status === 'approved' ? 'bg-blue-500 text-white' : 
+                                                del.brand_status === 'changes_requested' ? 'bg-orange-500 text-white' :
+                                                'bg-gray-500 text-white'}
+                                            `}>
+                                              Brand: {del.brand_status.replace(/_/g, ' ')}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      </div>
                                       <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
                                         {(del.status === "draft" || del.status === "changes_requested") && (
                                           <Button variant="destructive" size="icon" className="w-8 h-8 rounded-full bg-rose-500/20 backdrop-blur-md text-rose-500 hover:bg-rose-500 hover:text-white"
@@ -355,13 +371,14 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
                                         </Button>
                                       </div>
                                     </div>
+                                    {/* Agency Feedback */}
                                     {del.agency_review_note && (
                                       <div className="border-t border-amber-100">
                                         <button
                                           onClick={() => {
                                             const next = new Set(openFeedback);
-                                            if (next.has(del.id)) next.delete(del.id);
-                                            else next.add(del.id);
+                                            if (next.has(del.id + '_agency')) next.delete(del.id + '_agency');
+                                            else next.add(del.id + '_agency');
                                             setOpenFeedback(next);
                                           }}
                                           className="w-full p-3 flex items-center justify-between bg-amber-50/50 hover:bg-amber-100/50 transition-colors"
@@ -370,7 +387,7 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
                                             <MessageSquare className="w-3.5 h-3.5" />
                                             Agency Feedback
                                           </div>
-                                          {openFeedback.has(del.id) ? (
+                                          {openFeedback.has(del.id + '_agency') ? (
                                             <ChevronDown className="w-3.5 h-3.5 text-amber-400 rotate-180 transition-transform" />
                                           ) : (
                                             <ChevronDown className="w-3.5 h-3.5 text-amber-400 transition-transform" />
@@ -378,7 +395,7 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
                                         </button>
                                         
                                         <AnimatePresence>
-                                          {openFeedback.has(del.id) && (
+                                          {openFeedback.has(del.id + '_agency') && (
                                             <motion.div
                                               initial={{ height: 0, opacity: 0 }}
                                               animate={{ height: "auto", opacity: 1 }}
@@ -388,6 +405,48 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
                                               <div className="px-4 pb-4 pt-1 bg-amber-50/50">
                                                 <p className="text-[11px] text-amber-900 leading-relaxed font-medium bg-white/60 rounded-xl p-3 border border-amber-200/50 shadow-sm">
                                                   {del.agency_review_note}
+                                                </p>
+                                              </div>
+                                            </motion.div>
+                                          )}
+                                        </AnimatePresence>
+                                      </div>
+                                    )}
+
+                                    {/* Brand Feedback */}
+                                    {(del.brand_review_note || del.brand_status === 'changes_requested') && (
+                                      <div className="border-t border-blue-100">
+                                        <button
+                                          onClick={() => {
+                                            const next = new Set(openFeedback);
+                                            if (next.has(del.id + '_brand')) next.delete(del.id + '_brand');
+                                            else next.add(del.id + '_brand');
+                                            setOpenFeedback(next);
+                                          }}
+                                          className="w-full p-3 flex items-center justify-between bg-blue-50/50 hover:bg-blue-100/50 transition-colors"
+                                        >
+                                          <div className="flex items-center gap-2 font-bold text-[10px] text-blue-700 tracking-wider uppercase">
+                                            <MessageSquare className="w-3.5 h-3.5" />
+                                            Brand Feedback
+                                          </div>
+                                          {openFeedback.has(del.id + '_brand') ? (
+                                            <ChevronDown className="w-3.5 h-3.5 text-blue-400 rotate-180 transition-transform" />
+                                          ) : (
+                                            <ChevronDown className="w-3.5 h-3.5 text-blue-400 transition-transform" />
+                                          )}
+                                        </button>
+                                        
+                                        <AnimatePresence>
+                                          {openFeedback.has(del.id + '_brand') && (
+                                            <motion.div
+                                              initial={{ height: 0, opacity: 0 }}
+                                              animate={{ height: "auto", opacity: 1 }}
+                                              exit={{ height: 0, opacity: 0 }}
+                                              className="overflow-hidden"
+                                            >
+                                              <div className="px-4 pb-4 pt-1 bg-blue-50/50">
+                                                <p className="text-[11px] text-blue-900 leading-relaxed font-medium bg-white/60 rounded-xl p-3 border border-blue-200/50 shadow-sm">
+                                                  {del.brand_review_note || "Brand requested changes but provided no specific note."}
                                                 </p>
                                               </div>
                                             </motion.div>
