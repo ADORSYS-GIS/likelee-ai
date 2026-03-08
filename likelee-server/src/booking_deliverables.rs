@@ -34,6 +34,12 @@ pub struct ReviewDeliverableRequest {
     pub note: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct SubmitToBrandRequest {
+    pub deliverable_ids: Vec<String>,
+    pub brand_offer_id: String,
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ──────────────────────────────────────────────────────────────────────────────
@@ -575,4 +581,122 @@ pub async fn serve_deliverable_file(
             axum::body::Bytes::from(r#"{"error":"File fetch failed"}"#),
         ),
     }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Submit deliverables to Brand (Agency only)
+// POST /api/bookings-campaigns/:campaign_id/deliverables/submit-to-brand
+// ──────────────────────────────────────────────────────────────────────────────
+
+pub async fn submit_to_brand(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(CampaignPath { campaign_id }): Path<CampaignPath>,
+    Json(payload): Json<SubmitToBrandRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    if user.role != "agency" {
+        return Err((StatusCode::FORBIDDEN, "Only agencies can submit to brands".into()));
+    }
+
+    // 1. Verify agency owns the campaign
+    verify_agency_campaign(&state, &user, &campaign_id).await?;
+
+    // 2. Load the brand offer to get brand_id and brand_campaign_id
+    let offer_resp = state
+        .pg
+        .from("campaign_offers")
+        .select("id,brand_id,brand_campaign_id")
+        .eq("id", &payload.brand_offer_id)
+        .eq("target_type", "agency")
+        .eq("target_id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !offer_resp.status().is_success() {
+        return Err((StatusCode::NOT_FOUND, "Brand offer not found".into()));
+    }
+    let offer_text = offer_resp.text().await.unwrap_or_default();
+    let offer_rows: Vec<serde_json::Value> = serde_json::from_str(&offer_text).unwrap_or_default();
+    let offer = offer_rows.into_iter().next().ok_or((StatusCode::NOT_FOUND, "Brand offer not found".into()))?;
+
+    let brand_id = offer.get("brand_id").and_then(|v| v.as_str()).ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Missing brand_id".into()))?;
+    let brand_campaign_id = offer.get("brand_campaign_id").and_then(|v| v.as_str()).ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Missing brand_campaign_id".into()))?;
+
+    // 3. Load the booking deliverables to ensure agency owns them and they are approved
+    let dels_resp = state
+        .pg
+        .from("booking_deliverables")
+        .select("*")
+        .in_("id", payload.deliverable_ids.iter().map(|s| s.as_str()).collect::<Vec<_>>())
+        .eq("booking_campaign_id", &campaign_id)
+        .eq("agency_id", &user.id)
+        .eq("status", "approved")
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !dels_resp.status().is_success() {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to fetch deliverables".into()));
+    }
+    let dels_text = dels_resp.text().await.unwrap_or_default();
+    let deliverables: Vec<serde_json::Value> = serde_json::from_str(&dels_text).unwrap_or_default();
+
+    if deliverables.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "No valid deliverables found".into()));
+    }
+
+    // 4. Create records in campaign_offer_deliverables
+    let mut brand_deliverables = vec![];
+    for del in deliverables {
+        let payload = json!({
+            "offer_id": payload.brand_offer_id,
+            "brand_campaign_id": brand_campaign_id,
+            "brand_id": brand_id,
+            "agency_id": user.id,
+            "creator_id": del.get("creator_id"),
+            "submitted_by": user.id,
+            "asset_url": del.get("asset_url"),
+            "asset_type": del.get("asset_type").unwrap_or(&json!("image")),
+            "caption": del.get("caption"),
+            "status": "brand_review",
+            "meta": {
+                "source_booking_deliverable_id": del.get("id"),
+            }
+        });
+        brand_deliverables.push(payload);
+    }
+
+    let insert_resp = state
+        .pg
+        .from("campaign_offer_deliverables")
+        .insert(json!(brand_deliverables).to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !insert_resp.status().is_success() {
+        error!("Failed to insert brand deliverables: {}", insert_resp.text().await.unwrap_or_default());
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to submit to brand".into()));
+    }
+
+    // 5. Update the brand offer status
+    let _ = state
+        .pg
+        .from("campaign_offers")
+        .update(json!({ "status": "deliverables_submitted", "updated_at": chrono::Utc::now().to_rfc3339() }).to_string())
+        .eq("id", &payload.brand_offer_id)
+        .execute()
+        .await;
+
+    info!(
+        agency_id = %user.id,
+        brand_id = %brand_id,
+        offer_id = %payload.brand_offer_id,
+        count = %brand_deliverables.len(),
+        "deliverables submitted to brand"
+    );
+
+    Ok(Json(json!({ "ok": true, "count": brand_deliverables.len() })))
 }
