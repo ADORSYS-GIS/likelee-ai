@@ -1,4 +1,4 @@
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, PDFString } from "pdf-lib";
 
 export async function generateBriefPDF(brief: any, brandName: string, campaignName: string) {
     const doc = await PDFDocument.create();
@@ -96,6 +96,23 @@ export async function generateBriefPDF(brief: any, brandName: string, campaignNa
                 width: finalW,
                 height: finalH
             });
+
+            // Add secure clickable link
+            const linkAnnot = doc.context.register(
+                doc.context.obj({
+                    Type: 'Annot',
+                    Subtype: 'Link',
+                    Rect: [margin, currentY - finalH, margin + finalW, currentY],
+                    Border: [0, 0, 0],
+                    A: {
+                        Type: 'Action',
+                        S: 'URI',
+                        URI: PDFString.of(url),
+                    },
+                })
+            );
+            page.node.addAnnot(linkAnnot);
+
             currentY -= (finalH + 30);
         } catch (e) {
             console.error("Failed to embed image", e);
