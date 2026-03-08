@@ -357,9 +357,9 @@ export function AgencyDeliverablesView() {
                               expandedTalents.has(expandKey);
 
                             // Filter deliverables for this specific talent
-                            const talentDeliverables = talent.talentId
+                            const talentDeliverables = talent.bookingId
                               ? allDeliverables.filter(
-                                  (d) => d.creator_id === talent.talentId,
+                                  (d) => d.booking_id === talent.bookingId || d.creator_id === talent.talentId,
                                 )
                               : allDeliverables;
 
