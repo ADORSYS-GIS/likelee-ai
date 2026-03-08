@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Card } from "@/components/ui/card";
@@ -42,12 +43,15 @@ import {
   MessageSquare,
   ThumbsUp,
   Edit3,
+  Trash2,
+  Settings,
   Clock,
   TrendingUp,
   Zap,
   Shield,
   Briefcase,
   User,
+  Loader2,
 } from "lucide-react";
 
 const mockBrand = {
@@ -115,6 +119,29 @@ export default function BrandCampaignDashboard({
 }: BrandCampaignDashboardProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, supabase } = useAuth();
+
+  const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
+  const API_BASE_ABS = (() => {
+    try {
+      if (!API_BASE) return new URL("/", window.location.origin).toString();
+      if (API_BASE.startsWith("http")) return API_BASE;
+      return new URL(API_BASE, window.location.origin).toString();
+    } catch {
+      return new URL("/", window.location.origin).toString();
+    }
+  })();
+  const api = (path: string) => {
+    const normalizedBase = API_BASE_ABS.endsWith("/")
+      ? API_BASE_ABS
+      : `${API_BASE_ABS}/`;
+    let normalizedPath = path.startsWith("/") ? path.slice(1) : path;
+    if (normalizedBase.endsWith("/api/") && normalizedPath.startsWith("api/")) {
+      normalizedPath = normalizedPath.slice("api/".length);
+    }
+    return new URL(normalizedPath, normalizedBase).toString();
+  };
+
   const [showNewCampaignModal, setShowNewCampaignModal] = useState(false);
   const [showInviteAgencyModal, setShowInviteAgencyModal] = useState(false);
   const [showInviteCreatorModal, setShowInviteCreatorModal] = useState(false);
@@ -152,6 +179,7 @@ export default function BrandCampaignDashboard({
     Set<string>
   >(new Set());
   const [savingCampaign, setSavingCampaign] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(false);
   const creatorFetchRequestIdRef = useRef(0);
   const connectedCreatorCacheRef = useRef<Record<string, any[]>>({});
   const agencyTalentCacheRef = useRef<Record<string, any[]>>({});
@@ -744,36 +772,93 @@ export default function BrandCampaignDashboard({
     }
   };
 
-  const handleReferenceImageUpload = (
+  const handleReferenceImageUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
-    const next = files.map((file) => ({
-      name: file.name,
-      url: URL.createObjectURL(file),
-    }));
-    setCampaignBrief((prev) => ({
-      ...prev,
-      reference_images: [...prev.reference_images, ...next],
-    }));
+
+    setUploadingImages(true);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error("Auth required");
+
+      const uploaded = await Promise.all(
+        files.map(async (file) => {
+          const formData = new FormData();
+          formData.append("file", file);
+          const res = await fetch(api("/api/brand/brief-assets/upload"), {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+            body: formData,
+          });
+          if (!res.ok) throw new Error(await res.text());
+          const data = await res.json();
+          return { name: file.name, url: data.url };
+        }),
+      );
+
+      setCampaignBrief((prev) => ({
+        ...prev,
+        reference_images: [...prev.reference_images, ...uploaded],
+      }));
+    } catch (e: any) {
+      toast({
+        title: "Upload failed",
+        description: e.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingImages(false);
+    }
     event.target.value = "";
   };
 
-  const handleBrandAssetsUpload = (
+  const handleBrandAssetsUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
-    const next = files.map((file) => ({
-      name: file.name,
-      size: file.size,
-      url: URL.createObjectURL(file),
-    }));
-    setCampaignBrief((prev) => ({
-      ...prev,
-      brand_assets: [...prev.brand_assets, ...next],
-    }));
+
+    setUploadingImages(true);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error("Auth required");
+
+      const uploaded = await Promise.all(
+        files.map(async (file) => {
+          const formData = new FormData();
+          formData.append("file", file);
+          const res = await fetch(api("/api/brand/brief-assets/upload"), {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+            body: formData,
+          });
+          if (!res.ok) throw new Error(await res.text());
+          const data = await res.json();
+          return { name: file.name, size: file.size, url: data.url };
+        }),
+      );
+
+      setCampaignBrief((prev) => ({
+        ...prev,
+        brand_assets: [...prev.brand_assets, ...uploaded],
+      }));
+    } catch (e: any) {
+      toast({
+        title: "Upload failed",
+        description: e.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingImages(false);
+    }
     event.target.value = "";
   };
 
@@ -1090,44 +1175,40 @@ export default function BrandCampaignDashboard({
               <Button
                 variant="outline"
                 onClick={() => setCampaignListTab("active")}
-                className={`border-2 rounded-none ${
-                  campaignListTab === "active"
-                    ? "border-black bg-black text-white"
-                    : "border-gray-300"
-                }`}
+                className={`border-2 rounded-none ${campaignListTab === "active"
+                  ? "border-black bg-black text-white"
+                  : "border-gray-300"
+                  }`}
               >
                 Active
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setCampaignListTab("pending_approval")}
-                className={`border-2 rounded-none ${
-                  campaignListTab === "pending_approval"
-                    ? "border-black bg-black text-white"
-                    : "border-gray-300"
-                }`}
+                className={`border-2 rounded-none ${campaignListTab === "pending_approval"
+                  ? "border-black bg-black text-white"
+                  : "border-gray-300"
+                  }`}
               >
                 Pending Approval
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setCampaignListTab("completed")}
-                className={`border-2 rounded-none ${
-                  campaignListTab === "completed"
-                    ? "border-black bg-black text-white"
-                    : "border-gray-300"
-                }`}
+                className={`border-2 rounded-none ${campaignListTab === "completed"
+                  ? "border-black bg-black text-white"
+                  : "border-gray-300"
+                  }`}
               >
                 Completed
               </Button>
               <Button
                 variant="outline"
                 onClick={() => setCampaignListTab("inbox")}
-                className={`border-2 rounded-none ${
-                  campaignListTab === "inbox"
-                    ? "border-black bg-black text-white"
-                    : "border-gray-300"
-                }`}
+                className={`border-2 rounded-none ${campaignListTab === "inbox"
+                  ? "border-black bg-black text-white"
+                  : "border-gray-300"
+                  }`}
               >
                 Inbox
               </Button>
@@ -1604,6 +1685,7 @@ export default function BrandCampaignDashboard({
                   onBrandAssetsUpload={handleBrandAssetsUpload}
                   onBack={() => setNewCampaignStep(1)}
                   onNext={handleStep2Next}
+                  uploading={uploadingImages}
                 />
               )}
 
@@ -1626,11 +1708,10 @@ export default function BrandCampaignDashboard({
                     </label>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Card
-                        className={`p-4 border-2 cursor-pointer transition-all rounded-none ${
-                          campaignForm.collaborator_type === "agency"
-                            ? "border-black bg-gray-50"
-                            : "border-gray-300 hover:border-black"
-                        }`}
+                        className={`p-4 border-2 cursor-pointer transition-all rounded-none ${campaignForm.collaborator_type === "agency"
+                          ? "border-black bg-gray-50"
+                          : "border-gray-300 hover:border-black"
+                          }`}
                         onClick={() => {
                           setCampaignForm((prev) => ({
                             ...prev,
@@ -1651,11 +1732,10 @@ export default function BrandCampaignDashboard({
                         </p>
                       </Card>
                       <Card
-                        className={`p-4 border-2 cursor-pointer transition-all rounded-none ${
-                          campaignForm.collaborator_type === "creator"
-                            ? "border-black bg-gray-50"
-                            : "border-gray-300 hover:border-black"
-                        }`}
+                        className={`p-4 border-2 cursor-pointer transition-all rounded-none ${campaignForm.collaborator_type === "creator"
+                          ? "border-black bg-gray-50"
+                          : "border-gray-300 hover:border-black"
+                          }`}
                         onClick={() => {
                           setCampaignForm((prev) => ({
                             ...prev,
@@ -1709,11 +1789,10 @@ export default function BrandCampaignDashboard({
                             return (
                               <div
                                 key={agencyId}
-                                className={`w-full border-2 p-3 rounded-none transition-colors ${
-                                  selected
-                                    ? "border-black bg-gray-50"
-                                    : "border-gray-200 hover:border-gray-400"
-                                }`}
+                                className={`w-full border-2 p-3 rounded-none transition-colors ${selected
+                                  ? "border-black bg-gray-50"
+                                  : "border-gray-200 hover:border-gray-400"
+                                  }`}
                               >
                                 <div className="flex items-center justify-between gap-3">
                                   <div>
@@ -1787,32 +1866,32 @@ export default function BrandCampaignDashboard({
                               campaignForm.collaborator_type === "agency"
                                 ? selectedTalentCreatorIds.has(creatorId)
                                 : campaignForm.collaborators?.includes(
-                                    creatorId,
-                                  );
+                                  creatorId,
+                                );
                             const name = getDisplayName(
                               creator?.display_name ||
-                                creator?.full_name ||
-                                creator?.name,
+                              creator?.full_name ||
+                              creator?.name,
                             );
                             const creatorType = String(
                               creator?.creator_type ||
-                                (campaignForm.collaborator_type === "agency"
-                                  ? "Talent"
-                                  : "Creator"),
+                              (campaignForm.collaborator_type === "agency"
+                                ? "Talent"
+                                : "Creator"),
                             );
                             const baseRateWeeklyCents = Number(
                               creator?.base_rate_weekly_cents ??
-                                creator?.base_weekly_price_cents ??
-                                creator?.licensing_rate_weekly_cents ??
-                                0,
+                              creator?.base_weekly_price_cents ??
+                              creator?.licensing_rate_weekly_cents ??
+                              0,
                             );
                             const hasBaseRate =
                               Number.isFinite(baseRateWeeklyCents) &&
                               baseRateWeeklyCents > 0;
                             const rateCurrency = String(
                               creator?.rate_currency ||
-                                creator?.currency_code ||
-                                "USD",
+                              creator?.currency_code ||
+                              "USD",
                             );
                             const canNegotiate = isNegotiationEnabled(
                               creator?.accept_negotiations,
@@ -1821,11 +1900,10 @@ export default function BrandCampaignDashboard({
                             return (
                               <div
                                 key={creatorId}
-                                className={`border-2 p-3 rounded-none ${
-                                  selected
-                                    ? "border-black bg-gray-50"
-                                    : "border-gray-200"
-                                }`}
+                                className={`border-2 p-3 rounded-none ${selected
+                                  ? "border-black bg-gray-50"
+                                  : "border-gray-200"
+                                  }`}
                               >
                                 <div className="flex items-center justify-between gap-4">
                                   <div className="min-w-0 flex-1">
@@ -2036,22 +2114,22 @@ export default function BrandCampaignDashboard({
                             );
                           const name = getDisplayName(
                             creator?.display_name ||
-                              creator?.full_name ||
-                              creator?.name,
+                            creator?.full_name ||
+                            creator?.name,
                           );
                           const baseRateWeeklyCents = Number(
                             creator?.base_rate_weekly_cents ??
-                              creator?.base_weekly_price_cents ??
-                              creator?.licensing_rate_weekly_cents ??
-                              0,
+                            creator?.base_weekly_price_cents ??
+                            creator?.licensing_rate_weekly_cents ??
+                            0,
                           );
                           const hasBaseRate =
                             Number.isFinite(baseRateWeeklyCents) &&
                             baseRateWeeklyCents > 0;
                           const rateCurrency = String(
                             creator?.rate_currency ||
-                              creator?.currency_code ||
-                              "USD",
+                            creator?.currency_code ||
+                            "USD",
                           );
                           const canNegotiate = isNegotiationEnabled(
                             creator?.accept_negotiations,
