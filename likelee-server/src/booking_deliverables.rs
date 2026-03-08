@@ -48,7 +48,7 @@ async fn resolve_creator_for_campaign(
     state: &AppState,
     user: &AuthUser,
     campaign_id: &str,
-) -> Result<(String, String), (StatusCode, String)> {
+) -> Result<(String, String, Option<String>), (StatusCode, String)> {
     // Fetch the campaign to know which agency owns it
     let resp = state
         .pg
@@ -76,13 +76,37 @@ async fn resolve_creator_for_campaign(
         .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Campaign missing agency_id".into()))?
         .to_string();
 
-    // Verify the creator has a booking in this campaign
+    // Resolve the creator's agency_user ID for this agency
+    let au_resp = state
+        .pg
+        .from("agency_users")
+        .select("id")
+        .eq("agency_id", &agency_id)
+        .or(format!("creator_id.eq.{},user_id.eq.{}", user.id, user.id))
+        .eq("status", "active")
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !au_resp.status().is_success() {
+        return Err((StatusCode::FORBIDDEN, "Not registered with this agency".into()));
+    }
+    let au_text = au_resp.text().await.unwrap_or_default();
+    let au_rows: Vec<serde_json::Value> = serde_json::from_str(&au_text).unwrap_or_default();
+    let agency_user_id = au_rows
+        .into_iter()
+        .next()
+        .and_then(|row| row.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()))
+        .ok_or((StatusCode::FORBIDDEN, "Not registered with this agency".into()))?;
+
+    // Verify the creator has a booking in this campaign using their agency_user_id
     let booking_resp = state
         .pg
         .from("bookings")
         .select("id,talent_id")
         .eq("campaign_id", campaign_id)
-        .eq("talent_id", &user.id)
+        .eq("talent_id", &agency_user_id)
         .limit(1)
         .execute()
         .await
@@ -96,8 +120,12 @@ async fn resolve_creator_for_campaign(
     if booking_rows.is_empty() {
         return Err((StatusCode::FORBIDDEN, "No active booking for this campaign".into()));
     }
+    let booking_id = booking_rows
+        .into_iter()
+        .next()
+        .and_then(|row| row.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()));
 
-    Ok((agency_id, user.id.clone()))
+    Ok((agency_id, user.id.clone(), booking_id))
 }
 
 /// For an agency user, verify ownership of the campaign.
@@ -184,30 +212,7 @@ pub async fn upload_deliverable(
             verify_agency_campaign(&state, &user, &campaign_id).await?;
             (user.id.clone(), None, None)
         } else if is_creator_like(&user.role) {
-            let (aid, cid) = resolve_creator_for_campaign(&state, &user, &campaign_id).await?;
-            // Get the booking id for reference
-            let booking_resp = state
-                .pg
-                .from("bookings")
-                .select("id")
-                .eq("campaign_id", &campaign_id)
-                .eq("talent_id", &user.id)
-                .limit(1)
-                .execute()
-                .await
-                .ok();
-            let bid = match booking_resp {
-                Some(r) => match r.text().await {
-                    Ok(t) => {
-                        let rows: Vec<serde_json::Value> = serde_json::from_str(&t).unwrap_or_default();
-                        rows.into_iter()
-                            .next()
-                            .and_then(|row| row.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()))
-                    }
-                    Err(_) => None,
-                },
-                None => None,
-            };
+            let (aid, cid, bid) = resolve_creator_for_campaign(&state, &user, &campaign_id).await?;
             (aid, Some(cid), bid)
         } else {
             return Err((StatusCode::FORBIDDEN, "Forbidden".into()));
