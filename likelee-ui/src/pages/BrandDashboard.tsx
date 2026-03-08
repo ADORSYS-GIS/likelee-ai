@@ -53,6 +53,7 @@ import {
   CheckSquare,
   X,
   ChevronDown,
+  ChevronRight,
   Mail,
 } from "lucide-react";
 import {
