@@ -52,9 +52,10 @@ import {
   Copy,
   CheckSquare,
   X,
-  ChevronDown,
   ChevronRight,
   Mail,
+  Loader2,
+  MessageSquare,
 } from "lucide-react";
 import {
   Dialog,
@@ -657,6 +658,19 @@ export default function BrandDashboard() {
   const [usageRightsTab, setUsageRightsTab] = useState("licenses");
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [creators, setCreators] = useState(mockCreators);
+  const [reviewDialog, setReviewDialog] = useState<{
+    open: boolean;
+    offerId: string;
+    delId: string;
+    note: string;
+  }>({
+    open: false,
+    offerId: "",
+    delId: "",
+    note: "",
+  });
+  const [previewImage, setPreviewImage] = useState<any>(null);
+  const [reviewing, setReviewing] = useState<string | null>(null);
 
   useEffect(() => {
     const getSession = async () => {
@@ -2560,21 +2574,23 @@ export default function BrandDashboard() {
   const handleDeliverableReview = async (
     offerId: string,
     deliverableId: string,
-    status: string,
+    action: string,
     note?: string,
   ) => {
     try {
+      setReviewing(deliverableId);
       await base44.post(
         `/api/campaign-offers/${offerId}/deliverables/${deliverableId}/review`,
         {
-          status,
+          action,
           note,
         },
       );
       toast({
         title: "Success",
-        description: `Deliverable ${status.replace(/_/g, " ")}.`,
+        description: `Deliverable ${action.replace(/_/g, " ")}.`,
       });
+      setReviewDialog((prev) => ({ ...prev, open: false }));
       await loadOfferHubDetails(offerId);
     } catch (error: any) {
       toast({
@@ -2582,6 +2598,8 @@ export default function BrandDashboard() {
         description: error.message || "Failed to update deliverable status.",
         variant: "destructive",
       });
+    } finally {
+      setReviewing(null);
     }
   };
 
@@ -2836,13 +2854,27 @@ export default function BrandDashboard() {
                               </div>
                             )}
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                              <Button variant="secondary" size="sm" className="rounded-none h-8" asChild>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                className="rounded-none h-8 font-bold"
+                                onClick={() => setPreviewImage(del)}
+                              >
+                                <Eye className="w-3 h-3 mr-1.5" /> View
+                              </Button>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                className="rounded-none h-8 font-bold"
+                                asChild
+                              >
                                 <a
                                   href={getPublicUrl(del)}
+                                  download
                                   target="_blank"
                                   rel="noreferrer"
                                 >
-                                  <Eye className="w-3 h-3 mr-1.5" /> View
+                                  <Download className="w-3 h-3" />
                                 </a>
                               </Button>
                             </div>
@@ -2875,12 +2907,16 @@ export default function BrandDashboard() {
                                 size="sm"
                                 className="flex-1 h-8 rounded-none font-bold border-gray-300"
                                 onClick={() => {
-                                  const note = prompt("Feedback for the creator:");
-                                  if (note) handleDeliverableReview(offerId, del.id, "changes_requested", note);
-                                }}
-                              >
-                                Feedback
-                              </Button>
+                                    setReviewDialog({
+                                      open: true,
+                                      offerId,
+                                      delId: del.id,
+                                      note: del.brand_review_note || "",
+                                    });
+                                  }}
+                                >
+                                  Feedback
+                                </Button>
                             </div>
 
                             {del.brand_review_note && (
@@ -7163,6 +7199,137 @@ export default function BrandDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Image Preview Dialog */}
+      <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
+        <DialogContent className="max-w-[95vw] sm:max-w-[700px] p-0 overflow-hidden border-none bg-black/90 shadow-2xl rounded-none">
+          <div className="relative w-full h-full flex flex-col items-center justify-center p-0">
+            <div className="w-full aspect-[4/3] relative flex items-center justify-center bg-gray-900">
+              {previewImage?.asset_type === "video" ? (
+                <video
+                  src={getPublicUrl(previewImage)}
+                  controls
+                  className="max-w-full max-h-full"
+                />
+              ) : (
+                <img
+                  src={previewImage ? getPublicUrl(previewImage) : ""}
+                  className="max-w-full max-h-full object-contain"
+                  alt="Preview"
+                />
+              )}
+              <div className="absolute top-4 right-4 flex gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="rounded-none bg-white/10 hover:bg-white/20 text-white border-none backdrop-blur-md"
+                  asChild
+                >
+                  <a
+                    href={previewImage ? getPublicUrl(previewImage) : ""}
+                    download
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <Download className="w-4 h-4 mr-2" /> Download
+                  </a>
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="rounded-none bg-white/10 hover:bg-white/20 text-white border-none backdrop-blur-md h-8 w-8"
+                  onClick={() => setPreviewImage(null)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+            {previewImage?.caption && (
+              <div className="w-full bg-gray-900 p-6 text-white text-sm border-t border-white/10">
+                <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-2">
+                  Caption
+                </p>
+                <p className="text-sm leading-relaxed">{previewImage.caption}</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Feedback Dialog */}
+      <Dialog
+        open={reviewDialog.open}
+        onOpenChange={(open) =>
+          setReviewDialog((prev) => ({ ...prev, open }))
+        }
+      >
+        <DialogContent className="sm:max-w-[500px] rounded-none p-0 overflow-hidden border border-gray-200 shadow-2xl">
+          <div className="bg-gray-900 p-8 text-white relative">
+            <DialogHeader className="space-y-1 relative z-10">
+              <div className="w-12 h-12 bg-white/10 rounded-none flex items-center justify-center mb-4 border border-white/20">
+                <MessageSquare className="w-6 h-6 text-white" />
+              </div>
+              <DialogTitle className="text-2xl font-bold font-syne text-white">
+                Review Feedback
+              </DialogTitle>
+              <p className="text-gray-400 text-sm">
+                Provide feedback to help the creator refine this asset.
+              </p>
+            </DialogHeader>
+          </div>
+
+          <div className="p-8 space-y-6 bg-white">
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                Your Feedback
+              </label>
+              <Textarea
+                placeholder="What exactly should be changed? (e.g., 'Need more lighting', 'Crop the left side')"
+                className="min-h-[150px] resize-none rounded-none border-gray-200 bg-gray-50 focus:bg-white focus:ring-black/5 transition-all text-sm leading-relaxed"
+                value={reviewDialog.note}
+                onChange={(e) =>
+                  setReviewDialog((prev) => ({
+                    ...prev,
+                    note: e.target.value,
+                  }))
+                }
+              />
+            </div>
+
+            <DialogFooter className="flex-col sm:flex-row gap-3 pt-4">
+              <Button
+                variant="outline"
+                className="flex-1 h-12 rounded-none border-gray-200 hover:bg-gray-50 font-bold"
+                onClick={() =>
+                  setReviewDialog((prev) => ({ ...prev, open: false }))
+                }
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 h-12 rounded-none bg-black hover:bg-gray-800 text-white font-bold shadow-lg shadow-black/10 transition-all active:scale-[0.98]"
+                disabled={
+                  !reviewDialog.note.trim() || reviewing === reviewDialog.delId
+                }
+                onClick={() =>
+                  handleDeliverableReview(
+                    reviewDialog.offerId,
+                    reviewDialog.delId,
+                    "changes_requested",
+                    reviewDialog.note,
+                  )
+                }
+              >
+                {reviewing === reviewDialog.delId ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  "Send Feedback"
+                )}
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
