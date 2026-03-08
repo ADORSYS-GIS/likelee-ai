@@ -19,7 +19,9 @@ import {
   Trash2,
   TrendingUp,
   User,
+  File,
 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 import {
   Sheet,
   SheetContent,
@@ -157,6 +159,49 @@ export const BookingDetailsModal = ({
     });
   };
 
+  const handleDownloadFile = async (file: any) => {
+    if (!supabase) {
+      toast({
+        title: "Download failed",
+        description: "Supabase client not initialized",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      const { data, error } = await supabase.storage
+        .from(file.storage_bucket)
+        .download(file.storage_path);
+
+      if (error) throw error;
+
+      const url = URL.createObjectURL(data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = file.file_name;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Download started",
+        description: `Downloading ${file.file_name}`,
+      });
+    } catch (e: any) {
+      console.error("Storage download failed:", e);
+      const detail =
+        e.message ||
+        e.error_description ||
+        (typeof e === "object" ? JSON.stringify(e) : String(e));
+      toast({
+        title: "Download failed",
+        description: detail || "Could not download file",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-xl overflow-y-auto">
@@ -264,6 +309,40 @@ export const BookingDetailsModal = ({
               </p>
             </div>
           </div>
+
+          {booking.booking_files && booking.booking_files.length > 0 && (
+            <div className="border border-gray-100 rounded-xl p-4">
+              <div className="flex items-center gap-2 text-gray-600 font-bold text-sm mb-3">
+                <Link className="w-4 h-4" /> Attachments
+              </div>
+              <div className="space-y-2">
+                {booking.booking_files.map((file: any) => (
+                  <div
+                    key={file.id}
+                    className="flex items-center justify-between p-2 bg-gray-50 rounded-lg group"
+                  >
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <FileText className="w-4 h-4 text-gray-400 shrink-0" />
+                      <span
+                        className="text-sm font-medium text-gray-700 truncate"
+                        title={file.file_name}
+                      >
+                        {file.file_name}
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => handleDownloadFile(file)}
+                    >
+                      <Download className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <Button
