@@ -52,16 +52,22 @@ import {
   Copy,
   CheckSquare,
   X,
+  ChevronDown,
   ChevronRight,
   Mail,
   Loader2,
   MessageSquare,
 } from "lucide-react";
 import {
+  reviewOfferDeliverable,
+  listOfferDeliverables,
+} from "@/api/functions";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -2553,9 +2559,7 @@ export default function BrandDashboard() {
     try {
       const [contractsResp, deliverablesResp] = await Promise.all([
         base44.get<{ contracts?: any[] }>(`/api/campaign-offers/${offerId}/contracts`),
-        base44.get<{ deliverables?: any[] }>(
-          `/api/campaign-offers/${offerId}/deliverables`,
-        ),
+        listOfferDeliverables(offerId),
       ]);
       setSelectedOfferHubContracts(
         Array.isArray(contractsResp?.contracts) ? contractsResp.contracts : [],
@@ -2579,13 +2583,10 @@ export default function BrandDashboard() {
   ) => {
     try {
       setReviewing(deliverableId);
-      await base44.post(
-        `/api/campaign-offers/${offerId}/deliverables/${deliverableId}/review`,
-        {
-          action,
-          note,
-        },
-      );
+      await reviewOfferDeliverable(offerId, deliverableId, {
+        action,
+        note,
+      });
       toast({
         title: "Success",
         description: `Deliverable ${action.replace(/_/g, " ")}.`,
@@ -2897,7 +2898,7 @@ export default function BrandDashboard() {
                               <Button
                                 size="sm"
                                 className="flex-1 h-8 rounded-none font-bold bg-gray-900"
-                                onClick={() => handleDeliverableReview(offerId, del.id, "approved")}
+                                onClick={() => handleDeliverableReview(offerId, del.id, "approve")}
                                 disabled={del.status === "approved"}
                               >
                                 Approve

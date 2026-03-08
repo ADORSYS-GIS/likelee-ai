@@ -16,9 +16,19 @@ import {
   Briefcase,
   Sparkles,
   Loader2,
-  ExternalLink,
   Trash2,
+  Eye,
+  RefreshCw,
+  Download,
+  X,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   listBookingDeliverables,
   uploadBookingDeliverable,
@@ -56,6 +66,7 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
   const [submittingMap, setSubmittingMap] = useState<Record<string, boolean>>({});
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [openFeedback, setOpenFeedback] = useState<Set<string>>(new Set());
+  const [previewImage, setPreviewImage] = useState<Deliverable | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -319,9 +330,27 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
                                             <Trash2 className="w-4 h-4" />
                                           </Button>
                                         )}
-                                        <Button variant="secondary" size="icon" className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white hover:text-gray-900" asChild>
-                                          <a href={getFileUrl(del)} target="_blank" rel="noreferrer">
-                                            <ExternalLink className="w-4 h-4" />
+                                        <Button
+                                          variant="secondary"
+                                          size="icon"
+                                          className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white hover:text-gray-900"
+                                          onClick={() => setPreviewImage(del)}
+                                        >
+                                          <Eye className="w-4 h-4" />
+                                        </Button>
+                                        <Button
+                                          variant="secondary"
+                                          size="icon"
+                                          className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white hover:text-gray-900"
+                                          asChild
+                                        >
+                                          <a
+                                            href={getFileUrl(del)}
+                                            download
+                                            target="_blank"
+                                            rel="noreferrer"
+                                          >
+                                            <Download className="w-4 h-4" />
                                           </a>
                                         </Button>
                                       </div>
@@ -381,6 +410,65 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
           })
         )}
       </div>
+
+      {/* Image Preview Dialog */}
+      <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
+        <DialogContent className="max-w-[95vw] sm:max-w-[800px] p-0 overflow-hidden border-none bg-black/95 shadow-2xl rounded-3xl">
+          <div className="relative w-full h-full flex flex-col items-center justify-center p-0">
+            <div className="w-full aspect-[4/3] relative flex items-center justify-center bg-gray-900/50">
+              {previewImage?.asset_type === "video" ? (
+                <video
+                  src={getFileUrl(previewImage)}
+                  controls
+                  className="max-w-full max-h-full"
+                  autoPlay
+                />
+              ) : (
+                <img
+                  src={previewImage ? getFileUrl(previewImage) : ""}
+                  className="max-w-full max-h-full object-contain"
+                  alt="Preview"
+                />
+              )}
+              
+              {/* Overlay controls */}
+              <div className="absolute top-6 right-6 flex gap-3">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="rounded-xl bg-white/10 hover:bg-white/20 text-white border-none backdrop-blur-xl font-bold h-10 px-4"
+                  asChild
+                >
+                  <a
+                    href={previewImage ? getFileUrl(previewImage) : ""}
+                    download
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <Download className="w-4 h-4 mr-2" /> Download
+                  </a>
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="rounded-xl bg-white/10 hover:bg-white/20 text-white border-none backdrop-blur-xl h-10 w-10 transition-all hover:rotate-90"
+                  onClick={() => setPreviewImage(null)}
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+              </div>
+            </div>
+            {previewImage?.caption && (
+              <div className="w-full bg-white/5 backdrop-blur-md p-8 text-white text-sm border-t border-white/5">
+                <p className="text-blue-400 text-[10px] font-black uppercase tracking-[0.2em] mb-3">
+                  Caption
+                </p>
+                <p className="text-base leading-relaxed text-gray-200">{previewImage.caption}</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }
