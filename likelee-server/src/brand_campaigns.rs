@@ -2353,6 +2353,32 @@ pub async fn review_offer_deliverable(
         .execute()
         .await;
 
+    // Sync back to booking_deliverables if this was linked
+    if let Some(source_id) = row.get("meta").and_then(|m| m.get("source_booking_deliverable_id")).and_then(|v| v.as_str()) {
+        let mut b_update = serde_json::Map::new();
+        if user.role == "brand" {
+            b_update.insert("brand_status".to_string(), json!(status_value));
+            b_update.insert("reviewed_by_brand_at".to_string(), json!(now.clone()));
+            if let Some(note) = payload.note.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+                b_update.insert("brand_review_note".to_string(), json!(note));
+            }
+            // Also update status if it's a request for changes
+            if status_value == "changes_requested" {
+                b_update.insert("status".to_string(), json!("changes_requested"));
+            }
+        }
+        
+        if !b_update.is_empty() {
+            let _ = state
+                .pg
+                .from("booking_deliverables")
+                .eq("id", source_id)
+                .update(serde_json::Value::Object(b_update).to_string())
+                .execute()
+                .await;
+        }
+    }
+
     Ok(Json(json!({"status":"ok","deliverable": row})))
 }
 
