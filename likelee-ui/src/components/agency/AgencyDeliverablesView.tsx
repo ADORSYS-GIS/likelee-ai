@@ -80,9 +80,8 @@ export function AgencyDeliverablesView() {
       
       const grouped: Record<string, CampaignNode> = {};
       items.forEach((item: any) => {
-        // Handle nested campaign object if present, else fallback
-        const campaignId = item.brand_campaign_id || (item.brand_campaigns?.id);
-        const campaignName = item.brand_campaign_name || item.brand_campaigns?.name || item.offer_title || "Untitled Campaign";
+        const campaignId = item.brand_campaign_id || item.brand_campaigns?.id;
+        const campaignName = item.brand_campaigns?.name || item.brand_campaign_name || "Untitled Campaign";
         
         if (campaignId) {
           if (!grouped[campaignId]) {
@@ -273,11 +272,13 @@ export function AgencyDeliverablesView() {
                       >
                         <div className="flex items-center gap-4">
                           <div className="h-10 w-10 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 border-2 border-white shadow-sm flex items-center justify-center text-[12px] font-bold text-gray-700 uppercase">
-                            {offer.talent_name?.[0] || <User className="w-4 h-4" />}
+                            {(offer.talent_name || offer.campaign_offers?.offer_title)?.[0] || <User className="w-4 h-4" />}
                           </div>
                           <div>
-                            <p className="text-sm font-bold text-gray-900 font-syne">{offer.talent_name || "Unknown Talent"}</p>
-                            <p className="text-[10px] text-gray-500 font-medium">{offer.offer_title}</p>
+                            <p className="text-sm font-bold text-gray-900 font-syne">
+                              {offer.talent_name || offer.campaign_offers?.offer_title || "Unknown Talent"}
+                            </p>
+                            <p className="text-[10px] text-gray-500 font-medium">{offer.offer_title || offer.campaign_offers?.offer_title}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
