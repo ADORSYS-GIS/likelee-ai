@@ -56,6 +56,8 @@ interface Deliverable {
   status: string;
   caption?: string;
   agency_review_note?: string;
+  brand_status?: string;
+  brand_review_note?: string;
   created_at: string;
 }
 
@@ -537,9 +539,19 @@ export function AgencyDeliverablesView() {
                                                     </div>
                                                   )}
                                                   <div className="absolute top-2 left-2">
-                                                    {getStatusBadge(
-                                                      del.status,
-                                                    )}
+                                                    <div className="flex flex-col gap-1.5 items-start">
+                                                      {getStatusBadge(del.status)}
+                                                      {del.brand_status && (
+                                                        <Badge variant="outline" className={`
+                                                          text-[10px] h-5 border-none shadow-sm font-bold uppercase tracking-tight
+                                                          ${del.brand_status === 'approved' ? 'bg-blue-500 text-white' : 
+                                                            del.brand_status === 'changes_requested' ? 'bg-orange-500 text-white' :
+                                                            'bg-gray-500 text-white'}
+                                                        `}>
+                                                          Brand: {del.brand_status.replace(/_/g, ' ')}
+                                                        </Badge>
+                                                      )}
+                                                    </div>
                                                   </div>
                                                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                                                     <Button
@@ -641,6 +653,18 @@ export function AgencyDeliverablesView() {
                                                   <div className="px-3 pb-3">
                                                     <p className="text-[10px] text-amber-700 bg-amber-50 rounded p-2 leading-relaxed">
                                                       {del.agency_review_note}
+                                                    </p>
+                                                  </div>
+                                                )}
+
+                                                {(del.brand_review_note || del.brand_status === 'changes_requested') && (
+                                                  <div className="p-3 bg-blue-50/50 border-t border-blue-100/50">
+                                                    <div className="flex items-center gap-1.5 mb-1.5">
+                                                      <MessageSquare className="w-3.5 h-3.5 text-blue-600" />
+                                                      <span className="text-[10px] font-black uppercase tracking-wider text-blue-700">Brand Feedback</span>
+                                                    </div>
+                                                    <p className="text-[11px] text-blue-900 leading-relaxed font-medium">
+                                                      {del.brand_review_note || "Brand requested changes but provided no specific note."}
                                                     </p>
                                                   </div>
                                                 )}
