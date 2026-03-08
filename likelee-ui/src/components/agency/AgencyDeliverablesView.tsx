@@ -18,6 +18,15 @@ import {
   FileVideo,
 } from "lucide-react";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Textarea } from "@/components/ui/textarea";
+import {
   getBookingsCampaigns,
   listBookingDeliverables,
   reviewBookingDeliverable,
@@ -42,6 +51,7 @@ interface TalentNode {
   talentName: string;
   talentId?: string;
   bookingId?: string;
+  profilePhotoUrl?: string;
 }
 
 interface CampaignNode {
@@ -68,6 +78,12 @@ export function AgencyDeliverablesView() {
   >({});
   const [reviewing, setReviewing] = useState<string | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
+  const [reviewDialog, setReviewDialog] = useState<{
+    open: boolean;
+    delId: string;
+    campaignId: string;
+    note: string;
+  }>({ open: false, delId: "", campaignId: "", note: "" });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -100,6 +116,7 @@ export function AgencyDeliverablesView() {
               talentName: name,
               talentId: b.talent_id,
               bookingId: b.id,
+              profilePhotoUrl: b.agency_users?.profile_photo_url,
             });
           }
         });
@@ -178,6 +195,7 @@ export function AgencyDeliverablesView() {
         description: `Deliverable ${status.replace(/_/g, " ")}.`,
       });
       fetchDeliverables(campaignId);
+      setReviewDialog((prev) => ({ ...prev, open: false, note: "" }));
     } catch (error: any) {
       toast({
         title: "Review failed",
@@ -380,9 +398,24 @@ export function AgencyDeliverablesView() {
                                 >
                                   <div className="flex items-center gap-3">
                                     <div
-                                      className={`p-2 rounded-lg ${isTalentExpanded ? "bg-primary/10 text-primary" : "bg-gray-100 text-gray-500"}`}
+                                      className="relative group/avatar"
                                     >
-                                      <User className="w-4 h-4" />
+                                      <Avatar className="h-10 w-10 border-2 border-white shadow-sm transition-transform group-hover/avatar:scale-105">
+                                        <AvatarImage
+                                          src={talent.profilePhotoUrl}
+                                          alt={talent.talentName}
+                                        />
+                                        <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                                          {talent.talentName
+                                            .substring(0, 2)
+                                            .toUpperCase()}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      {isTalentExpanded && (
+                                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-primary text-white rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+                                          <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                                        </div>
+                                      )}
                                     </div>
                                     <div>
                                       <p className="text-sm font-semibold text-gray-900">
@@ -496,17 +529,12 @@ export function AgencyDeliverablesView() {
                                                         reviewing === del.id
                                                       }
                                                       onClick={() => {
-                                                        const note =
-                                                          window.prompt(
-                                                            "Feedback for creator:",
-                                                          );
-                                                        if (note !== null)
-                                                          handleReview(
-                                                            campaign.id,
-                                                            del.id,
-                                                            "changes_requested",
-                                                            note,
-                                                          );
+                                                        setReviewDialog({
+                                                          open: true,
+                                                          delId: del.id,
+                                                          campaignId: campaign.id,
+                                                          note: "",
+                                                        });
                                                       }}
                                                     >
                                                       <MessageSquare className="w-3 h-3 mr-1" />
@@ -543,6 +571,80 @@ export function AgencyDeliverablesView() {
           );
         })
       )}
+
+      {/* Review Feedback Dialog */}
+      <Dialog
+        open={reviewDialog.open}
+        onOpenChange={(open) =>
+          setReviewDialog((prev) => ({ ...prev, open }))
+        }
+      >
+        <DialogContent className="sm:max-w-[500px] rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+          <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-primary/20 p-8 text-white relative">
+            <DialogHeader className="space-y-1 relative z-10">
+              <div className="w-12 h-12 bg-amber-500/20 rounded-2xl flex items-center justify-center mb-4 border border-amber-500/30">
+                <MessageSquare className="w-6 h-6 text-amber-500" />
+              </div>
+              <DialogTitle className="text-2xl font-bold font-syne">
+                Request Changes
+              </DialogTitle>
+              <p className="text-gray-400 text-sm">
+                Provide specific feedback to help the talent improve this
+                deliverable.
+              </p>
+            </DialogHeader>
+          </div>
+
+          <div className="p-8 space-y-6">
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">
+                Your Feedback
+              </label>
+              <Textarea
+                placeholder="What exactly should be changed? (e.g., 'Brightness too low', 'Need a different background')"
+                className="min-h-[150px] resize-none rounded-2xl border-gray-100 bg-gray-50 focus:bg-white focus:ring-primary/20 transition-all text-sm leading-relaxed"
+                value={reviewDialog.note}
+                onChange={(e) =>
+                  setReviewDialog((prev) => ({
+                    ...prev,
+                    note: e.target.value,
+                  }))
+                }
+              />
+            </div>
+
+            <DialogFooter className="flex-col sm:flex-row gap-3 pt-4">
+              <Button
+                variant="outline"
+                className="flex-1 h-12 rounded-xl border-gray-100 hover:bg-gray-50 font-semibold"
+                onClick={() =>
+                  setReviewDialog((prev) => ({ ...prev, open: false }))
+                }
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 h-12 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold shadow-lg shadow-amber-500/20 transition-all active:scale-[0.98]"
+                disabled={!reviewDialog.note.trim() || reviewing === reviewDialog.delId}
+                onClick={() =>
+                  handleReview(
+                    reviewDialog.campaignId,
+                    reviewDialog.delId,
+                    "changes_requested",
+                    reviewDialog.note,
+                  )
+                }
+              >
+                {reviewing === reviewDialog.delId ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  "Send Feedback"
+                )}
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }
