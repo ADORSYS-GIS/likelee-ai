@@ -1711,7 +1711,7 @@ pub async fn list_agency_offer_packages(
     let resp = state
         .pg
         .from("campaign_offer_packages")
-        .select("*")
+        .select("*,brand_campaigns(id,name),campaign_offers(id,offer_title,target_type,target_id)")
         .eq("agency_id", &user.id)
         .order("created_at.desc")
         .execute()
@@ -1777,11 +1777,19 @@ pub async fn submit_offer_deliverable(
         .unwrap_or("file")
         .to_string();
 
+    let agency_id = if user.role == "agency" {
+        Some(user.id.clone())
+    } else if _offer.get("target_type").and_then(|v| v.as_str()) == Some("agency") {
+        _offer.get("target_id").and_then(|v| v.as_str()).map(|s| s.to_string())
+    } else {
+        None
+    };
+
     let insert_payload = json!({
         "offer_id": offer_id,
         "brand_campaign_id": _offer.get("brand_campaign_id").cloned().unwrap_or(serde_json::Value::Null),
         "brand_id": _offer.get("brand_id").cloned().unwrap_or(serde_json::Value::Null),
-        "agency_id": if user.role == "agency" { json!(user.id.clone()) } else { serde_json::Value::Null },
+        "agency_id": agency_id,
         "creator_id": if is_creator_like(&user.role) { json!(user.id.clone()) } else { serde_json::Value::Null },
         "submitted_by": user.id,
         "asset_url": asset_url,
@@ -1949,12 +1957,20 @@ pub async fn upload_offer_deliverable(
         ));
     }
 
+    let agency_id = if user.role == "agency" {
+        Some(user.id.clone())
+    } else if _offer.get("target_type").and_then(|v| v.as_str()) == Some("agency") {
+        _offer.get("target_id").and_then(|v| v.as_str()).map(|s| s.to_string())
+    } else {
+        None
+    };
+
     // Now insert the deliverable record
     let insert_payload = json!({
         "offer_id": offer_id,
         "brand_campaign_id": _offer.get("brand_campaign_id").cloned().unwrap_or(serde_json::Value::Null),
         "brand_id": _offer.get("brand_id").cloned().unwrap_or(serde_json::Value::Null),
-        "agency_id": if user.role == "agency" { json!(user.id.clone()) } else { serde_json::Value::Null },
+        "agency_id": agency_id,
         "creator_id": if is_creator_like(&user.role) { json!(user.id.clone()) } else { serde_json::Value::Null },
         "submitted_by": user.id,
         "asset_url": path, // Storing path relative to bucket
