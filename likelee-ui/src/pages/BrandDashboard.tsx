@@ -639,6 +639,7 @@ export default function BrandDashboard() {
   const [inboxPackages, setInboxPackages] = useState<any[]>([]);
   const [loadingInboxPackages, setLoadingInboxPackages] = useState(false);
   const [brandOfferItems, setBrandOfferItems] = useState<any[]>([]);
+  const [loadingBrandOfferItems, setLoadingBrandOfferItems] = useState(false);
   const [selectedOfferHubId, setSelectedOfferHubId] = useState<string>("");
   const [selectedOfferHubContracts, setSelectedOfferHubContracts] = useState<
     any[]
@@ -776,6 +777,7 @@ export default function BrandDashboard() {
     let mounted = true;
     const loadMyOffers = async () => {
       try {
+        setLoadingBrandOfferItems(true);
         const response = await base44.get<{ offers?: any[] }>(
           "/api/campaign-offers/my",
           { params: { limit: 120 } },
@@ -787,6 +789,9 @@ export default function BrandDashboard() {
       } catch {
         if (!mounted) return;
         setBrandOfferItems([]);
+      } finally {
+        if (!mounted) return;
+        setLoadingBrandOfferItems(false);
       }
     };
     loadMyOffers();
@@ -2876,6 +2881,11 @@ export default function BrandDashboard() {
         </p>
       </div>
       <div className="space-y-3">
+        {loadingBrandOfferItems && (
+          <Card className="p-6 bg-white border border-gray-300 rounded-none">
+            <p className="text-sm text-gray-500">Loading deliverables...</p>
+          </Card>
+        )}
         {brandOfferItems.filter((offer: any) =>
           [
             "sent",
@@ -2888,13 +2898,14 @@ export default function BrandDashboard() {
             "in_review",
             "approved",
           ].includes(String(offer?.status || "").toLowerCase()),
-        ).length === 0 && (
-          <Card className="p-6 bg-white border border-gray-300 rounded-none">
-            <p className="text-sm text-gray-500">
-              No ongoing campaign deliverables yet.
-            </p>
-          </Card>
-        )}
+        ).length === 0 &&
+          !loadingBrandOfferItems && (
+            <Card className="p-6 bg-white border border-gray-300 rounded-none">
+              <p className="text-sm text-gray-500">
+                No ongoing campaign deliverables yet.
+              </p>
+            </Card>
+          )}
         {brandOfferItems
           .filter((offer: any) =>
             [
@@ -3131,17 +3142,8 @@ export default function BrandDashboard() {
 
     const campaignsForOffers = brandOfferItems.map((offer: any) => {
       const statusRaw = String(offer?.status || "sent").toLowerCase();
-      const signedStatuses = new Set([
-        "contract_fully_signed",
-        "signed",
-        "in_execution",
-        "deliverables_submitted",
-        "in_review",
-        "changes_requested",
-        "approved",
-        "completed",
-      ]);
-      const isSigned = signedStatuses.has(statusRaw);
+      const fullySignedStatuses = new Set(["contract_fully_signed", "signed"]);
+      const isFullySigned = fullySignedStatuses.has(statusRaw);
       const startDateRaw = String(
         offer?.brand_campaigns?.start_date || "",
       ).trim();
@@ -3169,19 +3171,12 @@ export default function BrandDashboard() {
         endDate && today.getTime() > endDate.getTime(),
       );
 
-      let mappedStatus:
-        | "draft"
-        | "pending_approval"
-        | "in_progress"
-        | "completed" = "pending_approval";
-      if (isSigned) {
-        if (isAfterEnd || statusRaw === "completed") {
-          mappedStatus = "completed";
-        } else if (isBeforeStart) {
-          mappedStatus = "pending_approval";
-        } else {
-          mappedStatus = "in_progress";
-        }
+      let mappedStatus: "pending_approval" | "in_progress" | "completed" =
+        "pending_approval";
+      if (isAfterEnd || statusRaw === "completed") {
+        mappedStatus = "completed";
+      } else if (isFullySigned) {
+        mappedStatus = "in_progress";
       } else {
         mappedStatus = "pending_approval";
       }
@@ -3192,6 +3187,9 @@ export default function BrandDashboard() {
       const formattedStartDate =
         String(offer?.brand_campaigns?.start_date || "").trim() ||
         new Date().toISOString().slice(0, 10);
+      const formattedDueDate = endDate
+        ? endDate.toISOString().slice(0, 10)
+        : formattedStartDate;
       const collaboratorLabel =
         String(offer?.target_name || "").trim() ||
         (offer?.target_type === "agency"
@@ -3216,7 +3214,9 @@ export default function BrandDashboard() {
           String(offer?.target_avatar_url || "").trim() || "/favicon.svg",
         ],
         channels: [],
-        due_date: formattedStartDate,
+        go_live: formattedStartDate,
+        due_date: formattedDueDate,
+        duration_days: durationDays,
         assets_delivered: 0,
         last_update: offer?.updated_at
           ? new Date(String(offer.updated_at)).toLocaleString()
@@ -3233,7 +3233,6 @@ export default function BrandDashboard() {
       if (campaignView === "active") return c.status === "in_progress";
       if (campaignView === "pending") return c.status === "pending_approval";
       if (campaignView === "completed") return c.status === "completed";
-      if (campaignView === "drafts") return c.status === "draft";
       return true;
     });
 
@@ -3428,6 +3427,12 @@ export default function BrandDashboard() {
                 <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
                   <p className="text-slate-900 whitespace-pre-wrap">
                     {requiredDeliverablesText}
+                  </p>
+                  <p className="text-sm text-slate-700 mt-3">
+                    <span className="font-semibold">
+                      Total expected deliverables:
+                    </span>{" "}
+                    {briefValue("total_expected_deliverables")}
                   </p>
                 </div>
               </div>
@@ -3641,6 +3646,54 @@ export default function BrandDashboard() {
         );
       }
 
+      const selectedBrief =
+        campaign?.brief_snapshot && typeof campaign.brief_snapshot === "object"
+          ? campaign.brief_snapshot
+          : {};
+      const selectedBriefValue = (key: string, fallback = "Not specified") => {
+        const value = selectedBrief?.[key];
+        if (value === null || value === undefined) return fallback;
+        const text = String(value).trim();
+        return text.length > 0 ? text : fallback;
+      };
+      const selectedRequiredDeliverables = (() => {
+        const direct = String(
+          selectedBrief?.required_deliverables || "",
+        ).trim();
+        if (direct) return direct;
+        const legacy = [
+          selectedBrief?.deliverables_reels,
+          selectedBrief?.deliverables_hero_image,
+        ]
+          .map((entry) => String(entry || "").trim())
+          .filter(Boolean);
+        return legacy.length > 0 ? legacy.join(", ") : "Not specified";
+      })();
+      const startForProgress = /^\d{4}-\d{2}-\d{2}$/.test(
+        String(campaign.go_live || ""),
+      )
+        ? new Date(`${String(campaign.go_live)}T00:00:00`)
+        : null;
+      const dueForProgress = /^\d{4}-\d{2}-\d{2}$/.test(
+        String(campaign.due_date || ""),
+      )
+        ? new Date(`${String(campaign.due_date)}T23:59:59`)
+        : null;
+      const nowMs = Date.now();
+      const progressPercent = (() => {
+        if (campaign.status === "completed") return 100;
+        if (!startForProgress || !dueForProgress) return 0;
+        const startMs = startForProgress.getTime();
+        const dueMs = dueForProgress.getTime();
+        if (dueMs <= startMs) return nowMs >= dueMs ? 100 : 0;
+        if (nowMs <= startMs) return 0;
+        if (nowMs >= dueMs) return 100;
+        return Math.max(
+          0,
+          Math.min(100, ((nowMs - startMs) / (dueMs - startMs)) * 100),
+        );
+      })();
+
       return (
         <div className="space-y-6">
           <div className="space-y-3">
@@ -3684,16 +3737,7 @@ export default function BrandDashboard() {
                 </div>
               </div>
             </div>
-            <Progress
-              value={
-                campaign.status === "completed"
-                  ? 100
-                  : campaign.status === "pending_approval"
-                    ? 75
-                    : 50
-              }
-              className="h-2"
-            />
+            <Progress value={progressPercent} className="h-2" />
           </Card>
 
           <div className="grid md:grid-cols-3 gap-6">
@@ -3719,8 +3763,8 @@ export default function BrandDashboard() {
                   <Label className="text-sm font-semibold text-gray-700 block mb-2">
                     Deliverables
                   </Label>
-                  <p className="text-gray-900">
-                    3 Instagram Reels (15-30 seconds each), 1 Hero Image
+                  <p className="text-gray-900 whitespace-pre-wrap">
+                    {selectedRequiredDeliverables}
                   </p>
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
@@ -3737,12 +3781,16 @@ export default function BrandDashboard() {
                     <Label className="text-sm font-semibold text-gray-700 block mb-2">
                       Budget
                     </Label>
-                    <p className="text-gray-900">Total: ${campaign.budget}</p>
-                    <p className="text-sm text-gray-600">
-                      Creator: ${(campaign.budget * 0.9).toFixed(0)}
+                    <p className="text-gray-900">
+                      Total: {selectedBriefValue("budget_total", "N/A")}
                     </p>
                     <p className="text-sm text-gray-600">
-                      Likelee Fee: ${(campaign.budget * 0.1).toFixed(0)}
+                      Creator:{" "}
+                      {selectedBriefValue("budget_creator_payment", "N/A")}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Likelee Fee:{" "}
+                      {selectedBriefValue("budget_platform_fee", "N/A")}
                     </p>
                   </div>
                 </div>
@@ -3856,20 +3904,14 @@ export default function BrandDashboard() {
             Completed (
             {campaignsForOffers.filter((c) => c.status === "completed").length})
           </button>
-          <button
-            onClick={() => setCampaignView("drafts")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              campaignView === "drafts"
-                ? "border-[#F7B750] text-[#F7B750]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Drafts (
-            {campaignsForOffers.filter((c) => c.status === "draft").length})
-          </button>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {loadingBrandOfferItems && (
+            <Card className="p-6 bg-white border border-gray-200">
+              <p className="text-sm text-gray-600">Loading campaigns...</p>
+            </Card>
+          )}
           {filteredCampaigns.map((campaign) => (
             <Card
               key={campaign.id}
@@ -3953,11 +3995,15 @@ export default function BrandDashboard() {
           ))}
         </div>
 
-        {filteredCampaigns.length === 0 && (
+        {!loadingBrandOfferItems && filteredCampaigns.length === 0 && (
           <Card className="p-12 bg-gray-50 border border-gray-200 text-center">
             <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-gray-900 mb-2">
-              No {campaignView} campaigns
+              {campaignView === "active"
+                ? "No active campaigns"
+                : campaignView === "pending"
+                  ? "No pending approval campaigns"
+                  : "No completed campaigns"}
             </h3>
             <p className="text-gray-600 mb-6">
               Start a new campaign to get creators working on your content

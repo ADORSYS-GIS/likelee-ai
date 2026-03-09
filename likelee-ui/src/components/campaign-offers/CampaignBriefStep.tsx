@@ -203,6 +203,29 @@ export default function CampaignBriefStep({
             className="border-2 border-gray-300 rounded-none min-h-[130px]"
           />
         </div>
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-gray-700">
+            Total expected deliverables <span className="text-red-600">*</span>
+          </p>
+          <Input
+            type="number"
+            min={1}
+            step={1}
+            value={campaignBrief.total_expected_deliverables || ""}
+            onChange={(e) =>
+              setCampaignBrief((prev) => ({
+                ...prev,
+                total_expected_deliverables: e.target.value,
+              }))
+            }
+            placeholder="e.g. 6"
+            className="border-2 border-gray-300 rounded-none"
+          />
+          <p className="text-xs text-gray-500">
+            Required for tracking progress even when required-deliverables text
+            is not detailed.
+          </p>
+        </div>
 
         <p className="text-sm font-semibold text-gray-700">
           Visual Style & Aesthetic

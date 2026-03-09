@@ -128,6 +128,7 @@ export default function BrandCampaignDashboard({
     useState(false);
   const [brandCampaignId, setBrandCampaignId] = useState<string>("");
   const [campaignCards, setCampaignCards] = useState<any[]>([]);
+  const [loadingCampaignCards, setLoadingCampaignCards] = useState(false);
   const [campaignListTab, setCampaignListTab] = useState<
     "active" | "pending_approval" | "completed"
   >("active");
@@ -198,6 +199,7 @@ export default function BrandCampaignDashboard({
     dos: "",
     donts: "",
     required_deliverables: "",
+    total_expected_deliverables: "",
     deliverables_reels: "",
     deliverables_hero_image: "",
     visual_color_palette: "",
@@ -456,6 +458,13 @@ export default function BrandCampaignDashboard({
       campaign?.brief_snapshot && typeof campaign.brief_snapshot === "object"
         ? campaign.brief_snapshot
         : {};
+    const explicitExpected = Number.parseInt(
+      String(brief?.total_expected_deliverables || "").trim(),
+      10,
+    );
+    if (Number.isFinite(explicitExpected) && explicitExpected > 0) {
+      return explicitExpected;
+    }
     const requiredDeliverablesCount = extractDeliverableCount(
       brief?.required_deliverables,
     );
@@ -487,11 +496,31 @@ export default function BrandCampaignDashboard({
           .filter(Boolean),
       ),
     );
-    const startReached = isStartDateReached(campaign?.start_date);
+    const startDateRaw = String(campaign?.start_date || "").trim();
+    const startDate = /^\d{4}-\d{2}-\d{2}$/.test(startDateRaw)
+      ? new Date(`${startDateRaw}T00:00:00`)
+      : null;
+    const durationDaysRaw = Number(campaign?.duration_days || 0);
+    const durationDays =
+      Number.isFinite(durationDaysRaw) && durationDaysRaw > 0
+        ? durationDaysRaw
+        : 30;
+    const endDate = startDate
+      ? new Date(startDate.getTime() + (durationDays - 1) * 24 * 60 * 60 * 1000)
+      : null;
+    const today = new Date();
+    const todayOnly = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
+    const isAfterEnd = Boolean(
+      endDate && todayOnly.getTime() > endDate.getTime(),
+    );
     const status =
-      rawStatus === "completed" || rawStatus === "archived"
+      rawStatus === "completed" || rawStatus === "archived" || isAfterEnd
         ? "completed"
-        : hasSignedOffer && startReached
+        : hasSignedOffer
           ? "active"
           : "pending_approval";
     const budgetText = String(campaign?.budget_range || "");
@@ -519,7 +548,7 @@ export default function BrandCampaignDashboard({
       approved: Number(deliverableStats?.approved || 0),
       start_date: String(campaign?.start_date || "N/A"),
       has_signed_offer: hasSignedOffer,
-      start_reached: startReached,
+      start_reached: isStartDateReached(campaign?.start_date),
       brief_snapshot:
         campaign?.brief_snapshot && typeof campaign.brief_snapshot === "object"
           ? campaign.brief_snapshot
@@ -527,6 +556,7 @@ export default function BrandCampaignDashboard({
     };
   };
   const loadCampaignCards = async () => {
+    setLoadingCampaignCards(true);
     try {
       const response = await base44.get<{ campaigns?: any[] }>(
         "/api/brand/campaigns",
@@ -580,6 +610,8 @@ export default function BrandCampaignDashboard({
       setCampaignCards(normalized);
     } catch {
       setCampaignCards([]);
+    } finally {
+      setLoadingCampaignCards(false);
     }
   };
 
@@ -774,6 +806,17 @@ export default function BrandCampaignDashboard({
   };
 
   const validateStep2Brief = (): { ok: boolean; message?: string } => {
+    const expectedTotal = Number.parseInt(
+      String(campaignBrief.total_expected_deliverables || "").trim(),
+      10,
+    );
+    if (!Number.isFinite(expectedTotal) || expectedTotal <= 0) {
+      return {
+        ok: false,
+        message:
+          "Total expected deliverables is required and must be greater than 0.",
+      };
+    }
     const duration = Number.parseInt(
       String(campaignBrief.overview_campaign_duration || "").trim(),
       10,
@@ -1036,6 +1079,7 @@ export default function BrandCampaignDashboard({
       dos: "",
       donts: "",
       required_deliverables: "",
+      total_expected_deliverables: "",
       deliverables_reels: "",
       deliverables_hero_image: "",
       visual_color_palette: "",
@@ -1743,6 +1787,13 @@ export default function BrandCampaignDashboard({
             const filteredCampaigns = campaignCards.filter(
               (campaign) => campaign.status === campaignListTab,
             );
+            if (loadingCampaignCards) {
+              return (
+                <Card className="p-4 bg-white border-2 border-gray-200 rounded-none">
+                  <p className="text-sm text-gray-600">Loading campaigns...</p>
+                </Card>
+              );
+            }
             if (filteredCampaigns.length === 0) {
               return (
                 <Card className="p-4 bg-white border-2 border-gray-200 rounded-none">
@@ -2403,23 +2454,6 @@ export default function BrandCampaignDashboard({
                                   ? "Talent"
                                   : "Creator"),
                             );
-                            const baseRateWeeklyCents = Number(
-                              creator?.base_rate_weekly_cents ??
-                                creator?.base_weekly_price_cents ??
-                                creator?.licensing_rate_weekly_cents ??
-                                0,
-                            );
-                            const hasBaseRate =
-                              Number.isFinite(baseRateWeeklyCents) &&
-                              baseRateWeeklyCents > 0;
-                            const rateCurrency = String(
-                              creator?.rate_currency ||
-                                creator?.currency_code ||
-                                "USD",
-                            );
-                            const canNegotiate = isNegotiationEnabled(
-                              creator?.accept_negotiations,
-                            );
 
                             return (
                               <div
@@ -2440,36 +2474,7 @@ export default function BrandCampaignDashboard({
                                     </p>
                                   </div>
                                   <div className="w-56 shrink-0 text-right">
-                                    <p className="text-xs text-gray-600">
-                                      License rate
-                                    </p>
-                                    <p className="text-sm font-semibold text-gray-900 mt-1">
-                                      {hasBaseRate
-                                        ? `${rateCurrency} ${Math.round(baseRateWeeklyCents / 100).toLocaleString()}/week`
-                                        : "Unavailable"}
-                                    </p>
-                                    {canNegotiate && (
-                                      <Input
-                                        type="number"
-                                        min="1"
-                                        placeholder="My offer"
-                                        value={
-                                          offerByCreatorId[creatorId] || ""
-                                        }
-                                        onChange={(e) =>
-                                          setOfferByCreatorId((prev) => ({
-                                            ...prev,
-                                            [creatorId]: e.target.value,
-                                          }))
-                                        }
-                                        className="mt-2 border-2 border-gray-300 rounded-none h-9 text-right"
-                                      />
-                                    )}
-                                    {!canNegotiate && (
-                                      <p className="text-xs text-gray-500 mt-2">
-                                        Fixed rate only
-                                      </p>
-                                    )}
+                                    {/* Keep negotiation logic in data layer, but hide per request */}
                                   </div>
                                   <Button
                                     type="button"
@@ -2642,23 +2647,6 @@ export default function BrandCampaignDashboard({
                               creator?.full_name ||
                               creator?.name,
                           );
-                          const baseRateWeeklyCents = Number(
-                            creator?.base_rate_weekly_cents ??
-                              creator?.base_weekly_price_cents ??
-                              creator?.licensing_rate_weekly_cents ??
-                              0,
-                          );
-                          const hasBaseRate =
-                            Number.isFinite(baseRateWeeklyCents) &&
-                            baseRateWeeklyCents > 0;
-                          const rateCurrency = String(
-                            creator?.rate_currency ||
-                              creator?.currency_code ||
-                              "USD",
-                          );
-                          const canNegotiate = isNegotiationEnabled(
-                            creator?.accept_negotiations,
-                          );
 
                           return (
                             <div
@@ -2669,27 +2657,8 @@ export default function BrandCampaignDashboard({
                                 <p className="font-semibold text-gray-900">
                                   {name}
                                 </p>
-                                <div className="text-right">
-                                  <p className="text-xs text-gray-600">
-                                    License rate
-                                  </p>
-                                  <p className="text-sm font-semibold text-gray-900">
-                                    {hasBaseRate
-                                      ? `${rateCurrency} ${Math.round(baseRateWeeklyCents / 100).toLocaleString()}/week`
-                                      : "Unavailable"}
-                                  </p>
-                                </div>
+                                <div className="text-right" />
                               </div>
-                              {canNegotiate && (
-                                <p className="text-xs text-gray-600 mt-2">
-                                  My offer:{" "}
-                                  <span className="font-semibold text-gray-900">
-                                    {offerByCreatorId[creatorId]
-                                      ? `${rateCurrency} ${Number(offerByCreatorId[creatorId]).toLocaleString()}/week`
-                                      : "Not set"}
-                                  </span>
-                                </p>
-                              )}
                             </div>
                           );
                         })}

@@ -807,7 +807,7 @@ export default function CreatorDashboard() {
   const [brandConnections, setBrandConnections] = useState<any[]>([]);
   const [brandOffers, setBrandOffers] = useState<any[]>([]);
   const [brandConnectionSubTab, setBrandConnectionSubTab] = useState<
-    "connections" | "requests" | "offers" | "contract_hub" | "deliverables"
+    "connections" | "requests" | "offers" | "deliverables"
   >("connections");
   const [selectedBrandOfferId, setSelectedBrandOfferId] = useState<string>("");
   const [selectedOfferBriefId, setSelectedOfferBriefId] = useState<string>("");
@@ -823,14 +823,27 @@ export default function CreatorDashboard() {
   const [creatorSignUrl, setCreatorSignUrl] = useState("");
   const [creatorSignOpen, setCreatorSignOpen] = useState(false);
   const [offerActionLoading, setOfferActionLoading] = useState(false);
+  const [loadingBrandOffers, setLoadingBrandOffers] = useState(false);
+  const [loadingOfferDetails, setLoadingOfferDetails] = useState(false);
   const [sendDeliverableOpen, setSendDeliverableOpen] = useState(false);
   const [sendDeliverableBrandId, setSendDeliverableBrandId] = useState("");
   const [sendDeliverableOfferId, setSendDeliverableOfferId] = useState("");
-  const [sendDeliverableFile, setSendDeliverableFile] = useState<File | null>(
-    null,
+  const [sendDeliverableFiles, setSendDeliverableFiles] = useState<File[]>([]);
+  const [sendDeliverablePreviewUrls, setSendDeliverablePreviewUrls] = useState<
+    string[]
+  >([]);
+  const [seenBrandRequestIds, setSeenBrandRequestIds] = useState<Set<string>>(
+    new Set(),
   );
-  const [sendDeliverablePreviewUrl, setSendDeliverablePreviewUrl] =
-    useState("");
+  const [seenOfferNotificationIds, setSeenOfferNotificationIds] = useState<
+    Set<string>
+  >(new Set());
+  const [
+    seenDeliverableNotificationOfferIds,
+    setSeenDeliverableNotificationOfferIds,
+  ] = useState<Set<string>>(new Set());
+  const [briefGalleryOpen, setBriefGalleryOpen] = useState(false);
+  const [briefGalleryIndex, setBriefGalleryIndex] = useState(0);
   const [agencyConnectionLoading, setAgencyConnectionLoading] = useState(false);
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
   const [disconnectConfirmChecked, setDisconnectConfirmChecked] =
@@ -886,13 +899,18 @@ export default function CreatorDashboard() {
   };
 
   const loadBrandOffers = async () => {
-    const offersResp = await base44.get<{ offers?: any[] }>(
-      "/api/campaign-offers/my",
-      {
-        params: { limit: 300 },
-      },
-    );
-    return Array.isArray(offersResp?.offers) ? offersResp.offers : [];
+    setLoadingBrandOffers(true);
+    try {
+      const offersResp = await base44.get<{ offers?: any[] }>(
+        "/api/campaign-offers/my",
+        {
+          params: { limit: 300 },
+        },
+      );
+      return Array.isArray(offersResp?.offers) ? offersResp.offers : [];
+    } finally {
+      setLoadingBrandOffers(false);
+    }
   };
 
   const loadOfferDetails = async (offerId: string) => {
@@ -901,38 +919,43 @@ export default function CreatorDashboard() {
       setSelectedOfferDeliverables([]);
       return;
     }
-    const [contractsResp, deliverablesResp] = await Promise.all([
-      base44.get<{ contracts?: any[] }>(
-        `/api/campaign-offers/${offerId}/contracts`,
-      ),
-      base44.get<{ deliverables?: any[] }>(
-        `/api/campaign-offers/${offerId}/deliverables`,
-      ),
-    ]);
-    const contracts = Array.isArray(contractsResp?.contracts)
-      ? contractsResp.contracts
-      : [];
-    const refreshedContracts = await Promise.all(
-      contracts.map(async (contract: any) => {
-        const contractId = String(contract?.id || "").trim();
-        if (!contractId) return contract;
-        try {
-          const refreshed = await base44.post<{ contract?: any }>(
-            `/api/campaign-offers/${offerId}/contracts/${contractId}/refresh`,
-            {},
-          );
-          return refreshed?.contract || contract;
-        } catch {
-          return contract;
-        }
-      }),
-    );
-    setSelectedOfferContracts(refreshedContracts);
-    setSelectedOfferDeliverables(
-      Array.isArray(deliverablesResp?.deliverables)
-        ? deliverablesResp.deliverables
-        : [],
-    );
+    setLoadingOfferDetails(true);
+    try {
+      const [contractsResp, deliverablesResp] = await Promise.all([
+        base44.get<{ contracts?: any[] }>(
+          `/api/campaign-offers/${offerId}/contracts`,
+        ),
+        base44.get<{ deliverables?: any[] }>(
+          `/api/campaign-offers/${offerId}/deliverables`,
+        ),
+      ]);
+      const contracts = Array.isArray(contractsResp?.contracts)
+        ? contractsResp.contracts
+        : [];
+      const refreshedContracts = await Promise.all(
+        contracts.map(async (contract: any) => {
+          const contractId = String(contract?.id || "").trim();
+          if (!contractId) return contract;
+          try {
+            const refreshed = await base44.post<{ contract?: any }>(
+              `/api/campaign-offers/${offerId}/contracts/${contractId}/refresh`,
+              {},
+            );
+            return refreshed?.contract || contract;
+          } catch {
+            return contract;
+          }
+        }),
+      );
+      setSelectedOfferContracts(refreshedContracts);
+      setSelectedOfferDeliverables(
+        Array.isArray(deliverablesResp?.deliverables)
+          ? deliverablesResp.deliverables
+          : [],
+      );
+    } finally {
+      setLoadingOfferDetails(false);
+    }
   };
   const loadCreatorContractHubRows = async (offersInput?: any[]) => {
     const offers = Array.isArray(offersInput) ? offersInput : brandOffers;
@@ -1012,29 +1035,11 @@ export default function CreatorDashboard() {
   }, [initialized, authenticated]);
   useEffect(() => {
     return () => {
-      if (sendDeliverablePreviewUrl.startsWith("blob:")) {
-        URL.revokeObjectURL(sendDeliverablePreviewUrl);
-      }
+      sendDeliverablePreviewUrls.forEach((url) => {
+        if (String(url).startsWith("blob:")) URL.revokeObjectURL(url);
+      });
     };
-  }, [sendDeliverablePreviewUrl]);
-
-  useEffect(() => {
-    if (activeSection !== "brand-connection") return;
-    if (brandConnectionSubTab !== "contract_hub") return;
-    let active = true;
-    (async () => {
-      try {
-        if (!active) return;
-        await loadCreatorContractHubRows();
-      } catch {
-        if (!active) return;
-        setCreatorContractHubRows([]);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [activeSection, brandConnectionSubTab, brandOffers]);
+  }, [sendDeliverablePreviewUrls]);
 
   useEffect(() => {
     if (!initialized || !authenticated) return;
@@ -2011,6 +2016,25 @@ export default function CreatorDashboard() {
     }
   };
 
+  const brandPendingRequestsUnseen = brandConnectionRequests.filter(
+    (i) =>
+      i.status === "pending" && !seenBrandRequestIds.has(String(i?.id || "")),
+  ).length;
+  const brandOfferNotificationsUnseen = brandOffers.filter((offer: any) => {
+    const status = String(offer?.status || "").toLowerCase();
+    return (
+      [
+        "changes_requested",
+        "contract_sent",
+        "contract_partially_signed",
+        "deliverables_submitted",
+      ].includes(status) &&
+      !seenOfferNotificationIds.has(String(offer?.id || ""))
+    );
+  }).length;
+  const totalBrandConnectionUnseen =
+    brandPendingRequestsUnseen + brandOfferNotificationsUnseen;
+
   const navigationItems: Array<{
     id: string;
     label: string;
@@ -2104,9 +2128,7 @@ export default function CreatorDashboard() {
       label: "Brand Connection",
       icon: LinkIcon,
       badge:
-        brandConnectionRequests.filter((i) => i.status === "pending").length > 0
-          ? brandConnectionRequests.filter((i) => i.status === "pending").length
-          : undefined,
+        totalBrandConnectionUnseen > 0 ? totalBrandConnectionUnseen : undefined,
     },
   ];
 
@@ -5229,14 +5251,112 @@ export default function CreatorDashboard() {
       setBrandConnections(connections);
       setBrandOffers(Array.isArray(offers) ? offers : []);
     };
-    const campaignOptions = brandOffers.filter((offer: any) => {
-      if (!sendDeliverableBrandId) return true;
-      return String(offer?.brand_id || "") === sendDeliverableBrandId;
-    });
+    const fullySignedOfferStatuses = new Set([
+      "contract_fully_signed",
+      "fully_signed",
+      "contract_signed",
+      "signed",
+      "accepted",
+      "active",
+      "in_progress",
+      "in_execution",
+      "deliverables_submitted",
+      "in_review",
+      "changes_requested",
+      "approved",
+      "completed",
+    ]);
+    const deliverableEligibleOffers = brandOffers.filter((offer: any) =>
+      fullySignedOfferStatuses.has(String(offer?.status || "").toLowerCase()),
+    );
+    const campaignOptions = Array.from(
+      new Map(
+        deliverableEligibleOffers
+          .filter((offer: any) => {
+            if (!sendDeliverableBrandId) return true;
+            return String(offer?.brand_id || "") === sendDeliverableBrandId;
+          })
+          .map((offer: any) => [String(offer?.id || ""), offer]),
+      ).values(),
+    );
+    const unseenRequestCount = pending.filter(
+      (req: any) => !seenBrandRequestIds.has(String(req?.id || "")),
+    ).length;
+    const unseenOfferCount = brandOffers.filter(
+      (offer: any) =>
+        [
+          "changes_requested",
+          "contract_sent",
+          "contract_partially_signed",
+        ].includes(String(offer?.status || "").toLowerCase()) &&
+        !seenOfferNotificationIds.has(String(offer?.id || "")),
+    ).length;
+    const unseenDeliverableFeedbackCount = deliverableEligibleOffers.reduce(
+      (count: number, offer: any) => {
+        const hasFeedbackNotification =
+          String(offer?.status || "").toLowerCase() === "changes_requested";
+        if (
+          hasFeedbackNotification &&
+          !seenDeliverableNotificationOfferIds.has(String(offer?.id || ""))
+        ) {
+          return count + 1;
+        }
+        return count;
+      },
+      0,
+    );
+    const totalBrandConnectionNotifications =
+      unseenRequestCount + unseenOfferCount + unseenDeliverableFeedbackCount;
     const formatStatus = (status: unknown) =>
       String(status || "sent")
         .replace(/_/g, " ")
         .replace(/\b\w/g, (m) => m.toUpperCase());
+    const offerStatusBadgeClass = (statusRaw: unknown) => {
+      const status = String(statusRaw || "").toLowerCase();
+      if (status === "contract_fully_signed" || status === "signed") {
+        return "bg-emerald-100 text-emerald-700 border border-emerald-300";
+      }
+      if (
+        status === "contract_partially_signed" ||
+        status === "contract_sent"
+      ) {
+        return "bg-blue-100 text-blue-700 border border-blue-300";
+      }
+      if (status === "changes_requested") {
+        return "bg-amber-100 text-amber-700 border border-amber-300";
+      }
+      if (status === "declined") {
+        return "bg-red-100 text-red-700 border border-red-300";
+      }
+      return "bg-gray-100 text-gray-700 border border-gray-300";
+    };
+    const deliverableStatusBadgeClass = (statusRaw: unknown) => {
+      const status = String(statusRaw || "").toLowerCase();
+      if (["approved", "accepted"].includes(status)) {
+        return "bg-emerald-100 text-emerald-700 border border-emerald-300";
+      }
+      if (
+        ["changes_requested", "needs_changes", "request_review"].includes(
+          status,
+        )
+      ) {
+        return "bg-amber-100 text-amber-700 border border-amber-300";
+      }
+      if (
+        [
+          "submitted",
+          "deliverables_submitted",
+          "in_review",
+          "pending_review",
+        ].includes(status)
+      ) {
+        return "bg-blue-100 text-blue-700 border border-blue-300";
+      }
+      if (["declined", "rejected"].includes(status)) {
+        return "bg-red-100 text-red-700 border border-red-300";
+      }
+      return "bg-gray-100 text-gray-700 border border-gray-300";
+    };
     const normalizeDisplayName = (value: unknown) => {
       const raw = String(value || "").trim();
       if (!raw) return "";
@@ -5416,6 +5536,25 @@ export default function CreatorDashboard() {
           item?.path ||
           item,
       );
+    const downloadBriefFile = async (url: string, fileName: string) => {
+      const safeUrl = String(url || "").trim();
+      if (!safeUrl) return;
+      try {
+        const res = await fetch(safeUrl);
+        if (!res.ok) throw new Error("Failed to fetch file.");
+        const blob = await res.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = objectUrl;
+        anchor.download = fileName || "file";
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+        URL.revokeObjectURL(objectUrl);
+      } catch {
+        window.open(safeUrl, "_blank", "noopener,noreferrer");
+      }
+    };
 
     const onRespond = async (id: string, action: "accept" | "decline") => {
       try {
@@ -5463,6 +5602,13 @@ export default function CreatorDashboard() {
     const openOfferBrief = async (offerId: string) => {
       const next = selectedBrandOfferId === offerId ? "" : offerId;
       setSelectedBrandOfferId(next);
+      if (next) {
+        setSeenOfferNotificationIds((prev) => {
+          const nextSet = new Set(prev);
+          nextSet.add(next);
+          return nextSet;
+        });
+      }
       if (!next) {
         setSelectedOfferContracts([]);
         setSelectedOfferDeliverables([]);
@@ -5479,6 +5625,11 @@ export default function CreatorDashboard() {
     const openOfferBriefPage = async (offerId: string) => {
       setSelectedOfferBriefId(offerId);
       setSelectedBrandOfferId(offerId);
+      setSeenOfferNotificationIds((prev) => {
+        const nextSet = new Set(prev);
+        nextSet.add(offerId);
+        return nextSet;
+      });
       try {
         await loadOfferDetails(offerId);
       } catch {
@@ -5519,10 +5670,10 @@ export default function CreatorDashboard() {
     };
 
     const sendDeliverable = async () => {
-      if (!sendDeliverableFile) {
+      if (sendDeliverableFiles.length === 0) {
         toast({
           title: "Upload required",
-          description: "Please choose a deliverable file.",
+          description: "Please choose at least one deliverable file.",
           variant: "destructive",
         });
         return;
@@ -5566,44 +5717,45 @@ export default function CreatorDashboard() {
           ? await supabase.auth.getSession()
           : { data: { session: null } };
         const token = session.data.session?.access_token;
-        const uploadRes = await fetch(
-          api(
-            `/api/campaign-offers/${encodeURIComponent(sendDeliverableOfferId)}/deliverables/upload`,
-          ),
-          {
-            method: "POST",
-            headers: {
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-              "Content-Type":
-                sendDeliverableFile.type || "application/octet-stream",
+        for (const file of sendDeliverableFiles) {
+          const uploadRes = await fetch(
+            api(
+              `/api/campaign-offers/${encodeURIComponent(sendDeliverableOfferId)}/deliverables/upload`,
+            ),
+            {
+              method: "POST",
+              headers: {
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                "Content-Type": file.type || "application/octet-stream",
+              },
+              body: await file.arrayBuffer(),
             },
-            body: await sendDeliverableFile.arrayBuffer(),
-          },
-        );
-        const uploadText = await uploadRes.text();
-        if (!uploadRes.ok) {
-          throw new Error(uploadText || "Failed to upload deliverable file");
-        }
-        const uploadJson = uploadText ? JSON.parse(uploadText) : {};
-        const assetUrl = String(uploadJson?.public_url || "").trim();
-        if (!assetUrl) {
-          throw new Error("Deliverable upload URL missing");
-        }
+          );
+          const uploadText = await uploadRes.text();
+          if (!uploadRes.ok) {
+            throw new Error(uploadText || "Failed to upload deliverable file");
+          }
+          const uploadJson = uploadText ? JSON.parse(uploadText) : {};
+          const assetUrl = String(uploadJson?.public_url || "").trim();
+          if (!assetUrl) {
+            throw new Error("Deliverable upload URL missing");
+          }
 
-        await base44.post(
-          `/api/campaign-offers/${encodeURIComponent(sendDeliverableOfferId)}/deliverables`,
-          {
-            asset_url: assetUrl,
-            asset_type: inferAssetType(sendDeliverableFile.type),
-            caption: sendDeliverableFile.name,
-            brand_id: selectedOfferBrandId || sendDeliverableBrandId || "",
-            brand_campaign_id: String(selectedOffer?.brand_campaign_id || ""),
-            meta: {
-              original_name: sendDeliverableFile.name,
-              content_type: sendDeliverableFile.type,
+          await base44.post(
+            `/api/campaign-offers/${encodeURIComponent(sendDeliverableOfferId)}/deliverables`,
+            {
+              asset_url: assetUrl,
+              asset_type: inferAssetType(file.type),
+              caption: file.name,
+              brand_id: selectedOfferBrandId || sendDeliverableBrandId || "",
+              brand_campaign_id: String(selectedOffer?.brand_campaign_id || ""),
+              meta: {
+                original_name: file.name,
+                content_type: file.type,
+              },
             },
-          },
-        );
+          );
+        }
         await refreshBrandConnections();
         if (selectedBrandOfferId === sendDeliverableOfferId) {
           await loadOfferDetails(sendDeliverableOfferId);
@@ -5611,14 +5763,14 @@ export default function CreatorDashboard() {
         setSendDeliverableOpen(false);
         setSendDeliverableBrandId("");
         setSendDeliverableOfferId("");
-        setSendDeliverableFile(null);
-        if (sendDeliverablePreviewUrl.startsWith("blob:")) {
-          URL.revokeObjectURL(sendDeliverablePreviewUrl);
-        }
-        setSendDeliverablePreviewUrl("");
+        setSendDeliverableFiles([]);
+        sendDeliverablePreviewUrls.forEach((url) => {
+          if (String(url).startsWith("blob:")) URL.revokeObjectURL(url);
+        });
+        setSendDeliverablePreviewUrls([]);
         toast({
           title: "Deliverable sent",
-          description: "Your deliverable was uploaded and sent to the brand.",
+          description: `${sendDeliverableFiles.length} deliverable${sendDeliverableFiles.length > 1 ? "s were" : " was"} uploaded and sent to the brand.`,
         });
       } catch (e: any) {
         toast({
@@ -5638,6 +5790,13 @@ export default function CreatorDashboard() {
           <p className="text-gray-600 mt-1">
             Manage connections, requests, and incoming campaign offers.
           </p>
+          {totalBrandConnectionNotifications > 0 && (
+            <p className="text-xs text-amber-700 mt-2">
+              {totalBrandConnectionNotifications} new notification
+              {totalBrandConnectionNotifications > 1 ? "s" : ""} across
+              requests, offers, and deliverables.
+            </p>
+          )}
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -5663,12 +5822,21 @@ export default function CreatorDashboard() {
                 ? "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
                 : "border-gray-300"
             }
-            onClick={() => setBrandConnectionSubTab("requests")}
+            onClick={() => {
+              setBrandConnectionSubTab("requests");
+              setSeenBrandRequestIds(
+                new Set(
+                  brandConnectionRequests
+                    .filter((req: any) => req?.status === "pending")
+                    .map((req: any) => String(req?.id || "")),
+                ),
+              );
+            }}
           >
             Requests
-            {pending.length > 0 && (
+            {unseenRequestCount > 0 && (
               <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-white/20 px-1 text-xs">
-                {pending.length}
+                {unseenRequestCount}
               </span>
             )}
           </Button>
@@ -5679,22 +5847,21 @@ export default function CreatorDashboard() {
                 ? "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
                 : "border-gray-300"
             }
-            onClick={() => setBrandConnectionSubTab("offers")}
+            onClick={() => {
+              setBrandConnectionSubTab("offers");
+              setSeenOfferNotificationIds(
+                new Set(
+                  brandOffers.map((offer: any) => String(offer?.id || "")),
+                ),
+              );
+            }}
           >
             Brand Offers
-          </Button>
-          <Button
-            variant={
-              brandConnectionSubTab === "contract_hub" ? "default" : "outline"
-            }
-            className={
-              brandConnectionSubTab === "contract_hub"
-                ? "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                : "border-gray-300"
-            }
-            onClick={() => setBrandConnectionSubTab("contract_hub")}
-          >
-            Contract Hub
+            {unseenOfferCount > 0 && (
+              <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-white/20 px-1 text-xs">
+                {unseenOfferCount}
+              </span>
+            )}
           </Button>
           <Button
             variant={
@@ -5705,9 +5872,23 @@ export default function CreatorDashboard() {
                 ? "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
                 : "border-gray-300"
             }
-            onClick={() => setBrandConnectionSubTab("deliverables")}
+            onClick={() => {
+              setBrandConnectionSubTab("deliverables");
+              setSeenDeliverableNotificationOfferIds(
+                new Set(
+                  deliverableEligibleOffers.map((offer: any) =>
+                    String(offer?.id || ""),
+                  ),
+                ),
+              );
+            }}
           >
             Deliverables
+            {unseenDeliverableFeedbackCount > 0 && (
+              <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-white/20 px-1 text-xs">
+                {unseenDeliverableFeedbackCount}
+              </span>
+            )}
           </Button>
         </div>
 
@@ -5837,17 +6018,12 @@ export default function CreatorDashboard() {
               <div className="text-lg font-semibold text-gray-900">
                 Brand Offers
               </div>
-              {brandOffers.some(
-                (offer: any) =>
-                  String(offer?.status || "").toLowerCase() ===
-                  "changes_requested",
-              ) && (
-                <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                  You have campaigns with requested edits. Open the offer brief
-                  and check Deliverables for feedback comments.
-                </div>
+              {loadingBrandOffers && (
+                <p className="text-sm text-gray-600">
+                  Loading campaign offers...
+                </p>
               )}
-              {brandOffers.length === 0 && (
+              {!loadingBrandOffers && brandOffers.length === 0 && (
                 <p className="text-sm text-gray-600">
                   No campaign offers available yet.
                 </p>
@@ -5883,7 +6059,9 @@ export default function CreatorDashboard() {
                         Detailed scope and requirements
                       </p>
                     </div>
-                    <Badge variant="outline" className="text-xs">
+                    <Badge
+                      className={`text-xs ${offerStatusBadgeClass(selectedBriefOffer?.status)}`}
+                    >
                       {formatStatus(selectedBriefOffer?.status)}
                     </Badge>
                   </div>
@@ -6006,6 +6184,12 @@ export default function CreatorDashboard() {
                         <p className="text-slate-900 whitespace-pre-wrap">
                           {requiredDeliverablesText}
                         </p>
+                        <p className="text-sm text-slate-700 mt-3">
+                          <span className="font-semibold">
+                            Total expected deliverables:
+                          </span>{" "}
+                          {briefValue("total_expected_deliverables")}
+                        </p>
                       </div>
                     </div>
                     <div className="space-y-3">
@@ -6046,11 +6230,20 @@ export default function CreatorDashboard() {
                                 className="border border-gray-200 rounded-lg overflow-hidden"
                               >
                                 {imageUrl && !isLegacyBlob ? (
-                                  <img
-                                    src={imageUrl}
-                                    alt={`Ref ${idx + 1}`}
-                                    className="w-full h-40 object-cover bg-gray-100"
-                                  />
+                                  <button
+                                    type="button"
+                                    className="w-full text-left"
+                                    onClick={() => {
+                                      setBriefGalleryIndex(idx);
+                                      setBriefGalleryOpen(true);
+                                    }}
+                                  >
+                                    <img
+                                      src={imageUrl}
+                                      alt={`Ref ${idx + 1}`}
+                                      className="w-full h-40 object-cover bg-gray-100 hover:opacity-95 transition-opacity"
+                                    />
+                                  </button>
                                 ) : (
                                   <div className="w-full h-40 bg-gray-100 flex items-center justify-center text-xs text-gray-500 px-3 text-center">
                                     {isLegacyBlob
@@ -6089,19 +6282,22 @@ export default function CreatorDashboard() {
                                   {String(asset?.name || `Asset ${idx + 1}`)}
                                 </span>
                                 {assetUrl && !isLegacyBlob ? (
-                                  <a
-                                    href={assetUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    download={String(
-                                      asset?.name || `asset-${idx + 1}`,
-                                    )}
+                                  <button
+                                    type="button"
                                     title="Download file"
                                     className="inline-flex items-center justify-center w-9 h-9 border border-slate-300 rounded-md hover:bg-slate-100 transition-colors"
-                                    onClick={(event) => event.stopPropagation()}
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      void downloadBriefFile(
+                                        assetUrl,
+                                        String(
+                                          asset?.name || `asset-${idx + 1}`,
+                                        ),
+                                      );
+                                    }}
                                   >
                                     <Download className="w-4 h-4" />
-                                  </a>
+                                  </button>
                                 ) : (
                                   <span className="text-xs text-slate-500">
                                     {isLegacyBlob
@@ -6277,8 +6473,47 @@ export default function CreatorDashboard() {
                               "Campaign offer"}
                           </div>
                         </div>
+                        <Badge
+                          className={`text-xs ${offerStatusBadgeClass(offer?.status)}`}
+                        >
+                          {formatStatus(offer?.status || "sent")}
+                        </Badge>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-700">
+                        <p>
+                          Offer status:{" "}
+                          <span className="font-semibold text-gray-900">
+                            {formatStatus(offer?.status || "sent")}
+                          </span>
+                        </p>
+                        <p>
+                          Deliverable status:{" "}
+                          <span className="font-semibold text-gray-900">
+                            {(() => {
+                              const normalized = String(
+                                offer?.status || "",
+                              ).toLowerCase();
+                              if (normalized.includes("changes_requested")) {
+                                return "Request Review";
+                              }
+                              if (
+                                normalized.includes("deliverables_submitted")
+                              ) {
+                                return "Submitted";
+                              }
+                              if (normalized.includes("approved")) {
+                                return "Approved";
+                              }
+                              if (
+                                normalized.includes("contract_fully_signed") ||
+                                normalized.includes("signed")
+                              ) {
+                                return "Ready to submit";
+                              }
+                              return "Not started";
+                            })()}
+                          </span>
+                        </p>
                         <p>
                           Category:{" "}
                           <span className="font-semibold text-gray-900">
@@ -6324,12 +6559,15 @@ export default function CreatorDashboard() {
                         </p>
                       )}
                       {String(offer?.status || "").toLowerCase() ===
-                        "changes_requested" && (
-                        <div className="flex items-center rounded-md border border-amber-300 bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
-                          Edits requested by brand. Open brief and check
-                          feedback comments.
-                        </div>
-                      )}
+                        "changes_requested" &&
+                        !seenOfferNotificationIds.has(
+                          String(offer?.id || ""),
+                        ) && (
+                          <div className="flex items-center rounded-md border border-amber-300 bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
+                            Edits requested by brand. Open brief and check
+                            feedback comments.
+                          </div>
+                        )}
                       <Button
                         variant="outline"
                         className="border-gray-200"
@@ -6340,133 +6578,6 @@ export default function CreatorDashboard() {
                     </div>
                   );
                 })}
-            </div>
-          </Card>
-        )}
-
-        {brandConnectionSubTab === "contract_hub" && (
-          <Card className="p-6">
-            <div className="space-y-4">
-              <div className="text-lg font-semibold text-gray-900">
-                Contract Hub
-              </div>
-              {creatorContractHubRows.length === 0 && (
-                <p className="text-sm text-gray-600">No contracts yet.</p>
-              )}
-              {creatorContractHubRows.length > 0 && (
-                <div className="overflow-x-auto border border-gray-200 rounded-lg">
-                  <table className="min-w-full text-sm text-left text-gray-700">
-                    <thead className="bg-gray-50 text-gray-800 border-b border-gray-200">
-                      <tr>
-                        <th className="px-3 py-2">Campaign Name</th>
-                        <th className="px-3 py-2">Template</th>
-                        <th className="px-3 py-2">Status</th>
-                        <th className="px-3 py-2">Sent Date</th>
-                        <th className="px-3 py-2">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {creatorContractHubRows.map((contract: any) => {
-                        const creatorStatus = String(
-                          contract?.meta?.creator_submitter_status || "",
-                        ).toLowerCase();
-                        const contractStatus = String(
-                          contract?.docuseal_status || "sent",
-                        ).toLowerCase();
-                        const canSign =
-                          creatorStatus !== "completed" &&
-                          contractStatus !== "signed";
-                        const signUrl = String(
-                          contract?.meta?.creator_signing_url ||
-                            contract?.meta?.docuseal_signing_url ||
-                            "",
-                        ).trim();
-                        return (
-                          <tr
-                            key={String(contract?.id)}
-                            className="border-b border-gray-100 last:border-b-0"
-                          >
-                            <td className="px-3 py-2 font-medium text-gray-900">
-                              {String(
-                                contract?.campaign_name || "Campaign offer",
-                              )}
-                            </td>
-                            <td className="px-3 py-2 text-gray-700">
-                              {String(
-                                contract?.title ||
-                                  `Template ${String(contract?.docuseal_template_id || "N/A")}`,
-                              )}
-                            </td>
-                            <td className="px-3 py-2">
-                              <span
-                                className={contractStatusBadgeClass(
-                                  contract?.docuseal_status || "sent",
-                                )}
-                              >
-                                {String(
-                                  contract?.docuseal_status || "",
-                                ).toLowerCase() === "sent" && (
-                                  <Mail className="h-3.5 w-3.5 mr-1.5" />
-                                )}
-                                {String(
-                                  contract?.docuseal_status || "",
-                                ).toLowerCase() === "signed" && (
-                                  <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
-                                )}
-                                {formatStatus(
-                                  contract?.docuseal_status || "sent",
-                                )}
-                              </span>
-                            </td>
-                            <td className="px-3 py-2">
-                              {formatHubDate(
-                                contract?.sent_at || contract?.created_at,
-                              )}
-                            </td>
-                            <td className="px-3 py-2">
-                              <div className="flex items-center gap-3">
-                                {canSign && signUrl && (
-                                  <button
-                                    className="text-cyan-700 hover:text-cyan-800"
-                                    title="Sign"
-                                    aria-label="Sign"
-                                    type="button"
-                                    onClick={() => {
-                                      setCreatorSignUrl(signUrl);
-                                      setCreatorSignOpen(true);
-                                    }}
-                                  >
-                                    <CheckSquare className="h-4 w-4" />
-                                  </button>
-                                )}
-                                {contract?.meta?.docuseal_document_url && (
-                                  <a
-                                    href={String(
-                                      contract.meta.docuseal_document_url,
-                                    )}
-                                    download
-                                    title="Download copy"
-                                    aria-label="Download copy"
-                                    className="text-cyan-700 hover:text-cyan-800"
-                                  >
-                                    <Download className="h-4 w-4" />
-                                  </a>
-                                )}
-                                {!canSign &&
-                                  !contract?.meta?.docuseal_document_url && (
-                                    <span className="text-xs text-gray-500">
-                                      No actions
-                                    </span>
-                                  )}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
             </div>
           </Card>
         )}
@@ -6485,10 +6596,16 @@ export default function CreatorDashboard() {
                   Send deliverable
                 </Button>
               </div>
-              {brandOffers.length === 0 && (
-                <p className="text-sm text-gray-600">No deliverables yet.</p>
+              {loadingBrandOffers && (
+                <p className="text-sm text-gray-600">Loading deliverables...</p>
               )}
-              {brandOffers.map((offer: any) => {
+              {!loadingBrandOffers &&
+                deliverableEligibleOffers.length === 0 && (
+                  <p className="text-sm text-gray-600">
+                    No deliverables yet for fully signed offers.
+                  </p>
+                )}
+              {deliverableEligibleOffers.map((offer: any) => {
                 const offerId = String(offer?.id || "");
                 const expanded = selectedBrandOfferId === offerId;
                 return (
@@ -6497,9 +6614,14 @@ export default function CreatorDashboard() {
                     className="p-4 border border-gray-200 rounded-lg space-y-2"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <p className="font-semibold text-gray-900">
-                        {offer?.brand_campaigns?.name || "Campaign offer"}
-                      </p>
+                      <div className="space-y-1">
+                        <p className="font-semibold text-gray-900">
+                          {offer?.brand_campaigns?.name || "Campaign offer"}
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          Offer status: {formatStatus(offer?.status || "sent")}
+                        </p>
+                      </div>
                       <Button
                         variant="outline"
                         className="border-gray-200"
@@ -6510,7 +6632,11 @@ export default function CreatorDashboard() {
                     </div>
                     {expanded && (
                       <div className="rounded-md border border-gray-200 p-3">
-                        {selectedOfferDeliverables.length === 0 ? (
+                        {loadingOfferDetails ? (
+                          <div className="text-xs text-gray-500">
+                            Loading deliverables...
+                          </div>
+                        ) : selectedOfferDeliverables.length === 0 ? (
                           <div className="text-xs text-gray-500">
                             No deliverables yet.
                           </div>
@@ -6520,9 +6646,17 @@ export default function CreatorDashboard() {
                               key={String(deliverable?.id)}
                               className="text-xs text-gray-700 mb-2 border border-gray-100 rounded-md p-2 bg-gray-50"
                             >
-                              <div>
-                                {String(deliverable?.asset_type || "file")} •{" "}
-                                {String(deliverable?.status || "submitted")}
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-gray-900">
+                                  {String(deliverable?.asset_type || "file")}
+                                </span>
+                                <Badge
+                                  className={`text-[11px] ${deliverableStatusBadgeClass(deliverable?.status || "submitted")}`}
+                                >
+                                  {formatStatus(
+                                    deliverable?.status || "submitted",
+                                  )}
+                                </Badge>
                               </div>
                               {deliverable?.asset_url && (
                                 <div className="mt-2 space-y-2">
@@ -6561,20 +6695,6 @@ export default function CreatorDashboard() {
                                               const role = String(
                                                 comment?.author_role || "",
                                               ).toLowerCase();
-                                              const companyName = String(
-                                                offer?.brands?.company_name ||
-                                                  "",
-                                              ).trim();
-                                              if (
-                                                (role === "brand" ||
-                                                  role === "agency") &&
-                                                companyName &&
-                                                normalizeDisplayName(
-                                                  companyName,
-                                                )
-                                              ) {
-                                                return companyName;
-                                              }
                                               if (
                                                 role === "brand" ||
                                                 role === "agency"
@@ -6583,9 +6703,17 @@ export default function CreatorDashboard() {
                                                   offer,
                                                 );
                                               }
-                                              return String(
-                                                comment?.author_role || "Brand",
-                                              );
+                                              if (role === "creator") {
+                                                return "You";
+                                              }
+                                              const explicitName =
+                                                normalizeDisplayName(
+                                                  comment?.author_name,
+                                                ) ||
+                                                normalizeDisplayName(
+                                                  comment?.author_role,
+                                                );
+                                              return explicitName || "System";
                                             })()}
                                           </p>
                                           <p>
@@ -6610,9 +6738,18 @@ export default function CreatorDashboard() {
 
         <Dialog
           open={sendDeliverableOpen}
-          onOpenChange={setSendDeliverableOpen}
+          onOpenChange={(open) => {
+            setSendDeliverableOpen(open);
+            if (!open) {
+              setSendDeliverableFiles([]);
+              sendDeliverablePreviewUrls.forEach((url) => {
+                if (String(url).startsWith("blob:")) URL.revokeObjectURL(url);
+              });
+              setSendDeliverablePreviewUrls([]);
+            }
+          }}
         >
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-4xl">
             <DialogHeader>
               <DialogTitle>Send deliverable</DialogTitle>
               <DialogDescription>
@@ -6626,44 +6763,72 @@ export default function CreatorDashboard() {
                 <Input
                   id="deliverable-upload"
                   type="file"
+                  multiple
                   onChange={(e) => {
-                    const file = e.target.files?.[0] || null;
-                    setSendDeliverableFile(file);
-                    if (sendDeliverablePreviewUrl.startsWith("blob:")) {
-                      URL.revokeObjectURL(sendDeliverablePreviewUrl);
-                    }
-                    if (file && file.type.startsWith("image/")) {
-                      setSendDeliverablePreviewUrl(URL.createObjectURL(file));
-                    } else {
-                      setSendDeliverablePreviewUrl("");
-                    }
+                    const selectedFiles = Array.from(e.target.files || []);
+                    if (selectedFiles.length === 0) return;
+                    const nextFiles = [
+                      ...sendDeliverableFiles,
+                      ...selectedFiles,
+                    ];
+                    const nextPreviewUrls = [...sendDeliverablePreviewUrls];
+                    selectedFiles.forEach((file) => {
+                      if (file.type.startsWith("image/")) {
+                        nextPreviewUrls.push(URL.createObjectURL(file));
+                      } else {
+                        nextPreviewUrls.push("");
+                      }
+                    });
+                    setSendDeliverableFiles(nextFiles);
+                    setSendDeliverablePreviewUrls(nextPreviewUrls);
+                    e.target.value = "";
                   }}
                 />
                 <p className="text-xs text-gray-500">
                   Uploaded assets will be stored and shared as downloadable
                   links.
                 </p>
-                {sendDeliverablePreviewUrl && (
-                  <div className="mt-2">
-                    <img
-                      src={sendDeliverablePreviewUrl}
-                      alt="Deliverable preview"
-                      className="h-32 w-auto max-w-full rounded border border-gray-200 object-cover bg-white"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="mt-2 border-gray-300"
-                      onClick={() => {
-                        setSendDeliverableFile(null);
-                        if (sendDeliverablePreviewUrl.startsWith("blob:")) {
-                          URL.revokeObjectURL(sendDeliverablePreviewUrl);
-                        }
-                        setSendDeliverablePreviewUrl("");
-                      }}
-                    >
-                      Remove file
-                    </Button>
+                {sendDeliverableFiles.length > 0 && (
+                  <div className="mt-2 space-y-2">
+                    {sendDeliverableFiles.map((file, idx) => (
+                      <div
+                        key={`${file.name}-${idx}`}
+                        className="border border-gray-200 rounded-md p-2 bg-white"
+                      >
+                        {sendDeliverablePreviewUrls[idx] ? (
+                          <img
+                            src={sendDeliverablePreviewUrls[idx]}
+                            alt={`Deliverable preview ${idx + 1}`}
+                            className="h-32 w-auto max-w-full rounded border border-gray-200 object-cover bg-white"
+                          />
+                        ) : null}
+                        <div className="mt-2 flex items-center justify-between gap-2">
+                          <p className="text-xs text-gray-700 truncate">
+                            {file.name}
+                          </p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="border-gray-300"
+                            onClick={() => {
+                              const nextFiles = sendDeliverableFiles.filter(
+                                (_f, index) => index !== idx,
+                              );
+                              const nextUrls = [...sendDeliverablePreviewUrls];
+                              const removedUrl = nextUrls[idx];
+                              if (String(removedUrl).startsWith("blob:")) {
+                                URL.revokeObjectURL(removedUrl);
+                              }
+                              nextUrls.splice(idx, 1);
+                              setSendDeliverableFiles(nextFiles);
+                              setSendDeliverablePreviewUrls(nextUrls);
+                            }}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -6730,11 +6895,12 @@ export default function CreatorDashboard() {
                 variant="outline"
                 onClick={() => {
                   setSendDeliverableOpen(false);
-                  setSendDeliverableFile(null);
-                  if (sendDeliverablePreviewUrl.startsWith("blob:")) {
-                    URL.revokeObjectURL(sendDeliverablePreviewUrl);
-                  }
-                  setSendDeliverablePreviewUrl("");
+                  setSendDeliverableFiles([]);
+                  sendDeliverablePreviewUrls.forEach((url) => {
+                    if (String(url).startsWith("blob:"))
+                      URL.revokeObjectURL(url);
+                  });
+                  setSendDeliverablePreviewUrls([]);
                 }}
                 disabled={offerActionLoading}
               >
@@ -6748,6 +6914,55 @@ export default function CreatorDashboard() {
                 {offerActionLoading ? "Sending..." : "Send"}
               </Button>
             </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        <Dialog open={briefGalleryOpen} onOpenChange={setBriefGalleryOpen}>
+          <DialogContent className="max-w-5xl">
+            <DialogHeader>
+              <DialogTitle>
+                Reference Image {briefGalleryIndex + 1} of{" "}
+                {referenceImages.length}
+              </DialogTitle>
+            </DialogHeader>
+            {(() => {
+              const activeImage = referenceImages[briefGalleryIndex];
+              const activeImageUrl = briefItemUrl(activeImage);
+              return activeImageUrl ? (
+                <div className="space-y-3">
+                  <img
+                    src={activeImageUrl}
+                    alt={`Reference ${briefGalleryIndex + 1}`}
+                    className="w-full max-h-[70vh] object-contain bg-gray-50 border border-gray-200 rounded"
+                  />
+                  <div className="flex items-center justify-between gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        setBriefGalleryIndex((idx) =>
+                          idx <= 0 ? referenceImages.length - 1 : idx - 1,
+                        )
+                      }
+                      disabled={referenceImages.length <= 1}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        setBriefGalleryIndex((idx) =>
+                          idx >= referenceImages.length - 1 ? 0 : idx + 1,
+                        )
+                      }
+                      disabled={referenceImages.length <= 1}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">Image unavailable.</p>
+              );
+            })()}
           </DialogContent>
         </Dialog>
         <Dialog
