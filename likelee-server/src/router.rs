@@ -814,6 +814,7 @@ pub fn build_router(state: AppState) -> Router {
             "/api/studio/transactions",
             get(crate::studio::list_transactions),
         )
+        .route("/api/studio/presets", get(crate::studio::list_presets))
         .route(
             "/api/studio/campaigns/:campaign_id/generations",
             get(crate::studio::list_campaign_generations),

@@ -25,7 +25,7 @@ import {
   Layers,
   Settings2,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { getUserFriendlyError } from "@/utils";
@@ -36,7 +36,9 @@ import {
   getWallet,
   inferProviderFromModel,
   listGenerations,
+  listPresets,
   type StudioGenerationRow,
+  type StudioStylePreset,
 } from "@/api/studio";
 
 const imageModels = [
@@ -114,6 +116,9 @@ const imageModels = [
   },
 ];
 
+// Note: stylePresets is now fetched dynamically via useQuery in the component below.
+// The structure is transformed from a flat list to categorized groups for the UI.
+
 const imageSizes = [
   { value: "square_hd", label: "Square HD (1024x1024)" },
   { value: "square", label: "Square (512x512)" },
@@ -124,6 +129,12 @@ const imageSizes = [
 ];
 
 export default function StudioImage() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const v = searchParams.get("v");
+  const urlPrompt = searchParams.get("prompt");
+
   const [prompt, setPrompt] = useState("");
   const [selectedModel, setSelectedModel] = useState(imageModels[0].id);
   const [imageSize, setImageSize] = useState("landscape_16_9");
@@ -133,9 +144,9 @@ export default function StudioImage() {
   const [generatingJobId, setGeneratingJobId] = useState(null);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [showTransactions, setShowTransactions] = useState(false);
-  const navigate = useNavigate();
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   const { data: wallet } = useQuery({
     queryKey: ["studio", "wallet"],
@@ -146,6 +157,48 @@ export default function StudioImage() {
     queryKey: ["studio", "generations", "image"],
     queryFn: () => listGenerations({ generation_type: "image", limit: 40 }),
   });
+
+  React.useEffect(() => {
+    if (urlPrompt) {
+      setPrompt(urlPrompt);
+    }
+  }, [urlPrompt]);
+
+  React.useEffect(() => {
+    if (v === "presets") {
+      const el = document.getElementById("presets-gallery");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  }, [v]);
+
+  const { data: fetchedPresets, isLoading: loadingPresets } = useQuery({
+    queryKey: ["studio", "presets"],
+    queryFn: listPresets,
+  });
+
+  // Group fetched presets by category
+  const categorizedPresets = React.useMemo(() => {
+    if (!fetchedPresets) return [];
+    const map = new Map<string, StudioStylePreset[]>();
+    fetchedPresets.forEach((p) => {
+      const cat = p.category || "All Styles";
+      if (!map.has(cat)) map.set(cat, []);
+      map.get(cat)!.push(p);
+    });
+    return Array.from(map.entries()).map(([category, styles]) => ({
+      category,
+      styles,
+    }));
+  }, [fetchedPresets]);
+
+  // Auto-select first category when data loads
+  React.useEffect(() => {
+    if (categorizedPresets.length > 0 && !selectedCategory) {
+      setSelectedCategory(categorizedPresets[0].category);
+    }
+  }, [categorizedPresets, selectedCategory]);
 
   const generateMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -324,6 +377,8 @@ export default function StudioImage() {
       />
 
       <div className="max-w-7xl mx-auto px-6 py-12">
+        {/* Removed embedded Style Preset Explorer - now handled on separate page */}
+
         <div className="grid lg:grid-cols-12 gap-10 relative z-10">
           <div className="lg:col-span-4 xl:col-span-3 space-y-6">
             <div className="p-6 bg-white/[0.03] border border-white/10 rounded-2xl backdrop-blur-xl shadow-2xl">

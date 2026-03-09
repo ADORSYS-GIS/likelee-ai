@@ -45,7 +45,9 @@ import {
   getWallet,
   inferProviderFromModel,
   listGenerations,
+  listPresets,
   type StudioGenerationRow,
+  type StudioStylePreset,
 } from "@/api/studio";
 
 const videoModels = [
@@ -71,7 +73,7 @@ const videoModels = [
     cost: 21,
     description: "State-of-the-art video with synchronized audio",
     duration: [4, 6, 8],
-    resolutions: ["720p"],
+    resolutions: ["720p", "1080p", "4k"],
     icon: "🎬",
     tag: "Pro",
     tagColor: "#EC4899",
@@ -129,6 +131,7 @@ const videoModels = [
     cost: 5,
     description: "Ultra-fast open-source text-to-video",
     duration: [3, 5],
+    resolutions: ["720p", "1080p", "1440p", "2160p"],
     icon: "⚡",
     tag: "Fast",
     tagColor: "#10B981",
@@ -144,7 +147,7 @@ const videoModels = [
     cost: 21,
     description: "DeepMind's flagship image-to-video with audio",
     duration: [4, 6, 8],
-    resolutions: ["720p"],
+    resolutions: ["720p", "1080p", "4k"],
     icon: "🖼️",
     tag: "State-of-the-art",
     tagColor: "#EC4899",
@@ -215,8 +218,8 @@ const videoModels = [
     name: "Luma Dream Machine",
     cost: 10,
     description: "Cinematic quality with high motion fidelity",
-    duration: [5],
-    resolutions: ["720p", "1080p"],
+    duration: [5, 9],
+    resolutions: ["720p", "1080p", "4k"],
     icon: "🎥",
     tag: "Luma",
     tagColor: "#F59E0B",
@@ -225,6 +228,9 @@ const videoModels = [
     supportsAudio: false,
   },
 ];
+
+// Note: stylePresets is now fetched dynamically via useQuery in the component below.
+// The structure is transformed from a flat list to categorized groups for the UI.
 
 const aspectRatios = [
   { value: "16:9", label: "16:9", shape: "w-10 h-6", hint: "Landscape" },
@@ -243,6 +249,13 @@ const promptSuggestions = [
 ];
 
 const StudioVideo = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const urlModel = searchParams.get("model");
+  const urlPrompt = searchParams.get("prompt");
+  const v = searchParams.get("v");
+
   const [prompt, setPrompt] = useState("");
   const [selectedAssets, setSelectedAssets] = useState<StudioAsset[]>([]);
   const [assetPickerOpen, setAssetPickerOpen] = useState(false);
@@ -254,6 +267,30 @@ const StudioVideo = () => {
   const [enableAudio, setEnableAudio] = useState(true);
   const [resolution, setResolution] = useState("720p");
   const [generatingJobId, setGeneratingJobId] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [showTransactions, setShowTransactions] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [suggestionIdx, setSuggestionIdx] = useState(0);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (urlPrompt) {
+      setPrompt(urlPrompt);
+    }
+  }, [urlPrompt]);
+
+  useEffect(() => {
+    if (v === "templates") {
+      const el = document.getElementById("presets-gallery");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  }, [v]);
 
   // Sync resolution when model changes
   useEffect(() => {
@@ -261,18 +298,7 @@ const StudioVideo = () => {
     if (model?.resolutions && !model.resolutions.includes(resolution)) {
       setResolution(model.resolutions[0]);
     }
-  }, [selectedModel]);
-  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-  const [showTransactions, setShowTransactions] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [suggestionIdx, setSuggestionIdx] = useState(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const [searchParams] = useSearchParams();
-  const { toast } = useToast();
-
-  const urlModel = searchParams.get("model");
+  }, [selectedModel, resolution]);
 
   useEffect(() => {
     if (urlModel && videoModels.some((model) => model.id === urlModel)) {
@@ -297,6 +323,34 @@ const StudioVideo = () => {
     queryFn: () => getWallet(),
   });
 
+  const { data: fetchedPresets, isLoading: loadingPresets } = useQuery({
+    queryKey: ["studio", "presets"],
+    queryFn: listPresets,
+  });
+
+  // Group fetched presets by category
+  const categorizedPresets = React.useMemo(() => {
+    if (!fetchedPresets) return [];
+    const map = new Map<string, StudioStylePreset[]>();
+    fetchedPresets.forEach((p) => {
+      const cat = p.category || "All Motions";
+      if (!map.has(cat)) map.set(cat, []);
+      map.get(cat)!.push(p);
+    });
+    return Array.from(map.entries()).map(([category, styles]) => ({
+      category,
+      styles,
+    }));
+  }, [fetchedPresets]);
+
+  // Auto-select first category when data loads
+  React.useEffect(() => {
+    if (categorizedPresets.length > 0 && !selectedCategory) {
+      setSelectedCategory(categorizedPresets[0].category);
+    }
+  }, [categorizedPresets, selectedCategory]);
+
+  const [selectedStyles, setSelectedStyles] = useState<any[]>([]);
   const { data: generations } = useQuery({
     queryKey: ["studio", "generations", "video"],
     queryFn: () => listGenerations({ generation_type: "video", limit: 20 }),
@@ -343,7 +397,7 @@ const StudioVideo = () => {
       // Upscaling to 4K using fal-ai/crystal-video-upscaler
       return await studioGenerate({
         provider: "fal",
-        model: "fal-ai/crystal-video-upscaler",
+        model: "clarityai/crystal-video-upscaler",
         generation_type: "video_upscale",
         input_params: {
           video_url: videoUrl,
@@ -428,6 +482,25 @@ const StudioVideo = () => {
   const audioAsset = selectedAssets.find((a) => a.type === "audio");
   const imageUrl = primaryImage?.url ?? "";
 
+  const getResolutionMultiplier = (res: string) => {
+    switch (res) {
+      case "1080p":
+        return 2.0;
+      case "1440p":
+      case "2k":
+        return 4.0;
+      case "2160p":
+      case "4k":
+        return 8.0;
+      default:
+        return 1.0;
+    }
+  };
+
+  const currentMultiplier = getResolutionMultiplier(resolution);
+  const baseCost = selectedModelData?.cost || 10;
+  const currentCost = Math.round(baseCost * currentMultiplier);
+
   const handleGenerate = () => {
     if (!prompt && !imageUrl && !modelRequiresImage) {
       toast({
@@ -445,7 +518,7 @@ const StudioVideo = () => {
       });
       return;
     }
-    if (!wallet || wallet.balance < (selectedModelData?.cost || 10)) {
+    if (!wallet || wallet.balance < currentCost) {
       setShowSubscriptionModal(true);
       return;
     }
@@ -1449,7 +1522,7 @@ const StudioVideo = () => {
                 Estimated Cost
               </span>
               <span style={{ fontSize: 14, fontWeight: 800, color: "#8B5CF6" }}>
-                {selectedModelData?.cost} Credits
+                {currentCost} Credits
               </span>
             </div>
             <button
@@ -1551,6 +1624,8 @@ const StudioVideo = () => {
               </Badge>
             </div>
           </div>
+
+          {/* Removed embedded Style Preset Explorer - now handled on separate page */}
 
           {/* Workspace content */}
           <div

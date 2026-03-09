@@ -65,10 +65,11 @@ pub async fn get_generation_cost(
     provider: &str,
     model: &str,
     generation_type: &str,
+    input_params: Option<&serde_json::Value>,
 ) -> Result<i64> {
     let resp = pg
         .from("studio_provider_costs")
-        .select("cost_per_generation")
+        .select("cost_per_generation,cost_modifiers")
         .eq("provider", provider)
         .eq("model", model)
         .eq("generation_type", generation_type)
@@ -90,11 +91,28 @@ pub async fn get_generation_cost(
 
     let body = resp.text().await?;
     let cost_obj: serde_json::Value = serde_json::from_str(&body)?;
-    let cost = cost_obj["cost_per_generation"]
+    let base_cost = cost_obj["cost_per_generation"]
         .as_i64()
         .ok_or_else(|| anyhow!("missing cost_per_generation"))?;
 
-    Ok(cost)
+    // Apply modifiers if input_params provided
+    let mut final_cost = base_cost;
+    if let Some(params) = input_params {
+        if let Some(modifiers) = cost_obj["cost_modifiers"].as_object() {
+            // High Resolution Multipliers
+            if let Some(res_multipliers) = modifiers.get("resolution_multipliers") {
+                if let Some(requested_res) = params.get("resolution").and_then(|r| r.as_str()) {
+                    if let Some(multiplier) =
+                        res_multipliers.get(requested_res).and_then(|m| m.as_f64())
+                    {
+                        final_cost = (base_cost as f64 * multiplier).round() as i64;
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(final_cost)
 }
 
 /// Check if user has sufficient balance

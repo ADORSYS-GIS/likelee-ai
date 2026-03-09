@@ -31,6 +31,17 @@ export type StudioTransaction = {
   created_at: string;
 };
 
+export type StudioStylePreset = {
+  id: string;
+  name: string;
+  description?: string | null;
+  category: string;
+  prompt: string;
+  preview_url?: string | null;
+  provider: string;
+  metadata?: any;
+};
+
 export type StudioGenerateResponse = {
   generation_id: string;
   status: StudioGenerationStatus;
@@ -100,4 +111,9 @@ export async function getJobStatus(
   generationId: string,
 ): Promise<StudioJobStatusResponse> {
   return await base44.get(`/studio/jobs/${generationId}`);
+}
+
+export async function listPresets(): Promise<StudioStylePreset[]> {
+  const { presets } = await base44.get("/studio/presets");
+  return presets || [];
 }

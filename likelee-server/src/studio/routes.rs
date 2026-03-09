@@ -3,6 +3,7 @@ use super::types::*;
 use super::wallet;
 use crate::auth::AuthUser;
 use crate::config::AppState;
+use anyhow::anyhow;
 use axum::{
     extract::{Multipart, Path, Query, State},
     http::{header, StatusCode},
@@ -47,16 +48,21 @@ pub async fn generate(
     let generation_type_str = req.generation_type.as_str();
 
     // Get cost for this generation
-    let cost =
-        wallet::get_generation_cost(&state.pg, provider_str, &req.model, generation_type_str)
-            .await
-            .map_err(|e| {
-                error!(error = %e, "failed to get generation cost");
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Failed to get generation cost: {}", e),
-                )
-            })?;
+    let cost = wallet::get_generation_cost(
+        &state.pg,
+        provider_str,
+        &req.model,
+        generation_type_str,
+        Some(&req.input_params),
+    )
+    .await
+    .map_err(|e| {
+        error!(error = %e, "failed to get generation cost");
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to get generation cost: {}", e),
+        )
+    })?;
 
     // Check if user has sufficient balance
     let has_balance = wallet::check_balance(&state.pg, &user_id, cost)
@@ -163,6 +169,10 @@ pub async fn generate(
                 Err(e) => Err(e),
             }
         }
+        Provider::Higgsfield | Provider::Kive => Err(anyhow!(
+            "Generation not yet implemented for {} provider",
+            req.provider.as_str()
+        )),
     };
 
     match provider_job_id {
@@ -945,4 +955,34 @@ pub async fn list_licensed_assets(
     info!(user_id = %auth_user.id, count = assets.len(), "licensed_assets_listed");
 
     Ok(Json(json!({ "assets": assets })))
+}
+
+/// GET /api/studio/presets
+/// Fetch style presets and motion templates from Kive and Higgsfield
+pub async fn list_presets(
+    State(state): State<AppState>,
+    _auth_user: AuthUser,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let kive_presets_fut = providers::fetch_kive_presets(&state.kive_api_key, &state.kive_api_url);
+    let higgs_presets_fut =
+        providers::fetch_higgsfield_presets(&state.higgsfield_api_key, &state.higgsfield_api_url);
+
+    let (kive_res, higgs_res) = tokio::join!(kive_presets_fut, higgs_presets_fut);
+
+    let mut all_presets = Vec::new();
+
+    match kive_res {
+        Ok(p) => all_presets.extend(p),
+        Err(e) => warn!(error = %e, "failed to fetch kive presets"),
+    }
+
+    match higgs_res {
+        Ok(p) => all_presets.extend(p),
+        Err(e) => warn!(error = %e, "failed to fetch higgsfield presets"),
+    }
+
+    // Sort by name for consistency
+    all_presets.sort_by(|a, b| a.name.cmp(&b.name));
+
+    Ok(Json(json!({ "presets": all_presets })))
 }

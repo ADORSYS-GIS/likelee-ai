@@ -1,4 +1,4 @@
-use super::types::{GenerationStatus, ProviderJobStatus};
+use super::types::{GenerationStatus, ProviderJobStatus, StylePreset};
 use anyhow::{anyhow, Result};
 use serde_json::{json, Value as JsonValue};
 use tracing::{info, warn};
@@ -335,4 +335,90 @@ fn extract_fal_output_urls(result: &JsonValue) -> Vec<String> {
     urls.sort();
     urls.dedup();
     urls
+}
+
+/// Fetch available style presets (Studios) from Kive
+pub async fn fetch_kive_presets(api_key: &str, api_url: &str) -> Result<Vec<StylePreset>> {
+    if api_key.is_empty() {
+        return Ok(vec![]);
+    }
+
+    let client = reqwest::Client::new();
+    let url = format!("{}/v1/studios", api_url.trim_end_matches('/'));
+
+    let response = client
+        .get(&url)
+        .header("Authorization", format!("Bearer {}", api_key))
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        warn!(url = %url, status = %response.status(), "failed to fetch kive presets");
+        return Ok(vec![]);
+    }
+
+    let result: JsonValue = response.json().await?;
+    let mut presets = Vec::new();
+
+    // Map Kive response to our common StylePreset structure
+    // Expected structure: { data: [{ id, name, description, prompt, preview_image }] }
+    if let Some(data) = result.get("data").and_then(|d| d.as_array()) {
+        for item in data {
+            presets.push(StylePreset {
+                id: item["id"].as_str().unwrap_or_default().to_string(),
+                name: item["name"].as_str().unwrap_or_default().to_string(),
+                description: item["description"].as_str().map(String::from),
+                category: "Kive Studios".to_string(),
+                prompt: item["prompt"].as_str().unwrap_or_default().to_string(),
+                preview_url: item["preview_image"].as_str().map(String::from),
+                provider: "kive".to_string(),
+                metadata: Some(item.clone()),
+            });
+        }
+    }
+
+    Ok(presets)
+}
+
+/// Fetch available motion templates from Higgsfield
+pub async fn fetch_higgsfield_presets(api_key: &str, api_url: &str) -> Result<Vec<StylePreset>> {
+    if api_key.is_empty() {
+        return Ok(vec![]);
+    }
+
+    let client = reqwest::Client::new();
+    // Use the Higgsfield motions listing endpoint
+    let url = format!("{}/v1/motions", api_url.trim_end_matches('/'));
+
+    let response = client
+        .get(&url)
+        .header("Authorization", format!("Bearer {}", api_key))
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        warn!(url = %url, status = %response.status(), "failed to fetch higgsfield presets");
+        return Ok(vec![]);
+    }
+
+    let result: JsonValue = response.json().await?;
+    let mut presets = Vec::new();
+
+    // Mapping according to research: [{ id, name, description, category, preview_video, text_prompt }]
+    if let Some(arr) = result.as_array() {
+        for item in arr {
+            presets.push(StylePreset {
+                id: item["id"].as_str().unwrap_or_default().to_string(),
+                name: item["name"].as_str().unwrap_or_default().to_string(),
+                description: item["description"].as_str().map(String::from),
+                category: item["category"].as_str().unwrap_or("Cinematic").to_string(),
+                prompt: item["text_prompt"].as_str().unwrap_or_default().to_string(),
+                preview_url: item["preview_video"].as_str().map(String::from),
+                provider: "higgsfield".to_string(),
+                metadata: Some(item.clone()),
+            });
+        }
+    }
+
+    Ok(presets)
 }

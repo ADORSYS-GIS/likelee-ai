@@ -5,14 +5,31 @@ use serde_json::Value as JsonValue;
 #[serde(rename_all = "lowercase")]
 pub enum Provider {
     Fal,
+    Higgsfield,
+    Kive,
 }
 
 impl Provider {
     pub fn as_str(&self) -> &str {
         match self {
             Provider::Fal => "fal",
+            Provider::Higgsfield => "higgsfield",
+            Provider::Kive => "kive",
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct StylePreset {
+    pub id: String,
+    pub name: String,
+    pub description: Option<String>,
+    pub category: String,
+    pub prompt: String,
+    pub preview_url: Option<String>,
+    pub provider: String,
+    pub metadata: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -22,6 +39,7 @@ pub enum GenerationType {
     Image,
     Avatar,
     ImageToVideo,
+    VideoUpscale,
 }
 
 impl GenerationType {
@@ -31,6 +49,7 @@ impl GenerationType {
             GenerationType::Image => "image",
             GenerationType::Avatar => "avatar",
             GenerationType::ImageToVideo => "image_to_video",
+            GenerationType::VideoUpscale => "video_upscale",
         }
     }
 }
