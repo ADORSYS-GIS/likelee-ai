@@ -1030,7 +1030,7 @@ export default function TalentPortal({
                     label: "Availability",
                     icon: CheckCircle2,
                   },
-                  { id: "portfolio", label: "Portfolio", icon: Image },
+                  { id: "portfolio", label: "Portfolio", icon: LucideImage },
                   { id: "earnings", label: "Earnings", icon: DollarSign },
                   { id: "messages", label: "Messages", icon: MessageSquare },
                   { id: "settings", label: "Settings", icon: Settings },
