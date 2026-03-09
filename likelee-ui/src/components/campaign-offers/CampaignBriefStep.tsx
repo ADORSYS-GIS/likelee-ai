@@ -178,36 +178,29 @@ export default function CampaignBriefStep({
         </p>
         <div className="space-y-2">
           <p className="text-sm font-medium text-gray-700">
-            3x Instagram Reels (15-30 seconds each)
+            Enter all required deliverables
           </p>
           <Textarea
-            value={campaignBrief.deliverables_reels}
+            value={
+              campaignBrief.required_deliverables ??
+              [
+                campaignBrief.deliverables_reels,
+                campaignBrief.deliverables_hero_image,
+              ]
+                .map((entry) => String(entry || "").trim())
+                .filter(Boolean)
+                .join("\n")
+            }
             onChange={(e) =>
               setCampaignBrief((prev) => ({
                 ...prev,
-                deliverables_reels: e.target.value,
+                required_deliverables: e.target.value,
               }))
             }
             placeholder={
-              "Format: 9:16 vertical, 1080x1920, MP4\nContent: Product showcase, try-on, styling tips"
+              "Example:\n3x Instagram Reels (15-30 seconds each)\n1x Hero Image\n5x Story Frames\n\nTip: Include quantity in each line so expected total is tracked automatically."
             }
-            className="border-2 border-gray-300 rounded-none min-h-[90px]"
-          />
-        </div>
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-gray-700">1x Hero Image</p>
-          <Textarea
-            value={campaignBrief.deliverables_hero_image}
-            onChange={(e) =>
-              setCampaignBrief((prev) => ({
-                ...prev,
-                deliverables_hero_image: e.target.value,
-              }))
-            }
-            placeholder={
-              "Format: 1920x1080, JPG/PNG, high resolution\nContent: Lifestyle shot wearing spring collection piece"
-            }
-            className="border-2 border-gray-300 rounded-none min-h-[90px]"
+            className="border-2 border-gray-300 rounded-none min-h-[130px]"
           />
         </div>
 
@@ -312,6 +305,21 @@ export default function CampaignBriefStep({
                 <p className="text-xs text-gray-700 mt-2 truncate">
                   Style Ref {idx + 1}
                 </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="mt-2 h-7 px-2 text-xs border-gray-300 rounded-none"
+                  onClick={() =>
+                    setCampaignBrief((prev) => ({
+                      ...prev,
+                      reference_images: prev.reference_images.filter(
+                        (_: any, i: number) => i !== idx,
+                      ),
+                    }))
+                  }
+                >
+                  Remove
+                </Button>
               </div>
             ))}
           </div>
@@ -346,14 +354,33 @@ export default function CampaignBriefStep({
           />
           <div className="mt-3 space-y-2">
             {campaignBrief.brand_assets.map((asset, idx) => (
-              <a
+              <div
                 key={`${asset.name}-${idx}`}
-                href={asset.url}
-                download={asset.name}
-                className="block text-sm text-blue-700 hover:underline"
+                className="flex items-center justify-between gap-3"
               >
-                PDF {idx + 1}: {asset.name}
-              </a>
+                <a
+                  href={asset.url}
+                  download={asset.name}
+                  className="block text-sm text-blue-700 hover:underline truncate"
+                >
+                  PDF {idx + 1}: {asset.name}
+                </a>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-7 px-2 text-xs border-gray-300 rounded-none"
+                  onClick={() =>
+                    setCampaignBrief((prev) => ({
+                      ...prev,
+                      brand_assets: prev.brand_assets.filter(
+                        (_: any, i: number) => i !== idx,
+                      ),
+                    }))
+                  }
+                >
+                  Remove
+                </Button>
+              </div>
             ))}
           </div>
         </div>
