@@ -1,11 +1,18 @@
-use crate::{auth::AuthUser, config::AppState, errors::sanitize_db_error};
+use crate::{
+    auth::AuthUser,
+    config::AppState,
+    errors::sanitize_db_error,
+    services::docuseal::{DocuSealClient, Submitter},
+};
 use axum::{
     extract::{Path, Query, State},
-    http::StatusCode,
+    http::{HeaderMap, StatusCode},
     Json,
 };
+use reqwest::Client;
 use serde::Deserialize;
 use serde_json::json;
+use uuid::Uuid;
 
 #[derive(Debug, Deserialize)]
 pub struct CreateBrandCampaignRequest {
@@ -124,6 +131,8 @@ pub struct SubmitDeliverableRequest {
     pub asset_url: String,
     pub asset_type: Option<String>,
     pub caption: Option<String>,
+    pub brand_id: Option<String>,
+    pub brand_campaign_id: Option<String>,
     pub meta: Option<serde_json::Value>,
 }
 
@@ -134,14 +143,33 @@ pub struct ReviewDeliverableRequest {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct CommentDeliverableRequest {
+    pub message: String,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct OfferPath {
     pub offer_id: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct OfferContractPath {
+    pub offer_id: String,
+    pub contract_id: String,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct OfferDeliverablePath {
     pub offer_id: String,
     pub deliverable_id: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DocuSealWebhookEvent {
+    pub event_type: String,
+    #[allow(dead_code)]
+    pub timestamp: Option<String>,
+    pub data: serde_json::Value,
 }
 
 fn trim_non_empty(value: &str, field: &str) -> Result<String, (StatusCode, String)> {
@@ -154,6 +182,20 @@ fn trim_non_empty(value: &str, field: &str) -> Result<String, (StatusCode, Strin
 
 fn is_creator_like(role: &str) -> bool {
     role == "creator" || role == "talent"
+}
+
+fn docuseal_role_key(role: &str) -> String {
+    role.chars()
+        .filter(|c| c.is_ascii_alphanumeric())
+        .flat_map(|c| c.to_lowercase())
+        .collect::<String>()
+}
+
+fn is_submitter_signed(status: &str) -> bool {
+    matches!(
+        status.trim().to_lowercase().as_str(),
+        "completed" | "signed" | "done"
+    )
 }
 
 async fn ensure_offer_access(
@@ -522,10 +564,46 @@ pub async fn list_offer_options(
         return Ok(Json(json!({"target_type":"agency","items": items})));
     }
 
+    let connected_resp = state
+        .pg
+        .from("brand_creator_connections")
+        .select("creator_id")
+        .eq("brand_id", &user.id)
+        .eq("status", "active")
+        .limit(500)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let connected_status = connected_resp.status();
+    let connected_text = connected_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !connected_status.is_success() {
+        return Err(sanitize_db_error(connected_status.as_u16(), connected_text));
+    }
+    let connected_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&connected_text).unwrap_or_default();
+    let connected_creator_ids: Vec<String> = connected_rows
+        .into_iter()
+        .filter_map(|r| {
+            r.get("creator_id")
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .map(|s| s.to_string())
+        })
+        .collect();
+    if connected_creator_ids.is_empty() {
+        return Ok(Json(json!({"target_type":"creator","items": []})));
+    }
+
+    let connected_refs: Vec<&str> = connected_creator_ids.iter().map(|s| s.as_str()).collect();
     let mut req = state
         .pg
         .from("creators")
         .select("id,full_name,city,state,profile_photo_url,creator_type,base_weekly_price_cents,base_monthly_price_cents,currency_code,accept_negotiations,public_profile_visible,visibility")
+        .in_("id", connected_refs)
         .eq("role", "creator")
         .eq("kyc_status", "approved")
         .limit(limit);
@@ -666,6 +744,34 @@ pub async fn create_campaign_offers(
                 ));
             }
         } else {
+            let conn_resp = state
+                .pg
+                .from("brand_creator_connections")
+                .select("id")
+                .eq("brand_id", &user.id)
+                .eq("creator_id", tid.as_str())
+                .eq("status", "active")
+                .limit(1)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let conn_status = conn_resp.status();
+            let conn_text = conn_resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            if !conn_status.is_success() {
+                return Err(sanitize_db_error(conn_status.as_u16(), conn_text));
+            }
+            let conn_rows: Vec<serde_json::Value> =
+                serde_json::from_str(&conn_text).unwrap_or_default();
+            if conn_rows.is_empty() {
+                return Err((
+                    StatusCode::FORBIDDEN,
+                    "you can only send offers to connected creators".to_string(),
+                ));
+            }
+
             let c_resp = state
                 .pg
                 .from("creators")
@@ -754,7 +860,133 @@ pub async fn list_campaign_offers(
     if !status.is_success() {
         return Err(sanitize_db_error(status.as_u16(), text));
     }
-    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let mut rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+
+    let creator_ids: Vec<String> = rows
+        .iter()
+        .filter(|row| {
+            let tt = row
+                .get("target_type")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_lowercase();
+            tt == "creator" || tt == "talent"
+        })
+        .filter_map(|row| row.get("target_id").and_then(|v| v.as_str()))
+        .map(|id| id.to_string())
+        .collect();
+    let agency_ids: Vec<String> = rows
+        .iter()
+        .filter(|row| {
+            row.get("target_type")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .eq_ignore_ascii_case("agency")
+        })
+        .filter_map(|row| row.get("target_id").and_then(|v| v.as_str()))
+        .map(|id| id.to_string())
+        .collect();
+
+    let mut target_name_map: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
+
+    if !creator_ids.is_empty() {
+        let creator_refs: Vec<&str> = creator_ids.iter().map(|s| s.as_str()).collect();
+        if let Ok(creator_resp) = state
+            .pg
+            .from("creators")
+            .select("id,full_name,email")
+            .in_("id", creator_refs)
+            .execute()
+            .await
+        {
+            if creator_resp.status().is_success() {
+                if let Ok(creator_text) = creator_resp.text().await {
+                    let creator_rows: Vec<serde_json::Value> =
+                        serde_json::from_str(&creator_text).unwrap_or_default();
+                    for creator in creator_rows {
+                        let id = creator
+                            .get("id")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .trim()
+                            .to_string();
+                        if id.is_empty() {
+                            continue;
+                        }
+                        let name = creator
+                            .get("full_name")
+                            .and_then(|v| v.as_str())
+                            .or_else(|| creator.get("email").and_then(|v| v.as_str()))
+                            .unwrap_or("")
+                            .trim()
+                            .to_string();
+                        if !name.is_empty() {
+                            target_name_map.insert(id, name);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if !agency_ids.is_empty() {
+        let agency_refs: Vec<&str> = agency_ids.iter().map(|s| s.as_str()).collect();
+        if let Ok(agency_resp) = state
+            .pg
+            .from("agencies")
+            .select("id,agency_name,email")
+            .in_("id", agency_refs)
+            .execute()
+            .await
+        {
+            if agency_resp.status().is_success() {
+                if let Ok(agency_text) = agency_resp.text().await {
+                    let agency_rows: Vec<serde_json::Value> =
+                        serde_json::from_str(&agency_text).unwrap_or_default();
+                    for agency in agency_rows {
+                        let id = agency
+                            .get("id")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("")
+                            .trim()
+                            .to_string();
+                        if id.is_empty() {
+                            continue;
+                        }
+                        let name = agency
+                            .get("agency_name")
+                            .and_then(|v| v.as_str())
+                            .or_else(|| agency.get("email").and_then(|v| v.as_str()))
+                            .unwrap_or("")
+                            .trim()
+                            .to_string();
+                        if !name.is_empty() {
+                            target_name_map.insert(id, name);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    for row in rows.iter_mut() {
+        let target_id = row
+            .get("target_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if target_id.is_empty() {
+            continue;
+        }
+        if let Some(target_name) = target_name_map.get(&target_id) {
+            if let Some(obj) = row.as_object_mut() {
+                obj.insert("target_name".to_string(), json!(target_name));
+            }
+        }
+    }
+
     Ok(Json(json!({"offers": rows})))
 }
 
@@ -775,7 +1007,7 @@ pub async fn list_my_campaign_offers(
         .pg
         .from("campaign_offers")
         .select(
-            "id,brand_campaign_id,brand_id,target_type,target_id,status,offer_title,message,expires_at,decided_at,brief_snapshot,budget_snapshot,meta,created_at,updated_at,brand_campaigns(id,name,objective,start_date),brands(id,company_name,email,logo_url)",
+            "id,brand_campaign_id,brand_id,target_type,target_id,status,offer_title,message,expires_at,decided_at,brief_snapshot,budget_snapshot,meta,created_at,updated_at,brand_campaigns(id,name,objective,category,description,usage_scope,duration_days,territory,exclusivity,budget_range,start_date,custom_terms),brands(id,company_name,email,logo_url)",
         )
         .order("created_at.desc")
         .limit(limit);
@@ -806,7 +1038,159 @@ pub async fn list_my_campaign_offers(
     if !status.is_success() {
         return Err(sanitize_db_error(status.as_u16(), text));
     }
-    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let mut rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+
+    if user.role == "brand" {
+        let creator_ids: Vec<String> = rows
+            .iter()
+            .filter(|row| {
+                let tt = row
+                    .get("target_type")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_lowercase();
+                tt == "creator" || tt == "talent"
+            })
+            .filter_map(|row| row.get("target_id").and_then(|v| v.as_str()))
+            .map(|id| id.to_string())
+            .collect();
+        let agency_ids: Vec<String> = rows
+            .iter()
+            .filter(|row| {
+                row.get("target_type")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .eq_ignore_ascii_case("agency")
+            })
+            .filter_map(|row| row.get("target_id").and_then(|v| v.as_str()))
+            .map(|id| id.to_string())
+            .collect();
+        let mut target_name_map: std::collections::HashMap<String, String> =
+            std::collections::HashMap::new();
+        let mut target_avatar_map: std::collections::HashMap<String, String> =
+            std::collections::HashMap::new();
+
+        if !creator_ids.is_empty() {
+            let creator_refs: Vec<&str> = creator_ids.iter().map(|s| s.as_str()).collect();
+            if let Ok(creator_resp) = state
+                .pg
+                .from("creators")
+                .select("id,full_name,email,profile_photo_url")
+                .in_("id", creator_refs)
+                .execute()
+                .await
+            {
+                if creator_resp.status().is_success() {
+                    if let Ok(creator_text) = creator_resp.text().await {
+                        let creator_rows: Vec<serde_json::Value> =
+                            serde_json::from_str(&creator_text).unwrap_or_default();
+                        for creator in creator_rows {
+                            let id = creator
+                                .get("id")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("")
+                                .trim()
+                                .to_string();
+                            if id.is_empty() {
+                                continue;
+                            }
+                            let name = creator
+                                .get("full_name")
+                                .and_then(|v| v.as_str())
+                                .or_else(|| creator.get("email").and_then(|v| v.as_str()))
+                                .unwrap_or("")
+                                .trim()
+                                .to_string();
+                            if !name.is_empty() {
+                                target_name_map.insert(id.clone(), name);
+                            }
+                            let avatar = creator
+                                .get("profile_photo_url")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("")
+                                .trim()
+                                .to_string();
+                            if !avatar.is_empty() {
+                                target_avatar_map.insert(id, avatar);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if !agency_ids.is_empty() {
+            let agency_refs: Vec<&str> = agency_ids.iter().map(|s| s.as_str()).collect();
+            if let Ok(agency_resp) = state
+                .pg
+                .from("agencies")
+                .select("id,agency_name,email,logo_url")
+                .in_("id", agency_refs)
+                .execute()
+                .await
+            {
+                if agency_resp.status().is_success() {
+                    if let Ok(agency_text) = agency_resp.text().await {
+                        let agency_rows: Vec<serde_json::Value> =
+                            serde_json::from_str(&agency_text).unwrap_or_default();
+                        for agency in agency_rows {
+                            let id = agency
+                                .get("id")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("")
+                                .trim()
+                                .to_string();
+                            if id.is_empty() {
+                                continue;
+                            }
+                            let name = agency
+                                .get("agency_name")
+                                .and_then(|v| v.as_str())
+                                .or_else(|| agency.get("email").and_then(|v| v.as_str()))
+                                .unwrap_or("")
+                                .trim()
+                                .to_string();
+                            if !name.is_empty() {
+                                target_name_map.insert(id.clone(), name);
+                            }
+                            let avatar = agency
+                                .get("logo_url")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("")
+                                .trim()
+                                .to_string();
+                            if !avatar.is_empty() {
+                                target_avatar_map.insert(id, avatar);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        for row in rows.iter_mut() {
+            let target_id = row
+                .get("target_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .trim()
+                .to_string();
+            if target_id.is_empty() {
+                continue;
+            }
+            if let Some(target_name) = target_name_map.get(&target_id) {
+                if let Some(obj) = row.as_object_mut() {
+                    obj.insert("target_name".to_string(), json!(target_name));
+                }
+            }
+            if let Some(target_avatar_url) = target_avatar_map.get(&target_id) {
+                if let Some(obj) = row.as_object_mut() {
+                    obj.insert("target_avatar_url".to_string(), json!(target_avatar_url));
+                }
+            }
+        }
+    }
+
     Ok(Json(json!({ "offers": rows })))
 }
 
@@ -935,7 +1319,7 @@ pub async fn send_offer_contract(
     if user.role != "brand" && user.role != "agency" {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
-    let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
+    let offer = ensure_offer_access(&state, &user, &offer_id).await?;
 
     let contract_id = if let Some(id) = payload.contract_id.as_deref() {
         trim_non_empty(id, "contract_id")?
@@ -993,7 +1377,237 @@ pub async fn send_offer_contract(
     if !status.is_success() {
         return Err(sanitize_db_error(status.as_u16(), text));
     }
-    let contract: serde_json::Value = serde_json::from_str(&text).unwrap_or_default();
+    let mut contract: serde_json::Value = serde_json::from_str(&text).unwrap_or_default();
+
+    let template_id = contract
+        .get("docuseal_template_id")
+        .and_then(|v| v.as_i64())
+        .map(|v| v as i32);
+    let target_type = offer
+        .get("target_type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let target_id = offer
+        .get("target_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    if let Some(docuseal_template_id) = template_id {
+        if state.docuseal_api_key.trim().is_empty() {
+            return Err((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "docuseal_api_key_not_configured".to_string(),
+            ));
+        }
+        if target_type == "creator" || target_type == "talent" {
+            let brand_id = offer
+                .get("brand_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let brand_resp = state
+                .pg
+                .from("brands")
+                .select("id,company_name,email")
+                .eq("id", brand_id.as_str())
+                .limit(1)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let brand_status = brand_resp.status();
+            let brand_text = brand_resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            if !brand_status.is_success() {
+                return Err(sanitize_db_error(brand_status.as_u16(), brand_text));
+            }
+            let brand_rows: Vec<serde_json::Value> =
+                serde_json::from_str(&brand_text).unwrap_or_default();
+            let brand = brand_rows.first().cloned().ok_or((
+                StatusCode::BAD_REQUEST,
+                "brand profile not found for DocuSeal submission".to_string(),
+            ))?;
+            let brand_name = brand
+                .get("company_name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("Brand")
+                .to_string();
+            let brand_email = brand
+                .get("email")
+                .and_then(|v| v.as_str())
+                .ok_or((
+                    StatusCode::BAD_REQUEST,
+                    "brand email missing for DocuSeal submission".to_string(),
+                ))?
+                .to_string();
+
+            let creator_resp = state
+                .pg
+                .from("creators")
+                .select("id,full_name,email")
+                .eq("id", target_id.as_str())
+                .limit(1)
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let creator_status = creator_resp.status();
+            let creator_text = creator_resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            if !creator_status.is_success() {
+                return Err(sanitize_db_error(creator_status.as_u16(), creator_text));
+            }
+            let creator_rows: Vec<serde_json::Value> =
+                serde_json::from_str(&creator_text).unwrap_or_default();
+            let creator = creator_rows.first().cloned().ok_or((
+                StatusCode::BAD_REQUEST,
+                "creator profile not found for DocuSeal submission".to_string(),
+            ))?;
+            let creator_name = creator
+                .get("full_name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("Creator")
+                .to_string();
+            let creator_email = creator
+                .get("email")
+                .and_then(|v| v.as_str())
+                .ok_or((
+                    StatusCode::BAD_REQUEST,
+                    "creator email missing for DocuSeal submission".to_string(),
+                ))?
+                .to_string();
+
+            let docuseal_client = DocuSealClient::new(
+                state.docuseal_api_key.clone(),
+                state.docuseal_api_url.clone(),
+            );
+            let submission = docuseal_client
+                .create_submission_with_submitters(
+                    docuseal_template_id,
+                    vec![
+                        Submitter {
+                            name: Some(brand_name.clone()),
+                            email: Some(brand_email.clone()),
+                            role: Some("First Party".to_string()),
+                            order: Some(1),
+                            fields: None,
+                            values: None,
+                        },
+                        Submitter {
+                            name: Some(creator_name.clone()),
+                            email: Some(creator_email.clone()),
+                            role: Some("Second Party".to_string()),
+                            order: Some(2),
+                            fields: None,
+                            values: None,
+                        },
+                    ],
+                    true,
+                )
+                .await
+                .map_err(|e| {
+                    let msg = e.to_string();
+                    let lower = msg.to_lowercase();
+                    if lower.contains("template") && lower.contains("not found") {
+                        (
+                            StatusCode::BAD_REQUEST,
+                            "DocuSeal template not found. Verify DOCUSEAL_API_KEY account and upload a fresh PDF in Step 5."
+                                .to_string(),
+                        )
+                    } else {
+                        (StatusCode::INTERNAL_SERVER_ERROR, msg)
+                    }
+                })?;
+            let brand_submitter = submission.submitters.iter().find(|s| {
+                s.role
+                    .as_deref()
+                    .map(|r| docuseal_role_key(r) == "firstparty")
+                    .unwrap_or(false)
+            });
+            let creator_submitter = submission.submitters.iter().find(|s| {
+                s.role
+                    .as_deref()
+                    .map(|r| docuseal_role_key(r) == "secondparty")
+                    .unwrap_or(false)
+            });
+            let brand_slug = brand_submitter
+                .map(|s| s.slug.clone())
+                .or_else(|| submission.submitters.first().map(|s| s.slug.clone()))
+                .unwrap_or_else(|| submission.slug.clone());
+            let creator_slug = creator_submitter
+                .map(|s| s.slug.clone())
+                .or_else(|| submission.submitters.get(1).map(|s| s.slug.clone()))
+                .unwrap_or_else(|| brand_slug.clone());
+            let brand_signing_url = format!(
+                "{}/s/{}",
+                state.docuseal_app_url.trim_end_matches('/'),
+                brand_slug
+            );
+            let creator_signing_url = format!(
+                "{}/s/{}",
+                state.docuseal_app_url.trim_end_matches('/'),
+                creator_slug
+            );
+            let mut merged_meta = contract
+                .get("meta")
+                .and_then(|v| v.as_object().cloned())
+                .unwrap_or_default();
+            merged_meta.insert(
+                "docuseal_signing_url".to_string(),
+                json!(creator_signing_url.clone()),
+            );
+            merged_meta.insert("brand_signing_url".to_string(), json!(brand_signing_url));
+            merged_meta.insert(
+                "creator_signing_url".to_string(),
+                json!(creator_signing_url.clone()),
+            );
+            merged_meta.insert(
+                "submitter_statuses".to_string(),
+                json!(submission
+                    .submitters
+                    .iter()
+                    .map(|s| json!({
+                        "role": s.role,
+                        "email": s.email,
+                        "status": s.status,
+                        "slug": s.slug,
+                    }))
+                    .collect::<Vec<_>>()),
+            );
+            let sync_resp = state
+                .pg
+                .from("campaign_offer_contracts")
+                .eq("id", &contract_id)
+                .eq("offer_id", &offer_id)
+                .update(
+                    json!({
+                        "docuseal_submission_id": submission.id,
+                        "docuseal_slug": creator_slug,
+                        "docuseal_status": "sent",
+                        "meta": serde_json::Value::Object(merged_meta),
+                        "updated_at": chrono::Utc::now().to_rfc3339(),
+                    })
+                    .to_string(),
+                )
+                .select("*")
+                .single()
+                .execute()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            let sync_status = sync_resp.status();
+            let sync_text = sync_resp
+                .text()
+                .await
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            if !sync_status.is_success() {
+                return Err(sanitize_db_error(sync_status.as_u16(), sync_text));
+            }
+            contract = serde_json::from_str(&sync_text).unwrap_or_default();
+        }
+    }
 
     let _ = state
         .pg
@@ -1010,6 +1624,315 @@ pub async fn send_offer_contract(
         .await;
 
     Ok(Json(json!({"status":"ok","contract": contract})))
+}
+
+pub async fn refresh_offer_contract_status(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(OfferContractPath {
+        offer_id,
+        contract_id,
+    }): Path<OfferContractPath>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
+    let resp = state
+        .pg
+        .from("campaign_offer_contracts")
+        .select("*")
+        .eq("id", &contract_id)
+        .eq("offer_id", &offer_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let existing = rows
+        .first()
+        .cloned()
+        .ok_or((StatusCode::NOT_FOUND, "contract not found".to_string()))?;
+
+    let submission_id = existing
+        .get("docuseal_submission_id")
+        .and_then(|v| v.as_i64())
+        .ok_or((
+            StatusCode::BAD_REQUEST,
+            "docuseal submission id missing for this contract".to_string(),
+        ))?;
+    if state.docuseal_api_key.trim().is_empty() {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "docuseal_api_key_not_configured".to_string(),
+        ));
+    }
+
+    let docuseal_client = DocuSealClient::new(
+        state.docuseal_api_key.clone(),
+        state.docuseal_api_url.clone(),
+    );
+    let details = docuseal_client
+        .get_submission(submission_id as i32)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    let signer_slug = details
+        .submitters
+        .first()
+        .map(|s| s.slug.clone())
+        .or_else(|| {
+            existing
+                .get("docuseal_slug")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        })
+        .unwrap_or_default();
+    let signing_url = if signer_slug.is_empty() {
+        "".to_string()
+    } else {
+        format!(
+            "{}/s/{}",
+            state.docuseal_app_url.trim_end_matches('/'),
+            signer_slug
+        )
+    };
+    let mut merged_meta = existing
+        .get("meta")
+        .and_then(|v| v.as_object().cloned())
+        .unwrap_or_default();
+    if !signing_url.is_empty() {
+        merged_meta.insert("docuseal_signing_url".to_string(), json!(signing_url));
+    }
+    if let Some(first_doc) = details.documents.first() {
+        if !first_doc.url.trim().is_empty() {
+            merged_meta.insert(
+                "docuseal_document_url".to_string(),
+                json!(first_doc.url.trim()),
+            );
+        }
+    }
+    let submitter_statuses = details
+        .submitters
+        .iter()
+        .map(|s| {
+            json!({
+                "role": s.role,
+                "email": s.email,
+                "status": s.status,
+                "slug": s.slug,
+            })
+        })
+        .collect::<Vec<_>>();
+    merged_meta.insert("submitter_statuses".to_string(), json!(submitter_statuses));
+    let brand_submitter_status = details
+        .submitters
+        .iter()
+        .find(|s| {
+            s.role
+                .as_deref()
+                .map(|r| docuseal_role_key(r) == "firstparty")
+                .unwrap_or(false)
+        })
+        .map(|s| s.status.to_lowercase())
+        .unwrap_or_default();
+    let creator_submitter_status = details
+        .submitters
+        .iter()
+        .find(|s| {
+            s.role
+                .as_deref()
+                .map(|r| docuseal_role_key(r) == "secondparty")
+                .unwrap_or(false)
+        })
+        .map(|s| s.status.to_lowercase())
+        .unwrap_or_default();
+    let any_opened = details.submitters.iter().any(|s| {
+        let st = s.status.to_lowercase();
+        st == "opened" || st == "viewed"
+    });
+    let any_declined = details.submitters.iter().any(|s| {
+        let st = s.status.to_lowercase();
+        st == "declined" || st == "rejected"
+    });
+    let brand_is_signed = is_submitter_signed(&brand_submitter_status);
+    let creator_is_signed = is_submitter_signed(&creator_submitter_status);
+    let both_signed = brand_is_signed && creator_is_signed;
+    let derived_status = if any_declined {
+        "declined"
+    } else if both_signed {
+        "signed"
+    } else if any_opened || brand_is_signed {
+        "opened"
+    } else {
+        "sent"
+    };
+    merged_meta.insert(
+        "brand_submitter_status".to_string(),
+        json!(brand_submitter_status),
+    );
+    merged_meta.insert(
+        "creator_submitter_status".to_string(),
+        json!(creator_submitter_status),
+    );
+    merged_meta.insert(
+        "docuseal_submission_status".to_string(),
+        json!(details.status.clone()),
+    );
+
+    let docuseal_status = derived_status.to_string();
+    let update_resp = state
+        .pg
+        .from("campaign_offer_contracts")
+        .eq("id", &contract_id)
+        .eq("offer_id", &offer_id)
+        .update(
+            json!({
+                "docuseal_status": docuseal_status,
+                "docuseal_slug": if signer_slug.is_empty() { serde_json::Value::Null } else { json!(signer_slug) },
+                "meta": serde_json::Value::Object(merged_meta),
+                "last_synced_at": chrono::Utc::now().to_rfc3339(),
+                "updated_at": chrono::Utc::now().to_rfc3339(),
+            })
+            .to_string(),
+        )
+        .select("*")
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let update_status = update_resp.status();
+    let update_text = update_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !update_status.is_success() {
+        return Err(sanitize_db_error(update_status.as_u16(), update_text));
+    }
+    let updated_contract: serde_json::Value =
+        serde_json::from_str(&update_text).unwrap_or_default();
+
+    let mapped_offer_status = match derived_status {
+        "signed" => Some("contract_fully_signed"),
+        "opened" => Some("contract_partially_signed"),
+        "sent" => Some("contract_sent"),
+        "declined" => Some("changes_requested"),
+        _ => None,
+    };
+    if let Some(status_value) = mapped_offer_status {
+        let _ = state
+            .pg
+            .from("campaign_offers")
+            .eq("id", &offer_id)
+            .update(
+                json!({
+                    "status": status_value,
+                    "updated_at": chrono::Utc::now().to_rfc3339(),
+                })
+                .to_string(),
+            )
+            .execute()
+            .await;
+    }
+
+    Ok(Json(json!({"status":"ok","contract": updated_contract})))
+}
+
+pub async fn archive_offer_contract(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(OfferContractPath {
+        offer_id,
+        contract_id,
+    }): Path<OfferContractPath>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    if user.role != "brand" && user.role != "agency" {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+    let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
+    let resp = state
+        .pg
+        .from("campaign_offer_contracts")
+        .select("*")
+        .eq("id", &contract_id)
+        .eq("offer_id", &offer_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err(sanitize_db_error(status.as_u16(), text));
+    }
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    let existing = rows
+        .first()
+        .cloned()
+        .ok_or((StatusCode::NOT_FOUND, "contract not found".to_string()))?;
+
+    if let Some(submission_id) = existing
+        .get("docuseal_submission_id")
+        .and_then(|v| v.as_i64())
+    {
+        if !state.docuseal_api_key.trim().is_empty() {
+            let docuseal_client = DocuSealClient::new(
+                state.docuseal_api_key.clone(),
+                state.docuseal_api_url.clone(),
+            );
+            let _ = docuseal_client
+                .archive_submission(submission_id as i32)
+                .await;
+        }
+    }
+
+    let mut merged_meta = existing
+        .get("meta")
+        .and_then(|v| v.as_object().cloned())
+        .unwrap_or_default();
+    merged_meta.insert(
+        "archived_at".to_string(),
+        json!(chrono::Utc::now().to_rfc3339()),
+    );
+    merged_meta.insert("archived_by".to_string(), json!(user.id));
+
+    let update_resp = state
+        .pg
+        .from("campaign_offer_contracts")
+        .eq("id", &contract_id)
+        .eq("offer_id", &offer_id)
+        .update(
+            json!({
+                "docuseal_status": "archived",
+                "meta": serde_json::Value::Object(merged_meta),
+                "updated_at": chrono::Utc::now().to_rfc3339(),
+            })
+            .to_string(),
+        )
+        .select("*")
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let update_status = update_resp.status();
+    let update_text = update_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !update_status.is_success() {
+        return Err(sanitize_db_error(update_status.as_u16(), update_text));
+    }
+    let updated_contract: serde_json::Value =
+        serde_json::from_str(&update_text).unwrap_or_default();
+    Ok(Json(json!({"status":"ok","contract": updated_contract})))
 }
 
 pub async fn list_offer_contracts(
@@ -1345,6 +2268,42 @@ pub async fn submit_offer_deliverable(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
     let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
+    let offer_brand_id = _offer
+        .get("brand_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let offer_brand_campaign_id = _offer
+        .get("brand_campaign_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    if let Some(payload_brand_id) = payload
+        .brand_id
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        if payload_brand_id != offer_brand_id {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "brand mismatch for this offer".to_string(),
+            ));
+        }
+    }
+    if let Some(payload_campaign_id) = payload
+        .brand_campaign_id
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        if payload_campaign_id != offer_brand_campaign_id {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "campaign mismatch for this offer".to_string(),
+            ));
+        }
+    }
     let asset_url = trim_non_empty(&payload.asset_url, "asset_url")?;
     let asset_type = payload
         .asset_type
@@ -1399,6 +2358,380 @@ pub async fn submit_offer_deliverable(
         .execute()
         .await;
     Ok(Json(json!({"status":"ok","deliverable": row})))
+}
+
+pub async fn upload_offer_deliverable(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(OfferPath { offer_id }): Path<OfferPath>,
+    headers: HeaderMap,
+    body: axum::body::Bytes,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    if user.role != "agency" && !is_creator_like(&user.role) {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+    let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
+
+    const MAX_FILE_SIZE: usize = 100_000_000; // 100 MB
+    if body.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "missing file bytes".to_string()));
+    }
+    if body.len() > MAX_FILE_SIZE {
+        return Err((
+            StatusCode::PAYLOAD_TOO_LARGE,
+            "file too large (max 100MB)".to_string(),
+        ));
+    }
+
+    let content_type = headers
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("application/octet-stream");
+    let ext = match content_type {
+        "image/png" => "png",
+        "image/jpeg" => "jpg",
+        "image/webp" => "webp",
+        "video/mp4" => "mp4",
+        "video/quicktime" => "mov",
+        "audio/mpeg" => "mp3",
+        "audio/wav" => "wav",
+        "application/pdf" => "pdf",
+        _ => "bin",
+    };
+
+    let file_name = format!("{}_{}_{}.{}", offer_id, user.id, Uuid::new_v4(), ext);
+    let path = format!("offer-deliverables/{}/{}", user.id, file_name);
+    let storage_url = format!(
+        "{}/storage/v1/object/{}/{}",
+        state.supabase_url, state.supabase_bucket_public, path
+    );
+
+    let client = Client::new();
+    let upload_resp = client
+        .post(&storage_url)
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
+        .header("apikey", state.supabase_service_key.clone())
+        .header("content-type", content_type)
+        .body(body)
+        .send()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    if !upload_resp.status().is_success() {
+        let err = upload_resp.text().await.unwrap_or_default();
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("failed to upload deliverable: {err}"),
+        ));
+    }
+
+    let public_url = format!(
+        "{}/storage/v1/object/public/{}/{}",
+        state.supabase_url, state.supabase_bucket_public, path
+    );
+    Ok(Json(json!({
+        "status": "ok",
+        "public_url": public_url,
+        "file_name": file_name,
+        "content_type": content_type,
+    })))
+}
+
+pub async fn upload_campaign_contract_template(
+    State(state): State<AppState>,
+    user: AuthUser,
+    headers: HeaderMap,
+    body: axum::body::Bytes,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    use base64::{engine::general_purpose, Engine as _};
+
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+    if state.docuseal_api_key.trim().is_empty() {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "docuseal_api_key_not_configured".to_string(),
+        ));
+    }
+    if body.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "missing file bytes".to_string()));
+    }
+    const MAX_FILE_SIZE: usize = 25_000_000; // 25 MB
+    if body.len() > MAX_FILE_SIZE {
+        return Err((
+            StatusCode::PAYLOAD_TOO_LARGE,
+            "file too large (max 25MB)".to_string(),
+        ));
+    }
+
+    let content_type = headers
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+    if content_type != "application/pdf" {
+        return Err((StatusCode::BAD_REQUEST, "PDF file required".to_string()));
+    }
+
+    let file_name = headers
+        .get("x-file-name")
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .unwrap_or("Campaign Contract.pdf")
+        .to_string();
+
+    let base64_content = format!(
+        "data:application/pdf;base64,{}",
+        general_purpose::STANDARD.encode(&body)
+    );
+    let docuseal_client = DocuSealClient::new(
+        state.docuseal_api_key.clone(),
+        state.docuseal_api_url.clone(),
+    );
+    let template = docuseal_client
+        .create_template(file_name.clone(), file_name.clone(), base64_content)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
+    Ok(Json(json!({
+        "status": "ok",
+        "docuseal_template_id": template.id,
+        "template_name": template.name,
+        "template_slug": template.slug,
+    })))
+}
+
+pub async fn handle_campaign_contract_webhook(
+    State(state): State<AppState>,
+    Json(payload): Json<DocuSealWebhookEvent>,
+) -> Result<StatusCode, (StatusCode, String)> {
+    let submission_id = payload
+        .data
+        .get("submission_id")
+        .and_then(|v| v.as_i64())
+        .or_else(|| payload.data.get("id").and_then(|v| v.as_i64()))
+        .ok_or((StatusCode::BAD_REQUEST, "missing submission id".to_string()))?;
+
+    let list_resp = state
+        .pg
+        .from("campaign_offer_contracts")
+        .select("id,offer_id,meta")
+        .eq("docuseal_submission_id", submission_id.to_string())
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let list_status = list_resp.status();
+    let list_text = list_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !list_status.is_success() {
+        return Err(sanitize_db_error(list_status.as_u16(), list_text));
+    }
+    let contracts: Vec<serde_json::Value> = serde_json::from_str(&list_text).unwrap_or_default();
+    if contracts.is_empty() {
+        return Ok(StatusCode::OK);
+    }
+
+    let submitters = payload
+        .data
+        .get("submitters")
+        .and_then(|v| v.as_array())
+        .cloned()
+        .unwrap_or_default();
+    let brand_submitter = submitters.iter().find(|s| {
+        s.get("role")
+            .and_then(|v| v.as_str())
+            .map(|r| docuseal_role_key(r) == "firstparty")
+            .unwrap_or(false)
+    });
+    let creator_submitter = submitters.iter().find(|s| {
+        s.get("role")
+            .and_then(|v| v.as_str())
+            .map(|r| docuseal_role_key(r) == "secondparty")
+            .unwrap_or(false)
+    });
+    let brand_status = brand_submitter
+        .and_then(|s| s.get("status"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_lowercase();
+    let creator_status = creator_submitter
+        .and_then(|s| s.get("status"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_lowercase();
+    let any_opened = submitters.iter().any(|s| {
+        let st = s
+            .get("status")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_lowercase();
+        st == "opened" || st == "viewed"
+    });
+    let any_declined = submitters.iter().any(|s| {
+        let st = s
+            .get("status")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_lowercase();
+        st == "declined" || st == "rejected"
+    });
+    let brand_is_signed = is_submitter_signed(&brand_status);
+    let creator_is_signed = is_submitter_signed(&creator_status);
+    let both_signed = brand_is_signed && creator_is_signed;
+    let fallback_event_status = match payload.event_type.as_str() {
+        "submission.completed" | "form.completed" => "signed",
+        "submission.declined" | "form.declined" => "declined",
+        "submission.started" | "submission.opened" | "submission.viewed" | "form.started"
+        | "form.viewed" => "opened",
+        _ => "sent",
+    };
+    let derived_status = if any_declined {
+        "declined"
+    } else if both_signed {
+        "signed"
+    } else if any_opened || brand_is_signed {
+        "opened"
+    } else {
+        fallback_event_status
+    };
+
+    let brand_slug = brand_submitter
+        .and_then(|s| s.get("slug"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let creator_slug = creator_submitter
+        .and_then(|s| s.get("slug"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let brand_signing_url = if brand_slug.is_empty() {
+        None
+    } else {
+        Some(format!(
+            "{}/s/{}",
+            state.docuseal_app_url.trim_end_matches('/'),
+            brand_slug
+        ))
+    };
+    let creator_signing_url = if creator_slug.is_empty() {
+        None
+    } else {
+        Some(format!(
+            "{}/s/{}",
+            state.docuseal_app_url.trim_end_matches('/'),
+            creator_slug
+        ))
+    };
+    let signed_doc_url = payload
+        .data
+        .get("documents")
+        .and_then(|v| v.as_array())
+        .and_then(|docs| docs.first())
+        .and_then(|d| d.get("url"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+
+    for contract in contracts {
+        let contract_id = contract
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let offer_id = contract
+            .get("offer_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        if contract_id.is_empty() || offer_id.is_empty() {
+            continue;
+        }
+        let mut merged_meta = contract
+            .get("meta")
+            .and_then(|v| v.as_object().cloned())
+            .unwrap_or_default();
+        merged_meta.insert(
+            "submitter_statuses".to_string(),
+            json!(submitters
+                .iter()
+                .map(|s| json!({
+                    "role": s.get("role").cloned().unwrap_or(serde_json::Value::Null),
+                    "email": s.get("email").cloned().unwrap_or(serde_json::Value::Null),
+                    "status": s.get("status").cloned().unwrap_or(serde_json::Value::Null),
+                    "slug": s.get("slug").cloned().unwrap_or(serde_json::Value::Null),
+                }))
+                .collect::<Vec<_>>()),
+        );
+        merged_meta.insert("brand_submitter_status".to_string(), json!(brand_status));
+        merged_meta.insert(
+            "creator_submitter_status".to_string(),
+            json!(creator_status),
+        );
+        if let Some(url) = &brand_signing_url {
+            merged_meta.insert("brand_signing_url".to_string(), json!(url));
+        }
+        if let Some(url) = &creator_signing_url {
+            merged_meta.insert("creator_signing_url".to_string(), json!(url));
+            merged_meta.insert("docuseal_signing_url".to_string(), json!(url));
+        }
+        if let Some(url) = &signed_doc_url {
+            merged_meta.insert("docuseal_document_url".to_string(), json!(url));
+        }
+        merged_meta.insert(
+            "docuseal_submission_status".to_string(),
+            json!(payload
+                .data
+                .get("status")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")),
+        );
+
+        let _ = state
+            .pg
+            .from("campaign_offer_contracts")
+            .eq("id", &contract_id)
+            .eq("offer_id", &offer_id)
+            .update(
+                json!({
+                    "docuseal_status": derived_status,
+                    "meta": serde_json::Value::Object(merged_meta),
+                    "last_synced_at": chrono::Utc::now().to_rfc3339(),
+                    "updated_at": chrono::Utc::now().to_rfc3339(),
+                })
+                .to_string(),
+            )
+            .execute()
+            .await;
+
+        let mapped_offer_status = match derived_status {
+            "signed" => Some("contract_fully_signed"),
+            "opened" => Some("contract_partially_signed"),
+            "sent" => Some("contract_sent"),
+            "declined" => Some("changes_requested"),
+            _ => None,
+        };
+        if let Some(status_value) = mapped_offer_status {
+            let _ = state
+                .pg
+                .from("campaign_offers")
+                .eq("id", &offer_id)
+                .update(
+                    json!({
+                        "status": status_value,
+                        "updated_at": chrono::Utc::now().to_rfc3339(),
+                    })
+                    .to_string(),
+                )
+                .execute()
+                .await;
+        }
+    }
+
+    Ok(StatusCode::OK)
 }
 
 pub async fn list_offer_deliverables(
@@ -1520,5 +2853,170 @@ pub async fn review_offer_deliverable(
         .execute()
         .await;
 
+    Ok(Json(json!({"status":"ok","deliverable": row})))
+}
+
+pub async fn mark_offer_deliverable_downloaded(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(OfferDeliverablePath {
+        offer_id,
+        deliverable_id,
+    }): Path<OfferDeliverablePath>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    if user.role != "brand" && user.role != "agency" {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+    let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
+    let current_resp = state
+        .pg
+        .from("campaign_offer_deliverables")
+        .select("*")
+        .eq("id", &deliverable_id)
+        .eq("offer_id", &offer_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let current_status = current_resp.status();
+    let current_text = current_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !current_status.is_success() {
+        return Err(sanitize_db_error(current_status.as_u16(), current_text));
+    }
+    let current_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&current_text).unwrap_or_default();
+    let current = current_rows
+        .first()
+        .cloned()
+        .ok_or((StatusCode::NOT_FOUND, "deliverable not found".to_string()))?;
+
+    let mut merged_meta = current
+        .get("meta")
+        .and_then(|v| v.as_object().cloned())
+        .unwrap_or_default();
+    merged_meta.insert(
+        "brand_downloaded_at".to_string(),
+        json!(chrono::Utc::now().to_rfc3339()),
+    );
+    merged_meta.insert("brand_downloaded_by".to_string(), json!(user.id));
+
+    let update_resp = state
+        .pg
+        .from("campaign_offer_deliverables")
+        .eq("id", &deliverable_id)
+        .eq("offer_id", &offer_id)
+        .update(
+            json!({
+                "meta": serde_json::Value::Object(merged_meta),
+                "updated_at": chrono::Utc::now().to_rfc3339(),
+            })
+            .to_string(),
+        )
+        .select("*")
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let update_status = update_resp.status();
+    let update_text = update_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !update_status.is_success() {
+        return Err(sanitize_db_error(update_status.as_u16(), update_text));
+    }
+    let row: serde_json::Value = serde_json::from_str(&update_text).unwrap_or_default();
+    Ok(Json(json!({"status":"ok","deliverable": row})))
+}
+
+pub async fn comment_offer_deliverable(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(OfferDeliverablePath {
+        offer_id,
+        deliverable_id,
+    }): Path<OfferDeliverablePath>,
+    Json(payload): Json<CommentDeliverableRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    if user.role != "brand" && user.role != "agency" && !is_creator_like(&user.role) {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+    let _offer = ensure_offer_access(&state, &user, &offer_id).await?;
+    let message = payload.message.trim();
+    if message.is_empty() {
+        return Err((StatusCode::BAD_REQUEST, "message is required".to_string()));
+    }
+
+    let current_resp = state
+        .pg
+        .from("campaign_offer_deliverables")
+        .select("*")
+        .eq("id", &deliverable_id)
+        .eq("offer_id", &offer_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let current_status = current_resp.status();
+    let current_text = current_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !current_status.is_success() {
+        return Err(sanitize_db_error(current_status.as_u16(), current_text));
+    }
+    let current_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&current_text).unwrap_or_default();
+    let current = current_rows
+        .first()
+        .cloned()
+        .ok_or((StatusCode::NOT_FOUND, "deliverable not found".to_string()))?;
+
+    let mut merged_meta = current
+        .get("meta")
+        .and_then(|v| v.as_object().cloned())
+        .unwrap_or_default();
+    let mut comments = merged_meta
+        .get("feedback_comments")
+        .and_then(|v| v.as_array().cloned())
+        .unwrap_or_default();
+    comments.push(json!({
+        "id": Uuid::new_v4().to_string(),
+        "author_role": user.role,
+        "author_id": user.id,
+        "message": message,
+        "created_at": chrono::Utc::now().to_rfc3339(),
+    }));
+    merged_meta.insert("feedback_comments".to_string(), json!(comments));
+
+    let update_resp = state
+        .pg
+        .from("campaign_offer_deliverables")
+        .eq("id", &deliverable_id)
+        .eq("offer_id", &offer_id)
+        .update(
+            json!({
+                "meta": serde_json::Value::Object(merged_meta),
+                "updated_at": chrono::Utc::now().to_rfc3339(),
+            })
+            .to_string(),
+        )
+        .select("*")
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let update_status = update_resp.status();
+    let update_text = update_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !update_status.is_success() {
+        return Err(sanitize_db_error(update_status.as_u16(), update_text));
+    }
+    let row: serde_json::Value = serde_json::from_str(&update_text).unwrap_or_default();
     Ok(Json(json!({"status":"ok","deliverable": row})))
 }

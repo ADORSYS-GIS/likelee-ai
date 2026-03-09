@@ -680,7 +680,18 @@ pub async fn create_builder_token(
             req.external_id,
             None, // No values - we pre-fill in the PDF itself
             req.builder_roles.clone().map(|roles| {
-                json!(roles
+                let mut normalized: Vec<String> = Vec::new();
+                for role in roles {
+                    let with_spaces = role.trim().to_string();
+                    if !with_spaces.is_empty() && !normalized.contains(&with_spaces) {
+                        normalized.push(with_spaces.clone());
+                    }
+                    let compact = with_spaces.replace(' ', "");
+                    if !compact.is_empty() && !normalized.contains(&compact) {
+                        normalized.push(compact);
+                    }
+                }
+                json!(normalized
                     .into_iter()
                     .map(|role| json!({ "role": role }))
                     .collect::<Vec<_>>())

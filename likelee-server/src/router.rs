@@ -697,6 +697,10 @@ pub fn build_router(state: AppState) -> Router {
                 .get(crate::brand_campaigns::list_campaign_offers),
         )
         .route(
+            "/api/brand/docuseal/templates/upload",
+            post(crate::brand_campaigns::upload_campaign_contract_template),
+        )
+        .route(
             "/api/campaign-offers/:offer_id/respond",
             post(crate::brand_campaigns::respond_to_campaign_offer),
         )
@@ -716,6 +720,14 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/campaign-offers/:offer_id/contracts/sync",
             post(crate::brand_campaigns::sync_offer_contract),
+        )
+        .route(
+            "/api/campaign-offers/:offer_id/contracts/:contract_id/refresh",
+            post(crate::brand_campaigns::refresh_offer_contract_status),
+        )
+        .route(
+            "/api/campaign-offers/:offer_id/contracts/:contract_id/archive",
+            post(crate::brand_campaigns::archive_offer_contract),
         )
         .route(
             "/api/campaign-offers/:offer_id/packages",
@@ -743,8 +755,20 @@ pub fn build_router(state: AppState) -> Router {
                 .get(crate::brand_campaigns::list_offer_deliverables),
         )
         .route(
+            "/api/campaign-offers/:offer_id/deliverables/upload",
+            post(crate::brand_campaigns::upload_offer_deliverable),
+        )
+        .route(
             "/api/campaign-offers/:offer_id/deliverables/:deliverable_id/review",
             post(crate::brand_campaigns::review_offer_deliverable),
+        )
+        .route(
+            "/api/campaign-offers/:offer_id/deliverables/:deliverable_id/downloaded",
+            post(crate::brand_campaigns::mark_offer_deliverable_downloaded),
+        )
+        .route(
+            "/api/campaign-offers/:offer_id/deliverables/:deliverable_id/comments",
+            post(crate::brand_campaigns::comment_offer_deliverable),
         )
         .route(
             "/api/brand/campaigns/:campaign_id/license-requests",
@@ -874,6 +898,10 @@ pub fn build_router(state: AppState) -> Router {
         .route("/webhooks/stripe", post(crate::payouts::stripe_webhook))
         .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))
         .route("/webhooks/docuseal", post(crate::scouting::handle_webhook))
+        .route(
+            "/webhooks/docuseal/campaign-contracts",
+            post(crate::brand_campaigns::handle_campaign_contract_webhook),
+        )
         .route(
             "/api/webhooks/licenseContract",
             post(crate::license_submissions::handle_webhook),
