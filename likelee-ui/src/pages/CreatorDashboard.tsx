@@ -5681,7 +5681,7 @@ export default function CreatorDashboard() {
             }
             onClick={() => setBrandConnectionSubTab("offers")}
           >
-            My Offers
+            Brand Offers
           </Button>
           <Button
             variant={
@@ -5835,7 +5835,7 @@ export default function CreatorDashboard() {
           <Card className="p-6">
             <div className="space-y-4">
               <div className="text-lg font-semibold text-gray-900">
-                My Offers
+                Brand Offers
               </div>
               {brandOffers.some(
                 (offer: any) =>
@@ -5859,7 +5859,7 @@ export default function CreatorDashboard() {
                     className="border-gray-300"
                     onClick={closeOfferBriefPage}
                   >
-                    ← Back to My Offers
+                    ← Back to Brand Offers
                   </Button>
                   <p className="text-sm text-red-600">Offer brief not found.</p>
                 </div>
@@ -5873,7 +5873,7 @@ export default function CreatorDashboard() {
                         onClick={closeOfferBriefPage}
                         className="border-2 border-gray-300"
                       >
-                        ← Back to My Offers
+                        ← Back to Brand Offers
                       </Button>
                       <h1 className="text-3xl font-bold text-gray-900">
                         {selectedBriefCampaign?.name || "Campaign"} - Brief &
@@ -6325,7 +6325,7 @@ export default function CreatorDashboard() {
                       )}
                       {String(offer?.status || "").toLowerCase() ===
                         "changes_requested" && (
-                        <div className="inline-flex items-center rounded-md border border-amber-300 bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
+                        <div className="flex items-center rounded-md border border-amber-300 bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
                           Edits requested by brand. Open brief and check
                           feedback comments.
                         </div>
@@ -6725,7 +6725,7 @@ export default function CreatorDashboard() {
                 )}
               </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className="mt-3">
               <Button
                 variant="outline"
                 onClick={() => {

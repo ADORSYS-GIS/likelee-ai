@@ -644,6 +644,7 @@ export default function BrandDashboard() {
     any[]
   >([]);
   const [contractHubRows, setContractHubRows] = useState<any[]>([]);
+  const [loadingContractHubRows, setLoadingContractHubRows] = useState(false);
   const [selectedOfferHubDeliverables, setSelectedOfferHubDeliverables] =
     useState<any[]>([]);
   const [usageRightsTab, setUsageRightsTab] = useState("licenses");
@@ -709,6 +710,7 @@ export default function BrandDashboard() {
     if (activeSection !== "campaigns-contract-hub") return;
     let mounted = true;
     (async () => {
+      if (mounted) setLoadingContractHubRows(true);
       try {
         const rows = (
           await Promise.all(
@@ -753,6 +755,9 @@ export default function BrandDashboard() {
       } catch {
         if (!mounted) return;
         setContractHubRows([]);
+      } finally {
+        if (!mounted) return;
+        setLoadingContractHubRows(false);
       }
     })();
     return () => {
@@ -2708,7 +2713,9 @@ export default function BrandDashboard() {
         <p className="text-gray-600">Campaign contracts and signing status.</p>
       </div>
       <Card className="p-4 bg-white border border-gray-300 rounded-none">
-        {contractHubRows.length === 0 ? (
+        {loadingContractHubRows ? (
+          <p className="text-sm text-gray-500">Loading submissions</p>
+        ) : contractHubRows.length === 0 ? (
           <p className="text-sm text-gray-500">No contract submissions yet.</p>
         ) : (
           <div className="overflow-x-auto">
@@ -2865,7 +2872,7 @@ export default function BrandDashboard() {
       <div>
         <h2 className="text-3xl font-bold text-gray-900 mb-1">Deliverables</h2>
         <p className="text-gray-600">
-          Track deliverables submitted for campaign offers.
+          Approved and downloaded assets are organized per campaign offer.
         </p>
       </div>
       <div className="space-y-3">
@@ -2916,23 +2923,38 @@ export default function BrandDashboard() {
               (d: any) => String(d?.status || "").toLowerCase() === "approved",
             ).length;
             const totalCount = downloadedDeliverables.length;
+            const progressPct =
+              totalCount > 0
+                ? Math.round((approvedCount / totalCount) * 100)
+                : 0;
+            const offerStatus = String(offer?.status || "sent")
+              .replace(/_/g, " ")
+              .trim();
             return (
               <Card
                 key={offerId}
-                className="p-4 bg-white border border-gray-300 rounded-none space-y-2"
+                className="p-5 bg-white border border-gray-300 rounded-none space-y-4"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <p className="font-semibold text-gray-900">
+                  <div className="space-y-2">
+                    <p className="font-semibold text-lg text-gray-900">
                       {offer?.brand_campaigns?.name || "Campaign offer"}
                     </p>
-                    <p className="text-xs text-gray-500">
-                      {String(offer?.status || "sent").replace(/_/g, " ")}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge className="bg-blue-50 text-blue-700 border border-blue-200">
+                        {offerStatus}
+                      </Badge>
+                      <Badge className="bg-gray-100 text-gray-700 border border-gray-200">
+                        {totalCount} reviewed asset{totalCount === 1 ? "" : "s"}
+                      </Badge>
+                      <Badge className="bg-emerald-100 text-emerald-700 border border-emerald-200">
+                        {approvedCount} approved
+                      </Badge>
+                    </div>
                   </div>
                   <Button
                     variant="outline"
-                    className="border border-gray-300 rounded-none"
+                    className="border border-gray-300 rounded-none min-w-[120px]"
                     onClick={async () => {
                       const next = expanded ? "" : offerId;
                       setSelectedOfferHubId(next);
@@ -2942,11 +2964,37 @@ export default function BrandDashboard() {
                     {expanded ? "Hide" : "View Details"}
                   </Button>
                 </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="border border-gray-200 bg-gray-50 rounded-none p-3">
+                    <p className="text-[11px] uppercase tracking-wide text-gray-500 mb-1">
+                      Campaign
+                    </p>
+                    <p className="text-sm font-semibold text-gray-900 truncate">
+                      {offer?.brand_campaigns?.name || "Campaign offer"}
+                    </p>
+                  </div>
+                  <div className="border border-gray-200 bg-gray-50 rounded-none p-3">
+                    <p className="text-[11px] uppercase tracking-wide text-gray-500 mb-1">
+                      Progress
+                    </p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {approvedCount} / {Math.max(totalCount, 0)}
+                    </p>
+                  </div>
+                  <div className="border border-gray-200 bg-gray-50 rounded-none p-3">
+                    <p className="text-[11px] uppercase tracking-wide text-gray-500 mb-1">
+                      Completion
+                    </p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {progressPct}%
+                    </p>
+                  </div>
+                </div>
                 {expanded && (
-                  <div className="border border-gray-200 rounded-none p-3 bg-gray-50">
+                  <div className="border border-gray-200 rounded-none p-4 bg-gradient-to-b from-gray-50 to-white space-y-3">
                     {totalCount > 0 && (
-                      <div className="mb-3">
-                        <p className="text-xs text-gray-600 mb-1">Progress</p>
+                      <div>
+                        <p className="text-xs text-gray-600 mb-2">Progress</p>
                         <Progress
                           value={
                             totalCount > 0
@@ -2955,68 +3003,93 @@ export default function BrandDashboard() {
                           }
                           className="h-2"
                         />
-                        <p className="text-xs text-gray-600 mt-1">
+                        <p className="text-xs text-gray-600 mt-2">
                           {approvedCount} / {totalCount} deliverables approved
                         </p>
                       </div>
                     )}
                     {downloadedDeliverables.length === 0 ? (
-                      <p className="text-xs text-gray-500">
-                        No downloaded and approved deliverables yet.
-                      </p>
+                      <div className="border border-dashed border-gray-300 bg-white rounded-none p-4">
+                        <p className="text-xs text-gray-500">
+                          No downloaded and approved deliverables yet.
+                        </p>
+                      </div>
                     ) : (
-                      downloadedDeliverables.map((deliverable: any) => {
-                        const assetType = String(
-                          deliverable?.asset_type || "",
-                        ).toLowerCase();
-                        const contentType = String(
-                          deliverable?.meta?.content_type || "",
-                        ).toLowerCase();
-                        const caption = String(
-                          deliverable?.caption ||
-                            deliverable?.meta?.original_name ||
-                            "",
-                        ).toLowerCase();
-                        const assetUrl = String(deliverable?.asset_url || "");
-                        const isImage =
-                          assetType === "image" ||
-                          assetType.startsWith("image/") ||
-                          contentType.startsWith("image/") ||
-                          /\.(png|jpg|jpeg|webp|gif|bmp|svg)(\?.*)?$/i.test(
-                            assetUrl,
-                          ) ||
-                          /\.(png|jpg|jpeg|webp|gif|bmp|svg)$/i.test(caption);
-                        return (
-                          <div
-                            key={String(deliverable?.id)}
-                            className="text-xs text-gray-700 mb-2 border border-gray-100 rounded-md p-2 bg-white"
-                          >
-                            <div>
-                              {String(deliverable?.asset_type || "file")} •{" "}
-                              {String(deliverable?.status || "submitted")}
-                            </div>
-                            {deliverable?.asset_url && (
-                              <div className="mt-2 space-y-2">
-                                {isImage && (
-                                  <img
-                                    src={assetUrl}
-                                    alt={String(
-                                      deliverable?.caption ||
-                                        deliverable?.meta?.original_name ||
-                                        "Deliverable image",
+                      <div className="space-y-3">
+                        {downloadedDeliverables.map(
+                          (deliverable: any, index: number) => {
+                            const assetType = String(
+                              deliverable?.asset_type || "",
+                            ).toLowerCase();
+                            const contentType = String(
+                              deliverable?.meta?.content_type || "",
+                            ).toLowerCase();
+                            const caption = String(
+                              deliverable?.caption ||
+                                deliverable?.meta?.original_name ||
+                                "",
+                            ).toLowerCase();
+                            const assetUrl = String(
+                              deliverable?.asset_url || "",
+                            );
+                            const isImage =
+                              assetType === "image" ||
+                              assetType.startsWith("image/") ||
+                              contentType.startsWith("image/") ||
+                              /\.(png|jpg|jpeg|webp|gif|bmp|svg)(\?.*)?$/i.test(
+                                assetUrl,
+                              ) ||
+                              /\.(png|jpg|jpeg|webp|gif|bmp|svg)$/i.test(
+                                caption,
+                              );
+                            return (
+                              <div
+                                key={String(deliverable?.id)}
+                                className="border border-gray-200 rounded-none p-3 bg-white shadow-sm"
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div>
+                                    <p className="text-sm font-semibold text-gray-900">
+                                      Deliverable {index + 1}
+                                    </p>
+                                    <p className="text-xs text-gray-600 mt-1">
+                                      {String(
+                                        deliverable?.asset_type || "file",
+                                      )}{" "}
+                                      •{" "}
+                                      {String(
+                                        deliverable?.status || "submitted",
+                                      )}
+                                    </p>
+                                  </div>
+                                  <Badge className="bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                    Reviewed
+                                  </Badge>
+                                </div>
+                                {deliverable?.asset_url && (
+                                  <div className="mt-3 space-y-2">
+                                    {isImage && (
+                                      <img
+                                        src={assetUrl}
+                                        alt={String(
+                                          deliverable?.caption ||
+                                            deliverable?.meta?.original_name ||
+                                            "Deliverable image",
+                                        )}
+                                        className="h-32 w-auto max-w-full rounded-none border border-gray-200 object-cover bg-white"
+                                      />
                                     )}
-                                    className="h-28 w-auto max-w-full rounded border border-gray-200 object-cover bg-white"
-                                  />
+                                    <p className="text-xs text-gray-500">
+                                      Reviewed items appear here after download
+                                      and approval.
+                                    </p>
+                                  </div>
                                 )}
-                                <p className="text-xs text-gray-500">
-                                  Reviewed items appear here after download and
-                                  approval.
-                                </p>
                               </div>
-                            )}
-                          </div>
-                        );
-                      })
+                            );
+                          },
+                        )}
+                      </div>
                     )}
                   </div>
                 )}
@@ -3100,7 +3173,7 @@ export default function BrandDashboard() {
         | "draft"
         | "pending_approval"
         | "in_progress"
-        | "completed" = "draft";
+        | "completed" = "pending_approval";
       if (isSigned) {
         if (isAfterEnd || statusRaw === "completed") {
           mappedStatus = "completed";
@@ -3110,7 +3183,7 @@ export default function BrandDashboard() {
           mappedStatus = "in_progress";
         }
       } else {
-        mappedStatus = "draft";
+        mappedStatus = "pending_approval";
       }
       const campaignName =
         String(offer?.brand_campaigns?.name || "").trim() ||

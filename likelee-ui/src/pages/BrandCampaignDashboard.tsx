@@ -158,6 +158,7 @@ export default function BrandCampaignDashboard({
   const [isSendingFromBuilder, setIsSendingFromBuilder] = useState(false);
   const [brandSignUrl, setBrandSignUrl] = useState("");
   const [brandSignOpen, setBrandSignOpen] = useState(false);
+  const [awaitingBrandSignature, setAwaitingBrandSignature] = useState(false);
   const [selectedCreatorsById, setSelectedCreatorsById] = useState<
     Record<string, any>
   >({});
@@ -1005,6 +1006,7 @@ export default function BrandCampaignDashboard({
     setShowCampaignDocuSealBuilder(false);
     setBrandSignOpen(false);
     setBrandSignUrl("");
+    setAwaitingBrandSignature(false);
     setNewCampaignStep(1);
     setBrandCampaignId("");
     setCampaignForm({
@@ -1328,6 +1330,7 @@ export default function BrandCampaignDashboard({
           newCampaignStep >= 5 &&
           (contractDraft.file_url.trim() ||
             contractDraft.docuseal_template_id.trim());
+        let brandSignatureRequested = false;
 
         if (shouldCreateContract && createdOffers.length > 0) {
           let firstBrandSigningUrl = "";
@@ -1370,9 +1373,22 @@ export default function BrandCampaignDashboard({
               description:
                 "Sign as First Party now. Creator (Second Party) signs after your signature.",
             });
+            setAwaitingBrandSignature(true);
             setBrandSignUrl(firstBrandSigningUrl);
             setBrandSignOpen(true);
+            brandSignatureRequested = true;
           }
+        }
+
+        const requiresBrandSignature = brandSignatureRequested;
+        if (requiresBrandSignature) {
+          toast({
+            title: "Offers sent",
+            description:
+              "Complete your brand signature before closing this campaign flow.",
+          });
+          await loadCampaignCards();
+          return;
         }
       } catch (e: any) {
         toast({
@@ -2801,8 +2817,8 @@ export default function BrandCampaignDashboard({
       <Dialog
         open={brandSignOpen}
         onOpenChange={(open) => {
-          if (open) return;
-          setBrandSignOpen(false);
+          if (!open && awaitingBrandSignature) return;
+          setBrandSignOpen(open);
         }}
       >
         <DialogContent className="fixed !inset-0 bg-background w-screen h-screen !max-w-none !translate-x-0 !translate-y-0 !rounded-none border-none p-0 flex flex-col outline-none">
@@ -2822,6 +2838,10 @@ export default function BrandCampaignDashboard({
               type="button"
               onClick={() => {
                 setBrandSignOpen(false);
+                if (awaitingBrandSignature) {
+                  setAwaitingBrandSignature(false);
+                  resetCampaignBuilder();
+                }
               }}
             >
               Done
