@@ -42,7 +42,7 @@ import {
   Menu,
   Building2,
   Edit,
-  Trash2,
+  Archive,
   Upload,
   Send,
   Copy,
@@ -50,6 +50,7 @@ import {
   X,
   ChevronDown,
   Mail,
+  RefreshCw,
 } from "lucide-react";
 import {
   Dialog,
@@ -605,7 +606,8 @@ export default function BrandDashboard() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [campaignView, setCampaignView] = useState("active");
   const [openCampaignModalSignal, setOpenCampaignModalSignal] = useState(0);
-  const [campaignBuilderContext, setCampaignBuilderContext] = useState<any>(null);
+  const [campaignBuilderContext, setCampaignBuilderContext] =
+    useState<any>(null);
   const [campaignHubTab, setCampaignHubTab] = useState<
     "active" | "pending_approval" | "completed" | "inbox"
   >("active");
@@ -620,6 +622,13 @@ export default function BrandDashboard() {
   const [showCreatorProfile, setShowCreatorProfile] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showContractModal, setShowContractModal] = useState(false);
+  const [selectedCampaignContracts, setSelectedCampaignContracts] = useState<
+    any[]
+  >([]);
+  const [
+    loadingSelectedCampaignContracts,
+    setLoadingSelectedCampaignContracts,
+  ] = useState(false);
   const [showUpdateRequestModal, setShowUpdateRequestModal] = useState(false);
   const [updateRequestType, setUpdateRequestType] = useState(null);
   const [showContractHub, setShowContractHub] = useState(false);
@@ -631,9 +640,10 @@ export default function BrandDashboard() {
   const [loadingInboxPackages, setLoadingInboxPackages] = useState(false);
   const [brandOfferItems, setBrandOfferItems] = useState<any[]>([]);
   const [selectedOfferHubId, setSelectedOfferHubId] = useState<string>("");
-  const [selectedOfferHubContracts, setSelectedOfferHubContracts] = useState<any[]>(
-    [],
-  );
+  const [selectedOfferHubContracts, setSelectedOfferHubContracts] = useState<
+    any[]
+  >([]);
+  const [contractHubRows, setContractHubRows] = useState<any[]>([]);
   const [selectedOfferHubDeliverables, setSelectedOfferHubDeliverables] =
     useState<any[]>([]);
   const [usageRightsTab, setUsageRightsTab] = useState("licenses");
@@ -676,7 +686,9 @@ export default function BrandDashboard() {
           "/api/brand/inbox/packages",
         );
         if (!mounted) return;
-        setInboxPackages(Array.isArray(response?.packages) ? response.packages : []);
+        setInboxPackages(
+          Array.isArray(response?.packages) ? response.packages : [],
+        );
       } catch (e) {
         if (!mounted) return;
         setInboxPackages([]);
@@ -694,6 +706,61 @@ export default function BrandDashboard() {
   }, [activeSection]);
 
   useEffect(() => {
+    if (activeSection !== "campaigns-contract-hub") return;
+    let mounted = true;
+    (async () => {
+      try {
+        const rows = (
+          await Promise.all(
+            brandOfferItems.map(async (offer: any) => {
+              const offerId = String(offer?.id || "");
+              if (!offerId) return [];
+              const contractsResp = await base44.get<{ contracts?: any[] }>(
+                `/api/campaign-offers/${offerId}/contracts`,
+              );
+              const contracts = Array.isArray(contractsResp?.contracts)
+                ? contractsResp.contracts
+                : [];
+              const refreshedContracts = await Promise.all(
+                contracts.map(async (contract: any) => {
+                  const contractId = String(contract?.id || "").trim();
+                  if (!contractId) return contract;
+                  try {
+                    const refreshed = await base44.post<{ contract?: any }>(
+                      `/api/campaign-offers/${offerId}/contracts/${contractId}/refresh`,
+                      {},
+                    );
+                    return refreshed?.contract || contract;
+                  } catch {
+                    return contract;
+                  }
+                }),
+              );
+              return refreshedContracts.map((c: any) => ({
+                ...c,
+                offer_id: offerId,
+                campaign_name: String(
+                  offer?.brand_campaigns?.name ||
+                    offer?.offer_title ||
+                    "Campaign offer",
+                ),
+              }));
+            }),
+          )
+        ).flat();
+        if (!mounted) return;
+        setContractHubRows(rows);
+      } catch {
+        if (!mounted) return;
+        setContractHubRows([]);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [activeSection, brandOfferItems]);
+
+  useEffect(() => {
     if (
       activeSection !== "campaign-offers" &&
       activeSection !== "campaigns-contract-hub" &&
@@ -709,7 +776,9 @@ export default function BrandDashboard() {
           { params: { limit: 120 } },
         );
         if (!mounted) return;
-        setBrandOfferItems(Array.isArray(response?.offers) ? response.offers : []);
+        setBrandOfferItems(
+          Array.isArray(response?.offers) ? response.offers : [],
+        );
       } catch {
         if (!mounted) return;
         setBrandOfferItems([]);
@@ -2386,7 +2455,9 @@ export default function BrandDashboard() {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="text-2xl font-bold text-gray-900">
-                      {pkg.title || pkg.campaign_offers?.offer_title || "Talent package"}
+                      {pkg.title ||
+                        pkg.campaign_offers?.offer_title ||
+                        "Talent package"}
                     </h3>
                     {String(pkg?.status || "") === "sent" && (
                       <Badge className="bg-black text-white text-[10px] uppercase rounded-sm">
@@ -2412,7 +2483,9 @@ export default function BrandDashboard() {
                 </Badge>
               </div>
               {pkg?.message && (
-                <p className="text-gray-700 italic mb-4">"{String(pkg.message)}"</p>
+                <p className="text-gray-700 italic mb-4">
+                  "{String(pkg.message)}"
+                </p>
               )}
 
               <div className="flex gap-2">
@@ -2431,7 +2504,9 @@ export default function BrandDashboard() {
                         "/api/brand/inbox/packages",
                       );
                       setInboxPackages(
-                        Array.isArray(response?.packages) ? response.packages : [],
+                        Array.isArray(response?.packages)
+                          ? response.packages
+                          : [],
                       );
                       toast({
                         title: "Package submitted",
@@ -2489,14 +2564,32 @@ export default function BrandDashboard() {
     }
     try {
       const [contractsResp, deliverablesResp] = await Promise.all([
-        base44.get<{ contracts?: any[] }>(`/api/campaign-offers/${offerId}/contracts`),
+        base44.get<{ contracts?: any[] }>(
+          `/api/campaign-offers/${offerId}/contracts`,
+        ),
         base44.get<{ deliverables?: any[] }>(
           `/api/campaign-offers/${offerId}/deliverables`,
         ),
       ]);
-      setSelectedOfferHubContracts(
-        Array.isArray(contractsResp?.contracts) ? contractsResp.contracts : [],
+      const contracts = Array.isArray(contractsResp?.contracts)
+        ? contractsResp.contracts
+        : [];
+      const refreshedContracts = await Promise.all(
+        contracts.map(async (contract: any) => {
+          const contractId = String(contract?.id || "").trim();
+          if (!contractId) return contract;
+          try {
+            const refreshed = await base44.post<{ contract?: any }>(
+              `/api/campaign-offers/${offerId}/contracts/${contractId}/refresh`,
+              {},
+            );
+            return refreshed?.contract || contract;
+          } catch {
+            return contract;
+          }
+        }),
       );
+      setSelectedOfferHubContracts(refreshedContracts);
       setSelectedOfferHubDeliverables(
         Array.isArray(deliverablesResp?.deliverables)
           ? deliverablesResp.deliverables
@@ -2507,66 +2600,263 @@ export default function BrandDashboard() {
       setSelectedOfferHubDeliverables([]);
     }
   };
+  const loadCampaignContractsForOffer = async (offerId: string) => {
+    if (!offerId) {
+      setSelectedCampaignContracts([]);
+      return;
+    }
+    try {
+      setLoadingSelectedCampaignContracts(true);
+      const response = await base44.get<{ contracts?: any[] }>(
+        `/api/campaign-offers/${offerId}/contracts`,
+      );
+      const contracts = Array.isArray(response?.contracts)
+        ? response.contracts
+        : [];
+      setSelectedCampaignContracts(contracts);
+    } catch {
+      setSelectedCampaignContracts([]);
+    } finally {
+      setLoadingSelectedCampaignContracts(false);
+    }
+  };
+  const resolveDeliverableFileName = (deliverable: any) => {
+    const fromCaption = String(deliverable?.caption || "").trim();
+    if (fromCaption) return fromCaption;
+    const fromOriginal = String(deliverable?.meta?.original_name || "").trim();
+    if (fromOriginal) return fromOriginal;
+    return "deliverable";
+  };
+  const downloadOfferHubDeliverable = async (
+    offerId: string,
+    deliverable: any,
+  ) => {
+    const deliverableId = String(deliverable?.id || "").trim();
+    const assetUrl = String(deliverable?.asset_url || "").trim();
+    if (!offerId || !deliverableId || !assetUrl) {
+      toast({
+        title: "Download unavailable",
+        description: "Missing deliverable file URL.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    try {
+      const response = await fetch(assetUrl);
+      if (!response.ok) {
+        throw new Error("Failed to fetch deliverable file.");
+      }
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = resolveDeliverableFileName(deliverable);
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+      await base44.post(
+        `/api/campaign-offers/${encodeURIComponent(offerId)}/deliverables/${encodeURIComponent(deliverableId)}/downloaded`,
+        {},
+      );
+      toast({ title: "Download started" });
+      await loadOfferHubDetails(offerId);
+    } catch (e: any) {
+      toast({
+        title: "Download failed",
+        description: e?.message || "Please try again.",
+        variant: "destructive" as any,
+      });
+    }
+  };
+  const formatHubDate = (value: unknown) => {
+    const raw = String(value || "").trim();
+    if (!raw) return "N/A";
+    const dt = new Date(raw);
+    if (Number.isNaN(dt.getTime())) return raw;
+    return dt.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+  const contractStatusBadgeClass = (statusRaw: unknown) => {
+    const status = String(statusRaw || "").toLowerCase();
+    if (status === "signed") {
+      return "inline-flex min-w-28 items-center rounded-md border border-emerald-300 bg-emerald-100 px-2.5 py-1 text-emerald-700 font-semibold";
+    }
+    if (status === "sent") {
+      return "inline-flex min-w-28 items-center rounded-md border border-blue-300 bg-blue-100 px-2.5 py-1 text-blue-700 font-semibold";
+    }
+    if (status === "opened") {
+      return "inline-flex min-w-28 items-center rounded-md border border-amber-300 bg-amber-100 px-2.5 py-1 text-amber-700 font-semibold";
+    }
+    if (status === "declined" || status === "rejected") {
+      return "inline-flex min-w-28 items-center rounded-md border border-red-300 bg-red-100 px-2.5 py-1 text-red-700 font-semibold";
+    }
+    return "inline-flex min-w-28 items-center rounded-md border border-gray-300 bg-white px-2.5 py-1 text-gray-700 font-semibold";
+  };
+  const formatContractStatusLabel = (statusRaw: unknown) =>
+    String(statusRaw || "sent")
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (m) => m.toUpperCase());
 
   const renderCampaignContractHub = () => (
     <div className="space-y-5">
       <div>
         <h2 className="text-3xl font-bold text-gray-900 mb-1">Contract Hub</h2>
-        <p className="text-gray-600">Review contracts sent for campaign offers.</p>
+        <p className="text-gray-600">Campaign contracts and signing status.</p>
       </div>
-      <div className="space-y-3">
-        {brandOfferItems.length === 0 && (
-          <Card className="p-6 bg-white border border-gray-300 rounded-none">
-            <p className="text-sm text-gray-500">No offer contracts available yet.</p>
-          </Card>
-        )}
-        {brandOfferItems.map((offer: any) => {
-          const offerId = String(offer?.id || "");
-          const expanded = selectedOfferHubId === offerId;
-          return (
-            <Card
-              key={offerId}
-              className="p-4 bg-white border border-gray-300 rounded-none space-y-2"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <p className="font-semibold text-gray-900">
-                    {offer?.brand_campaigns?.name || "Campaign offer"}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {String(offer?.status || "sent").replace(/_/g, " ")}
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  className="border border-gray-300 rounded-none"
-                  onClick={async () => {
-                    const next = expanded ? "" : offerId;
-                    setSelectedOfferHubId(next);
-                    await loadOfferHubDetails(next);
-                  }}
-                >
-                  {expanded ? "Hide" : "View Contracts"}
-                </Button>
-              </div>
-              {expanded && (
-                <div className="border border-gray-200 rounded-none p-3 bg-gray-50">
-                  {selectedOfferHubContracts.length === 0 ? (
-                    <p className="text-xs text-gray-500">No contracts found.</p>
-                  ) : (
-                    selectedOfferHubContracts.map((contract: any) => (
-                      <div key={String(contract?.id)} className="text-xs text-gray-700 mb-1">
-                        {String(contract?.title || "Contract")} •{" "}
-                        {String(contract?.docuseal_status || "draft")}
+      <Card className="p-4 bg-white border border-gray-300 rounded-none">
+        {contractHubRows.length === 0 ? (
+          <p className="text-sm text-gray-500">No contract submissions yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm text-left text-gray-700">
+              <thead className="border-b border-gray-200 text-gray-800">
+                <tr>
+                  <th className="px-2 py-2">Campaign Name</th>
+                  <th className="px-2 py-2">Template</th>
+                  <th className="px-2 py-2">Status</th>
+                  <th className="px-2 py-2">Sent Date</th>
+                  <th className="px-2 py-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contractHubRows.map((row: any) => (
+                  <tr
+                    key={String(row?.id)}
+                    className="border-b border-gray-100"
+                  >
+                    <td className="px-2 py-2 font-medium text-gray-900">
+                      {String(row?.campaign_name || "Campaign offer")}
+                    </td>
+                    <td className="px-2 py-2 text-gray-700">
+                      {String(
+                        row?.title ||
+                          `Template ${String(row?.docuseal_template_id || "N/A")}`,
+                      )}
+                    </td>
+                    <td className="px-2 py-2">
+                      <span
+                        className={contractStatusBadgeClass(
+                          row?.docuseal_status,
+                        )}
+                      >
+                        {String(row?.docuseal_status || "").toLowerCase() ===
+                          "sent" && <Mail className="h-3.5 w-3.5 mr-1.5" />}
+                        {String(row?.docuseal_status || "").toLowerCase() ===
+                          "signed" && (
+                          <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                        )}
+                        {formatContractStatusLabel(row?.docuseal_status)}
+                      </span>
+                    </td>
+                    <td className="px-2 py-2">
+                      {formatHubDate(row?.sent_at || row?.created_at)}
+                    </td>
+                    <td className="px-2 py-2">
+                      <div className="flex items-center gap-3">
+                        <button
+                          className="text-blue-600 hover:text-blue-700"
+                          title="Resend"
+                          aria-label="Resend"
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await base44.post(
+                                `/api/campaign-offers/${encodeURIComponent(String(row?.offer_id || ""))}/contracts/send`,
+                                { contract_id: String(row?.id || "") },
+                              );
+                              const refreshed = await base44.get<{
+                                contracts?: any[];
+                              }>(
+                                `/api/campaign-offers/${encodeURIComponent(String(row?.offer_id || ""))}/contracts`,
+                              );
+                              const refreshedContracts = Array.isArray(
+                                refreshed?.contracts,
+                              )
+                                ? refreshed.contracts
+                                : [];
+                              setContractHubRows((prev) =>
+                                prev.map((existing: any) => {
+                                  if (String(existing?.id) !== String(row?.id))
+                                    return existing;
+                                  const fresh = refreshedContracts.find(
+                                    (c: any) =>
+                                      String(c?.id) === String(row?.id),
+                                  );
+                                  return fresh
+                                    ? {
+                                        ...fresh,
+                                        offer_id: existing?.offer_id,
+                                        campaign_name: existing?.campaign_name,
+                                      }
+                                    : existing;
+                                }),
+                              );
+                              toast({ title: "Contract resent" });
+                            } catch (e: any) {
+                              toast({
+                                title: "Resend failed",
+                                description: e?.message || "Please try again.",
+                                variant: "destructive" as any,
+                              });
+                            }
+                          }}
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </button>
+                        <button
+                          className="text-red-600 hover:text-red-700"
+                          title="Archive"
+                          aria-label="Archive"
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await base44.post(
+                                `/api/campaign-offers/${encodeURIComponent(String(row?.offer_id || ""))}/contracts/${encodeURIComponent(String(row?.id || ""))}/archive`,
+                                {},
+                              );
+                              setContractHubRows((prev) =>
+                                prev.filter(
+                                  (x: any) => String(x?.id) !== String(row?.id),
+                                ),
+                              );
+                              toast({ title: "Contract archived" });
+                            } catch (e: any) {
+                              toast({
+                                title: "Archive failed",
+                                description: e?.message || "Please try again.",
+                                variant: "destructive" as any,
+                              });
+                            }
+                          }}
+                        >
+                          <Archive className="h-4 w-4" />
+                        </button>
+                        {row?.meta?.docuseal_document_url && (
+                          <a
+                            href={String(row.meta.docuseal_document_url)}
+                            target="_blank"
+                            rel="noreferrer"
+                            download
+                            title="Download"
+                            aria-label="Download"
+                            className="text-blue-700 hover:text-blue-800"
+                          >
+                            <Download className="h-4 w-4" />
+                          </a>
+                        )}
                       </div>
-                    ))
-                  )}
-                </div>
-              )}
-            </Card>
-          );
-        })}
-      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
     </div>
   );
 
@@ -2574,63 +2864,165 @@ export default function BrandDashboard() {
     <div className="space-y-5">
       <div>
         <h2 className="text-3xl font-bold text-gray-900 mb-1">Deliverables</h2>
-        <p className="text-gray-600">Track deliverables submitted for campaign offers.</p>
+        <p className="text-gray-600">
+          Track deliverables submitted for campaign offers.
+        </p>
       </div>
       <div className="space-y-3">
-        {brandOfferItems.length === 0 && (
+        {brandOfferItems.filter((offer: any) =>
+          [
+            "sent",
+            "accepted",
+            "contract_sent",
+            "contract_partially_signed",
+            "contract_fully_signed",
+            "deliverables_submitted",
+            "changes_requested",
+            "in_review",
+            "approved",
+          ].includes(String(offer?.status || "").toLowerCase()),
+        ).length === 0 && (
           <Card className="p-6 bg-white border border-gray-300 rounded-none">
-            <p className="text-sm text-gray-500">No deliverables available yet.</p>
+            <p className="text-sm text-gray-500">
+              No ongoing campaign deliverables yet.
+            </p>
           </Card>
         )}
-        {brandOfferItems.map((offer: any) => {
-          const offerId = String(offer?.id || "");
-          const expanded = selectedOfferHubId === offerId;
-          return (
-            <Card
-              key={offerId}
-              className="p-4 bg-white border border-gray-300 rounded-none space-y-2"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <p className="font-semibold text-gray-900">
-                    {offer?.brand_campaigns?.name || "Campaign offer"}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {String(offer?.status || "sent").replace(/_/g, " ")}
-                  </p>
+        {brandOfferItems
+          .filter((offer: any) =>
+            [
+              "sent",
+              "accepted",
+              "contract_sent",
+              "contract_partially_signed",
+              "contract_fully_signed",
+              "deliverables_submitted",
+              "changes_requested",
+              "in_review",
+              "approved",
+            ].includes(String(offer?.status || "").toLowerCase()),
+          )
+          .map((offer: any) => {
+            const offerId = String(offer?.id || "");
+            const expanded = selectedOfferHubId === offerId;
+            const downloadedDeliverables = selectedOfferHubDeliverables.filter(
+              (d: any) =>
+                Boolean(d?.meta?.brand_downloaded_at) &&
+                ["approved", "accepted"].includes(
+                  String(d?.status || "").toLowerCase(),
+                ),
+            );
+            const approvedCount = downloadedDeliverables.filter(
+              (d: any) => String(d?.status || "").toLowerCase() === "approved",
+            ).length;
+            const totalCount = downloadedDeliverables.length;
+            return (
+              <Card
+                key={offerId}
+                className="p-4 bg-white border border-gray-300 rounded-none space-y-2"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <p className="font-semibold text-gray-900">
+                      {offer?.brand_campaigns?.name || "Campaign offer"}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {String(offer?.status || "sent").replace(/_/g, " ")}
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="border border-gray-300 rounded-none"
+                    onClick={async () => {
+                      const next = expanded ? "" : offerId;
+                      setSelectedOfferHubId(next);
+                      await loadOfferHubDetails(next);
+                    }}
+                  >
+                    {expanded ? "Hide" : "View Details"}
+                  </Button>
                 </div>
-                <Button
-                  variant="outline"
-                  className="border border-gray-300 rounded-none"
-                  onClick={async () => {
-                    const next = expanded ? "" : offerId;
-                    setSelectedOfferHubId(next);
-                    await loadOfferHubDetails(next);
-                  }}
-                >
-                  {expanded ? "Hide" : "View Deliverables"}
-                </Button>
-              </div>
-              {expanded && (
-                <div className="border border-gray-200 rounded-none p-3 bg-gray-50">
-                  {selectedOfferHubDeliverables.length === 0 ? (
-                    <p className="text-xs text-gray-500">No deliverables found.</p>
-                  ) : (
-                    selectedOfferHubDeliverables.map((deliverable: any) => (
-                      <div
-                        key={String(deliverable?.id)}
-                        className="text-xs text-gray-700 mb-1"
-                      >
-                        {String(deliverable?.asset_type || "file")} •{" "}
-                        {String(deliverable?.status || "submitted")}
+                {expanded && (
+                  <div className="border border-gray-200 rounded-none p-3 bg-gray-50">
+                    {totalCount > 0 && (
+                      <div className="mb-3">
+                        <p className="text-xs text-gray-600 mb-1">Progress</p>
+                        <Progress
+                          value={
+                            totalCount > 0
+                              ? (approvedCount / totalCount) * 100
+                              : 0
+                          }
+                          className="h-2"
+                        />
+                        <p className="text-xs text-gray-600 mt-1">
+                          {approvedCount} / {totalCount} deliverables approved
+                        </p>
                       </div>
-                    ))
-                  )}
-                </div>
-              )}
-            </Card>
-          );
-        })}
+                    )}
+                    {downloadedDeliverables.length === 0 ? (
+                      <p className="text-xs text-gray-500">
+                        No downloaded and approved deliverables yet.
+                      </p>
+                    ) : (
+                      downloadedDeliverables.map((deliverable: any) => {
+                        const assetType = String(
+                          deliverable?.asset_type || "",
+                        ).toLowerCase();
+                        const contentType = String(
+                          deliverable?.meta?.content_type || "",
+                        ).toLowerCase();
+                        const caption = String(
+                          deliverable?.caption ||
+                            deliverable?.meta?.original_name ||
+                            "",
+                        ).toLowerCase();
+                        const assetUrl = String(deliverable?.asset_url || "");
+                        const isImage =
+                          assetType === "image" ||
+                          assetType.startsWith("image/") ||
+                          contentType.startsWith("image/") ||
+                          /\.(png|jpg|jpeg|webp|gif|bmp|svg)(\?.*)?$/i.test(
+                            assetUrl,
+                          ) ||
+                          /\.(png|jpg|jpeg|webp|gif|bmp|svg)$/i.test(caption);
+                        return (
+                          <div
+                            key={String(deliverable?.id)}
+                            className="text-xs text-gray-700 mb-2 border border-gray-100 rounded-md p-2 bg-white"
+                          >
+                            <div>
+                              {String(deliverable?.asset_type || "file")} •{" "}
+                              {String(deliverable?.status || "submitted")}
+                            </div>
+                            {deliverable?.asset_url && (
+                              <div className="mt-2 space-y-2">
+                                {isImage && (
+                                  <img
+                                    src={assetUrl}
+                                    alt={String(
+                                      deliverable?.caption ||
+                                        deliverable?.meta?.original_name ||
+                                        "Deliverable image",
+                                    )}
+                                    className="h-28 w-auto max-w-full rounded border border-gray-200 object-cover bg-white"
+                                  />
+                                )}
+                                <p className="text-xs text-gray-500">
+                                  Reviewed items appear here after download and
+                                  approval.
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
+              </Card>
+            );
+          })}
       </div>
     </div>
   );
@@ -2654,7 +3046,8 @@ export default function BrandDashboard() {
         objective: campaign?.objective || "",
         start_date: campaign?.due_date || "",
         brief_snapshot:
-          campaign?.brief_snapshot && typeof campaign.brief_snapshot === "object"
+          campaign?.brief_snapshot &&
+          typeof campaign.brief_snapshot === "object"
             ? campaign.brief_snapshot
             : {},
         startStep: 3,
@@ -2665,32 +3058,80 @@ export default function BrandDashboard() {
 
     const campaignsForOffers = brandOfferItems.map((offer: any) => {
       const statusRaw = String(offer?.status || "sent").toLowerCase();
-      const mappedStatus =
-        statusRaw === "completed" || statusRaw === "signed"
-          ? "completed"
-          : statusRaw === "pending_approval"
-            ? "pending_approval"
-            : statusRaw === "draft"
-              ? "draft"
-              : "in_progress";
+      const signedStatuses = new Set([
+        "contract_fully_signed",
+        "signed",
+        "in_execution",
+        "deliverables_submitted",
+        "in_review",
+        "changes_requested",
+        "approved",
+        "completed",
+      ]);
+      const isSigned = signedStatuses.has(statusRaw);
+      const startDateRaw = String(
+        offer?.brand_campaigns?.start_date || "",
+      ).trim();
+      const startDate = /^\d{4}-\d{2}-\d{2}$/.test(startDateRaw)
+        ? new Date(`${startDateRaw}T00:00:00`)
+        : null;
+      const durationDaysRaw = Number(
+        offer?.brand_campaigns?.duration_days || 0,
+      );
+      const durationDays =
+        Number.isFinite(durationDaysRaw) && durationDaysRaw > 0
+          ? durationDaysRaw
+          : 30;
+      const endDate = startDate
+        ? new Date(
+            startDate.getTime() + (durationDays - 1) * 24 * 60 * 60 * 1000,
+          )
+        : null;
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const isBeforeStart = Boolean(
+        startDate && today.getTime() < startDate.getTime(),
+      );
+      const isAfterEnd = Boolean(
+        endDate && today.getTime() > endDate.getTime(),
+      );
+
+      let mappedStatus:
+        | "draft"
+        | "pending_approval"
+        | "in_progress"
+        | "completed" = "draft";
+      if (isSigned) {
+        if (isAfterEnd || statusRaw === "completed") {
+          mappedStatus = "completed";
+        } else if (isBeforeStart) {
+          mappedStatus = "pending_approval";
+        } else {
+          mappedStatus = "in_progress";
+        }
+      } else {
+        mappedStatus = "draft";
+      }
       const campaignName =
         String(offer?.brand_campaigns?.name || "").trim() ||
         String(offer?.offer_title || "").trim() ||
         "Campaign Offer";
-      const startDate =
+      const formattedStartDate =
         String(offer?.brand_campaigns?.start_date || "").trim() ||
         new Date().toISOString().slice(0, 10);
       const collaboratorLabel =
-        offer?.target_type === "agency"
+        String(offer?.target_name || "").trim() ||
+        (offer?.target_type === "agency"
           ? "Agency"
           : offer?.target_type === "creator"
             ? "Creator"
-            : "Collaborator";
+            : "Collaborator");
       return {
         id: String(offer?.id || Math.random()),
         offer_id: String(offer?.id || ""),
-        brand_campaign_id:
-          String(offer?.brand_campaign_id || offer?.brand_campaigns?.id || "").trim(),
+        brand_campaign_id: String(
+          offer?.brand_campaign_id || offer?.brand_campaigns?.id || "",
+        ).trim(),
         name: campaignName,
         status: mappedStatus,
         objective:
@@ -2698,9 +3139,11 @@ export default function BrandDashboard() {
           "Campaign offer",
         budget: 0,
         creators: [collaboratorLabel],
-        creatorAvatars: ["/favicon.svg"],
+        creatorAvatars: [
+          String(offer?.target_avatar_url || "").trim() || "/favicon.svg",
+        ],
         channels: [],
-        due_date: startDate,
+        due_date: formattedStartDate,
         assets_delivered: 0,
         last_update: offer?.updated_at
           ? new Date(String(offer.updated_at)).toLocaleString()
@@ -2722,7 +3165,9 @@ export default function BrandDashboard() {
     });
 
     if (selectedCampaign) {
-      const campaign = campaignsForOffers.find((c) => c.id === selectedCampaign);
+      const campaign = campaignsForOffers.find(
+        (c) => c.id === selectedCampaign,
+      );
       if (!campaign) {
         return (
           <div className="space-y-6">
@@ -2743,7 +3188,8 @@ export default function BrandDashboard() {
 
       if (showBriefDetails) {
         const brief =
-          campaign?.brief_snapshot && typeof campaign.brief_snapshot === "object"
+          campaign?.brief_snapshot &&
+          typeof campaign.brief_snapshot === "object"
             ? campaign.brief_snapshot
             : {};
         const briefValue = (key: string, fallback = "Not specified") => {
@@ -2766,6 +3212,17 @@ export default function BrandDashboard() {
         const brandAssets = Array.isArray(brief?.brand_assets)
           ? brief.brand_assets
           : [];
+        const requiredDeliverablesText = (() => {
+          const direct = String(brief?.required_deliverables || "").trim();
+          if (direct) return direct;
+          const legacy = [
+            brief?.deliverables_reels,
+            brief?.deliverables_hero_image,
+          ]
+            .map((entry) => String(entry || "").trim())
+            .filter(Boolean);
+          return legacy.length > 0 ? legacy.join("\n") : "Not specified";
+        })();
 
         return (
           <div className="space-y-6">
@@ -2810,12 +3267,16 @@ export default function BrandDashboard() {
               </div>
 
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-slate-800">Key Messages</h3>
+                <h3 className="text-lg font-semibold text-slate-800">
+                  Key Messages
+                </h3>
                 <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
                   {briefLines("key_messages").length > 0 ? (
                     <ul className="list-disc pl-5 space-y-1 text-slate-900">
                       {briefLines("key_messages").map((line, idx) => (
-                        <li key={`key-message-${idx}`}>{line.replace(/^[•-]\s*/, "")}</li>
+                        <li key={`key-message-${idx}`}>
+                          {line.replace(/^[•-]\s*/, "")}
+                        </li>
                       ))}
                     </ul>
                   ) : (
@@ -2845,14 +3306,18 @@ export default function BrandDashboard() {
               </div>
 
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-slate-800">Do&apos;s &amp; Don&apos;ts</h3>
+                <h3 className="text-lg font-semibold text-slate-800">
+                  Do&apos;s &amp; Don&apos;ts
+                </h3>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
                     <p className="font-semibold text-emerald-900 mb-2">✓ DO:</p>
                     {briefLines("dos").length > 0 ? (
                       <ul className="list-disc pl-5 space-y-1 text-emerald-900">
                         {briefLines("dos").map((line, idx) => (
-                          <li key={`dos-${idx}`}>{line.replace(/^[•-]\s*/, "")}</li>
+                          <li key={`dos-${idx}`}>
+                            {line.replace(/^[•-]\s*/, "")}
+                          </li>
                         ))}
                       </ul>
                     ) : (
@@ -2860,11 +3325,15 @@ export default function BrandDashboard() {
                     )}
                   </div>
                   <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="font-semibold text-red-900 mb-2">✗ DON&apos;T:</p>
+                    <p className="font-semibold text-red-900 mb-2">
+                      ✗ DON&apos;T:
+                    </p>
                     {briefLines("donts").length > 0 ? (
                       <ul className="list-disc pl-5 space-y-1 text-red-900">
                         {briefLines("donts").map((line, idx) => (
-                          <li key={`donts-${idx}`}>{line.replace(/^[•-]\s*/, "")}</li>
+                          <li key={`donts-${idx}`}>
+                            {line.replace(/^[•-]\s*/, "")}
+                          </li>
                         ))}
                       </ul>
                     ) : (
@@ -2880,24 +3349,19 @@ export default function BrandDashboard() {
                 Visual Requirements &amp; Style Guide
               </h2>
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-slate-800">Required Deliverables</h3>
-                <div className="space-y-3">
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                    <p className="font-semibold text-slate-900 mb-1">Instagram Reels</p>
-                    <p className="text-slate-900 whitespace-pre-wrap">
-                      {briefValue("deliverables_reels")}
-                    </p>
-                  </div>
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                    <p className="font-semibold text-slate-900 mb-1">Hero Image</p>
-                    <p className="text-slate-900 whitespace-pre-wrap">
-                      {briefValue("deliverables_hero_image")}
-                    </p>
-                  </div>
+                <h3 className="text-lg font-semibold text-slate-800">
+                  Required Deliverables
+                </h3>
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                  <p className="text-slate-900 whitespace-pre-wrap">
+                    {requiredDeliverablesText}
+                  </p>
                 </div>
               </div>
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-slate-800">Visual Style &amp; Aesthetic</h3>
+                <h3 className="text-lg font-semibold text-slate-800">
+                  Visual Style &amp; Aesthetic
+                </h3>
                 <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
                   <p className="text-slate-900">
                     <span className="font-semibold">Color Palette:</span>{" "}
@@ -2918,11 +3382,16 @@ export default function BrandDashboard() {
                 </div>
               </div>
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-slate-800">Reference Images</h3>
+                <h3 className="text-lg font-semibold text-slate-800">
+                  Reference Images
+                </h3>
                 {referenceImages.length > 0 ? (
                   <div className="grid md:grid-cols-3 gap-3">
                     {referenceImages.map((img: any, idx: number) => (
-                      <div key={`ref-img-${idx}`} className="border border-gray-200 rounded-lg overflow-hidden">
+                      <div
+                        key={`ref-img-${idx}`}
+                        className="border border-gray-200 rounded-lg overflow-hidden"
+                      >
                         <img
                           src={String(img?.url || "")}
                           alt={`Ref ${idx + 1}`}
@@ -2941,7 +3410,9 @@ export default function BrandDashboard() {
                 )}
               </div>
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-slate-800">Brand Assets Provided</h3>
+                <h3 className="text-lg font-semibold text-slate-800">
+                  Brand Assets Provided
+                </h3>
                 {brandAssets.length > 0 ? (
                   <div className="space-y-2">
                     {brandAssets.map((asset: any, idx: number) => (
@@ -2965,7 +3436,9 @@ export default function BrandDashboard() {
                             <Download className="w-4 h-4" />
                           </a>
                         ) : (
-                          <span className="text-xs text-slate-500">No file URL</span>
+                          <span className="text-xs text-slate-500">
+                            No file URL
+                          </span>
                         )}
                       </div>
                     ))}
@@ -3036,16 +3509,22 @@ export default function BrandDashboard() {
                   {briefValue("revision_major_changes")}
                 </p>
                 <p className="text-slate-900">
-                  <span className="font-semibold">Turnaround for Revisions:</span>{" "}
+                  <span className="font-semibold">
+                    Turnaround for Revisions:
+                  </span>{" "}
                   {briefValue("revision_turnaround")}
                 </p>
               </div>
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                <p className="font-semibold text-slate-900 mb-2">Approval Process</p>
+                <p className="font-semibold text-slate-900 mb-2">
+                  Approval Process
+                </p>
                 {briefLines("approval_process").length > 0 ? (
                   <ol className="list-decimal pl-5 space-y-1 text-slate-900">
                     {briefLines("approval_process").map((line, idx) => (
-                      <li key={`approval-${idx}`}>{line.replace(/^[•-]?\s*\d*\s*/, "")}</li>
+                      <li key={`approval-${idx}`}>
+                        {line.replace(/^[•-]?\s*\d*\s*/, "")}
+                      </li>
                     ))}
                   </ol>
                 ) : (
@@ -3053,7 +3532,9 @@ export default function BrandDashboard() {
                 )}
               </div>
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
-                <p className="font-semibold text-slate-900 mb-1">Watermark &amp; Protection</p>
+                <p className="font-semibold text-slate-900 mb-1">
+                  Watermark &amp; Protection
+                </p>
                 <p className="text-slate-900 whitespace-pre-wrap">
                   {briefValue("watermark_protection")}
                 </p>
@@ -3063,7 +3544,9 @@ export default function BrandDashboard() {
                 {briefLines("legal_terms").length > 0 ? (
                   <ul className="list-disc pl-5 space-y-1 text-slate-900">
                     {briefLines("legal_terms").map((line, idx) => (
-                      <li key={`legal-${idx}`}>{line.replace(/^[•-]\s*/, "")}</li>
+                      <li key={`legal-${idx}`}>
+                        {line.replace(/^[•-]\s*/, "")}
+                      </li>
                     ))}
                   </ul>
                 ) : (
@@ -3087,7 +3570,7 @@ export default function BrandDashboard() {
 
       return (
         <div className="space-y-6">
-          <div className="flex items-center gap-4">
+          <div className="space-y-3">
             <Button
               variant="outline"
               onClick={() => setSelectedCampaign(null)}
@@ -3120,14 +3603,6 @@ export default function BrandDashboard() {
                 {campaign.status.replace("_", " ")}
               </Badge>
               <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  className="border-2 border-gray-300"
-                  onClick={() => setShowContractModal(true)}
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  View Contract
-                </Button>
                 <div className="text-right">
                   <p className="text-sm text-gray-600">Due Date</p>
                   <p className="font-bold text-gray-900">
@@ -3223,66 +3698,10 @@ export default function BrandDashboard() {
                   <p className="font-semibold text-gray-900">
                     {campaign.creators[0]}
                   </p>
-                  <p className="text-sm text-gray-600">★★★★★ 4.9</p>
                 </div>
               </div>
-              <Button
-                variant="outline"
-                className="w-full border-2 border-gray-300 mb-2"
-              >
-                Message Talent
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full border-2 border-blue-300 text-blue-600"
-                onClick={() => setShowBriefDetails(true)}
-              >
-                Share Brief with Talent
-              </Button>
             </Card>
           </div>
-
-          {/* Deliverables Section */}
-          {campaign.status === "pending_approval" && (
-            <Card className="p-6 bg-white border border-yellow-300 border-2">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-gray-900">
-                  Review Deliverables
-                </h3>
-                <Badge className="bg-yellow-100 text-yellow-700 border border-yellow-300">
-                  <Clock className="w-4 h-4 mr-1" />
-                  48h to approve
-                </Badge>
-              </div>
-              <div className="grid md:grid-cols-3 gap-4 mb-6">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="relative">
-                    <img
-                      src={`https://images.unsplash.com/photo-${1540202404 + i}-d0c7fe46a087?w=400`}
-                      alt={`Asset ${i}`}
-                      className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
-                    />
-                    <Badge className="absolute top-2 right-2 bg-green-500 text-white">
-                      <CheckCircle2 className="w-3 h-3 mr-1" />
-                      Watermarked
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-3">
-                <Button className="flex-1 bg-green-600 hover:bg-green-700 text-white">
-                  <CheckCircle2 className="w-5 h-5 mr-2" />
-                  Approve Deliverables
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 border-2 border-gray-300"
-                >
-                  Request Revisions
-                </Button>
-              </div>
-            </Card>
-          )}
 
           {/* Contract Update Section */}
           <Card className="p-6 bg-white border border-gray-200">
@@ -3296,17 +3715,15 @@ export default function BrandDashboard() {
               <Button
                 variant="outline"
                 className="flex-1 border-2 border-gray-300"
-                onClick={() => setShowContractModal(true)}
+                onClick={async () => {
+                  await loadCampaignContractsForOffer(
+                    String(campaign.offer_id || ""),
+                  );
+                  setShowContractModal(true);
+                }}
               >
                 <FileText className="w-4 h-4 mr-2" />
                 View Full Contract
-              </Button>
-              <Button
-                className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
-                onClick={() => setShowUpdateRequestModal(true)}
-              >
-                <Edit className="w-4 h-4 mr-2" />
-                Request Contract Update
               </Button>
             </div>
           </Card>
@@ -3334,7 +3751,10 @@ export default function BrandDashboard() {
             }`}
           >
             Active (
-            {campaignsForOffers.filter((c) => c.status === "in_progress").length}
+            {
+              campaignsForOffers.filter((c) => c.status === "in_progress")
+                .length
+            }
             )
           </button>
           <button
@@ -3346,7 +3766,10 @@ export default function BrandDashboard() {
             }`}
           >
             Pending Approval (
-            {campaignsForOffers.filter((c) => c.status === "pending_approval").length}
+            {
+              campaignsForOffers.filter((c) => c.status === "pending_approval")
+                .length
+            }
             )
           </button>
           <button
@@ -3358,8 +3781,7 @@ export default function BrandDashboard() {
             }`}
           >
             Completed (
-            {campaignsForOffers.filter((c) => c.status === "completed").length}
-            )
+            {campaignsForOffers.filter((c) => c.status === "completed").length})
           </button>
           <button
             onClick={() => setCampaignView("drafts")}
@@ -3369,7 +3791,8 @@ export default function BrandDashboard() {
                 : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
           >
-            Drafts ({campaignsForOffers.filter((c) => c.status === "draft").length})
+            Drafts (
+            {campaignsForOffers.filter((c) => c.status === "draft").length})
           </button>
         </div>
 
@@ -5971,8 +6394,21 @@ export default function BrandDashboard() {
           </DialogHeader>
 
           <div className="py-4 space-y-6">
-            {selectedCampaign &&
-              mockCampaigns.find((c) => c.id === selectedCampaign) && (
+            {loadingSelectedCampaignContracts && (
+              <Card className="p-6 bg-white border border-gray-200">
+                <p className="text-sm text-gray-600">Loading contract...</p>
+              </Card>
+            )}
+            {!loadingSelectedCampaignContracts &&
+              selectedCampaignContracts.length === 0 && (
+                <Card className="p-6 bg-white border border-gray-200">
+                  <p className="text-sm text-gray-600">
+                    No contract found for this campaign offer yet.
+                  </p>
+                </Card>
+              )}
+            {!loadingSelectedCampaignContracts &&
+              selectedCampaignContracts.length > 0 && (
                 <>
                   <Card className="p-6 bg-gray-50 border-2 border-gray-300">
                     <h3 className="text-xl font-bold text-gray-900 mb-4">
@@ -5980,126 +6416,48 @@ export default function BrandDashboard() {
                     </h3>
                     <div className="grid md:grid-cols-2 gap-4 text-sm">
                       <div>
-                        <p className="text-gray-600 mb-1">Campaign Name</p>
+                        <p className="text-gray-600 mb-1">Contract</p>
                         <p className="font-semibold text-gray-900">
-                          {
-                            mockCampaigns.find((c) => c.id === selectedCampaign)
-                              .name
-                          }
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600 mb-1">Talent</p>
-                        <p className="font-semibold text-gray-900">
-                          {mockCampaigns
-                            .find((c) => c.id === selectedCampaign)
-                            .creators.join(", ")}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600 mb-1">Budget</p>
-                        <p className="font-semibold text-gray-900">
-                          $
-                          {mockCampaigns
-                            .find((c) => c.id === selectedCampaign)
-                            .budget.toLocaleString()}
+                          {String(
+                            selectedCampaignContracts[0]?.title ||
+                              "Campaign contract",
+                          )}
                         </p>
                       </div>
                       <div>
                         <p className="text-gray-600 mb-1">Status</p>
                         <Badge className="bg-blue-100 text-blue-700 border border-blue-300">
-                          {mockCampaigns
-                            .find((c) => c.id === selectedCampaign)
-                            .status.replace("_", " ")}
+                          {String(
+                            selectedCampaignContracts[0]?.docuseal_status ||
+                              "sent",
+                          ).replace(/_/g, " ")}
                         </Badge>
                       </div>
                     </div>
                   </Card>
-
-                  <Card className="p-6 bg-white border border-gray-200">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">
-                      Contract Terms
-                    </h3>
-                    <div className="space-y-4 text-sm">
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                          <p className="text-gray-600 mb-1">Territory</p>
-                          <p className="font-semibold text-gray-900">
-                            {
-                              mockCampaigns.find(
-                                (c) => c.id === selectedCampaign,
-                              ).territory
-                            }
-                          </p>
-                        </div>
-                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                          <p className="text-gray-600 mb-1">Duration</p>
-                          <p className="font-semibold text-gray-900">
-                            {
-                              mockCampaigns.find(
-                                (c) => c.id === selectedCampaign,
-                              ).duration
-                            }
-                          </p>
-                        </div>
-                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                          <p className="text-gray-600 mb-1">License Expires</p>
-                          <p className="font-semibold text-gray-900">
-                            {
-                              mockCampaigns.find(
-                                (c) => c.id === selectedCampaign,
-                              ).license_expiry
-                            }
-                          </p>
-                        </div>
-                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                          <p className="text-gray-600 mb-1">Channels</p>
-                          <p className="font-semibold text-gray-900">
-                            {mockCampaigns
-                              .find((c) => c.id === selectedCampaign)
-                              .channels.join(", ")}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                        <p className="font-semibold text-gray-900 mb-2">
-                          Deliverables
-                        </p>
-                        <p className="text-gray-700">
-                          3 Instagram Reels (15-30 seconds each), 1 Hero Image
-                        </p>
-                      </div>
-
-                      <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                        <p className="font-semibold text-gray-900 mb-2">
-                          Revision Policy
-                        </p>
-                        <p className="text-gray-700">
-                          2 rounds of revisions included
-                        </p>
-                      </div>
-
-                      <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                        <p className="font-semibold text-gray-900 mb-2">
-                          Payment Terms
-                        </p>
-                        <p className="text-gray-700">
-                          Escrow-protected, releases upon approval or after 48
-                          hours
-                        </p>
-                      </div>
-                    </div>
+                  <Card className="p-4 bg-white border border-gray-200">
+                    {String(
+                      selectedCampaignContracts[0]?.meta
+                        ?.docuseal_document_url ||
+                        selectedCampaignContracts[0]?.file_url ||
+                        "",
+                    ).trim() ? (
+                      <iframe
+                        src={String(
+                          selectedCampaignContracts[0]?.meta
+                            ?.docuseal_document_url ||
+                            selectedCampaignContracts[0]?.file_url,
+                        )}
+                        className="w-full h-[70vh] border border-gray-200 rounded"
+                        title="Campaign Contract Document"
+                      />
+                    ) : (
+                      <p className="text-sm text-gray-600">
+                        Contract document URL is not available yet.
+                      </p>
+                    )}
                   </Card>
-
-                  <div className="flex gap-3">
-                    <Button
-                      variant="outline"
-                      className="flex-1 border-2 border-gray-300"
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Download PDF
-                    </Button>
+                  <div className="flex justify-end">
                     <Button
                       variant="outline"
                       className="border-2 border-gray-300"
