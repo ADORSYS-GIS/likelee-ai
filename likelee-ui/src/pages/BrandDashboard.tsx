@@ -42,7 +42,7 @@ import {
   Menu,
   Building2,
   Edit,
-  Trash2,
+  Archive,
   Upload,
   Send,
   Copy,
@@ -50,6 +50,7 @@ import {
   X,
   ChevronDown,
   Mail,
+  RefreshCw,
 } from "lucide-react";
 import {
   Dialog,
@@ -73,6 +74,7 @@ import {
 } from "@/components/ui/popover";
 import { useToast } from "@/components/ui/use-toast";
 import MarketplaceSection from "@/components/marketplace/MarketplaceSection";
+import BrandCampaignDashboard from "@/pages/BrandCampaignDashboard";
 import {
   LineChart,
   Line,
@@ -402,38 +404,6 @@ const mockActivities = [
   },
 ];
 
-const mockInboxPackages = [
-  {
-    id: "pkg-1",
-    title: "Spring Fashion Campaign - Top Talent",
-    agency: "CM Models",
-    sent_at: "2/20/2025",
-    message:
-      "Hi! We have a curated selection of models perfect for your spring campaign. All talent is verified and ready for AI licensing.",
-    talent_count: 5,
-    unread: true,
-    avatars: [
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100",
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100",
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100",
-    ],
-  },
-  {
-    id: "pkg-2",
-    title: "Beauty & Lifestyle Portfolio",
-    agency: "Elite Models LA",
-    sent_at: "2/18/2025",
-    message:
-      "Thought you'd love our beauty talent for your upcoming campaigns.",
-    talent_count: 3,
-    unread: false,
-    avatars: [
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100",
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100",
-    ],
-  },
-];
-
 const mockAssets = [
   {
     id: 1,
@@ -635,6 +605,12 @@ export default function BrandDashboard() {
   const [brand, setBrand] = useState(mockBrand);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [campaignView, setCampaignView] = useState("active");
+  const [openCampaignModalSignal, setOpenCampaignModalSignal] = useState(0);
+  const [campaignBuilderContext, setCampaignBuilderContext] =
+    useState<any>(null);
+  const [campaignHubTab, setCampaignHubTab] = useState<
+    "active" | "pending_approval" | "completed" | "inbox"
+  >("active");
   const [selectedCampaign, setSelectedCampaign] = useState(null);
   const [viewMode, setViewMode] = useState("grid");
   const [showEscrowDetails, setShowEscrowDetails] = useState(false);
@@ -646,6 +622,13 @@ export default function BrandDashboard() {
   const [showCreatorProfile, setShowCreatorProfile] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showContractModal, setShowContractModal] = useState(false);
+  const [selectedCampaignContracts, setSelectedCampaignContracts] = useState<
+    any[]
+  >([]);
+  const [
+    loadingSelectedCampaignContracts,
+    setLoadingSelectedCampaignContracts,
+  ] = useState(false);
   const [showUpdateRequestModal, setShowUpdateRequestModal] = useState(false);
   const [updateRequestType, setUpdateRequestType] = useState(null);
   const [showContractHub, setShowContractHub] = useState(false);
@@ -653,6 +636,18 @@ export default function BrandDashboard() {
   const [contractHubTab, setContractHubTab] = useState("active");
   const [contractDetailTab, setContractDetailTab] = useState("summary");
   const { toast } = useToast();
+  const [inboxPackages, setInboxPackages] = useState<any[]>([]);
+  const [loadingInboxPackages, setLoadingInboxPackages] = useState(false);
+  const [brandOfferItems, setBrandOfferItems] = useState<any[]>([]);
+  const [loadingBrandOfferItems, setLoadingBrandOfferItems] = useState(false);
+  const [selectedOfferHubId, setSelectedOfferHubId] = useState<string>("");
+  const [selectedOfferHubContracts, setSelectedOfferHubContracts] = useState<
+    any[]
+  >([]);
+  const [contractHubRows, setContractHubRows] = useState<any[]>([]);
+  const [loadingContractHubRows, setLoadingContractHubRows] = useState(false);
+  const [selectedOfferHubDeliverables, setSelectedOfferHubDeliverables] =
+    useState<any[]>([]);
   const [usageRightsTab, setUsageRightsTab] = useState("licenses");
   const [creators, setCreators] = useState(mockCreators);
   const [loading, setLoading] = useState(false);
@@ -675,9 +670,135 @@ export default function BrandDashboard() {
   useEffect(() => {
     const sectionFromState = (location.state as any)?.activeSection;
     if (typeof sectionFromState === "string" && sectionFromState.length > 0) {
+      if (sectionFromState === "campaigns") {
+        setActiveSection("campaigns-hub");
+        return;
+      }
       setActiveSection(sectionFromState);
     }
   }, [location.state]);
+
+  useEffect(() => {
+    if (activeSection !== "campaigns-inbox") return;
+    let mounted = true;
+    const loadPackages = async () => {
+      try {
+        setLoadingInboxPackages(true);
+        const response = await base44.get<{ packages?: any[] }>(
+          "/api/brand/inbox/packages",
+        );
+        if (!mounted) return;
+        setInboxPackages(
+          Array.isArray(response?.packages) ? response.packages : [],
+        );
+      } catch (e) {
+        if (!mounted) return;
+        setInboxPackages([]);
+      } finally {
+        if (!mounted) return;
+        setLoadingInboxPackages(false);
+      }
+    };
+    loadPackages();
+    const timer = setInterval(loadPackages, 15000);
+    return () => {
+      mounted = false;
+      clearInterval(timer);
+    };
+  }, [activeSection]);
+
+  useEffect(() => {
+    if (activeSection !== "campaigns-contract-hub") return;
+    let mounted = true;
+    (async () => {
+      if (mounted) setLoadingContractHubRows(true);
+      try {
+        const rows = (
+          await Promise.all(
+            brandOfferItems.map(async (offer: any) => {
+              const offerId = String(offer?.id || "");
+              if (!offerId) return [];
+              const contractsResp = await base44.get<{ contracts?: any[] }>(
+                `/api/campaign-offers/${offerId}/contracts`,
+              );
+              const contracts = Array.isArray(contractsResp?.contracts)
+                ? contractsResp.contracts
+                : [];
+              const refreshedContracts = await Promise.all(
+                contracts.map(async (contract: any) => {
+                  const contractId = String(contract?.id || "").trim();
+                  if (!contractId) return contract;
+                  try {
+                    const refreshed = await base44.post<{ contract?: any }>(
+                      `/api/campaign-offers/${offerId}/contracts/${contractId}/refresh`,
+                      {},
+                    );
+                    return refreshed?.contract || contract;
+                  } catch {
+                    return contract;
+                  }
+                }),
+              );
+              return refreshedContracts.map((c: any) => ({
+                ...c,
+                offer_id: offerId,
+                campaign_name: String(
+                  offer?.brand_campaigns?.name ||
+                    offer?.offer_title ||
+                    "Campaign offer",
+                ),
+              }));
+            }),
+          )
+        ).flat();
+        if (!mounted) return;
+        setContractHubRows(rows);
+      } catch {
+        if (!mounted) return;
+        setContractHubRows([]);
+      } finally {
+        if (!mounted) return;
+        setLoadingContractHubRows(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [activeSection, brandOfferItems]);
+
+  useEffect(() => {
+    if (
+      activeSection !== "campaign-offers" &&
+      activeSection !== "campaigns-contract-hub" &&
+      activeSection !== "campaigns-deliverables"
+    ) {
+      return;
+    }
+    let mounted = true;
+    const loadMyOffers = async () => {
+      try {
+        setLoadingBrandOfferItems(true);
+        const response = await base44.get<{ offers?: any[] }>(
+          "/api/campaign-offers/my",
+          { params: { limit: 120 } },
+        );
+        if (!mounted) return;
+        setBrandOfferItems(
+          Array.isArray(response?.offers) ? response.offers : [],
+        );
+      } catch {
+        if (!mounted) return;
+        setBrandOfferItems([]);
+      } finally {
+        if (!mounted) return;
+        setLoadingBrandOfferItems(false);
+      }
+    };
+    loadMyOffers();
+    return () => {
+      mounted = false;
+    };
+  }, [activeSection]);
 
   useEffect(() => {
     const fetchCreators = async () => {
@@ -816,7 +937,6 @@ export default function BrandDashboard() {
       id: "campaigns",
       label: "My Campaigns",
       icon: Target,
-      badge: mockCampaigns.length,
     },
     { id: "analytics", label: "Analytics", icon: BarChart3 },
     {
@@ -1095,7 +1215,7 @@ export default function BrandDashboard() {
                       size="sm"
                       className="border-2 border-gray-300"
                       onClick={() => {
-                        setActiveSection("campaigns");
+                        setActiveSection("campaign-offers");
                         setSelectedCampaign(project.id);
                         setShowEscrowDetails(false);
                       }}
@@ -1206,8 +1326,6 @@ export default function BrandDashboard() {
       return renderEscrowDetails();
     }
 
-    if (campaignView === "inbox") return renderInboxSubtab();
-
     return (
       <div className="space-y-6">
         <div>
@@ -1311,7 +1429,7 @@ export default function BrandDashboard() {
               <span>Browse Creators</span>
             </Button>
             <Button
-              onClick={() => setActiveSection("campaigns")}
+              onClick={() => navigate(createPageUrl("BrandCampaignDashboard"))}
               className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
               <CheckCircle2 className="w-6 h-6" />
@@ -2312,7 +2430,7 @@ export default function BrandDashboard() {
               : "text-gray-500"
           }`}
         >
-          Talent Packages ({mockInboxPackages.length})
+          Talent Packages ({inboxPackages.length})
         </button>
         <button
           onClick={() => setInboxSubTab("direct_requests")}
@@ -2328,7 +2446,17 @@ export default function BrandDashboard() {
 
       {inboxSubTab === "talent_packages" ? (
         <div className="space-y-4">
-          {mockInboxPackages.map((pkg) => (
+          {loadingInboxPackages && (
+            <Card className="p-6 bg-white border border-gray-300 rounded-none">
+              <p className="text-sm text-gray-500">Loading packages...</p>
+            </Card>
+          )}
+          {!loadingInboxPackages && inboxPackages.length === 0 && (
+            <Card className="p-6 bg-white border border-gray-300 rounded-none">
+              <p className="text-sm text-gray-500">No packages received yet.</p>
+            </Card>
+          )}
+          {inboxPackages.map((pkg: any) => (
             <Card
               key={pkg.id}
               className="p-6 bg-white border border-gray-300 rounded-none"
@@ -2337,52 +2465,81 @@ export default function BrandDashboard() {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="text-2xl font-bold text-gray-900">
-                      {pkg.title}
+                      {pkg.title ||
+                        pkg.campaign_offers?.offer_title ||
+                        "Talent package"}
                     </h3>
-                    {pkg.unread && (
+                    {String(pkg?.status || "") === "sent" && (
                       <Badge className="bg-black text-white text-[10px] uppercase rounded-sm">
                         New
                       </Badge>
                     )}
                   </div>
                   <p className="text-sm text-gray-700 font-medium">
-                    From: {pkg.agency}
+                    From: {pkg?.agency_id || "Agency"}
                   </p>
-                  <p className="text-sm text-gray-500">Sent: {pkg.sent_at}</p>
+                  <p className="text-sm text-gray-500">
+                    Sent:{" "}
+                    {pkg?.sent_at
+                      ? new Date(String(pkg.sent_at)).toLocaleString()
+                      : "—"}
+                  </p>
                 </div>
                 <Badge className="bg-blue-100 text-blue-700 border border-blue-200 text-xs">
-                  {pkg.talent_count} talent
+                  {Array.isArray(pkg?.meta?.selected_talent_ids)
+                    ? pkg.meta.selected_talent_ids.length
+                    : 0}{" "}
+                  talent
                 </Badge>
               </div>
-
-              <div className="flex items-center gap-2 mb-3">
-                {pkg.avatars.map((avatar, idx) => (
-                  <img
-                    key={`${pkg.id}-avatar-${idx}`}
-                    src={avatar}
-                    alt="Talent"
-                    className="w-9 h-9 rounded-full object-cover border border-gray-200"
-                  />
-                ))}
-                {pkg.talent_count > pkg.avatars.length && (
-                  <span className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-xs font-semibold text-gray-700">
-                    +{pkg.talent_count - pkg.avatars.length}
-                  </span>
-                )}
-              </div>
-
-              <p className="text-gray-700 italic mb-4">"{pkg.message}"</p>
+              {pkg?.message && (
+                <p className="text-gray-700 italic mb-4">
+                  "{String(pkg.message)}"
+                </p>
+              )}
 
               <div className="flex gap-2">
-                <Button className="flex-1 bg-black hover:bg-gray-800 text-white rounded-none">
+                <Button
+                  className="flex-1 bg-black hover:bg-gray-800 text-white rounded-none"
+                  onClick={async () => {
+                    try {
+                      await base44.post(
+                        `/api/campaign-offers/${encodeURIComponent(String(pkg?.offer_id || ""))}/packages/brand-done`,
+                        {
+                          package_id: String(pkg?.id || ""),
+                          feedback_note: "Brand completed package selection.",
+                        },
+                      );
+                      const response = await base44.get<{ packages?: any[] }>(
+                        "/api/brand/inbox/packages",
+                      );
+                      setInboxPackages(
+                        Array.isArray(response?.packages)
+                          ? response.packages
+                          : [],
+                      );
+                      toast({
+                        title: "Package submitted",
+                        description:
+                          "Your package selection was submitted to the agency.",
+                      });
+                    } catch (e: any) {
+                      toast({
+                        title: "Unable to submit package",
+                        description: e?.message || "Please try again.",
+                        variant: "destructive" as any,
+                      });
+                    }
+                  }}
+                >
                   <Eye className="w-4 h-4 mr-2" />
-                  View Package
+                  Mark Done
                 </Button>
                 <Button
                   variant="outline"
                   className="border border-gray-300 rounded-none"
                 >
-                  Reply
+                  View Details
                 </Button>
                 <Button
                   variant="outline"
@@ -2409,21 +2566,680 @@ export default function BrandDashboard() {
     </div>
   );
 
-  const renderCampaigns = () => {
-    if (campaignView === "inbox") {
-      return renderInboxSubtab();
+  const loadOfferHubDetails = async (offerId: string) => {
+    if (!offerId) {
+      setSelectedOfferHubContracts([]);
+      setSelectedOfferHubDeliverables([]);
+      return;
     }
+    try {
+      const [contractsResp, deliverablesResp] = await Promise.all([
+        base44.get<{ contracts?: any[] }>(
+          `/api/campaign-offers/${offerId}/contracts`,
+        ),
+        base44.get<{ deliverables?: any[] }>(
+          `/api/campaign-offers/${offerId}/deliverables`,
+        ),
+      ]);
+      const contracts = Array.isArray(contractsResp?.contracts)
+        ? contractsResp.contracts
+        : [];
+      const refreshedContracts = await Promise.all(
+        contracts.map(async (contract: any) => {
+          const contractId = String(contract?.id || "").trim();
+          if (!contractId) return contract;
+          try {
+            const refreshed = await base44.post<{ contract?: any }>(
+              `/api/campaign-offers/${offerId}/contracts/${contractId}/refresh`,
+              {},
+            );
+            return refreshed?.contract || contract;
+          } catch {
+            return contract;
+          }
+        }),
+      );
+      setSelectedOfferHubContracts(refreshedContracts);
+      setSelectedOfferHubDeliverables(
+        Array.isArray(deliverablesResp?.deliverables)
+          ? deliverablesResp.deliverables
+          : [],
+      );
+    } catch {
+      setSelectedOfferHubContracts([]);
+      setSelectedOfferHubDeliverables([]);
+    }
+  };
+  const loadCampaignContractsForOffer = async (offerId: string) => {
+    if (!offerId) {
+      setSelectedCampaignContracts([]);
+      return;
+    }
+    try {
+      setLoadingSelectedCampaignContracts(true);
+      const response = await base44.get<{ contracts?: any[] }>(
+        `/api/campaign-offers/${offerId}/contracts`,
+      );
+      const contracts = Array.isArray(response?.contracts)
+        ? response.contracts
+        : [];
+      setSelectedCampaignContracts(contracts);
+    } catch {
+      setSelectedCampaignContracts([]);
+    } finally {
+      setLoadingSelectedCampaignContracts(false);
+    }
+  };
+  const resolveDeliverableFileName = (deliverable: any) => {
+    const fromCaption = String(deliverable?.caption || "").trim();
+    if (fromCaption) return fromCaption;
+    const fromOriginal = String(deliverable?.meta?.original_name || "").trim();
+    if (fromOriginal) return fromOriginal;
+    return "deliverable";
+  };
+  const downloadOfferHubDeliverable = async (
+    offerId: string,
+    deliverable: any,
+  ) => {
+    const deliverableId = String(deliverable?.id || "").trim();
+    const assetUrl = String(deliverable?.asset_url || "").trim();
+    if (!offerId || !deliverableId || !assetUrl) {
+      toast({
+        title: "Download unavailable",
+        description: "Missing deliverable file URL.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    try {
+      const response = await fetch(assetUrl);
+      if (!response.ok) {
+        throw new Error("Failed to fetch deliverable file.");
+      }
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = resolveDeliverableFileName(deliverable);
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+      await base44.post(
+        `/api/campaign-offers/${encodeURIComponent(offerId)}/deliverables/${encodeURIComponent(deliverableId)}/downloaded`,
+        {},
+      );
+      toast({ title: "Download started" });
+      await loadOfferHubDetails(offerId);
+    } catch (e: any) {
+      toast({
+        title: "Download failed",
+        description: e?.message || "Please try again.",
+        variant: "destructive" as any,
+      });
+    }
+  };
+  const formatHubDate = (value: unknown) => {
+    const raw = String(value || "").trim();
+    if (!raw) return "N/A";
+    const dt = new Date(raw);
+    if (Number.isNaN(dt.getTime())) return raw;
+    return dt.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+  const contractStatusBadgeClass = (statusRaw: unknown) => {
+    const status = String(statusRaw || "").toLowerCase();
+    if (status === "signed") {
+      return "inline-flex min-w-28 items-center rounded-md border border-emerald-300 bg-emerald-100 px-2.5 py-1 text-emerald-700 font-semibold";
+    }
+    if (status === "sent") {
+      return "inline-flex min-w-28 items-center rounded-md border border-blue-300 bg-blue-100 px-2.5 py-1 text-blue-700 font-semibold";
+    }
+    if (status === "opened") {
+      return "inline-flex min-w-28 items-center rounded-md border border-amber-300 bg-amber-100 px-2.5 py-1 text-amber-700 font-semibold";
+    }
+    if (status === "declined" || status === "rejected") {
+      return "inline-flex min-w-28 items-center rounded-md border border-red-300 bg-red-100 px-2.5 py-1 text-red-700 font-semibold";
+    }
+    return "inline-flex min-w-28 items-center rounded-md border border-gray-300 bg-white px-2.5 py-1 text-gray-700 font-semibold";
+  };
+  const formatContractStatusLabel = (statusRaw: unknown) =>
+    String(statusRaw || "sent")
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (m) => m.toUpperCase());
 
-    const filteredCampaigns = mockCampaigns.filter((c) => {
+  const renderCampaignContractHub = () => (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-3xl font-bold text-gray-900 mb-1">Contract Hub</h2>
+        <p className="text-gray-600">Campaign contracts and signing status.</p>
+      </div>
+      <Card className="p-4 bg-white border border-gray-300 rounded-none">
+        {loadingContractHubRows ? (
+          <p className="text-sm text-gray-500">Loading submissions</p>
+        ) : contractHubRows.length === 0 ? (
+          <p className="text-sm text-gray-500">No contract submissions yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm text-left text-gray-700">
+              <thead className="border-b border-gray-200 text-gray-800">
+                <tr>
+                  <th className="px-2 py-2">Campaign Name</th>
+                  <th className="px-2 py-2">Template</th>
+                  <th className="px-2 py-2">Status</th>
+                  <th className="px-2 py-2">Sent Date</th>
+                  <th className="px-2 py-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contractHubRows.map((row: any) => (
+                  <tr
+                    key={String(row?.id)}
+                    className="border-b border-gray-100"
+                  >
+                    <td className="px-2 py-2 font-medium text-gray-900">
+                      {String(row?.campaign_name || "Campaign offer")}
+                    </td>
+                    <td className="px-2 py-2 text-gray-700">
+                      {String(
+                        row?.title ||
+                          `Template ${String(row?.docuseal_template_id || "N/A")}`,
+                      )}
+                    </td>
+                    <td className="px-2 py-2">
+                      <span
+                        className={contractStatusBadgeClass(
+                          row?.docuseal_status,
+                        )}
+                      >
+                        {String(row?.docuseal_status || "").toLowerCase() ===
+                          "sent" && <Mail className="h-3.5 w-3.5 mr-1.5" />}
+                        {String(row?.docuseal_status || "").toLowerCase() ===
+                          "signed" && (
+                          <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                        )}
+                        {formatContractStatusLabel(row?.docuseal_status)}
+                      </span>
+                    </td>
+                    <td className="px-2 py-2">
+                      {formatHubDate(row?.sent_at || row?.created_at)}
+                    </td>
+                    <td className="px-2 py-2">
+                      <div className="flex items-center gap-3">
+                        <button
+                          className="text-blue-600 hover:text-blue-700"
+                          title="Resend"
+                          aria-label="Resend"
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await base44.post(
+                                `/api/campaign-offers/${encodeURIComponent(String(row?.offer_id || ""))}/contracts/send`,
+                                { contract_id: String(row?.id || "") },
+                              );
+                              const refreshed = await base44.get<{
+                                contracts?: any[];
+                              }>(
+                                `/api/campaign-offers/${encodeURIComponent(String(row?.offer_id || ""))}/contracts`,
+                              );
+                              const refreshedContracts = Array.isArray(
+                                refreshed?.contracts,
+                              )
+                                ? refreshed.contracts
+                                : [];
+                              setContractHubRows((prev) =>
+                                prev.map((existing: any) => {
+                                  if (String(existing?.id) !== String(row?.id))
+                                    return existing;
+                                  const fresh = refreshedContracts.find(
+                                    (c: any) =>
+                                      String(c?.id) === String(row?.id),
+                                  );
+                                  return fresh
+                                    ? {
+                                        ...fresh,
+                                        offer_id: existing?.offer_id,
+                                        campaign_name: existing?.campaign_name,
+                                      }
+                                    : existing;
+                                }),
+                              );
+                              toast({ title: "Contract resent" });
+                            } catch (e: any) {
+                              toast({
+                                title: "Resend failed",
+                                description: e?.message || "Please try again.",
+                                variant: "destructive" as any,
+                              });
+                            }
+                          }}
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </button>
+                        <button
+                          className="text-red-600 hover:text-red-700"
+                          title="Archive"
+                          aria-label="Archive"
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              await base44.post(
+                                `/api/campaign-offers/${encodeURIComponent(String(row?.offer_id || ""))}/contracts/${encodeURIComponent(String(row?.id || ""))}/archive`,
+                                {},
+                              );
+                              setContractHubRows((prev) =>
+                                prev.filter(
+                                  (x: any) => String(x?.id) !== String(row?.id),
+                                ),
+                              );
+                              toast({ title: "Contract archived" });
+                            } catch (e: any) {
+                              toast({
+                                title: "Archive failed",
+                                description: e?.message || "Please try again.",
+                                variant: "destructive" as any,
+                              });
+                            }
+                          }}
+                        >
+                          <Archive className="h-4 w-4" />
+                        </button>
+                        {row?.meta?.docuseal_document_url && (
+                          <a
+                            href={String(row.meta.docuseal_document_url)}
+                            target="_blank"
+                            rel="noreferrer"
+                            download
+                            title="Download"
+                            aria-label="Download"
+                            className="text-blue-700 hover:text-blue-800"
+                          >
+                            <Download className="h-4 w-4" />
+                          </a>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+
+  const renderCampaignDeliverablesHub = () => (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-3xl font-bold text-gray-900 mb-1">Deliverables</h2>
+        <p className="text-gray-600">
+          Approved and downloaded assets are organized per campaign offer.
+        </p>
+      </div>
+      <div className="space-y-3">
+        {loadingBrandOfferItems && (
+          <Card className="p-6 bg-white border border-gray-300 rounded-none">
+            <p className="text-sm text-gray-500">Loading deliverables...</p>
+          </Card>
+        )}
+        {brandOfferItems.filter((offer: any) =>
+          [
+            "sent",
+            "accepted",
+            "contract_sent",
+            "contract_partially_signed",
+            "contract_fully_signed",
+            "deliverables_submitted",
+            "changes_requested",
+            "in_review",
+            "approved",
+          ].includes(String(offer?.status || "").toLowerCase()),
+        ).length === 0 &&
+          !loadingBrandOfferItems && (
+            <Card className="p-6 bg-white border border-gray-300 rounded-none">
+              <p className="text-sm text-gray-500">
+                No ongoing campaign deliverables yet.
+              </p>
+            </Card>
+          )}
+        {brandOfferItems
+          .filter((offer: any) =>
+            [
+              "sent",
+              "accepted",
+              "contract_sent",
+              "contract_partially_signed",
+              "contract_fully_signed",
+              "deliverables_submitted",
+              "changes_requested",
+              "in_review",
+              "approved",
+            ].includes(String(offer?.status || "").toLowerCase()),
+          )
+          .map((offer: any) => {
+            const offerId = String(offer?.id || "");
+            const expanded = selectedOfferHubId === offerId;
+            const downloadedDeliverables = selectedOfferHubDeliverables.filter(
+              (d: any) =>
+                Boolean(d?.meta?.brand_downloaded_at) &&
+                ["approved", "accepted"].includes(
+                  String(d?.status || "").toLowerCase(),
+                ),
+            );
+            const approvedCount = downloadedDeliverables.filter(
+              (d: any) => String(d?.status || "").toLowerCase() === "approved",
+            ).length;
+            const totalCount = downloadedDeliverables.length;
+            const progressPct =
+              totalCount > 0
+                ? Math.round((approvedCount / totalCount) * 100)
+                : 0;
+            const offerStatus = String(offer?.status || "sent")
+              .replace(/_/g, " ")
+              .trim();
+            return (
+              <Card
+                key={offerId}
+                className="p-5 bg-white border border-gray-300 rounded-none space-y-4"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="space-y-2">
+                    <p className="font-semibold text-lg text-gray-900">
+                      {offer?.brand_campaigns?.name || "Campaign offer"}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge className="bg-blue-50 text-blue-700 border border-blue-200">
+                        {offerStatus}
+                      </Badge>
+                      <Badge className="bg-gray-100 text-gray-700 border border-gray-200">
+                        {totalCount} reviewed asset{totalCount === 1 ? "" : "s"}
+                      </Badge>
+                      <Badge className="bg-emerald-100 text-emerald-700 border border-emerald-200">
+                        {approvedCount} approved
+                      </Badge>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="border border-gray-300 rounded-none min-w-[120px]"
+                    onClick={async () => {
+                      const next = expanded ? "" : offerId;
+                      setSelectedOfferHubId(next);
+                      await loadOfferHubDetails(next);
+                    }}
+                  >
+                    {expanded ? "Hide" : "View Details"}
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="border border-gray-200 bg-gray-50 rounded-none p-3">
+                    <p className="text-[11px] uppercase tracking-wide text-gray-500 mb-1">
+                      Campaign
+                    </p>
+                    <p className="text-sm font-semibold text-gray-900 truncate">
+                      {offer?.brand_campaigns?.name || "Campaign offer"}
+                    </p>
+                  </div>
+                  <div className="border border-gray-200 bg-gray-50 rounded-none p-3">
+                    <p className="text-[11px] uppercase tracking-wide text-gray-500 mb-1">
+                      Progress
+                    </p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {approvedCount} / {Math.max(totalCount, 0)}
+                    </p>
+                  </div>
+                  <div className="border border-gray-200 bg-gray-50 rounded-none p-3">
+                    <p className="text-[11px] uppercase tracking-wide text-gray-500 mb-1">
+                      Completion
+                    </p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {progressPct}%
+                    </p>
+                  </div>
+                </div>
+                {expanded && (
+                  <div className="border border-gray-200 rounded-none p-4 bg-gradient-to-b from-gray-50 to-white space-y-3">
+                    {totalCount > 0 && (
+                      <div>
+                        <p className="text-xs text-gray-600 mb-2">Progress</p>
+                        <Progress
+                          value={
+                            totalCount > 0
+                              ? (approvedCount / totalCount) * 100
+                              : 0
+                          }
+                          className="h-2"
+                        />
+                        <p className="text-xs text-gray-600 mt-2">
+                          {approvedCount} / {totalCount} deliverables approved
+                        </p>
+                      </div>
+                    )}
+                    {downloadedDeliverables.length === 0 ? (
+                      <div className="border border-dashed border-gray-300 bg-white rounded-none p-4">
+                        <p className="text-xs text-gray-500">
+                          No downloaded and approved deliverables yet.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {downloadedDeliverables.map(
+                          (deliverable: any, index: number) => {
+                            const assetType = String(
+                              deliverable?.asset_type || "",
+                            ).toLowerCase();
+                            const contentType = String(
+                              deliverable?.meta?.content_type || "",
+                            ).toLowerCase();
+                            const caption = String(
+                              deliverable?.caption ||
+                                deliverable?.meta?.original_name ||
+                                "",
+                            ).toLowerCase();
+                            const assetUrl = String(
+                              deliverable?.asset_url || "",
+                            );
+                            const isImage =
+                              assetType === "image" ||
+                              assetType.startsWith("image/") ||
+                              contentType.startsWith("image/") ||
+                              /\.(png|jpg|jpeg|webp|gif|bmp|svg)(\?.*)?$/i.test(
+                                assetUrl,
+                              ) ||
+                              /\.(png|jpg|jpeg|webp|gif|bmp|svg)$/i.test(
+                                caption,
+                              );
+                            return (
+                              <div
+                                key={String(deliverable?.id)}
+                                className="border border-gray-200 rounded-none p-3 bg-white shadow-sm"
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div>
+                                    <p className="text-sm font-semibold text-gray-900">
+                                      Deliverable {index + 1}
+                                    </p>
+                                    <p className="text-xs text-gray-600 mt-1">
+                                      {String(
+                                        deliverable?.asset_type || "file",
+                                      )}{" "}
+                                      •{" "}
+                                      {String(
+                                        deliverable?.status || "submitted",
+                                      )}
+                                    </p>
+                                  </div>
+                                  <Badge className="bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                    Reviewed
+                                  </Badge>
+                                </div>
+                                {deliverable?.asset_url && (
+                                  <div className="mt-3 space-y-2">
+                                    {isImage && (
+                                      <img
+                                        src={assetUrl}
+                                        alt={String(
+                                          deliverable?.caption ||
+                                            deliverable?.meta?.original_name ||
+                                            "Deliverable image",
+                                        )}
+                                        className="h-32 w-auto max-w-full rounded-none border border-gray-200 object-cover bg-white"
+                                      />
+                                    )}
+                                    <p className="text-xs text-gray-500">
+                                      Reviewed items appear here after download
+                                      and approval.
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          },
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </Card>
+            );
+          })}
+      </div>
+    </div>
+  );
+
+  const renderCampaigns = () => {
+    const openAddCollaboratorFlow = (campaign: any) => {
+      const campaignId = String(campaign?.brand_campaign_id || "").trim();
+      if (!campaignId) {
+        toast({
+          title: "Campaign ID missing",
+          description:
+            "This offer is not linked to a campaign yet. Please create a campaign first.",
+          variant: "destructive" as any,
+        });
+        return;
+      }
+
+      setCampaignBuilderContext({
+        brandCampaignId: campaignId,
+        name: campaign?.name || "",
+        objective: campaign?.objective || "",
+        start_date: campaign?.due_date || "",
+        brief_snapshot:
+          campaign?.brief_snapshot &&
+          typeof campaign.brief_snapshot === "object"
+            ? campaign.brief_snapshot
+            : {},
+        startStep: 3,
+      });
+      setActiveSection("campaigns-hub");
+      setOpenCampaignModalSignal((prev) => prev + 1);
+    };
+
+    const campaignsForOffers = brandOfferItems.map((offer: any) => {
+      const statusRaw = String(offer?.status || "sent").toLowerCase();
+      const fullySignedStatuses = new Set(["contract_fully_signed", "signed"]);
+      const isFullySigned = fullySignedStatuses.has(statusRaw);
+      const startDateRaw = String(
+        offer?.brand_campaigns?.start_date || "",
+      ).trim();
+      const startDate = /^\d{4}-\d{2}-\d{2}$/.test(startDateRaw)
+        ? new Date(`${startDateRaw}T00:00:00`)
+        : null;
+      const durationDaysRaw = Number(
+        offer?.brand_campaigns?.duration_days || 0,
+      );
+      const durationDays =
+        Number.isFinite(durationDaysRaw) && durationDaysRaw > 0
+          ? durationDaysRaw
+          : 30;
+      const endDate = startDate
+        ? new Date(
+            startDate.getTime() + (durationDays - 1) * 24 * 60 * 60 * 1000,
+          )
+        : null;
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const isBeforeStart = Boolean(
+        startDate && today.getTime() < startDate.getTime(),
+      );
+      const isAfterEnd = Boolean(
+        endDate && today.getTime() > endDate.getTime(),
+      );
+
+      let mappedStatus: "pending_approval" | "in_progress" | "completed" =
+        "pending_approval";
+      if (isAfterEnd || statusRaw === "completed") {
+        mappedStatus = "completed";
+      } else if (isFullySigned) {
+        mappedStatus = "in_progress";
+      } else {
+        mappedStatus = "pending_approval";
+      }
+      const campaignName =
+        String(offer?.brand_campaigns?.name || "").trim() ||
+        String(offer?.offer_title || "").trim() ||
+        "Campaign Offer";
+      const formattedStartDate =
+        String(offer?.brand_campaigns?.start_date || "").trim() ||
+        new Date().toISOString().slice(0, 10);
+      const formattedDueDate = endDate
+        ? endDate.toISOString().slice(0, 10)
+        : formattedStartDate;
+      const collaboratorLabel =
+        String(offer?.target_name || "").trim() ||
+        (offer?.target_type === "agency"
+          ? "Agency"
+          : offer?.target_type === "creator"
+            ? "Creator"
+            : "Collaborator");
+      return {
+        id: String(offer?.id || Math.random()),
+        offer_id: String(offer?.id || ""),
+        brand_campaign_id: String(
+          offer?.brand_campaign_id || offer?.brand_campaigns?.id || "",
+        ).trim(),
+        name: campaignName,
+        status: mappedStatus,
+        objective:
+          String(offer?.brand_campaigns?.objective || "").trim() ||
+          "Campaign offer",
+        budget: 0,
+        creators: [collaboratorLabel],
+        creatorAvatars: [
+          String(offer?.target_avatar_url || "").trim() || "/favicon.svg",
+        ],
+        channels: [],
+        go_live: formattedStartDate,
+        due_date: formattedDueDate,
+        duration_days: durationDays,
+        assets_delivered: 0,
+        last_update: offer?.updated_at
+          ? new Date(String(offer.updated_at)).toLocaleString()
+          : "Recently",
+        brief_snapshot:
+          offer?.brief_snapshot && typeof offer.brief_snapshot === "object"
+            ? offer.brief_snapshot
+            : {},
+        message: typeof offer?.message === "string" ? offer.message : "",
+      };
+    });
+
+    const filteredCampaigns = campaignsForOffers.filter((c) => {
       if (campaignView === "active") return c.status === "in_progress";
       if (campaignView === "pending") return c.status === "pending_approval";
       if (campaignView === "completed") return c.status === "completed";
-      if (campaignView === "drafts") return c.status === "draft";
       return true;
     });
 
     if (selectedCampaign) {
-      const campaign = mockCampaigns.find((c) => c.id === selectedCampaign);
+      const campaign = campaignsForOffers.find(
+        (c) => c.id === selectedCampaign,
+      );
       if (!campaign) {
         return (
           <div className="space-y-6">
@@ -2443,6 +3259,43 @@ export default function BrandDashboard() {
       }
 
       if (showBriefDetails) {
+        const brief =
+          campaign?.brief_snapshot &&
+          typeof campaign.brief_snapshot === "object"
+            ? campaign.brief_snapshot
+            : {};
+        const briefValue = (key: string, fallback = "Not specified") => {
+          const value = brief?.[key];
+          if (value === null || value === undefined) return fallback;
+          const text = String(value).trim();
+          return text.length > 0 ? text : fallback;
+        };
+        const briefLines = (key: string): string[] => {
+          const raw = briefValue(key, "");
+          if (!raw) return [];
+          return raw
+            .split("\n")
+            .map((line) => line.trim())
+            .filter(Boolean);
+        };
+        const referenceImages = Array.isArray(brief?.reference_images)
+          ? brief.reference_images
+          : [];
+        const brandAssets = Array.isArray(brief?.brand_assets)
+          ? brief.brand_assets
+          : [];
+        const requiredDeliverablesText = (() => {
+          const direct = String(brief?.required_deliverables || "").trim();
+          if (direct) return direct;
+          const legacy = [
+            brief?.deliverables_reels,
+            brief?.deliverables_hero_image,
+          ]
+            .map((entry) => String(entry || "").trim())
+            .filter(Boolean);
+          return legacy.length > 0 ? legacy.join("\n") : "Not specified";
+        })();
+
         return (
           <div className="space-y-6">
             <div className="flex items-center gap-4">
@@ -2461,522 +3314,326 @@ export default function BrandDashboard() {
               </div>
             </div>
 
-            {/* Share Brief */}
-            <Card className="p-6 bg-blue-50 border-2 border-blue-300">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 mb-1">
-                    Share with Talent
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Send this brief and contract to {campaign.creators[0]}
+            <Card className="p-6 bg-white border border-gray-200 space-y-6">
+              <h2 className="text-2xl font-bold text-slate-900">
+                General Dialogue &amp; Voice Direction
+              </h2>
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-slate-800">
+                  Brand Voice &amp; Tone
+                </h3>
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Voice:</span>{" "}
+                    {briefValue("voice")}
+                  </p>
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Tone:</span>{" "}
+                    {briefValue("tone")}
+                  </p>
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Personality:</span>{" "}
+                    {briefValue("personality")}
                   </p>
                 </div>
-                <Button
-                  onClick={() => handleShareBrief(campaign.id)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <Users className="w-4 h-4 mr-2" />
-                  Share Brief
-                </Button>
               </div>
-            </Card>
 
-            {/* General Dialogue & Voice Direction */}
-            <Card className="p-6 bg-white border border-gray-200">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">
-                General Dialogue & Voice Direction
-              </h3>
-
-              <div className="space-y-6">
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-3">
-                    Brand Voice & Tone
-                  </Label>
-                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                    <p className="text-gray-900 mb-3">
-                      <strong>Voice:</strong> Friendly, authentic, approachable
-                    </p>
-                    <p className="text-gray-900 mb-3">
-                      <strong>Tone:</strong> Upbeat and energetic, but not
-                      over-the-top. Natural enthusiasm that feels genuine.
-                    </p>
-                    <p className="text-gray-900">
-                      <strong>Personality:</strong> Think "your stylish friend
-                      giving honest recommendations" rather than polished
-                      influencer.
-                    </p>
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-3">
-                    Key Messages
-                  </Label>
-                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
-                    <p className="text-gray-900">
-                      • "Spring collection drops next week - these pieces are
-                      incredible"
-                    </p>
-                    <p className="text-gray-900">
-                      • "Quality you can feel, style you can trust"
-                    </p>
-                    <p className="text-gray-900">
-                      • "Perfect for everyday wear or special occasions"
-                    </p>
-                    <p className="text-gray-900">
-                      • Call to action: "Shop now at urbanapparel.com"
-                    </p>
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-3">
-                    Script Guidelines (For Video/Audio)
-                  </Label>
-                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                    <p className="text-gray-900 mb-3">
-                      <strong>Opening (0-5s):</strong> Hook viewer with energy -
-                      "You guys! I just got early access to Urban Apparel's
-                      spring line..."
-                    </p>
-                    <p className="text-gray-900 mb-3">
-                      <strong>Middle (5-20s):</strong> Show product features,
-                      talk about quality, fit, versatility. Be specific about
-                      what you love.
-                    </p>
-                    <p className="text-gray-900">
-                      <strong>Closing (20-30s):</strong> Clear CTA - "Link in
-                      bio to shop" or "Head to urbanapparel.com before it sells
-                      out"
-                    </p>
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-3">
-                    Do's & Don'ts
-                  </Label>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                      <p className="font-semibold text-green-900 mb-2">✓ DO:</p>
-                      <ul className="text-sm text-green-800 space-y-1">
-                        <li>• Be authentic and natural</li>
-                        <li>• Show product in real-life settings</li>
-                        <li>• Speak to camera directly</li>
-                        <li>• Mention brand name at least once</li>
-                      </ul>
-                    </div>
-                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="font-semibold text-red-900 mb-2">
-                        ✗ DON'T:
-                      </p>
-                      <ul className="text-sm text-red-800 space-y-1">
-                        <li>• Use competitor brands in frame</li>
-                        <li>• Over-script - keep it natural</li>
-                        <li>• Include controversial topics</li>
-                        <li>• Disparage other brands</li>
-                      </ul>
-                    </div>
-                  </div>
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-slate-800">
+                  Key Messages
+                </h3>
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                  {briefLines("key_messages").length > 0 ? (
+                    <ul className="list-disc pl-5 space-y-1 text-slate-900">
+                      {briefLines("key_messages").map((line, idx) => (
+                        <li key={`key-message-${idx}`}>
+                          {line.replace(/^[•-]\s*/, "")}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-slate-500">Not specified</p>
+                  )}
                 </div>
               </div>
-            </Card>
 
-            {/* Visual Requirements */}
-            <Card className="p-6 bg-white border border-gray-200">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">
-                Visual Requirements & Style Guide
-              </h3>
-
-              <div className="space-y-6">
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-3">
-                    Required Deliverables
-                  </Label>
-                  <div className="space-y-3">
-                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="font-semibold text-gray-900">
-                          3x Instagram Reels (15-30 seconds each)
-                        </p>
-                        <Badge className="bg-blue-100 text-blue-700 border border-blue-300">
-                          Video
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-gray-700 mb-2">
-                        Format: 9:16 vertical, 1080x1920, MP4
-                      </p>
-                      <p className="text-sm text-gray-700">
-                        Content: Product showcase, try-on, styling tips
-                      </p>
-                    </div>
-                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="font-semibold text-gray-900">
-                          1x Hero Image
-                        </p>
-                        <Badge className="bg-purple-100 text-purple-700 border border-purple-300">
-                          Image
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-gray-700 mb-2">
-                        Format: 1920x1080, JPG/PNG, high resolution
-                      </p>
-                      <p className="text-sm text-gray-700">
-                        Content: Lifestyle shot wearing spring collection piece
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-3">
-                    Visual Style & Aesthetic
-                  </Label>
-                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-3">
-                    <p className="text-gray-900">
-                      <strong>Color Palette:</strong> Warm earth tones, natural
-                      lighting, bright but not oversaturated
-                    </p>
-                    <p className="text-gray-900">
-                      <strong>Setting:</strong> Indoor/outdoor lifestyle
-                      settings - coffee shop, park, urban backdrop, home
-                    </p>
-                    <p className="text-gray-900">
-                      <strong>Framing:</strong> Mix of close-ups and full-body
-                      shots. Show product clearly.
-                    </p>
-                    <p className="text-gray-900">
-                      <strong>Editing:</strong> Clean, minimal cuts. Trendy but
-                      not overly filtered. Authentic feel.
-                    </p>
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-3">
-                    Reference Images
-                  </Label>
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div className="relative">
-                      <img
-                        src="https://images.unsplash.com/photo-1483985988355-763728e1935b?w=400"
-                        alt="Reference 1"
-                        className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
-                      />
-                      <Badge className="absolute top-2 left-2 bg-white text-gray-900 border border-gray-300">
-                        Style Ref 1
-                      </Badge>
-                    </div>
-                    <div className="relative">
-                      <img
-                        src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400"
-                        alt="Reference 2"
-                        className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
-                      />
-                      <Badge className="absolute top-2 left-2 bg-white text-gray-900 border border-gray-300">
-                        Style Ref 2
-                      </Badge>
-                    </div>
-                    <div className="relative">
-                      <img
-                        src="https://images.unsplash.com/photo-1445205170230-053b83016050?w=400"
-                        alt="Reference 3"
-                        className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
-                      />
-                      <Badge className="absolute top-2 left-2 bg-white text-gray-900 border border-gray-300">
-                        Vibe Ref
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-3">
-                    Brand Assets Provided
-                  </Label>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <FileText className="w-5 h-5 text-gray-600" />
-                        <span className="text-gray-900">
-                          Brand_Guidelines.pdf
-                        </span>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-2 border-gray-300"
-                      >
-                        <Download className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <ImageIcon className="w-5 h-5 text-gray-600" />
-                        <span className="text-gray-900">
-                          Product_Photos_SpringCollection.zip
-                        </span>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-2 border-gray-300"
-                      >
-                        <Download className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-slate-800">
+                  Script Guidelines (For Video/Audio)
+                </h3>
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Opening (0-5s):</span>{" "}
+                    {briefValue("script_opening")}
+                  </p>
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Middle (5-20s):</span>{" "}
+                    {briefValue("script_middle")}
+                  </p>
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Closing (20-30s):</span>{" "}
+                    {briefValue("script_closing")}
+                  </p>
                 </div>
               </div>
-            </Card>
 
-            {/* Campaign Scope & Details */}
-            <Card className="p-6 bg-white border border-gray-200">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">
-                Campaign Scope & Contract Details
-              </h3>
-
-              <div className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <Label className="text-base font-semibold text-gray-900 block mb-3">
-                      Campaign Overview
-                    </Label>
-                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-2 text-sm">
-                      <p className="text-gray-900">
-                        <strong>Objective:</strong> Drive awareness and sales
-                        for Spring 2025 collection launch
-                      </p>
-                      <p className="text-gray-900">
-                        <strong>Target Audience:</strong> Women 25-40,
-                        fashion-conscious, urban lifestyle
-                      </p>
-                      <p className="text-gray-900">
-                        <strong>Campaign Duration:</strong> {campaign.duration}
-                      </p>
-                      <p className="text-gray-900">
-                        <strong>Launch Date:</strong> {campaign.go_live}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-base font-semibold text-gray-900 block mb-3">
-                      Budget & Timeline
-                    </Label>
-                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-2 text-sm">
-                      <p className="text-gray-900">
-                        <strong>Total Budget:</strong> $
-                        {campaign.budget.toLocaleString()}
-                      </p>
-                      <p className="text-gray-900">
-                        <strong>Creator Payment:</strong> $
-                        {(campaign.budget * 0.9).toFixed(0)}
-                      </p>
-                      <p className="text-gray-900">
-                        <strong>Platform Fee:</strong> $
-                        {(campaign.budget * 0.1).toFixed(0)} (10%)
-                      </p>
-                      <p className="text-gray-900">
-                        <strong>Submission Deadline:</strong>{" "}
-                        {new Date(campaign.due_date).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-3">
-                    Usage Rights & Licensing
-                  </Label>
-                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-3">
-                    <div className="grid md:grid-cols-3 gap-4">
-                      <div className="p-3 bg-white border border-gray-200 rounded-lg">
-                        <p className="text-sm text-gray-600 mb-1">Territory</p>
-                        <p className="font-semibold text-gray-900">
-                          {campaign.territory}
-                        </p>
-                      </div>
-                      <div className="p-3 bg-white border border-gray-200 rounded-lg">
-                        <p className="text-sm text-gray-600 mb-1">Duration</p>
-                        <p className="font-semibold text-gray-900">
-                          {campaign.duration}
-                        </p>
-                      </div>
-                      <div className="p-3 bg-white border border-gray-200 rounded-lg">
-                        <p className="text-sm text-gray-600 mb-1">
-                          License Expiry
-                        </p>
-                        <p className="font-semibold text-gray-900">
-                          {campaign.license_expiry}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="pt-3 border-t border-gray-300">
-                      <p className="text-sm text-gray-700 mb-2">
-                        <strong>Approved Channels:</strong>
-                      </p>
-                      <div className="flex gap-2">
-                        {campaign.channels.map((channel) => (
-                          <Badge
-                            key={channel}
-                            className="bg-blue-100 text-blue-700 border border-blue-300"
-                          >
-                            {channel}
-                          </Badge>
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-slate-800">
+                  Do&apos;s &amp; Don&apos;ts
+                </h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+                    <p className="font-semibold text-emerald-900 mb-2">✓ DO:</p>
+                    {briefLines("dos").length > 0 ? (
+                      <ul className="list-disc pl-5 space-y-1 text-emerald-900">
+                        {briefLines("dos").map((line, idx) => (
+                          <li key={`dos-${idx}`}>
+                            {line.replace(/^[•-]\s*/, "")}
+                          </li>
                         ))}
-                      </div>
-                    </div>
-
-                    <div className="pt-3 border-t border-gray-300">
-                      <p className="text-sm text-gray-700 mb-2">
-                        <strong>Exclusivity:</strong>
-                      </p>
-                      <p className="text-gray-900">
-                        Non-exclusive. Creator may work with non-competing
-                        brands in same category.
-                      </p>
-                    </div>
-
-                    <div className="pt-3 border-t border-gray-300">
-                      <p className="text-sm text-gray-700 mb-2">
-                        <strong>Renewal Terms:</strong>
-                      </p>
-                      <p className="text-gray-900">
-                        Auto-renewal available at end of term. Brand must notify
-                        14 days prior if not renewing.
-                      </p>
-                    </div>
+                      </ul>
+                    ) : (
+                      <p className="text-emerald-700">Not specified</p>
+                    )}
                   </div>
-                </div>
-
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-3">
-                    Revision Policy
-                  </Label>
-                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-gray-900 mb-2">
-                      <strong>Included Revisions:</strong> 2 rounds of minor
-                      edits (color correction, text changes, music swaps)
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="font-semibold text-red-900 mb-2">
+                      ✗ DON&apos;T:
                     </p>
-                    <p className="text-gray-900 mb-2">
-                      <strong>Major Changes:</strong> Require new brief and
-                      additional budget (e.g., re-shoot, complete re-edit)
-                    </p>
-                    <p className="text-gray-900">
-                      <strong>Turnaround for Revisions:</strong> 24-48 hours
-                      depending on scope
-                    </p>
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-3">
-                    Approval Process
-                  </Label>
-                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                    <div className="space-y-3 text-sm">
-                      <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 bg-[#F7B750] text-white rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold">
-                          1
-                        </div>
-                        <p className="text-gray-900">
-                          Creator submits deliverables to platform
-                        </p>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 bg-[#F7B750] text-white rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold">
-                          2
-                        </div>
-                        <p className="text-gray-900">
-                          Brand has 48 hours to review and approve/request
-                          revisions
-                        </p>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 bg-[#F7B750] text-white rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold">
-                          3
-                        </div>
-                        <p className="text-gray-900">
-                          Once approved, funds release from escrow to creator (3
-                          business days)
-                        </p>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-6 h-6 bg-[#F7B750] text-white rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold">
-                          4
-                        </div>
-                        <p className="text-gray-900">
-                          If no action taken, payment auto-releases after 48
-                          hours
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-3">
-                    Watermark & Protection
-                  </Label>
-                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                    <p className="text-gray-900 mb-2">
-                      All delivered assets include embedded Likelee watermark
-                      for license verification and usage tracking.
-                    </p>
-                    <p className="text-gray-900">
-                      <strong>DMCA Protection:</strong> Automatic takedown
-                      notices if assets used outside approved scope.
-                    </p>
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-base font-semibold text-gray-900 block mb-3">
-                    Legal Terms
-                  </Label>
-                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 space-y-2">
-                    <p>
-                      • Creator retains copyright; Brand receives usage license
-                      as specified
-                    </p>
-                    <p>
-                      • SAG-AFTRA compliant terms and fair compensation
-                      standards
-                    </p>
-                    <p>
-                      • Creator has right to approve final usage before
-                      publishing
-                    </p>
-                    <p>• Brand cannot sublicense without creator consent</p>
-                    <p>
-                      • Usage limited to approved channels, territories, and
-                      duration
-                    </p>
+                    {briefLines("donts").length > 0 ? (
+                      <ul className="list-disc pl-5 space-y-1 text-red-900">
+                        {briefLines("donts").map((line, idx) => (
+                          <li key={`donts-${idx}`}>
+                            {line.replace(/^[•-]\s*/, "")}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-red-700">Not specified</p>
+                    )}
                   </div>
                 </div>
               </div>
             </Card>
 
-            {/* Contract Actions */}
+            <Card className="p-6 bg-white border border-gray-200 space-y-6">
+              <h2 className="text-2xl font-bold text-slate-900">
+                Visual Requirements &amp; Style Guide
+              </h2>
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-slate-800">
+                  Required Deliverables
+                </h3>
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                  <p className="text-slate-900 whitespace-pre-wrap">
+                    {requiredDeliverablesText}
+                  </p>
+                  <p className="text-sm text-slate-700 mt-3">
+                    <span className="font-semibold">
+                      Total expected deliverables:
+                    </span>{" "}
+                    {briefValue("total_expected_deliverables")}
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-slate-800">
+                  Visual Style &amp; Aesthetic
+                </h3>
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Color Palette:</span>{" "}
+                    {briefValue("visual_color_palette")}
+                  </p>
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Setting:</span>{" "}
+                    {briefValue("visual_setting")}
+                  </p>
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Framing:</span>{" "}
+                    {briefValue("visual_framing")}
+                  </p>
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Editing:</span>{" "}
+                    {briefValue("visual_editing")}
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-slate-800">
+                  Reference Images
+                </h3>
+                {referenceImages.length > 0 ? (
+                  <div className="grid md:grid-cols-3 gap-3">
+                    {referenceImages.map((img: any, idx: number) => (
+                      <div
+                        key={`ref-img-${idx}`}
+                        className="border border-gray-200 rounded-lg overflow-hidden"
+                      >
+                        <img
+                          src={String(img?.url || "")}
+                          alt={`Ref ${idx + 1}`}
+                          className="w-full h-40 object-cover bg-gray-100"
+                        />
+                        <div className="p-2 text-xs text-gray-700 truncate">
+                          {`Ref ${idx + 1}`}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg text-slate-500">
+                    No reference images provided.
+                  </div>
+                )}
+              </div>
+              <div className="space-y-3">
+                <h3 className="text-lg font-semibold text-slate-800">
+                  Brand Assets Provided
+                </h3>
+                {brandAssets.length > 0 ? (
+                  <div className="space-y-2">
+                    {brandAssets.map((asset: any, idx: number) => (
+                      <div
+                        key={`asset-${idx}`}
+                        className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 flex items-center justify-between gap-3"
+                      >
+                        <span className="truncate">
+                          {String(asset?.name || `Asset ${idx + 1}`)}
+                        </span>
+                        {asset?.url ? (
+                          <a
+                            href={String(asset.url)}
+                            target="_blank"
+                            rel="noreferrer"
+                            download={String(asset?.name || `asset-${idx + 1}`)}
+                            title="Download file"
+                            className="inline-flex items-center justify-center w-9 h-9 border border-slate-300 rounded-md hover:bg-slate-100 transition-colors"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <Download className="w-4 h-4" />
+                          </a>
+                        ) : (
+                          <span className="text-xs text-slate-500">
+                            No file URL
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg text-slate-500">
+                    No brand assets provided.
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            <Card className="p-6 bg-white border border-gray-200 space-y-6">
+              <h2 className="text-2xl font-bold text-slate-900">
+                Campaign Scope &amp; Contract Details
+              </h2>
+              <div className="grid md:grid-cols-2 gap-4 text-sm">
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Objective:</span>{" "}
+                    {briefValue("overview_objective")}
+                  </p>
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Target Audience:</span>{" "}
+                    {briefValue("overview_target_audience")}
+                  </p>
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Campaign Duration:</span>{" "}
+                    {briefValue("overview_campaign_duration")}
+                  </p>
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Launch Date:</span>{" "}
+                    {briefValue("overview_launch_date")}
+                  </p>
+                </div>
+                <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Total Budget:</span>{" "}
+                    {briefValue("budget_total")}
+                  </p>
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Creator Payment:</span>{" "}
+                    {briefValue("budget_creator_payment")}
+                  </p>
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Platform Fee:</span>{" "}
+                    {briefValue("budget_platform_fee")}
+                  </p>
+                  <p className="text-slate-900">
+                    <span className="font-semibold">Submission Deadline:</span>{" "}
+                    {briefValue("budget_submission_deadline")}
+                  </p>
+                </div>
+              </div>
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                <p className="text-slate-900">
+                  <span className="font-semibold">Renewal Terms:</span>{" "}
+                  {briefValue("budget_renewal_terms")}
+                </p>
+              </div>
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg space-y-2">
+                <p className="text-slate-900">
+                  <span className="font-semibold">Included Revisions:</span>{" "}
+                  {briefValue("revision_included")}
+                </p>
+                <p className="text-slate-900">
+                  <span className="font-semibold">Major Changes:</span>{" "}
+                  {briefValue("revision_major_changes")}
+                </p>
+                <p className="text-slate-900">
+                  <span className="font-semibold">
+                    Turnaround for Revisions:
+                  </span>{" "}
+                  {briefValue("revision_turnaround")}
+                </p>
+              </div>
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                <p className="font-semibold text-slate-900 mb-2">
+                  Approval Process
+                </p>
+                {briefLines("approval_process").length > 0 ? (
+                  <ol className="list-decimal pl-5 space-y-1 text-slate-900">
+                    {briefLines("approval_process").map((line, idx) => (
+                      <li key={`approval-${idx}`}>
+                        {line.replace(/^[•-]?\s*\d*\s*/, "")}
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className="text-slate-500">Not specified</p>
+                )}
+              </div>
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                <p className="font-semibold text-slate-900 mb-1">
+                  Watermark &amp; Protection
+                </p>
+                <p className="text-slate-900 whitespace-pre-wrap">
+                  {briefValue("watermark_protection")}
+                </p>
+              </div>
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                <p className="font-semibold text-slate-900 mb-1">Legal Terms</p>
+                {briefLines("legal_terms").length > 0 ? (
+                  <ul className="list-disc pl-5 space-y-1 text-slate-900">
+                    {briefLines("legal_terms").map((line, idx) => (
+                      <li key={`legal-${idx}`}>
+                        {line.replace(/^[•-]\s*/, "")}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-slate-500">Not specified</p>
+                )}
+              </div>
+            </Card>
+
             <div className="flex gap-4">
-              <Button
-                onClick={() => handleShareBrief(campaign.id)}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-12"
-              >
-                <Users className="w-5 h-5 mr-2" />
-                Share Full Brief with Talent
-              </Button>
-              <Button
-                variant="outline"
-                className="flex-1 border-2 border-gray-300 h-12"
-              >
-                <Download className="w-5 h-5 mr-2" />
-                Download Contract PDF
-              </Button>
               <Button
                 variant="outline"
                 className="border-2 border-gray-300 h-12"
@@ -2989,9 +3646,57 @@ export default function BrandDashboard() {
         );
       }
 
+      const selectedBrief =
+        campaign?.brief_snapshot && typeof campaign.brief_snapshot === "object"
+          ? campaign.brief_snapshot
+          : {};
+      const selectedBriefValue = (key: string, fallback = "Not specified") => {
+        const value = selectedBrief?.[key];
+        if (value === null || value === undefined) return fallback;
+        const text = String(value).trim();
+        return text.length > 0 ? text : fallback;
+      };
+      const selectedRequiredDeliverables = (() => {
+        const direct = String(
+          selectedBrief?.required_deliverables || "",
+        ).trim();
+        if (direct) return direct;
+        const legacy = [
+          selectedBrief?.deliverables_reels,
+          selectedBrief?.deliverables_hero_image,
+        ]
+          .map((entry) => String(entry || "").trim())
+          .filter(Boolean);
+        return legacy.length > 0 ? legacy.join(", ") : "Not specified";
+      })();
+      const startForProgress = /^\d{4}-\d{2}-\d{2}$/.test(
+        String(campaign.go_live || ""),
+      )
+        ? new Date(`${String(campaign.go_live)}T00:00:00`)
+        : null;
+      const dueForProgress = /^\d{4}-\d{2}-\d{2}$/.test(
+        String(campaign.due_date || ""),
+      )
+        ? new Date(`${String(campaign.due_date)}T23:59:59`)
+        : null;
+      const nowMs = Date.now();
+      const progressPercent = (() => {
+        if (campaign.status === "completed") return 100;
+        if (!startForProgress || !dueForProgress) return 0;
+        const startMs = startForProgress.getTime();
+        const dueMs = dueForProgress.getTime();
+        if (dueMs <= startMs) return nowMs >= dueMs ? 100 : 0;
+        if (nowMs <= startMs) return 0;
+        if (nowMs >= dueMs) return 100;
+        return Math.max(
+          0,
+          Math.min(100, ((nowMs - startMs) / (dueMs - startMs)) * 100),
+        );
+      })();
+
       return (
         <div className="space-y-6">
-          <div className="flex items-center gap-4">
+          <div className="space-y-3">
             <Button
               variant="outline"
               onClick={() => setSelectedCampaign(null)}
@@ -3024,14 +3729,6 @@ export default function BrandDashboard() {
                 {campaign.status.replace("_", " ")}
               </Badge>
               <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  className="border-2 border-gray-300"
-                  onClick={() => setShowContractModal(true)}
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  View Contract
-                </Button>
                 <div className="text-right">
                   <p className="text-sm text-gray-600">Due Date</p>
                   <p className="font-bold text-gray-900">
@@ -3040,16 +3737,7 @@ export default function BrandDashboard() {
                 </div>
               </div>
             </div>
-            <Progress
-              value={
-                campaign.status === "completed"
-                  ? 100
-                  : campaign.status === "pending_approval"
-                    ? 75
-                    : 50
-              }
-              className="h-2"
-            />
+            <Progress value={progressPercent} className="h-2" />
           </Card>
 
           <div className="grid md:grid-cols-3 gap-6">
@@ -3075,8 +3763,8 @@ export default function BrandDashboard() {
                   <Label className="text-sm font-semibold text-gray-700 block mb-2">
                     Deliverables
                   </Label>
-                  <p className="text-gray-900">
-                    3 Instagram Reels (15-30 seconds each), 1 Hero Image
+                  <p className="text-gray-900 whitespace-pre-wrap">
+                    {selectedRequiredDeliverables}
                   </p>
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
@@ -3093,12 +3781,16 @@ export default function BrandDashboard() {
                     <Label className="text-sm font-semibold text-gray-700 block mb-2">
                       Budget
                     </Label>
-                    <p className="text-gray-900">Total: ${campaign.budget}</p>
-                    <p className="text-sm text-gray-600">
-                      Creator: ${(campaign.budget * 0.9).toFixed(0)}
+                    <p className="text-gray-900">
+                      Total: {selectedBriefValue("budget_total", "N/A")}
                     </p>
                     <p className="text-sm text-gray-600">
-                      Likelee Fee: ${(campaign.budget * 0.1).toFixed(0)}
+                      Creator:{" "}
+                      {selectedBriefValue("budget_creator_payment", "N/A")}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Likelee Fee:{" "}
+                      {selectedBriefValue("budget_platform_fee", "N/A")}
                     </p>
                   </div>
                 </div>
@@ -3127,99 +3819,10 @@ export default function BrandDashboard() {
                   <p className="font-semibold text-gray-900">
                     {campaign.creators[0]}
                   </p>
-                  <p className="text-sm text-gray-600">★★★★★ 4.9</p>
                 </div>
               </div>
-              <Button
-                variant="outline"
-                className="w-full border-2 border-gray-300 mb-2"
-              >
-                Message Talent
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full border-2 border-blue-300 text-blue-600"
-                onClick={() => setShowBriefDetails(true)}
-              >
-                Share Brief with Talent
-              </Button>
             </Card>
           </div>
-
-          {/* Deliverables Section */}
-          {campaign.status === "pending_approval" && (
-            <Card className="p-6 bg-white border border-yellow-300 border-2">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-gray-900">
-                  Review Deliverables
-                </h3>
-                <Badge className="bg-yellow-100 text-yellow-700 border border-yellow-300">
-                  <Clock className="w-4 h-4 mr-1" />
-                  48h to approve
-                </Badge>
-              </div>
-              <div className="grid md:grid-cols-3 gap-4 mb-6">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="relative">
-                    <img
-                      src={`https://images.unsplash.com/photo-${1540202404 + i}-d0c7fe46a087?w=400`}
-                      alt={`Asset ${i}`}
-                      className="w-full h-48 object-cover border-2 border-gray-200 rounded-lg"
-                    />
-                    <Badge className="absolute top-2 right-2 bg-green-500 text-white">
-                      <CheckCircle2 className="w-3 h-3 mr-1" />
-                      Watermarked
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-3">
-                <Button className="flex-1 bg-green-600 hover:bg-green-700 text-white">
-                  <CheckCircle2 className="w-5 h-5 mr-2" />
-                  Approve Deliverables
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 border-2 border-gray-300"
-                >
-                  Request Revisions
-                </Button>
-              </div>
-            </Card>
-          )}
-
-          {/* License & Usage Rights */}
-          <Card className="p-6 bg-white border border-gray-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">
-              License & Usage Rights
-            </h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <Label className="text-sm font-semibold text-gray-700 block mb-2">
-                  Territory
-                </Label>
-                <p className="text-gray-900">{campaign.territory}</p>
-              </div>
-              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <Label className="text-sm font-semibold text-gray-700 block mb-2">
-                  Duration
-                </Label>
-                <p className="text-gray-900">{campaign.duration}</p>
-              </div>
-              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <Label className="text-sm font-semibold text-gray-700 block mb-2">
-                  Channels
-                </Label>
-                <p className="text-gray-900">{campaign.channels.join(", ")}</p>
-              </div>
-              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <Label className="text-sm font-semibold text-gray-700 block mb-2">
-                  Valid Until
-                </Label>
-                <p className="text-gray-900">{campaign.license_expiry}</p>
-              </div>
-            </div>
-          </Card>
 
           {/* Contract Update Section */}
           <Card className="p-6 bg-white border border-gray-200">
@@ -3233,17 +3836,15 @@ export default function BrandDashboard() {
               <Button
                 variant="outline"
                 className="flex-1 border-2 border-gray-300"
-                onClick={() => setShowContractModal(true)}
+                onClick={async () => {
+                  await loadCampaignContractsForOffer(
+                    String(campaign.offer_id || ""),
+                  );
+                  setShowContractModal(true);
+                }}
               >
                 <FileText className="w-4 h-4 mr-2" />
                 View Full Contract
-              </Button>
-              <Button
-                className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
-                onClick={() => setShowUpdateRequestModal(true)}
-              >
-                <Edit className="w-4 h-4 mr-2" />
-                Request Contract Update
               </Button>
             </div>
           </Card>
@@ -3253,22 +3854,11 @@ export default function BrandDashboard() {
 
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              My Campaigns
-            </h1>
-            <p className="text-gray-600">
-              Create, manage, and track all projects from brief to completion
-            </p>
-          </div>
-          <Button
-            onClick={() => navigate(createPageUrl("BrandCampaignDashboard"))}
-            className="h-12 px-6 bg-[#F7B750] hover:bg-[#E6A640] text-white"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            New Campaign
-          </Button>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Offers</h1>
+          <p className="text-gray-600">
+            Review and manage campaign offers and ongoing collaborations
+          </p>
         </div>
 
         {/* Campaign Tabs */}
@@ -3282,7 +3872,11 @@ export default function BrandDashboard() {
             }`}
           >
             Active (
-            {mockCampaigns.filter((c) => c.status === "in_progress").length})
+            {
+              campaignsForOffers.filter((c) => c.status === "in_progress")
+                .length
+            }
+            )
           </button>
           <button
             onClick={() => setCampaignView("pending")}
@@ -3292,7 +3886,12 @@ export default function BrandDashboard() {
                 : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
           >
-            Pending Approval ({pendingApprovalCount})
+            Pending Approval (
+            {
+              campaignsForOffers.filter((c) => c.status === "pending_approval")
+                .length
+            }
+            )
           </button>
           <button
             onClick={() => setCampaignView("completed")}
@@ -3303,31 +3902,16 @@ export default function BrandDashboard() {
             }`}
           >
             Completed (
-            {mockCampaigns.filter((c) => c.status === "completed").length})
-          </button>
-          <button
-            onClick={() => setCampaignView("drafts")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              campaignView === "drafts"
-                ? "border-[#F7B750] text-[#F7B750]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Drafts ({mockCampaigns.filter((c) => c.status === "draft").length})
-          </button>
-          <button
-            onClick={() => setCampaignView("inbox")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              campaignView === "inbox"
-                ? "border-[#F7B750] text-[#F7B750]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Inbox ({mockActivities.length})
+            {campaignsForOffers.filter((c) => c.status === "completed").length})
           </button>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {loadingBrandOfferItems && (
+            <Card className="p-6 bg-white border border-gray-200">
+              <p className="text-sm text-gray-600">Loading campaigns...</p>
+            </Card>
+          )}
           {filteredCampaigns.map((campaign) => (
             <Card
               key={campaign.id}
@@ -3385,34 +3969,198 @@ export default function BrandDashboard() {
                 </div>
               </div>
 
-              <Button
-                variant="outline"
-                className="w-full border-2 border-gray-300"
-              >
-                View Details
-              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  className="w-full border-2 border-gray-300"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setSelectedCampaign(campaign.id);
+                  }}
+                >
+                  View Details
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full border-2 border-gray-300"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    openAddCollaboratorFlow(campaign);
+                  }}
+                >
+                  Add Collaborator
+                </Button>
+              </div>
             </Card>
           ))}
         </div>
 
-        {filteredCampaigns.length === 0 && (
+        {!loadingBrandOfferItems && filteredCampaigns.length === 0 && (
           <Card className="p-12 bg-gray-50 border border-gray-200 text-center">
             <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-gray-900 mb-2">
-              No {campaignView} campaigns
+              {campaignView === "active"
+                ? "No active campaigns"
+                : campaignView === "pending"
+                  ? "No pending approval campaigns"
+                  : "No completed campaigns"}
             </h3>
             <p className="text-gray-600 mb-6">
               Start a new campaign to get creators working on your content
             </p>
-            <Button
-              onClick={() => navigate(createPageUrl("BrandCampaignDashboard"))}
-              className="bg-[#F7B750] hover:bg-[#E6A640] text-white"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Create New Campaign
-            </Button>
           </Card>
         )}
+      </div>
+    );
+  };
+
+  const renderCampaignHub = () => {
+    const campaignsForHub = mockCampaigns.filter((campaign) => {
+      if (campaignHubTab === "inbox") return false;
+      const mappedStatus =
+        campaign.status === "in_progress"
+          ? "active"
+          : campaign.status === "pending_approval"
+            ? "pending_approval"
+            : campaign.status === "completed"
+              ? "completed"
+              : "draft";
+      return mappedStatus === campaignHubTab;
+    });
+
+    return (
+      <div className="space-y-8">
+        <div className="grid md:grid-cols-4 gap-6">
+          <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
+            <DollarSign className="w-8 h-8 text-[#F7B750] mb-4" />
+            <p className="text-sm text-gray-600 mb-1">Total Spend (30d)</p>
+            <p className="text-3xl font-bold text-gray-900">$12.4K</p>
+          </Card>
+          <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
+            <Users className="w-8 h-8 text-[#F7B750] mb-4" />
+            <p className="text-sm text-gray-600 mb-1">Active Collaborators</p>
+            <p className="text-3xl font-bold text-gray-900">8</p>
+          </Card>
+          <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
+            <FileText className="w-8 h-8 text-[#F7B750] mb-4" />
+            <p className="text-sm text-gray-600 mb-1">Campaigns Launched</p>
+            <p className="text-3xl font-bold text-gray-900">12</p>
+          </Card>
+          <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
+            <TrendingUp className="w-8 h-8 text-[#F7B750] mb-4" />
+            <p className="text-sm text-gray-600 mb-1">Avg ROI</p>
+            <p className="text-3xl font-bold text-gray-900">3.2x</p>
+          </Card>
+        </div>
+
+        <div className="grid md:grid-cols-5 gap-6">
+          <Card className="p-6 bg-white border-2 border-[#F7B750] rounded-none">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              Collaborate with Agency
+            </h3>
+            <Button className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none">
+              Invite Agency
+            </Button>
+          </Card>
+          <Card className="p-6 bg-white border-2 border-[#FAD54C]/60 opacity-70 rounded-none">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              Add AI Creator
+            </h3>
+            <Button
+              disabled
+              className="w-full bg-[#FAD54C] text-white rounded-none cursor-not-allowed"
+            >
+              Coming Soon
+            </Button>
+          </Card>
+          <Card className="p-6 bg-white border-2 border-amber-600/60 opacity-70 rounded-none">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              Invite Company Seat
+            </h3>
+            <Button
+              disabled
+              className="w-full bg-amber-600 text-white rounded-none cursor-not-allowed"
+            >
+              Coming Soon
+            </Button>
+          </Card>
+          <Card className="p-6 bg-white border-2 border-orange-600 rounded-none">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              AI Studio Add-On
+            </h3>
+            <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-none">
+              Enable Add-On
+            </Button>
+          </Card>
+          <Card className="p-6 bg-white border-2 border-blue-600 rounded-none">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Post a Job</h3>
+            <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-none">
+              Post Job
+            </Button>
+          </Card>
+        </div>
+
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-gray-900">Your Campaigns</h2>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setCampaignHubTab("active")}
+                className={`border-2 rounded-none ${campaignHubTab === "active" ? "border-black bg-black text-white" : "border-gray-300"}`}
+              >
+                Active
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setCampaignHubTab("pending_approval")}
+                className={`border-2 rounded-none ${campaignHubTab === "pending_approval" ? "border-black bg-black text-white" : "border-gray-300"}`}
+              >
+                Pending Approval
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setCampaignHubTab("completed")}
+                className={`border-2 rounded-none ${campaignHubTab === "completed" ? "border-black bg-black text-white" : "border-gray-300"}`}
+              >
+                Completed
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setCampaignHubTab("inbox")}
+                className={`border-2 rounded-none ${campaignHubTab === "inbox" ? "border-black bg-black text-white" : "border-gray-300"}`}
+              >
+                Inbox
+              </Button>
+            </div>
+          </div>
+          {campaignHubTab === "inbox" ? (
+            renderInboxSubtab()
+          ) : (
+            <div className="space-y-4">
+              {campaignsForHub.map((campaign) => (
+                <Card
+                  key={campaign.id}
+                  className="p-6 bg-white border-2 border-gray-200 rounded-none"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-2xl font-bold text-gray-900">
+                        {campaign.name}
+                      </h3>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {campaign.creators.join(", ")}
+                      </p>
+                    </div>
+                    <Button variant="outline" className="border-2 rounded-none">
+                      View Details
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     );
   };
@@ -5765,8 +6513,21 @@ export default function BrandDashboard() {
           </DialogHeader>
 
           <div className="py-4 space-y-6">
-            {selectedCampaign &&
-              mockCampaigns.find((c) => c.id === selectedCampaign) && (
+            {loadingSelectedCampaignContracts && (
+              <Card className="p-6 bg-white border border-gray-200">
+                <p className="text-sm text-gray-600">Loading contract...</p>
+              </Card>
+            )}
+            {!loadingSelectedCampaignContracts &&
+              selectedCampaignContracts.length === 0 && (
+                <Card className="p-6 bg-white border border-gray-200">
+                  <p className="text-sm text-gray-600">
+                    No contract found for this campaign offer yet.
+                  </p>
+                </Card>
+              )}
+            {!loadingSelectedCampaignContracts &&
+              selectedCampaignContracts.length > 0 && (
                 <>
                   <Card className="p-6 bg-gray-50 border-2 border-gray-300">
                     <h3 className="text-xl font-bold text-gray-900 mb-4">
@@ -5774,126 +6535,48 @@ export default function BrandDashboard() {
                     </h3>
                     <div className="grid md:grid-cols-2 gap-4 text-sm">
                       <div>
-                        <p className="text-gray-600 mb-1">Campaign Name</p>
+                        <p className="text-gray-600 mb-1">Contract</p>
                         <p className="font-semibold text-gray-900">
-                          {
-                            mockCampaigns.find((c) => c.id === selectedCampaign)
-                              .name
-                          }
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600 mb-1">Talent</p>
-                        <p className="font-semibold text-gray-900">
-                          {mockCampaigns
-                            .find((c) => c.id === selectedCampaign)
-                            .creators.join(", ")}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600 mb-1">Budget</p>
-                        <p className="font-semibold text-gray-900">
-                          $
-                          {mockCampaigns
-                            .find((c) => c.id === selectedCampaign)
-                            .budget.toLocaleString()}
+                          {String(
+                            selectedCampaignContracts[0]?.title ||
+                              "Campaign contract",
+                          )}
                         </p>
                       </div>
                       <div>
                         <p className="text-gray-600 mb-1">Status</p>
                         <Badge className="bg-blue-100 text-blue-700 border border-blue-300">
-                          {mockCampaigns
-                            .find((c) => c.id === selectedCampaign)
-                            .status.replace("_", " ")}
+                          {String(
+                            selectedCampaignContracts[0]?.docuseal_status ||
+                              "sent",
+                          ).replace(/_/g, " ")}
                         </Badge>
                       </div>
                     </div>
                   </Card>
-
-                  <Card className="p-6 bg-white border border-gray-200">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">
-                      Contract Terms
-                    </h3>
-                    <div className="space-y-4 text-sm">
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                          <p className="text-gray-600 mb-1">Territory</p>
-                          <p className="font-semibold text-gray-900">
-                            {
-                              mockCampaigns.find(
-                                (c) => c.id === selectedCampaign,
-                              ).territory
-                            }
-                          </p>
-                        </div>
-                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                          <p className="text-gray-600 mb-1">Duration</p>
-                          <p className="font-semibold text-gray-900">
-                            {
-                              mockCampaigns.find(
-                                (c) => c.id === selectedCampaign,
-                              ).duration
-                            }
-                          </p>
-                        </div>
-                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                          <p className="text-gray-600 mb-1">License Expires</p>
-                          <p className="font-semibold text-gray-900">
-                            {
-                              mockCampaigns.find(
-                                (c) => c.id === selectedCampaign,
-                              ).license_expiry
-                            }
-                          </p>
-                        </div>
-                        <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                          <p className="text-gray-600 mb-1">Channels</p>
-                          <p className="font-semibold text-gray-900">
-                            {mockCampaigns
-                              .find((c) => c.id === selectedCampaign)
-                              .channels.join(", ")}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                        <p className="font-semibold text-gray-900 mb-2">
-                          Deliverables
-                        </p>
-                        <p className="text-gray-700">
-                          3 Instagram Reels (15-30 seconds each), 1 Hero Image
-                        </p>
-                      </div>
-
-                      <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                        <p className="font-semibold text-gray-900 mb-2">
-                          Revision Policy
-                        </p>
-                        <p className="text-gray-700">
-                          2 rounds of revisions included
-                        </p>
-                      </div>
-
-                      <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                        <p className="font-semibold text-gray-900 mb-2">
-                          Payment Terms
-                        </p>
-                        <p className="text-gray-700">
-                          Escrow-protected, releases upon approval or after 48
-                          hours
-                        </p>
-                      </div>
-                    </div>
+                  <Card className="p-4 bg-white border border-gray-200">
+                    {String(
+                      selectedCampaignContracts[0]?.meta
+                        ?.docuseal_document_url ||
+                        selectedCampaignContracts[0]?.file_url ||
+                        "",
+                    ).trim() ? (
+                      <iframe
+                        src={String(
+                          selectedCampaignContracts[0]?.meta
+                            ?.docuseal_document_url ||
+                            selectedCampaignContracts[0]?.file_url,
+                        )}
+                        className="w-full h-[70vh] border border-gray-200 rounded"
+                        title="Campaign Contract Document"
+                      />
+                    ) : (
+                      <p className="text-sm text-gray-600">
+                        Contract document URL is not available yet.
+                      </p>
+                    )}
                   </Card>
-
-                  <div className="flex gap-3">
-                    <Button
-                      variant="outline"
-                      className="flex-1 border-2 border-gray-300"
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Download PDF
-                    </Button>
+                  <div className="flex justify-end">
                     <Button
                       variant="outline"
                       className="border-2 border-gray-300"
@@ -6721,7 +7404,12 @@ export default function BrandDashboard() {
               const Icon = item.icon;
               const isCampaignGroup = item.id === "campaigns";
               const isActive = isCampaignGroup
-                ? activeSection === "campaigns" || activeSection === "studio"
+                ? activeSection === "campaigns-hub" ||
+                  activeSection === "campaigns-inbox" ||
+                  activeSection === "campaign-offers" ||
+                  activeSection === "campaigns-contract-hub" ||
+                  activeSection === "campaigns-deliverables" ||
+                  activeSection === "studio"
                 : activeSection === item.id;
 
               return (
@@ -6735,10 +7423,12 @@ export default function BrandDashboard() {
                   >
                     <button
                       onClick={() => {
-                        setActiveSection(item.id);
                         if (item.id === "campaigns") {
-                          setCampaignView("active");
+                          setActiveSection("campaigns-hub");
+                          setSelectedCampaign(null);
+                          return;
                         }
+                        setActiveSection(item.id);
                         setShowEscrowDetails(false);
                         setShowBriefDetails(false);
                         setShowCreatorProfile(false);
@@ -6807,12 +7497,24 @@ export default function BrandDashboard() {
                     <div className="mt-1 ml-11 space-y-1">
                       <button
                         onClick={() => {
-                          setActiveSection("campaigns");
-                          setCampaignView("inbox");
+                          setActiveSection("campaign-offers");
+                          setCampaignView("active");
                         }}
                         className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
-                          activeSection === "campaigns" &&
-                          campaignView === "inbox"
+                          activeSection === "campaign-offers"
+                            ? "bg-gray-100 text-gray-900"
+                            : "text-gray-600 hover:bg-gray-100"
+                        }`}
+                      >
+                        <Target className="w-4 h-4" />
+                        <span className="flex-1 text-left">My Offers</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setActiveSection("campaigns-inbox");
+                        }}
+                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
+                          activeSection === "campaigns-inbox"
                             ? "bg-gray-100 text-gray-900"
                             : "text-gray-600 hover:bg-gray-100"
                         }`}
@@ -6822,6 +7524,32 @@ export default function BrandDashboard() {
                         <Badge className="bg-gray-200 text-gray-700">
                           {mockActivities.length}
                         </Badge>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setActiveSection("campaigns-contract-hub");
+                        }}
+                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
+                          activeSection === "campaigns-contract-hub"
+                            ? "bg-gray-100 text-gray-900"
+                            : "text-gray-600 hover:bg-gray-100"
+                        }`}
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span className="flex-1 text-left">Contract Hub</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setActiveSection("campaigns-deliverables");
+                        }}
+                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
+                          activeSection === "campaigns-deliverables"
+                            ? "bg-gray-100 text-gray-900"
+                            : "text-gray-600 hover:bg-gray-100"
+                        }`}
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span className="flex-1 text-left">Deliverables</span>
                       </button>
                       <button
                         onClick={() => setActiveSection("studio")}
@@ -6856,14 +7584,6 @@ export default function BrandDashboard() {
         className={`flex-1 ${sidebarOpen ? "ml-64" : "ml-20"} transition-all duration-300 overflow-y-auto`}
       >
         <div className="p-8">
-          <Alert className="mb-6 bg-amber-50 border border-amber-200">
-            <AlertCircle className="h-5 w-5 text-amber-600" />
-            <AlertDescription className="text-amber-900 font-medium">
-              <strong>Demo Mode:</strong> This is a preview of the Brand
-              Dashboard for companies and brands.
-            </AlertDescription>
-          </Alert>
-
           {activeSection === "home" && renderHome()}
           {activeSection === "marketplace" && (
             <MarketplaceSection
@@ -6875,7 +7595,19 @@ export default function BrandDashboard() {
           )}
           {activeSection === "marketplace-agencies" &&
             renderAgencyMarketplace()}
-          {activeSection === "campaigns" && renderCampaigns()}
+          {activeSection === "campaigns-hub" && (
+            <BrandCampaignDashboard
+              embedded
+              openNewCampaignSignal={openCampaignModalSignal}
+              prefillCampaignContext={campaignBuilderContext}
+            />
+          )}
+          {activeSection === "campaigns-inbox" && renderInboxSubtab()}
+          {activeSection === "campaign-offers" && renderCampaigns()}
+          {activeSection === "campaigns-contract-hub" &&
+            renderCampaignContractHub()}
+          {activeSection === "campaigns-deliverables" &&
+            renderCampaignDeliverablesHub()}
           {activeSection === "studio" && renderStudio()}
           {activeSection === "analytics" && renderAnalytics()}
           {activeSection === "usage" && renderUsageRights()}

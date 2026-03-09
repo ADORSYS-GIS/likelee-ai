@@ -16,7 +16,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
+import CampaignBriefStep from "@/components/campaign-offers/CampaignBriefStep";
 import {
   X,
   ArrowLeft,
@@ -38,8 +47,6 @@ import {
   Search,
   Building2,
   UserPlus,
-  MessageSquare,
-  ThumbsUp,
   Edit3,
   Clock,
   TrendingUp,
@@ -48,45 +55,62 @@ import {
   Briefcase,
   User,
 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { DocuSealBuilderModal } from "@/components/licensing/DocuSealBuilderModal";
+import { DocusealForm } from "@docuseal/react";
 
 const mockBrand = {
   name: "Urban Apparel Co.",
   logo: "https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=200",
 };
 
-const mockCampaigns = [
-  {
-    id: 1,
-    name: "Spring Collection Launch",
-    status: "active",
-    objective: "Product Launch",
-    budget: 5000,
-    collaborators: ["CreativeWorks Agency"],
-    deliverables: 8,
-    approved: 6,
-    start_date: "2025-02-01",
-  },
-  {
-    id: 2,
-    name: "Summer Fitness Challenge",
-    status: "pending_approval",
-    objective: "UGC Campaign",
-    budget: 2500,
-    collaborators: ["Marcus Davis"],
-    deliverables: 3,
-    approved: 0,
-    start_date: "2025-03-01",
-  },
-];
-
-const mockMetrics = {
-  total_spend: 12450,
-  active_creators: 8,
-  campaigns_launched: 12,
-  roi: 3.2,
+type BrandCampaignDashboardProps = {
+  embedded?: boolean;
+  openNewCampaignSignal?: number;
+  prefillCampaignContext?: {
+    brandCampaignId?: string;
+    name?: string;
+    objective?: string;
+    category?: string;
+    description?: string;
+    usage_scope?: string;
+    duration_days?: string | number;
+    territory?: string;
+    exclusivity?: string;
+    budget_range?: string;
+    start_date?: string;
+    custom_terms?: string;
+    brief_snapshot?: Record<string, any>;
+    startStep?: number;
+  } | null;
 };
 
-export default function BrandCampaignDashboard() {
+export default function BrandCampaignDashboard({
+  embedded = false,
+  openNewCampaignSignal = 0,
+  prefillCampaignContext = null,
+}: BrandCampaignDashboardProps) {
+  const API_BASE_RAW = (
+    import.meta.env.VITE_API_URL ||
+    (typeof window !== "undefined" ? `${window.location.origin}/api` : "/api")
+  ).toString();
+  const API_BASE_ABS = (() => {
+    try {
+      return new URL(API_BASE_RAW, window.location.origin).toString();
+    } catch {
+      return new URL("/", window.location.origin).toString();
+    }
+  })();
+  const api = (path: string) => {
+    const normalizedBase = API_BASE_ABS.endsWith("/")
+      ? API_BASE_ABS
+      : `${API_BASE_ABS}/`;
+    let normalizedPath = path.startsWith("/") ? path.slice(1) : path;
+    if (normalizedBase.endsWith("/api/") && normalizedPath.startsWith("api/")) {
+      normalizedPath = normalizedPath.slice("api/".length);
+    }
+    return new URL(normalizedPath, normalizedBase).toString();
+  };
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showNewCampaignModal, setShowNewCampaignModal] = useState(false);
@@ -96,9 +120,21 @@ export default function BrandCampaignDashboard() {
   const [showStudioUpgradeModal, setShowStudioUpgradeModal] = useState(false);
   const [showPostJobModal, setShowPostJobModal] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState(null);
+  const [selectedCampaignDeliverables, setSelectedCampaignDeliverables] =
+    useState<any[]>([]);
+  const [selectedCampaignCollaborators, setSelectedCampaignCollaborators] =
+    useState<string[]>([]);
+  const [loadingSelectedCampaignDetails, setLoadingSelectedCampaignDetails] =
+    useState(false);
+  const [brandCampaignId, setBrandCampaignId] = useState<string>("");
+  const [campaignCards, setCampaignCards] = useState<any[]>([]);
+  const [loadingCampaignCards, setLoadingCampaignCards] = useState(false);
   const [campaignListTab, setCampaignListTab] = useState<
-    "active" | "pending_approval" | "completed" | "inbox"
+    "active" | "pending_approval" | "completed"
   >("active");
+  const [deliverableCommentDrafts, setDeliverableCommentDrafts] = useState<
+    Record<string, string>
+  >({});
   const [newCampaignStep, setNewCampaignStep] = useState(1);
   const [hasStudioAddon, setHasStudioAddon] = useState(false);
   const [agencySearch, setAgencySearch] = useState("");
@@ -112,17 +148,25 @@ export default function BrandCampaignDashboard() {
   const [offerByCreatorId, setOfferByCreatorId] = useState<
     Record<string, string>
   >({});
+  const [contractDraft, setContractDraft] = useState({
+    title: "",
+    file_url: "",
+    docuseal_template_id: "",
+  });
+  const [contractUploadName, setContractUploadName] = useState("");
+  const [showCampaignDocuSealBuilder, setShowCampaignDocuSealBuilder] =
+    useState(false);
+  const [isSendingFromBuilder, setIsSendingFromBuilder] = useState(false);
+  const [brandSignUrl, setBrandSignUrl] = useState("");
+  const [brandSignOpen, setBrandSignOpen] = useState(false);
+  const [awaitingBrandSignature, setAwaitingBrandSignature] = useState(false);
   const [selectedCreatorsById, setSelectedCreatorsById] = useState<
     Record<string, any>
   >({});
   const [selectedTalentCreatorIds, setSelectedTalentCreatorIds] = useState<
     Set<string>
   >(new Set());
-  const [requestedLicenseCreatorIds, setRequestedLicenseCreatorIds] = useState<
-    Set<string>
-  >(new Set());
-  const [requestingLicenseCreatorIds, setRequestingLicenseCreatorIds] =
-    useState<Set<string>>(new Set());
+  const [savingCampaign, setSavingCampaign] = useState(false);
   const creatorFetchRequestIdRef = useRef(0);
   const connectedCreatorCacheRef = useRef<Record<string, any[]>>({});
   const agencyTalentCacheRef = useRef<Record<string, any[]>>({});
@@ -138,10 +182,110 @@ export default function BrandCampaignDashboard() {
     duration_days: "30",
     territory: "Global",
     exclusivity: "Non-exclusive",
+    budget_range: "",
+    start_date: "",
     custom_terms: "",
     collaborator_type: "",
     collaborators: [],
   });
+  const [campaignBrief, setCampaignBrief] = useState({
+    voice: "",
+    tone: "",
+    personality: "",
+    key_messages: "",
+    script_opening: "",
+    script_middle: "",
+    script_closing: "",
+    dos: "",
+    donts: "",
+    required_deliverables: "",
+    total_expected_deliverables: "",
+    deliverables_reels: "",
+    deliverables_hero_image: "",
+    visual_color_palette: "",
+    visual_setting: "",
+    visual_framing: "",
+    visual_editing: "",
+    reference_images: [] as { name: string; url: string }[],
+    brand_assets: [] as { name: string; size: number; url: string }[],
+    overview_objective: "",
+    overview_target_audience: "",
+    overview_campaign_duration: "",
+    overview_launch_date: "",
+    budget_total: "",
+    budget_creator_payment: "",
+    budget_platform_fee: "",
+    budget_submission_deadline: "",
+    budget_renewal_terms: "",
+    revision_included: "",
+    revision_major_changes: "",
+    revision_turnaround: "",
+    approval_process: "",
+    watermark_protection: "",
+    legal_terms: "",
+  });
+
+  useEffect(() => {
+    if (!embedded) return;
+    if (!openNewCampaignSignal) return;
+    const context = prefillCampaignContext || {};
+    const hasPrefillCampaignId = Boolean(
+      String(context?.brandCampaignId || "").trim(),
+    );
+
+    if (hasPrefillCampaignId) {
+      const nextStep = Number(context?.startStep || 3);
+      const safeStep = Number.isFinite(nextStep) ? Math.max(1, nextStep) : 3;
+      const brandCampaignId = String(context?.brandCampaignId || "").trim();
+
+      setBrandCampaignId(brandCampaignId);
+      setCampaignForm((prev) => ({
+        ...prev,
+        name: String(context?.name || prev.name || "").trim(),
+        objective: String(context?.objective || prev.objective || "").trim(),
+        category: String(context?.category || prev.category || "").trim(),
+        description: String(
+          context?.description || prev.description || "",
+        ).trim(),
+        usage_scope: String(
+          context?.usage_scope || prev.usage_scope || "",
+        ).trim(),
+        duration_days: String(
+          context?.duration_days || prev.duration_days || "30",
+        ).trim(),
+        territory: String(
+          context?.territory || prev.territory || "Global",
+        ).trim(),
+        exclusivity: String(
+          context?.exclusivity || prev.exclusivity || "Non-exclusive",
+        ).trim(),
+        budget_range: String(
+          context?.budget_range || prev.budget_range || "",
+        ).trim(),
+        start_date: String(context?.start_date || prev.start_date || "").trim(),
+        custom_terms: String(
+          context?.custom_terms || prev.custom_terms || "",
+        ).trim(),
+      }));
+
+      if (
+        context?.brief_snapshot &&
+        typeof context.brief_snapshot === "object" &&
+        !Array.isArray(context.brief_snapshot)
+      ) {
+        setCampaignBrief((prev) => ({
+          ...prev,
+          ...context.brief_snapshot,
+        }));
+      }
+
+      setNewCampaignStep(safeStep);
+    } else {
+      setNewCampaignStep(1);
+    }
+
+    setShowNewCampaignModal(true);
+  }, [embedded, openNewCampaignSignal, prefillCampaignContext]);
 
   const getDisplayName = (value: unknown) => {
     const normalized = String(value ?? "").trim();
@@ -168,6 +312,547 @@ export default function BrandCampaignDashboard() {
     return true;
   };
 
+  const parseBudgetRange = (value: string): { min: string; max: string } => {
+    const clean = String(value || "").trim();
+    if (!clean) return { min: "", max: "" };
+    const match = clean.match(/^\s*(\d+)\s*-\s*(\d+)\s*$/);
+    if (!match) return { min: "", max: "" };
+    return { min: match[1], max: match[2] };
+  };
+
+  const budgetParts = parseBudgetRange(campaignForm.budget_range);
+  const dashboardMetrics = useMemo(() => {
+    const activeCount = campaignCards.filter(
+      (c) => String(c?.status || "") === "active",
+    ).length;
+    const uniqueCollaborators = new Set<string>();
+    campaignCards.forEach((campaign: any) => {
+      const collaborators = Array.isArray(campaign?.collaborators)
+        ? campaign.collaborators
+        : [];
+      collaborators.forEach((collaborator: any) => {
+        const value = String(collaborator || "").trim();
+        if (value) uniqueCollaborators.add(value);
+      });
+    });
+    return {
+      totalSpend: 0,
+      activeCollaborators: uniqueCollaborators.size,
+      campaignsLaunched: campaignCards.length,
+      avgRoi: 0,
+      activeCount,
+    };
+  }, [campaignCards]);
+
+  const setBudgetPart = (part: "min" | "max", nextValue: string) => {
+    const normalized = String(nextValue || "").replace(/[^\d]/g, "");
+    const min = part === "min" ? normalized : budgetParts.min;
+    const max = part === "max" ? normalized : budgetParts.max;
+    if (!min && !max) {
+      setCampaignForm((prev) => ({ ...prev, budget_range: "" }));
+      return;
+    }
+    setCampaignForm((prev) => ({
+      ...prev,
+      budget_range: `${min || "0"}-${max || "0"}`,
+    }));
+  };
+
+  const validateStep1Form = (): { ok: boolean; message?: string } => {
+    if (!campaignForm.name.trim())
+      return { ok: false, message: "Campaign name is required." };
+    if (!campaignForm.objective.trim())
+      return { ok: false, message: "Campaign objective is required." };
+    if (!campaignForm.category.trim())
+      return { ok: false, message: "Category is required." };
+    if (!campaignForm.description.trim())
+      return { ok: false, message: "Description is required." };
+    if (!campaignForm.start_date.trim())
+      return { ok: false, message: "Start date is required." };
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(campaignForm.start_date.trim())) {
+      return { ok: false, message: "Start date must be a valid date." };
+    }
+    const min = Number.parseInt(budgetParts.min, 10);
+    const max = Number.parseInt(budgetParts.max, 10);
+    if (
+      !Number.isFinite(min) ||
+      min <= 0 ||
+      !Number.isFinite(max) ||
+      max <= 0
+    ) {
+      return {
+        ok: false,
+        message: "Budget min and max must be greater than zero.",
+      };
+    }
+    if (max < min) {
+      return {
+        ok: false,
+        message: "Budget max must be greater than or equal to budget min.",
+      };
+    }
+    const duration = Number.parseInt(
+      String(campaignForm.duration_days || "").trim(),
+      10,
+    );
+    if (!Number.isFinite(duration) || duration <= 0) {
+      return { ok: false, message: "Duration must be at least 1 day." };
+    }
+    return { ok: true };
+  };
+  const SIGNED_OFFER_STATUSES = new Set(["contract_fully_signed", "signed"]);
+  const isStartDateReached = (startDateRaw: unknown) => {
+    const startDate = String(startDateRaw || "").trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) return false;
+    const today = new Date();
+    const todayOnly = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
+    const startOnly = new Date(`${startDate}T00:00:00`);
+    return startOnly.getTime() <= todayOnly.getTime();
+  };
+  const collaboratorLabelFromOffer = (offer: any) => {
+    const targetType = String(offer?.target_type || "").toLowerCase();
+    const targetName = String(offer?.target_name || "").trim();
+    const targetId = String(offer?.target_id || "").trim();
+    const shortId = targetId ? targetId.slice(0, 8) : "";
+    if (targetType === "creator" || targetType === "talent") {
+      if (targetName) return targetName;
+      return shortId ? `Creator ${shortId}` : "Creator";
+    }
+    if (targetType === "agency") {
+      if (targetName) return targetName;
+      return shortId ? `Agency ${shortId}` : "Agency";
+    }
+    if (targetName) return targetName;
+    return shortId ? `Collaborator ${shortId}` : "Collaborator";
+  };
+  const extractFirstNumber = (value: unknown): number => {
+    const text = String(value || "");
+    const match = text.match(/(\d+)/);
+    const num = match ? Number(match[1]) : 0;
+    return Number.isFinite(num) && num > 0 ? num : 0;
+  };
+  const extractDeliverableCount = (value: unknown): number => {
+    const text = String(value || "").trim();
+    if (!text) return 0;
+    const lines = text
+      .split(/\r?\n|[;]+/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    if (lines.length === 0) return 0;
+    return lines.reduce((total, line) => {
+      const countMatch =
+        line.match(/(\d+)\s*[xX]\b/) || line.match(/\b(\d+)\b/);
+      if (countMatch) {
+        const parsed = Number(countMatch[1]);
+        return total + (Number.isFinite(parsed) && parsed > 0 ? parsed : 0);
+      }
+      return total + 1;
+    }, 0);
+  };
+  const expectedDeliverablesFromBrief = (campaign: any): number => {
+    const brief =
+      campaign?.brief_snapshot && typeof campaign.brief_snapshot === "object"
+        ? campaign.brief_snapshot
+        : {};
+    const explicitExpected = Number.parseInt(
+      String(brief?.total_expected_deliverables || "").trim(),
+      10,
+    );
+    if (Number.isFinite(explicitExpected) && explicitExpected > 0) {
+      return explicitExpected;
+    }
+    const requiredDeliverablesCount = extractDeliverableCount(
+      brief?.required_deliverables,
+    );
+    if (requiredDeliverablesCount > 0) return requiredDeliverablesCount;
+    const reelsCount = extractFirstNumber(brief?.deliverables_reels);
+    const heroCount = extractFirstNumber(brief?.deliverables_hero_image);
+    const fallbackHero =
+      heroCount > 0
+        ? heroCount
+        : String(brief?.deliverables_hero_image || "").trim()
+          ? 1
+          : 0;
+    return reelsCount + fallbackHero;
+  };
+  const normalizeCampaignCard = (
+    campaign: any,
+    offers: any[],
+    deliverableStats?: { total: number; approved: number },
+  ) => {
+    const rawStatus = String(campaign?.status || "").toLowerCase();
+    const safeOffers = Array.isArray(offers) ? offers : [];
+    const hasSignedOffer = safeOffers.some((offer: any) =>
+      SIGNED_OFFER_STATUSES.has(String(offer?.status || "").toLowerCase()),
+    );
+    const collaboratorLabels = Array.from(
+      new Set(
+        safeOffers
+          .map((offer: any) => collaboratorLabelFromOffer(offer))
+          .filter(Boolean),
+      ),
+    );
+    const startDateRaw = String(campaign?.start_date || "").trim();
+    const startDate = /^\d{4}-\d{2}-\d{2}$/.test(startDateRaw)
+      ? new Date(`${startDateRaw}T00:00:00`)
+      : null;
+    const durationDaysRaw = Number(campaign?.duration_days || 0);
+    const durationDays =
+      Number.isFinite(durationDaysRaw) && durationDaysRaw > 0
+        ? durationDaysRaw
+        : 30;
+    const endDate = startDate
+      ? new Date(startDate.getTime() + (durationDays - 1) * 24 * 60 * 60 * 1000)
+      : null;
+    const today = new Date();
+    const todayOnly = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
+    const isAfterEnd = Boolean(
+      endDate && todayOnly.getTime() > endDate.getTime(),
+    );
+    const status =
+      rawStatus === "completed" || rawStatus === "archived" || isAfterEnd
+        ? "completed"
+        : hasSignedOffer
+          ? "active"
+          : "pending_approval";
+    const budgetText = String(campaign?.budget_range || "");
+    const budgetMatch = budgetText.match(/(\d[\d,]*)\s*-\s*(\d[\d,]*)/);
+    const budget = budgetMatch
+      ? Number(String(budgetMatch[2]).replace(/[^\d]/g, "")) || 0
+      : 0;
+    const expectedDeliverables = expectedDeliverablesFromBrief(campaign);
+    const submittedDeliverables = Number(deliverableStats?.total || 0);
+    const totalDeliverables =
+      expectedDeliverables > 0
+        ? Math.max(expectedDeliverables, submittedDeliverables)
+        : submittedDeliverables;
+    return {
+      id: String(campaign?.id || ""),
+      brand_campaign_id: String(campaign?.id || ""),
+      name: String(campaign?.name || "Campaign"),
+      status,
+      objective: String(
+        campaign?.objective || campaign?.category || "Campaign",
+      ),
+      budget,
+      collaborators: collaboratorLabels,
+      deliverables: totalDeliverables,
+      approved: Number(deliverableStats?.approved || 0),
+      start_date: String(campaign?.start_date || "N/A"),
+      has_signed_offer: hasSignedOffer,
+      start_reached: isStartDateReached(campaign?.start_date),
+      brief_snapshot:
+        campaign?.brief_snapshot && typeof campaign.brief_snapshot === "object"
+          ? campaign.brief_snapshot
+          : {},
+    };
+  };
+  const loadCampaignCards = async () => {
+    setLoadingCampaignCards(true);
+    try {
+      const response = await base44.get<{ campaigns?: any[] }>(
+        "/api/brand/campaigns",
+        {
+          params: { limit: 120 },
+        },
+      );
+      const rows = Array.isArray(response?.campaigns) ? response.campaigns : [];
+      const normalized = await Promise.all(
+        rows.map(async (campaign: any) => {
+          const campaignId = String(campaign?.id || "").trim();
+          if (!campaignId) return normalizeCampaignCard(campaign, []);
+          try {
+            const offersResp = await base44.get<{ offers?: any[] }>(
+              `/api/brand/campaigns/${campaignId}/offers`,
+            );
+            const offers = Array.isArray(offersResp?.offers)
+              ? offersResp.offers
+              : [];
+            const deliverablesByOffer = await Promise.all(
+              offers.map(async (offer: any) => {
+                const offerId = String(offer?.id || "").trim();
+                if (!offerId) return [];
+                try {
+                  const deliverablesResp = await base44.get<{
+                    deliverables?: any[];
+                  }>(`/api/campaign-offers/${offerId}/deliverables`);
+                  return Array.isArray(deliverablesResp?.deliverables)
+                    ? deliverablesResp.deliverables
+                    : [];
+                } catch {
+                  return [];
+                }
+              }),
+            );
+            const flatDeliverables = deliverablesByOffer.flat();
+            const approvedCount = flatDeliverables.filter((d: any) =>
+              ["approved", "accepted"].includes(
+                String(d?.status || "").toLowerCase(),
+              ),
+            ).length;
+            return normalizeCampaignCard(campaign, offers, {
+              total: flatDeliverables.length,
+              approved: approvedCount,
+            });
+          } catch {
+            return normalizeCampaignCard(campaign, []);
+          }
+        }),
+      );
+      setCampaignCards(normalized);
+    } catch {
+      setCampaignCards([]);
+    } finally {
+      setLoadingCampaignCards(false);
+    }
+  };
+
+  const openCampaignDetails = async (campaign: any) => {
+    const campaignId = String(
+      campaign?.id || campaign?.brand_campaign_id || "",
+    ).trim();
+    setSelectedCampaign(campaign);
+    if (!campaignId) {
+      setSelectedCampaignDeliverables([]);
+      setSelectedCampaignCollaborators([]);
+      return;
+    }
+    setLoadingSelectedCampaignDetails(true);
+    try {
+      const offersResp = await base44.get<{ offers?: any[] }>(
+        `/api/brand/campaigns/${campaignId}/offers`,
+      );
+      const offers = Array.isArray(offersResp?.offers) ? offersResp.offers : [];
+      const collaborators = Array.from(
+        new Set(
+          offers
+            .map((offer: any) => collaboratorLabelFromOffer(offer))
+            .filter(Boolean),
+        ),
+      );
+      const deliverablesByOffer = await Promise.all(
+        offers.map(async (offer: any) => {
+          const offerId = String(offer?.id || "").trim();
+          if (!offerId) return [];
+          try {
+            const deliverablesResp = await base44.get<{ deliverables?: any[] }>(
+              `/api/campaign-offers/${offerId}/deliverables`,
+            );
+            const rows = Array.isArray(deliverablesResp?.deliverables)
+              ? deliverablesResp.deliverables
+              : [];
+            return rows.map((deliverable: any) => ({
+              ...deliverable,
+              offer_id: offerId,
+              collaborator_label: collaboratorLabelFromOffer(offer),
+            }));
+          } catch {
+            return [];
+          }
+        }),
+      );
+      setSelectedCampaignCollaborators(collaborators);
+      setSelectedCampaignDeliverables(deliverablesByOffer.flat());
+    } catch {
+      setSelectedCampaignCollaborators([]);
+      setSelectedCampaignDeliverables([]);
+    } finally {
+      setLoadingSelectedCampaignDetails(false);
+    }
+  };
+  const resolveDownloadFileName = (deliverable: any, fallbackIndex: number) => {
+    const byCaption = String(deliverable?.caption || "").trim();
+    if (byCaption) return byCaption;
+    const original = String(deliverable?.meta?.original_name || "").trim();
+    if (original) return original;
+    return `deliverable-${fallbackIndex + 1}`;
+  };
+  const refreshSelectedCampaignDetails = async () => {
+    if (!selectedCampaign) return;
+    await openCampaignDetails(selectedCampaign);
+    await loadCampaignCards();
+  };
+  const reviewSelectedCampaignDeliverable = async (
+    deliverable: any,
+    action: "approve" | "changes_requested",
+  ) => {
+    const offerId = String(deliverable?.offer_id || "").trim();
+    const deliverableId = String(deliverable?.id || "").trim();
+    if (!offerId || !deliverableId) return;
+    try {
+      await base44.post(
+        `/api/campaign-offers/${encodeURIComponent(offerId)}/deliverables/${encodeURIComponent(deliverableId)}/review`,
+        { action },
+      );
+      toast({
+        title:
+          action === "approve" ? "Deliverable approved" : "Edit request sent",
+        description:
+          action === "changes_requested"
+            ? "Creator has been notified. Add details in comments below."
+            : undefined,
+      });
+      await refreshSelectedCampaignDetails();
+    } catch (e: any) {
+      toast({
+        title: "Update failed",
+        description: e?.message || "Please try again.",
+        variant: "destructive" as any,
+      });
+    }
+  };
+  const commentSelectedCampaignDeliverable = async (deliverable: any) => {
+    const deliverableId = String(deliverable?.id || "").trim();
+    const offerId = String(deliverable?.offer_id || "").trim();
+    const message = String(
+      deliverableCommentDrafts[deliverableId] || "",
+    ).trim();
+    if (!deliverableId || !offerId) return;
+    if (!message) {
+      toast({
+        title: "Comment required",
+        description: "Type your feedback message first.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    try {
+      await base44.post(
+        `/api/campaign-offers/${encodeURIComponent(offerId)}/deliverables/${encodeURIComponent(deliverableId)}/comments`,
+        { message },
+      );
+      setDeliverableCommentDrafts((prev) => ({
+        ...prev,
+        [deliverableId]: "",
+      }));
+      toast({ title: "Feedback sent" });
+      await refreshSelectedCampaignDetails();
+    } catch (e: any) {
+      const message = String(e?.message || "");
+      toast({
+        title: "Comment failed",
+        description: message.includes(" failed: 404 ")
+          ? "Comments endpoint not found on current backend instance. Restart backend server and try again."
+          : message || "Please try again.",
+        variant: "destructive" as any,
+      });
+    }
+  };
+  const downloadSelectedCampaignDeliverable = async (
+    deliverable: any,
+    index: number,
+  ) => {
+    const offerId = String(deliverable?.offer_id || "").trim();
+    const deliverableId = String(deliverable?.id || "").trim();
+    const assetUrl = String(deliverable?.asset_url || "").trim();
+    if (!assetUrl || !offerId || !deliverableId) {
+      toast({
+        title: "Download unavailable",
+        description: "Deliverable file URL is missing.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    try {
+      const response = await fetch(assetUrl);
+      if (!response.ok) {
+        throw new Error("Failed to fetch deliverable file.");
+      }
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = resolveDownloadFileName(deliverable, index);
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+
+      await base44.post(
+        `/api/campaign-offers/${encodeURIComponent(offerId)}/deliverables/${encodeURIComponent(deliverableId)}/downloaded`,
+        {},
+      );
+      toast({ title: "Download started" });
+      await refreshSelectedCampaignDetails();
+    } catch (e: any) {
+      toast({
+        title: "Download failed",
+        description: e?.message || "Please try again.",
+        variant: "destructive" as any,
+      });
+    }
+  };
+
+  const isValidDateString = (value: string): boolean =>
+    /^\d{4}-\d{2}-\d{2}$/.test(String(value || "").trim());
+
+  const parsePositiveNumber = (value: unknown): number | null => {
+    if (value === null || value === undefined) return null;
+    const normalized = String(value)
+      .replace(/[$,\s]/g, "")
+      .trim();
+    if (!normalized) return null;
+    const num = Number(normalized);
+    if (!Number.isFinite(num) || num <= 0) return null;
+    return num;
+  };
+
+  const validateStep2Brief = (): { ok: boolean; message?: string } => {
+    const expectedTotal = Number.parseInt(
+      String(campaignBrief.total_expected_deliverables || "").trim(),
+      10,
+    );
+    if (!Number.isFinite(expectedTotal) || expectedTotal <= 0) {
+      return {
+        ok: false,
+        message:
+          "Total expected deliverables is required and must be greater than 0.",
+      };
+    }
+    const duration = Number.parseInt(
+      String(campaignBrief.overview_campaign_duration || "").trim(),
+      10,
+    );
+    if (!Number.isFinite(duration) || duration <= 0) {
+      return {
+        ok: false,
+        message: "Campaign duration must be a valid number of days.",
+      };
+    }
+    if (!isValidDateString(String(campaignBrief.overview_launch_date || ""))) {
+      return { ok: false, message: "Launch date must be a valid date." };
+    }
+    if (
+      !isValidDateString(String(campaignBrief.budget_submission_deadline || ""))
+    ) {
+      return {
+        ok: false,
+        message: "Submission deadline must be a valid date.",
+      };
+    }
+    if (!parsePositiveNumber(campaignBrief.budget_total)) {
+      return { ok: false, message: "Total budget must be a valid amount." };
+    }
+    if (!parsePositiveNumber(campaignBrief.budget_creator_payment)) {
+      return {
+        ok: false,
+        message: "Creator payment must be a valid amount.",
+      };
+    }
+    if (!parsePositiveNumber(campaignBrief.budget_platform_fee)) {
+      return { ok: false, message: "Platform fee must be a valid amount." };
+    }
+    return { ok: true };
+  };
+
   useEffect(() => {
     const loadConnectedAgencies = async () => {
       setLoadingConnectedAgencies(true);
@@ -187,6 +872,7 @@ export default function BrandCampaignDashboard() {
     };
 
     loadConnectedAgencies();
+    void loadCampaignCards();
   }, []);
 
   const filteredConnectedAgencies = useMemo(() => {
@@ -209,14 +895,16 @@ export default function BrandCampaignDashboard() {
   useEffect(() => {
     if (
       !showNewCampaignModal ||
-      (newCampaignStep !== 2 && newCampaignStep !== 3)
+      (newCampaignStep !== 3 && newCampaignStep !== 4)
     ) {
       return;
     }
-    if (
-      campaignForm.collaborator_type !== "agency" &&
-      campaignForm.collaborator_type !== "creator"
-    ) {
+    if (campaignForm.collaborator_type !== "creator") {
+      setMarketplaceCreators([]);
+      setLoadingMarketplaceCreators(false);
+      return;
+    }
+    if (!brandCampaignId) {
       setMarketplaceCreators([]);
       setLoadingMarketplaceCreators(false);
       return;
@@ -225,25 +913,13 @@ export default function BrandCampaignDashboard() {
     const requestId = ++creatorFetchRequestIdRef.current;
     const collaboratorType = campaignForm.collaborator_type;
     const normalizedQuery = creatorSearch.trim().toLowerCase();
-    const agencyId = String(campaignForm.collaborators?.[0] || "").trim();
     const creatorCacheKey = `connected::${normalizedQuery}`;
-    const agencyCacheKey = `${agencyId}::${normalizedQuery}`;
 
-    if (collaboratorType === "creator") {
-      const cached = connectedCreatorCacheRef.current[creatorCacheKey];
-      if (cached) {
-        setMarketplaceCreators(cached);
-        setLoadingMarketplaceCreators(false);
-        return;
-      }
-    }
-    if (collaboratorType === "agency" && agencyId) {
-      const cached = agencyTalentCacheRef.current[agencyCacheKey];
-      if (cached) {
-        setMarketplaceCreators(cached);
-        setLoadingMarketplaceCreators(false);
-        return;
-      }
+    const cached = connectedCreatorCacheRef.current[creatorCacheKey];
+    if (cached) {
+      setMarketplaceCreators(cached);
+      setLoadingMarketplaceCreators(false);
+      return;
     }
 
     if (previousCollaboratorTypeRef.current !== collaboratorType) {
@@ -254,42 +930,21 @@ export default function BrandCampaignDashboard() {
 
     const timer = setTimeout(async () => {
       try {
-        if (campaignForm.collaborator_type === "agency") {
-          if (!agencyId) {
-            if (creatorFetchRequestIdRef.current !== requestId) return;
-            setMarketplaceCreators([]);
-            setLoadingMarketplaceCreators(false);
-            return;
-          }
-          const resp = await base44.get<any>("/api/brand/agency-talent-rates", {
-            params: {
-              agency_id: agencyId,
-              q: creatorSearch.trim() || undefined,
-              limit: 80,
-            },
-          });
-          const rows = Array.isArray(resp?.items)
-            ? resp.items
-            : Array.isArray(resp)
-              ? resp
-              : [];
-          if (creatorFetchRequestIdRef.current !== requestId) return;
-          agencyTalentCacheRef.current[agencyCacheKey] = rows;
-          setMarketplaceCreators(rows);
-        } else {
-          const rows = await base44.get<any[]>("/api/marketplace/search", {
-            params: {
-              entity_type: "creator",
-              profile_type: "connected",
-              query: creatorSearch.trim() || undefined,
-              limit: 60,
-            },
-          });
-          if (creatorFetchRequestIdRef.current !== requestId) return;
-          const normalizedRows = Array.isArray(rows) ? rows : [];
-          connectedCreatorCacheRef.current[creatorCacheKey] = normalizedRows;
-          setMarketplaceCreators(normalizedRows);
-        }
+        const response = await base44.get<{
+          items?: any[];
+        }>(`/api/brand/campaigns/${brandCampaignId}/offer-options`, {
+          params: {
+            target_type: "creator",
+            q: creatorSearch.trim() || undefined,
+            limit: 60,
+          },
+        });
+        if (creatorFetchRequestIdRef.current !== requestId) return;
+        const normalizedRows = Array.isArray(response?.items)
+          ? response.items
+          : [];
+        connectedCreatorCacheRef.current[creatorCacheKey] = normalizedRows;
+        setMarketplaceCreators(normalizedRows);
       } catch {
         if (creatorFetchRequestIdRef.current !== requestId) return;
         setMarketplaceCreators([]);
@@ -302,12 +957,10 @@ export default function BrandCampaignDashboard() {
     return () => clearTimeout(timer);
   }, [
     creatorSearch,
+    brandCampaignId,
     showNewCampaignModal,
     newCampaignStep,
     campaignForm.collaborator_type,
-    campaignForm.collaborator_type === "agency"
-      ? String(campaignForm.collaborators?.[0] || "")
-      : "",
   ]);
 
   const step3Creators = useMemo(() => {
@@ -326,7 +979,7 @@ export default function BrandCampaignDashboard() {
 
   const selectedCreatorIdsForRequest = useMemo(() => {
     if (campaignForm.collaborator_type === "agency") {
-      return Array.from(selectedTalentCreatorIds);
+      return (campaignForm.collaborators || []).map((id) => String(id));
     }
     return (campaignForm.collaborators || []).map((id) => String(id));
   }, [
@@ -335,22 +988,36 @@ export default function BrandCampaignDashboard() {
     selectedTalentCreatorIds,
   ]);
 
-  const isRequestingSelectedLicenses = useMemo(
-    () =>
-      selectedCreatorIdsForRequest.some((creatorId) =>
-        requestingLicenseCreatorIds.has(creatorId),
-      ),
-    [selectedCreatorIdsForRequest, requestingLicenseCreatorIds],
-  );
-
-  const hasRequestedSelectedLicenses = useMemo(
-    () =>
-      selectedCreatorIdsForRequest.length > 0 &&
-      selectedCreatorIdsForRequest.every((creatorId) =>
-        requestedLicenseCreatorIds.has(creatorId),
-      ),
-    [selectedCreatorIdsForRequest, requestedLicenseCreatorIds],
-  );
+  const summaryCreatorNames = useMemo(() => {
+    if (campaignForm.collaborator_type === "agency") {
+      const agencyId = String(campaignForm.collaborators?.[0] || "");
+      const selectedAgency = connectedAgencies.find(
+        (agency) => String(agency?.agency_id || agency?.id || "") === agencyId,
+      );
+      if (!selectedAgency) return "N/A";
+      return getDisplayName(
+        selectedAgency?.display_name || selectedAgency?.agency_name,
+      );
+    }
+    const names = selectedCreatorIdsForRequest
+      .map((creatorId) => {
+        const creator =
+          selectedCreatorsById[creatorId] ||
+          step3Creators.find((c) => String(c?.id || "") === creatorId);
+        return getDisplayName(
+          creator?.display_name || creator?.full_name || creator?.name,
+        );
+      })
+      .filter(Boolean);
+    return names.length > 0 ? names.join(", ") : "N/A";
+  }, [
+    campaignForm.collaborator_type,
+    campaignForm.collaborators,
+    connectedAgencies,
+    selectedCreatorIdsForRequest,
+    selectedCreatorsById,
+    step3Creators,
+  ]);
 
   const toggleCreatorCollaborator = (creator: any) => {
     const creatorId = String(creator?.id || "");
@@ -377,13 +1044,14 @@ export default function BrandCampaignDashboard() {
     });
   };
 
-  const handleCreateCampaign = () => {
-    toast({
-      title: "Campaign created",
-      description: "Frontend demo action completed (no backend request sent).",
-    });
+  const resetCampaignBuilder = () => {
     setShowNewCampaignModal(false);
+    setShowCampaignDocuSealBuilder(false);
+    setBrandSignOpen(false);
+    setBrandSignUrl("");
+    setAwaitingBrandSignature(false);
     setNewCampaignStep(1);
+    setBrandCampaignId("");
     setCampaignForm({
       name: "",
       objective: "",
@@ -394,85 +1062,536 @@ export default function BrandCampaignDashboard() {
       duration_days: "30",
       territory: "Global",
       exclusivity: "Non-exclusive",
+      budget_range: "",
+      start_date: "",
       custom_terms: "",
       collaborator_type: "",
       collaborators: [],
     });
+    setCampaignBrief({
+      voice: "",
+      tone: "",
+      personality: "",
+      key_messages: "",
+      script_opening: "",
+      script_middle: "",
+      script_closing: "",
+      dos: "",
+      donts: "",
+      required_deliverables: "",
+      total_expected_deliverables: "",
+      deliverables_reels: "",
+      deliverables_hero_image: "",
+      visual_color_palette: "",
+      visual_setting: "",
+      visual_framing: "",
+      visual_editing: "",
+      reference_images: [],
+      brand_assets: [],
+      overview_objective: "",
+      overview_target_audience: "",
+      overview_campaign_duration: "",
+      overview_launch_date: "",
+      budget_total: "",
+      budget_creator_payment: "",
+      budget_platform_fee: "",
+      budget_submission_deadline: "",
+      budget_renewal_terms: "",
+      revision_included: "",
+      revision_major_changes: "",
+      revision_turnaround: "",
+      approval_process: "",
+      watermark_protection: "",
+      legal_terms: "",
+    });
     setOfferByCreatorId({});
+    setContractDraft({
+      title: "",
+      file_url: "",
+      docuseal_template_id: "",
+    });
     setSelectedCreatorsById({});
     setSelectedTalentCreatorIds(new Set());
-    setRequestedLicenseCreatorIds(new Set());
-    setRequestingLicenseCreatorIds(new Set());
     setMarketplaceCreators([]);
     setCreatorSearch("");
   };
 
-  const requestLicensesForSelectedCreators = async () => {
-    const creatorIds = selectedCreatorIdsForRequest.filter(Boolean);
-    if (creatorIds.length === 0) {
+  const ensureCampaignDraft = async (): Promise<string | null> => {
+    try {
+      setSavingCampaign(true);
+      const durationDays = Number.parseInt(
+        String(campaignForm.duration_days || "").trim(),
+        10,
+      );
+      const normalizedDurationDays =
+        Number.isFinite(durationDays) && durationDays > 0 ? durationDays : null;
+      const normalizedBudgetRange = campaignForm.budget_range.trim();
+      const normalizedStartDate = campaignForm.start_date.trim();
+      if (!brandCampaignId) {
+        const created = await base44.post<any>("/api/brand/campaigns", {
+          name: campaignForm.name,
+          objective: campaignForm.objective,
+          category: campaignForm.category,
+          description: campaignForm.description,
+          usage_scope: campaignForm.usage_scope || null,
+          duration_days: normalizedDurationDays,
+          territory: campaignForm.territory || null,
+          exclusivity: campaignForm.exclusivity || null,
+          budget_range: normalizedBudgetRange,
+          start_date: normalizedStartDate,
+          custom_terms: campaignForm.custom_terms || null,
+          brief_snapshot: campaignBrief,
+        });
+        const id = String(created?.id || "").trim();
+        if (!id) {
+          throw new Error("Campaign ID missing in create response");
+        }
+        setBrandCampaignId(id);
+        return id;
+      }
+      await base44.post(`/api/brand/campaigns/${brandCampaignId}`, {
+        name: campaignForm.name,
+        objective: campaignForm.objective,
+        category: campaignForm.category,
+        description: campaignForm.description,
+        usage_scope: campaignForm.usage_scope || null,
+        duration_days: normalizedDurationDays,
+        territory: campaignForm.territory || null,
+        exclusivity: campaignForm.exclusivity || null,
+        budget_range: normalizedBudgetRange,
+        start_date: normalizedStartDate,
+        custom_terms: campaignForm.custom_terms || null,
+      });
+      return brandCampaignId;
+    } catch (e: any) {
       toast({
-        title:
-          campaignForm.collaborator_type === "agency"
-            ? "Select at least one talent"
-            : "Select at least one creator",
+        title: "Unable to save campaign",
+        description: e?.message || "Please check fields and try again.",
+        variant: "destructive" as any,
+      });
+      return null;
+    } finally {
+      setSavingCampaign(false);
+    }
+  };
+
+  const handleStep1Next = async () => {
+    const validation = validateStep1Form();
+    if (!validation.ok) {
+      toast({
+        title: "Please correct the form",
+        description: validation.message || "Some fields are invalid.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    const id = await ensureCampaignDraft();
+    if (!id) return;
+    setNewCampaignStep(2);
+  };
+
+  const handleStep2Next = async () => {
+    const validation = validateStep2Brief();
+    if (!validation.ok) {
+      toast({
+        title: "Please correct the campaign brief",
+        description: validation.message || "Some brief fields are invalid.",
+        variant: "destructive" as any,
+      });
+      return;
+    }
+    const id = await ensureCampaignDraft();
+    if (!id) return;
+    try {
+      setSavingCampaign(true);
+      await base44.post(`/api/brand/campaigns/${id}`, {
+        brief_snapshot: campaignBrief,
+      });
+      setNewCampaignStep(3);
+    } catch (e: any) {
+      toast({
+        title: "Unable to save brief",
         description:
-          campaignForm.collaborator_type === "agency"
-            ? "Choose one or more talents before requesting licenses."
-            : "Choose one or more creators before requesting licenses.",
+          e?.message || "We could not save step 2 data. Please try again.",
+        variant: "destructive" as any,
+      });
+    } finally {
+      setSavingCampaign(false);
+    }
+  };
+
+  const handleReferenceImageUpload = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+    void (async () => {
+      try {
+        setSavingCampaign(true);
+        const session = supabase
+          ? await supabase.auth.getSession()
+          : { data: { session: null } };
+        const userId = String(session.data.session?.user?.id || "brand");
+        const uploaded = await Promise.all(
+          files.map(async (file) => {
+            const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+            const path = `campaign-brief/reference-images/${userId}/${Date.now()}_${Math.random()
+              .toString(36)
+              .slice(2, 8)}_${safeName}`;
+            const { error: uploadError } = await supabase.storage
+              .from("likelee-public")
+              .upload(path, file);
+            if (uploadError) throw uploadError;
+            const { data } = supabase.storage
+              .from("likelee-public")
+              .getPublicUrl(path);
+            return {
+              name: file.name,
+              url: String(data?.publicUrl || ""),
+            };
+          }),
+        );
+        const valid = uploaded.filter(
+          (x) => String(x.url || "").trim().length > 0,
+        );
+        setCampaignBrief((prev) => ({
+          ...prev,
+          reference_images: [...prev.reference_images, ...valid],
+        }));
+      } catch (e: any) {
+        toast({
+          title: "Reference image upload failed",
+          description:
+            e?.message || "We could not upload one or more reference images.",
+          variant: "destructive" as any,
+        });
+      } finally {
+        setSavingCampaign(false);
+        event.target.value = "";
+      }
+    })();
+  };
+
+  const handleBrandAssetsUpload = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+    void (async () => {
+      try {
+        setSavingCampaign(true);
+        const session = supabase
+          ? await supabase.auth.getSession()
+          : { data: { session: null } };
+        const userId = String(session.data.session?.user?.id || "brand");
+        const uploaded = await Promise.all(
+          files.map(async (file) => {
+            const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+            const path = `campaign-brief/brand-assets/${userId}/${Date.now()}_${Math.random()
+              .toString(36)
+              .slice(2, 8)}_${safeName}`;
+            const { error: uploadError } = await supabase.storage
+              .from("likelee-public")
+              .upload(path, file);
+            if (uploadError) throw uploadError;
+            const { data } = supabase.storage
+              .from("likelee-public")
+              .getPublicUrl(path);
+            return {
+              name: file.name,
+              size: file.size,
+              url: String(data?.publicUrl || ""),
+            };
+          }),
+        );
+        const valid = uploaded.filter(
+          (x) => String(x.url || "").trim().length > 0,
+        );
+        setCampaignBrief((prev) => ({
+          ...prev,
+          brand_assets: [...prev.brand_assets, ...valid],
+        }));
+      } catch (e: any) {
+        toast({
+          title: "Brand asset upload failed",
+          description:
+            e?.message || "We could not upload one or more PDF files.",
+          variant: "destructive" as any,
+        });
+      } finally {
+        setSavingCampaign(false);
+        event.target.value = "";
+      }
+    })();
+  };
+
+  const handleSendOffer = async () => {
+    if (!brandCampaignId) {
+      toast({
+        title: "Campaign not ready",
+        description: "Please save campaign details first.",
         variant: "destructive" as any,
       });
       return;
     }
 
-    if (
-      campaignForm.collaborator_type === "agency" &&
-      !String(campaignForm.collaborators?.[0] || "")
-    ) {
+    if (campaignForm.collaborator_type === "creator") {
+      if (newCampaignStep >= 5 && !contractDraft.docuseal_template_id.trim()) {
+        toast({
+          title: "DocuSeal template missing",
+          description:
+            "Upload a contract PDF first so we can create a DocuSeal template before sending.",
+          variant: "destructive" as any,
+        });
+        return;
+      }
+      const creatorIds = selectedCreatorIdsForRequest.filter(Boolean);
+      if (creatorIds.length === 0) {
+        toast({
+          title: "Select at least one creator",
+          description: "Choose one or more creators before sending offer.",
+          variant: "destructive" as any,
+        });
+        return;
+      }
+
+      try {
+        const created = await base44.post<{ offers?: any[] }>(
+          `/api/brand/campaigns/${brandCampaignId}/offers`,
+          {
+            target_type: "creator",
+            target_ids: creatorIds,
+            brief_snapshot: campaignBrief,
+            message: campaignForm.custom_terms || null,
+          },
+        );
+
+        const createdOffers = Array.isArray(created?.offers)
+          ? created.offers
+          : [];
+
+        const shouldCreateContract =
+          newCampaignStep >= 5 &&
+          (contractDraft.file_url.trim() ||
+            contractDraft.docuseal_template_id.trim());
+        let brandSignatureRequested = false;
+
+        if (shouldCreateContract && createdOffers.length > 0) {
+          let firstBrandSigningUrl = "";
+          await Promise.all(
+            createdOffers.map(async (offer: any) => {
+              const offerId = String(offer?.id || "").trim();
+              if (!offerId) return;
+              const contractResp = await base44.post<{ contract?: any }>(
+                `/api/campaign-offers/${offerId}/contracts`,
+                {
+                  title:
+                    contractDraft.title.trim() ||
+                    `${campaignForm.name || "Campaign"} Contract`,
+                  file_url: contractDraft.file_url.trim() || null,
+                  docuseal_template_id: contractDraft.docuseal_template_id
+                    ? Number(contractDraft.docuseal_template_id)
+                    : null,
+                },
+              );
+              const contractId = String(
+                contractResp?.contract?.id || "",
+              ).trim();
+              const sendResp = await base44.post<{ contract?: any }>(
+                `/api/campaign-offers/${offerId}/contracts/send`,
+                {
+                  contract_id: contractId || undefined,
+                },
+              );
+              const brandSigningUrl = String(
+                sendResp?.contract?.meta?.brand_signing_url || "",
+              ).trim();
+              if (!firstBrandSigningUrl && brandSigningUrl) {
+                firstBrandSigningUrl = brandSigningUrl;
+              }
+            }),
+          );
+          if (firstBrandSigningUrl) {
+            toast({
+              title: "Brand signature required",
+              description:
+                "Sign as First Party now. Creator (Second Party) signs after your signature.",
+            });
+            setAwaitingBrandSignature(true);
+            setBrandSignUrl(firstBrandSigningUrl);
+            setBrandSignOpen(true);
+            brandSignatureRequested = true;
+          }
+        }
+
+        const requiresBrandSignature = brandSignatureRequested;
+        if (requiresBrandSignature) {
+          toast({
+            title: "Offers sent",
+            description:
+              "Complete your brand signature before closing this campaign flow.",
+          });
+          await loadCampaignCards();
+          return;
+        }
+      } catch (e: any) {
+        toast({
+          title: "Failed to send offers",
+          description: e?.message || "Please try again.",
+          variant: "destructive" as any,
+        });
+        return;
+      }
+
       toast({
-        title: "Select an agency first",
-        description: "Choose a connected agency before requesting a license.",
+        title: "Offers sent",
+        description: `${creatorIds.length} creator offer${creatorIds.length > 1 ? "s were" : " was"} sent successfully.`,
+      });
+      await loadCampaignCards();
+      resetCampaignBuilder();
+      return;
+    }
+
+    const agencyId = String(campaignForm.collaborators?.[0] || "");
+    if (!agencyId) {
+      toast({
+        title: "Select an agency",
+        description: "Choose a connected agency before sending offer.",
         variant: "destructive" as any,
       });
       return;
     }
-    setRequestedLicenseCreatorIds((prev) => {
-      const next = new Set(prev);
-      creatorIds.forEach((id) => next.add(id));
-      return next;
-    });
-    toast({
-      title: "License requested",
-      description: "Frontend demo action completed (no backend request sent).",
-    });
+    try {
+      await base44.post(`/api/brand/campaigns/${brandCampaignId}/offers`, {
+        target_type: "agency",
+        target_ids: [agencyId],
+        brief_snapshot: campaignBrief,
+        message: campaignForm.custom_terms || null,
+      });
+      toast({
+        title: "Offer sent",
+        description: "Offer sent to the selected agency.",
+      });
+      await loadCampaignCards();
+      resetCampaignBuilder();
+    } catch (e: any) {
+      toast({
+        title: "Failed to send offer",
+        description: e?.message || "Please try again.",
+        variant: "destructive" as any,
+      });
+    }
+  };
+
+  const handleContractPdfUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (file.type !== "application/pdf") {
+      toast({
+        title: "PDF required",
+        description: "Please upload a PDF contract file.",
+        variant: "destructive" as any,
+      });
+      event.target.value = "";
+      return;
+    }
+    try {
+      setSavingCampaign(true);
+      const session = supabase
+        ? await supabase.auth.getSession()
+        : { data: { session: null } };
+      const token = session.data.session?.access_token;
+      const uploadRes = await fetch(
+        api("/api/brand/docuseal/templates/upload"),
+        {
+          method: "POST",
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            "Content-Type": "application/pdf",
+            "x-file-name": file.name,
+          },
+          body: await file.arrayBuffer(),
+        },
+      );
+      const uploadText = await uploadRes.text();
+      if (!uploadRes.ok) {
+        throw new Error(uploadText || "Failed to upload contract to DocuSeal");
+      }
+      const uploadJson = uploadText ? JSON.parse(uploadText) : {};
+      const templateId = Number(uploadJson?.docuseal_template_id || 0);
+      if (!templateId) {
+        throw new Error("DocuSeal template ID missing from upload response");
+      }
+      setContractDraft((prev) => ({
+        ...prev,
+        title: file.name.replace(/\.pdf$/i, ""),
+        file_url: "",
+        docuseal_template_id: String(templateId),
+      }));
+      setContractUploadName(file.name);
+      toast({
+        title: "Contract uploaded",
+        description:
+          "PDF uploaded. DocuSeal editor is now open. Add signature fields for First Party and Second Party, then click Finalize & Send.",
+      });
+      setShowCampaignDocuSealBuilder(true);
+    } catch (e: any) {
+      toast({
+        title: "Contract upload failed",
+        description: e?.message || "Unable to upload PDF contract to DocuSeal.",
+        variant: "destructive" as any,
+      });
+    } finally {
+      setSavingCampaign(false);
+      event.target.value = "";
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`${embedded ? "bg-gray-50" : "min-h-screen bg-gray-50"}`}>
       {/* Top Navigation */}
-      <nav className="bg-white border-b-2 border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                onClick={() => navigate(createPageUrl("BrandDashboard"))}
-                className="rounded-none"
-              >
-                <ArrowLeft className="w-5 h-5 mr-2" />
-                Back to Dashboard
-              </Button>
-              <div className="flex items-center gap-3">
-                <img
-                  src={mockBrand.logo}
-                  alt="Brand"
-                  className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
-                />
-                <span className="text-xl font-bold text-gray-900">
-                  {mockBrand.name}
-                </span>
+      {!embedded && (
+        <nav className="bg-white border-b-2 border-gray-200 sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="ghost"
+                  onClick={() => navigate(createPageUrl("BrandDashboard"))}
+                  className="rounded-none"
+                >
+                  <ArrowLeft className="w-5 h-5 mr-2" />
+                  Back to Dashboard
+                </Button>
+                <div className="flex items-center gap-3">
+                  <img
+                    src={mockBrand.logo}
+                    alt="Brand"
+                    className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                  />
+                  <span className="text-xl font-bold text-gray-900">
+                    {mockBrand.name}
+                  </span>
+                </div>
               </div>
-            </div>
 
+              <Button
+                onClick={() => setShowNewCampaignModal(true)}
+                className="bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Campaign
+              </Button>
+            </div>
+          </div>
+        </nav>
+      )}
+
+      <div className={`${embedded ? "" : "max-w-7xl mx-auto"} px-6 py-8`}>
+        {embedded && (
+          <div className="flex justify-end mb-3">
             <Button
               onClick={() => setShowNewCampaignModal(true)}
               className="bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none"
@@ -481,25 +1600,14 @@ export default function BrandCampaignDashboard() {
               New Campaign
             </Button>
           </div>
-        </div>
-      </nav>
-
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <Alert className="mb-8 bg-amber-50 border-2 border-amber-600 rounded-none">
-          <AlertCircle className="h-5 w-5 text-amber-600" />
-          <AlertDescription className="text-amber-900 font-medium">
-            <strong>Demo Mode:</strong> This is a preview of the Brand Campaign
-            Hub for companies and brands.
-          </AlertDescription>
-        </Alert>
-
+        )}
         {/* Metrics Overview */}
         <div className="grid md:grid-cols-4 gap-6 mb-8">
           <Card className="p-6 bg-white border-2 border-gray-200 rounded-none">
             <DollarSign className="w-8 h-8 text-[#F7B750] mb-4" />
             <p className="text-sm text-gray-600 mb-1">Total Spend (30d)</p>
             <p className="text-3xl font-bold text-gray-900">
-              ${(mockMetrics.total_spend / 1000).toFixed(1)}K
+              ${(dashboardMetrics.totalSpend / 1000).toFixed(1)}K
             </p>
           </Card>
 
@@ -507,7 +1615,7 @@ export default function BrandCampaignDashboard() {
             <Users className="w-8 h-8 text-[#F7B750] mb-4" />
             <p className="text-sm text-gray-600 mb-1">Active Collaborators</p>
             <p className="text-3xl font-bold text-gray-900">
-              {mockMetrics.active_creators}
+              {dashboardMetrics.activeCollaborators}
             </p>
           </Card>
 
@@ -515,7 +1623,7 @@ export default function BrandCampaignDashboard() {
             <FileText className="w-8 h-8 text-[#F7B750] mb-4" />
             <p className="text-sm text-gray-600 mb-1">Campaigns Launched</p>
             <p className="text-3xl font-bold text-gray-900">
-              {mockMetrics.campaigns_launched}
+              {dashboardMetrics.campaignsLaunched}
             </p>
           </Card>
 
@@ -523,7 +1631,7 @@ export default function BrandCampaignDashboard() {
             <TrendingUp className="w-8 h-8 text-[#F7B750] mb-4" />
             <p className="text-sm text-gray-600 mb-1">Avg ROI</p>
             <p className="text-3xl font-bold text-gray-900">
-              {mockMetrics.roi}x
+              {dashboardMetrics.avgRoi}x
             </p>
           </Card>
         </div>
@@ -672,118 +1780,116 @@ export default function BrandCampaignDashboard() {
               >
                 Completed
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => setCampaignListTab("inbox")}
-                className={`border-2 rounded-none ${
-                  campaignListTab === "inbox"
-                    ? "border-black bg-black text-white"
-                    : "border-gray-300"
-                }`}
-              >
-                Inbox
-              </Button>
             </div>
           </div>
 
-          {campaignListTab === "inbox" ? (
-            <div className="space-y-3">
-              {[
-                "Agency invited you to review campaign scope.",
-                "Creator submitted revised draft for approval.",
-                "License request is pending your confirmation.",
-              ].map((msg, idx) => (
-                <Card
-                  key={`${msg}-${idx}`}
-                  className="p-4 bg-white border-2 border-gray-200 rounded-none"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="w-2.5 h-2.5 rounded-full bg-gray-400 mt-1.5" />
-                    <p className="text-sm text-gray-900">{msg}</p>
-                  </div>
+          {(() => {
+            const filteredCampaigns = campaignCards.filter(
+              (campaign) => campaign.status === campaignListTab,
+            );
+            if (loadingCampaignCards) {
+              return (
+                <Card className="p-4 bg-white border-2 border-gray-200 rounded-none">
+                  <p className="text-sm text-gray-600">Loading campaigns...</p>
                 </Card>
-              ))}
-            </div>
-          ) : (
-            mockCampaigns
-              .filter((campaign) => campaign.status === campaignListTab)
-              .map((campaign) => (
-                <Card
-                  key={campaign.id}
-                  className="p-6 bg-white border-2 border-gray-200 hover:shadow-lg transition-all rounded-none"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">
-                        {campaign.name}
-                      </h3>
-                      <div className="flex items-center gap-3 mb-3">
-                        <Badge
-                          className={
-                            campaign.status === "active"
-                              ? "bg-green-100 text-green-800"
-                              : campaign.status === "pending_approval"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-gray-100 text-gray-800"
-                          }
-                        >
-                          {campaign.status.replace("_", " ")}
-                        </Badge>
-                        <span className="text-sm text-gray-600">
-                          {campaign.objective}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <span>Budget: ${campaign.budget.toLocaleString()}</span>
-                        <span>•</span>
-                        <span>Start: {campaign.start_date}</span>
-                        <span>•</span>
-                        <span>
-                          {campaign.collaborators.length} collaborator(s)
-                        </span>
-                      </div>
-                    </div>
-                    <Button
-                      onClick={() => setSelectedCampaign(campaign)}
-                      className="bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none"
-                    >
-                      View Details
-                    </Button>
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <p className="text-sm text-gray-600 mb-2">Progress</p>
-                      <Progress
-                        value={
-                          (campaign.approved / campaign.deliverables) * 100
+              );
+            }
+            if (filteredCampaigns.length === 0) {
+              return (
+                <Card className="p-4 bg-white border-2 border-gray-200 rounded-none">
+                  <p className="text-sm text-gray-600">
+                    {campaignListTab === "active"
+                      ? "No active campaigns yet."
+                      : campaignListTab === "pending_approval"
+                        ? "No campaigns pending approval."
+                        : "No completed campaigns yet."}
+                  </p>
+                </Card>
+              );
+            }
+            return filteredCampaigns.map((campaign) => (
+              <Card
+                key={campaign.id}
+                className="p-6 bg-white border-2 border-gray-200 hover:shadow-lg transition-all rounded-none"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">
+                      {campaign.name}
+                    </h3>
+                    <div className="flex items-center gap-3 mb-3">
+                      <Badge
+                        className={
+                          campaign.status === "active"
+                            ? "bg-green-100 text-green-800"
+                            : campaign.status === "pending_approval"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-gray-100 text-gray-800"
                         }
-                        className="h-2 mb-2"
-                      />
-                      <p className="text-sm text-gray-600">
-                        {campaign.approved} / {campaign.deliverables}{" "}
-                        deliverables approved
-                      </p>
+                      >
+                        {campaign.status.replace("_", " ")}
+                      </Badge>
+                      <span className="text-sm text-gray-600">
+                        {campaign.objective}
+                      </span>
                     </div>
-                    <div>
-                      <p className="text-sm text-gray-600 mb-2">
-                        Collaborators
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {campaign.collaborators.map((collab, idx) => (
+                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <span>Budget: ${campaign.budget.toLocaleString()}</span>
+                      <span>•</span>
+                      <span>Start: {campaign.start_date}</span>
+                      <span>•</span>
+                      <span>
+                        {campaign.collaborators.length} collaborator(s)
+                      </span>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => void openCampaignDetails(campaign)}
+                    className="bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none"
+                  >
+                    View Details
+                  </Button>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-2">Progress</p>
+                    <Progress
+                      value={
+                        campaign.deliverables > 0
+                          ? (campaign.approved / campaign.deliverables) * 100
+                          : 0
+                      }
+                      className="h-2 mb-2"
+                    />
+                    <p className="text-sm text-gray-600">
+                      {campaign.approved} / {campaign.deliverables} deliverables
+                      approved
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 mb-2">Collaborators</p>
+                    <div className="flex flex-wrap gap-2">
+                      {campaign.collaborators.length === 0 ? (
+                        <span className="text-sm text-gray-500">
+                          No collaborators yet.
+                        </span>
+                      ) : (
+                        campaign.collaborators.map((collab, idx) => (
                           <Badge
                             key={idx}
                             className="bg-gray-200 text-gray-700"
                           >
                             {collab}
                           </Badge>
-                        ))}
-                      </div>
+                        ))
+                      )}
                     </div>
                   </div>
-                </Card>
-              ))
-          )}
+                </div>
+              </Card>
+            ));
+          })()}
         </div>
       </div>
 
@@ -791,7 +1897,7 @@ export default function BrandCampaignDashboard() {
       {showNewCampaignModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 overflow-y-auto">
           <div className="min-h-screen flex items-center justify-center p-6">
-            <Card className="w-full max-w-3xl bg-white p-8 border-2 border-black rounded-none">
+            <Card className="w-full max-w-6xl bg-white p-8 border-2 border-black rounded-none">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">
                   Create New Campaign
@@ -799,7 +1905,7 @@ export default function BrandCampaignDashboard() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setShowNewCampaignModal(false)}
+                  onClick={resetCampaignBuilder}
                   className="rounded-none"
                 >
                   <X className="w-5 h-5" />
@@ -827,9 +1933,7 @@ export default function BrandCampaignDashboard() {
                     >
                       2
                     </div>
-                    <span className="text-sm font-medium">
-                      Collaborators (Optional)
-                    </span>
+                    <span className="text-sm font-medium">Campaign Brief</span>
                   </div>
                   <div className="flex-1 h-px bg-gray-300" />
                   <div
@@ -842,10 +1946,38 @@ export default function BrandCampaignDashboard() {
                     </div>
                     <span className="text-sm font-medium">
                       {campaignForm.collaborator_type === "creator"
-                        ? "Select Creators (Optional)"
-                        : "Select Talents (Optional)"}
+                        ? "Collaborators"
+                        : "Collaborators"}
                     </span>
                   </div>
+                  <div className="flex-1 h-px bg-gray-300" />
+                  <div
+                    className={`flex items-center gap-2 ${newCampaignStep >= 4 ? "text-black" : "text-gray-400"}`}
+                  >
+                    <div
+                      className={`w-8 h-8 border-2 rounded-none flex items-center justify-center ${newCampaignStep >= 4 ? "border-black bg-black text-white" : "border-gray-300"}`}
+                    >
+                      4
+                    </div>
+                    <span className="text-sm font-medium">Offer Summary</span>
+                  </div>
+                  {campaignForm.collaborator_type === "creator" && (
+                    <>
+                      <div className="flex-1 h-px bg-gray-300" />
+                      <div
+                        className={`flex items-center gap-2 ${newCampaignStep >= 5 ? "text-black" : "text-gray-400"}`}
+                      >
+                        <div
+                          className={`w-8 h-8 border-2 rounded-none flex items-center justify-center ${newCampaignStep >= 5 ? "border-black bg-black text-white" : "border-gray-300"}`}
+                        >
+                          5
+                        </div>
+                        <span className="text-sm font-medium">
+                          Contract Upload
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -940,6 +2072,55 @@ export default function BrandCampaignDashboard() {
                       placeholder="Describe campaign goals and licensing context..."
                       className="border-2 border-gray-300 rounded-none min-h-[90px]"
                     />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-2">
+                        Budget Min (USD) *
+                      </label>
+                      <Input
+                        type="number"
+                        min={1}
+                        step={1}
+                        inputMode="numeric"
+                        value={budgetParts.min}
+                        onChange={(e) => setBudgetPart("min", e.target.value)}
+                        placeholder="5000"
+                        className="border-2 border-gray-300 rounded-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-2">
+                        Budget Max (USD) *
+                      </label>
+                      <Input
+                        type="number"
+                        min={1}
+                        step={1}
+                        inputMode="numeric"
+                        value={budgetParts.max}
+                        onChange={(e) => setBudgetPart("max", e.target.value)}
+                        placeholder="10000"
+                        className="border-2 border-gray-300 rounded-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-2">
+                        Start Date *
+                      </label>
+                      <Input
+                        type="date"
+                        value={campaignForm.start_date}
+                        onChange={(e) =>
+                          setCampaignForm({
+                            ...campaignForm,
+                            start_date: e.target.value,
+                          })
+                        }
+                        className="border-2 border-gray-300 rounded-none"
+                      />
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1044,34 +2225,52 @@ export default function BrandCampaignDashboard() {
                   <div className="flex justify-end gap-3">
                     <Button
                       variant="outline"
-                      onClick={() => setShowNewCampaignModal(false)}
+                      onClick={resetCampaignBuilder}
                       className="border-2 border-gray-300 rounded-none bg-white text-black hover:bg-gray-50"
                     >
                       Cancel
                     </Button>
                     <Button
-                      onClick={() => setNewCampaignStep(2)}
+                      onClick={handleStep1Next}
                       disabled={
+                        savingCampaign ||
                         !campaignForm.name ||
                         !campaignForm.objective ||
                         !campaignForm.category ||
-                        !campaignForm.description.trim()
+                        !campaignForm.description.trim() ||
+                        !campaignForm.start_date ||
+                        !budgetParts.min ||
+                        !budgetParts.max
                       }
                       className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
                     >
-                      Next
+                      {savingCampaign ? "Saving..." : "Next"}
                     </Button>
                   </div>
                 </div>
               )}
 
               {newCampaignStep === 2 && (
+                <CampaignBriefStep
+                  campaignBrief={campaignBrief}
+                  setCampaignBrief={setCampaignBrief}
+                  onReferenceImagesUpload={handleReferenceImageUpload}
+                  onBrandAssetsUpload={handleBrandAssetsUpload}
+                  onBack={() => setNewCampaignStep(1)}
+                  onNext={handleStep2Next}
+                />
+              )}
+
+              {newCampaignStep === 3 && (
                 <div className="space-y-6">
                   <Alert className="bg-blue-50 border-2 border-blue-200 rounded-none">
                     <AlertCircle className="h-5 w-5 text-blue-600" />
                     <AlertDescription className="text-blue-900">
-                      Campaigns require an assigned agency or creator for
-                      production. You can invite one now or return later.
+                      Select your collaborator type, then choose connected{" "}
+                      {campaignForm.collaborator_type === "agency"
+                        ? "talents"
+                        : "creators"}
+                      .
                     </AlertDescription>
                   </Alert>
 
@@ -1079,7 +2278,7 @@ export default function BrandCampaignDashboard() {
                     <label className="text-sm font-medium text-gray-700 block mb-3">
                       Select Collaborator Type
                     </label>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Card
                         className={`p-4 border-2 cursor-pointer transition-all rounded-none ${
                           campaignForm.collaborator_type === "agency"
@@ -1094,7 +2293,7 @@ export default function BrandCampaignDashboard() {
                           }));
                           setSelectedCreatorsById({});
                           setSelectedTalentCreatorIds(new Set());
-                          setRequestedLicenseCreatorIds(new Set());
+                          setCreatorSearch("");
                         }}
                       >
                         <Building2 className="w-8 h-8 text-black mb-2" />
@@ -1102,10 +2301,9 @@ export default function BrandCampaignDashboard() {
                           Marketing Agency
                         </h4>
                         <p className="text-xs text-gray-600">
-                          Full campaign management
+                          Select talents from a connected agency
                         </p>
                       </Card>
-
                       <Card
                         className={`p-4 border-2 cursor-pointer transition-all rounded-none ${
                           campaignForm.collaborator_type === "creator"
@@ -1118,10 +2316,10 @@ export default function BrandCampaignDashboard() {
                             collaborator_type: "creator",
                             collaborators: [],
                           }));
+                          setSelectedCreatorsById({});
                           setMarketplaceCreators([]);
-                          setCreatorSearch("");
                           setSelectedTalentCreatorIds(new Set());
-                          setRequestedLicenseCreatorIds(new Set());
+                          setCreatorSearch("");
                         }}
                       >
                         <Sparkles className="w-8 h-8 text-black mb-2" />
@@ -1129,71 +2327,50 @@ export default function BrandCampaignDashboard() {
                           AI Creator
                         </h4>
                         <p className="text-xs text-gray-600">
-                          Task-specific work
+                          Work directly with connected creators
                         </p>
                       </Card>
                     </div>
                   </div>
 
-                  {campaignForm.collaborator_type && (
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 block mb-3">
-                        {campaignForm.collaborator_type === "agency"
-                          ? "Select Agency"
-                          : "Select Creator(s)"}
+                  {campaignForm.collaborator_type === "agency" && (
+                    <div className="space-y-4">
+                      <label className="text-sm font-medium text-gray-700 block">
+                        Select Agency
                       </label>
-                      {campaignForm.collaborator_type === "agency" ? (
-                        <>
-                          <div className="flex gap-3 mb-4">
-                            <Input
-                              value={agencySearch}
-                              onChange={(e) => setAgencySearch(e.target.value)}
-                              placeholder="Search connected agencies..."
-                              className="flex-1 border-2 border-gray-300 rounded-none"
-                            />
-                          </div>
-                          <div className="border-2 border-gray-200 rounded-none p-4 mb-4 space-y-3">
-                            <p className="text-sm text-gray-600">
-                              Connected agencies
-                            </p>
-                            {loadingConnectedAgencies ? (
-                              <p className="text-sm text-gray-500">
-                                Loading connected agencies...
-                              </p>
-                            ) : filteredConnectedAgencies.length === 0 ? (
-                              <p className="text-sm text-gray-500">
-                                No connected agencies found. Connect from Brand
-                                Dashboard {"->"} Find Agencies.
-                              </p>
-                            ) : (
-                              filteredConnectedAgencies.map((agency) => {
-                                const agencyId = String(
-                                  agency?.agency_id || agency?.id || "",
-                                );
-                                const selected =
-                                  campaignForm.collaborators?.includes(
-                                    agencyId,
-                                  );
-                                return (
-                                  <button
-                                    key={agencyId}
-                                    type="button"
-                                    onClick={() => {
-                                      setCampaignForm((prev) => ({
-                                        ...prev,
-                                        collaborators: agencyId
-                                          ? [agencyId]
-                                          : prev.collaborators,
-                                      }));
-                                      setSelectedTalentCreatorIds(new Set());
-                                      setRequestedLicenseCreatorIds(new Set());
-                                    }}
-                                    className={`w-full text-left border-2 p-3 rounded-none transition-colors ${
-                                      selected
-                                        ? "border-black bg-gray-50"
-                                        : "border-gray-200 hover:border-gray-400"
-                                    }`}
-                                  >
+                      <Input
+                        value={agencySearch}
+                        onChange={(e) => setAgencySearch(e.target.value)}
+                        placeholder="Search connected agencies..."
+                        className="border-2 border-gray-300 rounded-none"
+                      />
+                      <div className="border-2 border-gray-200 rounded-none p-3 space-y-3">
+                        {loadingConnectedAgencies ? (
+                          <p className="text-sm text-gray-500">
+                            Loading connected agencies...
+                          </p>
+                        ) : filteredConnectedAgencies.length === 0 ? (
+                          <p className="text-sm text-gray-500">
+                            No connected agencies found.
+                          </p>
+                        ) : (
+                          filteredConnectedAgencies.map((agency) => {
+                            const agencyId = String(
+                              agency?.agency_id || agency?.id || "",
+                            );
+                            const selected =
+                              campaignForm.collaborators?.includes(agencyId);
+                            return (
+                              <div
+                                key={agencyId}
+                                className={`w-full border-2 p-3 rounded-none transition-colors ${
+                                  selected
+                                    ? "border-black bg-gray-50"
+                                    : "border-gray-200 hover:border-gray-400"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between gap-3">
+                                  <div>
                                     <p className="font-semibold text-gray-900">
                                       {agency?.display_name ||
                                         agency?.agency_name ||
@@ -1201,377 +2378,141 @@ export default function BrandCampaignDashboard() {
                                     </p>
                                     <p className="text-xs text-gray-600 mt-1">
                                       {agency?.agency_type || "Agency"}
-                                      {agency?.location
-                                        ? ` • ${agency.location}`
-                                        : ""}
                                     </p>
-                                  </button>
-                                );
-                              })
-                            )}
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="flex gap-3 mb-4">
-                            <Input
-                              value={creatorSearch}
-                              onChange={(e) => setCreatorSearch(e.target.value)}
-                              placeholder="Search verified creators..."
-                              className="flex-1 border-2 border-gray-300 rounded-none"
-                            />
-                          </div>
-                          <div className="border-2 border-gray-200 rounded-none p-4 mb-4 space-y-3">
-                            <p className="text-sm text-gray-600">
-                              Verified creators
-                            </p>
-                            {loadingMarketplaceCreators ? (
-                              <p className="text-sm text-gray-500">
-                                Loading creators...
-                              </p>
-                            ) : marketplaceCreators.length === 0 ? (
-                              <p className="text-sm text-gray-500">
-                                No verified creators found for this search.
-                              </p>
-                            ) : (
-                              marketplaceCreators.map((creator) => {
-                                const creatorId = String(creator?.id || "");
-                                const selected =
-                                  campaignForm.collaborators?.includes(
-                                    creatorId,
-                                  );
-                                const creatorName = getDisplayName(
-                                  creator?.display_name ||
-                                    creator?.full_name ||
-                                    creator?.name,
-                                );
-                                const creatorType = String(
-                                  creator?.creator_type || "Creator",
-                                );
-                                const location = String(
-                                  creator?.location || "",
-                                ).trim();
-                                const baseRateWeeklyCents = Number(
-                                  creator?.base_rate_weekly_cents ??
-                                    creator?.base_weekly_price_cents ??
-                                    creator?.licensing_rate_weekly_cents ??
-                                    0,
-                                );
-                                const hasBaseRate =
-                                  Number.isFinite(baseRateWeeklyCents) &&
-                                  baseRateWeeklyCents > 0;
-                                const rateCurrency = String(
-                                  creator?.rate_currency ||
-                                    creator?.currency_code ||
-                                    "USD",
-                                );
-                                const canNegotiate = isNegotiationEnabled(
-                                  creator?.accept_negotiations,
-                                );
-                                return (
-                                  <div
-                                    key={creatorId}
-                                    className={`w-full border-2 p-3 rounded-none transition-colors ${
-                                      selected
-                                        ? "border-black bg-gray-50"
-                                        : "border-gray-200 hover:border-gray-400"
-                                    }`}
-                                  >
-                                    <div className="flex items-center justify-between gap-4">
-                                      <button
-                                        type="button"
-                                        onClick={() =>
-                                          toggleCreatorCollaborator(creator)
-                                        }
-                                        className="flex-1 text-left"
-                                      >
-                                        <p className="font-semibold text-gray-900">
-                                          {creatorName}
-                                        </p>
-                                        <p className="text-xs text-gray-600 mt-1">
-                                          {creatorType}
-                                          {location ? ` • ${location}` : ""}
-                                        </p>
-                                        {selected && (
-                                          <p className="mt-2 text-xs font-semibold text-black">
-                                            Selected
-                                          </p>
-                                        )}
-                                      </button>
-                                      <div className="w-56 shrink-0 text-right">
-                                        <p className="text-xs text-gray-600">
-                                          License rate
-                                        </p>
-                                        <p className="text-sm font-semibold text-gray-900 mt-1">
-                                          {hasBaseRate
-                                            ? `${rateCurrency} ${Math.round(baseRateWeeklyCents / 100).toLocaleString()}/week`
-                                            : "Unavailable"}
-                                        </p>
-                                        {canNegotiate && (
-                                          <Input
-                                            type="number"
-                                            min="1"
-                                            placeholder="My offer"
-                                            value={
-                                              offerByCreatorId[creatorId] || ""
-                                            }
-                                            onChange={(e) =>
-                                              setOfferByCreatorId((prev) => ({
-                                                ...prev,
-                                                [creatorId]: e.target.value,
-                                              }))
-                                            }
-                                            className="mt-2 border-2 border-gray-300 rounded-none h-9 text-right"
-                                          />
-                                        )}
-                                        {!canNegotiate && (
-                                          <p className="text-xs text-gray-500 mt-2">
-                                            Fixed rate only
-                                          </p>
-                                        )}
-                                      </div>
-                                    </div>
                                   </div>
-                                );
-                              })
-                            )}
-                          </div>
-                        </>
-                      )}
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="h-10 border-2 border-gray-300 rounded-none"
+                                    onClick={() =>
+                                      setCampaignForm((prev) => ({
+                                        ...prev,
+                                        collaborators: agencyId
+                                          ? [agencyId]
+                                          : [],
+                                      }))
+                                    }
+                                  >
+                                    {selected ? "Selected" : "Select"}
+                                  </Button>
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
                     </div>
                   )}
 
-                  <div className="flex justify-between gap-3">
-                    <Button
-                      variant="outline"
-                      onClick={() => setNewCampaignStep(1)}
-                      className="border-2 border-gray-300 rounded-none bg-white text-black hover:bg-gray-50"
-                    >
-                      <ArrowLeft className="w-4 h-4 mr-2" />
-                      Back
-                    </Button>
-                    <div className="flex gap-3">
-                      <Button
-                        variant="outline"
-                        onClick={handleCreateCampaign}
-                        className="border-2 border-gray-300 rounded-none bg-white text-black hover:bg-gray-50"
-                      >
-                        Save & Add Collaborators Later
-                      </Button>
-                      <Button
-                        onClick={() => setNewCampaignStep(3)}
-                        disabled={
-                          !campaignForm.collaborator_type ||
-                          (campaignForm.collaborators || []).length === 0
-                        }
-                        className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
-                      >
-                        Next
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {newCampaignStep === 3 && (
-                <div className="space-y-6">
-                  <Alert className="bg-blue-50 border-2 border-blue-200 rounded-none">
-                    <AlertCircle className="h-5 w-5 text-blue-700" />
-                    <AlertDescription className="text-blue-900">
-                      {campaignForm.collaborator_type === "agency"
-                        ? "Select one or more talents under your chosen agency and request licenses in one action."
-                        : "Review selected creators and request their licenses before creating your campaign."}
-                    </AlertDescription>
-                  </Alert>
-
-                  {campaignForm.collaborator_type === "agency" && (
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 block mb-2">
-                        Search Talent by Name
+                  {campaignForm.collaborator_type === "creator" && (
+                    <div className="space-y-3">
+                      <label className="text-sm font-medium text-gray-700 block">
+                        {campaignForm.collaborator_type === "agency"
+                          ? "Select Talents"
+                          : "Select Creators"}
                       </label>
                       <Input
                         value={creatorSearch}
                         onChange={(e) => setCreatorSearch(e.target.value)}
-                        placeholder="Type model or talent name..."
+                        placeholder={
+                          campaignForm.collaborator_type === "agency"
+                            ? "Search talents..."
+                            : "Search creators..."
+                        }
                         className="border-2 border-gray-300 rounded-none"
                       />
-                    </div>
-                  )}
+                      <div className="border-2 border-gray-200 rounded-none p-3 max-h-[340px] overflow-y-auto space-y-3">
+                        {loadingMarketplaceCreators ? (
+                          <p className="text-sm text-gray-500">
+                            {campaignForm.collaborator_type === "agency"
+                              ? "Loading talents..."
+                              : "Loading creators..."}
+                          </p>
+                        ) : marketplaceCreators.length === 0 ? (
+                          <p className="text-sm text-gray-500">
+                            {campaignForm.collaborator_type === "agency"
+                              ? "No talents found for this agency."
+                              : "No connected creators found."}
+                          </p>
+                        ) : (
+                          marketplaceCreators.map((creator) => {
+                            const creatorId = String(creator?.id || "");
+                            const selected =
+                              campaignForm.collaborator_type === "agency"
+                                ? selectedTalentCreatorIds.has(creatorId)
+                                : campaignForm.collaborators?.includes(
+                                    creatorId,
+                                  );
+                            const name = getDisplayName(
+                              creator?.display_name ||
+                                creator?.full_name ||
+                                creator?.name,
+                            );
+                            const creatorType = String(
+                              creator?.creator_type ||
+                                (campaignForm.collaborator_type === "agency"
+                                  ? "Talent"
+                                  : "Creator"),
+                            );
 
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 block mb-3">
-                      {campaignForm.collaborator_type === "agency"
-                        ? "Available Talent"
-                        : "Selected Creators"}
-                    </label>
-                    <div className="border-2 border-gray-200 rounded-none max-h-[320px] overflow-y-auto p-3 space-y-3">
-                      {loadingMarketplaceCreators ? (
-                        <p className="text-sm text-gray-500">
-                          {campaignForm.collaborator_type === "agency"
-                            ? "Loading talents..."
-                            : "Loading creators..."}
-                        </p>
-                      ) : step3Creators.length === 0 ? (
-                        <p className="text-sm text-gray-500">
-                          {campaignForm.collaborator_type === "agency"
-                            ? "No talents available under this agency."
-                            : "No creators selected. Go back to step 2 and select creators."}
-                        </p>
-                      ) : (
-                        step3Creators.map((creator) => {
-                          const creatorId = String(creator?.id || "");
-                          const name = getDisplayName(
-                            creator?.display_name ||
-                              creator?.full_name ||
-                              creator?.name,
-                          );
-                          const creatorType = String(
-                            creator?.creator_type || "Creator",
-                          );
-                          const baseRateWeeklyCents = Number(
-                            creator?.base_rate_weekly_cents ??
-                              creator?.licensing_rate_weekly_cents ??
-                              creator?.base_weekly_price_cents ??
-                              0,
-                          );
-                          const hasBaseRate =
-                            Number.isFinite(baseRateWeeklyCents) &&
-                            baseRateWeeklyCents > 0;
-                          const rateCurrency = String(
-                            creator?.rate_currency ||
-                              creator?.currency_code ||
-                              "USD",
-                          );
-                          const canNegotiate = isNegotiationEnabled(
-                            creator?.accept_negotiations,
-                          );
-                          const selectedForRequest =
-                            campaignForm.collaborator_type === "agency"
-                              ? selectedTalentCreatorIds.has(creatorId)
-                              : true;
-                          return (
-                            <div
-                              key={creatorId}
-                              className={`border rounded-none p-3 bg-white ${
-                                selectedForRequest
-                                  ? "border-black"
-                                  : "border-gray-300"
-                              }`}
-                            >
-                              <div className="flex items-center gap-3 flex-wrap">
-                                <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
-                                  {creator?.profile_photo_url ? (
-                                    <img
-                                      src={String(creator.profile_photo_url)}
-                                      alt={name}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  ) : (
-                                    <span className="text-xs font-semibold text-gray-600">
-                                      {getInitials(name)}
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <p className="font-semibold text-gray-900 truncate">
-                                    {name}
-                                  </p>
-                                  <p className="text-sm text-gray-600 truncate">
-                                    {creatorType}
-                                  </p>
-                                  <p className="text-xs text-gray-700 mt-1">
-                                    License rate:{" "}
-                                    <span className="font-semibold">
-                                      {hasBaseRate
-                                        ? `${rateCurrency} ${Math.round(baseRateWeeklyCents / 100).toLocaleString()}/week`
-                                        : "Unavailable"}
-                                    </span>
-                                  </p>
-                                </div>
-                                {campaignForm.collaborator_type === "agency" &&
-                                  canNegotiate && (
-                                    <div className="w-40">
-                                      <Input
-                                        type="number"
-                                        min="1"
-                                        placeholder="My offer"
-                                        value={
-                                          offerByCreatorId[creatorId] || ""
-                                        }
-                                        onChange={(e) =>
-                                          setOfferByCreatorId((prev) => ({
-                                            ...prev,
-                                            [creatorId]: e.target.value,
-                                          }))
-                                        }
-                                        className="border-2 border-gray-300 rounded-none h-10"
-                                      />
-                                    </div>
-                                  )}
-                                {campaignForm.collaborator_type === "creator" &&
-                                  canNegotiate && (
-                                    <p className="text-xs text-gray-700">
-                                      My offer:{" "}
-                                      <span className="font-semibold">
-                                        {offerByCreatorId[creatorId]
-                                          ? `${rateCurrency} ${Number(offerByCreatorId[creatorId]).toLocaleString()}/week`
-                                          : "Not set"}
-                                      </span>
+                            return (
+                              <div
+                                key={creatorId}
+                                className={`border-2 p-3 rounded-none ${
+                                  selected
+                                    ? "border-black bg-gray-50"
+                                    : "border-gray-200"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between gap-4">
+                                  <div className="min-w-0 flex-1">
+                                    <p className="font-semibold text-gray-900 truncate">
+                                      {name}
                                     </p>
-                                  )}
-                                {!canNegotiate && (
-                                  <p className="text-xs text-gray-500">
-                                    Fixed rate only
-                                  </p>
-                                )}
-                                {campaignForm.collaborator_type ===
-                                  "agency" && (
+                                    <p className="text-xs text-gray-600 mt-1">
+                                      {creatorType}
+                                    </p>
+                                  </div>
+                                  <div className="w-56 shrink-0 text-right">
+                                    {/* Keep negotiation logic in data layer, but hide per request */}
+                                  </div>
                                   <Button
                                     type="button"
                                     variant="outline"
-                                    onClick={() =>
-                                      setSelectedTalentCreatorIds((prev) => {
-                                        const next = new Set(prev);
-                                        if (next.has(creatorId)) {
-                                          next.delete(creatorId);
-                                        } else {
-                                          next.add(creatorId);
-                                        }
-                                        return next;
-                                      })
-                                    }
                                     className="h-10 border-2 border-gray-300 rounded-none"
+                                    onClick={() => {
+                                      if (
+                                        campaignForm.collaborator_type ===
+                                        "agency"
+                                      ) {
+                                        setSelectedTalentCreatorIds((prev) => {
+                                          const next = new Set(prev);
+                                          if (next.has(creatorId)) {
+                                            next.delete(creatorId);
+                                          } else {
+                                            next.add(creatorId);
+                                          }
+                                          return next;
+                                        });
+                                        setSelectedCreatorsById((prev) => ({
+                                          ...prev,
+                                          [creatorId]: creator,
+                                        }));
+                                        return;
+                                      }
+                                      toggleCreatorCollaborator(creator);
+                                    }}
                                   >
-                                    {selectedForRequest ? "Selected" : "Select"}
+                                    {selected ? "Selected" : "Select"}
                                   </Button>
-                                )}
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })
-                      )}
+                            );
+                          })
+                        )}
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm text-gray-600">
-                      {selectedCreatorIdsForRequest.length} selected
-                    </p>
-                    <Button
-                      onClick={requestLicensesForSelectedCreators}
-                      disabled={
-                        selectedCreatorIdsForRequest.length === 0 ||
-                        isRequestingSelectedLicenses
-                      }
-                      className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
-                    >
-                      {isRequestingSelectedLicenses
-                        ? "Requesting..."
-                        : hasRequestedSelectedLicenses
-                          ? "License Requested"
-                          : "Request License"}
-                    </Button>
-                  </div>
+                  )}
 
                   <div className="flex justify-between gap-3">
                     <Button
@@ -1583,19 +2524,300 @@ export default function BrandCampaignDashboard() {
                       Back
                     </Button>
                     <Button
-                      onClick={handleCreateCampaign}
+                      onClick={() => setNewCampaignStep(4)}
+                      disabled={
+                        !campaignForm.collaborator_type ||
+                        selectedCreatorIdsForRequest.length === 0
+                      }
                       className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
                     >
-                      <CheckCircle2 className="w-4 h-4 mr-2" />
-                      Create Campaign
+                      Next
                     </Button>
                   </div>
                 </div>
               )}
+
+              {newCampaignStep === 4 && (
+                <div className="space-y-6">
+                  <Alert className="bg-blue-50 border-2 border-blue-200 rounded-none">
+                    <CheckCircle2 className="h-5 w-5 text-blue-700" />
+                    <AlertDescription className="text-blue-900">
+                      {campaignForm.collaborator_type === "agency"
+                        ? "Summary of selected agency. Send this offer to continue."
+                        : "Summary of selected creators. Continue to contract upload."}
+                    </AlertDescription>
+                  </Alert>
+
+                  <div className="border-2 border-gray-200 rounded-none p-4 space-y-3">
+                    <p className="text-sm text-gray-600">Campaign name</p>
+                    <p className="font-semibold text-gray-900">
+                      {campaignForm.name || "Untitled Campaign"}
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-700">
+                      <p>
+                        {campaignForm.collaborator_type === "agency"
+                          ? "Agency name(s): "
+                          : "Creator name(s): "}
+                        <span className="font-semibold text-gray-900">
+                          {summaryCreatorNames}
+                        </span>
+                      </p>
+                      <p>
+                        Category:{" "}
+                        <span className="font-semibold text-gray-900">
+                          {campaignForm.category || "N/A"}
+                        </span>
+                      </p>
+                      <p>
+                        Budget range:{" "}
+                        <span className="font-semibold text-gray-900">
+                          {campaignForm.budget_range || "N/A"}
+                        </span>
+                      </p>
+                      <p>
+                        Usage scope:{" "}
+                        <span className="font-semibold text-gray-900">
+                          {campaignForm.usage_scope || "N/A"}
+                        </span>
+                      </p>
+                      <p>
+                        Territory:{" "}
+                        <span className="font-semibold text-gray-900">
+                          {campaignForm.territory || "N/A"}
+                        </span>
+                      </p>
+                      <p>
+                        Start date:{" "}
+                        <span className="font-semibold text-gray-900">
+                          {campaignForm.start_date || "N/A"}
+                        </span>
+                      </p>
+                      <p>
+                        Duration:{" "}
+                        <span className="font-semibold text-gray-900">
+                          {campaignForm.duration_days
+                            ? `${campaignForm.duration_days} days`
+                            : "N/A"}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {campaignForm.collaborator_type === "agency" ? (
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-gray-700">
+                        Selected agency
+                      </p>
+                      <div className="border border-gray-200 rounded-none p-3 bg-white">
+                        <p className="font-semibold text-gray-900">
+                          {(() => {
+                            const agencyId = String(
+                              campaignForm.collaborators?.[0] || "",
+                            );
+                            const selectedAgency = connectedAgencies.find(
+                              (agency) =>
+                                String(
+                                  agency?.agency_id || agency?.id || "",
+                                ) === agencyId,
+                            );
+                            return (
+                              selectedAgency?.display_name ||
+                              selectedAgency?.agency_name ||
+                              "Agency"
+                            );
+                          })()}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-gray-700">
+                        Selected creators ({selectedCreatorIdsForRequest.length}
+                        )
+                      </p>
+                      <div className="border-2 border-gray-200 rounded-none p-3 max-h-[320px] overflow-y-auto space-y-3">
+                        {selectedCreatorIdsForRequest.map((creatorId) => {
+                          const creator =
+                            selectedCreatorsById[creatorId] ||
+                            step3Creators.find(
+                              (c) => String(c?.id || "") === creatorId,
+                            );
+                          const name = getDisplayName(
+                            creator?.display_name ||
+                              creator?.full_name ||
+                              creator?.name,
+                          );
+
+                          return (
+                            <div
+                              key={creatorId}
+                              className="border border-gray-200 rounded-none p-3 bg-white"
+                            >
+                              <div className="flex items-center justify-between gap-3">
+                                <p className="font-semibold text-gray-900">
+                                  {name}
+                                </p>
+                                <div className="text-right" />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => setNewCampaignStep(3)}
+                      className="border-2 border-gray-300 rounded-none bg-white text-black hover:bg-gray-50"
+                    >
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      Back
+                    </Button>
+                    {campaignForm.collaborator_type === "creator" ? (
+                      <Button
+                        type="button"
+                        onClick={() => setNewCampaignStep(5)}
+                        className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
+                      >
+                        Next
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        onClick={handleSendOffer}
+                        className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
+                      >
+                        Send Offer
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {newCampaignStep === 5 &&
+                campaignForm.collaborator_type === "creator" && (
+                  <div className="space-y-6">
+                    <Alert className="bg-blue-50 border-2 border-blue-200 rounded-none">
+                      <AlertCircle className="h-5 w-5 text-blue-700" />
+                      <AlertDescription className="text-blue-900">
+                        Upload your PDF contract. The DocuSeal editor will open
+                        immediately so you can add First/Second party fields and
+                        signature blocks, then send with each creator offer.
+                      </AlertDescription>
+                    </Alert>
+                    <div className="border-2 border-gray-200 rounded-none p-4 space-y-4">
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 block mb-2">
+                          Upload contract PDF
+                        </label>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <input
+                            id="campaign-contract-upload"
+                            type="file"
+                            accept=".pdf,application/pdf"
+                            onChange={handleContractPdfUpload}
+                            className="text-sm"
+                          />
+                          {contractUploadName && (
+                            <span className="text-xs text-gray-600">
+                              Uploaded: {contractUploadName}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-600">
+                        {contractDraft.docuseal_template_id
+                          ? `Template ID: ${contractDraft.docuseal_template_id}. Editor opens automatically after upload.`
+                          : "Choose a PDF to create a DocuSeal template and open the editor."}
+                      </p>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <Button
+                        variant="outline"
+                        onClick={() => setNewCampaignStep(4)}
+                        className="border-2 border-gray-300 rounded-none bg-white text-black hover:bg-gray-50"
+                      >
+                        <ArrowLeft className="w-4 h-4 mr-2" />
+                        Back
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleSendOffer}
+                        disabled={
+                          !contractDraft.docuseal_template_id || savingCampaign
+                        }
+                        className="bg-black hover:bg-gray-800 text-white border-2 border-black rounded-none"
+                      >
+                        Send Offer
+                      </Button>
+                    </div>
+                  </div>
+                )}
             </Card>
           </div>
         </div>
       )}
+
+      <DocuSealBuilderModal
+        open={showCampaignDocuSealBuilder}
+        onClose={() => setShowCampaignDocuSealBuilder(false)}
+        templateName={
+          contractDraft.title || campaignForm.name || "Campaign Contract"
+        }
+        docusealTemplateId={
+          contractDraft.docuseal_template_id
+            ? Number(contractDraft.docuseal_template_id)
+            : undefined
+        }
+        builderRoles={["First Party", "Second Party"]}
+        onSave={() => {}}
+        onSend={async () => {
+          setIsSendingFromBuilder(true);
+          try {
+            await handleSendOffer();
+          } finally {
+            setIsSendingFromBuilder(false);
+          }
+        }}
+        isSending={isSendingFromBuilder}
+      />
+      <Dialog
+        open={brandSignOpen}
+        onOpenChange={(open) => {
+          if (!open && awaitingBrandSignature) return;
+          setBrandSignOpen(open);
+        }}
+      >
+        <DialogContent className="fixed !inset-0 bg-background w-screen h-screen !max-w-none !translate-x-0 !translate-y-0 !rounded-none border-none p-0 flex flex-col outline-none">
+          <DialogHeader className="p-4 border-b">
+            <DialogTitle>Brand Signature</DialogTitle>
+            <DialogDescription>
+              Sign as First Party. The creator receives this same contract as
+              Second Party.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 w-full bg-gray-50 overflow-auto">
+            {brandSignUrl ? <DocusealForm src={brandSignUrl} /> : null}
+          </div>
+          <DialogFooter className="p-4 border-t">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => {
+                setBrandSignOpen(false);
+                if (awaitingBrandSignature) {
+                  setAwaitingBrandSignature(false);
+                  resetCampaignBuilder();
+                }
+              }}
+            >
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Invite Agency Modal */}
       {showInviteAgencyModal && (
@@ -1666,18 +2888,6 @@ export default function BrandCampaignDashboard() {
                     </Card>
                   </div>
                 </div>
-
-                <Alert className="bg-blue-50 border-2 border-blue-200 rounded-none">
-                  <FileText className="h-5 w-5 text-blue-600" />
-                  <AlertDescription className="text-blue-900">
-                    <strong>Agency Agreement Preview:</strong> Standard 10%
-                    platform fee on payments, campaign-level data access only,
-                    and full rights transparency.
-                    <button className="text-blue-700 underline ml-1">
-                      View full terms
-                    </button>
-                  </AlertDescription>
-                </Alert>
               </div>
             </Card>
           </div>
@@ -1961,7 +3171,11 @@ export default function BrandCampaignDashboard() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setSelectedCampaign(null)}
+                  onClick={() => {
+                    setSelectedCampaign(null);
+                    setSelectedCampaignDeliverables([]);
+                    setSelectedCampaignCollaborators([]);
+                  }}
                   className="rounded-none"
                 >
                   <X className="w-5 h-5" />
@@ -1989,98 +3203,215 @@ export default function BrandCampaignDashboard() {
                   </p>
                 </Card>
               </div>
+              <div className="mb-8">
+                <p className="text-sm text-gray-600 mb-2">Collaborators</p>
+                <div className="flex flex-wrap gap-2">
+                  {selectedCampaignCollaborators.length === 0 ? (
+                    <span className="text-sm text-gray-500">
+                      No collaborators assigned yet.
+                    </span>
+                  ) : (
+                    selectedCampaignCollaborators.map((label, idx) => (
+                      <Badge
+                        key={`${label}-${idx}`}
+                        className="bg-gray-200 text-gray-700"
+                      >
+                        {label}
+                      </Badge>
+                    ))
+                  )}
+                </div>
+              </div>
 
               <div className="space-y-6">
                 <h3 className="text-xl font-bold text-gray-900">
                   Deliverables & Feedback
                 </h3>
-
-                {[1, 2, 3].map((i) => (
-                  <Card
-                    key={i}
-                    className="p-6 border-2 border-gray-200 rounded-none"
-                  >
-                    <div className="flex items-start gap-6">
-                      <div className="w-48 h-32 bg-gray-200 rounded-none flex items-center justify-center">
-                        <Play className="w-12 h-12 text-gray-400" />
-                      </div>
-
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between mb-3">
-                          <div>
-                            <h4 className="font-bold text-gray-900 mb-1">
-                              Video Asset #{i}
-                            </h4>
-                            <p className="text-sm text-gray-600 mb-2">
-                              Uploaded 2 days ago by CreativeWorks Agency
-                            </p>
-                            <Badge className="bg-yellow-100 text-yellow-800">
-                              Pending Review
-                            </Badge>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              className="bg-green-600 hover:bg-green-700 text-white rounded-none"
-                            >
-                              <ThumbsUp className="w-3 h-3 mr-1" />
-                              Approve
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-2 border-gray-300 rounded-none"
-                            >
-                              <MessageSquare className="w-3 h-3 mr-1" />
-                              Request Edit
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="border-2 border-gray-300 rounded-none"
-                            >
-                              <Download className="w-3 h-3 mr-1" />
-                              Download
-                            </Button>
-                          </div>
-                        </div>
-
-                        <div className="border-t-2 border-gray-200 pt-4">
-                          <h5 className="text-sm font-bold text-gray-900 mb-3">
-                            Comments & Feedback
-                          </h5>
-                          <div className="space-y-3">
-                            <div className="flex gap-3">
-                              <div className="w-8 h-8 bg-gray-300 rounded-full flex-shrink-0" />
-                              <div className="flex-1">
-                                <p className="text-sm font-medium text-gray-900">
-                                  Brand Manager
-                                </p>
-                                <p className="text-sm text-gray-600">
-                                  Looks great! Can we adjust the color grading
-                                  slightly?
-                                </p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                  2 hours ago
-                                </p>
+                {loadingSelectedCampaignDetails && (
+                  <Card className="p-6 border-2 border-gray-200 rounded-none">
+                    <p className="text-sm text-gray-600">
+                      Loading campaign deliverables...
+                    </p>
+                  </Card>
+                )}
+                {!loadingSelectedCampaignDetails &&
+                  selectedCampaignDeliverables.length === 0 && (
+                    <Card className="p-6 border-2 border-gray-200 rounded-none">
+                      <p className="text-sm text-gray-600">
+                        No deliverables submitted yet for this campaign.
+                      </p>
+                    </Card>
+                  )}
+                {!loadingSelectedCampaignDetails &&
+                  selectedCampaignDeliverables.map(
+                    (deliverable: any, idx: number) => {
+                      const status = String(
+                        deliverable?.status || "pending_review",
+                      ).toLowerCase();
+                      const statusClass =
+                        status === "approved" || status === "accepted"
+                          ? "bg-emerald-100 text-emerald-700"
+                          : status === "changes_requested" ||
+                              status === "rejected"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-yellow-100 text-yellow-800";
+                      const uploadedAtRaw = String(
+                        deliverable?.created_at || "",
+                      ).trim();
+                      const uploadedAt = uploadedAtRaw
+                        ? new Date(uploadedAtRaw).toLocaleString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })
+                        : "N/A";
+                      return (
+                        <Card
+                          key={String(deliverable?.id || idx)}
+                          className="p-6 border-2 border-gray-200 rounded-none"
+                        >
+                          <div className="flex items-start gap-6">
+                            <div className="w-48 h-32 bg-gray-100 rounded-none flex items-center justify-center overflow-hidden">
+                              {String(deliverable?.asset_type || "").startsWith(
+                                "image",
+                              ) && deliverable?.asset_url ? (
+                                <img
+                                  src={String(deliverable.asset_url)}
+                                  alt={String(
+                                    deliverable?.caption ||
+                                      `Deliverable #${idx + 1}`,
+                                  )}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <Play className="w-12 h-12 text-gray-400" />
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-start justify-between mb-3">
+                                <div>
+                                  <h4 className="font-bold text-gray-900 mb-1">
+                                    {`Deliverable ${idx + 1}`}
+                                  </h4>
+                                  <p className="text-sm text-gray-600 mb-2">
+                                    Uploaded {uploadedAt} by{" "}
+                                    {String(
+                                      deliverable?.collaborator_label ||
+                                        "Campaign collaborator",
+                                    )}
+                                  </p>
+                                  <Badge className={statusClass}>
+                                    {status.replace(/_/g, " ")}
+                                  </Badge>
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    className="bg-green-600 hover:bg-green-700 text-white rounded-none"
+                                    onClick={() =>
+                                      void reviewSelectedCampaignDeliverable(
+                                        deliverable,
+                                        "approve",
+                                      )
+                                    }
+                                  >
+                                    Approve
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="border-2 border-gray-300 rounded-none"
+                                    onClick={() =>
+                                      void reviewSelectedCampaignDeliverable(
+                                        deliverable,
+                                        "changes_requested",
+                                      )
+                                    }
+                                  >
+                                    Request Edit
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="border-2 border-gray-300 rounded-none"
+                                    onClick={() =>
+                                      void downloadSelectedCampaignDeliverable(
+                                        deliverable,
+                                        idx,
+                                      )
+                                    }
+                                  >
+                                    <Download className="w-3 h-3 mr-1" />
+                                    Download
+                                  </Button>
+                                </div>
+                              </div>
+                              <div className="border-t-2 border-gray-200 pt-4">
+                                <h5 className="text-sm font-bold text-gray-900 mb-1">
+                                  Comments &amp; Feedback
+                                </h5>
+                                <div className="space-y-3">
+                                  {(Array.isArray(
+                                    deliverable?.meta?.feedback_comments,
+                                  )
+                                    ? deliverable.meta.feedback_comments
+                                    : []
+                                  ).map((comment: any) => (
+                                    <div
+                                      key={String(comment?.id || Math.random())}
+                                      className="rounded-md border border-gray-200 bg-white px-3 py-2"
+                                    >
+                                      <p className="text-sm font-semibold text-gray-900">
+                                        {String(comment?.author_role || "User")}
+                                      </p>
+                                      <p className="text-sm text-gray-700">
+                                        {String(comment?.message || "")}
+                                      </p>
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        {comment?.created_at
+                                          ? new Date(
+                                              String(comment.created_at),
+                                            ).toLocaleString()
+                                          : ""}
+                                      </p>
+                                    </div>
+                                  ))}
+                                  <div className="flex items-center gap-2">
+                                    <Input
+                                      value={
+                                        deliverableCommentDrafts[
+                                          String(deliverable?.id || "")
+                                        ] || ""
+                                      }
+                                      onChange={(event) =>
+                                        setDeliverableCommentDrafts((prev) => ({
+                                          ...prev,
+                                          [String(deliverable?.id || "")]:
+                                            event.target.value,
+                                        }))
+                                      }
+                                      placeholder="Add a comment..."
+                                      className="border-2 border-gray-300 rounded-none"
+                                    />
+                                    <Button
+                                      className="bg-black hover:bg-gray-900 text-white rounded-none"
+                                      onClick={() =>
+                                        void commentSelectedCampaignDeliverable(
+                                          deliverable,
+                                        )
+                                      }
+                                    >
+                                      Send
+                                    </Button>
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>
-
-                          <div className="flex gap-3 mt-4">
-                            <Input
-                              placeholder="Add a comment..."
-                              className="flex-1 border-2 border-gray-300 rounded-none"
-                            />
-                            <Button className="bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none">
-                              Send
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
+                        </Card>
+                      );
+                    },
+                  )}
               </div>
             </Card>
           </div>
