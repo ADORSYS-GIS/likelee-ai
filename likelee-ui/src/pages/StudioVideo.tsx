@@ -527,8 +527,6 @@ const StudioVideo = () => {
         };
       }
 
-
-
       if (isLuma) {
         return {
           prompt: prompt || undefined,
@@ -1085,32 +1083,32 @@ const StudioVideo = () => {
 
                       {selectedAssets.filter((a) => a.type === "image")
                         .length === 2 && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const images = selectedAssets.filter(
-                                (a) => a.type === "image",
-                              );
-                              const nonImages = selectedAssets.filter(
-                                (a) => a.type !== "image",
-                              );
-                              setSelectedAssets([
-                                ...images.reverse(),
-                                ...nonImages,
-                              ]);
-                            }}
-                            style={{
-                              height: 32,
-                              fontSize: 11,
-                              gap: 6,
-                              borderRadius: 8,
-                            }}
-                          >
-                            <Zap size={12} />
-                            Swap Frames
-                          </Button>
-                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const images = selectedAssets.filter(
+                              (a) => a.type === "image",
+                            );
+                            const nonImages = selectedAssets.filter(
+                              (a) => a.type !== "image",
+                            );
+                            setSelectedAssets([
+                              ...images.reverse(),
+                              ...nonImages,
+                            ]);
+                          }}
+                          style={{
+                            height: 32,
+                            fontSize: 11,
+                            gap: 6,
+                            borderRadius: 8,
+                          }}
+                        >
+                          <Zap size={12} />
+                          Swap Frames
+                        </Button>
+                      )}
                     </div>
                   ) : null}
 
@@ -1246,7 +1244,7 @@ const StudioVideo = () => {
                       Duration
                     </label>
                     {selectedModelData?.duration &&
-                      selectedModelData.duration.length > 2 ? (
+                    selectedModelData.duration.length > 2 ? (
                       <div style={{ display: "flex", gap: 8 }}>
                         {selectedModelData.duration.map((d) => (
                           <Button
@@ -1289,7 +1287,7 @@ const StudioVideo = () => {
                           min={selectedModelData?.duration?.[0] || 5}
                           max={
                             selectedModelData?.duration?.[
-                            selectedModelData.duration.length - 1
+                              selectedModelData.duration.length - 1
                             ] || 10
                           }
                           step={1}
@@ -1389,7 +1387,13 @@ const StudioVideo = () => {
                     Output Quality
                   </label>
                   <div style={{ display: "flex", gap: 8 }}>
-                    {(selectedModelData?.resolutions || ["480p", "720p", "1080p"]).map((res) => (
+                    {(
+                      selectedModelData?.resolutions || [
+                        "480p",
+                        "720p",
+                        "1080p",
+                      ]
+                    ).map((res) => (
                       <button
                         key={res}
                         onClick={() => setResolution(res)}
@@ -1681,8 +1685,8 @@ const StudioVideo = () => {
                     {/* Check if the job we are waiting for is in the generations list and completed */}
                     {generations?.find((g) => g.id === generatingJobId)
                       ?.status === "completed" &&
-                      generations?.find((g) => g.id === generatingJobId)
-                        ?.output_urls?.[0] ? (
+                    generations?.find((g) => g.id === generatingJobId)
+                      ?.output_urls?.[0] ? (
                       <video
                         src={
                           generations?.find((g) => g.id === generatingJobId)
