@@ -16,7 +16,12 @@ const BrandConnectionsView = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<
-    "connections" | "requests" | "offers" | "contract_hub" | "deliverables" | "feedback"
+    | "connections"
+    | "requests"
+    | "offers"
+    | "contract_hub"
+    | "deliverables"
+    | "feedback"
   >("connections");
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
   const [selectedOfferId, setSelectedOfferId] = useState<string>("");
@@ -64,9 +69,12 @@ const BrandConnectionsView = () => {
   const offersQuery = useQuery({
     queryKey: ["agency", "campaign-offers-my"],
     queryFn: async () => {
-      const resp = await base44.get<{ offers?: any[] }>("/api/campaign-offers/my", {
-        params: { limit: 80 },
-      });
+      const resp = await base44.get<{ offers?: any[] }>(
+        "/api/campaign-offers/my",
+        {
+          params: { limit: 80 },
+        },
+      );
       return Array.isArray(resp?.offers) ? resp.offers : [];
     },
   });
@@ -209,14 +217,21 @@ const BrandConnectionsView = () => {
     }
   };
 
-  const respondToOffer = async (offerId: string, action: "accept" | "decline") => {
+  const respondToOffer = async (
+    offerId: string,
+    action: "accept" | "decline",
+  ) => {
     if (!offerId || busyIds.has(offerId)) return;
     setBusyIds((prev) => new Set(prev).add(offerId));
     try {
       await base44.post(`/api/campaign-offers/${offerId}/respond`, { action });
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["agency", "campaign-offers-my"] }),
-        queryClient.invalidateQueries({ queryKey: ["agency", "offer-contracts", offerId] }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency", "campaign-offers-my"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency", "offer-contracts", offerId],
+        }),
       ]);
       toast({
         title: action === "accept" ? "Offer accepted" : "Offer declined",
@@ -388,8 +403,12 @@ const BrandConnectionsView = () => {
         [offerId]: { ...draft, packageId },
       }));
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["agency", "campaign-offers-my"] }),
-        queryClient.invalidateQueries({ queryKey: ["agency", "package-feedback"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency", "campaign-offers-my"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["agency", "package-feedback"],
+        }),
       ]);
       toast({
         title: "Package sent",
@@ -502,8 +521,8 @@ const BrandConnectionsView = () => {
                   const brandId = String(connection?.brand_id || "").trim();
                   const connectedAt = connection?.connected_at
                     ? new Date(
-                      String(connection.connected_at),
-                    ).toLocaleDateString()
+                        String(connection.connected_at),
+                      ).toLocaleDateString()
                     : "—";
                   const isBusy = busyIds.has(brandId);
                   return (
@@ -1005,19 +1024,22 @@ const BrandConnectionsView = () => {
                     <p className="text-xs text-gray-500">
                       Status: {String(item?.status || "feedback_received")}
                     </p>
-                    <div className="flex items-center justify-between mt-2">
-                      <p className="text-sm text-gray-700">
-                        {item?.meta?.feedback_note ? String(item.meta.feedback_note) : ""}
+                    {item?.meta?.feedback_note && (
+                      <p className="text-sm text-gray-700 mt-2">
+                        {String(item.meta.feedback_note)}
                       </p>
+                    )}
+                    <div className="flex items-center justify-end mt-3">
                       <Button
                         size="sm"
                         variant="outline"
                         className="text-xs font-bold border-gray-300 h-8"
                         onClick={() => {
-                          // Navigate to packages tab and pass the package ID
                           navigate("/AgencyDashboard?tab=packages", {
                             state: {
-                              openFeedbackForPackageId: String(item?.meta?.agency_package_id || item?.id || ""),
+                              openFeedbackForPackageId: String(
+                                item?.meta?.agency_package_id || item?.id || "",
+                              ),
                             },
                           });
                         }}
@@ -1366,11 +1388,11 @@ const BrandConnectionsView = () => {
                           )}
                         </div>
                       </TabsContent>
-                    </Tabs >
-                  </div >
+                    </Tabs>
+                  </div>
                 )}
-              </div >
-            </div >
+              </div>
+            </div>
           )}
         </Card >
       )
@@ -1400,16 +1422,45 @@ const BrandConnectionsView = () => {
                     </Button>
                   </div>
                   {selectedOfferId === offerId && (
-                    <div className="rounded-md border border-gray-200 p-3">
-                      {(offerDeliverablesQuery.data || []).length === 0 ? (
-                        <p className="text-xs text-gray-500">No deliverables yet.</p>
-                      ) : (
-                        (offerDeliverablesQuery.data || []).map((d: any) => (
-                          <div key={String(d?.id)} className="text-xs text-gray-700 mb-1">
-                            {String(d?.asset_type || "file")} • {String(d?.status || "submitted")}
-                          </div>
-                        ))
-                      )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="rounded-md border border-gray-200 p-3">
+                        <p className="text-xs text-gray-500 mb-2">Contracts</p>
+                        {(offerContractsQuery.data || []).length === 0 ? (
+                          <p className="text-xs text-gray-500">
+                            No contracts yet.
+                          </p>
+                        ) : (
+                          (offerContractsQuery.data || []).map((c: any) => (
+                            <div
+                              key={String(c?.id)}
+                              className="text-xs text-gray-700 mb-1"
+                            >
+                              {String(c?.title || "Contract")} •{" "}
+                              {String(c?.docuseal_status || "draft")}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                      <div className="rounded-md border border-gray-200 p-3">
+                        <p className="text-xs text-gray-500 mb-2">
+                          Deliverables
+                        </p>
+                        {(offerDeliverablesQuery.data || []).length === 0 ? (
+                          <p className="text-xs text-gray-500">
+                            No deliverables yet.
+                          </p>
+                        ) : (
+                          (offerDeliverablesQuery.data || []).map((d: any) => (
+                            <div
+                              key={String(d?.id)}
+                              className="text-xs text-gray-700 mb-1"
+                            >
+                              {String(d?.asset_type || "file")} •{" "}
+                              {String(d?.status || "submitted")}
+                            </div>
+                          ))
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1474,7 +1525,7 @@ const BrandConnectionsView = () => {
           </div>
         )
       }
-    </div >
+    </div>
   );
 };
 

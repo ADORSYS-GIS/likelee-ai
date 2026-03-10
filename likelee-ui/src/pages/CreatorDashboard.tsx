@@ -85,6 +85,7 @@ import {
   CheckSquare,
   XCircle,
   Send,
+  Mail,
   MessageSquare,
   Copy,
   ArrowRight,
@@ -124,6 +125,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import { DeliverablesTab } from "@/components/Talent/DeliverablesTab";
+import { DocusealForm } from "@docuseal/react";
 
 import { useTranslation } from "react-i18next";
 
@@ -808,9 +810,10 @@ export default function CreatorDashboard() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [creatorCampaigns, setCreatorCampaigns] = useState<any[]>([]);
   const [brandConnectionSubTab, setBrandConnectionSubTab] = useState<
-    "connections" | "requests" | "offers" | "contract_hub" | "deliverables"
+    "connections" | "requests" | "offers" | "deliverables"
   >("connections");
   const [selectedBrandOfferId, setSelectedBrandOfferId] = useState<string>("");
+  const [selectedOfferBriefId, setSelectedOfferBriefId] = useState<string>("");
   const [selectedOfferContracts, setSelectedOfferContracts] = useState<any[]>(
     [],
   );
@@ -820,7 +823,33 @@ export default function CreatorDashboard() {
   const [deliverableUrlByOffer, setDeliverableUrlByOffer] = useState<
     Record<string, string>
   >({});
+  const [creatorContractHubRows, setCreatorContractHubRows] = useState<any[]>(
+    [],
+  );
+  const [creatorSignUrl, setCreatorSignUrl] = useState("");
+  const [creatorSignOpen, setCreatorSignOpen] = useState(false);
   const [offerActionLoading, setOfferActionLoading] = useState(false);
+  const [loadingBrandOffers, setLoadingBrandOffers] = useState(false);
+  const [loadingOfferDetails, setLoadingOfferDetails] = useState(false);
+  const [sendDeliverableOpen, setSendDeliverableOpen] = useState(false);
+  const [sendDeliverableBrandId, setSendDeliverableBrandId] = useState("");
+  const [sendDeliverableOfferId, setSendDeliverableOfferId] = useState("");
+  const [sendDeliverableFiles, setSendDeliverableFiles] = useState<File[]>([]);
+  const [sendDeliverablePreviewUrls, setSendDeliverablePreviewUrls] = useState<
+    string[]
+  >([]);
+  const [seenBrandRequestIds, setSeenBrandRequestIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [seenOfferNotificationIds, setSeenOfferNotificationIds] = useState<
+    Set<string>
+  >(new Set());
+  const [
+    seenDeliverableNotificationOfferIds,
+    setSeenDeliverableNotificationOfferIds,
+  ] = useState<Set<string>>(new Set());
+  const [briefGalleryOpen, setBriefGalleryOpen] = useState(false);
+  const [briefGalleryIndex, setBriefGalleryIndex] = useState(0);
   const [agencyConnectionLoading, setAgencyConnectionLoading] = useState(false);
   const [disconnectDialogOpen, setDisconnectDialogOpen] = useState(false);
   const [disconnectConfirmChecked, setDisconnectConfirmChecked] =
@@ -876,13 +905,18 @@ export default function CreatorDashboard() {
   };
 
   const loadBrandOffers = async () => {
-    const offersResp = await base44.get<{ offers?: any[] }>(
-      "/api/campaign-offers/my",
-      {
-        params: { limit: 80 },
-      },
-    );
-    return Array.isArray(offersResp?.offers) ? offersResp.offers : [];
+    setLoadingBrandOffers(true);
+    try {
+      const offersResp = await base44.get<{ offers?: any[] }>(
+        "/api/campaign-offers/my",
+        {
+          params: { limit: 300 },
+        },
+      );
+      return Array.isArray(offersResp?.offers) ? offersResp.offers : [];
+    } finally {
+      setLoadingBrandOffers(false);
+    }
   };
 
   const loadBookings = async () => {
@@ -911,22 +945,85 @@ export default function CreatorDashboard() {
       setSelectedOfferDeliverables([]);
       return;
     }
-    const [contractsResp, deliverablesResp] = await Promise.all([
-      base44.get<{ contracts?: any[] }>(
-        `/api/campaign-offers/${offerId}/contracts`,
-      ),
-      base44.get<{ deliverables?: any[] }>(
-        `/api/campaign-offers/${offerId}/deliverables`,
-      ),
-    ]);
-    setSelectedOfferContracts(
-      Array.isArray(contractsResp?.contracts) ? contractsResp.contracts : [],
-    );
-    setSelectedOfferDeliverables(
-      Array.isArray(deliverablesResp?.deliverables)
-        ? deliverablesResp.deliverables
-        : [],
-    );
+    setLoadingOfferDetails(true);
+    try {
+      const [contractsResp, deliverablesResp] = await Promise.all([
+        base44.get<{ contracts?: any[] }>(
+          `/api/campaign-offers/${offerId}/contracts`,
+        ),
+        base44.get<{ deliverables?: any[] }>(
+          `/api/campaign-offers/${offerId}/deliverables`,
+        ),
+      ]);
+      const contracts = Array.isArray(contractsResp?.contracts)
+        ? contractsResp.contracts
+        : [];
+      const refreshedContracts = await Promise.all(
+        contracts.map(async (contract: any) => {
+          const contractId = String(contract?.id || "").trim();
+          if (!contractId) return contract;
+          try {
+            const refreshed = await base44.post<{ contract?: any }>(
+              `/api/campaign-offers/${offerId}/contracts/${contractId}/refresh`,
+              {},
+            );
+            return refreshed?.contract || contract;
+          } catch {
+            return contract;
+          }
+        }),
+      );
+      setSelectedOfferContracts(refreshedContracts);
+      setSelectedOfferDeliverables(
+        Array.isArray(deliverablesResp?.deliverables)
+          ? deliverablesResp.deliverables
+          : [],
+      );
+    } finally {
+      setLoadingOfferDetails(false);
+    }
+  };
+  const loadCreatorContractHubRows = async (offersInput?: any[]) => {
+    const offers = Array.isArray(offersInput) ? offersInput : brandOffers;
+    const rows = (
+      await Promise.all(
+        offers.map(async (offer: any) => {
+          const offerId = String(offer?.id || "");
+          if (!offerId) return [];
+          const contractsResp = await base44.get<{ contracts?: any[] }>(
+            `/api/campaign-offers/${offerId}/contracts`,
+          );
+          const contracts = Array.isArray(contractsResp?.contracts)
+            ? contractsResp.contracts
+            : [];
+          const refreshedContracts = await Promise.all(
+            contracts.map(async (contract: any) => {
+              const contractId = String(contract?.id || "").trim();
+              if (!contractId) return contract;
+              try {
+                const refreshed = await base44.post<{ contract?: any }>(
+                  `/api/campaign-offers/${offerId}/contracts/${contractId}/refresh`,
+                  {},
+                );
+                return refreshed?.contract || contract;
+              } catch {
+                return contract;
+              }
+            }),
+          );
+          return refreshedContracts.map((c: any) => ({
+            ...c,
+            offer_id: offerId,
+            campaign_name: String(
+              offer?.brand_campaigns?.name ||
+                offer?.offer_title ||
+                "Campaign offer",
+            ),
+          }));
+        }),
+      )
+    ).flat();
+    setCreatorContractHubRows(rows);
   };
 
   useEffect(() => {
@@ -966,6 +1063,13 @@ export default function CreatorDashboard() {
       active = false;
     };
   }, [initialized, authenticated]);
+  useEffect(() => {
+    return () => {
+      sendDeliverablePreviewUrls.forEach((url) => {
+        if (String(url).startsWith("blob:")) URL.revokeObjectURL(url);
+      });
+    };
+  }, [sendDeliverablePreviewUrls]);
 
   useEffect(() => {
     if (!initialized || !authenticated) return;
@@ -1942,6 +2046,25 @@ export default function CreatorDashboard() {
     }
   };
 
+  const brandPendingRequestsUnseen = brandConnectionRequests.filter(
+    (i) =>
+      i.status === "pending" && !seenBrandRequestIds.has(String(i?.id || "")),
+  ).length;
+  const brandOfferNotificationsUnseen = brandOffers.filter((offer: any) => {
+    const status = String(offer?.status || "").toLowerCase();
+    return (
+      [
+        "changes_requested",
+        "contract_sent",
+        "contract_partially_signed",
+        "deliverables_submitted",
+      ].includes(status) &&
+      !seenOfferNotificationIds.has(String(offer?.id || ""))
+    );
+  }).length;
+  const totalBrandConnectionUnseen =
+    brandPendingRequestsUnseen + brandOfferNotificationsUnseen;
+
   const navigationItems: Array<{
     id: string;
     label: string;
@@ -2035,9 +2158,7 @@ export default function CreatorDashboard() {
       label: "Brand Connection",
       icon: LinkIcon,
       badge:
-        brandConnectionRequests.filter((i) => i.status === "pending").length > 0
-          ? brandConnectionRequests.filter((i) => i.status === "pending").length
-          : undefined,
+        totalBrandConnectionUnseen > 0 ? totalBrandConnectionUnseen : undefined,
     },
   ];
 
@@ -5160,6 +5281,310 @@ export default function CreatorDashboard() {
       setBrandConnections(connections);
       setBrandOffers(Array.isArray(offers) ? offers : []);
     };
+    const fullySignedOfferStatuses = new Set([
+      "contract_fully_signed",
+      "fully_signed",
+      "contract_signed",
+      "signed",
+      "accepted",
+      "active",
+      "in_progress",
+      "in_execution",
+      "deliverables_submitted",
+      "in_review",
+      "changes_requested",
+      "approved",
+      "completed",
+    ]);
+    const deliverableEligibleOffers = brandOffers.filter((offer: any) =>
+      fullySignedOfferStatuses.has(String(offer?.status || "").toLowerCase()),
+    );
+    const campaignOptions = Array.from(
+      new Map(
+        deliverableEligibleOffers
+          .filter((offer: any) => {
+            if (!sendDeliverableBrandId) return true;
+            return String(offer?.brand_id || "") === sendDeliverableBrandId;
+          })
+          .map((offer: any) => [String(offer?.id || ""), offer]),
+      ).values(),
+    );
+    const unseenRequestCount = pending.filter(
+      (req: any) => !seenBrandRequestIds.has(String(req?.id || "")),
+    ).length;
+    const unseenOfferCount = brandOffers.filter(
+      (offer: any) =>
+        [
+          "changes_requested",
+          "contract_sent",
+          "contract_partially_signed",
+        ].includes(String(offer?.status || "").toLowerCase()) &&
+        !seenOfferNotificationIds.has(String(offer?.id || "")),
+    ).length;
+    const unseenDeliverableFeedbackCount = deliverableEligibleOffers.reduce(
+      (count: number, offer: any) => {
+        const hasFeedbackNotification =
+          String(offer?.status || "").toLowerCase() === "changes_requested";
+        if (
+          hasFeedbackNotification &&
+          !seenDeliverableNotificationOfferIds.has(String(offer?.id || ""))
+        ) {
+          return count + 1;
+        }
+        return count;
+      },
+      0,
+    );
+    const totalBrandConnectionNotifications =
+      unseenRequestCount + unseenOfferCount + unseenDeliverableFeedbackCount;
+    const formatStatus = (status: unknown) =>
+      String(status || "sent")
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (m) => m.toUpperCase());
+    const offerStatusBadgeClass = (statusRaw: unknown) => {
+      const status = String(statusRaw || "").toLowerCase();
+      if (status === "contract_fully_signed" || status === "signed") {
+        return "bg-emerald-100 text-emerald-700 border border-emerald-300";
+      }
+      if (
+        status === "contract_partially_signed" ||
+        status === "contract_sent"
+      ) {
+        return "bg-blue-100 text-blue-700 border border-blue-300";
+      }
+      if (status === "changes_requested") {
+        return "bg-amber-100 text-amber-700 border border-amber-300";
+      }
+      if (status === "declined") {
+        return "bg-red-100 text-red-700 border border-red-300";
+      }
+      return "bg-gray-100 text-gray-700 border border-gray-300";
+    };
+    const deliverableStatusBadgeClass = (statusRaw: unknown) => {
+      const status = String(statusRaw || "").toLowerCase();
+      if (["approved", "accepted"].includes(status)) {
+        return "bg-emerald-100 text-emerald-700 border border-emerald-300";
+      }
+      if (
+        ["changes_requested", "needs_changes", "request_review"].includes(
+          status,
+        )
+      ) {
+        return "bg-amber-100 text-amber-700 border border-amber-300";
+      }
+      if (
+        [
+          "submitted",
+          "deliverables_submitted",
+          "in_review",
+          "pending_review",
+        ].includes(status)
+      ) {
+        return "bg-blue-100 text-blue-700 border border-blue-300";
+      }
+      if (["declined", "rejected"].includes(status)) {
+        return "bg-red-100 text-red-700 border border-red-300";
+      }
+      return "bg-gray-100 text-gray-700 border border-gray-300";
+    };
+    const normalizeDisplayName = (value: unknown) => {
+      const raw = String(value || "").trim();
+      if (!raw) return "";
+      const lowered = raw.toLowerCase();
+      if (["brand", "agency", "creator", "user"].includes(lowered)) return "";
+      return raw;
+    };
+    const fallbackNameFromEmail = (email: unknown) => {
+      const raw = String(email || "").trim();
+      if (!raw.includes("@")) return "";
+      const local = raw
+        .split("@")[0]
+        .replace(/[._-]+/g, " ")
+        .trim();
+      return local
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" ");
+    };
+    const resolveConnectedBrandName = (connection: any) => {
+      if (!connection) return "";
+      const company = normalizeDisplayName(connection?.brands?.company_name);
+      if (company) return company;
+      const emailName = fallbackNameFromEmail(connection?.brands?.email);
+      if (emailName) return emailName;
+      return String(connection?.brand_id || "Connected brand");
+    };
+    const resolveOfferBrandName = (offer: any) => {
+      const company = normalizeDisplayName(offer?.brands?.company_name);
+      if (company) return company;
+      const brandId = String(offer?.brand_id || "").trim();
+      if (brandId) {
+        const fromConnection = brandConnections.find(
+          (conn: any) => String(conn?.brand_id || "") === brandId,
+        );
+        const connectedName = resolveConnectedBrandName(fromConnection);
+        if (connectedName) return connectedName;
+      }
+      const emailName = fallbackNameFromEmail(offer?.brands?.email);
+      if (emailName) return emailName;
+      return "Brand Manager";
+    };
+    const formatHubDate = (value: unknown) => {
+      const raw = String(value || "").trim();
+      if (!raw) return "N/A";
+      const dt = new Date(raw);
+      if (Number.isNaN(dt.getTime())) return raw;
+      return dt.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    };
+    const contractStatusBadgeClass = (statusRaw: unknown) => {
+      const status = String(statusRaw || "").toLowerCase();
+      if (status === "signed") {
+        return "inline-flex min-w-28 items-center rounded-md border border-emerald-300 bg-emerald-100 px-2.5 py-1 text-emerald-700 font-semibold";
+      }
+      if (status === "sent") {
+        return "inline-flex min-w-28 items-center rounded-md border border-blue-300 bg-blue-100 px-2.5 py-1 text-blue-700 font-semibold";
+      }
+      if (status === "opened") {
+        return "inline-flex min-w-28 items-center rounded-md border border-amber-300 bg-amber-100 px-2.5 py-1 text-amber-700 font-semibold";
+      }
+      if (status === "declined" || status === "rejected") {
+        return "inline-flex min-w-28 items-center rounded-md border border-red-300 bg-red-100 px-2.5 py-1 text-red-700 font-semibold";
+      }
+      return "inline-flex min-w-28 items-center rounded-md border border-gray-300 bg-white px-2.5 py-1 text-gray-700 font-semibold";
+    };
+    const inferAssetType = (contentType: string) => {
+      const normalized = String(contentType || "").toLowerCase();
+      if (normalized.startsWith("image/")) return "image";
+      if (normalized.startsWith("video/")) return "video";
+      if (normalized.startsWith("audio/")) return "audio";
+      return "file";
+    };
+    const deliverableIsImage = (deliverable: any) => {
+      const type = String(deliverable?.asset_type || "").toLowerCase();
+      if (type === "image" || type.startsWith("image/")) return true;
+      const contentType = String(
+        deliverable?.meta?.content_type || "",
+      ).toLowerCase();
+      if (contentType.startsWith("image/")) return true;
+      const url = String(deliverable?.asset_url || "").toLowerCase();
+      return /\.(png|jpg|jpeg|webp|gif|bmp|svg)(\?.*)?$/.test(url);
+    };
+    const selectedBriefOffer = brandOffers.find(
+      (offer: any) => String(offer?.id || "") === selectedOfferBriefId,
+    );
+    const selectedBriefCampaign = selectedBriefOffer?.brand_campaigns || {};
+    const selectedBrief = selectedBriefOffer?.brief_snapshot || {};
+    const briefValue = (key: string, fallback = "Not specified") => {
+      const value = selectedBrief?.[key];
+      if (value === null || value === undefined) return fallback;
+      const text = String(value).trim();
+      return text.length > 0 ? text : fallback;
+    };
+    const briefLines = (key: string): string[] => {
+      const raw = briefValue(key, "");
+      if (!raw) return [];
+      return raw
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean);
+    };
+    const referenceImages = Array.isArray(selectedBrief?.reference_images)
+      ? selectedBrief.reference_images
+      : [];
+    const brandAssets = Array.isArray(selectedBrief?.brand_assets)
+      ? selectedBrief.brand_assets
+      : [];
+    const requiredDeliverablesText = (() => {
+      const direct = String(selectedBrief?.required_deliverables || "").trim();
+      if (direct) return direct;
+      const legacy = [
+        selectedBrief?.deliverables_reels,
+        selectedBrief?.deliverables_hero_image,
+      ]
+        .map((entry) => String(entry || "").trim())
+        .filter(Boolean);
+      return legacy.length > 0 ? legacy.join("\n") : "Not specified";
+    })();
+    const selectedBriefContract = selectedOfferContracts[0] || null;
+    const creatorAlreadySigned = selectedOfferContracts.some(
+      (contract: any) => {
+        const creatorStatus = String(
+          contract?.meta?.creator_submitter_status || "",
+        ).toLowerCase();
+        const submitterStatuses = Array.isArray(
+          contract?.meta?.submitter_statuses,
+        )
+          ? contract.meta.submitter_statuses
+          : [];
+        const secondPartyStatus = String(
+          submitterStatuses.find(
+            (s: any) =>
+              String(s?.role || "")
+                .toLowerCase()
+                .replace(/\s+/g, "") === "secondparty",
+          )?.status || "",
+        ).toLowerCase();
+        const contractStatus = String(
+          contract?.docuseal_status || "",
+        ).toLowerCase();
+        return (
+          creatorStatus === "completed" ||
+          creatorStatus === "signed" ||
+          secondPartyStatus === "completed" ||
+          secondPartyStatus === "signed" ||
+          contractStatus === "signed"
+        );
+      },
+    );
+    const resolveStoredUrl = (value: unknown): string => {
+      const raw = String(value || "").trim();
+      if (!raw) return "";
+      if (
+        raw.startsWith("http://") ||
+        raw.startsWith("https://") ||
+        raw.startsWith("blob:")
+      ) {
+        return raw;
+      }
+      const cleaned = raw.replace(/^\/+/, "");
+      const fromBucket = supabase?.storage
+        .from("likelee-public")
+        .getPublicUrl(cleaned)?.data?.publicUrl;
+      return String(fromBucket || "");
+    };
+    const briefItemUrl = (item: any): string =>
+      resolveStoredUrl(
+        item?.url ||
+          item?.public_url ||
+          item?.file_url ||
+          item?.asset_url ||
+          item?.path ||
+          item,
+      );
+    const downloadBriefFile = async (url: string, fileName: string) => {
+      const safeUrl = String(url || "").trim();
+      if (!safeUrl) return;
+      try {
+        const res = await fetch(safeUrl);
+        if (!res.ok) throw new Error("Failed to fetch file.");
+        const blob = await res.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = objectUrl;
+        anchor.download = fileName || "file";
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+        URL.revokeObjectURL(objectUrl);
+      } catch {
+        window.open(safeUrl, "_blank", "noopener,noreferrer");
+      }
+    };
 
     const onRespond = async (id: string, action: "accept" | "decline") => {
       try {
@@ -5204,56 +5629,183 @@ export default function CreatorDashboard() {
       }
     };
 
-    const respondToOffer = async (
-      offerId: string,
-      action: "accept" | "decline",
-    ) => {
+    const openOfferBrief = async (offerId: string) => {
+      const next = selectedBrandOfferId === offerId ? "" : offerId;
+      setSelectedBrandOfferId(next);
+      if (next) {
+        setSeenOfferNotificationIds((prev) => {
+          const nextSet = new Set(prev);
+          nextSet.add(next);
+          return nextSet;
+        });
+      }
+      if (!next) {
+        setSelectedOfferContracts([]);
+        setSelectedOfferDeliverables([]);
+        return;
+      }
       try {
-        setOfferActionLoading(true);
-        await base44.post(`/api/campaign-offers/${offerId}/respond`, {
-          action,
-        });
-        await refreshBrandConnections();
-        toast({
-          title: action === "accept" ? "Offer accepted" : "Offer declined",
-        });
-      } catch (e: any) {
-        toast({
-          variant: "destructive",
-          title: "Failed to update offer",
-          description: e?.message || String(e),
-        });
-      } finally {
-        setOfferActionLoading(false);
+        await loadOfferDetails(next);
+      } catch {
+        setSelectedOfferContracts([]);
+        setSelectedOfferDeliverables([]);
       }
     };
 
-    const submitDeliverable = async (offerId: string) => {
-      const assetUrl = String(deliverableUrlByOffer[offerId] || "").trim();
-      if (!assetUrl) {
+    const openOfferBriefPage = async (offerId: string) => {
+      setSelectedOfferBriefId(offerId);
+      setSelectedBrandOfferId(offerId);
+      setSeenOfferNotificationIds((prev) => {
+        const nextSet = new Set(prev);
+        nextSet.add(offerId);
+        return nextSet;
+      });
+      try {
+        await loadOfferDetails(offerId);
+      } catch {
+        setSelectedOfferContracts([]);
+      }
+    };
+
+    const closeOfferBriefPage = () => {
+      setSelectedOfferBriefId("");
+    };
+
+    const signContract = () => {
+      const contract = selectedOfferContracts[0];
+      const creatorSigningUrl = String(
+        contract?.meta?.creator_signing_url ||
+          contract?.meta?.docuseal_signing_url ||
+          "",
+      ).trim();
+      const fileUrl = String(contract?.file_url || "").trim();
+      const rawSlug = String(contract?.docuseal_slug || "").trim();
+      const slugUrl = rawSlug
+        ? rawSlug.startsWith("http")
+          ? rawSlug
+          : `https://docuseal.co/s/${rawSlug}`
+        : "";
+      const signUrl = creatorSigningUrl || slugUrl || fileUrl;
+      if (!signUrl) {
         toast({
+          title: "Contract unavailable",
+          description:
+            "Signing link is not ready yet. DocuSeal flow will be connected next.",
           variant: "destructive",
-          title: "Asset URL required",
-          description: "Provide an asset URL before submitting deliverable.",
+        });
+        return;
+      }
+      setCreatorSignUrl(signUrl);
+      setCreatorSignOpen(true);
+    };
+
+    const sendDeliverable = async () => {
+      if (sendDeliverableFiles.length === 0) {
+        toast({
+          title: "Upload required",
+          description: "Please choose at least one deliverable file.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!sendDeliverableOfferId) {
+        toast({
+          title: "Campaign required",
+          description: "Please select the campaign offer.",
+          variant: "destructive",
+        });
+        return;
+      }
+      const selectedOffer = brandOffers.find(
+        (offer: any) => String(offer?.id || "") === sendDeliverableOfferId,
+      );
+      const selectedOfferBrandId = String(selectedOffer?.brand_id || "");
+      if (!selectedOffer) {
+        toast({
+          title: "Campaign unavailable",
+          description: "The selected campaign offer could not be found.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (
+        sendDeliverableBrandId &&
+        selectedOfferBrandId &&
+        selectedOfferBrandId !== sendDeliverableBrandId
+      ) {
+        toast({
+          title: "Brand and campaign mismatch",
+          description:
+            "Please select a campaign that belongs to the selected connected brand.",
+          variant: "destructive",
         });
         return;
       }
       try {
         setOfferActionLoading(true);
-        await base44.post(`/api/campaign-offers/${offerId}/deliverables`, {
-          asset_url: assetUrl,
-          asset_type: "file",
+        const session = supabase
+          ? await supabase.auth.getSession()
+          : { data: { session: null } };
+        const token = session.data.session?.access_token;
+        for (const file of sendDeliverableFiles) {
+          const uploadRes = await fetch(
+            api(
+              `/api/campaign-offers/${encodeURIComponent(sendDeliverableOfferId)}/deliverables/upload`,
+            ),
+            {
+              method: "POST",
+              headers: {
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                "Content-Type": file.type || "application/octet-stream",
+              },
+              body: await file.arrayBuffer(),
+            },
+          );
+          const uploadText = await uploadRes.text();
+          if (!uploadRes.ok) {
+            throw new Error(uploadText || "Failed to upload deliverable file");
+          }
+          const uploadJson = uploadText ? JSON.parse(uploadText) : {};
+          const assetUrl = String(uploadJson?.public_url || "").trim();
+          if (!assetUrl) {
+            throw new Error("Deliverable upload URL missing");
+          }
+
+          await base44.post(
+            `/api/campaign-offers/${encodeURIComponent(sendDeliverableOfferId)}/deliverables`,
+            {
+              asset_url: assetUrl,
+              asset_type: inferAssetType(file.type),
+              caption: file.name,
+              brand_id: selectedOfferBrandId || sendDeliverableBrandId || "",
+              brand_campaign_id: String(selectedOffer?.brand_campaign_id || ""),
+              meta: {
+                original_name: file.name,
+                content_type: file.type,
+              },
+            },
+          );
+        }
+        await refreshBrandConnections();
+        if (selectedBrandOfferId === sendDeliverableOfferId) {
+          await loadOfferDetails(sendDeliverableOfferId);
+        }
+        setSendDeliverableOpen(false);
+        setSendDeliverableBrandId("");
+        setSendDeliverableOfferId("");
+        setSendDeliverableFiles([]);
+        sendDeliverablePreviewUrls.forEach((url) => {
+          if (String(url).startsWith("blob:")) URL.revokeObjectURL(url);
         });
-        await loadOfferDetails(offerId);
-        setDeliverableUrlByOffer((prev) => ({ ...prev, [offerId]: "" }));
+        setSendDeliverablePreviewUrls([]);
         toast({
-          title: "Deliverable submitted",
-          description: "Your deliverable was sent for review.",
+          title: "Deliverable sent",
+          description: `${sendDeliverableFiles.length} deliverable${sendDeliverableFiles.length > 1 ? "s were" : " was"} uploaded and sent to the brand.`,
         });
       } catch (e: any) {
         toast({
           variant: "destructive",
-          title: "Submit failed",
+          title: "Send failed",
           description: e?.message || String(e),
         });
       } finally {
@@ -5268,6 +5820,13 @@ export default function CreatorDashboard() {
           <p className="text-gray-600 mt-1">
             Manage connections, requests, and incoming campaign offers.
           </p>
+          {totalBrandConnectionNotifications > 0 && (
+            <p className="text-xs text-amber-700 mt-2">
+              {totalBrandConnectionNotifications} new notification
+              {totalBrandConnectionNotifications > 1 ? "s" : ""} across
+              requests, offers, and deliverables.
+            </p>
+          )}
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -5293,12 +5852,21 @@ export default function CreatorDashboard() {
                 ? "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
                 : "border-gray-300"
             }
-            onClick={() => setBrandConnectionSubTab("requests")}
+            onClick={() => {
+              setBrandConnectionSubTab("requests");
+              setSeenBrandRequestIds(
+                new Set(
+                  brandConnectionRequests
+                    .filter((req: any) => req?.status === "pending")
+                    .map((req: any) => String(req?.id || "")),
+                ),
+              );
+            }}
           >
             Requests
-            {pending.length > 0 && (
+            {unseenRequestCount > 0 && (
               <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-white/20 px-1 text-xs">
-                {pending.length}
+                {unseenRequestCount}
               </span>
             )}
           </Button>
@@ -5309,9 +5877,21 @@ export default function CreatorDashboard() {
                 ? "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
                 : "border-gray-300"
             }
-            onClick={() => setBrandConnectionSubTab("offers")}
+            onClick={() => {
+              setBrandConnectionSubTab("offers");
+              setSeenOfferNotificationIds(
+                new Set(
+                  brandOffers.map((offer: any) => String(offer?.id || "")),
+                ),
+              );
+            }}
           >
-            My Offers
+            Brand Offers
+            {unseenOfferCount > 0 && (
+              <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-white/20 px-1 text-xs">
+                {unseenOfferCount}
+              </span>
+            )}
           </Button>
           <Button
             variant={
@@ -5335,9 +5915,23 @@ export default function CreatorDashboard() {
                 ? "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
                 : "border-gray-300"
             }
-            onClick={() => setBrandConnectionSubTab("deliverables")}
+            onClick={() => {
+              setBrandConnectionSubTab("deliverables");
+              setSeenDeliverableNotificationOfferIds(
+                new Set(
+                  deliverableEligibleOffers.map((offer: any) =>
+                    String(offer?.id || ""),
+                  ),
+                ),
+              );
+            }}
           >
             Deliverables
+            {unseenDeliverableFeedbackCount > 0 && (
+              <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-white/20 px-1 text-xs">
+                {unseenDeliverableFeedbackCount}
+              </span>
+            )}
           </Button>
         </div>
 
@@ -5372,7 +5966,7 @@ export default function CreatorDashboard() {
                       </div>
                       <div className="min-w-0">
                         <div className="font-semibold text-gray-900 truncate">
-                          {c?.brands?.company_name || c?.brand_id}
+                          {resolveConnectedBrandName(c)}
                         </div>
                         <div className="text-xs text-gray-500 truncate">
                           {c?.brands?.email || "Connected brand"}
@@ -5465,156 +6059,625 @@ export default function CreatorDashboard() {
           <Card className="p-6">
             <div className="space-y-4">
               <div className="text-lg font-semibold text-gray-900">
-                My Offers
+                Brand Offers
               </div>
-              {brandOffers.length === 0 && (
+              {loadingBrandOffers && (
+                <p className="text-sm text-gray-600">
+                  Loading campaign offers...
+                </p>
+              )}
+              {!loadingBrandOffers && brandOffers.length === 0 && (
                 <p className="text-sm text-gray-600">
                   No campaign offers available yet.
                 </p>
               )}
-              {brandOffers.map((offer: any) => {
-                const offerId = String(offer?.id || "");
-                const status = String(offer?.status || "sent");
-                const isPending = ["sent", "viewed"].includes(status);
-                const expanded = selectedBrandOfferId === offerId;
-                return (
-                  <div
-                    key={offerId}
-                    className="p-4 border border-gray-200 rounded-lg space-y-3"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="font-semibold text-gray-900">
-                          {offer?.brand_campaigns?.name || "Campaign offer"}
+              {!selectedOfferBriefId && brandOffers.length > 0 && (
+                <div className="space-y-3">
+                  {brandOffers.map((offer: any) => {
+                    const offerId = String(offer?.id || "");
+                    const status = String(offer?.status || "sent");
+                    return (
+                      <div
+                        key={offerId}
+                        className="border border-gray-200 rounded-lg p-4 bg-white space-y-3"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="font-semibold text-gray-900">
+                              {offer?.brand_campaigns?.name || "Campaign offer"}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {offer?.brands?.company_name || "Brand"} •{" "}
+                              {status.replace(/_/g, " ")}
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="capitalize">
+                            {status.replace(/_/g, " ")}
+                          </Badge>
                         </div>
-                        <div className="text-xs text-gray-500">
-                          {offer?.brands?.company_name || "Brand"} •{" "}
-                          {status.replace(/_/g, " ")}
-                        </div>
-                      </div>
-                      <Badge variant="outline" className="capitalize">
-                        {status.replace(/_/g, " ")}
-                      </Badge>
-                    </div>
-                    {offer?.message && (
-                      <p className="text-sm text-gray-700">
-                        {String(offer.message)}
-                      </p>
-                    )}
-                    <div className="flex flex-wrap gap-2">
-                      {isPending && (
-                        <>
-                          <Button
-                            className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                            disabled={offerActionLoading}
-                            onClick={() => respondToOffer(offerId, "accept")}
-                          >
-                            Accept
-                          </Button>
+                        {offer?.message && (
+                          <p className="text-sm text-gray-700">
+                            {String(offer.message)}
+                          </p>
+                        )}
+                        <div className="flex flex-wrap gap-2">
                           <Button
                             variant="outline"
                             className="border-gray-200"
-                            disabled={offerActionLoading}
-                            onClick={() => respondToOffer(offerId, "decline")}
+                            onClick={() => openOfferBriefPage(offerId)}
                           >
-                            Decline
+                            View brief
                           </Button>
-                        </>
-                      )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {selectedOfferBriefId && !selectedBriefOffer && (
+                <div className="space-y-3">
+                  <Button
+                    variant="outline"
+                    className="border-gray-300"
+                    onClick={closeOfferBriefPage}
+                  >
+                    ← Back to Brand Offers
+                  </Button>
+                  <p className="text-sm text-red-600">Offer brief not found.</p>
+                </div>
+              )}
+              {selectedOfferBriefId && selectedBriefOffer && (
+                <div className="space-y-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-1">
                       <Button
                         variant="outline"
-                        className="border-gray-200"
-                        onClick={async () => {
-                          const next = expanded ? "" : offerId;
-                          setSelectedBrandOfferId(next);
-                          if (next) {
-                            try {
-                              await loadOfferDetails(next);
-                            } catch {
-                              setSelectedOfferContracts([]);
-                              setSelectedOfferDeliverables([]);
-                            }
-                          } else {
-                            setSelectedOfferContracts([]);
-                            setSelectedOfferDeliverables([]);
-                          }
-                        }}
+                        onClick={closeOfferBriefPage}
+                        className="border-2 border-gray-300"
                       >
-                        {expanded ? "Hide details" : "View details"}
+                        ← Back to Brand Offers
                       </Button>
+                      <h1 className="text-3xl font-bold text-gray-900">
+                        {selectedBriefCampaign?.name || "Campaign"} - Brief &
+                        Contract
+                      </h1>
+                      <p className="text-gray-600">
+                        Detailed scope and requirements
+                      </p>
                     </div>
-                    {expanded && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-                        <div className="rounded-md border border-gray-200 p-3">
-                          <div className="text-xs font-semibold text-gray-700 mb-2">
-                            Contracts
-                          </div>
-                          {selectedOfferContracts.length === 0 ? (
-                            <div className="text-xs text-gray-500">
-                              No contracts yet.
-                            </div>
+                    <Badge
+                      className={`text-xs ${offerStatusBadgeClass(selectedBriefOffer?.status)}`}
+                    >
+                      {formatStatus(selectedBriefOffer?.status)}
+                    </Badge>
+                  </div>
+
+                  {selectedOfferContracts.length > 0 && (
+                    <div className="rounded-md border border-gray-200 p-3 bg-white">
+                      {selectedOfferContracts.map((contract: any) => (
+                        <div
+                          key={String(contract?.id)}
+                          className="text-xs text-gray-700 mb-1"
+                        >
+                          {String(contract?.title || "Contract")} •{" "}
+                          {String(contract?.docuseal_status || "draft")}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <Card className="p-6 bg-white border border-gray-200 space-y-6">
+                    <h2 className="text-2xl font-bold text-slate-900">
+                      General Dialogue &amp; Voice Direction
+                    </h2>
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-semibold text-slate-800">
+                        Brand Voice &amp; Tone
+                      </h3>
+                      <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                        <p className="text-slate-900">
+                          <span className="font-semibold">Voice:</span>{" "}
+                          {briefValue("voice")}
+                        </p>
+                        <p className="text-slate-900">
+                          <span className="font-semibold">Tone:</span>{" "}
+                          {briefValue("tone")}
+                        </p>
+                        <p className="text-slate-900">
+                          <span className="font-semibold">Personality:</span>{" "}
+                          {briefValue("personality")}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-semibold text-slate-800">
+                        Key Messages
+                      </h3>
+                      <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                        {briefLines("key_messages").length > 0 ? (
+                          <ul className="list-disc pl-5 space-y-1 text-slate-900">
+                            {briefLines("key_messages").map((line, idx) => (
+                              <li key={`brief-key-message-${idx}`}>
+                                {line.replace(/^[•-]\s*/, "")}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-slate-500">Not specified</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-semibold text-slate-800">
+                        Script Guidelines (For Video/Audio)
+                      </h3>
+                      <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                        <p className="text-slate-900">
+                          <span className="font-semibold">Opening (0-5s):</span>{" "}
+                          {briefValue("script_opening")}
+                        </p>
+                        <p className="text-slate-900">
+                          <span className="font-semibold">Middle (5-20s):</span>{" "}
+                          {briefValue("script_middle")}
+                        </p>
+                        <p className="text-slate-900">
+                          <span className="font-semibold">
+                            Closing (20-30s):
+                          </span>{" "}
+                          {briefValue("script_closing")}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-semibold text-slate-800">
+                        Do&apos;s &amp; Don&apos;ts
+                      </h3>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+                          <p className="font-semibold text-emerald-900 mb-2">
+                            ✓ DO:
+                          </p>
+                          {briefLines("dos").length > 0 ? (
+                            <ul className="list-disc pl-5 space-y-1 text-emerald-900">
+                              {briefLines("dos").map((line, idx) => (
+                                <li key={`brief-dos-${idx}`}>
+                                  {line.replace(/^[•-]\s*/, "")}
+                                </li>
+                              ))}
+                            </ul>
                           ) : (
-                            selectedOfferContracts
-                              .slice(0, 4)
-                              .map((contract: any) => (
-                                <div
-                                  key={String(contract?.id)}
-                                  className="text-xs text-gray-700 mb-1"
-                                >
-                                  {String(contract?.title || "Contract")} •{" "}
-                                  {String(contract?.docuseal_status || "draft")}
-                                </div>
-                              ))
+                            <p className="text-emerald-700">Not specified</p>
                           )}
                         </div>
-                        <div className="rounded-md border border-gray-200 p-3">
-                          <div className="text-xs font-semibold text-gray-700 mb-2">
-                            Deliverables
-                          </div>
-                          <div className="flex gap-2 mb-3">
-                            <Input
-                              value={deliverableUrlByOffer[offerId] || ""}
-                              onChange={(e) =>
-                                setDeliverableUrlByOffer((prev) => ({
-                                  ...prev,
-                                  [offerId]: e.target.value,
-                                }))
-                              }
-                              placeholder="https://... asset URL"
-                              className="h-8 text-xs"
-                            />
-                            <Button
-                              size="sm"
-                              className="h-8"
-                              disabled={offerActionLoading}
-                              onClick={() => submitDeliverable(offerId)}
-                            >
-                              Upload
-                            </Button>
-                          </div>
-                          {selectedOfferDeliverables.length === 0 ? (
-                            <div className="text-xs text-gray-500">
-                              No deliverables yet.
-                            </div>
+                        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                          <p className="font-semibold text-red-900 mb-2">
+                            ✗ DON&apos;T:
+                          </p>
+                          {briefLines("donts").length > 0 ? (
+                            <ul className="list-disc pl-5 space-y-1 text-red-900">
+                              {briefLines("donts").map((line, idx) => (
+                                <li key={`brief-donts-${idx}`}>
+                                  {line.replace(/^[•-]\s*/, "")}
+                                </li>
+                              ))}
+                            </ul>
                           ) : (
-                            selectedOfferDeliverables
-                              .slice(0, 4)
-                              .map((deliverable: any) => (
-                                <div
-                                  key={String(deliverable?.id)}
-                                  className="text-xs text-gray-700 mb-1"
-                                >
-                                  {String(deliverable?.asset_type || "file")} •{" "}
-                                  {String(deliverable?.status || "submitted")}
-                                </div>
-                              ))
+                            <p className="text-red-700">Not specified</p>
                           )}
                         </div>
                       </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-6 bg-white border border-gray-200 space-y-6">
+                    <h2 className="text-2xl font-bold text-slate-900">
+                      Visual Requirements &amp; Style Guide
+                    </h2>
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-semibold text-slate-800">
+                        Required Deliverables
+                      </h3>
+                      <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                        <p className="text-slate-900 whitespace-pre-wrap">
+                          {requiredDeliverablesText}
+                        </p>
+                        <p className="text-sm text-slate-700 mt-3">
+                          <span className="font-semibold">
+                            Total expected deliverables:
+                          </span>{" "}
+                          {briefValue("total_expected_deliverables")}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-semibold text-slate-800">
+                        Visual Style &amp; Aesthetic
+                      </h3>
+                      <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                        <p className="text-slate-900">
+                          <span className="font-semibold">Color Palette:</span>{" "}
+                          {briefValue("visual_color_palette")}
+                        </p>
+                        <p className="text-slate-900">
+                          <span className="font-semibold">Setting:</span>{" "}
+                          {briefValue("visual_setting")}
+                        </p>
+                        <p className="text-slate-900">
+                          <span className="font-semibold">Framing:</span>{" "}
+                          {briefValue("visual_framing")}
+                        </p>
+                        <p className="text-slate-900">
+                          <span className="font-semibold">Editing:</span>{" "}
+                          {briefValue("visual_editing")}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-semibold text-slate-800">
+                        Reference Images
+                      </h3>
+                      {referenceImages.length > 0 ? (
+                        <div className="grid md:grid-cols-3 gap-3">
+                          {referenceImages.map((img: any, idx: number) => {
+                            const imageUrl = briefItemUrl(img);
+                            const isLegacyBlob = imageUrl.startsWith("blob:");
+                            return (
+                              <div
+                                key={`creator-ref-img-${idx}`}
+                                className="border border-gray-200 rounded-lg overflow-hidden"
+                              >
+                                {imageUrl && !isLegacyBlob ? (
+                                  <button
+                                    type="button"
+                                    className="w-full text-left"
+                                    onClick={() => {
+                                      setBriefGalleryIndex(idx);
+                                      setBriefGalleryOpen(true);
+                                    }}
+                                  >
+                                    <img
+                                      src={imageUrl}
+                                      alt={`Ref ${idx + 1}`}
+                                      className="w-full h-40 object-cover bg-gray-100 hover:opacity-95 transition-opacity"
+                                    />
+                                  </button>
+                                ) : (
+                                  <div className="w-full h-40 bg-gray-100 flex items-center justify-center text-xs text-gray-500 px-3 text-center">
+                                    {isLegacyBlob
+                                      ? "This image was attached as a temporary local file. Ask brand to re-upload."
+                                      : "Reference image unavailable."}
+                                  </div>
+                                )}
+                                <div className="p-2 text-xs text-gray-700 truncate">
+                                  {`Ref ${idx + 1}`}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg text-slate-500">
+                          No reference images provided.
+                        </div>
+                      )}
+                    </div>
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-semibold text-slate-800">
+                        Brand Assets Provided
+                      </h3>
+                      {brandAssets.length > 0 ? (
+                        <div className="space-y-2">
+                          {brandAssets.map((asset: any, idx: number) => {
+                            const assetUrl = briefItemUrl(asset);
+                            const isLegacyBlob = assetUrl.startsWith("blob:");
+                            return (
+                              <div
+                                key={`creator-asset-${idx}`}
+                                className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 flex items-center justify-between gap-3"
+                              >
+                                <span className="truncate">
+                                  {String(asset?.name || `Asset ${idx + 1}`)}
+                                </span>
+                                {assetUrl && !isLegacyBlob ? (
+                                  <button
+                                    type="button"
+                                    title="Download file"
+                                    className="inline-flex items-center justify-center w-9 h-9 border border-slate-300 rounded-md hover:bg-slate-100 transition-colors"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      void downloadBriefFile(
+                                        assetUrl,
+                                        String(
+                                          asset?.name || `asset-${idx + 1}`,
+                                        ),
+                                      );
+                                    }}
+                                  >
+                                    <Download className="w-4 h-4" />
+                                  </button>
+                                ) : (
+                                  <span className="text-xs text-slate-500">
+                                    {isLegacyBlob
+                                      ? "Legacy local file URL. Ask brand to re-upload."
+                                      : "No file URL"}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg text-slate-500">
+                          No brand assets provided.
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+
+                  <Card className="p-6 bg-white border border-gray-200 space-y-6">
+                    <h2 className="text-2xl font-bold text-slate-900">
+                      Campaign Scope &amp; Contract Details
+                    </h2>
+                    <div className="grid md:grid-cols-2 gap-4 text-sm">
+                      <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                        <p className="text-slate-900">
+                          <span className="font-semibold">Objective:</span>{" "}
+                          {briefValue("overview_objective")}
+                        </p>
+                        <p className="text-slate-900">
+                          <span className="font-semibold">
+                            Target Audience:
+                          </span>{" "}
+                          {briefValue("overview_target_audience")}
+                        </p>
+                        <p className="text-slate-900">
+                          <span className="font-semibold">
+                            Campaign Duration:
+                          </span>{" "}
+                          {briefValue("overview_campaign_duration")}
+                        </p>
+                        <p className="text-slate-900">
+                          <span className="font-semibold">Launch Date:</span>{" "}
+                          {briefValue("overview_launch_date")}
+                        </p>
+                      </div>
+                      <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                        <p className="text-slate-900">
+                          <span className="font-semibold">Total Budget:</span>{" "}
+                          {briefValue("budget_total")}
+                        </p>
+                        <p className="text-slate-900">
+                          <span className="font-semibold">
+                            Creator Payment:
+                          </span>{" "}
+                          {briefValue("budget_creator_payment")}
+                        </p>
+                        <p className="text-slate-900">
+                          <span className="font-semibold">Platform Fee:</span>{" "}
+                          {briefValue("budget_platform_fee")}
+                        </p>
+                        <p className="text-slate-900">
+                          <span className="font-semibold">
+                            Submission Deadline:
+                          </span>{" "}
+                          {briefValue("budget_submission_deadline")}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                      <p className="text-slate-900">
+                        <span className="font-semibold">Renewal Terms:</span>{" "}
+                        {briefValue("budget_renewal_terms")}
+                      </p>
+                    </div>
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg space-y-2">
+                      <p className="text-slate-900">
+                        <span className="font-semibold">
+                          Included Revisions:
+                        </span>{" "}
+                        {briefValue("revision_included")}
+                      </p>
+                      <p className="text-slate-900">
+                        <span className="font-semibold">Major Changes:</span>{" "}
+                        {briefValue("revision_major_changes")}
+                      </p>
+                      <p className="text-slate-900">
+                        <span className="font-semibold">
+                          Turnaround for Revisions:
+                        </span>{" "}
+                        {briefValue("revision_turnaround")}
+                      </p>
+                    </div>
+                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                      <p className="font-semibold text-slate-900 mb-2">
+                        Approval Process
+                      </p>
+                      {briefLines("approval_process").length > 0 ? (
+                        <ol className="list-decimal pl-5 space-y-1 text-slate-900">
+                          {briefLines("approval_process").map((line, idx) => (
+                            <li key={`creator-approval-${idx}`}>
+                              {line.replace(/^[•-]?\s*\d*\s*/, "")}
+                            </li>
+                          ))}
+                        </ol>
+                      ) : (
+                        <p className="text-slate-500">Not specified</p>
+                      )}
+                    </div>
+                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                      <p className="font-semibold text-slate-900 mb-1">
+                        Watermark &amp; Protection
+                      </p>
+                      <p className="text-slate-900 whitespace-pre-wrap">
+                        {briefValue("watermark_protection")}
+                      </p>
+                    </div>
+                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                      <p className="font-semibold text-slate-900 mb-1">
+                        Legal Terms
+                      </p>
+                      {briefLines("legal_terms").length > 0 ? (
+                        <ul className="list-disc pl-5 space-y-1 text-slate-900">
+                          {briefLines("legal_terms").map((line, idx) => (
+                            <li key={`creator-legal-${idx}`}>
+                              {line.replace(/^[•-]\s*/, "")}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-slate-500">Not specified</p>
+                      )}
+                    </div>
+                  </Card>
+
+                  <div className="flex justify-end">
+                    {!creatorAlreadySigned ? (
+                      <Button
+                        className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                        onClick={signContract}
+                        disabled={!selectedBriefContract}
+                      >
+                        Sign Contract
+                      </Button>
+                    ) : (
+                      <div className="text-sm font-medium text-emerald-700">
+                        Contract already signed.
+                      </div>
                     )}
                   </div>
-                );
-              })}
+                </div>
+              )}
+              {!selectedOfferBriefId &&
+                brandOffers.map((offer: any) => {
+                  const offerId = String(offer?.id || "");
+                  const campaign = offer?.brand_campaigns || {};
+                  return (
+                    <div
+                      key={offerId}
+                      className="p-4 border border-gray-200 rounded-lg space-y-3"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-2">
+                          <p className="text-xs text-gray-600 uppercase tracking-wide">
+                            Brand
+                          </p>
+                          <p className="text-base font-bold text-gray-900">
+                            {resolveOfferBrandName(offer)}
+                          </p>
+                          <div className="font-semibold text-gray-900">
+                            {campaign?.name ||
+                              offer?.offer_title ||
+                              "Campaign offer"}
+                          </div>
+                        </div>
+                        <Badge
+                          className={`text-xs ${offerStatusBadgeClass(offer?.status)}`}
+                        >
+                          {formatStatus(offer?.status || "sent")}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-700">
+                        <p>
+                          Offer status:{" "}
+                          <span className="font-semibold text-gray-900">
+                            {formatStatus(offer?.status || "sent")}
+                          </span>
+                        </p>
+                        <p>
+                          Deliverable status:{" "}
+                          <span className="font-semibold text-gray-900">
+                            {(() => {
+                              const normalized = String(
+                                offer?.status || "",
+                              ).toLowerCase();
+                              if (normalized.includes("changes_requested")) {
+                                return "Request Review";
+                              }
+                              if (
+                                normalized.includes("deliverables_submitted")
+                              ) {
+                                return "Submitted";
+                              }
+                              if (normalized.includes("approved")) {
+                                return "Approved";
+                              }
+                              if (
+                                normalized.includes("contract_fully_signed") ||
+                                normalized.includes("signed")
+                              ) {
+                                return "Ready to submit";
+                              }
+                              return "Not started";
+                            })()}
+                          </span>
+                        </p>
+                        <p>
+                          Category:{" "}
+                          <span className="font-semibold text-gray-900">
+                            {String(campaign?.category || "N/A")}
+                          </span>
+                        </p>
+                        <p>
+                          Budget range:{" "}
+                          <span className="font-semibold text-gray-900">
+                            {String(campaign?.budget_range || "N/A")}
+                          </span>
+                        </p>
+                        <p>
+                          Usage scope:{" "}
+                          <span className="font-semibold text-gray-900">
+                            {String(campaign?.usage_scope || "N/A")}
+                          </span>
+                        </p>
+                        <p>
+                          Territory:{" "}
+                          <span className="font-semibold text-gray-900">
+                            {String(campaign?.territory || "N/A")}
+                          </span>
+                        </p>
+                        <p>
+                          Start date:{" "}
+                          <span className="font-semibold text-gray-900">
+                            {String(campaign?.start_date || "N/A")}
+                          </span>
+                        </p>
+                        <p>
+                          Duration:{" "}
+                          <span className="font-semibold text-gray-900">
+                            {campaign?.duration_days
+                              ? `${campaign.duration_days} days`
+                              : "N/A"}
+                          </span>
+                        </p>
+                      </div>
+                      {offer?.message && (
+                        <p className="text-sm text-gray-700">
+                          {String(offer.message)}
+                        </p>
+                      )}
+                      {String(offer?.status || "").toLowerCase() ===
+                        "changes_requested" &&
+                        !seenOfferNotificationIds.has(
+                          String(offer?.id || ""),
+                        ) && (
+                          <div className="flex items-center rounded-md border border-amber-300 bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">
+                            Edits requested by brand. Open brief and check
+                            feedback comments.
+                          </div>
+                        )}
+                      <Button
+                        variant="outline"
+                        className="border-gray-200"
+                        onClick={() => openOfferBriefPage(offerId)}
+                      >
+                        View brief
+                      </Button>
+                    </div>
+                  );
+                })}
             </div>
           </Card>
         )}
@@ -5625,12 +6688,81 @@ export default function CreatorDashboard() {
               <div className="text-lg font-semibold text-gray-900">
                 Contract Hub
               </div>
-              {brandOffers.length === 0 && (
+              {creatorContractHubRows.length === 0 && (
                 <p className="text-sm text-gray-600">
-                  No offers with contracts yet.
+                  No contracts available yet.
                 </p>
               )}
-              {brandOffers.map((offer: any) => {
+              {creatorContractHubRows.map((row: any) => {
+                const status = String(row?.docuseal_status || "draft");
+                const slug = String(row?.docuseal_slug || "").trim();
+                const submissionId = String(row?.docuseal_submission_id || "").trim();
+                const signUrl = slug
+                  ? `https://docuseal.com/s/${slug}`
+                  : submissionId
+                    ? `https://docuseal.com/s/${submissionId}`
+                    : "";
+                return (
+                  <div
+                    key={String(row?.id)}
+                    className="border border-gray-200 rounded-lg p-4 bg-white space-y-2"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="font-semibold text-gray-900">
+                          {String(row?.campaign_name || "Campaign offer")}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {String(row?.title || "Contract")} •{" "}
+                          {status.replace(/_/g, " ")}
+                        </div>
+                      </div>
+                      <Badge variant="outline" className="capitalize">
+                        {status.replace(/_/g, " ")}
+                      </Badge>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {signUrl && (
+                        <Button
+                          variant="outline"
+                          className="border-gray-200"
+                          onClick={() => window.open(signUrl, "_blank")}
+                        >
+                          Open DocuSeal
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        )}
+
+        {brandConnectionSubTab === "deliverables" && (
+          <Card className="p-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-lg font-semibold text-gray-900">
+                  Deliverables
+                </div>
+                <Button
+                  className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                  onClick={() => setSendDeliverableOpen(true)}
+                >
+                  Send deliverable
+                </Button>
+              </div>
+              {loadingBrandOffers && (
+                <p className="text-sm text-gray-600">Loading deliverables...</p>
+              )}
+              {!loadingBrandOffers &&
+                deliverableEligibleOffers.length === 0 && (
+                  <p className="text-sm text-gray-600">
+                    No deliverables yet for fully signed offers.
+                  </p>
+                )}
+              {deliverableEligibleOffers.map((offer: any) => {
                 const offerId = String(offer?.id || "");
                 const expanded = selectedBrandOfferId === offerId;
                 return (
@@ -5639,35 +6771,116 @@ export default function CreatorDashboard() {
                     className="p-4 border border-gray-200 rounded-lg space-y-2"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <p className="font-semibold text-gray-900">
-                        {offer?.brand_campaigns?.name || "Campaign offer"}
-                      </p>
+                      <div className="space-y-1">
+                        <p className="font-semibold text-gray-900">
+                          {offer?.brand_campaigns?.name || "Campaign offer"}
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          Offer status: {formatStatus(offer?.status || "sent")}
+                        </p>
+                      </div>
                       <Button
                         variant="outline"
                         className="border-gray-200"
-                        onClick={async () => {
-                          const next = expanded ? "" : offerId;
-                          setSelectedBrandOfferId(next);
-                          if (next) await loadOfferDetails(next);
-                        }}
+                        onClick={() => openOfferBrief(offerId)}
                       >
                         {expanded ? "Hide" : "Open"}
                       </Button>
                     </div>
                     {expanded && (
                       <div className="rounded-md border border-gray-200 p-3">
-                        {selectedOfferContracts.length === 0 ? (
+                        {loadingOfferDetails ? (
                           <div className="text-xs text-gray-500">
-                            No contracts yet.
+                            Loading deliverables...
+                          </div>
+                        ) : selectedOfferDeliverables.length === 0 ? (
+                          <div className="text-xs text-gray-500">
+                            No deliverables yet.
                           </div>
                         ) : (
-                          selectedOfferContracts.map((contract: any) => (
+                          selectedOfferDeliverables.map((deliverable: any) => (
                             <div
-                              key={String(contract?.id)}
-                              className="text-xs text-gray-700 mb-1"
+                              key={String(deliverable?.id)}
+                              className="text-xs text-gray-700 mb-2 border border-gray-100 rounded-md p-2 bg-gray-50"
                             >
-                              {String(contract?.title || "Contract")} •{" "}
-                              {String(contract?.docuseal_status || "draft")}
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-gray-900">
+                                  {String(deliverable?.asset_type || "file")}
+                                </span>
+                                <Badge
+                                  className={`text-[11px] ${deliverableStatusBadgeClass(deliverable?.status || "submitted")}`}
+                                >
+                                  {formatStatus(
+                                    deliverable?.status || "submitted",
+                                  )}
+                                </Badge>
+                              </div>
+                              {deliverable?.asset_url && (
+                                <div className="mt-2 space-y-2">
+                                  {deliverableIsImage(deliverable) && (
+                                    <img
+                                      src={String(deliverable.asset_url)}
+                                      alt={String(
+                                        deliverable?.caption ||
+                                          deliverable?.meta?.original_name ||
+                                          "Deliverable image",
+                                      )}
+                                      className="h-28 w-auto max-w-full rounded border border-gray-200 object-cover bg-white"
+                                    />
+                                  )}
+                                </div>
+                              )}
+                              {Array.isArray(
+                                deliverable?.meta?.feedback_comments,
+                              ) &&
+                                deliverable.meta.feedback_comments.length >
+                                  0 && (
+                                  <div className="mt-2 border-t border-gray-200 pt-2 space-y-1">
+                                    <p className="font-semibold text-gray-900">
+                                      Comments &amp; Feedback
+                                    </p>
+                                    {deliverable.meta.feedback_comments.map(
+                                      (comment: any) => (
+                                        <div
+                                          key={String(
+                                            comment?.id || Math.random(),
+                                          )}
+                                          className="rounded border border-gray-200 bg-white px-2 py-1"
+                                        >
+                                          <p className="font-medium text-gray-900">
+                                            {(() => {
+                                              const role = String(
+                                                comment?.author_role || "",
+                                              ).toLowerCase();
+                                              if (
+                                                role === "brand" ||
+                                                role === "agency"
+                                              ) {
+                                                return resolveOfferBrandName(
+                                                  offer,
+                                                );
+                                              }
+                                              if (role === "creator") {
+                                                return "You";
+                                              }
+                                              const explicitName =
+                                                normalizeDisplayName(
+                                                  comment?.author_name,
+                                                ) ||
+                                                normalizeDisplayName(
+                                                  comment?.author_role,
+                                                );
+                                              return explicitName || "System";
+                                            })()}
+                                          </p>
+                                          <p>
+                                            {String(comment?.message || "")}
+                                          </p>
+                                        </div>
+                                      ),
+                                    )}
+                                  </div>
+                                )}
                             </div>
                           ))
                         )}
@@ -5680,13 +6893,292 @@ export default function CreatorDashboard() {
           </Card>
         )}
 
-        {brandConnectionSubTab === "deliverables" && (
-          <DeliverablesTab activeCampaigns={creatorCampaigns} />
-        )}
+        <Dialog
+          open={sendDeliverableOpen}
+          onOpenChange={(open) => {
+            setSendDeliverableOpen(open);
+            if (!open) {
+              setSendDeliverableFiles([]);
+              sendDeliverablePreviewUrls.forEach((url) => {
+                if (String(url).startsWith("blob:")) URL.revokeObjectURL(url);
+              });
+              setSendDeliverablePreviewUrls([]);
+            }
+          }}
+        >
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>Send deliverable</DialogTitle>
+              <DialogDescription>
+                Upload a deliverable, choose the connected brand, and select the
+                campaign offer.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="deliverable-upload">Upload deliverables</Label>
+                <Input
+                  id="deliverable-upload"
+                  type="file"
+                  multiple
+                  onChange={(e) => {
+                    const selectedFiles = Array.from(e.target.files || []);
+                    if (selectedFiles.length === 0) return;
+                    const nextFiles = [
+                      ...sendDeliverableFiles,
+                      ...selectedFiles,
+                    ];
+                    const nextPreviewUrls = [...sendDeliverablePreviewUrls];
+                    selectedFiles.forEach((file) => {
+                      if (file.type.startsWith("image/")) {
+                        nextPreviewUrls.push(URL.createObjectURL(file));
+                      } else {
+                        nextPreviewUrls.push("");
+                      }
+                    });
+                    setSendDeliverableFiles(nextFiles);
+                    setSendDeliverablePreviewUrls(nextPreviewUrls);
+                    e.target.value = "";
+                  }}
+                />
+                <p className="text-xs text-gray-500">
+                  Uploaded assets will be stored and shared as downloadable
+                  links.
+                </p>
+                {sendDeliverableFiles.length > 0 && (
+                  <div className="mt-2 space-y-2">
+                    {sendDeliverableFiles.map((file, idx) => (
+                      <div
+                        key={`${file.name}-${idx}`}
+                        className="border border-gray-200 rounded-md p-2 bg-white"
+                      >
+                        {sendDeliverablePreviewUrls[idx] ? (
+                          <img
+                            src={sendDeliverablePreviewUrls[idx]}
+                            alt={`Deliverable preview ${idx + 1}`}
+                            className="h-32 w-auto max-w-full rounded border border-gray-200 object-cover bg-white"
+                          />
+                        ) : null}
+                        <div className="mt-2 flex items-center justify-between gap-2">
+                          <p className="text-xs text-gray-700 truncate">
+                            {file.name}
+                          </p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="border-gray-300"
+                            onClick={() => {
+                              const nextFiles = sendDeliverableFiles.filter(
+                                (_f, index) => index !== idx,
+                              );
+                              const nextUrls = [...sendDeliverablePreviewUrls];
+                              const removedUrl = nextUrls[idx];
+                              if (String(removedUrl).startsWith("blob:")) {
+                                URL.revokeObjectURL(removedUrl);
+                              }
+                              nextUrls.splice(idx, 1);
+                              setSendDeliverableFiles(nextFiles);
+                              setSendDeliverablePreviewUrls(nextUrls);
+                            }}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="deliverable-brand">Select brand</Label>
+                <select
+                  id="deliverable-brand"
+                  value={sendDeliverableBrandId}
+                  onChange={(e) => {
+                    setSendDeliverableBrandId(e.target.value);
+                    setSendDeliverableOfferId("");
+                  }}
+                  className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
+                >
+                  <option value="">Select connected brand</option>
+                  {brandConnections.map((c: any) => (
+                    <option
+                      key={String(c?.brand_id || c?.id)}
+                      value={String(c?.brand_id || "")}
+                    >
+                      {resolveConnectedBrandName(c)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="deliverable-campaign">Select campaign</Label>
+                <select
+                  id="deliverable-campaign"
+                  value={sendDeliverableOfferId}
+                  onChange={(e) => {
+                    const offerId = e.target.value;
+                    setSendDeliverableOfferId(offerId);
+                    const selected = brandOffers.find(
+                      (offer: any) => String(offer?.id || "") === offerId,
+                    );
+                    const selectedBrandId = String(selected?.brand_id || "");
+                    if (selectedBrandId) {
+                      setSendDeliverableBrandId(selectedBrandId);
+                    }
+                  }}
+                  className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
+                >
+                  <option value="">Select campaign offer</option>
+                  {campaignOptions.map((offer: any) => (
+                    <option key={String(offer?.id)} value={String(offer?.id)}>
+                      {String(
+                        offer?.brand_campaigns?.name ||
+                          offer?.offer_title ||
+                          "Campaign offer",
+                      )}
+                    </option>
+                  ))}
+                </select>
+                {sendDeliverableBrandId && campaignOptions.length === 0 && (
+                  <p className="text-xs text-amber-700">
+                    No campaign offers found for this brand yet.
+                  </p>
+                )}
+              </div>
+            </div>
+            <DialogFooter className="mt-3">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSendDeliverableOpen(false);
+                  setSendDeliverableFiles([]);
+                  sendDeliverablePreviewUrls.forEach((url) => {
+                    if (String(url).startsWith("blob:"))
+                      URL.revokeObjectURL(url);
+                  });
+                  setSendDeliverablePreviewUrls([]);
+                }}
+                disabled={offerActionLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                onClick={sendDeliverable}
+                disabled={offerActionLoading}
+              >
+                {offerActionLoading ? "Sending..." : "Send"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        <Dialog open={briefGalleryOpen} onOpenChange={setBriefGalleryOpen}>
+          <DialogContent className="max-w-5xl">
+            <DialogHeader>
+              <DialogTitle>
+                Reference Image {briefGalleryIndex + 1} of{" "}
+                {referenceImages.length}
+              </DialogTitle>
+            </DialogHeader>
+            {(() => {
+              const activeImage = referenceImages[briefGalleryIndex];
+              const activeImageUrl = briefItemUrl(activeImage);
+              return activeImageUrl ? (
+                <div className="space-y-3">
+                  <img
+                    src={activeImageUrl}
+                    alt={`Reference ${briefGalleryIndex + 1}`}
+                    className="w-full max-h-[70vh] object-contain bg-gray-50 border border-gray-200 rounded"
+                  />
+                  <div className="flex items-center justify-between gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        setBriefGalleryIndex((idx) =>
+                          idx <= 0 ? referenceImages.length - 1 : idx - 1,
+                        )
+                      }
+                      disabled={referenceImages.length <= 1}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        setBriefGalleryIndex((idx) =>
+                          idx >= referenceImages.length - 1 ? 0 : idx + 1,
+                        )
+                      }
+                      disabled={referenceImages.length <= 1}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">Image unavailable.</p>
+              );
+            })()}
+          </DialogContent>
+        </Dialog>
+        <Dialog
+          open={creatorSignOpen}
+          onOpenChange={async (open) => {
+            if (open) return;
+            setCreatorSignOpen(false);
+            if (selectedOfferBriefId) {
+              try {
+                await loadOfferDetails(selectedOfferBriefId);
+              } catch {
+                // no-op
+              }
+            }
+            try {
+              await loadCreatorContractHubRows();
+            } catch {
+              // no-op
+            }
+          }}
+        >
+          <DialogContent className="fixed !inset-0 bg-background w-screen h-screen !max-w-none !translate-x-0 !translate-y-0 !rounded-none border-none p-0 flex flex-col outline-none">
+            <DialogHeader className="p-4 border-b">
+              <DialogTitle>Sign Contract</DialogTitle>
+              <DialogDescription>
+                Complete your signature to finalize this campaign contract.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex-1 w-full bg-gray-50 overflow-auto">
+              {creatorSignUrl ? <DocusealForm src={creatorSignUrl} /> : null}
+            </div>
+            <DialogFooter className="p-4 border-t">
+              <Button
+                variant="outline"
+                type="button"
+                onClick={async () => {
+                  setCreatorSignOpen(false);
+                  if (selectedOfferBriefId) {
+                    try {
+                      await loadOfferDetails(selectedOfferBriefId);
+                    } catch {
+                      // no-op
+                    }
+                  }
+                  try {
+                    await loadCreatorContractHubRows();
+                  } catch {
+                    // no-op
+                  }
+                }}
+              >
+                Done
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   };
-
   const renderCampaigns = () => {
     // Use example campaigns if activeCampaigns is empty, otherwise use real data
     const campaignsToShow =
