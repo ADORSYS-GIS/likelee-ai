@@ -756,11 +756,20 @@ export const listOfferDeliverables = (offerId: string) =>
 
 export const uploadOfferDeliverable = (
   offerId: string,
-  data: { file: File; caption?: string },
+  data: {
+    file: File;
+    caption?: string;
+    talent_id?: string;
+    asset_request_id?: string;
+    status?: string;
+  },
 ) => {
   const fd = new FormData();
   fd.append("file", data.file);
   if (data.caption) fd.append("caption", data.caption);
+  if (data.talent_id) fd.append("talent_id", data.talent_id);
+  if (data.asset_request_id) fd.append("asset_request_id", data.asset_request_id);
+  if (data.status) fd.append("status", data.status);
   return base44Client.post(
     `/api/campaign-offers/${offerId}/deliverables/upload-form`,
     fd,
@@ -776,9 +785,55 @@ export const submitOfferDeliverable = (
     asset_url: string;
     asset_type?: string;
     caption?: string;
+    talent_id?: string;
+    asset_request_id?: string;
     meta?: any;
   },
 ) => base44Client.post(`/api/campaign-offers/${offerId}/deliverables`, data);
+
+export const listOfferTalentAssignments = (offerId: string) =>
+  base44Client.get(`/api/campaign-offers/${offerId}/assignments`);
+
+export const createOfferTalentAssignment = (offerId: string, talentId: string) =>
+  base44Client.post(`/api/campaign-offers/${offerId}/assignments`, {
+    talent_id: talentId,
+  });
+
+export const deleteOfferTalentAssignment = (
+  offerId: string,
+  assignmentId: string,
+) =>
+  base44Client.delete(
+    `/api/campaign-offers/${offerId}/assignments/${assignmentId}`,
+  );
+
+export const uploadOfferAssetRequestFile = (offerId: string, file: File) =>
+  base44Client.post(
+    `/api/campaign-offers/${offerId}/asset-requests/upload`,
+    file,
+    {
+      headers: { "Content-Type": file.type || "application/pdf" },
+    },
+  );
+
+export const listOfferAssetRequests = (offerId: string) =>
+  base44Client.get(`/api/campaign-offers/${offerId}/asset-requests`);
+
+export const createOfferAssetRequest = (
+  offerId: string,
+  data: {
+    talent_id: string;
+    title?: string;
+    message?: string;
+    file_url?: string;
+  },
+) => base44Client.post(`/api/campaign-offers/${offerId}/asset-requests`, data);
+
+export const listTalentAssetRequests = () =>
+  base44Client.get("/api/talent/offer-asset-requests");
+
+export const markTalentAssetRequestViewed = (requestId: string) =>
+  base44Client.post(`/api/talent/offer-asset-requests/${requestId}/viewed`, {});
 
 export const reviewOfferDeliverable = (
   offerId: string,
