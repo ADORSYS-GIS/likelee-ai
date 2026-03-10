@@ -3254,7 +3254,7 @@ pub async fn list_offer_deliverables(
     Ok(Json(json!({"deliverables": rows})))
 }
 
-pub async fn upload_offer_deliverable(
+pub async fn upload_offer_deliverable_form(
     State(state): State<AppState>,
     user: AuthUser,
     Path(OfferPath { offer_id }): Path<OfferPath>,
@@ -3997,5 +3997,4 @@ pub async fn comment_offer_deliverable(
     }
     let row: serde_json::Value = serde_json::from_str(&update_text).unwrap_or_default();
     Ok(Json(json!({"status":"ok","deliverable": row})))
-}
 }
