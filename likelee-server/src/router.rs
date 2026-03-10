@@ -796,6 +796,24 @@ pub fn build_router(state: AppState) -> Router {
                 .get(crate::brand_campaigns::list_offer_deliverables),
         )
         .route(
+            "/api/campaign-offers/:offer_id/assignments",
+            get(crate::brand_campaigns::list_offer_talent_assignments)
+                .post(crate::brand_campaigns::create_offer_talent_assignment),
+        )
+        .route(
+            "/api/campaign-offers/:offer_id/assignments/:assignment_id",
+            delete(crate::brand_campaigns::delete_offer_talent_assignment),
+        )
+        .route(
+            "/api/campaign-offers/:offer_id/asset-requests",
+            get(crate::brand_campaigns::list_offer_asset_requests)
+                .post(crate::brand_campaigns::create_offer_asset_request),
+        )
+        .route(
+            "/api/campaign-offers/:offer_id/asset-requests/upload",
+            post(crate::brand_campaigns::upload_offer_asset_request_file),
+        )
+        .route(
             "/api/campaign-offers/:offer_id/deliverables/upload",
             post(crate::brand_campaigns::upload_offer_deliverable),
         )
@@ -826,6 +844,14 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/campaign-offers/:offer_id/deliverables/:deliverable_id/comments",
             post(crate::brand_campaigns::comment_offer_deliverable),
+        )
+        .route(
+            "/api/talent/offer-asset-requests",
+            get(crate::brand_campaigns::list_creator_asset_requests),
+        )
+        .route(
+            "/api/talent/offer-asset-requests/:request_id/viewed",
+            post(crate::brand_campaigns::mark_creator_asset_request_viewed),
         )
         .route(
             "/api/brand/campaigns/:campaign_id/license-requests",
