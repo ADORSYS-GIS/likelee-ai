@@ -119,27 +119,6 @@ export default function BrandCampaignDashboard({
   const { toast } = useToast();
   const { user, supabase } = useAuth();
 
-  const API_BASE = (import.meta as any).env.VITE_API_BASE_URL || "";
-  const API_BASE_ABS = (() => {
-    try {
-      if (!API_BASE) return new URL("/", window.location.origin).toString();
-      if (API_BASE.startsWith("http")) return API_BASE;
-      return new URL(API_BASE, window.location.origin).toString();
-    } catch {
-      return new URL("/", window.location.origin).toString();
-    }
-  })();
-  const api = (path: string) => {
-    const normalizedBase = API_BASE_ABS.endsWith("/")
-      ? API_BASE_ABS
-      : `${API_BASE_ABS}/`;
-    let normalizedPath = path.startsWith("/") ? path.slice(1) : path;
-    if (normalizedBase.endsWith("/api/") && normalizedPath.startsWith("api/")) {
-      normalizedPath = normalizedPath.slice("api/".length);
-    }
-    return new URL(normalizedPath, normalizedBase).toString();
-  };
-
   const [showNewCampaignModal, setShowNewCampaignModal] = useState(false);
   const [showInviteAgencyModal, setShowInviteAgencyModal] = useState(false);
   const [showInviteCreatorModal, setShowInviteCreatorModal] = useState(false);
