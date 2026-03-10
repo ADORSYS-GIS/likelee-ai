@@ -958,28 +958,19 @@ pub async fn list_licensed_assets(
 }
 
 /// GET /api/studio/presets
-/// Fetch style presets and motion templates from Kive and Higgsfield
+/// Fetch style presets and motion templates from Fal
 pub async fn list_presets(
-    State(state): State<AppState>,
+    State(_state): State<AppState>,
     _auth_user: AuthUser,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let kive_presets_fut = providers::fetch_kive_presets(&state.kive_api_key, &state.kive_api_url);
-    let higgs_presets_fut =
-        providers::fetch_higgsfield_presets(&state.higgsfield_api_key, &state.higgsfield_api_url);
+    let all_presets = providers::fetch_fal_presets()
+        .await
+        .map_err(|e| {
+            error!(error = %e, "failed to fetch fal presets");
+            (StatusCode::INTERNAL_SERVER_ERROR, "Failed to fetch presets".to_string())
+        })?;
 
-    let (kive_res, higgs_res) = tokio::join!(kive_presets_fut, higgs_presets_fut);
-
-    let mut all_presets = Vec::new();
-
-    match kive_res {
-        Ok(p) => all_presets.extend(p),
-        Err(e) => warn!(error = %e, "failed to fetch kive presets"),
-    }
-
-    match higgs_res {
-        Ok(p) => all_presets.extend(p),
-        Err(e) => warn!(error = %e, "failed to fetch higgsfield presets"),
-    }
+    let mut all_presets = all_presets;
 
     // Sort by name for consistency
     all_presets.sort_by(|a, b| a.name.cmp(&b.name));

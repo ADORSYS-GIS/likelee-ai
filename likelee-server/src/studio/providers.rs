@@ -337,87 +337,57 @@ fn extract_fal_output_urls(result: &JsonValue) -> Vec<String> {
     urls
 }
 
-/// Fetch available style presets (Studios) from Kive
-pub async fn fetch_kive_presets(api_key: &str, api_url: &str) -> Result<Vec<StylePreset>> {
-    if api_key.is_empty() {
-        return Ok(vec![]);
-    }
-
-    let client = reqwest::Client::new();
-    let url = format!("{}/v1/studios", api_url.trim_end_matches('/'));
-
-    let response = client
-        .get(&url)
-        .header("Authorization", format!("Bearer {}", api_key))
-        .send()
-        .await?;
-
-    if !response.status().is_success() {
-        warn!(url = %url, status = %response.status(), "failed to fetch kive presets");
-        return Ok(vec![]);
-    }
-
-    let result: JsonValue = response.json().await?;
+/// Fetch curated style presets and motion templates from Fal
+pub async fn fetch_fal_presets() -> Result<Vec<StylePreset>> {
     let mut presets = Vec::new();
 
-    // Map Kive response to our common StylePreset structure
-    // Expected structure: { data: [{ id, name, description, prompt, preview_image }] }
-    if let Some(data) = result.get("data").and_then(|d| d.as_array()) {
-        for item in data {
-            presets.push(StylePreset {
-                id: item["id"].as_str().unwrap_or_default().to_string(),
-                name: item["name"].as_str().unwrap_or_default().to_string(),
-                description: item["description"].as_str().map(String::from),
-                category: "Kive Studios".to_string(),
-                prompt: item["prompt"].as_str().unwrap_or_default().to_string(),
-                preview_url: item["preview_image"].as_str().map(String::from),
-                provider: "kive".to_string(),
-                metadata: Some(item.clone()),
-            });
-        }
+    // 1. Curated Image Styles (Presets)
+    // Categories: Cinematic, Anime, Digital Art, Photorealistic, Cyberpunk, Aesthetic
+    let image_styles = vec![
+        ("flux-pro-cinematic", "Cinematic Pro", "Masterful cinematic lighting and composition.", "Cinematic", "masterpiece, cinematic lighting, highly detailed, professional photography", "https://fal.media/files/monkey/1.png"),
+        ("flux-dev-anime", "Anime Dream", "High-fidelity anime style with vibrant colors.", "Anime", "anime style, high quality, masterpiece, vivid colors", "https://fal.media/files/elephant/1.png"),
+        ("flux-pro-cyberpunk", "Neon Cyberpunk", "Futuristic cyberpunk aesthetic with neon accents.", "Cyberpunk", "cyberpunk style, neon lights, futuristic city, highly detailed", "https://fal.media/files/lion/1.png"),
+        ("flux-dev-3d", "3D Render", "Clean 3D render look with soft shadows.", "Digital Art", "3d render, octane render, soft lighting, masterpiece", "https://fal.media/files/tiger/1.png"),
+        ("flux-pro-pencil", "Pencil Sketch", "Hand-drawn pencil sketch with fine lines.", "Aesthetic", "pencil sketch, hand drawn, artistic, charcoal style", "https://fal.media/files/bear/1.png"),
+        ("flux-dev-vaporwave", "Vaporwave", "Retro 80s aesthetic with pink and blue hues.", "Aesthetic", "vaporwave aesthetic, retro 80s, synthwave, pink and blue lighting", "https://fal.media/files/koala/1.png"),
+        ("flux-pro-minimal", "Minimalist", "Clean, minimalist composition for a modern look.", "Aesthetic", "minimalist style, clean lines, simple background, modern aesthetic", "https://fal.media/files/panda/1.png"),
+        ("flux-dev-ink", "Ink Wash", "Traditional Japanese ink wash painting style.", "Digital Art", "ink wash painting, traditional japanese style, artistic, sumi-e", "https://fal.media/files/wolf/1.png"),
+    ];
+
+    for (id, name, desc, cat, prompt, preview) in image_styles {
+        presets.push(StylePreset {
+            id: id.to_string(),
+            name: name.to_string(),
+            description: Some(desc.to_string()),
+            category: cat.to_string(),
+            prompt: prompt.to_string(),
+            preview_url: Some(preview.to_string()),
+            provider: "fal".to_string(),
+            metadata: Some(json!({ "type": "image", "model": "fal-ai/flux-pro" })),
+        });
     }
 
-    Ok(presets)
-}
+    // 2. Curated Video Templates (Templates)
+    // Categories: High Motion, Cinematic, Abstract, Social Media
+    let video_templates = vec![
+        ("kling-1.5-cinematic", "Cinematic Motion", "Professional cinematic camera work and fluid motion.", "Cinematic", "cinematic camera movement, masterpiece, professional video quality", "https://fal.media/files/penguin/1.png"),
+        ("ltx-video-fast", "Fast Action", "High-energy motion for dynamic commercial results.", "High Motion", "fast action, dynamic movement, energetic pace", "https://fal.media/files/zebra/1.png"),
+        ("mochi-v1-abstract", "Abstract Flow", "Dreamy, flowing abstract visuals.", "Abstract", "abstract motion, flowing colors, satisfying visuals, masterpiece", "https://fal.media/files/deer/1.png"),
+        ("minimax-video-v2", "Social Portrait", "Optimized for social media vertical formats.", "Social Media", "portrait video, professional social media style, inviting lighting", "https://fal.media/files/fox/1.png"),
+        ("sora-2-epic", "Epic Landscape", "Grand-scale landscape transitions and vistas.", "Epic Landscape", "epic landscape, sweeping camera drone shot, grand scale", "https://fal.media/files/eagle/1.png"),
+    ];
 
-/// Fetch available motion templates from Higgsfield
-pub async fn fetch_higgsfield_presets(api_key: &str, api_url: &str) -> Result<Vec<StylePreset>> {
-    if api_key.is_empty() {
-        return Ok(vec![]);
-    }
-
-    let client = reqwest::Client::new();
-    // Use the Higgsfield motions listing endpoint
-    let url = format!("{}/v1/motions", api_url.trim_end_matches('/'));
-
-    let response = client
-        .get(&url)
-        .header("Authorization", format!("Bearer {}", api_key))
-        .send()
-        .await?;
-
-    if !response.status().is_success() {
-        warn!(url = %url, status = %response.status(), "failed to fetch higgsfield presets");
-        return Ok(vec![]);
-    }
-
-    let result: JsonValue = response.json().await?;
-    let mut presets = Vec::new();
-
-    // Mapping according to research: [{ id, name, description, category, preview_video, text_prompt }]
-    if let Some(arr) = result.as_array() {
-        for item in arr {
-            presets.push(StylePreset {
-                id: item["id"].as_str().unwrap_or_default().to_string(),
-                name: item["name"].as_str().unwrap_or_default().to_string(),
-                description: item["description"].as_str().map(String::from),
-                category: item["category"].as_str().unwrap_or("Cinematic").to_string(),
-                prompt: item["text_prompt"].as_str().unwrap_or_default().to_string(),
-                preview_url: item["preview_video"].as_str().map(String::from),
-                provider: "higgsfield".to_string(),
-                metadata: Some(item.clone()),
-            });
-        }
+    for (id, name, desc, cat, prompt, preview) in video_templates {
+        presets.push(StylePreset {
+            id: id.to_string(),
+            name: name.to_string(),
+            description: Some(desc.to_string()),
+            category: cat.to_string(),
+            prompt: prompt.to_string(),
+            preview_url: Some(preview.to_string()),
+            provider: "fal".to_string(),
+            metadata: Some(json!({ "type": "video", "model": id })),
+        });
     }
 
     Ok(presets)
