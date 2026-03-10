@@ -800,6 +800,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::brand_campaigns::upload_offer_deliverable),
         )
         .route(
+            "/api/campaign-offers/:offer_id/deliverables/upload-form",
+            post(crate::brand_campaigns::upload_offer_deliverable_form),
+        )
+        .route(
             "/api/campaign-offers/:offer_id/deliverables/submit",
             post(crate::brand_campaigns::submit_draft_deliverables),
         )
