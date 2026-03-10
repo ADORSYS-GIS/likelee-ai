@@ -762,7 +762,7 @@ export const uploadOfferDeliverable = (
   fd.append("file", data.file);
   if (data.caption) fd.append("caption", data.caption);
   return base44Client.post(
-    `/api/campaign-offers/${offerId}/deliverables/upload`,
+    `/api/campaign-offers/${offerId}/deliverables/upload-form`,
     fd,
   );
 };
