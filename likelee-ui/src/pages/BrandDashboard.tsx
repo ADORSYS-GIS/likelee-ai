@@ -58,6 +58,7 @@ import {
   Loader2,
   MessageSquare,
   RefreshCw,
+  Trash2,
 } from "lucide-react";
 import {
   reviewOfferDeliverable,
@@ -795,6 +796,7 @@ export default function BrandDashboard() {
                 contracts.map(async (contract: any) => {
                   const contractId = String(contract?.id || "").trim();
                   if (!contractId) return contract;
+                  if (!contract?.docuseal_submission_id) return contract;
                   try {
                     const refreshed = await base44.post<{ contract?: any }>(
                       `/api/campaign-offers/${offerId}/contracts/${contractId}/refresh`,
@@ -2672,6 +2674,7 @@ export default function BrandDashboard() {
         contracts.map(async (contract: any) => {
           const contractId = String(contract?.id || "").trim();
           if (!contractId) return contract;
+          if (!contract?.docuseal_submission_id) return contract;
           try {
             const refreshed = await base44.post<{ contract?: any }>(
               `/api/campaign-offers/${offerId}/contracts/${contractId}/refresh`,
@@ -3000,9 +3003,6 @@ export default function BrandDashboard() {
           );
         })}
       </div>
-    </div >
-  );
-
       <Card className="p-4 bg-white border border-gray-300 rounded-none">
         {loadingContractHubRows ? (
           <p className="text-sm text-gray-500">Loading submissions</p>
@@ -3044,7 +3044,9 @@ export default function BrandDashboard() {
                         )}
                       >
                         {String(row?.docuseal_status || "").toLowerCase() ===
-                          "sent" && <Mail className="h-3.5 w-3.5 mr-1.5" />}
+                          "sent" && (
+                          <Mail className="h-3.5 w-3.5 mr-1.5" />
+                        )}
                         {String(row?.docuseal_status || "").toLowerCase() ===
                           "signed" && (
                           <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
@@ -3189,6 +3191,15 @@ export default function BrandDashboard() {
         {brandOfferItems.map((offer: any) => {
           const offerId = String(offer?.id || "");
           const expanded = selectedOfferHubId === offerId;
+          const offerDeliverables =
+            selectedOfferHubId === offerId ? selectedOfferHubDeliverables : [];
+          const reviewedCount = offerDeliverables.filter((d: any) => {
+            const st = String(d?.status || "").toLowerCase();
+            return st !== "" && st !== "submitted" && st !== "draft";
+          }).length;
+          const approvedCount = offerDeliverables.filter(
+            (d: any) => String(d?.status || "").toLowerCase() === "approved",
+          ).length;
           return (
             <div
               key={offerId}
@@ -3221,7 +3232,7 @@ export default function BrandDashboard() {
                     {String(offer?.status || "sent").replace(/_/g, " ")}
                   </Badge>
                   <Badge className="bg-gray-100 text-gray-700 border border-gray-200">
-                    {totalCount} reviewed
+                    {reviewedCount} reviewed
                   </Badge>
                   <Badge className="bg-emerald-100 text-emerald-700 border border-emerald-200">
                     {approvedCount} approved
