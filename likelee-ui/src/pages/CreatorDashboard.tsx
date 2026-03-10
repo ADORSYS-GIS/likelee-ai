@@ -124,7 +124,6 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
-import { DeliverablesTab } from "@/components/Talent/DeliverablesTab";
 import { DocusealForm } from "@docuseal/react";
 
 import { useTranslation } from "react-i18next";
