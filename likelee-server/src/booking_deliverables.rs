@@ -656,6 +656,7 @@ pub async fn submit_to_brand(
             "brand_id": brand_id,
             "agency_id": user.id,
             "creator_id": del.get("creator_id"),
+            "submitted_by_role": "agency",
             "submitted_by": user.id,
             "asset_url": del.get("asset_url"),
             "asset_type": del.get("asset_type").unwrap_or(&json!("image")),
