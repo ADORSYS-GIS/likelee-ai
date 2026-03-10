@@ -12,7 +12,12 @@ import {
   type CreatorAgencyConnection,
   type CreatorAgencyInvite,
 } from "@/api/creatorAgencyConnection";
-import { listTalentAgencyInvites, listTalentBookings } from "@/api/functions";
+import {
+  listTalentAgencyInvites,
+  listTalentAssetRequests,
+  listTalentBookings,
+  markTalentAssetRequestViewed,
+} from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -108,6 +113,7 @@ import {
   Ban,
   BadgeCheck,
   Sparkles,
+  ChevronDown,
 } from "lucide-react";
 import {
   LineChart,
@@ -806,6 +812,16 @@ export default function CreatorDashboard() {
   );
   const [brandConnections, setBrandConnections] = useState<any[]>([]);
   const [brandOffers, setBrandOffers] = useState<any[]>([]);
+  const [assetRequests, setAssetRequests] = useState<any[]>([]);
+  const [offerDeliverablesById, setOfferDeliverablesById] = useState<
+    Record<string, any[]>
+  >({});
+  const [loadingOfferDeliverablesById, setLoadingOfferDeliverablesById] =
+    useState<Record<string, boolean>>({});
+  const [expandedAssetRequests, setExpandedAssetRequests] = useState<Set<string>>(
+    new Set(),
+  );
+  const [assetRequestsInitialized, setAssetRequestsInitialized] = useState(false);
   const [bookings, setBookings] = useState<any[]>([]);
   const [creatorCampaigns, setCreatorCampaigns] = useState<any[]>([]);
   const [brandConnectionSubTab, setBrandConnectionSubTab] = useState<
@@ -830,9 +846,17 @@ export default function CreatorDashboard() {
   const [offerActionLoading, setOfferActionLoading] = useState(false);
   const [loadingBrandOffers, setLoadingBrandOffers] = useState(false);
   const [loadingOfferDetails, setLoadingOfferDetails] = useState(false);
+  const [loadingAssetRequests, setLoadingAssetRequests] = useState(false);
   const [sendDeliverableOpen, setSendDeliverableOpen] = useState(false);
   const [sendDeliverableBrandId, setSendDeliverableBrandId] = useState("");
   const [sendDeliverableOfferId, setSendDeliverableOfferId] = useState("");
+  const [sendDeliverableRequestId, setSendDeliverableRequestId] = useState("");
+  const [sendDeliverableRequestMeta, setSendDeliverableRequestMeta] = useState<{
+    agency_name?: string;
+    agency_logo_url?: string;
+    offer_title?: string;
+    campaign_name?: string;
+  } | null>(null);
   const [sendDeliverableFiles, setSendDeliverableFiles] = useState<File[]>([]);
   const [sendDeliverablePreviewUrls, setSendDeliverablePreviewUrls] = useState<
     string[]
@@ -915,6 +939,16 @@ export default function CreatorDashboard() {
       return Array.isArray(offersResp?.offers) ? offersResp.offers : [];
     } finally {
       setLoadingBrandOffers(false);
+    }
+  };
+
+  const loadAssetRequests = async () => {
+    setLoadingAssetRequests(true);
+    try {
+      const resp = await listTalentAssetRequests();
+      return Array.isArray((resp as any)?.requests) ? (resp as any).requests : [];
+    } finally {
+      setLoadingAssetRequests(false);
     }
   };
 
@@ -1035,11 +1069,13 @@ export default function CreatorDashboard() {
           { connections, invites },
           { requests, connections: brandConnected },
           offers,
+          assetRequestsResp,
           bookingsData,
         ] = await Promise.all([
           loadAgencyConnectionData(),
           loadBrandConnectionData(),
           loadBrandOffers().catch(() => []),
+          loadAssetRequests().catch(() => []),
           loadBookings().catch(() => ({ bookings: [], campaigns: [] })),
         ]);
         if (!active) return;
@@ -1048,6 +1084,49 @@ export default function CreatorDashboard() {
         setBrandConnectionRequests(requests);
         setBrandConnections(brandConnected);
         setBrandOffers(Array.isArray(offers) ? offers : []);
+        const assets = Array.isArray(assetRequestsResp) ? assetRequestsResp : [];
+        setAssetRequests(assets);
+        const offerIds = Array.from(
+          new Set(
+            assets
+              .map((req: any) =>
+                String(req?.offer_id || req?.campaign_offers?.id || ""),
+              )
+              .filter(Boolean),
+          ),
+        );
+        if (offerIds.length > 0) {
+          await Promise.all(
+            offerIds.map(async (offerId) => {
+              setLoadingOfferDeliverablesById((prev) => ({
+                ...prev,
+                [offerId]: true,
+              }));
+              try {
+                const resp = await base44.get<{ deliverables?: any[] }>(
+                  `/api/campaign-offers/${offerId}/deliverables`,
+                );
+                const rows = Array.isArray(resp?.deliverables)
+                  ? resp.deliverables
+                  : [];
+                setOfferDeliverablesById((prev) => ({
+                  ...prev,
+                  [offerId]: rows,
+                }));
+              } catch {
+                setOfferDeliverablesById((prev) => ({
+                  ...prev,
+                  [offerId]: [],
+                }));
+              } finally {
+                setLoadingOfferDeliverablesById((prev) => ({
+                  ...prev,
+                  [offerId]: false,
+                }));
+              }
+            }),
+          );
+        }
         setBookings(Array.isArray(bookingsData.bookings) ? bookingsData.bookings : []);
         setCreatorCampaigns(Array.isArray(bookingsData.campaigns) ? bookingsData.campaigns : []);
       } catch (e: any) {
@@ -1063,6 +1142,12 @@ export default function CreatorDashboard() {
     };
   }, [initialized, authenticated]);
   useEffect(() => {
+    if (assetRequestsInitialized) return;
+    if (assetRequests.length === 0) return;
+    setExpandedAssetRequests(new Set());
+    setAssetRequestsInitialized(true);
+  }, [assetRequests, assetRequestsInitialized]);
+  useEffect(() => {
     return () => {
       sendDeliverablePreviewUrls.forEach((url) => {
         if (String(url).startsWith("blob:")) URL.revokeObjectURL(url);
@@ -1072,16 +1157,23 @@ export default function CreatorDashboard() {
 
   useEffect(() => {
     if (!initialized || !authenticated) return;
-    if (activeSection !== "brand-connection") return;
+    if (
+      activeSection !== "brand-connection" &&
+      activeSection !== "agency-connection"
+    ) {
+      return;
+    }
     let active = true;
     (async () => {
       try {
         const { requests, connections } = await loadBrandConnectionData();
         const offers = await loadBrandOffers().catch(() => []);
+        const assets = await loadAssetRequests().catch(() => []);
         if (!active) return;
         setBrandConnectionRequests(requests);
         setBrandConnections(connections);
         setBrandOffers(Array.isArray(offers) ? offers : []);
+        setAssetRequests(Array.isArray(assets) ? assets : []);
       } catch (e) {
         if (!active) return;
         console.error("Failed to refresh brand connection data", e);
@@ -1099,10 +1191,12 @@ export default function CreatorDashboard() {
       try {
         const { requests, connections } = await loadBrandConnectionData();
         const offers = await loadBrandOffers().catch(() => []);
+        const assets = await loadAssetRequests().catch(() => []);
         if (!active) return;
         setBrandConnectionRequests(requests);
         setBrandConnections(connections);
         setBrandOffers(Array.isArray(offers) ? offers : []);
+        setAssetRequests(Array.isArray(assets) ? assets : []);
       } catch (e) {
         if (!active) return;
         console.error("Failed to poll brand connection data", e);
@@ -4954,10 +5048,58 @@ export default function CreatorDashboard() {
     </div>
   );
 
+  const deliverableStatusBadgeClass = (statusRaw: unknown) => {
+    const status = String(statusRaw || "").toLowerCase();
+    if (["approved", "accepted"].includes(status)) {
+      return "bg-emerald-100 text-emerald-700 border border-emerald-300";
+    }
+    if (
+      ["changes_requested", "needs_changes", "request_review"].includes(status)
+    ) {
+      return "bg-amber-100 text-amber-700 border border-amber-300";
+    }
+    if (
+      [
+        "submitted",
+        "deliverables_submitted",
+        "in_review",
+        "pending_review",
+        "brand_approved",
+      ].includes(status)
+    ) {
+      return "bg-blue-100 text-blue-700 border border-blue-300";
+    }
+    if (["declined", "rejected"].includes(status)) {
+      return "bg-red-100 text-red-700 border border-red-300";
+    }
+    return "bg-gray-100 text-gray-700 border border-gray-300";
+  };
+
+  const deliverableIsImage = (deliverable: any) => {
+    const type = String(deliverable?.asset_type || "").toLowerCase();
+    if (type === "image" || type.startsWith("image/")) return true;
+    const contentType = String(deliverable?.meta?.content_type || "").toLowerCase();
+    if (contentType.startsWith("image/")) return true;
+    const url = String(deliverable?.asset_url || "").toLowerCase();
+    return /\.(png|jpg|jpeg|webp|gif|bmp|svg)(\?.*)?$/.test(url);
+  };
+
+  const deliverableIsVideo = (deliverable: any) => {
+    const type = String(deliverable?.asset_type || "").toLowerCase();
+    if (type === "video" || type.startsWith("video/")) return true;
+    const contentType = String(deliverable?.meta?.content_type || "").toLowerCase();
+    if (contentType.startsWith("video/")) return true;
+    const url = String(deliverable?.asset_url || "").toLowerCase();
+    return /\.(mp4|mov|webm|m4v)(\?.*)?$/.test(url);
+  };
+
   const renderAgencyConnection = () => {
     const pending = agencyInvites.filter((i) => i.status === "pending");
     const isTalent =
       (profile as any)?.role === "talent" || agencyConnections.length > 0;
+    const unseenAssetRequestCount = assetRequests.filter(
+      (req: any) => String(req?.status || "").toLowerCase() === "sent",
+    ).length;
 
     const disconnectLabel =
       disconnectTarget?.agency_name ||
@@ -5263,6 +5405,242 @@ export default function CreatorDashboard() {
             </div>
           )}
         </Card>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="text-lg font-semibold text-gray-900">
+                Asset Requests
+              </div>
+              <div className="text-sm text-gray-600 mt-1">
+                Upload deliverables for agency requests.
+              </div>
+            </div>
+            {unseenAssetRequestCount > 0 && (
+              <Badge className="bg-[#32C8D1] text-white">
+                {unseenAssetRequestCount}
+              </Badge>
+            )}
+          </div>
+          <div className="mt-6 space-y-4">
+            {loadingAssetRequests && (
+              <p className="text-sm text-gray-600">Loading requests...</p>
+            )}
+            {!loadingAssetRequests && assetRequests.length === 0 && (
+              <p className="text-sm text-gray-600">No asset requests yet.</p>
+            )}
+            {assetRequests.map((req: any) => {
+              const offer = req?.campaign_offers || {};
+              const offerId = String(req?.offer_id || offer?.id || "");
+              const reqId = String(req?.id || "");
+              const agencyName = req?.agencies?.agency_name || "Agency";
+              const agencyLogo = req?.agencies?.logo_url || "";
+              const requestTitle = String(req?.title || "Asset request");
+              const offerDeliverables = offerId
+                ? offerDeliverablesById[offerId] || []
+                : [];
+              const requestDeliverables = offerDeliverables.filter((d: any) =>
+                String(d?.asset_request_id || "") === reqId &&
+                String(d?.submitted_by_role || "") === "creator",
+              );
+              const isExpanded = expandedAssetRequests.has(reqId);
+              return (
+                <div
+                  key={String(req?.id)}
+                  className="border border-gray-200 rounded-lg p-4 bg-white space-y-2"
+                >
+                  <button
+                    type="button"
+                    className="w-full flex items-start justify-between gap-3 text-left"
+                    onClick={() => {
+                      const next = new Set(expandedAssetRequests);
+                      if (next.has(reqId)) next.delete(reqId);
+                      else next.add(reqId);
+                      setExpandedAssetRequests(next);
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
+                        {agencyLogo ? (
+                          <img
+                            src={String(agencyLogo)}
+                            alt={agencyName}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          agencyName.slice(0, 1).toUpperCase()
+                        )}
+                      </div>
+                        <div>
+                          <div className="font-semibold text-gray-900">
+                            {requestTitle}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                          {agencyName} •{" "}
+                          {offer?.offer_title ||
+                            offer?.brand_campaigns?.name ||
+                            "Campaign"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="capitalize">
+                        {String(req?.status || "sent").replace(/_/g, " ")}
+                      </Badge>
+                      <ChevronDown
+                        className={`w-4 h-4 text-gray-400 transition-transform ${
+                          isExpanded ? "rotate-180" : ""
+                        }`}
+                      />
+                    </div>
+                  </button>
+                  {isExpanded && (
+                    <>
+                      {req?.message && (
+                        <p className="text-sm text-gray-700">
+                          {String(req.message)}
+                        </p>
+                      )}
+                      {req?.file_url && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-gray-200"
+                          onClick={() =>
+                            window.open(String(req.file_url), "_blank")
+                          }
+                        >
+                          <FileText className="w-4 h-4 mr-2" /> View PDF
+                        </Button>
+                      )}
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        <Button
+                          size="sm"
+                          onClick={async () => {
+                            if (!offerId) return;
+                            setSendDeliverableBrandId(
+                              String(offer?.brand_id || ""),
+                            );
+                            setSendDeliverableOfferId(offerId);
+                            setSendDeliverableRequestId(String(req?.id || ""));
+                            setSendDeliverableRequestMeta({
+                              agency_name: agencyName,
+                              agency_logo_url: agencyLogo,
+                              offer_title: offer?.offer_title || undefined,
+                              campaign_name:
+                                offer?.brand_campaigns?.name || undefined,
+                            });
+                            setSendDeliverableOpen(true);
+                            try {
+                              if (
+                                String(req?.status || "").toLowerCase() === "sent"
+                              ) {
+                                await markTalentAssetRequestViewed(
+                                  String(req?.id || ""),
+                                );
+                              }
+                            } catch {}
+                          }}
+                        >
+                          Upload Deliverables
+                        </Button>
+                      </div>
+                      <div className="pt-2 border-t border-gray-100">
+                        <div className="flex items-center justify-between text-xs font-semibold text-gray-700 mb-2">
+                          <span>Your deliverables</span>
+                        </div>
+                        {loadingOfferDeliverablesById[offerId] && (
+                          <p className="text-xs text-gray-500">
+                            Loading deliverables...
+                          </p>
+                        )}
+                        {!loadingOfferDeliverablesById[offerId] &&
+                          requestDeliverables.length === 0 && (
+                            <p className="text-xs text-gray-500">
+                              No deliverables submitted yet.
+                            </p>
+                          )}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
+                          {requestDeliverables.map((deliverable: any) => {
+                            const assetUrl = String(deliverable?.asset_url || "");
+                            const caption =
+                              String(deliverable?.caption || "").trim() ||
+                              String(deliverable?.meta?.original_name || "").trim();
+                            const agencyNote = String(
+                              deliverable?.agency_review_note || "",
+                            ).trim();
+                            const brandNote = String(
+                              deliverable?.brand_review_note || "",
+                            ).trim();
+                            return (
+                              <div
+                                key={String(deliverable?.id)}
+                                className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm"
+                              >
+                                <div className="relative aspect-[4/5] bg-gray-100">
+                                  {assetUrl && deliverableIsImage(deliverable) && (
+                                    <img
+                                      src={assetUrl}
+                                      alt={caption || "Deliverable"}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  )}
+                                  {assetUrl && deliverableIsVideo(deliverable) && (
+                                    <video
+                                      src={assetUrl}
+                                      controls
+                                      className="w-full h-full object-cover bg-black"
+                                    />
+                                  )}
+                                  <div className="absolute top-2 left-2">
+                                    <Badge
+                                      className={`text-[11px] ${deliverableStatusBadgeClass(
+                                        deliverable?.status || "submitted",
+                                      )}`}
+                                    >
+                                      {String(deliverable?.status || "submitted")}
+                                    </Badge>
+                                  </div>
+                                </div>
+                                <div className="p-3 space-y-2">
+                                  <div className="text-xs text-gray-700 font-medium">
+                                    {caption || "Deliverable"}
+                                  </div>
+                                  {agencyNote && (
+                                    <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-100 rounded p-2">
+                                      <strong>Agency Feedback:</strong> {agencyNote}
+                                    </div>
+                                  )}
+                                  {brandNote && (
+                                    <div className="text-[11px] text-blue-800 bg-blue-50 border border-blue-100 rounded p-2">
+                                      <strong>Brand Feedback:</strong> {brandNote}
+                                    </div>
+                                  )}
+                                  {assetUrl &&
+                                    !deliverableIsImage(deliverable) &&
+                                    !deliverableIsVideo(deliverable) && (
+                                      <a
+                                        href={assetUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-xs text-blue-600 underline"
+                                      >
+                                        Open file
+                                      </a>
+                                    )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </Card>
       </div>
     );
   };
@@ -5335,7 +5713,9 @@ export default function CreatorDashboard() {
       0,
     );
     const totalBrandConnectionNotifications =
-      unseenRequestCount + unseenOfferCount + unseenDeliverableFeedbackCount;
+      unseenRequestCount +
+      unseenOfferCount +
+      unseenDeliverableFeedbackCount;
     const formatStatus = (status: unknown) =>
       String(status || "sent")
         .replace(/_/g, " ")
@@ -5355,33 +5735,6 @@ export default function CreatorDashboard() {
         return "bg-amber-100 text-amber-700 border border-amber-300";
       }
       if (status === "declined") {
-        return "bg-red-100 text-red-700 border border-red-300";
-      }
-      return "bg-gray-100 text-gray-700 border border-gray-300";
-    };
-    const deliverableStatusBadgeClass = (statusRaw: unknown) => {
-      const status = String(statusRaw || "").toLowerCase();
-      if (["approved", "accepted"].includes(status)) {
-        return "bg-emerald-100 text-emerald-700 border border-emerald-300";
-      }
-      if (
-        ["changes_requested", "needs_changes", "request_review"].includes(
-          status,
-        )
-      ) {
-        return "bg-amber-100 text-amber-700 border border-amber-300";
-      }
-      if (
-        [
-          "submitted",
-          "deliverables_submitted",
-          "in_review",
-          "pending_review",
-        ].includes(status)
-      ) {
-        return "bg-blue-100 text-blue-700 border border-blue-300";
-      }
-      if (["declined", "rejected"].includes(status)) {
         return "bg-red-100 text-red-700 border border-red-300";
       }
       return "bg-gray-100 text-gray-700 border border-gray-300";
@@ -5462,16 +5815,6 @@ export default function CreatorDashboard() {
       if (normalized.startsWith("video/")) return "video";
       if (normalized.startsWith("audio/")) return "audio";
       return "file";
-    };
-    const deliverableIsImage = (deliverable: any) => {
-      const type = String(deliverable?.asset_type || "").toLowerCase();
-      if (type === "image" || type.startsWith("image/")) return true;
-      const contentType = String(
-        deliverable?.meta?.content_type || "",
-      ).toLowerCase();
-      if (contentType.startsWith("image/")) return true;
-      const url = String(deliverable?.asset_url || "").toLowerCase();
-      return /\.(png|jpg|jpeg|webp|gif|bmp|svg)(\?.*)?$/.test(url);
     };
     const selectedBriefOffer = brandOffers.find(
       (offer: any) => String(offer?.id || "") === selectedOfferBriefId,
@@ -5778,6 +6121,7 @@ export default function CreatorDashboard() {
               caption: file.name,
               brand_id: selectedOfferBrandId || sendDeliverableBrandId || "",
               brand_campaign_id: String(selectedOffer?.brand_campaign_id || ""),
+              asset_request_id: sendDeliverableRequestId || undefined,
               meta: {
                 original_name: file.name,
                 content_type: file.type,
@@ -5792,6 +6136,7 @@ export default function CreatorDashboard() {
         setSendDeliverableOpen(false);
         setSendDeliverableBrandId("");
         setSendDeliverableOfferId("");
+        setSendDeliverableRequestId("");
         setSendDeliverableFiles([]);
         sendDeliverablePreviewUrls.forEach((url) => {
           if (String(url).startsWith("blob:")) URL.revokeObjectURL(url);
@@ -6747,7 +7092,11 @@ export default function CreatorDashboard() {
                 </div>
                 <Button
                   className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                  onClick={() => setSendDeliverableOpen(true)}
+                  onClick={() => {
+                    setSendDeliverableRequestId("");
+                    setSendDeliverableRequestMeta(null);
+                    setSendDeliverableOpen(true);
+                  }}
                 >
                   Send deliverable
                 </Button>
@@ -6800,22 +7149,31 @@ export default function CreatorDashboard() {
                           selectedOfferDeliverables.map((deliverable: any) => (
                             <div
                               key={String(deliverable?.id)}
-                              className="text-xs text-gray-700 mb-2 border border-gray-100 rounded-md p-2 bg-gray-50"
+                              className="text-xs text-gray-700 mb-3 border border-gray-200 rounded-md p-3 bg-white"
                             >
                               <div className="flex items-center gap-2">
                                 <span className="font-medium text-gray-900">
                                   {String(deliverable?.asset_type || "file")}
                                 </span>
                                 <Badge
-                                  className={`text-[11px] ${deliverableStatusBadgeClass(deliverable?.status || "submitted")}`}
+                                  className={`text-[11px] ${deliverableStatusBadgeClass(
+                                    deliverable?.status || "submitted",
+                                  )}`}
                                 >
                                   {formatStatus(
                                     deliverable?.status || "submitted",
                                   )}
                                 </Badge>
                               </div>
+                              <div className="mt-1 text-[11px] text-gray-600">
+                                {String(
+                                  deliverable?.caption ||
+                                    deliverable?.meta?.original_name ||
+                                    "Deliverable image",
+                                )}
+                              </div>
                               {deliverable?.asset_url && (
-                                <div className="mt-2 space-y-2">
+                                <div className="mt-2">
                                   {deliverableIsImage(deliverable) && (
                                     <img
                                       src={String(deliverable.asset_url)}
@@ -6827,59 +7185,15 @@ export default function CreatorDashboard() {
                                       className="h-28 w-auto max-w-full rounded border border-gray-200 object-cover bg-white"
                                     />
                                   )}
+                                  {deliverableIsVideo(deliverable) && (
+                                    <video
+                                      src={String(deliverable.asset_url)}
+                                      controls
+                                      className="h-32 w-auto max-w-full rounded border border-gray-200 bg-black"
+                                    />
+                                  )}
                                 </div>
                               )}
-                              {Array.isArray(
-                                deliverable?.meta?.feedback_comments,
-                              ) &&
-                                deliverable.meta.feedback_comments.length >
-                                  0 && (
-                                  <div className="mt-2 border-t border-gray-200 pt-2 space-y-1">
-                                    <p className="font-semibold text-gray-900">
-                                      Comments &amp; Feedback
-                                    </p>
-                                    {deliverable.meta.feedback_comments.map(
-                                      (comment: any) => (
-                                        <div
-                                          key={String(
-                                            comment?.id || Math.random(),
-                                          )}
-                                          className="rounded border border-gray-200 bg-white px-2 py-1"
-                                        >
-                                          <p className="font-medium text-gray-900">
-                                            {(() => {
-                                              const role = String(
-                                                comment?.author_role || "",
-                                              ).toLowerCase();
-                                              if (
-                                                role === "brand" ||
-                                                role === "agency"
-                                              ) {
-                                                return resolveOfferBrandName(
-                                                  offer,
-                                                );
-                                              }
-                                              if (role === "creator") {
-                                                return "You";
-                                              }
-                                              const explicitName =
-                                                normalizeDisplayName(
-                                                  comment?.author_name,
-                                                ) ||
-                                                normalizeDisplayName(
-                                                  comment?.author_role,
-                                                );
-                                              return explicitName || "System";
-                                            })()}
-                                          </p>
-                                          <p>
-                                            {String(comment?.message || "")}
-                                          </p>
-                                        </div>
-                                      ),
-                                    )}
-                                  </div>
-                                )}
                             </div>
                           ))
                         )}
@@ -6898,6 +7212,8 @@ export default function CreatorDashboard() {
             setSendDeliverableOpen(open);
             if (!open) {
               setSendDeliverableFiles([]);
+              setSendDeliverableRequestId("");
+              setSendDeliverableRequestMeta(null);
               sendDeliverablePreviewUrls.forEach((url) => {
                 if (String(url).startsWith("blob:")) URL.revokeObjectURL(url);
               });
@@ -6909,11 +7225,39 @@ export default function CreatorDashboard() {
             <DialogHeader>
               <DialogTitle>Send deliverable</DialogTitle>
               <DialogDescription>
-                Upload a deliverable, choose the connected brand, and select the
-                campaign offer.
+                {sendDeliverableRequestId
+                  ? "Upload deliverables for the agency request."
+                  : "Upload a deliverable, choose the connected brand, and select the campaign offer."}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
+              {sendDeliverableRequestId && sendDeliverableRequestMeta && (
+                <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-white border border-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
+                    {sendDeliverableRequestMeta.agency_logo_url ? (
+                      <img
+                        src={sendDeliverableRequestMeta.agency_logo_url}
+                        alt={sendDeliverableRequestMeta.agency_name || "Agency"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      String(sendDeliverableRequestMeta.agency_name || "A")
+                        .slice(0, 1)
+                        .toUpperCase()
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900">
+                      {sendDeliverableRequestMeta.agency_name || "Agency"}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {sendDeliverableRequestMeta.offer_title ||
+                        sendDeliverableRequestMeta.campaign_name ||
+                        "Campaign offer"}
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="deliverable-upload">Upload deliverables</Label>
                 <Input
@@ -6929,7 +7273,10 @@ export default function CreatorDashboard() {
                     ];
                     const nextPreviewUrls = [...sendDeliverablePreviewUrls];
                     selectedFiles.forEach((file) => {
-                      if (file.type.startsWith("image/")) {
+                      if (
+                        file.type.startsWith("image/") ||
+                        file.type.startsWith("video/")
+                      ) {
                         nextPreviewUrls.push(URL.createObjectURL(file));
                       } else {
                         nextPreviewUrls.push("");
@@ -6952,11 +7299,21 @@ export default function CreatorDashboard() {
                         className="border border-gray-200 rounded-md p-2 bg-white"
                       >
                         {sendDeliverablePreviewUrls[idx] ? (
-                          <img
-                            src={sendDeliverablePreviewUrls[idx]}
-                            alt={`Deliverable preview ${idx + 1}`}
-                            className="h-32 w-auto max-w-full rounded border border-gray-200 object-cover bg-white"
-                          />
+                          sendDeliverableFiles[idx]?.type?.startsWith(
+                            "video/",
+                          ) ? (
+                            <video
+                              src={sendDeliverablePreviewUrls[idx]}
+                              controls
+                              className="h-40 w-auto max-w-full rounded border border-gray-200 bg-black"
+                            />
+                          ) : (
+                            <img
+                              src={sendDeliverablePreviewUrls[idx]}
+                              alt={`Deliverable preview ${idx + 1}`}
+                              className="h-32 w-auto max-w-full rounded border border-gray-200 object-cover bg-white"
+                            />
+                          )
                         ) : null}
                         <div className="mt-2 flex items-center justify-between gap-2">
                           <p className="text-xs text-gray-700 truncate">
@@ -6988,63 +7345,67 @@ export default function CreatorDashboard() {
                   </div>
                 )}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="deliverable-brand">Select brand</Label>
-                <select
-                  id="deliverable-brand"
-                  value={sendDeliverableBrandId}
-                  onChange={(e) => {
-                    setSendDeliverableBrandId(e.target.value);
-                    setSendDeliverableOfferId("");
-                  }}
-                  className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
-                >
-                  <option value="">Select connected brand</option>
-                  {brandConnections.map((c: any) => (
-                    <option
-                      key={String(c?.brand_id || c?.id)}
-                      value={String(c?.brand_id || "")}
+              {!sendDeliverableRequestId && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="deliverable-brand">Select brand</Label>
+                    <select
+                      id="deliverable-brand"
+                      value={sendDeliverableBrandId}
+                      onChange={(e) => {
+                        setSendDeliverableBrandId(e.target.value);
+                        setSendDeliverableOfferId("");
+                      }}
+                      className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
                     >
-                      {resolveConnectedBrandName(c)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="deliverable-campaign">Select campaign</Label>
-                <select
-                  id="deliverable-campaign"
-                  value={sendDeliverableOfferId}
-                  onChange={(e) => {
-                    const offerId = e.target.value;
-                    setSendDeliverableOfferId(offerId);
-                    const selected = brandOffers.find(
-                      (offer: any) => String(offer?.id || "") === offerId,
-                    );
-                    const selectedBrandId = String(selected?.brand_id || "");
-                    if (selectedBrandId) {
-                      setSendDeliverableBrandId(selectedBrandId);
-                    }
-                  }}
-                  className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
-                >
-                  <option value="">Select campaign offer</option>
-                  {campaignOptions.map((offer: any) => (
-                    <option key={String(offer?.id)} value={String(offer?.id)}>
-                      {String(
-                        offer?.brand_campaigns?.name ||
-                          offer?.offer_title ||
-                          "Campaign offer",
-                      )}
-                    </option>
-                  ))}
-                </select>
-                {sendDeliverableBrandId && campaignOptions.length === 0 && (
-                  <p className="text-xs text-amber-700">
-                    No campaign offers found for this brand yet.
-                  </p>
-                )}
-              </div>
+                      <option value="">Select connected brand</option>
+                      {brandConnections.map((c: any) => (
+                        <option
+                          key={String(c?.brand_id || c?.id)}
+                          value={String(c?.brand_id || "")}
+                        >
+                          {resolveConnectedBrandName(c)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="deliverable-campaign">Select campaign</Label>
+                    <select
+                      id="deliverable-campaign"
+                      value={sendDeliverableOfferId}
+                      onChange={(e) => {
+                        const offerId = e.target.value;
+                        setSendDeliverableOfferId(offerId);
+                        const selected = brandOffers.find(
+                          (offer: any) => String(offer?.id || "") === offerId,
+                        );
+                        const selectedBrandId = String(selected?.brand_id || "");
+                        if (selectedBrandId) {
+                          setSendDeliverableBrandId(selectedBrandId);
+                        }
+                      }}
+                      className="w-full h-10 rounded-md border border-gray-300 px-3 text-sm"
+                    >
+                      <option value="">Select campaign offer</option>
+                      {campaignOptions.map((offer: any) => (
+                        <option key={String(offer?.id)} value={String(offer?.id)}>
+                          {String(
+                            offer?.brand_campaigns?.name ||
+                              offer?.offer_title ||
+                              "Campaign offer",
+                          )}
+                        </option>
+                      ))}
+                    </select>
+                    {sendDeliverableBrandId && campaignOptions.length === 0 && (
+                      <p className="text-xs text-amber-700">
+                        No campaign offers found for this brand yet.
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
             <DialogFooter className="mt-3">
               <Button
