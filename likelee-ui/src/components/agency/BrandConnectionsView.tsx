@@ -6,10 +6,29 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
-import { Link2Off, Eye, CheckCircle2, ArrowLeft, FileText } from "lucide-react";
+import {
+  Link2Off,
+  Eye,
+  CheckCircle2,
+  ArrowLeft,
+  FileText,
+  User,
+  Check,
+  Search,
+} from "lucide-react";
 import { CampaignBriefView } from "@/components/campaign-offers/CampaignBriefView";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Plus, RefreshCw, Trash2, Send, Wand2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 const BrandConnectionsView = () => {
   const { toast } = useToast();
@@ -33,6 +52,31 @@ const BrandConnectionsView = () => {
   const [currentContractId, setCurrentContractId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [contractTab, setContractTab] = useState("submissions");
+  const [assignDialog, setAssignDialog] = useState<{
+    open: boolean;
+    offerId: string;
+    talentId: string;
+  }>({ open: false, offerId: "", talentId: "" });
+  const [assignSearch, setAssignSearch] = useState("");
+  const [assignSelectedIds, setAssignSelectedIds] = useState<string[]>([]);
+  const [assignSubmitting, setAssignSubmitting] = useState(false);
+  const [messageDialog, setMessageDialog] = useState<{
+    open: boolean;
+    offerId: string;
+    talentId: string;
+    title: string;
+    message: string;
+    file?: File | null;
+    sending: boolean;
+  }>({
+    open: false,
+    offerId: "",
+    talentId: "",
+    title: "",
+    message: "",
+    file: null,
+    sending: false,
+  });
 
   // Load DocuSeal Builder script
   const loadDocuSealBuilder = () => {
@@ -123,6 +167,28 @@ const BrandConnectionsView = () => {
     refetchInterval: 5000,
   });
 
+  const rosterQuery = useQuery({
+    queryKey: ["agency", "roster"],
+    queryFn: async () => {
+      const resp = await base44.get<any>("/agency/roster");
+      if (Array.isArray(resp)) return resp;
+      if (Array.isArray(resp?.talents)) return resp.talents;
+      if (Array.isArray(resp?.data?.talents)) return resp.data.talents;
+      return [];
+    },
+  });
+
+  const offerAssignmentsQuery = useQuery({
+    queryKey: ["agency", "offer-assignments", selectedOfferId],
+    enabled: !!selectedOfferId,
+    queryFn: async () => {
+      const resp = await base44.get<{ assignments?: any[] }>(
+        `/api/campaign-offers/${selectedOfferId}/assignments`,
+      );
+      return Array.isArray(resp?.assignments) ? resp.assignments : [];
+    },
+  });
+
   const requests = useMemo(() => {
     if (!Array.isArray(requestsQuery.data)) return [];
     return requestsQuery.data;
@@ -136,6 +202,46 @@ const BrandConnectionsView = () => {
     if (!Array.isArray(offersQuery.data)) return [];
     return offersQuery.data;
   }, [offersQuery.data]);
+  const roster = useMemo(() => {
+    if (!Array.isArray(rosterQuery.data)) return [];
+    return rosterQuery.data;
+  }, [rosterQuery.data]);
+  const filteredRoster = useMemo(() => {
+    const q = assignSearch.trim().toLowerCase();
+    if (!q) return roster;
+    return roster.filter((t: any) => {
+      const name = String(
+        t?.stage_name || t?.name || t?.full_legal_name || "",
+      ).toLowerCase();
+      const email = String(t?.email || "").toLowerCase();
+      return name.includes(q) || email.includes(q);
+    });
+  }, [assignSearch, roster]);
+  const assignedTalentIds = useMemo(() => {
+    return new Set(
+      (offerAssignmentsQuery.data || []).map((a: any) =>
+        String(a?.talent_id || ""),
+      ),
+    );
+  }, [offerAssignmentsQuery.data]);
+  const getTalentAvatar = (t: any) => {
+    if (!t) return "";
+    if (t.img) return t.img;
+    if (t.profile_photo_url) return t.profile_photo_url;
+    if (t.photo_url) return t.photo_url;
+    if (Array.isArray(t.photo_urls) && t.photo_urls.length > 0) {
+      return t.photo_urls[0];
+    }
+    return "";
+  };
+  const getTalentInitial = (t: any) => {
+    const name = String(
+      t?.stage_name || t?.name || t?.full_legal_name || t?.email || "",
+    )
+      .trim()
+      .toUpperCase();
+    return name ? name.slice(0, 1) : "T";
+  };
   const feedbackItems = useMemo(() => {
     if (!Array.isArray(feedbackQuery.data)) return [];
     return feedbackQuery.data;
@@ -176,6 +282,81 @@ const BrandConnectionsView = () => {
         next.delete(id);
         return next;
       });
+    }
+  };
+
+  const handleAssignTalents = async () => {
+    if (!assignDialog.offerId || assignSelectedIds.length === 0) return;
+    if (assignSubmitting) return;
+    setAssignSubmitting(true);
+    try {
+      await Promise.all(
+        assignSelectedIds.map((talentId) =>
+          base44.post(
+            `/api/campaign-offers/${assignDialog.offerId}/assignments`,
+            { talent_id: talentId },
+          ),
+        ),
+      );
+      queryClient.invalidateQueries({
+        queryKey: ["agency", "offer-assignments", assignDialog.offerId],
+      });
+      setAssignDialog({ open: false, offerId: "", talentId: "" });
+      setAssignSelectedIds([]);
+      setAssignSearch("");
+      toast({ title: "Talent assigned" });
+    } catch (e: any) {
+      toast({
+        title: "Assignment failed",
+        description: e?.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setAssignSubmitting(false);
+    }
+  };
+
+  const handleSendTalentMessage = async () => {
+    if (!messageDialog.offerId || !messageDialog.talentId) return;
+    if (messageDialog.sending) return;
+    setMessageDialog((prev) => ({ ...prev, sending: true }));
+    try {
+      let fileUrl: string | undefined;
+      if (messageDialog.file) {
+        const fd = new FormData();
+        fd.append("file", messageDialog.file);
+        const uploadResp = await base44.post<{ file_url?: string }>(
+          `/api/campaign-offers/${messageDialog.offerId}/asset-requests/upload`,
+          fd,
+        );
+        fileUrl = uploadResp?.file_url;
+      }
+      await base44.post(
+        `/api/campaign-offers/${messageDialog.offerId}/asset-requests`,
+        {
+          talent_id: messageDialog.talentId,
+          title: messageDialog.title || undefined,
+          message: messageDialog.message || undefined,
+          file_url: fileUrl,
+        },
+      );
+      setMessageDialog({
+        open: false,
+        offerId: "",
+        talentId: "",
+        title: "",
+        message: "",
+        file: null,
+        sending: false,
+      });
+      toast({ title: "Message sent" });
+    } catch (e: any) {
+      toast({
+        title: "Message failed",
+        description: e?.message || "Please try again.",
+        variant: "destructive",
+      });
+      setMessageDialog((prev) => ({ ...prev, sending: false }));
     }
   };
 
@@ -706,6 +887,12 @@ const BrandConnectionsView = () => {
                 const status = String(offer?.status || "sent");
                 const isPending = ["sent", "viewed"].includes(status);
                 const isAccepted = status === "accepted";
+                const isFullySigned = new Set([
+                  "contract_fully_signed",
+                  "signed",
+                  "fully_signed",
+                  "completed",
+                ]).has(status.toLowerCase());
 
                 return (
                   <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -802,8 +989,85 @@ const BrandConnectionsView = () => {
                             })()}
                           </>
                         )}
+                        {isFullySigned && (
+                          <Button
+                            variant="outline"
+                            className="border-indigo-200 text-indigo-700 font-bold"
+                            onClick={() =>
+                              setAssignDialog({
+                                open: true,
+                                offerId: selectedOfferId,
+                                talentId: "",
+                              })
+                            }
+                          >
+                            <User className="h-4 w-4 mr-2" />
+                            Assign Talent
+                          </Button>
+                        )}
                       </div>
 
+
+                      {isFullySigned && (
+                        <div className="rounded-xl border border-indigo-100 bg-white p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-bold text-gray-900">
+                              Assigned Talent
+                            </p>
+                          </div>
+                          {(offerAssignmentsQuery.data || []).length === 0 ? (
+                            <p className="text-xs text-gray-500">
+                              No talent assigned yet.
+                            </p>
+                          ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              {(offerAssignmentsQuery.data || []).map((a: any) => {
+                                const talent = a?.agency_users || {};
+                                const tid = String(a?.talent_id || "");
+                                return (
+                                  <div
+                                    key={String(a?.id)}
+                                    className="border border-gray-200 rounded-lg p-3 flex items-center justify-between gap-3"
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                                        <User className="h-4 w-4 text-gray-500" />
+                                      </div>
+                                      <div>
+                                        <p className="text-sm font-semibold text-gray-900">
+                                          {talent?.stage_name ||
+                                            talent?.full_legal_name ||
+                                            "Talent"}
+                                        </p>
+                                        <p className="text-xs text-gray-500">
+                                          Assigned
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() =>
+                                        setMessageDialog({
+                                          open: true,
+                                          offerId: selectedOfferId,
+                                          talentId: tid,
+                                          title: "",
+                                          message: "",
+                                          file: null,
+                                          sending: false,
+                                        })
+                                      }
+                                    >
+                                      Send Message
+                                    </Button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
 
                       {/* Full brief — shown directly, no duplicate summary */}
                       {offer?.brief_snapshot && typeof offer.brief_snapshot === "object" ? (
@@ -836,6 +1100,12 @@ const BrandConnectionsView = () => {
                   const status = String(offer?.status || "sent");
                   const isPending = ["sent", "viewed"].includes(status);
                   const isAccepted = status === "accepted";
+                  const isFullySigned = new Set([
+                    "contract_fully_signed",
+                    "signed",
+                    "fully_signed",
+                    "completed",
+                  ]).has(status.toLowerCase());
 
                   const bs = offer?.brief_snapshot && typeof offer.brief_snapshot === "object" ? offer.brief_snapshot : null;
                   const briefVal = (key: string, fallback = "") => {
@@ -938,8 +1208,26 @@ const BrandConnectionsView = () => {
                               >
                                 Build Package
                               </Button>
-                            );
-                          })()}
+                              );
+                            })()}
+                          {isFullySigned && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-indigo-200 text-indigo-700 font-bold"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setAssignDialog({
+                                  open: true,
+                                  offerId,
+                                  talentId: "",
+                                });
+                              }}
+                            >
+                              <User className="h-4 w-4 mr-2" />
+                              Assign Talent
+                            </Button>
+                          )}
                         </div>
                       </div>
 
@@ -1469,6 +1757,187 @@ const BrandConnectionsView = () => {
           </Card>
         )
       }
+      <Dialog
+        open={assignDialog.open}
+        onOpenChange={(open) => {
+          setAssignDialog((prev) => ({ ...prev, open }));
+          if (!open) {
+            setAssignSearch("");
+            setAssignSelectedIds([]);
+          }
+        }}
+      >
+        <DialogContent className="max-w-[96vw] sm:max-w-2xl rounded-2xl sm:rounded-[3rem] p-4 sm:p-10 border-none bg-white/95 backdrop-blur-xl shadow-2xl">
+          <DialogHeader className="mb-8">
+            <DialogTitle className="text-2xl font-black text-gray-900 tracking-tight">
+              Assign Talent
+            </DialogTitle>
+            <p className="text-sm text-gray-500 font-medium mt-1">
+              Select one or more talents from your roster to assign to this offer.
+            </p>
+          </DialogHeader>
+
+          <div className="relative mb-8">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="Filter by name or email..."
+              value={assignSearch}
+              onChange={(e) => setAssignSearch(e.target.value)}
+              className="h-12 pl-10 bg-gray-100 border-none rounded-xl"
+            />
+          </div>
+
+          <ScrollArea className="h-[450px] pr-2 sm:pr-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {filteredRoster.map((talent: any) => {
+                const id = String(talent?.id || "");
+                const alreadyAssigned = assignedTalentIds.has(id);
+                const isSelected = assignSelectedIds.includes(id);
+                return (
+                  <Card
+                    key={id}
+                    onClick={() => {
+                      if (alreadyAssigned) return;
+                      setAssignSelectedIds((prev) =>
+                        prev.includes(id)
+                          ? prev.filter((x) => x !== id)
+                          : [...prev, id],
+                      );
+                    }}
+                    className={`p-5 rounded-[2rem] border-2 transition-all duration-500 flex items-center gap-5 ${
+                      alreadyAssigned
+                        ? "border-gray-100 bg-gray-50/80 opacity-70 cursor-not-allowed"
+                        : "cursor-pointer"
+                    } ${
+                      isSelected
+                        ? "border-indigo-600 bg-indigo-50/30 shadow-lg shadow-indigo-100/20"
+                        : "border-gray-50 hover:border-gray-100 bg-white"
+                    }`}
+                  >
+                    <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0 shadow-inner">
+                      <Avatar className="w-16 h-16 rounded-2xl">
+                        <AvatarImage src={getTalentAvatar(talent)} />
+                        <AvatarFallback className="bg-indigo-50 text-indigo-600 font-black text-lg uppercase">
+                          {getTalentInitial(talent)}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h6 className="font-black text-gray-900 truncate tracking-tight text-base">
+                        {talent?.stage_name ||
+                          talent?.name ||
+                          talent?.full_legal_name ||
+                          "Talent"}
+                      </h6>
+                      <div className="mt-1 flex items-center gap-2 flex-wrap">
+                        {alreadyAssigned && (
+                          <Badge className="bg-gray-100 text-gray-600 border-gray-200 text-[10px] uppercase tracking-widest font-black px-2 py-0.5">
+                            Assigned
+                          </Badge>
+                        )}
+                        <Badge
+                          className={`text-[10px] uppercase tracking-widest font-black px-2 py-0.5 ${
+                            talent?.has_creator_account
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : "bg-amber-50 text-amber-700 border-amber-200"
+                          }`}
+                        >
+                          {talent?.has_creator_account
+                            ? "Dashboard Access"
+                            : "No Dashboard Access"}
+                        </Badge>
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <div className="bg-indigo-600 rounded-full p-1 shadow-md shadow-indigo-200">
+                        <Check className="w-4 h-4 text-white" />
+                      </div>
+                    )}
+                  </Card>
+                );
+              })}
+            </div>
+          </ScrollArea>
+
+          <Button
+            onClick={handleAssignTalents}
+            disabled={assignSelectedIds.length === 0 || assignSubmitting}
+            className="w-full mt-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg h-12 font-bold tracking-wider text-sm shadow-md shadow-indigo-200"
+          >
+            {assignSubmitting ? (
+              <Loader2 className="w-5 h-5 animate-spin mr-3" />
+            ) : null}
+            Confirm Selection ({assignSelectedIds.length})
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={messageDialog.open}
+        onOpenChange={(open) =>
+          setMessageDialog((prev) => ({ ...prev, open }))
+        }
+      >
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Message Talent</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input
+              placeholder="Title (optional)"
+              value={messageDialog.title}
+              onChange={(e) =>
+                setMessageDialog((prev) => ({
+                  ...prev,
+                  title: e.target.value,
+                }))
+              }
+            />
+            <Textarea
+              placeholder="Write a short instruction or note..."
+              value={messageDialog.message}
+              onChange={(e) =>
+                setMessageDialog((prev) => ({
+                  ...prev,
+                  message: e.target.value,
+                }))
+              }
+              className="min-h-[120px]"
+            />
+            <div className="flex items-center gap-3">
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.mp4,.mov,video/*"
+                onChange={(e) =>
+                  setMessageDialog((prev) => ({
+                    ...prev,
+                    file: e.target.files?.[0] || null,
+                  }))
+                }
+              />
+              {messageDialog.file && (
+                <span className="text-xs text-gray-500">
+                  {messageDialog.file.name}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center justify-end gap-2 pt-3">
+            <Button
+              variant="outline"
+              onClick={() =>
+                setMessageDialog((prev) => ({ ...prev, open: false }))
+              }
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleSendTalentMessage} disabled={messageDialog.sending}>
+              {messageDialog.sending ? "Sending..." : "Send Message"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* DocuSeal Builder Modal */}
       {
         builderOpen && builderToken && (
