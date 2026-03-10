@@ -3300,7 +3300,7 @@ export default function BrandDashboard() {
                             </div>
                             <div className="absolute top-2 left-2">
                               <Badge className={`rounded-none border-0 ${
-                                del.status === 'approved' ? 'bg-emerald-600 text-white' : 
+                                (del.status === 'approved' || del.status === 'brand_approved') ? 'bg-emerald-600 text-white' : 
                                 del.status === 'changes_requested' ? 'bg-rose-600 text-white' : 
                                 'bg-blue-600 text-white'
                               }`}>
@@ -3318,7 +3318,7 @@ export default function BrandDashboard() {
                                 size="sm"
                                 className="flex-1 h-8 rounded-none font-bold bg-gray-900"
                                 onClick={() => handleDeliverableReview(offerId, del.id, "approve")}
-                                disabled={del.status === "approved"}
+                                disabled={del.status === "approved" || del.status === "brand_approved"}
                               >
                                 Approve
                               </Button>
