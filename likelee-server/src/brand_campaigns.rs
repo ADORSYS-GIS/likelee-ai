@@ -2278,7 +2278,7 @@ pub async fn refresh_offer_contract_status(
     let derived_status = if any_declined {
         "declined"
     } else if both_signed {
-        "signed"
+        "completed"
     } else if target_type == "agency" {
         if agency_is_signed {
             if any_opened || brand_is_signed {
@@ -2345,7 +2345,7 @@ pub async fn refresh_offer_contract_status(
 
     let mapped_offer_status = match (brand_is_signed, derived_status) {
         (true, _) => Some("contract_fully_signed"),
-        (_, "signed") => Some("contract_fully_signed"),
+        (_, "completed") => Some("contract_fully_signed"),
         (_, "opened") => Some("contract_partially_signed"),
         (_, "sent") => Some("contract_sent"),
         (_, "declined") => Some("changes_requested"),
@@ -3968,7 +3968,7 @@ pub async fn handle_campaign_contract_webhook(
         let derived_status = if any_declined {
             "declined"
         } else if both_signed {
-            "signed"
+            "completed"
         } else if target_type == "agency" {
             if agency_is_signed {
                 if any_opened || brand_is_signed {
@@ -4037,7 +4037,7 @@ pub async fn handle_campaign_contract_webhook(
 
         let mapped_offer_status = match (brand_is_signed, derived_status) {
             (true, _) => Some("contract_fully_signed"),
-            (_, "signed") => Some("contract_fully_signed"),
+            (_, "completed") => Some("contract_fully_signed"),
             (_, "opened") => Some("contract_partially_signed"),
             (_, "sent") => Some("contract_sent"),
             (_, "declined") => Some("changes_requested"),
