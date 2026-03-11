@@ -5692,6 +5692,17 @@ export default function CreatorDashboard() {
     const pending = brandConnectionRequests.filter(
       (i) => i.status === "pending",
     );
+    const isDirectCreatorOffer = (offer: any) => {
+      const targetType = String(offer?.target_type || "creator").toLowerCase();
+      if (targetType === "agency") return false;
+      const targetId = String(offer?.target_id || "").trim();
+      if (targetId && user?.id) return targetId === user.id;
+      return true;
+    };
+    const directBrandOffers = brandOffers.filter(isDirectCreatorOffer);
+    const directOfferIds = new Set(
+      directBrandOffers.map((offer: any) => String(offer?.id || "")),
+    );
     const refreshBrandConnections = async () => {
       const [{ requests, connections }, offers] = await Promise.all([
         loadBrandConnectionData(),
@@ -5716,7 +5727,7 @@ export default function CreatorDashboard() {
       "approved",
       "completed",
     ]);
-    const deliverableEligibleOffers = brandOffers.filter((offer: any) =>
+    const deliverableEligibleOffers = directBrandOffers.filter((offer: any) =>
       fullySignedOfferStatuses.has(String(offer?.status || "").toLowerCase()),
     );
     const campaignOptions = Array.from(
@@ -5732,7 +5743,7 @@ export default function CreatorDashboard() {
     const unseenRequestCount = pending.filter(
       (req: any) => !seenBrandRequestIds.has(String(req?.id || "")),
     ).length;
-    const unseenOfferCount = brandOffers.filter(
+    const unseenOfferCount = directBrandOffers.filter(
       (offer: any) =>
         [
           "changes_requested",
@@ -5859,7 +5870,7 @@ export default function CreatorDashboard() {
       if (normalized.startsWith("audio/")) return "audio";
       return "file";
     };
-    const selectedBriefOffer = brandOffers.find(
+    const selectedBriefOffer = directBrandOffers.find(
       (offer: any) => String(offer?.id || "") === selectedOfferBriefId,
     );
     const selectedBriefCampaign = selectedBriefOffer?.brand_campaigns || {};
@@ -6453,14 +6464,14 @@ export default function CreatorDashboard() {
                   Loading campaign offers...
                 </p>
               )}
-              {!loadingBrandOffers && brandOffers.length === 0 && (
+              {!loadingBrandOffers && directBrandOffers.length === 0 && (
                 <p className="text-sm text-gray-600">
                   No campaign offers available yet.
                 </p>
               )}
-              {!selectedOfferBriefId && brandOffers.length > 0 && (
+              {!selectedOfferBriefId && directBrandOffers.length > 0 && (
                 <div className="space-y-3">
-                  {brandOffers.map((offer: any) => {
+                  {directBrandOffers.map((offer: any) => {
                     const offerId = String(offer?.id || "");
                     const status = String(offer?.status || "sent");
                     return (
@@ -6938,7 +6949,7 @@ export default function CreatorDashboard() {
                 </div>
               )}
               {!selectedOfferBriefId &&
-                brandOffers.map((offer: any) => {
+                directBrandOffers.map((offer: any) => {
                   const offerId = String(offer?.id || "");
                   const campaign = offer?.brand_campaigns || {};
                   return (
@@ -7075,12 +7086,18 @@ export default function CreatorDashboard() {
               <div className="text-lg font-semibold text-gray-900">
                 Contract Hub
               </div>
-              {creatorContractHubRows.length === 0 && (
+              {creatorContractHubRows.filter((row: any) =>
+                directOfferIds.has(String(row?.offer_id || "")),
+              ).length === 0 && (
                 <p className="text-sm text-gray-600">
                   No contracts available yet.
                 </p>
               )}
-              {creatorContractHubRows.map((row: any) => {
+              {creatorContractHubRows
+                .filter((row: any) =>
+                  directOfferIds.has(String(row?.offer_id || "")),
+                )
+                .map((row: any) => {
                 const status = String(row?.docuseal_status || "draft");
                 const slug = String(row?.docuseal_slug || "").trim();
                 const submissionId = String(row?.docuseal_submission_id || "").trim();
