@@ -5611,9 +5611,6 @@ export default function CreatorDashboard() {
                             const agencyNote = String(
                               deliverable?.agency_review_note || "",
                             ).trim();
-                            const brandNote = String(
-                              deliverable?.brand_review_note || "",
-                            ).trim();
                             return (
                               <div
                                 key={String(deliverable?.id)}
@@ -5634,15 +5631,19 @@ export default function CreatorDashboard() {
                                       className="w-full h-full object-cover bg-black"
                                     />
                                   )}
-                                  <div className="absolute top-2 left-2">
-                                    <Badge
-                                      className={`text-[11px] ${deliverableStatusBadgeClass(
-                                        deliverable?.status || "submitted",
-                                      )}`}
-                                    >
-                                      {String(deliverable?.status || "submitted")}
-                                    </Badge>
-                                  </div>
+                                <div className="absolute top-2 left-2">
+                                  <Badge
+                                    className={`text-[11px] ${deliverableStatusBadgeClass(
+                                      deliverable?.status || "submitted",
+                                    )}`}
+                                  >
+                                    {String(
+                                      deliverable?.status || "submitted",
+                                    ).toLowerCase() === "brand_approved"
+                                      ? "approved"
+                                      : String(deliverable?.status || "submitted")}
+                                  </Badge>
+                                </div>
                                 </div>
                                 <div className="p-3 space-y-2">
                                   <div className="text-xs text-gray-700 font-medium">
@@ -5651,11 +5652,6 @@ export default function CreatorDashboard() {
                                   {agencyNote && (
                                     <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-100 rounded p-2">
                                       <strong>Agency Feedback:</strong> {agencyNote}
-                                    </div>
-                                  )}
-                                  {brandNote && (
-                                    <div className="text-[11px] text-blue-800 bg-blue-50 border border-blue-100 rounded p-2">
-                                      <strong>Brand Feedback:</strong> {brandNote}
                                     </div>
                                   )}
                                   {assetUrl &&
@@ -7220,9 +7216,11 @@ export default function CreatorDashboard() {
                                     deliverable?.status || "submitted",
                                   )}`}
                                 >
-                                  {formatStatus(
+                                  {String(
                                     deliverable?.status || "submitted",
-                                  )}
+                                  ).toLowerCase() === "brand_approved"
+                                    ? "Approved"
+                                    : formatStatus(deliverable?.status || "submitted")}
                                 </Badge>
                               </div>
                               <div className="mt-1 text-[11px] text-gray-600">
