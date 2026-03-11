@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   ArrowLeft,
   FileText,
+  Download,
   User,
   Check,
   Search,
@@ -1504,6 +1505,8 @@ const BrandConnectionsView = () => {
                                         .map((c: any) => {
                                           const cId = String(c?.id);
                                           const isBusy = busyIds.has(cId);
+                                          const statusRaw = String(c?.docuseal_status || "sent").toLowerCase();
+                                          const statusLabel = statusRaw === "signed" ? "completed" : statusRaw;
                                           return (
                                             <tr key={cId} className="hover:bg-gray-50/50 transition-colors">
                                               <td className="px-6 py-4">
@@ -1591,6 +1594,8 @@ const BrandConnectionsView = () => {
                                         .map((c: any) => {
                                           const cId = String(c?.id);
                                           const isBusy = busyIds.has(cId);
+                                          const statusRaw = String(c?.docuseal_status || "sent").toLowerCase();
+                                          const statusLabel = statusRaw === "signed" ? "completed" : statusRaw;
                                           return (
                                             <tr key={cId} className="hover:bg-gray-50/50 transition-colors">
                                               <td className="px-6 py-4">
@@ -1611,16 +1616,16 @@ const BrandConnectionsView = () => {
                                               <td className="px-6 py-4">
                                                 <Badge
                                                   variant="secondary"
-                                                  className={`capitalize ${c?.docuseal_status === "completed" || c?.docuseal_status === "fully_signed"
+                                                  className={`capitalize ${statusLabel === "completed" || c?.docuseal_status === "fully_signed"
                                                     ? "bg-green-100 text-green-700 hover:bg-green-200"
-                                                    : c?.docuseal_status === "sent"
+                                                    : statusLabel === "sent"
                                                       ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                                                      : c?.docuseal_status === "agency_pending"
+                                                      : statusLabel === "agency_pending"
                                                         ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
                                                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                                                     }`}
                                                 >
-                                                  {String(c?.docuseal_status || "sent")}
+                                                  {statusLabel}
                                                 </Badge>
                                               </td>
                                               <td className="px-6 py-4 text-right">
@@ -1686,14 +1691,14 @@ const BrandConnectionsView = () => {
                                                       )}
                                                       {downloadUrl ? (
                                                         <Button
-                                                          size="sm"
+                                                          size="icon"
                                                           variant="outline"
                                                           className="border-gray-200 hover:bg-gray-50"
                                                           onClick={() => window.open(downloadUrl, "_blank")}
                                                           disabled={isBusy}
+                                                          title="Download"
                                                         >
-                                                          <FileText className="w-4 h-4 mr-2" />
-                                                          Download
+                                                          <Download className="w-4 h-4" />
                                                         </Button>
                                                       ) : null}
                                                       <Button
@@ -2046,19 +2051,40 @@ const BrandConnectionsView = () => {
                     <p className="text-xs text-gray-500">Place signature fields and save to finish</p>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setBuilderOpen(false);
-                    setBuilderToken(null);
-                    if (selectedOfferId) {
-                      queryClient.invalidateQueries({ queryKey: ["agency", "offer-contracts", selectedOfferId] });
-                    }
-                  }}
-                  className="hover:bg-red-50 hover:text-red-500 rounded-full w-10 h-10 p-0"
-                >
-                  ✕
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    className="border-gray-200 hover:bg-gray-50"
+                    onClick={() => {
+                      if (!selectedOfferId || !currentContractId) {
+                        toast({
+                          title: "Missing contract",
+                          description: "Select a contract before sending.",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+                      handleSendContract(selectedOfferId, currentContractId);
+                    }}
+                    disabled={!selectedOfferId || !currentContractId}
+                  >
+                    <Send className="w-4 h-4 mr-2" />
+                    Send
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setBuilderOpen(false);
+                      setBuilderToken(null);
+                      if (selectedOfferId) {
+                        queryClient.invalidateQueries({ queryKey: ["agency", "offer-contracts", selectedOfferId] });
+                      }
+                    }}
+                    className="hover:bg-red-50 hover:text-red-500 rounded-full w-10 h-10 p-0"
+                  >
+                    ✕
+                  </Button>
+                </div>
               </div>
               <div className="flex-1 bg-gray-50 relative">
                 <docuseal-builder
@@ -2067,6 +2093,20 @@ const BrandConnectionsView = () => {
                   className="w-full h-full block"
                   ref={(el: any) => {
                     if (el && !el._hasSaveListener) {
+                      const hideActionButtons = (root: ParentNode) => {
+                        const buttons = Array.from(root.querySelectorAll("button"));
+                        buttons.forEach((btn) => {
+                          const label = (btn.textContent || "").trim().toLowerCase();
+                          if (label === "sign yourself" || label === "send") {
+                            (btn as HTMLElement).style.display = "none";
+                          }
+                        });
+                      };
+                      const root = el.shadowRoot || el;
+                      hideActionButtons(root);
+                      const observer = new MutationObserver(() => hideActionButtons(root));
+                      observer.observe(root, { childList: true, subtree: true });
+                      el._hideObserver = observer;
                       el.addEventListener("save", () => {
                         if (selectedOfferId) {
                           queryClient.invalidateQueries({
