@@ -746,6 +746,17 @@ export default function BrandDashboard() {
   }, [location.state, searchParams]);
 
   useEffect(() => {
+    const nextSection =
+      activeSection === "campaigns-hub" ? "campaigns" : activeSection;
+    const currentSection = String(searchParams.get("section") || "").trim();
+    if (nextSection && nextSection !== currentSection) {
+      const params = new URLSearchParams(searchParams);
+      params.set("section", nextSection);
+      setSearchParams(params, { replace: true });
+    }
+  }, [activeSection, searchParams, setSearchParams]);
+
+  useEffect(() => {
     const pkgId = String(searchParams.get("package_id") || "").trim();
     if (!pkgId) return;
     setExpandedInboxPackageId(pkgId);

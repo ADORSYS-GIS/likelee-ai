@@ -1308,6 +1308,7 @@ export function AgencyDeliverablesView() {
                           title: e.target.value,
                         }))
                       }
+                      className="rounded-lg"
                     />
                   </div>
                   <div className="space-y-2">
@@ -1323,17 +1324,19 @@ export function AgencyDeliverablesView() {
                           message: e.target.value,
                         }))
                       }
-                      className="min-h-[140px] resize-none rounded-none border-gray-200 bg-gray-50 focus:bg-white focus:ring-black/5 transition-all text-sm leading-relaxed"
+                      className="min-h-[140px] resize-none rounded-lg border-gray-200 bg-gray-50 focus:bg-white focus:ring-black/5 transition-all text-sm leading-relaxed"
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
                       Brief PDF (optional)
                     </label>
-                    <div className="flex items-center gap-3 rounded-none border border-gray-200 bg-gray-50 px-3 py-2">
+                    <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
                       <input
+                        id="request-asset-file"
                         type="file"
                         accept="application/pdf"
+                        className="hidden"
                         onChange={(e) =>
                           setRequestDialog((prev) => ({
                             ...prev,
@@ -1341,6 +1344,13 @@ export function AgencyDeliverablesView() {
                           }))
                         }
                       />
+                      <label
+                        htmlFor="request-asset-file"
+                        className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100 cursor-pointer"
+                      >
+                        <Upload className="w-4 h-4" />
+                        Choose File
+                      </label>
                       <span className="text-xs text-gray-500 truncate">
                         {requestDialog.file?.name || "No file selected"}
                       </span>
@@ -1349,7 +1359,7 @@ export function AgencyDeliverablesView() {
                   <div className="flex flex-col sm:flex-row gap-3 pt-2">
                     <Button
                       variant="outline"
-                      className="flex-1 h-12 rounded-none border-gray-200 hover:bg-gray-50 font-bold"
+                      className="flex-1 h-12 rounded-lg border-gray-200 hover:bg-gray-50 font-bold"
                       onClick={() =>
                         setRequestDialog((prev) => ({ ...prev, open: false }))
                       }
@@ -1358,7 +1368,7 @@ export function AgencyDeliverablesView() {
                       Cancel
                     </Button>
                     <Button
-                      className="flex-1 h-12 rounded-none bg-black hover:bg-gray-800 text-white font-bold shadow-lg shadow-black/10 transition-all active:scale-[0.98]"
+                      className="flex-1 h-12 rounded-lg bg-black hover:bg-gray-800 text-white font-bold shadow-lg shadow-black/10 transition-all active:scale-[0.98]"
                       onClick={handleRequestAsset}
                       disabled={requestDialog.sending}
                     >
@@ -1382,7 +1392,7 @@ export function AgencyDeliverablesView() {
           setUploadDialog((prev) => ({ ...prev, open }))
         }
       >
-        <DialogContent>
+        <DialogContent className="rounded-lg">
           <DialogHeader>
             <DialogTitle>Upload Deliverable</DialogTitle>
           </DialogHeader>
@@ -1396,18 +1406,35 @@ export function AgencyDeliverablesView() {
                   caption: e.target.value,
                 }))
               }
+              className="rounded-lg"
             />
-            <Input
-              type="file"
-              accept="image/*,video/*"
-              multiple
-              onChange={(e) =>
-                setUploadDialog((prev) => ({
-                  ...prev,
-                  files: Array.from(e.target.files || []),
-                }))
-              }
-            />
+            <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+              <input
+                id="upload-deliverable-files"
+                type="file"
+                accept="image/*,video/*"
+                multiple
+                className="hidden"
+                onChange={(e) =>
+                  setUploadDialog((prev) => ({
+                    ...prev,
+                    files: Array.from(e.target.files || []),
+                  }))
+                }
+              />
+              <label
+                htmlFor="upload-deliverable-files"
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100 cursor-pointer"
+              >
+                <Upload className="w-4 h-4" />
+                Choose Files
+              </label>
+              <span className="text-xs text-gray-500 truncate">
+                {uploadDialog.files?.length
+                  ? `${uploadDialog.files.length} file(s) selected`
+                  : "No files selected"}
+              </span>
+            </div>
             <Button
               onClick={handleUploadDeliverable}
               disabled={
@@ -1415,6 +1442,7 @@ export function AgencyDeliverablesView() {
                 !uploadDialog.files ||
                 uploadDialog.files.length === 0
               }
+              className="rounded-lg"
             >
               {uploadDialog.sending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
