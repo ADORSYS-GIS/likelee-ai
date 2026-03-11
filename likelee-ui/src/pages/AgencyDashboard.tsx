@@ -18931,6 +18931,7 @@ export default function AgencyDashboard() {
               onAddBookOut={onAddBookOut}
               onRemoveBookOut={onRemoveBookOut}
               isSportsAgency={isSportsAgency}
+              agencyMode={agencyMode}
             />
           )}
           {activeTab === "accounting" && (
