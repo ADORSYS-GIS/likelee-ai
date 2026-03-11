@@ -306,10 +306,11 @@ pub async fn list_irl_payments(
     RoleGuard::new(vec!["creator", "talent"]).check(&user.role)?;
     let _resolved = resolve_talent(&state, &user).await?;
     let connections = list_active_talent_connections(&state, &user).await?;
-    
+
     let requested_aid = q.agency_id.as_ref().filter(|s| !s.trim().is_empty());
-    
-    let filtered_connections: Vec<&serde_json::Value> = connections.iter()
+
+    let filtered_connections: Vec<&serde_json::Value> = connections
+        .iter()
         .filter(|c| {
             if let Some(aid) = requested_aid {
                 c.get("agency_id").and_then(|v| v.as_str()) == Some(aid)
@@ -323,11 +324,17 @@ pub async fn list_irl_payments(
         return Ok(Json(json!([])));
     }
 
-    let talent_ids: Vec<String> = filtered_connections.iter()
+    let talent_ids: Vec<String> = filtered_connections
+        .iter()
         .filter_map(|c| c.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()))
         .collect();
-    let agency_ids: Vec<String> = filtered_connections.iter()
-        .filter_map(|c| c.get("agency_id").and_then(|v| v.as_str()).map(|s| s.to_string()))
+    let agency_ids: Vec<String> = filtered_connections
+        .iter()
+        .filter_map(|c| {
+            c.get("agency_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        })
         .collect();
 
     let t_refs: Vec<&str> = talent_ids.iter().map(|s| s.as_str()).collect();
@@ -381,7 +388,8 @@ async fn compute_irl_earnings_summary(
         }));
     }
 
-    let talent_ids: Vec<String> = connections.iter()
+    let talent_ids: Vec<String> = connections
+        .iter()
         .filter_map(|c| c.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()))
         .collect();
     let t_refs: Vec<&str> = talent_ids.iter().map(|s| s.as_str()).collect();
@@ -997,16 +1005,22 @@ pub async fn list_licensing_requests(
 ) -> Result<Json<Vec<TalentLicensingRequestItem>>, (StatusCode, String)> {
     let _resolved = resolve_talent(&state, &user).await?;
     let connections = list_active_talent_connections(&state, &user).await?;
-    
+
     if connections.is_empty() {
         return Ok(Json(vec![]));
     }
 
-    let talent_ids: Vec<String> = connections.iter()
+    let talent_ids: Vec<String> = connections
+        .iter()
         .filter_map(|c| c.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()))
         .collect();
-    let agency_ids: Vec<String> = connections.iter()
-        .filter_map(|c| c.get("agency_id").and_then(|v| v.as_str()).map(|s| s.to_string()))
+    let agency_ids: Vec<String> = connections
+        .iter()
+        .filter_map(|c| {
+            c.get("agency_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        })
         .collect();
 
     let t_refs: Vec<&str> = talent_ids.iter().map(|s| s.as_str()).collect();
@@ -1853,7 +1867,8 @@ pub async fn get_analytics(
     let connections = list_active_talent_connections(&state, &user).await?;
     let requested_aid = params.get("agency_id").map(|s| s.as_str());
 
-    let filtered_connections: Vec<&serde_json::Value> = connections.iter()
+    let filtered_connections: Vec<&serde_json::Value> = connections
+        .iter()
         .filter(|c| {
             if let Some(aid) = requested_aid {
                 c.get("agency_id").and_then(|v| v.as_str()) == Some(aid)
@@ -1863,11 +1878,17 @@ pub async fn get_analytics(
         })
         .collect();
 
-    let talent_ids: Vec<String> = filtered_connections.iter()
+    let talent_ids: Vec<String> = filtered_connections
+        .iter()
         .filter_map(|c| c.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()))
         .collect();
-    let agency_ids: Vec<String> = filtered_connections.iter()
-        .filter_map(|c| c.get("agency_id").and_then(|v| v.as_str()).map(|s| s.to_string()))
+    let agency_ids: Vec<String> = filtered_connections
+        .iter()
+        .filter_map(|c| {
+            c.get("agency_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        })
         .collect();
 
     let t_refs: Vec<&str> = talent_ids.iter().map(|s| s.as_str()).collect();
@@ -2002,7 +2023,10 @@ pub async fn get_analytics(
         .pg
         .from("talent_campaign_metrics_weekly")
         .select("brand_id,views_week,week_start")
-        .in_("talent_id", talent_ids.iter().map(|s| s.as_str()).collect::<Vec<_>>())
+        .in_(
+            "talent_id",
+            talent_ids.iter().map(|s| s.as_str()).collect::<Vec<_>>(),
+        )
         .gte(
             "week_start",
             prev_month_start.format("%Y-%m-%d").to_string(),
@@ -2104,8 +2128,14 @@ pub async fn get_analytics(
         .pg
         .from("licensing_requests")
         .select("id,status")
-        .in_("agency_id", agency_ids.iter().map(|s| s.as_str()).collect::<Vec<_>>())
-        .in_("talent_id", talent_ids.iter().map(|s| s.as_str()).collect::<Vec<_>>())
+        .in_(
+            "agency_id",
+            agency_ids.iter().map(|s| s.as_str()).collect::<Vec<_>>(),
+        )
+        .in_(
+            "talent_id",
+            talent_ids.iter().map(|s| s.as_str()).collect::<Vec<_>>(),
+        )
         .is("archived_at", "null") // Only count non-archived records
         .limit(500)
         .execute()
@@ -2491,10 +2521,14 @@ pub async fn list_bookings(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let _resolved = resolve_talent(&state, &user).await?;
     let connections = list_active_talent_connections(&state, &user).await?;
-    
-    let requested_aid = q.get("agency_id").map(|s| s.as_str()).filter(|s| !s.trim().is_empty());
-    
-    let filtered_connections: Vec<&serde_json::Value> = connections.iter()
+
+    let requested_aid = q
+        .get("agency_id")
+        .map(|s| s.as_str())
+        .filter(|s| !s.trim().is_empty());
+
+    let filtered_connections: Vec<&serde_json::Value> = connections
+        .iter()
         .filter(|c| {
             if let Some(aid) = requested_aid {
                 c.get("agency_id").and_then(|v| v.as_str()) == Some(aid)
@@ -2508,11 +2542,17 @@ pub async fn list_bookings(
         return Ok(Json(json!([])));
     }
 
-    let talent_ids: Vec<String> = filtered_connections.iter()
+    let talent_ids: Vec<String> = filtered_connections
+        .iter()
         .filter_map(|c| c.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()))
         .collect();
-    let agency_ids: Vec<String> = filtered_connections.iter()
-        .filter_map(|c| c.get("agency_id").and_then(|v| v.as_str()).map(|s| s.to_string()))
+    let agency_ids: Vec<String> = filtered_connections
+        .iter()
+        .filter_map(|c| {
+            c.get("agency_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        })
         .collect();
 
     let t_refs: Vec<&str> = talent_ids.iter().map(|s| s.as_str()).collect();
@@ -2555,10 +2595,11 @@ pub async fn list_book_outs(
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let _resolved = resolve_talent(&state, &user).await?;
     let connections = list_active_talent_connections(&state, &user).await?;
-    
+
     let requested_aid = params.agency_id.as_ref().filter(|s| !s.trim().is_empty());
-    
-    let filtered_connections: Vec<&serde_json::Value> = connections.iter()
+
+    let filtered_connections: Vec<&serde_json::Value> = connections
+        .iter()
         .filter(|c| {
             if let Some(aid) = requested_aid {
                 c.get("agency_id").and_then(|v| v.as_str()) == Some(aid)
@@ -2572,11 +2613,17 @@ pub async fn list_book_outs(
         return Ok(Json(json!([])));
     }
 
-    let talent_ids: Vec<String> = filtered_connections.iter()
+    let talent_ids: Vec<String> = filtered_connections
+        .iter()
         .filter_map(|c| c.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()))
         .collect();
-    let agency_ids: Vec<String> = filtered_connections.iter()
-        .filter_map(|c| c.get("agency_id").and_then(|v| v.as_str()).map(|s| s.to_string()))
+    let agency_ids: Vec<String> = filtered_connections
+        .iter()
+        .filter_map(|c| {
+            c.get("agency_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        })
         .collect();
 
     let t_refs: Vec<&str> = talent_ids.iter().map(|s| s.as_str()).collect();

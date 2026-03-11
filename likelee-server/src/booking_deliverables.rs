@@ -79,7 +79,10 @@ async fn resolve_creator_for_campaign(
     let agency_id = campaign
         .get("agency_id")
         .and_then(|v| v.as_str())
-        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Campaign missing agency_id".into()))?
+        .ok_or((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Campaign missing agency_id".into(),
+        ))?
         .to_string();
 
     // Resolve the creator's agency_user ID for this agency
@@ -96,15 +99,25 @@ async fn resolve_creator_for_campaign(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     if !au_resp.status().is_success() {
-        return Err((StatusCode::FORBIDDEN, "Not registered with this agency".into()));
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Not registered with this agency".into(),
+        ));
     }
     let au_text = au_resp.text().await.unwrap_or_default();
     let au_rows: Vec<serde_json::Value> = serde_json::from_str(&au_text).unwrap_or_default();
     let agency_user_id = au_rows
         .into_iter()
         .next()
-        .and_then(|row| row.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()))
-        .ok_or((StatusCode::FORBIDDEN, "Not registered with this agency".into()))?;
+        .and_then(|row| {
+            row.get("id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        })
+        .ok_or((
+            StatusCode::FORBIDDEN,
+            "Not registered with this agency".into(),
+        ))?;
 
     // Verify the creator has a booking in this campaign using their agency_user_id
     let booking_resp = state
@@ -119,17 +132,25 @@ async fn resolve_creator_for_campaign(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     if !booking_resp.status().is_success() {
-        return Err((StatusCode::FORBIDDEN, "No active booking for this campaign".into()));
+        return Err((
+            StatusCode::FORBIDDEN,
+            "No active booking for this campaign".into(),
+        ));
     }
     let booking_text = booking_resp.text().await.unwrap_or_default();
-    let booking_rows: Vec<serde_json::Value> = serde_json::from_str(&booking_text).unwrap_or_default();
+    let booking_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&booking_text).unwrap_or_default();
     if booking_rows.is_empty() {
-        return Err((StatusCode::FORBIDDEN, "No active booking for this campaign".into()));
+        return Err((
+            StatusCode::FORBIDDEN,
+            "No active booking for this campaign".into(),
+        ));
     }
-    let booking_id = booking_rows
-        .into_iter()
-        .next()
-        .and_then(|row| row.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()));
+    let booking_id = booking_rows.into_iter().next().and_then(|row| {
+        row.get("id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+    });
 
     Ok((agency_id, user.id.clone(), booking_id))
 }
@@ -154,7 +175,10 @@ async fn verify_agency_campaign(
     let text = resp.text().await.unwrap_or_default();
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
     if rows.is_empty() {
-        return Err((StatusCode::FORBIDDEN, "Campaign not found or not yours".into()));
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Campaign not found or not yours".into(),
+        ));
     }
     Ok(())
 }
@@ -251,7 +275,10 @@ pub async fn upload_deliverable(
     let http = reqwest::Client::new();
     let up = http
         .post(&storage_url)
-        .header("Authorization", format!("Bearer {}", state.supabase_service_key))
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
         .header("apikey", state.supabase_service_key.clone())
         .body(bytes)
         .send()
@@ -260,7 +287,10 @@ pub async fn upload_deliverable(
 
     if !up.status().is_success() {
         let msg = up.text().await.unwrap_or_default();
-        return Err((StatusCode::BAD_GATEWAY, format!("storage upload failed: {msg}")));
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            format!("storage upload failed: {msg}"),
+        ));
     }
 
     let insert_payload = json!({
@@ -293,10 +323,8 @@ pub async fn upload_deliverable(
         ));
     }
 
-    let created: serde_json::Value = serde_json::from_str(
-        &resp.text().await.unwrap_or_default(),
-    )
-    .unwrap_or(json!({}));
+    let created: serde_json::Value =
+        serde_json::from_str(&resp.text().await.unwrap_or_default()).unwrap_or(json!({}));
 
     info!(
         campaign_id = %campaign_id,
@@ -348,8 +376,7 @@ pub async fn list_deliverables(
     }
 
     let text = resp.text().await.unwrap_or_default();
-    let deliverables: Vec<serde_json::Value> =
-        serde_json::from_str(&text).unwrap_or_default();
+    let deliverables: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
 
     Ok(Json(json!({ "deliverables": deliverables })))
 }
@@ -365,13 +392,19 @@ pub async fn submit_deliverables(
     Path(CampaignPath { campaign_id }): Path<CampaignPath>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     if !is_creator_like(&user.role) {
-        return Err((StatusCode::FORBIDDEN, "Only creators can submit deliverables".into()));
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Only creators can submit deliverables".into(),
+        ));
     }
 
     let resp = state
         .pg
         .from("booking_deliverables")
-        .update(json!({ "status": "submitted", "updated_at": chrono::Utc::now().to_rfc3339() }).to_string())
+        .update(
+            json!({ "status": "submitted", "updated_at": chrono::Utc::now().to_rfc3339() })
+                .to_string(),
+        )
         .eq("booking_campaign_id", &campaign_id)
         .eq("creator_id", &user.id)
         .eq("status", "draft")
@@ -397,11 +430,17 @@ pub async fn submit_deliverables(
 pub async fn review_deliverable(
     State(state): State<AppState>,
     user: AuthUser,
-    Path(DeliverablePath { campaign_id, deliverable_id }): Path<DeliverablePath>,
+    Path(DeliverablePath {
+        campaign_id,
+        deliverable_id,
+    }): Path<DeliverablePath>,
     Json(payload): Json<ReviewDeliverableRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Only agencies can review deliverables".into()));
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Only agencies can review deliverables".into(),
+        ));
     }
 
     let allowed = ["approved", "changes_requested", "rejected"];
@@ -414,8 +453,16 @@ pub async fn review_deliverable(
     let mut update = serde_json::Map::new();
     update.insert("status".into(), json!(payload.status));
     update.insert("updated_at".into(), json!(chrono::Utc::now().to_rfc3339()));
-    update.insert("reviewed_by_agency_at".into(), json!(chrono::Utc::now().to_rfc3339()));
-    if let Some(note) = payload.note.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+    update.insert(
+        "reviewed_by_agency_at".into(),
+        json!(chrono::Utc::now().to_rfc3339()),
+    );
+    if let Some(note) = payload
+        .note
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
         update.insert("agency_review_note".into(), json!(note));
     }
 
@@ -447,7 +494,10 @@ pub async fn review_deliverable(
 pub async fn delete_deliverable(
     State(state): State<AppState>,
     user: AuthUser,
-    Path(DeliverablePath { campaign_id, deliverable_id }): Path<DeliverablePath>,
+    Path(DeliverablePath {
+        campaign_id,
+        deliverable_id,
+    }): Path<DeliverablePath>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     let mut req = state
         .pg
@@ -487,7 +537,10 @@ pub async fn delete_deliverable(
 pub async fn serve_deliverable_file(
     State(state): State<AppState>,
     user: AuthUser,
-    Path(DeliverablePath { campaign_id, deliverable_id }): Path<DeliverablePath>,
+    Path(DeliverablePath {
+        campaign_id,
+        deliverable_id,
+    }): Path<DeliverablePath>,
 ) -> impl IntoResponse {
     // Verify access
     let mut req = state
@@ -556,7 +609,10 @@ pub async fn serve_deliverable_file(
     let http = reqwest::Client::new();
     match http
         .get(&file_url)
-        .header("Authorization", format!("Bearer {}", state.supabase_service_key))
+        .header(
+            "Authorization",
+            format!("Bearer {}", state.supabase_service_key),
+        )
         .header("apikey", state.supabase_service_key.clone())
         .send()
         .await
@@ -571,7 +627,10 @@ pub async fn serve_deliverable_file(
             let body = upstream.bytes().await.unwrap_or_default();
             (
                 StatusCode::OK,
-                [("content-type", Box::leak(content_type.into_boxed_str()) as &'static str)],
+                [(
+                    "content-type",
+                    Box::leak(content_type.into_boxed_str()) as &'static str,
+                )],
                 body,
             )
         }
@@ -595,7 +654,10 @@ pub async fn submit_to_brand(
     Json(payload): Json<SubmitToBrandRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
     if user.role != "agency" {
-        return Err((StatusCode::FORBIDDEN, "Only agencies can submit to brands".into()));
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Only agencies can submit to brands".into(),
+        ));
     }
 
     // 1. Verify agency owns the campaign
@@ -619,17 +681,36 @@ pub async fn submit_to_brand(
     }
     let offer_text = offer_resp.text().await.unwrap_or_default();
     let offer_rows: Vec<serde_json::Value> = serde_json::from_str(&offer_text).unwrap_or_default();
-    let offer = offer_rows.into_iter().next().ok_or((StatusCode::NOT_FOUND, "Brand offer not found".into()))?;
+    let offer = offer_rows
+        .into_iter()
+        .next()
+        .ok_or((StatusCode::NOT_FOUND, "Brand offer not found".into()))?;
 
-    let brand_id = offer.get("brand_id").and_then(|v| v.as_str()).ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Missing brand_id".into()))?;
-    let brand_campaign_id = offer.get("brand_campaign_id").and_then(|v| v.as_str()).ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Missing brand_campaign_id".into()))?;
+    let brand_id = offer
+        .get("brand_id")
+        .and_then(|v| v.as_str())
+        .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Missing brand_id".into()))?;
+    let brand_campaign_id = offer
+        .get("brand_campaign_id")
+        .and_then(|v| v.as_str())
+        .ok_or((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Missing brand_campaign_id".into(),
+        ))?;
 
     // 3. Load the booking deliverables to ensure agency owns them and they are approved
     let dels_resp = state
         .pg
         .from("booking_deliverables")
         .select("*")
-        .in_("id", payload.deliverable_ids.iter().map(|s| s.as_str()).collect::<Vec<_>>())
+        .in_(
+            "id",
+            payload
+                .deliverable_ids
+                .iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<_>>(),
+        )
         .eq("booking_campaign_id", &campaign_id)
         .eq("agency_id", &user.id)
         .eq("status", "approved")
@@ -638,13 +719,19 @@ pub async fn submit_to_brand(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     if !dels_resp.status().is_success() {
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to fetch deliverables".into()));
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to fetch deliverables".into(),
+        ));
     }
     let dels_text = dels_resp.text().await.unwrap_or_default();
     let deliverables: Vec<serde_json::Value> = serde_json::from_str(&dels_text).unwrap_or_default();
 
     if deliverables.is_empty() {
-        return Err((StatusCode::BAD_REQUEST, "No valid deliverables found".into()));
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "No valid deliverables found".into(),
+        ));
     }
 
     // 4. Create records in campaign_offer_deliverables
@@ -678,8 +765,14 @@ pub async fn submit_to_brand(
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
     if !insert_resp.status().is_success() {
-        error!("Failed to insert brand deliverables: {}", insert_resp.text().await.unwrap_or_default());
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to submit to brand".into()));
+        error!(
+            "Failed to insert brand deliverables: {}",
+            insert_resp.text().await.unwrap_or_default()
+        );
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to submit to brand".into(),
+        ));
     }
 
     // 5. Update the brand offer status
@@ -699,5 +792,7 @@ pub async fn submit_to_brand(
         "deliverables submitted to brand"
     );
 
-    Ok(Json(json!({ "ok": true, "count": brand_deliverables.len() })))
+    Ok(Json(
+        json!({ "ok": true, "count": brand_deliverables.len() }),
+    ))
 }
