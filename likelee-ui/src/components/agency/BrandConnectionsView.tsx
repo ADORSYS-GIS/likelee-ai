@@ -150,7 +150,32 @@ const BrandConnectionsView = () => {
       const resp = await base44.get<{ contracts?: any[] }>(
         `/api/campaign-offers/${selectedOfferId}/contracts`,
       );
-      return Array.isArray(resp?.contracts) ? resp.contracts : [];
+      const contracts = Array.isArray(resp?.contracts) ? resp.contracts : [];
+      const refreshable = contracts.filter((contract: any) => {
+        if (!contract) return false;
+        const status = String(contract?.docuseal_status || "").toLowerCase();
+        if (!status || status === "draft" || status === "completed") return false;
+        if (["signed", "declined", "rejected"].includes(status)) return false;
+        return Boolean(contract?.docuseal_submission_id || contract?.docuseal_slug);
+      });
+      if (refreshable.length === 0) return contracts;
+      const refreshed = await Promise.all(
+        contracts.map(async (contract: any) => {
+          const contractId = String(contract?.id || "").trim();
+          if (!contractId) return contract;
+          if (!refreshable.some((c: any) => c?.id === contract?.id)) return contract;
+          try {
+            const refreshedResp = await base44.post<{ contract?: any }>(
+              `/api/campaign-offers/${selectedOfferId}/contracts/${contractId}/refresh`,
+              {},
+            );
+            return refreshedResp?.contract || contract;
+          } catch {
+            return contract;
+          }
+        }),
+      );
+      return refreshed;
     },
     refetchInterval: 5000,
   });
