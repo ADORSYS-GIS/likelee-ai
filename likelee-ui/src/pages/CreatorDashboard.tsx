@@ -827,6 +827,9 @@ export default function CreatorDashboard() {
   const [brandConnectionSubTab, setBrandConnectionSubTab] = useState<
     "connections" | "requests" | "offers" | "deliverables"
   >("connections");
+  const [agencyConnectionSubTab, setAgencyConnectionSubTab] = useState<
+    "connections" | "asset_requests"
+  >("connections");
   const [selectedBrandOfferId, setSelectedBrandOfferId] = useState<string>("");
   const [selectedOfferBriefId, setSelectedOfferBriefId] = useState<string>("");
   const [selectedOfferContracts, setSelectedOfferContracts] = useState<any[]>(
@@ -5191,222 +5194,261 @@ export default function CreatorDashboard() {
           </p>
         </div>
 
-        <Card className="p-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <div className="text-lg font-semibold text-gray-900">
-                Connected Agencies
-              </div>
-              <div className="text-sm text-gray-600 mt-1">
-                {agencyConnections.length > 0
-                  ? "You can be connected to multiple agencies at once."
-                  : "You are not connected to any agencies yet."}
-              </div>
-            </div>
-            {agencyConnectionLoading && (
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Loading
-              </div>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant={
+              agencyConnectionSubTab === "connections" ? "default" : "outline"
+            }
+            className={
+              agencyConnectionSubTab === "connections"
+                ? "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                : "border-gray-300"
+            }
+            onClick={() => setAgencyConnectionSubTab("connections")}
+          >
+            Connections
+          </Button>
+          <Button
+            variant={
+              agencyConnectionSubTab === "asset_requests" ? "default" : "outline"
+            }
+            className={
+              agencyConnectionSubTab === "asset_requests"
+                ? "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                : "border-gray-300"
+            }
+            onClick={() => setAgencyConnectionSubTab("asset_requests")}
+          >
+            Asset Requests
+            {unseenAssetRequestCount > 0 && (
+              <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 rounded-full bg-white/20 px-1 text-xs">
+                {unseenAssetRequestCount}
+              </span>
             )}
-          </div>
+          </Button>
+        </div>
 
-          {agencyConnections.length > 0 && (
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-              {agencyConnections.map((c) => (
-                <div
-                  key={c.agency_id}
-                  className="flex items-center justify-between gap-3 p-4 border border-gray-200 rounded-lg bg-white"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
-                      {c.agencies?.logo_url ? (
-                        <img
-                          src={c.agencies.logo_url}
-                          alt={c.agencies.agency_name || "Agency"}
-                          className="w-full h-full object-contain"
-                        />
-                      ) : (
-                        <Building2 className="w-5 h-5 text-gray-500" />
+        {agencyConnectionSubTab === "connections" && (
+          <>
+            <Card className="p-6">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <div className="text-lg font-semibold text-gray-900">
+                    Connected Agencies
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    {agencyConnections.length > 0
+                      ? "You can be connected to multiple agencies at once."
+                      : "You are not connected to any agencies yet."}
+                  </div>
+                </div>
+                {agencyConnectionLoading && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Loading
+                  </div>
+                )}
+              </div>
+
+              {agencyConnections.length > 0 && (
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {agencyConnections.map((c) => (
+                    <div
+                      key={c.agency_id}
+                      className="flex items-center justify-between gap-3 p-4 border border-gray-200 rounded-lg bg-white"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                          {c.agencies?.logo_url ? (
+                            <img
+                              src={c.agencies.logo_url}
+                              alt={c.agencies.agency_name || "Agency"}
+                              className="w-full h-full object-contain"
+                            />
+                          ) : (
+                            <Building2 className="w-5 h-5 text-gray-500" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-semibold text-gray-900 truncate">
+                            {c.agencies?.agency_name || c.agency_id}
+                          </div>
+                          <div className="text-xs text-gray-500 truncate">
+                            Connected agency
+                          </div>
+                        </div>
+                      </div>
+
+                      {((profile as any)?.role === "talent" ||
+                        agencyConnections.length > 0) && (
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          disabled={agencyConnectionLoading}
+                          onClick={() => {
+                            setDisconnectTarget({
+                              agency_id: String(c.agency_id),
+                              agency_name: c.agencies?.agency_name || undefined,
+                            });
+                            setDisconnectConfirmChecked(false);
+                            setDisconnectDialogOpen(true);
+                          }}
+                          aria-label="Disconnect from agency"
+                        >
+                          <Link2Off className="h-4 w-4" />
+                        </Button>
                       )}
                     </div>
-                    <div className="min-w-0">
-                      <div className="font-semibold text-gray-900 truncate">
-                        {c.agencies?.agency_name || c.agency_id}
-                      </div>
-                      <div className="text-xs text-gray-500 truncate">
-                        Connected agency
-                      </div>
-                    </div>
-                  </div>
+                  ))}
+                </div>
+              )}
+            </Card>
 
-                  {((profile as any)?.role === "talent" ||
-                    agencyConnections.length > 0) && (
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      disabled={agencyConnectionLoading}
-                      onClick={() => {
-                        setDisconnectTarget({
-                          agency_id: String(c.agency_id),
-                          agency_name: c.agencies?.agency_name || undefined,
-                        });
-                        setDisconnectConfirmChecked(false);
-                        setDisconnectDialogOpen(true);
-                      }}
-                      aria-label="Disconnect from agency"
+            <Card className="p-6">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <div className="text-lg font-semibold text-gray-900">
+                    Invitations
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    {pending.length > 0
+                      ? "Respond to pending invitations from agencies."
+                      : "No pending invitations right now."}
+                  </div>
+                </div>
+                {pending.length > 0 && (
+                  <Badge className="bg-[#32C8D1] text-white">
+                    {pending.length}
+                  </Badge>
+                )}
+              </div>
+
+              {pending.length > 0 && (
+                <div className="mt-6 space-y-3">
+                  {pending.map((inv) => (
+                    <div
+                      key={inv.id}
+                      className="p-4 border border-gray-200 rounded-lg space-y-3"
                     >
-                      <Link2Off className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="min-w-0 flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                            {inv?.agencies?.logo_url ? (
+                              <img
+                                src={inv.agencies.logo_url}
+                                alt={inv.agencies.agency_name || "Agency"}
+                                className="w-full h-full object-contain"
+                              />
+                            ) : (
+                              <Building2 className="w-5 h-5 text-gray-500" />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-semibold text-gray-900 truncate">
+                              {inv?.agencies?.agency_name
+                                ? `Invitation from ${inv.agencies.agency_name}`
+                                : "Invitation from agency"}
+                            </div>
+                            <div className="text-xs text-gray-500 truncate mt-1">
+                              {inv?.agencies?.email ||
+                                inv?.agencies?.website ||
+                                "Agency profile available on request"}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <Button
+                            variant="outline"
+                            className="border-gray-200"
+                            onClick={async () => {
+                              try {
+                                const token = String(inv?.token || "");
+                                if (token) {
+                                  navigate(
+                                    `/invite/agency/${encodeURIComponent(token)}`,
+                                  );
+                                  return;
+                                }
 
-        <Card className="p-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <div className="text-lg font-semibold text-gray-900">
-                Invitations
-              </div>
-              <div className="text-sm text-gray-600 mt-1">
-                {pending.length > 0
-                  ? "Respond to pending invitations from agencies."
-                  : "No pending invitations right now."}
-              </div>
-            </div>
-            {pending.length > 0 && (
-              <Badge className="bg-[#32C8D1] text-white">
-                {pending.length}
-              </Badge>
-            )}
-          </div>
+                                await declineCreatorAgencyInvite(inv.id);
+                                setAgencyInvites((prev) =>
+                                  prev.map((p) =>
+                                    p.id === inv.id
+                                      ? { ...p, status: "declined" }
+                                      : p,
+                                  ),
+                                );
+                                toast({ title: "Invitation declined" });
+                              } catch (e: any) {
+                                toast({
+                                  variant: "destructive",
+                                  title: "Failed to decline",
+                                  description:
+                                    "We could not decline this invitation right now. Please try again.",
+                                });
+                              }
+                            }}
+                          >
+                            Decline
+                          </Button>
+                          <Button
+                            className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
+                            onClick={async () => {
+                              try {
+                                const token = String(inv?.token || "");
+                                if (token) {
+                                  navigate(
+                                    `/invite/agency/${encodeURIComponent(token)}`,
+                                  );
+                                  return;
+                                }
 
-          {pending.length > 0 && (
-            <div className="mt-6 space-y-3">
-              {pending.map((inv) => (
-                <div
-                  key={inv.id}
-                  className="p-4 border border-gray-200 rounded-lg space-y-3"
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="min-w-0 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
-                        {inv?.agencies?.logo_url ? (
-                          <img
-                            src={inv.agencies.logo_url}
-                            alt={inv.agencies.agency_name || "Agency"}
-                            className="w-full h-full object-contain"
-                          />
-                        ) : (
-                          <Building2 className="w-5 h-5 text-gray-500" />
-                        )}
+                                await acceptCreatorAgencyInvite(inv.id);
+                                const [connections] = await Promise.all([
+                                  listCreatorAgencyConnections(),
+                                ]);
+                                setAgencyConnections(connections);
+                                setAgencyInvites((prev) =>
+                                  prev.map((p) =>
+                                    p.id === inv.id
+                                      ? { ...p, status: "accepted" }
+                                      : p,
+                                  ),
+                                );
+                                toast({
+                                  title: "Invitation accepted",
+                                  description:
+                                    "You are now connected to this agency. You can edit your profile per agency in Talent Portal settings.",
+                                });
+                              } catch (e: any) {
+                                toast({
+                                  variant: "destructive",
+                                  title: "Failed to accept",
+                                  description:
+                                    "We could not accept this invitation right now. Please try again.",
+                                });
+                              }
+                            }}
+                          >
+                            Accept
+                          </Button>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <div className="font-semibold text-gray-900 truncate">
-                          {inv?.agencies?.agency_name
-                            ? `Invitation from ${inv.agencies.agency_name}`
-                            : "Invitation from agency"}
-                        </div>
-                        <div className="text-xs text-gray-500 truncate mt-1">
-                          {inv?.agencies?.email ||
-                            inv?.agencies?.website ||
-                            "Agency profile available on request"}
-                        </div>
+                      <div className="rounded-md border border-cyan-100 bg-cyan-50 px-3 py-2 text-xs text-cyan-900">
+                        <span className="font-semibold">Likelee notice:</span>{" "}
+                        This agency found your public profile in marketplace and
+                        sent a connection invitation.
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <Button
-                        variant="outline"
-                        className="border-gray-200"
-                        onClick={async () => {
-                          try {
-                            const token = String(inv?.token || "");
-                            if (token) {
-                              navigate(
-                                `/invite/agency/${encodeURIComponent(token)}`,
-                              );
-                              return;
-                            }
-
-                            await declineCreatorAgencyInvite(inv.id);
-                            setAgencyInvites((prev) =>
-                              prev.map((p) =>
-                                p.id === inv.id
-                                  ? { ...p, status: "declined" }
-                                  : p,
-                              ),
-                            );
-                            toast({ title: "Invitation declined" });
-                          } catch (e: any) {
-                            toast({
-                              variant: "destructive",
-                              title: "Failed to decline",
-                              description:
-                                "We could not decline this invitation right now. Please try again.",
-                            });
-                          }
-                        }}
-                      >
-                        Decline
-                      </Button>
-                      <Button
-                        className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                        onClick={async () => {
-                          try {
-                            const token = String(inv?.token || "");
-                            if (token) {
-                              navigate(
-                                `/invite/agency/${encodeURIComponent(token)}`,
-                              );
-                              return;
-                            }
-
-                            await acceptCreatorAgencyInvite(inv.id);
-                            const [connections] = await Promise.all([
-                              listCreatorAgencyConnections(),
-                            ]);
-                            setAgencyConnections(connections);
-                            setAgencyInvites((prev) =>
-                              prev.map((p) =>
-                                p.id === inv.id
-                                  ? { ...p, status: "accepted" }
-                                  : p,
-                              ),
-                            );
-                            toast({
-                              title: "Invitation accepted",
-                              description:
-                                "You are now connected to this agency. You can edit your profile per agency in Talent Portal settings.",
-                            });
-                          } catch (e: any) {
-                            toast({
-                              variant: "destructive",
-                              title: "Failed to accept",
-                              description:
-                                "We could not accept this invitation right now. Please try again.",
-                            });
-                          }
-                        }}
-                      >
-                        Accept
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="rounded-md border border-cyan-100 bg-cyan-50 px-3 py-2 text-xs text-cyan-900">
-                    <span className="font-semibold">Likelee notice:</span> This
-                    agency found your public profile in marketplace and sent a
-                    connection invitation.
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-        </Card>
+              )}
+            </Card>
+          </>
+        )}
 
-        <Card className="p-6">
+        {agencyConnectionSubTab === "asset_requests" && (
+          <Card className="p-6">
           <div className="flex items-center justify-between gap-4">
             <div>
               <div className="text-lg font-semibold text-gray-900">
@@ -5641,6 +5683,7 @@ export default function CreatorDashboard() {
             })}
           </div>
         </Card>
+        )}
       </div>
     );
   };
