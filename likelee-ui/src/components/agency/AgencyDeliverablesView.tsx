@@ -326,6 +326,30 @@ export function AgencyDeliverablesView() {
       caption: string;
     }[];
 
+  const handleDownload = async (url: string, filename?: string) => {
+    if (!url) return;
+    const safeName = filename?.trim() || "deliverable";
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = safeName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch {
+      const fallback = document.createElement("a");
+      fallback.href = url;
+      fallback.download = safeName;
+      document.body.appendChild(fallback);
+      fallback.click();
+      fallback.remove();
+    }
+  };
+
   const renderDeliverableCard = (
     deliverable: any,
     options?: {
@@ -384,16 +408,16 @@ export function AgencyDeliverablesView() {
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           {assetUrl && (
             <div className="absolute top-3 right-3 flex items-center gap-2">
-              <a
-                href={resolvedUrl}
-                download
-                target="_blank"
-                rel="noreferrer"
+              <button
+                type="button"
                 className="h-8 w-8 rounded-full bg-white/90 text-gray-900 flex items-center justify-center shadow-sm hover:bg-white"
-                onClick={(event) => event.stopPropagation()}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  void handleDownload(resolvedUrl, caption || "deliverable");
+                }}
               >
                 <Download className="w-4 h-4" />
-              </a>
+              </button>
               {canDelete && (
                 <Button
                   variant="secondary"
@@ -811,7 +835,7 @@ export function AgencyDeliverablesView() {
           <Button
             variant="outline"
             size="sm"
-            className="border-white/20 text-white hover:bg-white/10"
+            className="border-white/20 text-white bg-white/10 hover:bg-white/20"
             onClick={() => {
               setExpandedOfferId("");
               setSelectedTalentId("");
@@ -941,9 +965,12 @@ export function AgencyDeliverablesView() {
                                   }`}
                                 >
                                   <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center">
-                                      <User className="w-4 h-4 text-gray-500" />
-                                    </div>
+                                    <Avatar className="w-9 h-9">
+                                      <AvatarImage src={getTalentAvatar(talent)} />
+                                      <AvatarFallback className="bg-indigo-50 text-indigo-600 font-bold text-xs uppercase">
+                                        {getTalentInitial(talent)}
+                                      </AvatarFallback>
+                                    </Avatar>
                                     <div>
                                       <p className="text-sm font-semibold text-gray-900">
                                         {talent?.stage_name || talent?.full_legal_name || "Talent"}
@@ -1217,46 +1244,135 @@ export function AgencyDeliverablesView() {
           setRequestDialog((prev) => ({ ...prev, open }))
         }
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Request Asset</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <Input
-              placeholder="Title"
-              value={requestDialog.title}
-              onChange={(e) =>
-                setRequestDialog((prev) => ({ ...prev, title: e.target.value }))
-              }
-            />
-            <Textarea
-              placeholder="Describe what you need"
-              value={requestDialog.message}
-              onChange={(e) =>
-                setRequestDialog((prev) => ({
-                  ...prev,
-                  message: e.target.value,
-                }))
-              }
-            />
-            <Input
-              type="file"
-              accept="application/pdf"
-              onChange={(e) =>
-                setRequestDialog((prev) => ({
-                  ...prev,
-                  file: e.target.files?.[0] || null,
-                }))
-              }
-            />
-            <Button onClick={handleRequestAsset} disabled={requestDialog.sending}>
-              {requestDialog.sending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <>Send Request</>
-              )}
-            </Button>
-          </div>
+        <DialogContent className="sm:max-w-[560px] rounded-none p-0 overflow-hidden border border-gray-200 shadow-2xl">
+          {(() => {
+            const assigned = assignmentsByOffer[requestDialog.offerId] || [];
+            const requestTalent =
+              assigned.find(
+                (a: any) =>
+                  String(a?.talent_id || "") ===
+                  String(requestDialog.talentId || ""),
+              )?.agency_users ||
+              rosterOptions.find(
+                (t: any) =>
+                  String(t?.id || "") === String(requestDialog.talentId || ""),
+              ) ||
+              null;
+            return (
+              <>
+                <div className="bg-gray-900 p-8 text-white relative">
+                  <DialogHeader className="space-y-2 relative z-10">
+                    <div className="w-12 h-12 bg-white/10 rounded-none flex items-center justify-center mb-4 border border-white/20">
+                      <FileText className="w-6 h-6 text-white" />
+                    </div>
+                    <DialogTitle className="text-2xl font-bold text-white">
+                      Request Asset
+                    </DialogTitle>
+                    <p className="text-gray-400 text-sm">
+                      Send a clear brief and optional PDF to guide the talent.
+                    </p>
+                  </DialogHeader>
+                </div>
+                <div className="p-8 space-y-6 bg-white">
+                  {requestTalent && (
+                    <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                      <Avatar className="w-10 h-10">
+                        <AvatarImage src={getTalentAvatar(requestTalent)} />
+                        <AvatarFallback className="bg-indigo-50 text-indigo-600 font-bold text-xs uppercase">
+                          {getTalentInitial(requestTalent)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-gray-900 truncate">
+                          {requestTalent?.stage_name ||
+                            requestTalent?.name ||
+                            requestTalent?.full_legal_name ||
+                            "Talent"}
+                        </div>
+                        <div className="text-xs text-gray-500 truncate">
+                          {requestTalent?.email || "Selected talent"}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                      Title
+                    </label>
+                    <Input
+                      placeholder="Short title (e.g., Product shots for May)"
+                      value={requestDialog.title}
+                      onChange={(e) =>
+                        setRequestDialog((prev) => ({
+                          ...prev,
+                          title: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                      Details
+                    </label>
+                    <Textarea
+                      placeholder="Describe exactly what you need, delivery format, and deadline."
+                      value={requestDialog.message}
+                      onChange={(e) =>
+                        setRequestDialog((prev) => ({
+                          ...prev,
+                          message: e.target.value,
+                        }))
+                      }
+                      className="min-h-[140px] resize-none rounded-none border-gray-200 bg-gray-50 focus:bg-white focus:ring-black/5 transition-all text-sm leading-relaxed"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                      Brief PDF (optional)
+                    </label>
+                    <div className="flex items-center gap-3 rounded-none border border-gray-200 bg-gray-50 px-3 py-2">
+                      <input
+                        type="file"
+                        accept="application/pdf"
+                        onChange={(e) =>
+                          setRequestDialog((prev) => ({
+                            ...prev,
+                            file: e.target.files?.[0] || null,
+                          }))
+                        }
+                      />
+                      <span className="text-xs text-gray-500 truncate">
+                        {requestDialog.file?.name || "No file selected"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1 h-12 rounded-none border-gray-200 hover:bg-gray-50 font-bold"
+                      onClick={() =>
+                        setRequestDialog((prev) => ({ ...prev, open: false }))
+                      }
+                      disabled={requestDialog.sending}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      className="flex-1 h-12 rounded-none bg-black hover:bg-gray-800 text-white font-bold shadow-lg shadow-black/10 transition-all active:scale-[0.98]"
+                      onClick={handleRequestAsset}
+                      disabled={requestDialog.sending}
+                    >
+                      {requestDialog.sending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        "Send Request"
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
@@ -1497,15 +1613,18 @@ export function AgencyDeliverablesView() {
                   {galleryItems[galleryIndex].caption}
                 </div>
                 <div className="flex items-center gap-2 mr-4">
-                  <a
-                    href={galleryItems[galleryIndex].url}
-                    download
-                    target="_blank"
-                    rel="noreferrer"
+                  <button
+                    type="button"
                     className="h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
+                    onClick={() =>
+                      handleDownload(
+                        galleryItems[galleryIndex].url,
+                        galleryItems[galleryIndex].caption,
+                      )
+                    }
                   >
                     <Download className="w-4 h-4" />
-                  </a>
+                  </button>
                 </div>
               </div>
               <div className="bg-black flex items-center justify-center min-h-[60vh] relative">
