@@ -818,10 +818,11 @@ export default function CreatorDashboard() {
   >({});
   const [loadingOfferDeliverablesById, setLoadingOfferDeliverablesById] =
     useState<Record<string, boolean>>({});
-  const [expandedAssetRequests, setExpandedAssetRequests] = useState<Set<string>>(
-    new Set(),
-  );
-  const [assetRequestsInitialized, setAssetRequestsInitialized] = useState(false);
+  const [expandedAssetRequests, setExpandedAssetRequests] = useState<
+    Set<string>
+  >(new Set());
+  const [assetRequestsInitialized, setAssetRequestsInitialized] =
+    useState(false);
   const [bookings, setBookings] = useState<any[]>([]);
   const [creatorCampaigns, setCreatorCampaigns] = useState<any[]>([]);
   const [brandConnectionSubTab, setBrandConnectionSubTab] = useState<
@@ -949,7 +950,9 @@ export default function CreatorDashboard() {
     setLoadingAssetRequests(true);
     try {
       const resp = await listTalentAssetRequests();
-      return Array.isArray((resp as any)?.requests) ? (resp as any).requests : [];
+      return Array.isArray((resp as any)?.requests)
+        ? (resp as any).requests
+        : [];
     } finally {
       setLoadingAssetRequests(false);
     }
@@ -1087,7 +1090,9 @@ export default function CreatorDashboard() {
         setBrandConnectionRequests(requests);
         setBrandConnections(brandConnected);
         setBrandOffers(Array.isArray(offers) ? offers : []);
-        const assets = Array.isArray(assetRequestsResp) ? assetRequestsResp : [];
+        const assets = Array.isArray(assetRequestsResp)
+          ? assetRequestsResp
+          : [];
         setAssetRequests(assets);
         const offerIds = Array.from(
           new Set(
@@ -1130,8 +1135,12 @@ export default function CreatorDashboard() {
             }),
           );
         }
-        setBookings(Array.isArray(bookingsData.bookings) ? bookingsData.bookings : []);
-        setCreatorCampaigns(Array.isArray(bookingsData.campaigns) ? bookingsData.campaigns : []);
+        setBookings(
+          Array.isArray(bookingsData.bookings) ? bookingsData.bookings : [],
+        );
+        setCreatorCampaigns(
+          Array.isArray(bookingsData.campaigns) ? bookingsData.campaigns : [],
+        );
       } catch (e: any) {
         if (!active) return;
         console.error("Failed to load agency connection data", e);
@@ -5081,7 +5090,9 @@ export default function CreatorDashboard() {
   const deliverableIsImage = (deliverable: any) => {
     const type = String(deliverable?.asset_type || "").toLowerCase();
     if (type === "image" || type.startsWith("image/")) return true;
-    const contentType = String(deliverable?.meta?.content_type || "").toLowerCase();
+    const contentType = String(
+      deliverable?.meta?.content_type || "",
+    ).toLowerCase();
     if (contentType.startsWith("image/")) return true;
     const url = String(deliverable?.asset_url || "").toLowerCase();
     return /\.(png|jpg|jpeg|webp|gif|bmp|svg)(\?.*)?$/.test(url);
@@ -5090,7 +5101,9 @@ export default function CreatorDashboard() {
   const deliverableIsVideo = (deliverable: any) => {
     const type = String(deliverable?.asset_type || "").toLowerCase();
     if (type === "video" || type.startsWith("video/")) return true;
-    const contentType = String(deliverable?.meta?.content_type || "").toLowerCase();
+    const contentType = String(
+      deliverable?.meta?.content_type || "",
+    ).toLowerCase();
     if (contentType.startsWith("video/")) return true;
     const url = String(deliverable?.asset_url || "").toLowerCase();
     return /\.(mp4|mov|webm|m4v)(\?.*)?$/.test(url);
@@ -5210,7 +5223,9 @@ export default function CreatorDashboard() {
           </Button>
           <Button
             variant={
-              agencyConnectionSubTab === "asset_requests" ? "default" : "outline"
+              agencyConnectionSubTab === "asset_requests"
+                ? "default"
+                : "outline"
             }
             className={
               agencyConnectionSubTab === "asset_requests"
@@ -5449,236 +5464,250 @@ export default function CreatorDashboard() {
 
         {agencyConnectionSubTab === "asset_requests" && (
           <Card className="p-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <div className="text-lg font-semibold text-gray-900">
-                Asset Requests
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="text-lg font-semibold text-gray-900">
+                  Asset Requests
+                </div>
+                <div className="text-sm text-gray-600 mt-1">
+                  Upload deliverables for agency requests.
+                </div>
               </div>
-              <div className="text-sm text-gray-600 mt-1">
-                Upload deliverables for agency requests.
-              </div>
+              {unseenAssetRequestCount > 0 && (
+                <Badge className="bg-[#32C8D1] text-white">
+                  {unseenAssetRequestCount}
+                </Badge>
+              )}
             </div>
-            {unseenAssetRequestCount > 0 && (
-              <Badge className="bg-[#32C8D1] text-white">
-                {unseenAssetRequestCount}
-              </Badge>
-            )}
-          </div>
-          <div className="mt-6 space-y-4">
-            {loadingAssetRequests && (
-              <p className="text-sm text-gray-600">Loading requests...</p>
-            )}
-            {!loadingAssetRequests && assetRequests.length === 0 && (
-              <p className="text-sm text-gray-600">No asset requests yet.</p>
-            )}
-            {assetRequests.map((req: any) => {
-              const offer = req?.campaign_offers || {};
-              const offerId = String(req?.offer_id || offer?.id || "");
-              const reqId = String(req?.id || "");
-              const agencyName = req?.agencies?.agency_name || "Agency";
-              const agencyLogo = req?.agencies?.logo_url || "";
-              const requestTitle = String(req?.title || "Asset request");
-              const offerDeliverables = offerId
-                ? offerDeliverablesById[offerId] || []
-                : [];
-              const requestDeliverables = offerDeliverables.filter((d: any) =>
-                String(d?.asset_request_id || "") === reqId &&
-                String(d?.submitted_by_role || "") === "creator",
-              );
-              const isExpanded = expandedAssetRequests.has(reqId);
-              return (
-                <div
-                  key={String(req?.id)}
-                  className="border border-gray-200 rounded-lg p-4 bg-white space-y-2"
-                >
-                  <button
-                    type="button"
-                    className="w-full flex items-start justify-between gap-3 text-left"
-                    onClick={() => {
-                      const next = new Set(expandedAssetRequests);
-                      if (next.has(reqId)) next.delete(reqId);
-                      else next.add(reqId);
-                      setExpandedAssetRequests(next);
-                    }}
+            <div className="mt-6 space-y-4">
+              {loadingAssetRequests && (
+                <p className="text-sm text-gray-600">Loading requests...</p>
+              )}
+              {!loadingAssetRequests && assetRequests.length === 0 && (
+                <p className="text-sm text-gray-600">No asset requests yet.</p>
+              )}
+              {assetRequests.map((req: any) => {
+                const offer = req?.campaign_offers || {};
+                const offerId = String(req?.offer_id || offer?.id || "");
+                const reqId = String(req?.id || "");
+                const agencyName = req?.agencies?.agency_name || "Agency";
+                const agencyLogo = req?.agencies?.logo_url || "";
+                const requestTitle = String(req?.title || "Asset request");
+                const offerDeliverables = offerId
+                  ? offerDeliverablesById[offerId] || []
+                  : [];
+                const requestDeliverables = offerDeliverables.filter(
+                  (d: any) =>
+                    String(d?.asset_request_id || "") === reqId &&
+                    String(d?.submitted_by_role || "") === "creator",
+                );
+                const isExpanded = expandedAssetRequests.has(reqId);
+                return (
+                  <div
+                    key={String(req?.id)}
+                    className="border border-gray-200 rounded-lg p-4 bg-white space-y-2"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
-                        {agencyLogo ? (
-                          <img
-                            src={String(agencyLogo)}
-                            alt={agencyName}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          agencyName.slice(0, 1).toUpperCase()
-                        )}
-                      </div>
+                    <button
+                      type="button"
+                      className="w-full flex items-start justify-between gap-3 text-left"
+                      onClick={() => {
+                        const next = new Set(expandedAssetRequests);
+                        if (next.has(reqId)) next.delete(reqId);
+                        else next.add(reqId);
+                        setExpandedAssetRequests(next);
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center text-xs font-bold text-gray-600">
+                          {agencyLogo ? (
+                            <img
+                              src={String(agencyLogo)}
+                              alt={agencyName}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            agencyName.slice(0, 1).toUpperCase()
+                          )}
+                        </div>
                         <div>
                           <div className="font-semibold text-gray-900">
                             {requestTitle}
                           </div>
                           <div className="text-xs text-gray-500">
-                          {agencyName} •{" "}
-                          {offer?.offer_title ||
-                            offer?.brand_campaigns?.name ||
-                            "Campaign"}
+                            {agencyName} •{" "}
+                            {offer?.offer_title ||
+                              offer?.brand_campaigns?.name ||
+                              "Campaign"}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="capitalize">
-                        {String(req?.status || "sent").replace(/_/g, " ")}
-                      </Badge>
-                      <ChevronDown
-                        className={`w-4 h-4 text-gray-400 transition-transform ${
-                          isExpanded ? "rotate-180" : ""
-                        }`}
-                      />
-                    </div>
-                  </button>
-                  {isExpanded && (
-                    <>
-                      {req?.message && (
-                        <p className="text-sm text-gray-700">
-                          {String(req.message)}
-                        </p>
-                      )}
-                      {req?.file_url && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="border-gray-200"
-                          onClick={() =>
-                            window.open(String(req.file_url), "_blank")
-                          }
-                        >
-                          <FileText className="w-4 h-4 mr-2" /> View PDF
-                        </Button>
-                      )}
-                      <div className="flex flex-wrap gap-2 pt-2">
-                        <Button
-                          size="sm"
-                          onClick={async () => {
-                            if (!offerId) return;
-                            setSendDeliverableBrandId(
-                              String(offer?.brand_id || ""),
-                            );
-                            setSendDeliverableOfferId(offerId);
-                            setSendDeliverableRequestId(String(req?.id || ""));
-                            setSendDeliverableRequestMeta({
-                              agency_name: agencyName,
-                              agency_logo_url: agencyLogo,
-                              offer_title: offer?.offer_title || undefined,
-                              campaign_name:
-                                offer?.brand_campaigns?.name || undefined,
-                            });
-                            setSendDeliverableOpen(true);
-                            try {
-                              if (
-                                String(req?.status || "").toLowerCase() === "sent"
-                              ) {
-                                await markTalentAssetRequestViewed(
-                                  String(req?.id || ""),
-                                );
-                              }
-                            } catch {}
-                          }}
-                        >
-                          Upload Deliverables
-                        </Button>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="capitalize">
+                          {String(req?.status || "sent").replace(/_/g, " ")}
+                        </Badge>
+                        <ChevronDown
+                          className={`w-4 h-4 text-gray-400 transition-transform ${
+                            isExpanded ? "rotate-180" : ""
+                          }`}
+                        />
                       </div>
-                      <div className="pt-2 border-t border-gray-100">
-                        <div className="flex items-center justify-between text-xs font-semibold text-gray-700 mb-2">
-                          <span>Your deliverables</span>
-                        </div>
-                        {loadingOfferDeliverablesById[offerId] && (
-                          <p className="text-xs text-gray-500">
-                            Loading deliverables...
+                    </button>
+                    {isExpanded && (
+                      <>
+                        {req?.message && (
+                          <p className="text-sm text-gray-700">
+                            {String(req.message)}
                           </p>
                         )}
-                        {!loadingOfferDeliverablesById[offerId] &&
-                          requestDeliverables.length === 0 && (
+                        {req?.file_url && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-gray-200"
+                            onClick={() =>
+                              window.open(String(req.file_url), "_blank")
+                            }
+                          >
+                            <FileText className="w-4 h-4 mr-2" /> View PDF
+                          </Button>
+                        )}
+                        <div className="flex flex-wrap gap-2 pt-2">
+                          <Button
+                            size="sm"
+                            onClick={async () => {
+                              if (!offerId) return;
+                              setSendDeliverableBrandId(
+                                String(offer?.brand_id || ""),
+                              );
+                              setSendDeliverableOfferId(offerId);
+                              setSendDeliverableRequestId(
+                                String(req?.id || ""),
+                              );
+                              setSendDeliverableRequestMeta({
+                                agency_name: agencyName,
+                                agency_logo_url: agencyLogo,
+                                offer_title: offer?.offer_title || undefined,
+                                campaign_name:
+                                  offer?.brand_campaigns?.name || undefined,
+                              });
+                              setSendDeliverableOpen(true);
+                              try {
+                                if (
+                                  String(req?.status || "").toLowerCase() ===
+                                  "sent"
+                                ) {
+                                  await markTalentAssetRequestViewed(
+                                    String(req?.id || ""),
+                                  );
+                                }
+                              } catch {}
+                            }}
+                          >
+                            Upload Deliverables
+                          </Button>
+                        </div>
+                        <div className="pt-2 border-t border-gray-100">
+                          <div className="flex items-center justify-between text-xs font-semibold text-gray-700 mb-2">
+                            <span>Your deliverables</span>
+                          </div>
+                          {loadingOfferDeliverablesById[offerId] && (
                             <p className="text-xs text-gray-500">
-                              No deliverables submitted yet.
+                              Loading deliverables...
                             </p>
                           )}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
-                          {requestDeliverables.map((deliverable: any) => {
-                            const assetUrl = String(deliverable?.asset_url || "");
-                            const caption =
-                              String(deliverable?.caption || "").trim() ||
-                              String(deliverable?.meta?.original_name || "").trim();
-                            const agencyNote = String(
-                              deliverable?.agency_review_note || "",
-                            ).trim();
-                            return (
-                              <div
-                                key={String(deliverable?.id)}
-                                className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm"
-                              >
-                                <div className="relative aspect-[4/5] bg-gray-100">
-                                  {assetUrl && deliverableIsImage(deliverable) && (
-                                    <img
-                                      src={assetUrl}
-                                      alt={caption || "Deliverable"}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  )}
-                                  {assetUrl && deliverableIsVideo(deliverable) && (
-                                    <video
-                                      src={assetUrl}
-                                      controls
-                                      className="w-full h-full object-cover bg-black"
-                                    />
-                                  )}
-                                <div className="absolute top-2 left-2">
-                                  <Badge
-                                    className={`text-[11px] ${deliverableStatusBadgeClass(
-                                      deliverable?.status || "submitted",
-                                    )}`}
-                                  >
-                                    {String(
-                                      deliverable?.status || "submitted",
-                                    ).toLowerCase() === "brand_approved"
-                                      ? "approved"
-                                      : String(deliverable?.status || "submitted")}
-                                  </Badge>
-                                </div>
-                                </div>
-                                <div className="p-3 space-y-2">
-                                  <div className="text-xs text-gray-700 font-medium">
-                                    {caption || "Deliverable"}
-                                  </div>
-                                  {agencyNote && (
-                                    <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-100 rounded p-2">
-                                      <strong>Agency Feedback:</strong> {agencyNote}
-                                    </div>
-                                  )}
-                                  {assetUrl &&
-                                    !deliverableIsImage(deliverable) &&
-                                    !deliverableIsVideo(deliverable) && (
-                                      <a
-                                        href={assetUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="text-xs text-blue-600 underline"
+                          {!loadingOfferDeliverablesById[offerId] &&
+                            requestDeliverables.length === 0 && (
+                              <p className="text-xs text-gray-500">
+                                No deliverables submitted yet.
+                              </p>
+                            )}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
+                            {requestDeliverables.map((deliverable: any) => {
+                              const assetUrl = String(
+                                deliverable?.asset_url || "",
+                              );
+                              const caption =
+                                String(deliverable?.caption || "").trim() ||
+                                String(
+                                  deliverable?.meta?.original_name || "",
+                                ).trim();
+                              const agencyNote = String(
+                                deliverable?.agency_review_note || "",
+                              ).trim();
+                              return (
+                                <div
+                                  key={String(deliverable?.id)}
+                                  className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm"
+                                >
+                                  <div className="relative aspect-[4/5] bg-gray-100">
+                                    {assetUrl &&
+                                      deliverableIsImage(deliverable) && (
+                                        <img
+                                          src={assetUrl}
+                                          alt={caption || "Deliverable"}
+                                          className="w-full h-full object-cover"
+                                        />
+                                      )}
+                                    {assetUrl &&
+                                      deliverableIsVideo(deliverable) && (
+                                        <video
+                                          src={assetUrl}
+                                          controls
+                                          className="w-full h-full object-cover bg-black"
+                                        />
+                                      )}
+                                    <div className="absolute top-2 left-2">
+                                      <Badge
+                                        className={`text-[11px] ${deliverableStatusBadgeClass(
+                                          deliverable?.status || "submitted",
+                                        )}`}
                                       >
-                                        Open file
-                                      </a>
+                                        {String(
+                                          deliverable?.status || "submitted",
+                                        ).toLowerCase() === "brand_approved"
+                                          ? "approved"
+                                          : String(
+                                              deliverable?.status ||
+                                                "submitted",
+                                            )}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                  <div className="p-3 space-y-2">
+                                    <div className="text-xs text-gray-700 font-medium">
+                                      {caption || "Deliverable"}
+                                    </div>
+                                    {agencyNote && (
+                                      <div className="text-[11px] text-amber-800 bg-amber-50 border border-amber-100 rounded p-2">
+                                        <strong>Agency Feedback:</strong>{" "}
+                                        {agencyNote}
+                                      </div>
                                     )}
+                                    {assetUrl &&
+                                      !deliverableIsImage(deliverable) &&
+                                      !deliverableIsVideo(deliverable) && (
+                                        <a
+                                          href={assetUrl}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="text-xs text-blue-600 underline"
+                                        >
+                                          Open file
+                                        </a>
+                                      )}
+                                  </div>
                                 </div>
-                              </div>
-                            );
-                          })}
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </Card>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
         )}
       </div>
     );
@@ -5763,9 +5792,7 @@ export default function CreatorDashboard() {
       0,
     );
     const totalBrandConnectionNotifications =
-      unseenRequestCount +
-      unseenOfferCount +
-      unseenDeliverableFeedbackCount;
+      unseenRequestCount + unseenOfferCount + unseenDeliverableFeedbackCount;
     const formatStatus = (status: unknown) =>
       String(status || "sent")
         .replace(/_/g, " ")
@@ -7090,47 +7117,49 @@ export default function CreatorDashboard() {
                   directOfferIds.has(String(row?.offer_id || "")),
                 )
                 .map((row: any) => {
-                const status = String(row?.docuseal_status || "draft");
-                const slug = String(row?.docuseal_slug || "").trim();
-                const submissionId = String(row?.docuseal_submission_id || "").trim();
-                const signUrl = slug
-                  ? `https://docuseal.com/s/${slug}`
-                  : submissionId
-                    ? `https://docuseal.com/s/${submissionId}`
-                    : "";
-                return (
-                  <div
-                    key={String(row?.id)}
-                    className="border border-gray-200 rounded-lg p-4 bg-white space-y-2"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="font-semibold text-gray-900">
-                          {String(row?.campaign_name || "Campaign offer")}
+                  const status = String(row?.docuseal_status || "draft");
+                  const slug = String(row?.docuseal_slug || "").trim();
+                  const submissionId = String(
+                    row?.docuseal_submission_id || "",
+                  ).trim();
+                  const signUrl = slug
+                    ? `https://docuseal.com/s/${slug}`
+                    : submissionId
+                      ? `https://docuseal.com/s/${submissionId}`
+                      : "";
+                  return (
+                    <div
+                      key={String(row?.id)}
+                      className="border border-gray-200 rounded-lg p-4 bg-white space-y-2"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="font-semibold text-gray-900">
+                            {String(row?.campaign_name || "Campaign offer")}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {String(row?.title || "Contract")} •{" "}
+                            {status.replace(/_/g, " ")}
+                          </div>
                         </div>
-                        <div className="text-xs text-gray-500">
-                          {String(row?.title || "Contract")} •{" "}
+                        <Badge variant="outline" className="capitalize">
                           {status.replace(/_/g, " ")}
-                        </div>
+                        </Badge>
                       </div>
-                      <Badge variant="outline" className="capitalize">
-                        {status.replace(/_/g, " ")}
-                      </Badge>
+                      <div className="flex flex-wrap gap-2">
+                        {signUrl && (
+                          <Button
+                            variant="outline"
+                            className="border-gray-200"
+                            onClick={() => window.open(signUrl, "_blank")}
+                          >
+                            Open DocuSeal
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {signUrl && (
-                        <Button
-                          variant="outline"
-                          className="border-gray-200"
-                          onClick={() => window.open(signUrl, "_blank")}
-                        >
-                          Open DocuSeal
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
           </Card>
         )}
@@ -7216,7 +7245,9 @@ export default function CreatorDashboard() {
                                     deliverable?.status || "submitted",
                                   ).toLowerCase() === "brand_approved"
                                     ? "Approved"
-                                    : formatStatus(deliverable?.status || "submitted")}
+                                    : formatStatus(
+                                        deliverable?.status || "submitted",
+                                      )}
                                 </Badge>
                               </div>
                               <div className="mt-1 text-[11px] text-gray-600">
@@ -7424,7 +7455,9 @@ export default function CreatorDashboard() {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="deliverable-campaign">Select campaign</Label>
+                    <Label htmlFor="deliverable-campaign">
+                      Select campaign
+                    </Label>
                     <select
                       id="deliverable-campaign"
                       value={sendDeliverableOfferId}
@@ -7434,7 +7467,9 @@ export default function CreatorDashboard() {
                         const selected = brandOffers.find(
                           (offer: any) => String(offer?.id || "") === offerId,
                         );
-                        const selectedBrandId = String(selected?.brand_id || "");
+                        const selectedBrandId = String(
+                          selected?.brand_id || "",
+                        );
                         if (selectedBrandId) {
                           setSendDeliverableBrandId(selectedBrandId);
                         }
@@ -7443,7 +7478,10 @@ export default function CreatorDashboard() {
                     >
                       <option value="">Select campaign offer</option>
                       {campaignOptions.map((offer: any) => (
-                        <option key={String(offer?.id)} value={String(offer?.id)}>
+                        <option
+                          key={String(offer?.id)}
+                          value={String(offer?.id)}
+                        >
                           {String(
                             offer?.brand_campaigns?.name ||
                               offer?.offer_title ||

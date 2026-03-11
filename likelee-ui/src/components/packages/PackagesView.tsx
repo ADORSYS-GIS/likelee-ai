@@ -36,7 +36,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { CreatePackageWizard, type CreatePackageWizardMode } from "./CreatePackageWizard";
+import {
+  CreatePackageWizard,
+  type CreatePackageWizardMode,
+} from "./CreatePackageWizard";
 import { TemplateCard } from "./TemplateCard";
 import { PackageFeedbackDialog } from "./PackageFeedbackDialog";
 import { useToast } from "@/components/ui/use-toast";
@@ -66,7 +69,8 @@ export function PackagesView({
 
   const [searchTerm, setSearchTerm] = useState("");
   const [showWizard, setShowWizard] = useState(false);
-  const [wizardMode, setWizardMode] = useState<CreatePackageWizardMode>("template");
+  const [wizardMode, setWizardMode] =
+    useState<CreatePackageWizardMode>("template");
   const [editingPackage, setEditingPackage] = useState<any | null>(null);
   const [offerContext, setOfferContext] = useState<{
     offerId: string;
@@ -160,9 +164,9 @@ export function PackagesView({
   const paginatedTemplates =
     activeTab === "templates"
       ? filteredPackages.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE,
-      )
+          (currentPage - 1) * ITEMS_PER_PAGE,
+          currentPage * ITEMS_PER_PAGE,
+        )
       : [];
 
   const realStats = (statsData as any) || {
@@ -205,7 +209,8 @@ export function PackagesView({
                 Sending for offer
               </p>
               <p className="text-sm text-gray-700 font-medium mt-1">
-                Choose whether to send an existing package/template or create a new one.
+                Choose whether to send an existing package/template or create a
+                new one.
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
@@ -272,19 +277,21 @@ export function PackagesView({
         <div className="flex gap-2 min-w-max">
           <button
             onClick={() => setActiveTab("templates")}
-            className={`px-6 py-3 font-bold text-sm uppercase tracking-wider transition-all whitespace-nowrap ${activeTab === "templates"
-              ? "border-b-2 border-indigo-600 text-indigo-600"
-              : "text-gray-500 hover:text-gray-700"
-              }`}
+            className={`px-6 py-3 font-bold text-sm uppercase tracking-wider transition-all whitespace-nowrap ${
+              activeTab === "templates"
+                ? "border-b-2 border-indigo-600 text-indigo-600"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
           >
             Templates
           </button>
           <button
             onClick={() => setActiveTab("sent")}
-            className={`px-6 py-3 font-bold text-sm uppercase tracking-wider transition-all whitespace-nowrap ${activeTab === "sent"
-              ? "border-b-2 border-indigo-600 text-indigo-600"
-              : "text-gray-500 hover:text-gray-700"
-              }`}
+            className={`px-6 py-3 font-bold text-sm uppercase tracking-wider transition-all whitespace-nowrap ${
+              activeTab === "sent"
+                ? "border-b-2 border-indigo-600 text-indigo-600"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
           >
             Packages Sent
           </button>
@@ -395,10 +402,11 @@ export function PackagesView({
                       key={page}
                       variant={currentPage === page ? "default" : "outline"}
                       onClick={() => setCurrentPage(page)}
-                      className={`w-10 h-10 p-0 rounded-lg font-bold text-sm transition-all ${currentPage === page
-                        ? "bg-gray-900 text-white shadow-md hover:bg-gray-800"
-                        : "text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900"
-                        }`}
+                      className={`w-10 h-10 p-0 rounded-lg font-bold text-sm transition-all ${
+                        currentPage === page
+                          ? "bg-gray-900 text-white shadow-md hover:bg-gray-800"
+                          : "text-gray-600 border-gray-200 hover:border-gray-900 hover:text-gray-900"
+                      }`}
                     >
                       {page}
                     </Button>
@@ -426,8 +434,8 @@ export function PackagesView({
             const now = new Date();
             const daysRemaining = expiresAt
               ? Math.ceil(
-                (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
-              )
+                  (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+                )
               : null;
             const isExpired = expiresAt
               ? expiresAt.getTime() < now.getTime()
@@ -441,7 +449,9 @@ export function PackagesView({
                 ? "bg-yellow-100 text-yellow-800 border-yellow-200"
                 : "bg-blue-100 text-blue-700 border-blue-200";
 
-            const isOffer = pkg.meta?.wizard_source === "talent_packages" || !!pkg.meta?.selected_brand_id;
+            const isOffer =
+              pkg.meta?.wizard_source === "talent_packages" ||
+              !!pkg.meta?.selected_brand_id;
 
             return (
               <Card

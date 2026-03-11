@@ -62,10 +62,14 @@ interface DeliverablesTabProps {
 
 export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
   const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
-  const [deliverablesMap, setDeliverablesMap] = useState<Record<string, Deliverable[]>>({});
+  const [deliverablesMap, setDeliverablesMap] = useState<
+    Record<string, Deliverable[]>
+  >({});
   const [loadingMap, setLoadingMap] = useState<Record<string, boolean>>({});
   const [uploadingMap, setUploadingMap] = useState<Record<string, boolean>>({});
-  const [submittingMap, setSubmittingMap] = useState<Record<string, boolean>>({});
+  const [submittingMap, setSubmittingMap] = useState<Record<string, boolean>>(
+    {},
+  );
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [openFeedback, setOpenFeedback] = useState<Set<string>>(new Set());
   const [previewImage, setPreviewImage] = useState<Deliverable | null>(null);
@@ -104,10 +108,17 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
     setSubmittingMap((prev) => ({ ...prev, [campaignId]: true }));
     try {
       await submitBookingDeliverables(campaignId);
-      toast({ title: "Submitted", description: "Deliverables sent to the agency." });
+      toast({
+        title: "Submitted",
+        description: "Deliverables sent to the agency.",
+      });
       loadDeliverables(campaignId);
     } catch (error: any) {
-      toast({ title: "Submit failed", description: error?.message || "Something went wrong.", variant: "destructive" });
+      toast({
+        title: "Submit failed",
+        description: error?.message || "Something went wrong.",
+        variant: "destructive",
+      });
     } finally {
       setSubmittingMap((prev) => ({ ...prev, [campaignId]: false }));
     }
@@ -120,7 +131,11 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
       toast({ title: "Deleted", description: "Deliverable removed." });
       loadDeliverables(campaignId);
     } catch (error: any) {
-      toast({ title: "Delete failed", description: error?.message || "Something went wrong.", variant: "destructive" });
+      toast({
+        title: "Delete failed",
+        description: error?.message || "Something went wrong.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -136,7 +151,11 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
     );
 
     if (validFiles.length === 0) {
-      toast({ title: "Invalid file type", description: "Only images and videos are supported.", variant: "destructive" });
+      toast({
+        title: "Invalid file type",
+        description: "Only images and videos are supported.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -155,10 +174,17 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
     );
 
     if (successCount > 0) {
-      toast({ title: "Uploaded", description: `${successCount} file${successCount > 1 ? "s" : ""} uploaded.` });
+      toast({
+        title: "Uploaded",
+        description: `${successCount} file${successCount > 1 ? "s" : ""} uploaded.`,
+      });
       loadDeliverables(campaignId);
     } else {
-      toast({ title: "Upload failed", description: "All uploads failed.", variant: "destructive" });
+      toast({
+        title: "Upload failed",
+        description: "All uploads failed.",
+        variant: "destructive",
+      });
     }
 
     setUploadingMap((prev) => ({ ...prev, [campaignId]: false }));
@@ -167,11 +193,40 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "draft": return <Badge className="bg-gray-100 text-gray-600 border-gray-200 px-2 py-0.5"><Clock className="w-3 h-3 mr-1" />Draft</Badge>;
-      case "submitted": return <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20 px-2 py-0.5"><Clock className="w-3 h-3 mr-1" />Submitted</Badge>;
-      case "approved": return <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 px-2 py-0.5"><CheckCircle2 className="w-3 h-3 mr-1" />Approved</Badge>;
-      case "changes_requested": return <Badge className="bg-rose-500/10 text-rose-500 border-rose-500/20 px-2 py-0.5"><AlertCircle className="w-3 h-3 mr-1" />Changes Requested</Badge>;
-      default: return <Badge variant="outline" className="px-2 py-0.5 text-[10px]">{status.replace(/_/g, " ")}</Badge>;
+      case "draft":
+        return (
+          <Badge className="bg-gray-100 text-gray-600 border-gray-200 px-2 py-0.5">
+            <Clock className="w-3 h-3 mr-1" />
+            Draft
+          </Badge>
+        );
+      case "submitted":
+        return (
+          <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20 px-2 py-0.5">
+            <Clock className="w-3 h-3 mr-1" />
+            Submitted
+          </Badge>
+        );
+      case "approved":
+        return (
+          <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 px-2 py-0.5">
+            <CheckCircle2 className="w-3 h-3 mr-1" />
+            Approved
+          </Badge>
+        );
+      case "changes_requested":
+        return (
+          <Badge className="bg-rose-500/10 text-rose-500 border-rose-500/20 px-2 py-0.5">
+            <AlertCircle className="w-3 h-3 mr-1" />
+            Changes Requested
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="outline" className="px-2 py-0.5 text-[10px]">
+            {status.replace(/_/g, " ")}
+          </Badge>
+        );
     }
   };
 
@@ -181,14 +236,19 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
   };
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-8"
+    >
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-gray-900 to-gray-800 p-8 text-white shadow-xl">
         <div className="relative z-10">
           <h2 className="text-3xl font-bold font-syne bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-teal-400">
             Campaign Deliverables
           </h2>
           <p className="mt-2 text-gray-400 max-w-lg text-sm">
-            Upload your content for each campaign you've been booked for. Submit when ready for agency review.
+            Upload your content for each campaign you've been booked for. Submit
+            when ready for agency review.
           </p>
         </div>
         <div className="absolute top-0 right-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl" />
@@ -200,8 +260,12 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
             <div className="p-4 bg-gray-50 rounded-full mb-4">
               <Sparkles className="w-12 h-12 text-gray-300" />
             </div>
-            <p className="text-gray-500 font-syne font-medium text-lg">No active campaigns.</p>
-            <p className="text-gray-400 text-sm mt-2">You'll see campaigns here once your agency books you.</p>
+            <p className="text-gray-500 font-syne font-medium text-lg">
+              No active campaigns.
+            </p>
+            <p className="text-gray-400 text-sm mt-2">
+              You'll see campaigns here once your agency books you.
+            </p>
           </Card>
         ) : (
           activeCampaigns.map((campaign, index) => {
@@ -218,13 +282,19 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card className={`overflow-hidden transition-all duration-300 border-gray-200 shadow-sm hover:shadow-md ${isExpanded ? "ring-2 ring-primary/5" : ""}`}>
+                <Card
+                  className={`overflow-hidden transition-all duration-300 border-gray-200 shadow-sm hover:shadow-md ${isExpanded ? "ring-2 ring-primary/5" : ""}`}
+                >
                   <div
                     className={`p-5 flex items-center justify-between cursor-pointer transition-colors ${isExpanded ? "bg-primary/5" : "bg-white hover:bg-gray-50"}`}
-                    onClick={() => setSelectedCampaign(isExpanded ? null : campaignId)}
+                    onClick={() =>
+                      setSelectedCampaign(isExpanded ? null : campaignId)
+                    }
                   >
                     <div className="flex items-center gap-5">
-                      <div className={`p-3 rounded-xl transition-colors ${isExpanded ? "bg-primary text-white shadow-lg shadow-primary/25" : "bg-gray-100 text-gray-600"}`}>
+                      <div
+                        className={`p-3 rounded-xl transition-colors ${isExpanded ? "bg-primary text-white shadow-lg shadow-primary/25" : "bg-gray-100 text-gray-600"}`}
+                      >
                         <Briefcase className="w-6 h-6" />
                       </div>
                       <div>
@@ -233,7 +303,8 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
                         </h3>
                         <div className="flex items-center gap-2 mt-1">
                           <span className="text-xs text-gray-500 flex items-center">
-                            {deliverables.length} file{deliverables.length !== 1 ? "s" : ""}
+                            {deliverables.length} file
+                            {deliverables.length !== 1 ? "s" : ""}
                           </span>
                           <span className="w-1 h-1 rounded-full bg-gray-300" />
                           <span className="text-xs font-medium text-primary uppercase tracking-wider">
@@ -244,7 +315,10 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
                     </div>
                     <div>
                       {isExpanded ? (
-                        <motion.div initial={{ rotate: 0 }} animate={{ rotate: 180 }}>
+                        <motion.div
+                          initial={{ rotate: 0 }}
+                          animate={{ rotate: 180 }}
+                        >
                           <ChevronDown className="w-6 h-6 text-gray-400" />
                         </motion.div>
                       ) : (
@@ -265,18 +339,30 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
                         <div className="px-6 pb-6 pt-2 border-t border-gray-100 bg-white">
                           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-4 mb-2">
                             <div>
-                              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">Asset Library</h4>
-                              <p className="text-[10px] text-gray-500 mt-0.5">Manage your photos and videos for this campaign.</p>
+                              <h4 className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em]">
+                                Asset Library
+                              </h4>
+                              <p className="text-[10px] text-gray-500 mt-0.5">
+                                Manage your photos and videos for this campaign.
+                              </p>
                             </div>
                             <div className="flex items-center gap-2">
-                              {deliverables.some((d) => d.status === "draft") && (
+                              {deliverables.some(
+                                (d) => d.status === "draft",
+                              ) && (
                                 <Button
                                   variant="outline"
                                   className="h-11 px-6 border-blue-500 text-blue-500 hover:bg-blue-50 rounded-xl font-semibold"
                                   onClick={() => handleSubmit(campaignId)}
-                                  disabled={submittingMap[campaignId] || isUploading}
+                                  disabled={
+                                    submittingMap[campaignId] || isUploading
+                                  }
                                 >
-                                  {submittingMap[campaignId] ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <MessageSquare className="w-5 h-5 mr-2" />}
+                                  {submittingMap[campaignId] ? (
+                                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                                  ) : (
+                                    <MessageSquare className="w-5 h-5 mr-2" />
+                                  )}
                                   Submit to Agency
                                 </Button>
                               )}
@@ -286,15 +372,30 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
                                 className="hidden"
                                 accept="image/*,video/*"
                                 multiple
-                                onChange={(e) => handleFileUpload(e, campaignId)}
+                                onChange={(e) =>
+                                  handleFileUpload(e, campaignId)
+                                }
                                 disabled={isUploading}
                               />
                               <Button
                                 className="h-11 px-6 bg-primary hover:bg-primary/90 text-white rounded-xl shadow-lg shadow-primary/20"
-                                onClick={() => document.getElementById(`file-upload-${campaignId}`)?.click()}
+                                onClick={() =>
+                                  document
+                                    .getElementById(`file-upload-${campaignId}`)
+                                    ?.click()
+                                }
                                 disabled={isUploading}
                               >
-                                {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Upload className="w-5 h-5 mr-2" /><span className="font-semibold">Upload</span></>}
+                                {isUploading ? (
+                                  <Loader2 className="w-5 h-5 animate-spin" />
+                                ) : (
+                                  <>
+                                    <Upload className="w-5 h-5 mr-2" />
+                                    <span className="font-semibold">
+                                      Upload
+                                    </span>
+                                  </>
+                                )}
                               </Button>
                             </div>
                           </div>
@@ -302,22 +403,37 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
                           {isLoading ? (
                             <div className="flex flex-col items-center justify-center py-20 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
                               <Loader2 className="w-10 h-10 animate-spin text-primary/30" />
-                              <p className="text-sm text-gray-400 mt-4 italic">Loading…</p>
+                              <p className="text-sm text-gray-400 mt-4 italic">
+                                Loading…
+                              </p>
                             </div>
                           ) : deliverables.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-16 bg-gray-50/30 rounded-2xl border-2 border-dashed border-gray-200">
                               <Upload className="w-6 h-6 text-gray-300 mb-2" />
-                              <p className="text-sm text-gray-500 font-medium">No files yet.</p>
-                              <p className="text-xs text-gray-400 mt-1">Upload your first asset above.</p>
+                              <p className="text-sm text-gray-500 font-medium">
+                                No files yet.
+                              </p>
+                              <p className="text-xs text-gray-400 mt-1">
+                                Upload your first asset above.
+                              </p>
                             </div>
                           ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                               {deliverables.map((del) => (
-                                <motion.div layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} key={del.id}>
+                                <motion.div
+                                  layout
+                                  initial={{ opacity: 0, scale: 0.9 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  key={del.id}
+                                >
                                   <Card className="group relative overflow-hidden bg-white border-gray-200 rounded-2xl transition-all hover:shadow-xl hover:-translate-y-1">
                                     <div className="aspect-[4/5] bg-gray-100 relative overflow-hidden">
                                       {del.asset_type === "image" ? (
-                                        <img src={getFileUrl(del)} alt={del.caption || "Deliverable"} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                                        <img
+                                          src={getFileUrl(del)}
+                                          alt={del.caption || "Deliverable"}
+                                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                        />
                                       ) : (
                                         <div className="w-full h-full flex items-center justify-center bg-gray-900">
                                           <FileVideo className="w-12 h-12 text-blue-400/50" />
@@ -328,21 +444,41 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
                                         <div className="flex flex-col gap-1.5 items-start">
                                           {getStatusBadge(del.status)}
                                           {del.brand_status && (
-                                            <Badge variant="outline" className={`
+                                            <Badge
+                                              variant="outline"
+                                              className={`
                                               text-[10px] h-5 border-none shadow-sm font-bold uppercase tracking-tight
-                                              ${del.brand_status === 'approved' ? 'bg-blue-500 text-white' : 
-                                                del.brand_status === 'changes_requested' ? 'bg-orange-500 text-white' :
-                                                'bg-gray-500 text-white'}
-                                            `}>
-                                              Brand: {del.brand_status.replace(/_/g, ' ')}
+                                              ${
+                                                del.brand_status === "approved"
+                                                  ? "bg-blue-500 text-white"
+                                                  : del.brand_status ===
+                                                      "changes_requested"
+                                                    ? "bg-orange-500 text-white"
+                                                    : "bg-gray-500 text-white"
+                                              }
+                                            `}
+                                            >
+                                              Brand:{" "}
+                                              {del.brand_status.replace(
+                                                /_/g,
+                                                " ",
+                                              )}
                                             </Badge>
                                           )}
                                         </div>
                                       </div>
                                       <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                                        {(del.status === "draft" || del.status === "changes_requested") && (
-                                          <Button variant="destructive" size="icon" className="w-8 h-8 rounded-full bg-rose-500/20 backdrop-blur-md text-rose-500 hover:bg-rose-500 hover:text-white"
-                                            onClick={() => handleDelete(campaignId, del.id)}>
+                                        {(del.status === "draft" ||
+                                          del.status ===
+                                            "changes_requested") && (
+                                          <Button
+                                            variant="destructive"
+                                            size="icon"
+                                            className="w-8 h-8 rounded-full bg-rose-500/20 backdrop-blur-md text-rose-500 hover:bg-rose-500 hover:text-white"
+                                            onClick={() =>
+                                              handleDelete(campaignId, del.id)
+                                            }
+                                          >
                                             <Trash2 className="w-4 h-4" />
                                           </Button>
                                         )}
@@ -377,8 +513,9 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
                                         <button
                                           onClick={() => {
                                             const next = new Set(openFeedback);
-                                            if (next.has(del.id + '_agency')) next.delete(del.id + '_agency');
-                                            else next.add(del.id + '_agency');
+                                            if (next.has(del.id + "_agency"))
+                                              next.delete(del.id + "_agency");
+                                            else next.add(del.id + "_agency");
                                             setOpenFeedback(next);
                                           }}
                                           className="w-full p-3 flex items-center justify-between bg-amber-50/50 hover:bg-amber-100/50 transition-colors"
@@ -387,18 +524,28 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
                                             <MessageSquare className="w-3.5 h-3.5" />
                                             Agency Feedback
                                           </div>
-                                          {openFeedback.has(del.id + '_agency') ? (
+                                          {openFeedback.has(
+                                            del.id + "_agency",
+                                          ) ? (
                                             <ChevronDown className="w-3.5 h-3.5 text-amber-400 rotate-180 transition-transform" />
                                           ) : (
                                             <ChevronDown className="w-3.5 h-3.5 text-amber-400 transition-transform" />
                                           )}
                                         </button>
-                                        
+
                                         <AnimatePresence>
-                                          {openFeedback.has(del.id + '_agency') && (
+                                          {openFeedback.has(
+                                            del.id + "_agency",
+                                          ) && (
                                             <motion.div
-                                              initial={{ height: 0, opacity: 0 }}
-                                              animate={{ height: "auto", opacity: 1 }}
+                                              initial={{
+                                                height: 0,
+                                                opacity: 0,
+                                              }}
+                                              animate={{
+                                                height: "auto",
+                                                opacity: 1,
+                                              }}
                                               exit={{ height: 0, opacity: 0 }}
                                               className="overflow-hidden"
                                             >
@@ -414,13 +561,16 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
                                     )}
 
                                     {/* Brand Feedback */}
-                                    {(del.brand_review_note || del.brand_status === 'changes_requested') && (
+                                    {(del.brand_review_note ||
+                                      del.brand_status ===
+                                        "changes_requested") && (
                                       <div className="border-t border-blue-100">
                                         <button
                                           onClick={() => {
                                             const next = new Set(openFeedback);
-                                            if (next.has(del.id + '_brand')) next.delete(del.id + '_brand');
-                                            else next.add(del.id + '_brand');
+                                            if (next.has(del.id + "_brand"))
+                                              next.delete(del.id + "_brand");
+                                            else next.add(del.id + "_brand");
                                             setOpenFeedback(next);
                                           }}
                                           className="w-full p-3 flex items-center justify-between bg-blue-50/50 hover:bg-blue-100/50 transition-colors"
@@ -429,24 +579,35 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
                                             <MessageSquare className="w-3.5 h-3.5" />
                                             Brand Feedback
                                           </div>
-                                          {openFeedback.has(del.id + '_brand') ? (
+                                          {openFeedback.has(
+                                            del.id + "_brand",
+                                          ) ? (
                                             <ChevronDown className="w-3.5 h-3.5 text-blue-400 rotate-180 transition-transform" />
                                           ) : (
                                             <ChevronDown className="w-3.5 h-3.5 text-blue-400 transition-transform" />
                                           )}
                                         </button>
-                                        
+
                                         <AnimatePresence>
-                                          {openFeedback.has(del.id + '_brand') && (
+                                          {openFeedback.has(
+                                            del.id + "_brand",
+                                          ) && (
                                             <motion.div
-                                              initial={{ height: 0, opacity: 0 }}
-                                              animate={{ height: "auto", opacity: 1 }}
+                                              initial={{
+                                                height: 0,
+                                                opacity: 0,
+                                              }}
+                                              animate={{
+                                                height: "auto",
+                                                opacity: 1,
+                                              }}
                                               exit={{ height: 0, opacity: 0 }}
                                               className="overflow-hidden"
                                             >
                                               <div className="px-4 pb-4 pt-1 bg-blue-50/50">
                                                 <p className="text-[11px] text-blue-900 leading-relaxed font-medium bg-white/60 rounded-xl p-3 border border-blue-200/50 shadow-sm">
-                                                  {del.brand_review_note || "Brand requested changes but provided no specific note."}
+                                                  {del.brand_review_note ||
+                                                    "Brand requested changes but provided no specific note."}
                                                 </p>
                                               </div>
                                             </motion.div>
@@ -489,7 +650,7 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
                   alt="Preview"
                 />
               )}
-              
+
               {/* Overlay controls */}
               <div className="absolute top-6 right-6 flex gap-3">
                 <Button
@@ -522,7 +683,9 @@ export function DeliverablesTab({ activeCampaigns }: DeliverablesTabProps) {
                 <p className="text-blue-400 text-[10px] font-black uppercase tracking-[0.2em] mb-3">
                   Caption
                 </p>
-                <p className="text-base leading-relaxed text-gray-200">{previewImage.caption}</p>
+                <p className="text-base leading-relaxed text-gray-200">
+                  {previewImage.caption}
+                </p>
               </div>
             )}
           </div>

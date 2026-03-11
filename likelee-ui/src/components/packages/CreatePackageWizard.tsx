@@ -106,7 +106,8 @@ export function CreatePackageWizard({
   const queryClient = useQueryClient();
   const isEditMode = !!packageToEdit && mode !== "send-from-template";
   const isTemplateMode = mode === "template";
-  const isOfferMode = mode === "offer-send" || mode === "offer-send-from-template";
+  const isOfferMode =
+    mode === "offer-send" || mode === "offer-send-from-template";
   const totalSteps = isTemplateMode ? 4 : 5; // Templates end on Consents; packages add Send
 
   const initialFormData = {
@@ -154,7 +155,7 @@ export function CreatePackageWizard({
         allow_callbacks: packageToEdit.allow_callbacks ?? true,
         consent_items:
           Array.isArray(packageToEdit.consent_items) &&
-            packageToEdit.consent_items.length > 0
+          packageToEdit.consent_items.length > 0
             ? packageToEdit.consent_items
             : initialFormData.consent_items,
         password_protected: packageToEdit.password_protected || false,
@@ -164,9 +165,13 @@ export function CreatePackageWizard({
           : "",
         // Clear client details if we are sending from a template or in offer mode
         client_name:
-          mode === "send-from-template" || isOfferMode ? "" : packageToEdit.client_name || "",
+          mode === "send-from-template" || isOfferMode
+            ? ""
+            : packageToEdit.client_name || "",
         client_email:
-          mode === "send-from-template" || isOfferMode ? "" : packageToEdit.client_email || "",
+          mode === "send-from-template" || isOfferMode
+            ? ""
+            : packageToEdit.client_email || "",
         items: packageToEdit.items || [],
       });
     } else if (open && !isEditMode && mode !== "send-from-template") {
@@ -250,7 +255,9 @@ export function CreatePackageWizard({
       const offerId = String(offerContext.offerId);
 
       // 1. Create the real linked agency package
-      const standardPkgResp = await packageApi.createPackage(data.standard_package_payload);
+      const standardPkgResp = await packageApi.createPackage(
+        data.standard_package_payload,
+      );
 
       // 2. Prepare the payload for the campaign offer package, linking the real package
       const offerPayload = {
@@ -461,7 +468,9 @@ export function CreatePackageWizard({
       const offerPayload = {
         title: formData.title,
         message: formData.description || formData.custom_message || "",
-        expires_at: formData.expires_at ? new Date(formData.expires_at).toISOString() : null,
+        expires_at: formData.expires_at
+          ? new Date(formData.expires_at).toISOString()
+          : null,
         meta: {
           selected_talent_ids: selectedTalentIds,
           selected_brand_id: selectedBrandId,
@@ -1002,24 +1011,26 @@ export function CreatePackageWizard({
                             className="w-full h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
                           >
                             <option value="">Select a brand…</option>
-                            {(Array.isArray(connectedBrands) ? connectedBrands : []).map(
-                              (c: any) => {
-                                const id = String(c?.brand_id || "").trim();
-                                const label =
-                                  String(c?.brands?.company_name || "").trim() ||
-                                  String(c?.brands?.email || "").trim() ||
-                                  id;
-                                if (!id) return null;
-                                return (
-                                  <option key={id} value={id}>
-                                    {label}
-                                  </option>
-                                );
-                              },
-                            )}
+                            {(Array.isArray(connectedBrands)
+                              ? connectedBrands
+                              : []
+                            ).map((c: any) => {
+                              const id = String(c?.brand_id || "").trim();
+                              const label =
+                                String(c?.brands?.company_name || "").trim() ||
+                                String(c?.brands?.email || "").trim() ||
+                                id;
+                              if (!id) return null;
+                              return (
+                                <option key={id} value={id}>
+                                  {label}
+                                </option>
+                              );
+                            })}
                           </select>
                           <p className="text-xs text-gray-500 font-medium">
-                            This package will be delivered to the brand’s dashboard inbox for this offer.
+                            This package will be delivered to the brand’s
+                            dashboard inbox for this offer.
                           </p>
                         </div>
                       )}
@@ -1043,7 +1054,9 @@ export function CreatePackageWizard({
                                       String(selectedBrandId || "").trim(),
                                   );
                                   return (
-                                    String(match?.brands?.company_name || "").trim() ||
+                                    String(
+                                      match?.brands?.company_name || "",
+                                    ).trim() ||
                                     String(match?.brands?.email || "").trim() ||
                                     ""
                                   );
@@ -1067,7 +1080,9 @@ export function CreatePackageWizard({
                                       String(c?.brand_id || "").trim() ===
                                       String(selectedBrandId || "").trim(),
                                   );
-                                  return String(match?.brands?.email || "").trim();
+                                  return String(
+                                    match?.brands?.email || "",
+                                  ).trim();
                                 })()}
                                 className="h-12 bg-gray-50 border border-gray-200 focus:border-indigo-600 focus:bg-white rounded-lg px-4 transition-all duration-300 font-medium"
                               />

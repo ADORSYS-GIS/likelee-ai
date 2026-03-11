@@ -33,7 +33,12 @@ import {
   uploadOfferAssetRequestFile,
   uploadOfferDeliverable,
 } from "@/api/functions";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -61,9 +66,9 @@ export function AgencyDeliverablesView() {
     Record<string, boolean>
   >({});
   const [authToken, setAuthToken] = useState<string>("");
-  const [submittingDrafts, setSubmittingDrafts] = useState<Record<string, boolean>>(
-    {},
-  );
+  const [submittingDrafts, setSubmittingDrafts] = useState<
+    Record<string, boolean>
+  >({});
   const [assignDialog, setAssignDialog] = useState<{
     open: boolean;
     offerId: string;
@@ -279,7 +284,9 @@ export function AgencyDeliverablesView() {
   };
 
   const offerStatusLabel = (statusRaw: unknown) => {
-    const status = String(statusRaw || "").toLowerCase().trim();
+    const status = String(statusRaw || "")
+      .toLowerCase()
+      .trim();
     if (!status) return "";
     if (status === "contract_fully_signed") return "Contract Signed";
     if (status === "contract_sent") return "Contract Sent";
@@ -290,7 +297,9 @@ export function AgencyDeliverablesView() {
   };
 
   const offerStatusClass = (statusRaw: unknown) => {
-    const status = String(statusRaw || "").toLowerCase().trim();
+    const status = String(statusRaw || "")
+      .toLowerCase()
+      .trim();
     if (!status) return "bg-gray-100 text-gray-700 border border-gray-200";
     if (status === "contract_fully_signed") {
       return "bg-emerald-100 text-emerald-800 border border-emerald-200";
@@ -321,7 +330,10 @@ export function AgencyDeliverablesView() {
     return "bg-gradient-to-r from-blue-600 to-cyan-600 text-white";
   };
 
-  const resolveDeliverableUrl = (deliverable: any, offerIdOverride?: string) => {
+  const resolveDeliverableUrl = (
+    deliverable: any,
+    offerIdOverride?: string,
+  ) => {
     const assetUrl = String(deliverable?.asset_url || "");
     if (!assetUrl) return "";
     if (assetUrl.startsWith("http")) return assetUrl;
@@ -388,7 +400,11 @@ export function AgencyDeliverablesView() {
       showActions?: boolean;
       offerId?: string;
       layout?: "creator" | "agency";
-      galleryItems?: { url: string; type: "image" | "video" | "file"; caption: string }[];
+      galleryItems?: {
+        url: string;
+        type: "image" | "video" | "file";
+        caption: string;
+      }[];
       galleryIndex?: number;
     },
   ) => {
@@ -399,7 +415,9 @@ export function AgencyDeliverablesView() {
       String(deliverable?.meta?.original_name || "").trim();
     const agencyFeedback = String(deliverable?.agency_review_note || "").trim();
     const brandFeedback = String(deliverable?.brand_review_note || "").trim();
-    const statusValue = String(deliverable?.status || "submitted").toLowerCase();
+    const statusValue = String(
+      deliverable?.status || "submitted",
+    ).toLowerCase();
     const isSentToBrand = statusValue === "brand_review";
     const isBrandApproved = statusValue === "brand_approved";
     const isFinalized =
@@ -408,7 +426,8 @@ export function AgencyDeliverablesView() {
       statusValue === "changes_requested";
     const isDraft = statusValue === "draft";
     const canDelete =
-      options?.layout === "agency" && (statusValue === "draft" || statusValue === "changes_requested");
+      options?.layout === "agency" &&
+      (statusValue === "draft" || statusValue === "changes_requested");
     return (
       <Card
         key={String(deliverable?.id || deliverable?.asset_url || "deliverable")}
@@ -471,7 +490,9 @@ export function AgencyDeliverablesView() {
             </div>
           )}
           <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
-            <Badge className={`rounded-full border-0 ${deliverableStatusClass(deliverable?.status)}`}>
+            <Badge
+              className={`rounded-full border-0 ${deliverableStatusClass(deliverable?.status)}`}
+            >
               {deliverableStatusLabel(deliverable?.status)}
             </Badge>
             {(agencyFeedback || brandFeedback) && (
@@ -483,7 +504,9 @@ export function AgencyDeliverablesView() {
         </div>
         <div className="p-4 space-y-3">
           <p className="text-xs text-gray-700 font-medium leading-relaxed line-clamp-2">
-            {caption || <span className="text-gray-300 italic">No caption</span>}
+            {caption || (
+              <span className="text-gray-300 italic">No caption</span>
+            )}
           </p>
 
           {agencyFeedback && (
@@ -861,7 +884,8 @@ export function AgencyDeliverablesView() {
               Offer Deliverables
             </h2>
             <p className="mt-2 text-gray-400 text-sm">
-              Assign talents, request assets, and review deliverables for brand offers.
+              Assign talents, request assets, and review deliverables for brand
+              offers.
             </p>
           </div>
           <Button
@@ -921,12 +945,16 @@ export function AgencyDeliverablesView() {
                   onClick={() => openOffer(offerId)}
                 >
                   <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-xl ${expanded ? "bg-primary text-white" : "bg-gray-100 text-gray-600"}`}>
+                    <div
+                      className={`p-3 rounded-xl ${expanded ? "bg-primary text-white" : "bg-gray-100 text-gray-600"}`}
+                    >
                       <Briefcase className="w-5 h-5" />
                     </div>
                     <div>
                       <h3 className="text-lg font-bold text-gray-900">
-                        {offer?.offer_title || offer?.brand_campaigns?.name || "Offer"}
+                        {offer?.offer_title ||
+                          offer?.brand_campaigns?.name ||
+                          "Offer"}
                       </h3>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-xs text-gray-400">
@@ -936,7 +964,8 @@ export function AgencyDeliverablesView() {
                         <Badge
                           className={`text-[10px] py-0 ${offerStatusClass(offer?.status)}`}
                         >
-                          {offerStatusLabel(offer?.status) || String(offer?.status || "")}
+                          {offerStatusLabel(offer?.status) ||
+                            String(offer?.status || "")}
                         </Badge>
                       </div>
                     </div>
@@ -962,7 +991,9 @@ export function AgencyDeliverablesView() {
                       }}
                     >
                       <Plus className="w-4 h-4 mr-2" />
-                      {assignments.length === 0 ? "Assign Talent" : "Add Talent"}
+                      {assignments.length === 0
+                        ? "Assign Talent"
+                        : "Add Talent"}
                     </Button>
                   </div>
                 </div>
@@ -978,9 +1009,13 @@ export function AgencyDeliverablesView() {
                     >
                       <div className="p-4 space-y-4 bg-gray-50/50">
                         {loadingAssignments[offerId] ? (
-                          <p className="text-xs text-gray-500">Loading assignments...</p>
+                          <p className="text-xs text-gray-500">
+                            Loading assignments...
+                          </p>
                         ) : assignments.length === 0 ? (
-                          <p className="text-xs text-gray-500">No talents assigned yet.</p>
+                          <p className="text-xs text-gray-500">
+                            No talents assigned yet.
+                          </p>
                         ) : (
                           <div className="space-y-2">
                             {assignments.map((assignment: any) => {
@@ -990,21 +1025,29 @@ export function AgencyDeliverablesView() {
                                 <div
                                   key={assignment.id}
                                   className={`border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between ${
-                                    selectedTalentId === tid ? "bg-white" : "bg-white"
+                                    selectedTalentId === tid
+                                      ? "bg-white"
+                                      : "bg-white"
                                   }`}
                                 >
                                   <div className="flex items-center gap-3">
                                     <Avatar className="w-9 h-9">
-                                      <AvatarImage src={getTalentAvatar(talent)} />
+                                      <AvatarImage
+                                        src={getTalentAvatar(talent)}
+                                      />
                                       <AvatarFallback className="bg-indigo-50 text-indigo-600 font-bold text-xs uppercase">
                                         {getTalentInitial(talent)}
                                       </AvatarFallback>
                                     </Avatar>
                                     <div>
                                       <p className="text-sm font-semibold text-gray-900">
-                                        {talent?.stage_name || talent?.full_legal_name || "Talent"}
+                                        {talent?.stage_name ||
+                                          talent?.full_legal_name ||
+                                          "Talent"}
                                       </p>
-                                      <p className="text-xs text-gray-500">Assigned</p>
+                                      <p className="text-xs text-gray-500">
+                                        Assigned
+                                      </p>
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-2">
@@ -1058,7 +1101,8 @@ export function AgencyDeliverablesView() {
                                 </p>
                                 <p className="text-xs text-gray-500">
                                   {selectedTalent?.agency_users?.stage_name ||
-                                    selectedTalent?.agency_users?.full_legal_name ||
+                                    selectedTalent?.agency_users
+                                      ?.full_legal_name ||
                                     "Talent"}
                                 </p>
                               </div>
@@ -1098,45 +1142,57 @@ export function AgencyDeliverablesView() {
                             </div>
 
                             {loadingDeliverables[offerId] ? (
-                              <p className="text-xs text-gray-500">Loading deliverables...</p>
+                              <p className="text-xs text-gray-500">
+                                Loading deliverables...
+                              </p>
                             ) : (
                               <div className="space-y-6">
-                              <div className="border border-gray-200 rounded-2xl p-4 bg-white">
-                                  <p className="text-sm font-semibold text-gray-900 mb-3">Creator uploads</p>
+                                <div className="border border-gray-200 rounded-2xl p-4 bg-white">
+                                  <p className="text-sm font-semibold text-gray-900 mb-3">
+                                    Creator uploads
+                                  </p>
                                   {creatorDeliverables.length === 0 ? (
-                                    <p className="text-xs text-gray-400">None yet.</p>
+                                    <p className="text-xs text-gray-400">
+                                      None yet.
+                                    </p>
                                   ) : (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
-                                      {creatorDeliverables.map((d: any, idx: number) =>
-                                        renderDeliverableCard(d, {
-                                          showActions: true,
-                                          offerId,
-                                          galleryItems: buildGalleryItems(
-                                            creatorDeliverables,
+                                      {creatorDeliverables.map(
+                                        (d: any, idx: number) =>
+                                          renderDeliverableCard(d, {
+                                            showActions: true,
                                             offerId,
-                                          ),
-                                          galleryIndex: idx,
-                                        }),
+                                            galleryItems: buildGalleryItems(
+                                              creatorDeliverables,
+                                              offerId,
+                                            ),
+                                            galleryIndex: idx,
+                                          }),
                                       )}
                                     </div>
                                   )}
                                 </div>
                                 <div className="border border-gray-200 rounded-2xl p-4 bg-white">
-                                  <p className="text-sm font-semibold text-gray-900 mb-3">Agency uploads</p>
+                                  <p className="text-sm font-semibold text-gray-900 mb-3">
+                                    Agency uploads
+                                  </p>
                                   {agencyDeliverables.length === 0 ? (
-                                    <p className="text-xs text-gray-400">None yet.</p>
+                                    <p className="text-xs text-gray-400">
+                                      None yet.
+                                    </p>
                                   ) : (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
-                                      {agencyDeliverables.map((d: any, idx: number) =>
-                                        renderDeliverableCard(d, {
-                                          offerId,
-                                          layout: "agency",
-                                          galleryItems: buildGalleryItems(
-                                            agencyDeliverables,
+                                      {agencyDeliverables.map(
+                                        (d: any, idx: number) =>
+                                          renderDeliverableCard(d, {
                                             offerId,
-                                          ),
-                                          galleryIndex: idx,
-                                        }),
+                                            layout: "agency",
+                                            galleryItems: buildGalleryItems(
+                                              agencyDeliverables,
+                                              offerId,
+                                            ),
+                                            galleryIndex: idx,
+                                          }),
                                       )}
                                     </div>
                                   )}
@@ -1171,7 +1227,8 @@ export function AgencyDeliverablesView() {
               Assign Talent
             </DialogTitle>
             <p className="text-sm text-gray-500 font-medium mt-1">
-              Select one or more talents from your roster to assign to this offer.
+              Select one or more talents from your roster to assign to this
+              offer.
             </p>
           </DialogHeader>
 
@@ -1272,9 +1329,7 @@ export function AgencyDeliverablesView() {
 
       <Dialog
         open={requestDialog.open}
-        onOpenChange={(open) =>
-          setRequestDialog((prev) => ({ ...prev, open }))
-        }
+        onOpenChange={(open) => setRequestDialog((prev) => ({ ...prev, open }))}
       >
         <DialogContent className="sm:max-w-[560px] rounded-none p-0 overflow-hidden border border-gray-200 shadow-2xl">
           {(() => {
@@ -1409,9 +1464,7 @@ export function AgencyDeliverablesView() {
 
       <Dialog
         open={uploadDialog.open}
-        onOpenChange={(open) =>
-          setUploadDialog((prev) => ({ ...prev, open }))
-        }
+        onOpenChange={(open) => setUploadDialog((prev) => ({ ...prev, open }))}
       >
         <DialogContent className="rounded-lg">
           <DialogHeader>
@@ -1477,9 +1530,7 @@ export function AgencyDeliverablesView() {
 
       <Dialog
         open={reviewDialog.open}
-        onOpenChange={(open) =>
-          setReviewDialog((prev) => ({ ...prev, open }))
-        }
+        onOpenChange={(open) => setReviewDialog((prev) => ({ ...prev, open }))}
       >
         <DialogContent className="sm:max-w-[500px] rounded-none p-0 overflow-hidden border border-gray-200 shadow-2xl">
           <div className="bg-gray-900 p-8 text-white relative">
@@ -1492,18 +1543,18 @@ export function AgencyDeliverablesView() {
                   ? "Send to Brand"
                   : reviewDialog.action === "final_approve"
                     ? "Approve Deliverable"
-                  : reviewDialog.action === "reject"
-                    ? "Reject Deliverable"
-                    : "Request Changes"}
+                    : reviewDialog.action === "reject"
+                      ? "Reject Deliverable"
+                      : "Request Changes"}
               </DialogTitle>
               <p className="text-gray-400 text-sm">
                 {reviewDialog.action === "approve"
                   ? "Forward this deliverable to the brand for approval."
                   : reviewDialog.action === "final_approve"
                     ? "Mark this deliverable as approved after brand sign-off."
-                  : reviewDialog.action === "reject"
-                    ? "Reject this deliverable and notify the creator."
-                    : "Request revisions from the creator before sending to brand."}
+                    : reviewDialog.action === "reject"
+                      ? "Reject this deliverable and notify the creator."
+                      : "Request revisions from the creator before sending to brand."}
               </p>
             </DialogHeader>
           </div>
@@ -1582,7 +1633,8 @@ export function AgencyDeliverablesView() {
                 Send to Brand
               </DialogTitle>
               <p className="text-gray-400 text-sm">
-                Are you sure you want to send this deliverable to the brand for review?
+                Are you sure you want to send this deliverable to the brand for
+                review?
               </p>
             </DialogHeader>
           </div>
@@ -1633,7 +1685,9 @@ export function AgencyDeliverablesView() {
               <Button
                 variant="outline"
                 className="flex-1 h-11 rounded-none border-blue-300/70 text-blue-700 hover:bg-blue-50"
-                onClick={() => setDeleteDialog((prev) => ({ ...prev, open: false }))}
+                onClick={() =>
+                  setDeleteDialog((prev) => ({ ...prev, open: false }))
+                }
               >
                 Cancel
               </Button>

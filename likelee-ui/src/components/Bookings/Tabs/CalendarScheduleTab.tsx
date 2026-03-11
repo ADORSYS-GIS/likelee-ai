@@ -212,12 +212,12 @@ export const CalendarScheduleTab = ({
     : 0;
   const confirmedCount = Array.isArray(bookings)
     ? bookings.filter(
-      (b: any) => safeStr(b.status).toLowerCase() === "confirmed",
-    ).length
+        (b: any) => safeStr(b.status).toLowerCase() === "confirmed",
+      ).length
     : 0;
   const pendingCount = Array.isArray(bookings)
     ? bookings.filter((b: any) => safeStr(b.status).toLowerCase() === "pending")
-      .length
+        .length
     : 0;
   const stats = [
     { label: "Total Bookings", value: String(totalCount) },
@@ -575,10 +575,11 @@ export const CalendarScheduleTab = ({
                 return (
                   <div
                     key={d}
-                    className={`p-2 relative group hover:bg-gray-50 transition-colors ${isSelected
+                    className={`p-2 relative group hover:bg-gray-50 transition-colors ${
+                      isSelected
                         ? "bg-blue-50/10 ring-2 ring-indigo-600 inset-0 z-10"
                         : ""
-                      }`}
+                    }`}
                     onClick={() => {
                       const newDate = new Date(currentDate);
                       newDate.setDate(d);
@@ -591,9 +592,9 @@ export const CalendarScheduleTab = ({
                           date: dayString,
                           ...(selectedTalentName
                             ? {
-                              talentName: selectedTalentName,
-                              talent_name: selectedTalentName,
-                            }
+                                talentName: selectedTalentName,
+                                talent_name: selectedTalentName,
+                              }
                             : {}),
                         });
                         setNewBookingOpen(true);
@@ -601,10 +602,11 @@ export const CalendarScheduleTab = ({
                     }}
                   >
                     <span
-                      className={`text-sm font-medium ${isSelected
+                      className={`text-sm font-medium ${
+                        isSelected
                           ? "bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center -ml-1 -mt-1"
                           : "text-gray-700"
-                        }`}
+                      }`}
                     >
                       {d}
                     </span>

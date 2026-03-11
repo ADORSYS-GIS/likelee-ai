@@ -28,7 +28,6 @@ import {
   Eye,
   ExternalLink,
   BarChart3,
-
   Download,
   Settings,
   Calendar,
@@ -62,10 +61,7 @@ import {
   RefreshCw,
   Trash2,
 } from "lucide-react";
-import {
-  reviewOfferDeliverable,
-  listOfferDeliverables,
-} from "@/api/functions";
+import { reviewOfferDeliverable, listOfferDeliverables } from "@/api/functions";
 import {
   Dialog,
   DialogContent,
@@ -667,7 +663,8 @@ export default function BrandDashboard() {
   const [confirmingDonePkg, setConfirmingDonePkg] = useState<any>(null);
   const { toast } = useToast();
   const [loadingInboxPackages, setLoadingInboxPackages] = useState(false);
-  const [expandedInboxPackageId, setExpandedInboxPackageId] = useState<string>("");
+  const [expandedInboxPackageId, setExpandedInboxPackageId] =
+    useState<string>("");
   const [brandOfferItems, setBrandOfferItems] = useState<any[]>([]);
   const [loadingBrandOfferItems, setLoadingBrandOfferItems] = useState(false);
   const [selectedOfferHubId, setSelectedOfferHubId] = useState<string>("");
@@ -701,7 +698,9 @@ export default function BrandDashboard() {
   useEffect(() => {
     const getSession = async () => {
       if (supabase) {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         setAuthToken(session?.access_token || null);
       }
     };
@@ -812,7 +811,10 @@ export default function BrandDashboard() {
                 contracts.map(async (contract: any) => {
                   const contractId = String(contract?.id || "").trim();
                   if (!contractId) return contract;
-                  if (!contract?.docuseal_submission_id && !contract?.docuseal_slug) {
+                  if (
+                    !contract?.docuseal_submission_id &&
+                    !contract?.docuseal_slug
+                  ) {
                     return contract;
                   }
                   try {
@@ -879,9 +881,9 @@ export default function BrandDashboard() {
               const [delResp, contractsResp] = await Promise.all([
                 listOfferDeliverables(offerId),
                 base44
-                  .get<{ contracts?: any[] }>(
-                    `/api/campaign-offers/${offerId}/contracts`,
-                  )
+                  .get<{
+                    contracts?: any[];
+                  }>(`/api/campaign-offers/${offerId}/contracts`)
                   .catch(() => ({ contracts: [] })),
               ]);
               const deliverables = Array.isArray(delResp?.deliverables)
@@ -914,7 +916,11 @@ export default function BrandDashboard() {
 
     // Auto-refresh expanded offer details every 5 seconds
     const hubRefreshTimer = setInterval(() => {
-      if (mounted && selectedOfferHubId && activeSection === "campaigns-contract-hub") {
+      if (
+        mounted &&
+        selectedOfferHubId &&
+        activeSection === "campaigns-contract-hub"
+      ) {
         loadOfferHubDetails(selectedOfferHubId);
       }
     }, 5000);
@@ -964,9 +970,9 @@ export default function BrandDashboard() {
             id: creator.id || Math.random().toString(36).substr(2, 9),
             name: getDisplayName(
               creator.full_name ||
-              creator.display_name ||
-              creator.stage_name ||
-              creator.name,
+                creator.display_name ||
+                creator.stage_name ||
+                creator.name,
             ),
             image: creator.profile_photo_url || creator.image || null,
             location:
@@ -1633,15 +1639,17 @@ export default function BrandDashboard() {
               {mockActivities.map((activity, index) => (
                 <div
                   key={index}
-                  className={`p-3 rounded-lg border ${activity.urgent
-                    ? "bg-yellow-50 border-yellow-300"
-                    : "bg-gray-50 border-gray-200"
-                    }`}
+                  className={`p-3 rounded-lg border ${
+                    activity.urgent
+                      ? "bg-yellow-50 border-yellow-300"
+                      : "bg-gray-50 border-gray-200"
+                  }`}
                 >
                   <div className="flex items-start gap-3">
                     <div
-                      className={`w-2 h-2 rounded-full mt-2 ${activity.urgent ? "bg-yellow-500" : "bg-gray-400"
-                        }`}
+                      className={`w-2 h-2 rounded-full mt-2 ${
+                        activity.urgent ? "bg-yellow-500" : "bg-gray-400"
+                      }`}
                     />
                     <div className="flex-1">
                       <p className="text-sm text-gray-900 font-medium">
@@ -1764,51 +1772,51 @@ export default function BrandDashboard() {
             {(selectedCreator.instagram ||
               selectedCreator.tiktok ||
               selectedCreator.portfolio_url) && (
-                <Card className="p-6 bg-white border border-gray-200">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">Links</h3>
-                  <div className="space-y-2">
-                    {selectedCreator.instagram && (
-                      <a
-                        href={selectedCreator.instagram}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-gray-700 hover:text-[#F7B750] transition-colors"
-                      >
-                        <Globe className="w-4 h-4" />
-                        <span>Instagram</span>
-                      </a>
-                    )}
-                    {selectedCreator.tiktok && (
-                      <a
-                        href={selectedCreator.tiktok}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-gray-700 hover:text-[#F7B750] transition-colors"
-                      >
-                        <Globe className="w-4 h-4" />
-                        <span>TikTok</span>
-                      </a>
-                    )}
-                    {selectedCreator.portfolio_url && (
-                      <a
-                        href={selectedCreator.portfolio_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-gray-700 hover:text-[#F7B750] transition-colors"
-                      >
-                        <Globe className="w-4 h-4" />
-                        <span>Portfolio</span>
-                      </a>
-                    )}
-                    {selectedCreator.sport && (
-                      <div className="flex items-center gap-2 text-gray-700">
-                        <Star className="w-4 h-4" />
-                        <span>Sport: {selectedCreator.sport}</span>
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              )}
+              <Card className="p-6 bg-white border border-gray-200">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Links</h3>
+                <div className="space-y-2">
+                  {selectedCreator.instagram && (
+                    <a
+                      href={selectedCreator.instagram}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-gray-700 hover:text-[#F7B750] transition-colors"
+                    >
+                      <Globe className="w-4 h-4" />
+                      <span>Instagram</span>
+                    </a>
+                  )}
+                  {selectedCreator.tiktok && (
+                    <a
+                      href={selectedCreator.tiktok}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-gray-700 hover:text-[#F7B750] transition-colors"
+                    >
+                      <Globe className="w-4 h-4" />
+                      <span>TikTok</span>
+                    </a>
+                  )}
+                  {selectedCreator.portfolio_url && (
+                    <a
+                      href={selectedCreator.portfolio_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-gray-700 hover:text-[#F7B750] transition-colors"
+                    >
+                      <Globe className="w-4 h-4" />
+                      <span>Portfolio</span>
+                    </a>
+                  )}
+                  {selectedCreator.sport && (
+                    <div className="flex items-center gap-2 text-gray-700">
+                      <Star className="w-4 h-4" />
+                      <span>Sport: {selectedCreator.sport}</span>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            )}
           </div>
 
           {/* Right Column - Details */}
@@ -2333,38 +2341,38 @@ export default function BrandDashboard() {
               {/* Model Measurements */}
               {(filters.creator_types.length === 0 ||
                 filters.creator_types.includes("model")) && (
-                  <div className="pt-4 border-t border-gray-100">
-                    <Label className="text-sm font-semibold text-gray-900 mb-3 block">
-                      Model Measurements (inches)
-                    </Label>
-                    <div className="flex gap-4 max-w-md">
-                      <Input
-                        placeholder="Bust"
-                        value={filters.bust}
-                        onChange={(e) =>
-                          setFilters({ ...filters, bust: e.target.value })
-                        }
-                        className="border-2 border-gray-300"
-                      />
-                      <Input
-                        placeholder="Waist"
-                        value={filters.waist}
-                        onChange={(e) =>
-                          setFilters({ ...filters, waist: e.target.value })
-                        }
-                        className="border-2 border-gray-300"
-                      />
-                      <Input
-                        placeholder="Hips"
-                        value={filters.hips}
-                        onChange={(e) =>
-                          setFilters({ ...filters, hips: e.target.value })
-                        }
-                        className="border-2 border-gray-300"
-                      />
-                    </div>
+                <div className="pt-4 border-t border-gray-100">
+                  <Label className="text-sm font-semibold text-gray-900 mb-3 block">
+                    Model Measurements (inches)
+                  </Label>
+                  <div className="flex gap-4 max-w-md">
+                    <Input
+                      placeholder="Bust"
+                      value={filters.bust}
+                      onChange={(e) =>
+                        setFilters({ ...filters, bust: e.target.value })
+                      }
+                      className="border-2 border-gray-300"
+                    />
+                    <Input
+                      placeholder="Waist"
+                      value={filters.waist}
+                      onChange={(e) =>
+                        setFilters({ ...filters, waist: e.target.value })
+                      }
+                      className="border-2 border-gray-300"
+                    />
+                    <Input
+                      placeholder="Hips"
+                      value={filters.hips}
+                      onChange={(e) =>
+                        setFilters({ ...filters, hips: e.target.value })
+                      }
+                      className="border-2 border-gray-300"
+                    />
                   </div>
-                )}
+                </div>
+              )}
             </div>
           </Card>
         )}
@@ -2547,19 +2555,21 @@ export default function BrandDashboard() {
       <div className="inline-flex items-center bg-gray-100 p-1 rounded-lg">
         <button
           onClick={() => setInboxSubTab("talent_packages")}
-          className={`px-3 py-1.5 text-sm font-semibold rounded-md ${inboxSubTab === "talent_packages"
-            ? "bg-white shadow-sm text-gray-900"
-            : "text-gray-500"
-            }`}
+          className={`px-3 py-1.5 text-sm font-semibold rounded-md ${
+            inboxSubTab === "talent_packages"
+              ? "bg-white shadow-sm text-gray-900"
+              : "text-gray-500"
+          }`}
         >
           Talent Packages ({inboxPackages.length})
         </button>
         <button
           onClick={() => setInboxSubTab("direct_requests")}
-          className={`px-3 py-1.5 text-sm font-semibold rounded-md ${inboxSubTab === "direct_requests"
-            ? "bg-white shadow-sm text-gray-900"
-            : "text-gray-500"
-            }`}
+          className={`px-3 py-1.5 text-sm font-semibold rounded-md ${
+            inboxSubTab === "direct_requests"
+              ? "bg-white shadow-sm text-gray-900"
+              : "text-gray-500"
+          }`}
         >
           Direct Requests
         </button>
@@ -2579,9 +2589,12 @@ export default function BrandDashboard() {
           )}
           {inboxPackages.map((pkg: any) => {
             const expiresAt = pkg?.expires_at ? new Date(pkg.expires_at) : null;
-            const isExpired = expiresAt ? expiresAt.getTime() < Date.now() : false;
+            const isExpired = expiresAt
+              ? expiresAt.getTime() < Date.now()
+              : false;
             const isDone =
-              pkg?.status === "feedback_received" || pkg?.status === "completed";
+              pkg?.status === "feedback_received" ||
+              pkg?.status === "completed";
             const selectedTalentCount = Array.isArray(
               pkg?.meta?.selected_talent_ids,
             )
@@ -2610,9 +2623,7 @@ export default function BrandDashboard() {
                     </div>
                     <p className="text-sm text-gray-700 font-medium">
                       From:{" "}
-                      {pkg?.agencies?.agency_name ||
-                        pkg?.agency_id ||
-                        "Agency"}
+                      {pkg?.agencies?.agency_name || pkg?.agency_id || "Agency"}
                     </p>
                     <p className="text-sm text-gray-500">
                       Sent:{" "}
@@ -2900,7 +2911,9 @@ export default function BrandDashboard() {
       <div className="space-y-3">
         {brandOfferItems.length === 0 && (
           <Card className="p-6 bg-white border border-gray-300 rounded-none">
-            <p className="text-sm text-gray-500">No offer contracts available yet.</p>
+            <p className="text-sm text-gray-500">
+              No offer contracts available yet.
+            </p>
           </Card>
         )}
         {brandOfferItems.map((offer: any) => {
@@ -2918,9 +2931,7 @@ export default function BrandDashboard() {
           ).length;
           const totalCount = downloadedDeliverables.length;
           const progressPct =
-            totalCount > 0
-              ? Math.round((approvedCount / totalCount) * 100)
-              : 0;
+            totalCount > 0 ? Math.round((approvedCount / totalCount) * 100) : 0;
           return (
             <Card
               key={offerId}
@@ -2949,29 +2960,48 @@ export default function BrandDashboard() {
               </div>
               {expanded && (
                 <div className="border border-gray-200 rounded-none bg-gray-50 flex flex-col gap-px">
-                  {selectedOfferHubContracts.filter((c: any) => c?.docuseal_status && c.docuseal_status !== "draft").length === 0 ? (
+                  {selectedOfferHubContracts.filter(
+                    (c: any) =>
+                      c?.docuseal_status && c.docuseal_status !== "draft",
+                  ).length === 0 ? (
                     <div className="p-8 text-center bg-white">
                       <FileText className="w-8 h-8 text-gray-300 mx-auto mb-3" />
-                      <p className="text-sm text-gray-500 font-medium">No active contracts</p>
-                      <p className="text-xs text-gray-400 mt-1">Contracts requiring your attention will appear here.</p>
+                      <p className="text-sm text-gray-500 font-medium">
+                        No active contracts
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Contracts requiring your attention will appear here.
+                      </p>
                     </div>
                   ) : (
                     selectedOfferHubContracts
-                      .filter((c: any) => c?.docuseal_status && c.docuseal_status !== "draft")
+                      .filter(
+                        (c: any) =>
+                          c?.docuseal_status && c.docuseal_status !== "draft",
+                      )
                       .map((contract: any) => {
-                        const isCompleted = contract?.docuseal_status === "completed";
-                        const isPending = contract?.docuseal_status === "sent" || contract?.docuseal_status === "opened";
+                        const isCompleted =
+                          contract?.docuseal_status === "completed";
+                        const isPending =
+                          contract?.docuseal_status === "sent" ||
+                          contract?.docuseal_status === "opened";
                         // Calculate signing URL from submission ID
                         const submissionId = contract?.docuseal_submission_id;
                         // Based on standard DocuSeal flow, though typically we'd fetch this from backend
-                        // For now we'll link to a placeholder or rely on email if URL isn't directly available, 
+                        // For now we'll link to a placeholder or rely on email if URL isn't directly available,
                         // but ideally we'd have the signing_url. We'll add a realistic button.
 
                         return (
-                          <div key={String(contract?.id)} className="bg-white p-4 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
+                          <div
+                            key={String(contract?.id)}
+                            className="bg-white p-4 flex items-center justify-between hover:bg-gray-50/50 transition-colors"
+                          >
                             <div className="flex items-center gap-4">
-                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isCompleted ? "bg-green-50" : "bg-blue-50"
-                                }`}>
+                              <div
+                                className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                                  isCompleted ? "bg-green-50" : "bg-blue-50"
+                                }`}
+                              >
                                 {isCompleted ? (
                                   <CheckCircle className="w-5 h-5 text-green-500" />
                                 ) : (
@@ -2980,20 +3010,30 @@ export default function BrandDashboard() {
                               </div>
                               <div>
                                 <h4 className="text-sm font-semibold text-gray-900">
-                                  {String(contract?.title || "Contract Document")}
+                                  {String(
+                                    contract?.title || "Contract Document",
+                                  )}
                                 </h4>
                                 <div className="flex items-center gap-2 mt-1">
-                                  <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full ${isCompleted
-                                    ? "bg-green-100 text-green-700"
-                                    : isPending
-                                      ? "bg-blue-100 text-blue-700"
-                                      : "bg-gray-100 text-gray-700"
-                                    }`}>
-                                    {String(contract?.docuseal_status || "Unknown").replace(/_/g, " ")}
+                                  <span
+                                    className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full ${
+                                      isCompleted
+                                        ? "bg-green-100 text-green-700"
+                                        : isPending
+                                          ? "bg-blue-100 text-blue-700"
+                                          : "bg-gray-100 text-gray-700"
+                                    }`}
+                                  >
+                                    {String(
+                                      contract?.docuseal_status || "Unknown",
+                                    ).replace(/_/g, " ")}
                                   </span>
                                   {contract?.updated_at && (
                                     <span className="text-xs text-gray-500">
-                                      Updated {new Date(contract.updated_at).toLocaleDateString()}
+                                      Updated{" "}
+                                      {new Date(
+                                        contract.updated_at,
+                                      ).toLocaleDateString()}
                                     </span>
                                   )}
                                 </div>
@@ -3006,13 +3046,19 @@ export default function BrandDashboard() {
                                   size="sm"
                                   className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
                                   onClick={() => {
-                                    const subId = contract?.docuseal_slug || contract?.docuseal_submission_id;
+                                    const subId =
+                                      contract?.docuseal_slug ||
+                                      contract?.docuseal_submission_id;
                                     if (subId) {
-                                      window.open(`https://docuseal.com/s/${subId}`, '_blank');
+                                      window.open(
+                                        `https://docuseal.com/s/${subId}`,
+                                        "_blank",
+                                      );
                                     } else {
                                       toast({
                                         title: "Check your email",
-                                        description: "A secure DocuSeal signing link has been sent to your email address.",
+                                        description:
+                                          "A secure DocuSeal signing link has been sent to your email address.",
                                       });
                                     }
                                   }}
@@ -3027,12 +3073,16 @@ export default function BrandDashboard() {
                                   className="border-gray-200 text-gray-600"
                                   onClick={() => {
                                     if (contract?.signed_document_url) {
-                                      window.open(contract.signed_document_url, '_blank');
+                                      window.open(
+                                        contract.signed_document_url,
+                                        "_blank",
+                                      );
                                     } else {
                                       toast({
                                         title: "Download Unavailable",
-                                        description: "The signed document URL is not available yet.",
-                                        variant: "destructive"
+                                        description:
+                                          "The signed document URL is not available yet.",
+                                        variant: "destructive",
                                       });
                                     }
                                   }}
@@ -3047,8 +3097,7 @@ export default function BrandDashboard() {
                       })
                   )}
                 </div>
-              )
-              }
+              )}
             </Card>
           );
         })}
@@ -3094,9 +3143,7 @@ export default function BrandDashboard() {
                         )}
                       >
                         {String(row?.docuseal_status || "").toLowerCase() ===
-                          "sent" && (
-                          <Mail className="h-3.5 w-3.5 mr-1.5" />
-                        )}
+                          "sent" && <Mail className="h-3.5 w-3.5 mr-1.5" />}
                         {String(row?.docuseal_status || "").toLowerCase() ===
                           "signed" && (
                           <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
@@ -3155,8 +3202,7 @@ export default function BrandDashboard() {
                             } catch (e: any) {
                               toast({
                                 title: "Resend failed",
-                                description:
-                                  e?.message || "Please try again.",
+                                description: e?.message || "Please try again.",
                                 variant: "destructive" as any,
                               });
                             }
@@ -3188,8 +3234,7 @@ export default function BrandDashboard() {
                             } catch (e: any) {
                               toast({
                                 title: "Archive failed",
-                                description:
-                                  e?.message || "Please try again.",
+                                description: e?.message || "Please try again.",
                                 variant: "destructive" as any,
                               });
                             }
@@ -3235,7 +3280,9 @@ export default function BrandDashboard() {
       <div className="space-y-4">
         {brandOfferItems.length === 0 && (
           <Card className="p-12 bg-white border border-gray-300 rounded-none text-center">
-            <p className="text-sm text-gray-500">No active campaigns available.</p>
+            <p className="text-sm text-gray-500">
+              No active campaigns available.
+            </p>
           </Card>
         )}
         {brandOfferItems.map((offer: any) => {
@@ -3287,11 +3334,14 @@ export default function BrandDashboard() {
                   </div>
                   <div>
                     <h3 className="font-bold text-gray-900">
-                      {offer?.brand_campaigns?.name || "Campaign Asset Submission"}
+                      {offer?.brand_campaigns?.name ||
+                        "Campaign Asset Submission"}
                     </h3>
                     <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5">
                       {offer.talent_name || "Creator"} •{" "}
-                      {offer.offer_title || offer.brand_campaigns?.name || "Offer"}
+                      {offer.offer_title ||
+                        offer.brand_campaigns?.name ||
+                        "Offer"}
                     </p>
                   </div>
                 </div>
@@ -3367,71 +3417,94 @@ export default function BrandDashboard() {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                      {selectedOfferHubDeliverables.map((del: any, idx: number) => (
-                        <Card
-                          key={String(del.id)}
-                          className="group overflow-hidden rounded-2xl border border-white/70 bg-white/70 backdrop-blur-lg shadow-lg hover:shadow-2xl transition-all cursor-zoom-in"
-                          onClick={() => {
-                            setPreviewItems(selectedOfferHubDeliverables);
-                            setPreviewIndex(idx);
-                            setPreviewImage(del);
-                          }}
-                        >
-                          <div className="aspect-[4/5] bg-gray-100 relative overflow-hidden">
-                            {del.asset_type === "image" ? (
-                              <img
-                                src={getPublicUrl(del)}
-                                alt={del.caption || "Deliverable"}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-gray-900">
-                                <Video className="w-12 h-12 text-white/20" />
+                      {selectedOfferHubDeliverables.map(
+                        (del: any, idx: number) => (
+                          <Card
+                            key={String(del.id)}
+                            className="group overflow-hidden rounded-2xl border border-white/70 bg-white/70 backdrop-blur-lg shadow-lg hover:shadow-2xl transition-all cursor-zoom-in"
+                            onClick={() => {
+                              setPreviewItems(selectedOfferHubDeliverables);
+                              setPreviewIndex(idx);
+                              setPreviewImage(del);
+                            }}
+                          >
+                            <div className="aspect-[4/5] bg-gray-100 relative overflow-hidden">
+                              {del.asset_type === "image" ? (
+                                <img
+                                  src={getPublicUrl(del)}
+                                  alt={del.caption || "Deliverable"}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-gray-900">
+                                  <Video className="w-12 h-12 text-white/20" />
+                                </div>
+                              )}
+                              <div className="absolute top-3 right-3">
+                                <Button
+                                  variant="secondary"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-full bg-white/90 text-gray-900 hover:bg-white shadow-sm"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    window.open(getPublicUrl(del), "_blank");
+                                  }}
+                                  title="Download"
+                                >
+                                  <Download className="w-4 h-4" />
+                                </Button>
                               </div>
-                            )}
-                            <div className="absolute top-3 right-3">
-                              <Button
-                                variant="secondary"
-                                size="icon"
-                                className="h-8 w-8 rounded-full bg-white/90 text-gray-900 hover:bg-white shadow-sm"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  window.open(getPublicUrl(del), "_blank");
-                                }}
-                                title="Download"
-                              >
-                                <Download className="w-4 h-4" />
-                              </Button>
+                              <div className="absolute top-2 left-2">
+                                <Badge
+                                  className={`rounded-none border-0 ${
+                                    del.status === "approved" ||
+                                    del.status === "brand_approved"
+                                      ? "bg-emerald-600 text-white"
+                                      : del.status === "changes_requested"
+                                        ? "bg-rose-600 text-white"
+                                        : "bg-blue-600 text-white"
+                                  }`}
+                                >
+                                  {del.status === "submitted"
+                                    ? "New"
+                                    : del.status === "brand_approved"
+                                      ? "approved"
+                                      : del.status.replace(/_/g, " ")}
+                                </Badge>
+                              </div>
                             </div>
-                            <div className="absolute top-2 left-2">
-                              <Badge className={`rounded-none border-0 ${
-                                (del.status === 'approved' || del.status === 'brand_approved') ? 'bg-emerald-600 text-white' : 
-                                del.status === 'changes_requested' ? 'bg-rose-600 text-white' : 
-                                'bg-blue-600 text-white'
-                              }`}>
-                                {del.status === 'submitted' ? 'New' : (del.status === 'brand_approved' ? 'approved' : del.status.replace(/_/g, " "))}
-                              </Badge>
-                            </div>
-                          </div>
-                          <div className="p-4 space-y-4">
-                            <p className="text-xs text-gray-600 font-medium leading-relaxed line-clamp-2">
-                              {del.caption || <span className="text-gray-300 italic">No caption</span>}
-                            </p>
-                            
-                            <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
-                              <Button
-                                size="sm"
-                                className="flex-1 h-8 rounded-none font-bold bg-gray-900"
-                                onClick={() => handleDeliverableReview(offerId, del.id, "approve")}
-                                disabled={del.status === "approved" || del.status === "brand_approved"}
-                              >
-                                Approve
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex-1 h-8 rounded-none font-bold border-gray-300"
-                                onClick={() => {
+                            <div className="p-4 space-y-4">
+                              <p className="text-xs text-gray-600 font-medium leading-relaxed line-clamp-2">
+                                {del.caption || (
+                                  <span className="text-gray-300 italic">
+                                    No caption
+                                  </span>
+                                )}
+                              </p>
+
+                              <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+                                <Button
+                                  size="sm"
+                                  className="flex-1 h-8 rounded-none font-bold bg-gray-900"
+                                  onClick={() =>
+                                    handleDeliverableReview(
+                                      offerId,
+                                      del.id,
+                                      "approve",
+                                    )
+                                  }
+                                  disabled={
+                                    del.status === "approved" ||
+                                    del.status === "brand_approved"
+                                  }
+                                >
+                                  Approve
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex-1 h-8 rounded-none font-bold border-gray-300"
+                                  onClick={() => {
                                     setReviewDialog({
                                       open: true,
                                       offerId,
@@ -3442,16 +3515,18 @@ export default function BrandDashboard() {
                                 >
                                   Feedback
                                 </Button>
-                            </div>
-
-                            {del.brand_review_note && (
-                              <div className="p-2 bg-gray-50 border border-gray-200 text-[10px] text-gray-600">
-                                <strong>Your feedback:</strong> {del.brand_review_note}
                               </div>
-                            )}
-                          </div>
-                        </Card>
-                      ))}
+
+                              {del.brand_review_note && (
+                                <div className="p-2 bg-gray-50 border border-gray-200 text-[10px] text-gray-600">
+                                  <strong>Your feedback:</strong>{" "}
+                                  {del.brand_review_note}
+                                </div>
+                              )}
+                            </div>
+                          </Card>
+                        ),
+                      )}
                     </div>
                   )}
                 </div>
@@ -4135,7 +4210,9 @@ export default function BrandDashboard() {
                     <Label className="text-sm font-semibold text-gray-700 block mb-2">
                       Timeline
                     </Label>
-                    <p className="text-gray-900">Start: {(campaign as any)?.go_live || "—"}</p>
+                    <p className="text-gray-900">
+                      Start: {(campaign as any)?.go_live || "—"}
+                    </p>
                     <p className="text-gray-900">
                       Due: {new Date(campaign.due_date).toLocaleDateString()}
                     </p>
@@ -4177,7 +4254,10 @@ export default function BrandDashboard() {
               ) : (
                 <div className="space-y-3">
                   {campaign.creators.map((creator: string, idx: number) => (
-                    <div key={`${creator}-${idx}`} className="flex items-center gap-3">
+                    <div
+                      key={`${creator}-${idx}`}
+                      className="flex items-center gap-3"
+                    >
                       <img
                         src={campaign.creatorAvatars[idx] || "/favicon.svg"}
                         alt={creator}
@@ -4234,10 +4314,11 @@ export default function BrandDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setCampaignView("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${campaignView === "active"
-              ? "border-[#F7B750] text-[#F7B750]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              campaignView === "active"
+                ? "border-[#F7B750] text-[#F7B750]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Active (
             {
@@ -4248,10 +4329,11 @@ export default function BrandDashboard() {
           </button>
           <button
             onClick={() => setCampaignView("pending")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${campaignView === "pending"
-              ? "border-[#F7B750] text-[#F7B750]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              campaignView === "pending"
+                ? "border-[#F7B750] text-[#F7B750]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Pending Approval (
             {
@@ -4262,23 +4344,25 @@ export default function BrandDashboard() {
           </button>
           <button
             onClick={() => setCampaignView("completed")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${campaignView === "completed"
-              ? "border-[#F7B750] text-[#F7B750]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              campaignView === "completed"
+                ? "border-[#F7B750] text-[#F7B750]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Completed (
-            {campaignsForOffers.filter((c) => c.status === "completed").length}
-            )
+            {campaignsForOffers.filter((c) => c.status === "completed").length})
           </button>
           <button
             onClick={() => setCampaignView("drafts")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${campaignView === "drafts"
-              ? "border-[#F7B750] text-[#F7B750]"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              campaignView === "drafts"
+                ? "border-[#F7B750] text-[#F7B750]"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
-            Drafts ({campaignsForOffers.filter((c) => c.status === "draft").length})
+            Drafts (
+            {campaignsForOffers.filter((c) => c.status === "draft").length})
           </button>
         </div>
 
@@ -5041,28 +5125,31 @@ export default function BrandDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setContractDetailTab("summary")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractDetailTab === "summary"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractDetailTab === "summary"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Summary
           </button>
           <button
             onClick={() => setContractDetailTab("full_text")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractDetailTab === "full_text"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractDetailTab === "full_text"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Full Text
           </button>
           <button
             onClick={() => setContractDetailTab("custom")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractDetailTab === "custom"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractDetailTab === "custom"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Custom Clauses{" "}
             {contract.custom_clauses.length > 0 &&
@@ -5070,10 +5157,11 @@ export default function BrandDashboard() {
           </button>
           <button
             onClick={() => setContractDetailTab("history")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractDetailTab === "history"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractDetailTab === "history"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             History
           </button>
@@ -5590,28 +5678,31 @@ export default function BrandDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setContractHubTab("active")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractHubTab === "active"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractHubTab === "active"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Active ({activeContracts.length})
           </button>
           <button
             onClick={() => setContractHubTab("pending")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractHubTab === "pending"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractHubTab === "pending"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Pending Signature ({pendingContracts.length})
           </button>
           <button
             onClick={() => setContractHubTab("all")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${contractHubTab === "all"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              contractHubTab === "all"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             All Contracts ({mockContracts.length})
           </button>
@@ -5804,10 +5895,11 @@ export default function BrandDashboard() {
             {mockContracts.map((contract) => (
               <Card
                 key={contract.id}
-                className={`p-6 border ${contract.status === "signed"
-                  ? "bg-white border-gray-200"
-                  : "bg-yellow-50 border-yellow-300"
-                  }`}
+                className={`p-6 border ${
+                  contract.status === "signed"
+                    ? "bg-white border-gray-200"
+                    : "bg-yellow-50 border-yellow-300"
+                }`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
@@ -5893,38 +5985,42 @@ export default function BrandDashboard() {
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setUsageRightsTab("licenses")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${usageRightsTab === "licenses"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              usageRightsTab === "licenses"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Active Licenses
           </button>
           <button
             onClick={() => setUsageRightsTab("expiring")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${usageRightsTab === "expiring"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              usageRightsTab === "expiring"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Expiring Soon{" "}
             {expiringLicenses.length > 0 && `(${expiringLicenses.length})`}
           </button>
           <button
             onClick={() => setUsageRightsTab("contracts")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${usageRightsTab === "contracts"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              usageRightsTab === "contracts"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Contract Hub
           </button>
           <button
             onClick={() => setUsageRightsTab("compliance")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${usageRightsTab === "compliance"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
+              usageRightsTab === "compliance"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
           >
             Compliance
           </button>
@@ -6108,16 +6204,16 @@ export default function BrandDashboard() {
                   ))}
                 {mockLicenses.filter((l) => l.status === "expiring_soon")
                   .length === 0 && (
-                    <div className="col-span-3 text-center py-12">
-                      <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">
-                        No licenses expiring soon
-                      </h3>
-                      <p className="text-gray-600">
-                        All your licenses are active for 30+ days
-                      </p>
-                    </div>
-                  )}
+                  <div className="col-span-3 text-center py-12">
+                    <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">
+                      No licenses expiring soon
+                    </h3>
+                    <p className="text-gray-600">
+                      All your licenses are active for 30+ days
+                    </p>
+                  </div>
+                )}
               </div>
             </Card>
           </div>
@@ -7678,26 +7774,26 @@ export default function BrandDashboard() {
                     contractData.add_restrictions ||
                     contractData.add_liability ||
                     contractData.add_special_terms) && (
-                      <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <p className="font-semibold text-yellow-900 mb-2">
-                          Custom Terms Added:
-                        </p>
-                        <ul className="text-sm text-yellow-800 space-y-1">
-                          {contractData.add_disclaimer && (
-                            <li>• Required disclaimer included</li>
-                          )}
-                          {contractData.add_restrictions && (
-                            <li>• Content restrictions added</li>
-                          )}
-                          {contractData.add_liability && (
-                            <li>• Liability waiver included</li>
-                          )}
-                          {contractData.add_special_terms && (
-                            <li>• Special terms added</li>
-                          )}
-                        </ul>
-                      </div>
-                    )}
+                    <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <p className="font-semibold text-yellow-900 mb-2">
+                        Custom Terms Added:
+                      </p>
+                      <ul className="text-sm text-yellow-800 space-y-1">
+                        {contractData.add_disclaimer && (
+                          <li>• Required disclaimer included</li>
+                        )}
+                        {contractData.add_restrictions && (
+                          <li>• Content restrictions added</li>
+                        )}
+                        {contractData.add_liability && (
+                          <li>• Liability waiver included</li>
+                        )}
+                        {contractData.add_special_terms && (
+                          <li>• Special terms added</li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
                 </Card>
 
                 <Card className="p-6 bg-green-50 border-2 border-green-300">
@@ -7769,20 +7865,21 @@ export default function BrandDashboard() {
               const isCampaignGroup = item.id === "campaigns";
               const isActive = isCampaignGroup
                 ? activeSection === "campaigns-hub" ||
-                activeSection === "campaigns-inbox" ||
-                activeSection === "campaign-offers" ||
-                activeSection === "campaigns-contract-hub" ||
-                activeSection === "campaigns-deliverables" ||
-                activeSection === "studio"
+                  activeSection === "campaigns-inbox" ||
+                  activeSection === "campaign-offers" ||
+                  activeSection === "campaigns-contract-hub" ||
+                  activeSection === "campaigns-deliverables" ||
+                  activeSection === "studio"
                 : activeSection === item.id;
 
               return (
                 <div key={item.id}>
                   <div
-                    className={`w-full flex items-center gap-2 rounded-lg transition-all ${isActive
-                      ? "bg-[#F7B750] text-white"
-                      : "text-gray-700 hover:bg-gray-100"
-                      }`}
+                    className={`w-full flex items-center gap-2 rounded-lg transition-all ${
+                      isActive
+                        ? "bg-[#F7B750] text-white"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
                   >
                     <button
                       onClick={() => {
@@ -7848,8 +7945,9 @@ export default function BrandDashboard() {
                         className="inline-flex items-center justify-center px-2 mr-2"
                       >
                         <ChevronDown
-                          className={`w-4 h-4 transition-transform ${showCampaignSubtabs ? "rotate-0" : "-rotate-90"
-                            }`}
+                          className={`w-4 h-4 transition-transform ${
+                            showCampaignSubtabs ? "rotate-0" : "-rotate-90"
+                          }`}
                         />
                       </button>
                     )}
@@ -7862,10 +7960,11 @@ export default function BrandDashboard() {
                           setActiveSection("campaign-offers");
                           setCampaignView("active");
                         }}
-                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${activeSection === "campaign-offers"
-                          ? "bg-gray-100 text-gray-900"
-                          : "text-gray-600 hover:bg-gray-100"
-                          }`}
+                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
+                          activeSection === "campaign-offers"
+                            ? "bg-gray-100 text-gray-900"
+                            : "text-gray-600 hover:bg-gray-100"
+                        }`}
                       >
                         <Target className="w-4 h-4" />
                         <span className="flex-1 text-left">My Offers</span>
@@ -7874,10 +7973,11 @@ export default function BrandDashboard() {
                         onClick={() => {
                           setActiveSection("campaigns-inbox");
                         }}
-                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${activeSection === "campaigns-inbox"
-                          ? "bg-gray-100 text-gray-900"
-                          : "text-gray-600 hover:bg-gray-100"
-                          }`}
+                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
+                          activeSection === "campaigns-inbox"
+                            ? "bg-gray-100 text-gray-900"
+                            : "text-gray-600 hover:bg-gray-100"
+                        }`}
                       >
                         <Mail className="w-4 h-4" />
                         <span className="flex-1 text-left">Inbox</span>
@@ -7889,10 +7989,11 @@ export default function BrandDashboard() {
                         onClick={() => {
                           setActiveSection("campaigns-contract-hub");
                         }}
-                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${activeSection === "campaigns-contract-hub"
-                          ? "bg-gray-100 text-gray-900"
-                          : "text-gray-600 hover:bg-gray-100"
-                          }`}
+                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
+                          activeSection === "campaigns-contract-hub"
+                            ? "bg-gray-100 text-gray-900"
+                            : "text-gray-600 hover:bg-gray-100"
+                        }`}
                       >
                         <FileText className="w-4 h-4" />
                         <span className="flex-1 text-left">Contract Hub</span>
@@ -7901,20 +8002,22 @@ export default function BrandDashboard() {
                         onClick={() => {
                           setActiveSection("campaigns-deliverables");
                         }}
-                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${activeSection === "campaigns-deliverables"
-                          ? "bg-gray-100 text-gray-900"
-                          : "text-gray-600 hover:bg-gray-100"
-                          }`}
+                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
+                          activeSection === "campaigns-deliverables"
+                            ? "bg-gray-100 text-gray-900"
+                            : "text-gray-600 hover:bg-gray-100"
+                        }`}
                       >
                         <CheckCircle2 className="w-4 h-4" />
                         <span className="flex-1 text-left">Deliverables</span>
                       </button>
                       <button
                         onClick={() => setActiveSection("studio")}
-                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${activeSection === "studio"
-                          ? "bg-gray-100 text-gray-900"
-                          : "text-gray-600 hover:bg-gray-100"
-                          }`}
+                        className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
+                          activeSection === "studio"
+                            ? "bg-gray-100 text-gray-900"
+                            : "text-gray-600 hover:bg-gray-100"
+                        }`}
                       >
                         <ImageIcon className="w-4 h-4" />
                         <span className="text-left">Asset Library</span>
@@ -7993,15 +8096,25 @@ export default function BrandDashboard() {
                 </p>
                 <ul className="space-y-1">
                   {(() => {
-                    const selectedIds = confirmingDonePkg?.meta?.selected_talent_ids || [];
-                    const items = confirmingDonePkg?.package_snapshot?.items || [];
+                    const selectedIds =
+                      confirmingDonePkg?.meta?.selected_talent_ids || [];
+                    const items =
+                      confirmingDonePkg?.package_snapshot?.items || [];
                     const selectedNames = items
-                      .filter((item: any) => selectedIds.includes(String(item.talent_id || item.id)))
+                      .filter((item: any) =>
+                        selectedIds.includes(String(item.talent_id || item.id)),
+                      )
                       .map((item: any) => item.talent_name || "Unnamed Talent");
 
-                    if (selectedNames.length === 0) return <li className="text-sm italic">No talent selected</li>;
+                    if (selectedNames.length === 0)
+                      return (
+                        <li className="text-sm italic">No talent selected</li>
+                      );
                     return selectedNames.map((name: string, idx: number) => (
-                      <li key={idx} className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                      <li
+                        key={idx}
+                        className="text-sm font-medium text-gray-900 flex items-center gap-2"
+                      >
                         <CheckCircle2 className="w-3 h-3 text-green-600" />
                         {name}
                       </li>
@@ -8010,12 +8123,16 @@ export default function BrandDashboard() {
                 </ul>
               </div>
               <p className="text-sm font-medium text-red-600 bg-red-50 p-3 border border-red-100 italic">
-                Note: Once you click "Confirm", you will not be able to modify your selection again. The agency will be notified of your final choice.
+                Note: Once you click "Confirm", you will not be able to modify
+                your selection again. The agency will be notified of your final
+                choice.
               </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-none border-gray-300">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-none border-gray-300">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               className="rounded-none bg-black hover:bg-gray-800 text-white"
               onClick={async () => {
@@ -8090,7 +8207,9 @@ export default function BrandDashboard() {
                     className="absolute left-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/10 text-white hover:bg-white/20 backdrop-blur-md flex items-center justify-center"
                     onClick={() => {
                       const nextIndex =
-                        previewIndex > 0 ? previewIndex - 1 : previewItems.length - 1;
+                        previewIndex > 0
+                          ? previewIndex - 1
+                          : previewItems.length - 1;
                       setPreviewIndex(nextIndex);
                       setPreviewImage(previewItems[nextIndex]);
                     }}
@@ -8102,7 +8221,9 @@ export default function BrandDashboard() {
                     className="absolute right-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/10 text-white hover:bg-white/20 backdrop-blur-md flex items-center justify-center"
                     onClick={() => {
                       const nextIndex =
-                        previewIndex < previewItems.length - 1 ? previewIndex + 1 : 0;
+                        previewIndex < previewItems.length - 1
+                          ? previewIndex + 1
+                          : 0;
                       setPreviewIndex(nextIndex);
                       setPreviewImage(previewItems[nextIndex]);
                     }}
@@ -8142,7 +8263,9 @@ export default function BrandDashboard() {
                 <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-2">
                   Caption
                 </p>
-                <p className="text-sm leading-relaxed">{previewImage.caption}</p>
+                <p className="text-sm leading-relaxed">
+                  {previewImage.caption}
+                </p>
               </div>
             )}
           </div>
@@ -8152,9 +8275,7 @@ export default function BrandDashboard() {
       {/* Feedback Dialog */}
       <Dialog
         open={reviewDialog.open}
-        onOpenChange={(open) =>
-          setReviewDialog((prev) => ({ ...prev, open }))
-        }
+        onOpenChange={(open) => setReviewDialog((prev) => ({ ...prev, open }))}
       >
         <DialogContent className="sm:max-w-[500px] rounded-none p-0 overflow-hidden border border-gray-200 shadow-2xl">
           <div className="bg-gray-900 p-8 text-white relative">

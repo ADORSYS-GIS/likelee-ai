@@ -1090,7 +1090,9 @@ export function MarketplaceSection({
                         </div>
                         {selectedProfile?.profile_type === "agency" && (
                           <div className="rounded-lg border border-slate-100 bg-white/80 px-3 py-2">
-                            <p className="text-slate-500 font-medium">Services</p>
+                            <p className="text-slate-500 font-medium">
+                              Services
+                            </p>
                             <p className="text-slate-900 font-bold mt-0.5">
                               {(selectedProfile?.skills || []).length || "N/A"}
                             </p>

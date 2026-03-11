@@ -776,7 +776,8 @@ export const uploadOfferDeliverable = (
   fd.append("file", data.file);
   if (data.caption) fd.append("caption", data.caption);
   if (data.talent_id) fd.append("talent_id", data.talent_id);
-  if (data.asset_request_id) fd.append("asset_request_id", data.asset_request_id);
+  if (data.asset_request_id)
+    fd.append("asset_request_id", data.asset_request_id);
   if (data.status) fd.append("status", data.status);
   return base44Client.post(
     `/api/campaign-offers/${offerId}/deliverables/upload-form`,
@@ -802,7 +803,10 @@ export const submitOfferDeliverable = (
 export const listOfferTalentAssignments = (offerId: string) =>
   base44Client.get(`/api/campaign-offers/${offerId}/assignments`);
 
-export const createOfferTalentAssignment = (offerId: string, talentId: string) =>
+export const createOfferTalentAssignment = (
+  offerId: string,
+  talentId: string,
+) =>
   base44Client.post(`/api/campaign-offers/${offerId}/assignments`, {
     talent_id: talentId,
   });
@@ -889,7 +893,9 @@ export const uploadBookingDeliverable = (
 };
 
 export const submitBookingDeliverables = (campaignId: string) =>
-  base44Client.post(`/api/bookings-campaigns/${campaignId}/deliverables/submit`);
+  base44Client.post(
+    `/api/bookings-campaigns/${campaignId}/deliverables/submit`,
+  );
 
 export const reviewBookingDeliverable = (
   campaignId: string,

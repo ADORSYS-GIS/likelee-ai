@@ -17124,7 +17124,8 @@ export default function AgencyDashboard() {
     if (nextTab && nextTab !== activeTab) {
       setActiveTabState(nextTab);
       const nextSubTab =
-        normalizeSubTab(searchParams.get("subTab")) || getDefaultSubTab(nextTab);
+        normalizeSubTab(searchParams.get("subTab")) ||
+        getDefaultSubTab(nextTab);
       setActiveSubTabState(nextSubTab);
       setExpandedItems((prev) => {
         if (prev.includes(nextTab)) return prev;

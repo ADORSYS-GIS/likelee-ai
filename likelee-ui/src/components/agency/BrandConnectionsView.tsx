@@ -50,7 +50,9 @@ const BrandConnectionsView = () => {
   >({});
   const [builderToken, setBuilderToken] = useState<string | null>(null);
   const [builderOpen, setBuilderOpen] = useState(false);
-  const [currentContractId, setCurrentContractId] = useState<string | null>(null);
+  const [currentContractId, setCurrentContractId] = useState<string | null>(
+    null,
+  );
   const [isUploading, setIsUploading] = useState(false);
   const [contractTab, setContractTab] = useState("submissions");
   const [assignDialog, setAssignDialog] = useState<{
@@ -155,16 +157,20 @@ const BrandConnectionsView = () => {
       const refreshable = contracts.filter((contract: any) => {
         if (!contract) return false;
         const status = String(contract?.docuseal_status || "").toLowerCase();
-        if (!status || status === "draft" || status === "completed") return false;
+        if (!status || status === "draft" || status === "completed")
+          return false;
         if (["signed", "declined", "rejected"].includes(status)) return false;
-        return Boolean(contract?.docuseal_submission_id || contract?.docuseal_slug);
+        return Boolean(
+          contract?.docuseal_submission_id || contract?.docuseal_slug,
+        );
       });
       if (refreshable.length === 0) return contracts;
       const refreshed = await Promise.all(
         contracts.map(async (contract: any) => {
           const contractId = String(contract?.id || "").trim();
           if (!contractId) return contract;
-          if (!refreshable.some((c: any) => c?.id === contract?.id)) return contract;
+          if (!refreshable.some((c: any) => c?.id === contract?.id))
+            return contract;
           try {
             const refreshedResp = await base44.post<{ contract?: any }>(
               `/api/campaign-offers/${selectedOfferId}/contracts/${contractId}/refresh`,
@@ -473,7 +479,9 @@ const BrandConnectionsView = () => {
         title: "Contract uploaded",
         description: "Draft created successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ["agency", "offer-contracts", offerId] });
+      queryClient.invalidateQueries({
+        queryKey: ["agency", "offer-contracts", offerId],
+      });
       // Automatically open builder for the new contract
       handlePrepareContract(offerId, resp.id);
     } catch (err: any) {
@@ -509,9 +517,12 @@ const BrandConnectionsView = () => {
     if (busyIds.has(contractId)) return;
     setBusyIds((prev) => new Set(prev).add(contractId));
     try {
-      const resp = await base44.post<{ contract?: any }>(`/api/campaign-offers/${offerId}/contracts/send`, {
-        contract_id: contractId,
-      });
+      const resp = await base44.post<{ contract?: any }>(
+        `/api/campaign-offers/${offerId}/contracts/send`,
+        {
+          contract_id: contractId,
+        },
+      );
       const contract = resp?.contract;
       const status = String(contract?.docuseal_status || "").toLowerCase();
       const agencySignUrl =
@@ -529,8 +540,12 @@ const BrandConnectionsView = () => {
           description: "The contract has been sent to the brand.",
         });
       }
-      queryClient.invalidateQueries({ queryKey: ["agency", "offer-contracts", offerId] });
-      queryClient.invalidateQueries({ queryKey: ["agency", "campaign-offers-my"] });
+      queryClient.invalidateQueries({
+        queryKey: ["agency", "offer-contracts", offerId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["agency", "campaign-offers-my"],
+      });
     } catch (err: any) {
       toast({
         title: "Send failed",
@@ -557,8 +572,12 @@ const BrandConnectionsView = () => {
         title: "Status synced",
         description: "Contract status updated from DocuSeal.",
       });
-      queryClient.invalidateQueries({ queryKey: ["agency", "offer-contracts", offerId] });
-      queryClient.invalidateQueries({ queryKey: ["agency", "campaign-offers-my"] });
+      queryClient.invalidateQueries({
+        queryKey: ["agency", "offer-contracts", offerId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["agency", "campaign-offers-my"],
+      });
     } catch (err: any) {
       toast({
         title: "Sync failed",
@@ -575,16 +594,21 @@ const BrandConnectionsView = () => {
   };
 
   const handleDeleteContract = async (offerId: string, contractId: string) => {
-    if (!confirm("Are you sure you want to delete this contract draft?")) return;
+    if (!confirm("Are you sure you want to delete this contract draft?"))
+      return;
     if (busyIds.has(contractId)) return;
     setBusyIds((prev) => new Set(prev).add(contractId));
     try {
-      await base44.delete(`/api/campaign-offers/${offerId}/contracts/${contractId}`);
+      await base44.delete(
+        `/api/campaign-offers/${offerId}/contracts/${contractId}`,
+      );
       toast({
         title: "Contract deleted",
         description: "Draft removed successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ["agency", "offer-contracts", offerId] });
+      queryClient.invalidateQueries({
+        queryKey: ["agency", "offer-contracts", offerId],
+      });
     } catch (err: any) {
       toast({
         title: "Delete failed",
@@ -911,7 +935,9 @@ const BrandConnectionsView = () => {
 
             {selectedOfferId ? (
               (() => {
-                const offer = offers.find((o: any) => String(o.id) === selectedOfferId);
+                const offer = offers.find(
+                  (o: any) => String(o.id) === selectedOfferId,
+                );
                 if (!offer) {
                   return (
                     <div className="p-8 text-center">
@@ -951,10 +977,11 @@ const BrandConnectionsView = () => {
                         </div>
                         <div className="flex items-center gap-3">
                           <Badge
-                            className={`px-3 py-1 text-xs font-bold uppercase tracking-wider ${isAccepted
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                              : "bg-indigo-50 text-indigo-700 border-indigo-200"
-                              }`}
+                            className={`px-3 py-1 text-xs font-bold uppercase tracking-wider ${
+                              isAccepted
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : "bg-indigo-50 text-indigo-700 border-indigo-200"
+                            }`}
                           >
                             {status.replace(/_/g, " ")}
                           </Badge>
@@ -970,7 +997,9 @@ const BrandConnectionsView = () => {
                             <Button
                               className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6"
                               disabled={busyIds.has(selectedOfferId)}
-                              onClick={() => respondToOffer(selectedOfferId, "accept")}
+                              onClick={() =>
+                                respondToOffer(selectedOfferId, "accept")
+                              }
                             >
                               Accept Offer
                             </Button>
@@ -978,7 +1007,9 @@ const BrandConnectionsView = () => {
                               variant="outline"
                               className="border-red-200 text-red-600 hover:bg-red-50 font-bold"
                               disabled={busyIds.has(selectedOfferId)}
-                              onClick={() => respondToOffer(selectedOfferId, "decline")}
+                              onClick={() =>
+                                respondToOffer(selectedOfferId, "decline")
+                              }
                             >
                               Decline
                             </Button>
@@ -987,11 +1018,15 @@ const BrandConnectionsView = () => {
                         {isAccepted && (
                           <>
                             {(() => {
-                              const offerPkg = (offerPackagesQuery.data || []).find(
-                                (p: any) => String(p.offer_id) === selectedOfferId
+                              const offerPkg = (
+                                offerPackagesQuery.data || []
+                              ).find(
+                                (p: any) =>
+                                  String(p.offer_id) === selectedOfferId,
                               );
                               if (offerPkg) {
-                                const token = offerPkg.meta?.agency_package_token;
+                                const token =
+                                  offerPkg.meta?.agency_package_token;
                                 return (
                                   <div className="flex items-center gap-3">
                                     <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 py-2 px-4 rounded-full flex items-center gap-2">
@@ -1002,7 +1037,12 @@ const BrandConnectionsView = () => {
                                       <Button
                                         variant="secondary"
                                         className="font-bold"
-                                        onClick={() => window.open(`/share/package/${token}`, "_blank")}
+                                        onClick={() =>
+                                          window.open(
+                                            `/share/package/${token}`,
+                                            "_blank",
+                                          )
+                                        }
                                       >
                                         View Shared Package
                                       </Button>
@@ -1017,7 +1057,9 @@ const BrandConnectionsView = () => {
                                     navigate("/AgencyDashboard?tab=packages", {
                                       state: {
                                         fromOfferId: selectedOfferId,
-                                        fromOfferBrandId: String(offer?.brand_id || "").trim(),
+                                        fromOfferBrandId: String(
+                                          offer?.brand_id || "",
+                                        ).trim(),
                                       },
                                     });
                                   }}
@@ -1046,7 +1088,6 @@ const BrandConnectionsView = () => {
                         )}
                       </div>
 
-
                       {isFullySigned && (
                         <div className="rounded-xl border border-indigo-100 bg-white p-4 space-y-3">
                           <div className="flex items-center justify-between">
@@ -1060,61 +1101,68 @@ const BrandConnectionsView = () => {
                             </p>
                           ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                              {(offerAssignmentsQuery.data || []).map((a: any) => {
-                                const talent = a?.agency_users || {};
-                                const tid = String(a?.talent_id || "");
-                                return (
-                                  <div
-                                    key={String(a?.id)}
-                                    className="border border-gray-200 rounded-lg p-3 flex items-center justify-between gap-3"
-                                  >
-                                    <div className="flex items-center gap-3">
-                                      <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
-                                        <User className="h-4 w-4 text-gray-500" />
-                                      </div>
-                                      <div>
-                                        <p className="text-sm font-semibold text-gray-900">
-                                          {talent?.stage_name ||
-                                            talent?.full_legal_name ||
-                                            "Talent"}
-                                        </p>
-                                        <p className="text-xs text-gray-500">
-                                          Assigned
-                                        </p>
-                                      </div>
-                                    </div>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() =>
-                                        setMessageDialog({
-                                          open: true,
-                                          offerId: selectedOfferId,
-                                          talentId: tid,
-                                          title: "",
-                                          message: "",
-                                          file: null,
-                                          sending: false,
-                                        })
-                                      }
+                              {(offerAssignmentsQuery.data || []).map(
+                                (a: any) => {
+                                  const talent = a?.agency_users || {};
+                                  const tid = String(a?.talent_id || "");
+                                  return (
+                                    <div
+                                      key={String(a?.id)}
+                                      className="border border-gray-200 rounded-lg p-3 flex items-center justify-between gap-3"
                                     >
-                                      Send Message
-                                    </Button>
-                                  </div>
-                                );
-                              })}
+                                      <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                                          <User className="h-4 w-4 text-gray-500" />
+                                        </div>
+                                        <div>
+                                          <p className="text-sm font-semibold text-gray-900">
+                                            {talent?.stage_name ||
+                                              talent?.full_legal_name ||
+                                              "Talent"}
+                                          </p>
+                                          <p className="text-xs text-gray-500">
+                                            Assigned
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() =>
+                                          setMessageDialog({
+                                            open: true,
+                                            offerId: selectedOfferId,
+                                            talentId: tid,
+                                            title: "",
+                                            message: "",
+                                            file: null,
+                                            sending: false,
+                                          })
+                                        }
+                                      >
+                                        Send Message
+                                      </Button>
+                                    </div>
+                                  );
+                                },
+                              )}
                             </div>
                           )}
                         </div>
                       )}
 
                       {/* Full brief — shown directly, no duplicate summary */}
-                      {offer?.brief_snapshot && typeof offer.brief_snapshot === "object" ? (
+                      {offer?.brief_snapshot &&
+                      typeof offer.brief_snapshot === "object" ? (
                         <div className="rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                           <CampaignBriefView
                             brief={offer.brief_snapshot}
-                            brandName={String(offer?.brand_campaigns?.brands?.name || "Brand")}
-                            campaignName={String(offer?.brand_campaigns?.name || "Campaign")}
+                            brandName={String(
+                              offer?.brand_campaigns?.brands?.name || "Brand",
+                            )}
+                            campaignName={String(
+                              offer?.brand_campaigns?.name || "Campaign",
+                            )}
                           />
                         </div>
                       ) : offer?.message ? (
@@ -1123,11 +1171,11 @@ const BrandConnectionsView = () => {
                         </div>
                       ) : (
                         <div className="p-12 text-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
-                          <p className="text-gray-400 font-medium">No detailed brief attached to this offer.</p>
+                          <p className="text-gray-400 font-medium">
+                            No detailed brief attached to this offer.
+                          </p>
                         </div>
                       )}
-
-
                     </div>
                   </div>
                 );
@@ -1146,30 +1194,41 @@ const BrandConnectionsView = () => {
                     "completed",
                   ]).has(status.toLowerCase());
 
-                  const bs = offer?.brief_snapshot && typeof offer.brief_snapshot === "object" ? offer.brief_snapshot : null;
+                  const bs =
+                    offer?.brief_snapshot &&
+                    typeof offer.brief_snapshot === "object"
+                      ? offer.brief_snapshot
+                      : null;
                   const briefVal = (key: string, fallback = "") => {
                     if (!bs) return fallback;
                     const v = bs[key];
-                    const t = v !== null && v !== undefined ? String(v).trim() : "";
+                    const t =
+                      v !== null && v !== undefined ? String(v).trim() : "";
                     return t || fallback;
                   };
                   const reels = briefVal("deliverables_reels");
                   const heroImg = briefVal("deliverables_hero_image");
-                  const deliverablesSummary = [reels, heroImg].filter(Boolean).join(", ") || "—";
+                  const deliverablesSummary =
+                    [reels, heroImg].filter(Boolean).join(", ") || "—";
                   const launchDate = briefVal("overview_launch_date");
                   const deadlineDate = briefVal("budget_submission_deadline");
                   const budgetTotal = briefVal("budget_total");
                   const budgetCreator = briefVal("budget_creator_payment");
-                  
 
                   return (
-                    <div key={offerId} className="rounded-xl border-2 border-blue-200 bg-white shadow-sm overflow-hidden cursor-pointer hover:border-blue-400 hover:shadow-md transition-all" onClick={() => setSelectedOfferId(offerId)}>
+                    <div
+                      key={offerId}
+                      className="rounded-xl border-2 border-blue-200 bg-white shadow-sm overflow-hidden cursor-pointer hover:border-blue-400 hover:shadow-md transition-all"
+                      onClick={() => setSelectedOfferId(offerId)}
+                    >
                       {/* Row header */}
                       <div className="flex items-center justify-between px-6 py-4 border-b border-blue-100 bg-white gap-4">
                         <div className="flex items-center gap-4 min-w-0">
                           <div className="min-w-0">
                             <h4 className="font-extrabold text-gray-900 text-base tracking-tight truncate">
-                              {offer?.brand_campaigns?.name || offer?.offer_title || "Campaign Offer"}
+                              {offer?.brand_campaigns?.name ||
+                                offer?.offer_title ||
+                                "Campaign Offer"}
                             </h4>
                             <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
                               {offer?.offer_title || "Direct Request"}
@@ -1178,10 +1237,11 @@ const BrandConnectionsView = () => {
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
                           <Badge
-                            className={`px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${isAccepted
-                              ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-                              : "bg-indigo-100 text-indigo-700 border-indigo-200"
-                              }`}
+                            className={`px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${
+                              isAccepted
+                                ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                                : "bg-indigo-100 text-indigo-700 border-indigo-200"
+                            }`}
                           >
                             {status.replace(/_/g, " ")}
                           </Badge>
@@ -1191,7 +1251,10 @@ const BrandConnectionsView = () => {
                                 size="sm"
                                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
                                 disabled={busyIds.has(offerId)}
-                                onClick={(e) => { e.stopPropagation(); respondToOffer(offerId, "accept"); }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  respondToOffer(offerId, "accept");
+                                }}
                               >
                                 Accept
                               </Button>
@@ -1200,53 +1263,68 @@ const BrandConnectionsView = () => {
                                 variant="outline"
                                 className="border-red-200 text-red-600 hover:bg-red-50 font-bold"
                                 disabled={busyIds.has(offerId)}
-                                onClick={(e) => { e.stopPropagation(); respondToOffer(offerId, "decline"); }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  respondToOffer(offerId, "decline");
+                                }}
                               >
                                 Decline
                               </Button>
                             </>
                           )}
-                          {isAccepted && (() => {
-                            const offerPkg = (offerPackagesQuery.data || []).find(
-                              (p: any) => String(p.offer_id) === offerId
-                            );
-                            if (offerPkg) {
-                              const token = offerPkg.meta?.agency_package_token;
-                              return (
-                                <div className="flex items-center gap-2">
-                                  <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-1.5 px-3 py-1">
-                                    <CheckCircle2 className="h-3 w-3" />
-                                    Package Sent
-                                  </Badge>
-                                  {token && (
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="font-bold text-xs"
-                                      onClick={(e) => { e.stopPropagation(); window.open(`/share/package/${token}`, "_blank"); }}
-                                    >
-                                      View Package
-                                    </Button>
-                                  )}
-                                </div>
+                          {isAccepted &&
+                            (() => {
+                              const offerPkg = (
+                                offerPackagesQuery.data || []
+                              ).find(
+                                (p: any) => String(p.offer_id) === offerId,
                               );
-                            }
-                            return (
-                              <Button
-                                size="sm"
-                                className="bg-black hover:bg-gray-800 text-white font-bold"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate("/AgencyDashboard?tab=packages", {
-                                    state: {
-                                      fromOfferId: offerId,
-                                      fromOfferBrandId: String(offer?.brand_id || "").trim(),
-                                    },
-                                  });
-                                }}
-                              >
-                                Build Package
-                              </Button>
+                              if (offerPkg) {
+                                const token =
+                                  offerPkg.meta?.agency_package_token;
+                                return (
+                                  <div className="flex items-center gap-2">
+                                    <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-1.5 px-3 py-1">
+                                      <CheckCircle2 className="h-3 w-3" />
+                                      Package Sent
+                                    </Badge>
+                                    {token && (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="font-bold text-xs"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          window.open(
+                                            `/share/package/${token}`,
+                                            "_blank",
+                                          );
+                                        }}
+                                      >
+                                        View Package
+                                      </Button>
+                                    )}
+                                  </div>
+                                );
+                              }
+                              return (
+                                <Button
+                                  size="sm"
+                                  className="bg-black hover:bg-gray-800 text-white font-bold"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate("/AgencyDashboard?tab=packages", {
+                                      state: {
+                                        fromOfferId: offerId,
+                                        fromOfferBrandId: String(
+                                          offer?.brand_id || "",
+                                        ).trim(),
+                                      },
+                                    });
+                                  }}
+                                >
+                                  Build Package
+                                </Button>
                               );
                             })()}
                           {isFullySigned && (
@@ -1286,24 +1364,54 @@ const BrandConnectionsView = () => {
 
                         {/* Deliverables */}
                         <div>
-                          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Deliverables</p>
-                          <p className="text-sm text-gray-800">{deliverablesSummary}</p>
+                          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
+                            Deliverables
+                          </p>
+                          <p className="text-sm text-gray-800">
+                            {deliverablesSummary}
+                          </p>
                         </div>
 
                         {/* Timeline + Budget */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <div>
-                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Timeline</p>
-                            {launchDate && <p className="text-sm text-gray-800">Start: {launchDate}</p>}
-                            {deadlineDate && <p className="text-sm text-gray-800">Due: {deadlineDate}</p>}
-                            {!launchDate && !deadlineDate && <p className="text-sm text-gray-400">Not specified</p>}
+                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                              Timeline
+                            </p>
+                            {launchDate && (
+                              <p className="text-sm text-gray-800">
+                                Start: {launchDate}
+                              </p>
+                            )}
+                            {deadlineDate && (
+                              <p className="text-sm text-gray-800">
+                                Due: {deadlineDate}
+                              </p>
+                            )}
+                            {!launchDate && !deadlineDate && (
+                              <p className="text-sm text-gray-400">
+                                Not specified
+                              </p>
+                            )}
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Budget</p>
-                            {budgetTotal && <p className="text-sm font-bold text-gray-900">Total: {budgetTotal}</p>}
-                            {budgetCreator && <p className="text-sm text-gray-700">Creator: {budgetCreator}</p>}
+                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                              Budget
+                            </p>
+                            {budgetTotal && (
+                              <p className="text-sm font-bold text-gray-900">
+                                Total: {budgetTotal}
+                              </p>
+                            )}
+                            {budgetCreator && (
+                              <p className="text-sm text-gray-700">
+                                Creator: {budgetCreator}
+                              </p>
+                            )}
                             {!budgetTotal && !budgetCreator && (
-                              <p className="text-sm text-gray-400">Not specified</p>
+                              <p className="text-sm text-gray-400">
+                                Not specified
+                              </p>
                             )}
                           </div>
                         </div>
@@ -1314,9 +1422,12 @@ const BrandConnectionsView = () => {
                             className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-xl p-4 cursor-pointer hover:bg-blue-100/50 transition-colors"
                             onClick={() => setSelectedOfferId(offerId)}
                           >
-                            <span className="text-blue-500 mt-0.5 shrink-0">ⓘ</span>
+                            <span className="text-blue-500 mt-0.5 shrink-0">
+                              ⓘ
+                            </span>
                             <p className="text-sm font-medium text-blue-700">
-                              Click to view complete brief with dialogue, visuals, and contract details
+                              Click to view complete brief with dialogue,
+                              visuals, and contract details
                             </p>
                           </div>
                         )}
@@ -1330,57 +1441,60 @@ const BrandConnectionsView = () => {
         </Card>
       )}
 
-      {
-        activeTab === "feedback" && (
-          <Card className="p-6 border border-gray-200 rounded-xl">
-            <h3 className="text-lg font-bold text-gray-900 mb-3">Package Feedback</h3>
-            {feedbackQuery.isLoading && (
-              <p className="text-sm text-gray-500">Loading package feedback...</p>
-            )}
-            {!feedbackQuery.isLoading && feedbackItems.length === 0 && (
-              <p className="text-sm text-gray-500">No package feedback yet.</p>
-            )}
-            {feedbackItems.length > 0 && (
-              <div className="space-y-3">
-                {feedbackItems.map((item: any) => (
-                  <div key={String(item?.id)} className="border border-gray-200 rounded-lg p-4">
-                    <p className="font-semibold text-gray-900">
-                      {String(item?.title || "Talent package")}
+      {activeTab === "feedback" && (
+        <Card className="p-6 border border-gray-200 rounded-xl">
+          <h3 className="text-lg font-bold text-gray-900 mb-3">
+            Package Feedback
+          </h3>
+          {feedbackQuery.isLoading && (
+            <p className="text-sm text-gray-500">Loading package feedback...</p>
+          )}
+          {!feedbackQuery.isLoading && feedbackItems.length === 0 && (
+            <p className="text-sm text-gray-500">No package feedback yet.</p>
+          )}
+          {feedbackItems.length > 0 && (
+            <div className="space-y-3">
+              {feedbackItems.map((item: any) => (
+                <div
+                  key={String(item?.id)}
+                  className="border border-gray-200 rounded-lg p-4"
+                >
+                  <p className="font-semibold text-gray-900">
+                    {String(item?.title || "Talent package")}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Status: {String(item?.status || "feedback_received")}
+                  </p>
+                  {item?.meta?.feedback_note && (
+                    <p className="text-sm text-gray-700 mt-2">
+                      {String(item.meta.feedback_note)}
                     </p>
-                    <p className="text-xs text-gray-500">
-                      Status: {String(item?.status || "feedback_received")}
-                    </p>
-                    {item?.meta?.feedback_note && (
-                      <p className="text-sm text-gray-700 mt-2">
-                        {String(item.meta.feedback_note)}
-                      </p>
-                    )}
-                    <div className="flex items-center justify-end mt-3">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-xs font-bold border-gray-300 h-8"
-                        onClick={() => {
-                          navigate("/AgencyDashboard?tab=packages", {
-                            state: {
-                              openFeedbackForPackageId: String(
-                                item?.meta?.agency_package_id || item?.id || "",
-                              ),
-                            },
-                          });
-                        }}
-                      >
-                        <Eye className="w-3 h-3 mr-2" />
-                        View Activity
-                      </Button>
-                    </div>
+                  )}
+                  <div className="flex items-center justify-end mt-3">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs font-bold border-gray-300 h-8"
+                      onClick={() => {
+                        navigate("/AgencyDashboard?tab=packages", {
+                          state: {
+                            openFeedbackForPackageId: String(
+                              item?.meta?.agency_package_id || item?.id || "",
+                            ),
+                          },
+                        });
+                      }}
+                    >
+                      <Eye className="w-3 h-3 mr-2" />
+                      View Activity
+                    </Button>
                   </div>
-                ))}
-              </div>
-            )}
-          </Card>
-        )
-      }
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
 
       {activeTab === "contract_hub" && (
         <Card className="p-6 border border-gray-200 rounded-xl space-y-6">
@@ -1394,13 +1508,17 @@ const BrandConnectionsView = () => {
           {offers.length === 0 ? (
             <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
               <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-sm text-gray-500 font-medium">No active campaign offers to manage contracts for.</p>
+              <p className="text-sm text-gray-500 font-medium">
+                No active campaign offers to manage contracts for.
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Sidebar: Offer List */}
               <div className="md:col-span-1 space-y-3">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Campaign Offers</p>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">
+                  Campaign Offers
+                </p>
                 <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                   {offers.map((offer: any) => {
                     const offerId = String(offer?.id || "");
@@ -1409,24 +1527,32 @@ const BrandConnectionsView = () => {
                       <div
                         key={offerId}
                         onClick={() => setSelectedOfferId(offerId)}
-                        className={`p-4 rounded-xl border transition-all cursor-pointer ${isSelected
-                          ? "border-blue-500 bg-blue-50 shadow-sm"
-                          : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 bg-white"
-                          }`}
+                        className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                          isSelected
+                            ? "border-blue-500 bg-blue-50 shadow-sm"
+                            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 bg-white"
+                        }`}
                       >
                         <div className="flex items-start justify-between gap-2">
-                          <p className={`font-bold text-sm ${isSelected ? "text-blue-900" : "text-gray-900"}`}>
-                            {String(offer?.brand_campaigns?.name || "Campaign offer")}
+                          <p
+                            className={`font-bold text-sm ${isSelected ? "text-blue-900" : "text-gray-900"}`}
+                          >
+                            {String(
+                              offer?.brand_campaigns?.name || "Campaign offer",
+                            )}
                           </p>
-                          {isSelected && <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5" />}
+                          {isSelected && (
+                            <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5" />
+                          )}
                         </div>
                         <p className="text-xs text-gray-500 mt-1 truncate">
-                          Brand: {String(
+                          Brand:{" "}
+                          {String(
                             offer?.brands?.company_name ||
-                            offer?.brands?.name ||
-                            offer?.brand_campaigns?.brands?.company_name ||
-                            offer?.brand_campaigns?.brands?.name ||
-                            "Unknown",
+                              offer?.brands?.name ||
+                              offer?.brand_campaigns?.brands?.company_name ||
+                              offer?.brand_campaigns?.brands?.name ||
+                              "Unknown",
                           )}
                         </p>
                       </div>
@@ -1442,26 +1568,41 @@ const BrandConnectionsView = () => {
                     <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4">
                       <ArrowLeft className="w-6 h-6 text-gray-400" />
                     </div>
-                    <h4 className="text-lg font-bold text-gray-900 mb-1">Select an offer</h4>
+                    <h4 className="text-lg font-bold text-gray-900 mb-1">
+                      Select an offer
+                    </h4>
                     <p className="text-sm text-gray-500 max-w-xs">
                       Choose an offer from the sidebar to manage its contracts.
                     </p>
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    <Tabs value={contractTab} onValueChange={setContractTab} className="w-full">
+                    <Tabs
+                      value={contractTab}
+                      onValueChange={setContractTab}
+                      className="w-full"
+                    >
                       <div className="flex items-center justify-between mb-4">
                         <TabsList className="bg-gray-100 p-1 rounded-lg">
-                          <TabsTrigger value="submissions" className="px-6 py-2 rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                          <TabsTrigger
+                            value="submissions"
+                            className="px-6 py-2 rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                          >
                             Submissions
                           </TabsTrigger>
-                          <TabsTrigger value="upload" className="px-6 py-2 rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                          <TabsTrigger
+                            value="upload"
+                            className="px-6 py-2 rounded-md transition-all data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                          >
                             New Contract
                           </TabsTrigger>
                         </TabsList>
                       </div>
 
-                      <TabsContent value="submissions" className="space-y-4 m-0">
+                      <TabsContent
+                        value="submissions"
+                        className="space-y-4 m-0"
+                      >
                         {offerContractsQuery.isLoading ? (
                           <div className="flex items-center justify-center py-20">
                             <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
@@ -1471,7 +1612,9 @@ const BrandConnectionsView = () => {
                             <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                               <FileText className="w-8 h-8 text-gray-300" />
                             </div>
-                            <p className="text-gray-500 font-medium mb-4">No contracts found for this offer.</p>
+                            <p className="text-gray-500 font-medium mb-4">
+                              No contracts found for this offer.
+                            </p>
                             <Button
                               variant="outline"
                               className="border-blue-200 text-blue-600 hover:bg-blue-50"
@@ -1484,30 +1627,54 @@ const BrandConnectionsView = () => {
                         ) : (
                           <div className="space-y-8">
                             {/* Templates Section */}
-                            {(offerContractsQuery.data || []).some((c: any) => c?.docuseal_status === "draft" || !c?.docuseal_status) && (
+                            {(offerContractsQuery.data || []).some(
+                              (c: any) =>
+                                c?.docuseal_status === "draft" ||
+                                !c?.docuseal_status,
+                            ) && (
                               <section className="space-y-4">
                                 <div className="flex items-center justify-between">
-                                  <h5 className="text-sm font-bold text-gray-500 uppercase tracking-wider">Contract Templates</h5>
-                                  <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium">Ready to Prepare</span>
+                                  <h5 className="text-sm font-bold text-gray-500 uppercase tracking-wider">
+                                    Contract Templates
+                                  </h5>
+                                  <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium">
+                                    Ready to Prepare
+                                  </span>
                                 </div>
                                 <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
                                   <table className="w-full text-left">
                                     <thead className="bg-gray-50 border-b border-gray-200">
                                       <tr>
-                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Title</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">Actions</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">
+                                          Title
+                                        </th>
+                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">
+                                          Actions
+                                        </th>
                                       </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
                                       {(offerContractsQuery.data || [])
-                                        .filter((c: any) => c?.docuseal_status === "draft" || !c?.docuseal_status)
+                                        .filter(
+                                          (c: any) =>
+                                            c?.docuseal_status === "draft" ||
+                                            !c?.docuseal_status,
+                                        )
                                         .map((c: any) => {
                                           const cId = String(c?.id);
                                           const isBusy = busyIds.has(cId);
-                                          const statusRaw = String(c?.docuseal_status || "sent").toLowerCase();
-                                          const statusLabel = statusRaw === "signed" ? "completed" : statusRaw;
+                                          const statusRaw = String(
+                                            c?.docuseal_status || "sent",
+                                          ).toLowerCase();
+                                          const statusLabel =
+                                            statusRaw === "signed"
+                                              ? "completed"
+                                              : statusRaw;
                                           return (
-                                            <tr key={cId} className="hover:bg-gray-50/50 transition-colors">
+                                            <tr
+                                              key={cId}
+                                              className="hover:bg-gray-50/50 transition-colors"
+                                            >
                                               <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
                                                   <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
@@ -1515,10 +1682,17 @@ const BrandConnectionsView = () => {
                                                   </div>
                                                   <div>
                                                     <p className="text-sm font-bold text-gray-900">
-                                                      {String(c?.title || "Contract Draft")}
+                                                      {String(
+                                                        c?.title ||
+                                                          "Contract Draft",
+                                                      )}
                                                     </p>
                                                     <p className="text-[10px] text-gray-400 mt-0.5">
-                                                      Template ID: {String(c?.docuseal_template_id || "N/A")}
+                                                      Template ID:{" "}
+                                                      {String(
+                                                        c?.docuseal_template_id ||
+                                                          "N/A",
+                                                      )}
                                                     </p>
                                                   </div>
                                                 </div>
@@ -1529,7 +1703,12 @@ const BrandConnectionsView = () => {
                                                     size="sm"
                                                     variant="ghost"
                                                     className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                                    onClick={() => handlePrepareContract(selectedOfferId, cId)}
+                                                    onClick={() =>
+                                                      handlePrepareContract(
+                                                        selectedOfferId,
+                                                        cId,
+                                                      )
+                                                    }
                                                     disabled={isBusy}
                                                   >
                                                     <Wand2 className="w-4 h-4 mr-2" />
@@ -1539,7 +1718,12 @@ const BrandConnectionsView = () => {
                                                     size="sm"
                                                     variant="default"
                                                     className="bg-blue-600 hover:bg-blue-700 h-9"
-                                                    onClick={() => handleSendContract(selectedOfferId, cId)}
+                                                    onClick={() =>
+                                                      handleSendContract(
+                                                        selectedOfferId,
+                                                        cId,
+                                                      )
+                                                    }
                                                     disabled={isBusy}
                                                   >
                                                     {isBusy ? (
@@ -1555,7 +1739,12 @@ const BrandConnectionsView = () => {
                                                     size="icon"
                                                     variant="ghost"
                                                     className="text-red-400 hover:text-red-500 hover:bg-red-50"
-                                                    onClick={() => handleDeleteContract(selectedOfferId, cId)}
+                                                    onClick={() =>
+                                                      handleDeleteContract(
+                                                        selectedOfferId,
+                                                        cId,
+                                                      )
+                                                    }
                                                     disabled={isBusy}
                                                   >
                                                     <Trash2 className="w-4 h-4" />
@@ -1572,31 +1761,57 @@ const BrandConnectionsView = () => {
                             )}
 
                             {/* Submissions Section */}
-                            {(offerContractsQuery.data || []).some((c: any) => c?.docuseal_status && c?.docuseal_status !== "draft") && (
+                            {(offerContractsQuery.data || []).some(
+                              (c: any) =>
+                                c?.docuseal_status &&
+                                c?.docuseal_status !== "draft",
+                            ) && (
                               <section className="space-y-4">
                                 <div className="flex items-center justify-between">
-                                  <h5 className="text-sm font-bold text-gray-500 uppercase tracking-wider">Sent Submissions</h5>
-                                  <span className="text-[10px] bg-green-50 text-green-600 px-2 py-0.5 rounded-full font-medium">Active Submissions</span>
+                                  <h5 className="text-sm font-bold text-gray-500 uppercase tracking-wider">
+                                    Sent Submissions
+                                  </h5>
+                                  <span className="text-[10px] bg-green-50 text-green-600 px-2 py-0.5 rounded-full font-medium">
+                                    Active Submissions
+                                  </span>
                                 </div>
                                 <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
                                   <table className="w-full text-left">
                                     <thead className="bg-gray-50 border-b border-gray-200">
                                       <tr>
-                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Title</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Status</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">Actions</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">
+                                          Title
+                                        </th>
+                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">
+                                          Status
+                                        </th>
+                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">
+                                          Actions
+                                        </th>
                                       </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
                                       {(offerContractsQuery.data || [])
-                                        .filter((c: any) => c?.docuseal_status && c?.docuseal_status !== "draft")
+                                        .filter(
+                                          (c: any) =>
+                                            c?.docuseal_status &&
+                                            c?.docuseal_status !== "draft",
+                                        )
                                         .map((c: any) => {
                                           const cId = String(c?.id);
                                           const isBusy = busyIds.has(cId);
-                                          const statusRaw = String(c?.docuseal_status || "sent").toLowerCase();
-                                          const statusLabel = statusRaw === "signed" ? "completed" : statusRaw;
+                                          const statusRaw = String(
+                                            c?.docuseal_status || "sent",
+                                          ).toLowerCase();
+                                          const statusLabel =
+                                            statusRaw === "signed"
+                                              ? "completed"
+                                              : statusRaw;
                                           return (
-                                            <tr key={cId} className="hover:bg-gray-50/50 transition-colors">
+                                            <tr
+                                              key={cId}
+                                              className="hover:bg-gray-50/50 transition-colors"
+                                            >
                                               <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
                                                   <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
@@ -1604,7 +1819,10 @@ const BrandConnectionsView = () => {
                                                   </div>
                                                   <div>
                                                     <p className="text-sm font-bold text-gray-900">
-                                                      {String(c?.title || "Contract Submission")}
+                                                      {String(
+                                                        c?.title ||
+                                                          "Contract Submission",
+                                                      )}
                                                     </p>
                                                     <p className="text-[10px] text-gray-400 mt-0.5">
                                                       ID: {cId.slice(0, 8)}...
@@ -1615,14 +1833,19 @@ const BrandConnectionsView = () => {
                                               <td className="px-6 py-4">
                                                 <Badge
                                                   variant="secondary"
-                                                  className={`capitalize ${statusLabel === "completed" || c?.docuseal_status === "fully_signed"
-                                                    ? "bg-green-100 text-green-700 hover:bg-green-200"
-                                                    : statusLabel === "sent"
-                                                      ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                                                      : statusLabel === "agency_pending"
-                                                        ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
-                                                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                                                    }`}
+                                                  className={`capitalize ${
+                                                    statusLabel ===
+                                                      "completed" ||
+                                                    c?.docuseal_status ===
+                                                      "fully_signed"
+                                                      ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                                      : statusLabel === "sent"
+                                                        ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                                        : statusLabel ===
+                                                            "agency_pending"
+                                                          ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                                                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                                  }`}
                                                 >
                                                   {statusLabel}
                                                 </Badge>
@@ -1630,23 +1853,61 @@ const BrandConnectionsView = () => {
                                               <td className="px-6 py-4 text-right">
                                                 {(() => {
                                                   const agencySignUrl =
-                                                    String(c?.meta?.agency_signing_url || "").trim() ||
-                                                    String(c?.meta?.docuseal_signing_url || "").trim();
-                                                  const agencyStatus = String(c?.meta?.agency_submitter_status || "").toLowerCase();
-                                                  const agencySigned = ["completed", "signed", "done"].includes(agencyStatus);
-                                                  const brandSignUrl = String(c?.meta?.brand_signing_url || "").trim();
-                                                  const canCopyBrand = agencySigned && Boolean(brandSignUrl);
+                                                    String(
+                                                      c?.meta
+                                                        ?.agency_signing_url ||
+                                                        "",
+                                                    ).trim() ||
+                                                    String(
+                                                      c?.meta
+                                                        ?.docuseal_signing_url ||
+                                                        "",
+                                                    ).trim();
+                                                  const agencyStatus = String(
+                                                    c?.meta
+                                                      ?.agency_submitter_status ||
+                                                      "",
+                                                  ).toLowerCase();
+                                                  const agencySigned = [
+                                                    "completed",
+                                                    "signed",
+                                                    "done",
+                                                  ].includes(agencyStatus);
+                                                  const brandSignUrl = String(
+                                                    c?.meta
+                                                      ?.brand_signing_url || "",
+                                                  ).trim();
+                                                  const canCopyBrand =
+                                                    agencySigned &&
+                                                    Boolean(brandSignUrl);
                                                   const downloadUrl =
-                                                    String(c?.meta?.docuseal_document_url || "").trim() ||
-                                                    String(c?.signed_document_url || "").trim();
+                                                    String(
+                                                      c?.meta
+                                                        ?.docuseal_document_url ||
+                                                        "",
+                                                    ).trim() ||
+                                                    String(
+                                                      c?.signed_document_url ||
+                                                        "",
+                                                    ).trim();
                                                   return (
                                                     <div className="flex items-center justify-end gap-2">
-                                                      {String(c?.docuseal_status || "").toLowerCase() === "agency_pending" && agencySignUrl ? (
+                                                      {String(
+                                                        c?.docuseal_status ||
+                                                          "",
+                                                      ).toLowerCase() ===
+                                                        "agency_pending" &&
+                                                      agencySignUrl ? (
                                                         <Button
                                                           size="sm"
                                                           variant="outline"
                                                           className="border-blue-200 text-blue-700 hover:bg-blue-50"
-                                                          onClick={() => window.open(agencySignUrl, "_blank")}
+                                                          onClick={() =>
+                                                            window.open(
+                                                              agencySignUrl,
+                                                              "_blank",
+                                                            )
+                                                          }
                                                           disabled={isBusy}
                                                         >
                                                           <FileText className="w-4 h-4 mr-2" />
@@ -1661,27 +1922,38 @@ const BrandConnectionsView = () => {
                                                             const subId =
                                                               canCopyBrand
                                                                 ? brandSignUrl
-                                                                : c?.docuseal_slug || c?.docuseal_submission_id;
+                                                                : c?.docuseal_slug ||
+                                                                  c?.docuseal_submission_id;
                                                             if (subId) {
-                                                              const url = canCopyBrand
-                                                                ? subId
-                                                                : `https://docuseal.com/s/${subId}`;
-                                                              navigator.clipboard.writeText(url);
+                                                              const url =
+                                                                canCopyBrand
+                                                                  ? subId
+                                                                  : `https://docuseal.com/s/${subId}`;
+                                                              navigator.clipboard.writeText(
+                                                                url,
+                                                              );
                                                               toast({
-                                                                title: "Link Copied",
-                                                                description: "Signing link copied to clipboard.",
+                                                                title:
+                                                                  "Link Copied",
+                                                                description:
+                                                                  "Signing link copied to clipboard.",
                                                               });
                                                             } else {
                                                               toast({
-                                                                title: "Link Unavailable",
-                                                                description: "No submission found for this contract.",
-                                                                variant: "destructive"
+                                                                title:
+                                                                  "Link Unavailable",
+                                                                description:
+                                                                  "No submission found for this contract.",
+                                                                variant:
+                                                                  "destructive",
                                                               });
                                                             }
                                                           }}
                                                           disabled={
                                                             isBusy ||
-                                                            (!c?.docuseal_slug && !c?.docuseal_submission_id && !canCopyBrand)
+                                                            (!c?.docuseal_slug &&
+                                                              !c?.docuseal_submission_id &&
+                                                              !canCopyBrand)
                                                           }
                                                         >
                                                           <FileText className="w-4 h-4 mr-2" />
@@ -1693,7 +1965,12 @@ const BrandConnectionsView = () => {
                                                           size="icon"
                                                           variant="outline"
                                                           className="border-gray-200 hover:bg-gray-50"
-                                                          onClick={() => window.open(downloadUrl, "_blank")}
+                                                          onClick={() =>
+                                                            window.open(
+                                                              downloadUrl,
+                                                              "_blank",
+                                                            )
+                                                          }
                                                           disabled={isBusy}
                                                           title="Download"
                                                         >
@@ -1704,7 +1981,12 @@ const BrandConnectionsView = () => {
                                                         size="sm"
                                                         variant="outline"
                                                         className="border-gray-200 hover:bg-gray-50"
-                                                        onClick={() => handleSyncContract(selectedOfferId, cId)}
+                                                        onClick={() =>
+                                                          handleSyncContract(
+                                                            selectedOfferId,
+                                                            cId,
+                                                          )
+                                                        }
                                                         disabled={isBusy}
                                                       >
                                                         {isBusy ? (
@@ -1737,17 +2019,25 @@ const BrandConnectionsView = () => {
                           {isUploading ? (
                             <div className="space-y-4">
                               <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto" />
-                              <p className="text-gray-900 font-bold">Uploading PDF...</p>
-                              <p className="text-xs text-gray-500">Creating your DocuSeal template draft</p>
+                              <p className="text-gray-900 font-bold">
+                                Uploading PDF...
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                Creating your DocuSeal template draft
+                              </p>
                             </div>
                           ) : (
                             <>
                               <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform">
                                 <Plus className="w-10 h-10 text-blue-500" />
                               </div>
-                              <h4 className="text-xl font-bold text-gray-900 mb-2">Upload Contract PDF</h4>
+                              <h4 className="text-xl font-bold text-gray-900 mb-2">
+                                Upload Contract PDF
+                              </h4>
                               <p className="text-gray-500 mb-8 max-w-sm mx-auto text-sm leading-relaxed">
-                                Upload a PDF contract to create a new signature request. You can place fields in the builder afterwards.
+                                Upload a PDF contract to create a new signature
+                                request. You can place fields in the builder
+                                afterwards.
                               </p>
                               <div className="flex items-center justify-center gap-4">
                                 <input
@@ -1757,7 +2047,11 @@ const BrandConnectionsView = () => {
                                   accept=".pdf"
                                   onChange={(e) => {
                                     const file = e.target.files?.[0];
-                                    if (file) handleUploadContract(selectedOfferId, file);
+                                    if (file)
+                                      handleUploadContract(
+                                        selectedOfferId,
+                                        file,
+                                      );
                                     e.target.value = "";
                                   }}
                                 />
@@ -1779,81 +2073,83 @@ const BrandConnectionsView = () => {
               </div>
             </div>
           )}
-        </Card >
-      )
-      }
+        </Card>
+      )}
 
-      {
-        activeTab === "deliverables" && (
-          <Card className="p-6 border border-gray-200 rounded-xl space-y-4">
-            <h3 className="text-lg font-bold text-gray-900">Deliverables</h3>
-            {offers.length === 0 && (
-              <p className="text-sm text-gray-500">No offers available.</p>
-            )}
-            {offers.map((offer: any) => {
-              const offerId = String(offer?.id || "");
-              return (
-                <div key={offerId} className="border border-gray-200 rounded-lg p-4 space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="font-semibold text-gray-900">
-                      {String(offer?.brand_campaigns?.name || "Campaign offer")}
-                    </p>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setSelectedOfferId((prev) => (prev === offerId ? "" : offerId))}
-                    >
-                      {selectedOfferId === offerId ? "Hide" : "Open"}
-                    </Button>
-                  </div>
-                  {selectedOfferId === offerId && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="rounded-md border border-gray-200 p-3">
-                        <p className="text-xs text-gray-500 mb-2">Contracts</p>
-                        {(offerContractsQuery.data || []).length === 0 ? (
-                          <p className="text-xs text-gray-500">
-                            No contracts yet.
-                          </p>
-                        ) : (
-                          (offerContractsQuery.data || []).map((c: any) => (
-                            <div
-                              key={String(c?.id)}
-                              className="text-xs text-gray-700 mb-1"
-                            >
-                              {String(c?.title || "Contract")} •{" "}
-                              {String(c?.docuseal_status || "draft")}
-                            </div>
-                          ))
-                        )}
-                      </div>
-                      <div className="rounded-md border border-gray-200 p-3">
-                        <p className="text-xs text-gray-500 mb-2">
-                          Deliverables
-                        </p>
-                        {(offerDeliverablesQuery.data || []).length === 0 ? (
-                          <p className="text-xs text-gray-500">
-                            No deliverables yet.
-                          </p>
-                        ) : (
-                          (offerDeliverablesQuery.data || []).map((d: any) => (
-                            <div
-                              key={String(d?.id)}
-                              className="text-xs text-gray-700 mb-1"
-                            >
-                              {String(d?.asset_type || "file")} •{" "}
-                              {String(d?.status || "submitted")}
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  )}
+      {activeTab === "deliverables" && (
+        <Card className="p-6 border border-gray-200 rounded-xl space-y-4">
+          <h3 className="text-lg font-bold text-gray-900">Deliverables</h3>
+          {offers.length === 0 && (
+            <p className="text-sm text-gray-500">No offers available.</p>
+          )}
+          {offers.map((offer: any) => {
+            const offerId = String(offer?.id || "");
+            return (
+              <div
+                key={offerId}
+                className="border border-gray-200 rounded-lg p-4 space-y-2"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-semibold text-gray-900">
+                    {String(offer?.brand_campaigns?.name || "Campaign offer")}
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setSelectedOfferId((prev) =>
+                        prev === offerId ? "" : offerId,
+                      )
+                    }
+                  >
+                    {selectedOfferId === offerId ? "Hide" : "Open"}
+                  </Button>
                 </div>
-              );
-            })}
-          </Card>
-        )
-      }
+                {selectedOfferId === offerId && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="rounded-md border border-gray-200 p-3">
+                      <p className="text-xs text-gray-500 mb-2">Contracts</p>
+                      {(offerContractsQuery.data || []).length === 0 ? (
+                        <p className="text-xs text-gray-500">
+                          No contracts yet.
+                        </p>
+                      ) : (
+                        (offerContractsQuery.data || []).map((c: any) => (
+                          <div
+                            key={String(c?.id)}
+                            className="text-xs text-gray-700 mb-1"
+                          >
+                            {String(c?.title || "Contract")} •{" "}
+                            {String(c?.docuseal_status || "draft")}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    <div className="rounded-md border border-gray-200 p-3">
+                      <p className="text-xs text-gray-500 mb-2">Deliverables</p>
+                      {(offerDeliverablesQuery.data || []).length === 0 ? (
+                        <p className="text-xs text-gray-500">
+                          No deliverables yet.
+                        </p>
+                      ) : (
+                        (offerDeliverablesQuery.data || []).map((d: any) => (
+                          <div
+                            key={String(d?.id)}
+                            className="text-xs text-gray-700 mb-1"
+                          >
+                            {String(d?.asset_type || "file")} •{" "}
+                            {String(d?.status || "submitted")}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </Card>
+      )}
       <Dialog
         open={assignDialog.open}
         onOpenChange={(open) => {
@@ -1870,7 +2166,8 @@ const BrandConnectionsView = () => {
               Assign Talent
             </DialogTitle>
             <p className="text-sm text-gray-500 font-medium mt-1">
-              Select one or more talents from your roster to assign to this offer.
+              Select one or more talents from your roster to assign to this
+              offer.
             </p>
           </DialogHeader>
 
@@ -1971,9 +2268,7 @@ const BrandConnectionsView = () => {
 
       <Dialog
         open={messageDialog.open}
-        onOpenChange={(open) =>
-          setMessageDialog((prev) => ({ ...prev, open }))
-        }
+        onOpenChange={(open) => setMessageDialog((prev) => ({ ...prev, open }))}
       >
         <DialogContent className="max-w-xl">
           <DialogHeader>
@@ -2028,7 +2323,10 @@ const BrandConnectionsView = () => {
             >
               Cancel
             </Button>
-            <Button onClick={handleSendTalentMessage} disabled={messageDialog.sending}>
+            <Button
+              onClick={handleSendTalentMessage}
+              disabled={messageDialog.sending}
+            >
               {messageDialog.sending ? "Sending..." : "Send Message"}
             </Button>
           </div>
@@ -2036,96 +2334,113 @@ const BrandConnectionsView = () => {
       </Dialog>
 
       {/* DocuSeal Builder Modal */}
-      {
-        builderOpen && builderToken && (
-          <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-200">
-            <div className="bg-white w-full h-full rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-              <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-blue-500" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900">Prepare Contract</h3>
-                    <p className="text-xs text-gray-500">Place signature fields and save to finish</p>
-                  </div>
+      {builderOpen && builderToken && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-200">
+          <div className="bg-white w-full h-full rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-blue-500" />
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    className="border-gray-200 hover:bg-gray-50"
-                    onClick={() => {
-                      if (!selectedOfferId || !currentContractId) {
-                        toast({
-                          title: "Missing contract",
-                          description: "Select a contract before sending.",
-                          variant: "destructive",
-                        });
-                        return;
-                      }
-                      handleSendContract(selectedOfferId, currentContractId);
-                    }}
-                    disabled={!selectedOfferId || !currentContractId}
-                  >
-                    <Send className="w-4 h-4 mr-2" />
-                    Send
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      setBuilderOpen(false);
-                      setBuilderToken(null);
-                      if (selectedOfferId) {
-                        queryClient.invalidateQueries({ queryKey: ["agency", "offer-contracts", selectedOfferId] });
-                      }
-                    }}
-                    className="hover:bg-red-50 hover:text-red-500 rounded-full w-10 h-10 p-0"
-                  >
-                    ✕
-                  </Button>
+                <div>
+                  <h3 className="font-bold text-gray-900">Prepare Contract</h3>
+                  <p className="text-xs text-gray-500">
+                    Place signature fields and save to finish
+                  </p>
                 </div>
               </div>
-              <div className="flex-1 bg-gray-50 relative">
-                <docuseal-builder
-                  data-token={builderToken}
-                  data-autosave={true}
-                  className="w-full h-full block"
-                  ref={(el: any) => {
-                    if (el && !el._hasSaveListener) {
-                      const hideActionButtons = (root: ParentNode) => {
-                        const buttons = Array.from(root.querySelectorAll("button"));
-                        buttons.forEach((btn) => {
-                          const label = (btn.textContent || "").trim().toLowerCase();
-                          if (label === "sign yourself" || label === "send") {
-                            (btn as HTMLElement).style.display = "none";
-                          }
-                        });
-                      };
-                      const root = el.shadowRoot || el;
-                      hideActionButtons(root);
-                      const observer = new MutationObserver(() => hideActionButtons(root));
-                      observer.observe(root, { childList: true, subtree: true });
-                      el._hideObserver = observer;
-                      el.addEventListener("save", () => {
-                        if (selectedOfferId) {
-                          queryClient.invalidateQueries({
-                            queryKey: ["agency", "offer-contracts", selectedOfferId],
-                          });
-                        }
-                        toast({
-                          title: "Contract saved",
-                          description: "Your changes have been saved successfully.",
-                        });
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  className="border-gray-200 hover:bg-gray-50"
+                  onClick={() => {
+                    if (!selectedOfferId || !currentContractId) {
+                      toast({
+                        title: "Missing contract",
+                        description: "Select a contract before sending.",
+                        variant: "destructive",
                       });
-                      el._hasSaveListener = true;
+                      return;
+                    }
+                    handleSendContract(selectedOfferId, currentContractId);
+                  }}
+                  disabled={!selectedOfferId || !currentContractId}
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Send
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setBuilderOpen(false);
+                    setBuilderToken(null);
+                    if (selectedOfferId) {
+                      queryClient.invalidateQueries({
+                        queryKey: [
+                          "agency",
+                          "offer-contracts",
+                          selectedOfferId,
+                        ],
+                      });
                     }
                   }}
-                ></docuseal-builder>
+                  className="hover:bg-red-50 hover:text-red-500 rounded-full w-10 h-10 p-0"
+                >
+                  ✕
+                </Button>
               </div>
             </div>
+            <div className="flex-1 bg-gray-50 relative">
+              <docuseal-builder
+                data-token={builderToken}
+                data-autosave={true}
+                className="w-full h-full block"
+                ref={(el: any) => {
+                  if (el && !el._hasSaveListener) {
+                    const hideActionButtons = (root: ParentNode) => {
+                      const buttons = Array.from(
+                        root.querySelectorAll("button"),
+                      );
+                      buttons.forEach((btn) => {
+                        const label = (btn.textContent || "")
+                          .trim()
+                          .toLowerCase();
+                        if (label === "sign yourself" || label === "send") {
+                          (btn as HTMLElement).style.display = "none";
+                        }
+                      });
+                    };
+                    const root = el.shadowRoot || el;
+                    hideActionButtons(root);
+                    const observer = new MutationObserver(() =>
+                      hideActionButtons(root),
+                    );
+                    observer.observe(root, { childList: true, subtree: true });
+                    el._hideObserver = observer;
+                    el.addEventListener("save", () => {
+                      if (selectedOfferId) {
+                        queryClient.invalidateQueries({
+                          queryKey: [
+                            "agency",
+                            "offer-contracts",
+                            selectedOfferId,
+                          ],
+                        });
+                      }
+                      toast({
+                        title: "Contract saved",
+                        description:
+                          "Your changes have been saved successfully.",
+                      });
+                    });
+                    el._hasSaveListener = true;
+                  }
+                }}
+              ></docuseal-builder>
+            </div>
           </div>
-        )
-      }
+        </div>
+      )}
     </div>
   );
 };
