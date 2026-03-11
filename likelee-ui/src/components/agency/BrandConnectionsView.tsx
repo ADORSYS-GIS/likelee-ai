@@ -508,13 +508,26 @@ const BrandConnectionsView = () => {
     if (busyIds.has(contractId)) return;
     setBusyIds((prev) => new Set(prev).add(contractId));
     try {
-      await base44.post(`/api/campaign-offers/${offerId}/contracts/send`, {
+      const resp = await base44.post<{ contract?: any }>(`/api/campaign-offers/${offerId}/contracts/send`, {
         contract_id: contractId,
       });
-      toast({
-        title: "Contract sent",
-        description: "The contract has been sent to the brand.",
-      });
+      const contract = resp?.contract;
+      const status = String(contract?.docuseal_status || "").toLowerCase();
+      const agencySignUrl =
+        String(contract?.meta?.agency_signing_url || "").trim() ||
+        String(contract?.meta?.docuseal_signing_url || "").trim();
+      if (status === "agency_pending" && agencySignUrl) {
+        window.open(agencySignUrl, "_blank");
+        toast({
+          title: "Agency signature required",
+          description: "Sign the contract to release it to the brand.",
+        });
+      } else {
+        toast({
+          title: "Contract sent",
+          description: "The contract has been sent to the brand.",
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ["agency", "offer-contracts", offerId] });
       queryClient.invalidateQueries({ queryKey: ["agency", "campaign-offers-my"] });
     } catch (err: any) {
@@ -1408,7 +1421,13 @@ const BrandConnectionsView = () => {
                           {isSelected && <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5" />}
                         </div>
                         <p className="text-xs text-gray-500 mt-1 truncate">
-                          Brand: {String(offer?.brand_campaigns?.brands?.name || "Unknown")}
+                          Brand: {String(
+                            offer?.brands?.company_name ||
+                            offer?.brands?.name ||
+                            offer?.brand_campaigns?.brands?.company_name ||
+                            offer?.brand_campaigns?.brands?.name ||
+                            "Unknown",
+                          )}
                         </p>
                       </div>
                     );
@@ -1596,6 +1615,8 @@ const BrandConnectionsView = () => {
                                                     ? "bg-green-100 text-green-700 hover:bg-green-200"
                                                     : c?.docuseal_status === "sent"
                                                       ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                                      : c?.docuseal_status === "agency_pending"
+                                                        ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
                                                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                                                     }`}
                                                 >
@@ -1603,50 +1624,97 @@ const BrandConnectionsView = () => {
                                                 </Badge>
                                               </td>
                                               <td className="px-6 py-4 text-right">
-                                                <div className="flex items-center justify-end gap-2">
-                                                  <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="border-gray-200 hover:bg-gray-50"
-                                                    onClick={() => {
-                                                      const subId = c?.docuseal_slug || c?.docuseal_submission_id;
-                                                      if (subId) {
-                                                        const url = `https://docuseal.com/s/${subId}`;
-                                                        navigator.clipboard.writeText(url);
-                                                        toast({
-                                                          title: "Link Copied",
-                                                          description: "Signing link copied to clipboard.",
-                                                        });
-                                                      } else {
-                                                        toast({
-                                                          title: "Link Unavailable",
-                                                          description: "No submission found for this contract.",
-                                                          variant: "destructive"
-                                                        });
-                                                      }
-                                                    }}
-                                                    disabled={isBusy || (!c?.docuseal_slug && !c?.docuseal_submission_id)}
-                                                  >
-                                                    <FileText className="w-4 h-4 mr-2" />
-                                                    Copy Link
-                                                  </Button>
-                                                  <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="border-gray-200 hover:bg-gray-50"
-                                                    onClick={() => handleSyncContract(selectedOfferId, cId)}
-                                                    disabled={isBusy}
-                                                  >
-                                                    {isBusy ? (
-                                                      <Loader2 className="w-4 h-4 animate-spin" />
-                                                    ) : (
-                                                      <>
-                                                        <RefreshCw className="w-4 h-4 mr-2" />
-                                                        Sync
-                                                      </>
-                                                    )}
-                                                  </Button>
-                                                </div>
+                                                {(() => {
+                                                  const agencySignUrl =
+                                                    String(c?.meta?.agency_signing_url || "").trim() ||
+                                                    String(c?.meta?.docuseal_signing_url || "").trim();
+                                                  const agencyStatus = String(c?.meta?.agency_submitter_status || "").toLowerCase();
+                                                  const agencySigned = ["completed", "signed", "done"].includes(agencyStatus);
+                                                  const brandSignUrl = String(c?.meta?.brand_signing_url || "").trim();
+                                                  const canCopyBrand = agencySigned && Boolean(brandSignUrl);
+                                                  const downloadUrl =
+                                                    String(c?.meta?.docuseal_document_url || "").trim() ||
+                                                    String(c?.signed_document_url || "").trim();
+                                                  return (
+                                                    <div className="flex items-center justify-end gap-2">
+                                                      {String(c?.docuseal_status || "").toLowerCase() === "agency_pending" && agencySignUrl ? (
+                                                        <Button
+                                                          size="sm"
+                                                          variant="outline"
+                                                          className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                                                          onClick={() => window.open(agencySignUrl, "_blank")}
+                                                          disabled={isBusy}
+                                                        >
+                                                          <FileText className="w-4 h-4 mr-2" />
+                                                          Sign now
+                                                        </Button>
+                                                      ) : (
+                                                        <Button
+                                                          size="sm"
+                                                          variant="outline"
+                                                          className="border-gray-200 hover:bg-gray-50"
+                                                          onClick={() => {
+                                                            const subId =
+                                                              canCopyBrand
+                                                                ? brandSignUrl
+                                                                : c?.docuseal_slug || c?.docuseal_submission_id;
+                                                            if (subId) {
+                                                              const url = canCopyBrand
+                                                                ? subId
+                                                                : `https://docuseal.com/s/${subId}`;
+                                                              navigator.clipboard.writeText(url);
+                                                              toast({
+                                                                title: "Link Copied",
+                                                                description: "Signing link copied to clipboard.",
+                                                              });
+                                                            } else {
+                                                              toast({
+                                                                title: "Link Unavailable",
+                                                                description: "No submission found for this contract.",
+                                                                variant: "destructive"
+                                                              });
+                                                            }
+                                                          }}
+                                                          disabled={
+                                                            isBusy ||
+                                                            (!c?.docuseal_slug && !c?.docuseal_submission_id && !canCopyBrand)
+                                                          }
+                                                        >
+                                                          <FileText className="w-4 h-4 mr-2" />
+                                                          Copy Link
+                                                        </Button>
+                                                      )}
+                                                      {downloadUrl ? (
+                                                        <Button
+                                                          size="sm"
+                                                          variant="outline"
+                                                          className="border-gray-200 hover:bg-gray-50"
+                                                          onClick={() => window.open(downloadUrl, "_blank")}
+                                                          disabled={isBusy}
+                                                        >
+                                                          <FileText className="w-4 h-4 mr-2" />
+                                                          Download
+                                                        </Button>
+                                                      ) : null}
+                                                      <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="border-gray-200 hover:bg-gray-50"
+                                                        onClick={() => handleSyncContract(selectedOfferId, cId)}
+                                                        disabled={isBusy}
+                                                      >
+                                                        {isBusy ? (
+                                                          <Loader2 className="w-4 h-4 animate-spin" />
+                                                        ) : (
+                                                          <>
+                                                            <RefreshCw className="w-4 h-4 mr-2" />
+                                                            Sync
+                                                          </>
+                                                        )}
+                                                      </Button>
+                                                    </div>
+                                                  );
+                                                })()}
                                               </td>
                                             </tr>
                                           );
