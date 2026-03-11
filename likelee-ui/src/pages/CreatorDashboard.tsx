@@ -824,6 +824,8 @@ export default function CreatorDashboard() {
   const [creatorSignOpen, setCreatorSignOpen] = useState(false);
   const [offerActionLoading, setOfferActionLoading] = useState(false);
   const [loadingBrandOffers, setLoadingBrandOffers] = useState(false);
+  const [loadingJobInvites, setLoadingJobInvites] = useState(false);
+  const [jobInvites, setJobInvites] = useState<any[]>([]);
   const [loadingOfferDetails, setLoadingOfferDetails] = useState(false);
   const [sendDeliverableOpen, setSendDeliverableOpen] = useState(false);
   const [sendDeliverableBrandId, setSendDeliverableBrandId] = useState("");
@@ -910,6 +912,29 @@ export default function CreatorDashboard() {
       return Array.isArray(offersResp?.offers) ? offersResp.offers : [];
     } finally {
       setLoadingBrandOffers(false);
+    }
+  };
+
+  const loadJobInvites = async () => {
+    setLoadingJobInvites(true);
+    try {
+      const res = await base44.get<{ jobs?: any[] }>("/api/jobs", {
+        params: { status: "open", limit: 200 },
+      });
+      const jobs = Array.isArray(res?.jobs) ? res.jobs : [];
+      const invites = jobs.filter((job) => {
+        if (!job?.confidential) return false;
+        const invitedCreators = Array.isArray(job?.invited_creator_ids)
+          ? job.invited_creator_ids.length
+          : 0;
+        const invitedAgencies = Array.isArray(job?.invited_agency_ids)
+          ? job.invited_agency_ids.length
+          : 0;
+        return invitedCreators > 0 || invitedAgencies > 0;
+      });
+      return invites;
+    } finally {
+      setLoadingJobInvites(false);
     }
   };
 
@@ -1010,10 +1035,12 @@ export default function CreatorDashboard() {
           { connections, invites },
           { requests, connections: brandConnected },
           offers,
+          jobInvitesRes,
         ] = await Promise.all([
           loadAgencyConnectionData(),
           loadBrandConnectionData(),
           loadBrandOffers().catch(() => []),
+          loadJobInvites().catch(() => []),
         ]);
         if (!active) return;
         setAgencyConnections(connections);
@@ -1021,6 +1048,7 @@ export default function CreatorDashboard() {
         setBrandConnectionRequests(requests);
         setBrandConnections(brandConnected);
         setBrandOffers(Array.isArray(offers) ? offers : []);
+        setJobInvites(Array.isArray(jobInvitesRes) ? jobInvitesRes : []);
       } catch (e: any) {
         if (!active) return;
         console.error("Failed to load agency connection data", e);
@@ -1048,11 +1076,15 @@ export default function CreatorDashboard() {
     (async () => {
       try {
         const { requests, connections } = await loadBrandConnectionData();
-        const offers = await loadBrandOffers().catch(() => []);
+        const [offers, jobInvitesRes] = await Promise.all([
+          loadBrandOffers().catch(() => []),
+          loadJobInvites().catch(() => []),
+        ]);
         if (!active) return;
         setBrandConnectionRequests(requests);
         setBrandConnections(connections);
         setBrandOffers(Array.isArray(offers) ? offers : []);
+        setJobInvites(Array.isArray(jobInvitesRes) ? jobInvitesRes : []);
       } catch (e) {
         if (!active) return;
         console.error("Failed to refresh brand connection data", e);
@@ -1069,11 +1101,15 @@ export default function CreatorDashboard() {
     const refresh = async () => {
       try {
         const { requests, connections } = await loadBrandConnectionData();
-        const offers = await loadBrandOffers().catch(() => []);
+        const [offers, jobInvitesRes] = await Promise.all([
+          loadBrandOffers().catch(() => []),
+          loadJobInvites().catch(() => []),
+        ]);
         if (!active) return;
         setBrandConnectionRequests(requests);
         setBrandConnections(connections);
         setBrandOffers(Array.isArray(offers) ? offers : []);
+        setJobInvites(Array.isArray(jobInvitesRes) ? jobInvitesRes : []);
       } catch (e) {
         if (!active) return;
         console.error("Failed to poll brand connection data", e);
@@ -2065,6 +2101,14 @@ export default function CreatorDashboard() {
       label: t("creatorDashboard.nav.campaigns"),
       icon: Target,
       badge: activeCampaigns.length,
+    },
+    {
+      id: "jobs",
+      label: "Jobs",
+      icon: Briefcase,
+      onClick: () => {
+        navigate(createPageUrl("Jobs"));
+      },
     },
     {
       id: "approvals",
@@ -5243,13 +5287,16 @@ export default function CreatorDashboard() {
       (i) => i.status === "pending",
     );
     const refreshBrandConnections = async () => {
-      const [{ requests, connections }, offers] = await Promise.all([
-        loadBrandConnectionData(),
-        loadBrandOffers().catch(() => []),
-      ]);
+      const [{ requests, connections }, offers, jobInvitesRes] =
+        await Promise.all([
+          loadBrandConnectionData(),
+          loadBrandOffers().catch(() => []),
+          loadJobInvites().catch(() => []),
+        ]);
       setBrandConnectionRequests(requests);
       setBrandConnections(connections);
       setBrandOffers(Array.isArray(offers) ? offers : []);
+      setJobInvites(Array.isArray(jobInvitesRes) ? jobInvitesRes : []);
     };
     const fullySignedOfferStatuses = new Set([
       "contract_fully_signed",
@@ -5399,6 +5446,17 @@ export default function CreatorDashboard() {
       const emailName = fallbackNameFromEmail(offer?.brands?.email);
       if (emailName) return emailName;
       return "Brand Manager";
+    };
+    const resolveJobBrandName = (job: any) => {
+      const company = normalizeDisplayName(
+        job?.brands?.company_name || job?.company_name,
+      );
+      if (company) return company;
+      const emailName = fallbackNameFromEmail(
+        job?.brands?.email || job?.contact_email,
+      );
+      if (emailName) return emailName;
+      return "Brand";
     };
     const formatHubDate = (value: unknown) => {
       const raw = String(value || "").trim();
@@ -6017,6 +6075,109 @@ export default function CreatorDashboard() {
             <div className="space-y-4">
               <div className="text-lg font-semibold text-gray-900">
                 Brand Offers
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-base font-semibold text-gray-800">
+                    Job Invites
+                  </div>
+                  <Badge className="bg-slate-100 text-slate-700 border border-slate-200">
+                    {jobInvites.length}
+                  </Badge>
+                </div>
+                {loadingJobInvites && (
+                  <p className="text-sm text-gray-600">
+                    Loading job invites...
+                  </p>
+                )}
+                {!loadingJobInvites && jobInvites.length === 0 && (
+                  <p className="text-sm text-gray-600">No job invites yet.</p>
+                )}
+                {!loadingJobInvites && jobInvites.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {jobInvites.map((job: any) => (
+                      <div
+                        key={String(job?.id || "")}
+                        className="p-4 border border-slate-200 rounded-lg bg-white space-y-3"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="font-semibold text-gray-900 truncate">
+                              {job?.job_title || "Job invite"}
+                            </div>
+                            <div className="text-xs text-gray-500 truncate mt-1">
+                              {resolveJobBrandName(job)}
+                            </div>
+                          </div>
+                          <Badge className="bg-blue-50 text-blue-700 border border-blue-200">
+                            {(job?.call_type || "call").replace("_", " ")}
+                          </Badge>
+                        </div>
+                        <div className="text-xs text-gray-600 flex flex-wrap gap-2">
+                          {job?.location && (
+                            <span>
+                              {String(job.location).replace("_", " ")}
+                            </span>
+                          )}
+                          {job?.job_type && (
+                            <span>
+                              {String(job.job_type).replace("_", " ")}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            className="border-gray-300"
+                            onClick={() =>
+                              navigate(
+                                `${createPageUrl("Jobs")}?jobId=${encodeURIComponent(
+                                  String(job?.id || ""),
+                                )}`,
+                              )
+                            }
+                          >
+                            View job details
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="border-red-200 text-red-600 hover:bg-red-50"
+                            onClick={async () => {
+                              try {
+                                await base44.post(
+                                  `/api/jobs/${encodeURIComponent(
+                                    String(job?.id || ""),
+                                  )}/decline`,
+                                  {},
+                                );
+                                const jobInvitesRes =
+                                  await loadJobInvites().catch(() => []);
+                                setJobInvites(
+                                  Array.isArray(jobInvitesRes)
+                                    ? jobInvitesRes
+                                    : [],
+                                );
+                                toast({
+                                  title: "Invite declined",
+                                  description:
+                                    "The brand will see your response in job details.",
+                                });
+                              } catch (e: any) {
+                                toast({
+                                  variant: "destructive",
+                                  title: "Decline failed",
+                                  description: e?.message || String(e),
+                                });
+                              }
+                            }}
+                          >
+                            Decline
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               {loadingBrandOffers && (
                 <p className="text-sm text-gray-600">

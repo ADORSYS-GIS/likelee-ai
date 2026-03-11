@@ -8,6 +8,7 @@ import { ScoutingEvent, ScoutingProspect } from "@/types/scouting";
 import { ScoutingMap } from "@/components/scouting/map/ScoutingMap";
 import { ScoutingTrips } from "@/components/scouting/ScoutingTrips";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDebounce } from "@/hooks/useDebounce";
 import { searchLocations } from "@/components/scouting/map/geocoding";
@@ -17974,6 +17975,7 @@ export default function AgencyDashboard() {
       ? [
           { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
           { id: "marketplace", label: "Marketplace", icon: Store },
+          { id: "jobs", label: "Jobs", icon: Briefcase },
           {
             id: "roster",
             label: "Roster",
@@ -18036,6 +18038,7 @@ export default function AgencyDashboard() {
       : [
           { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
           { id: "marketplace", label: "Marketplace", icon: Store },
+          { id: "jobs", label: "Jobs", icon: Briefcase },
           {
             id: "roster",
             label: "Roster",
@@ -18183,6 +18186,11 @@ export default function AgencyDashboard() {
                 onClick={() => {
                   if (item.disabled) {
                     navigate("/AgencySubscribe");
+                    setSidebarOpen(false);
+                    return;
+                  }
+                  if (item.id === "jobs") {
+                    navigate(createPageUrl("Jobs"));
                     setSidebarOpen(false);
                     return;
                   }

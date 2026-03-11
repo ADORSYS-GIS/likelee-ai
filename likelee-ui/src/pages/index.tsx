@@ -63,6 +63,7 @@ import ForBusiness from "./ForBusiness";
 import CreatorEconomics from "./CreatorEconomics";
 
 import AITalentBoard from "./AITalentBoard";
+import JobsBoard from "./JobsBoard";
 
 import TalentDashboard from "./TalentDashboard";
 
@@ -193,6 +194,7 @@ const PAGES = {
   CreatorEconomics: CreatorEconomics,
 
   AITalentBoard: AITalentBoard,
+  Jobs: JobsBoard,
 
   TalentDashboard: TalentDashboard,
 
@@ -334,6 +336,16 @@ function AppRoutes() {
       <Route path="/CreatorEconomics" element={<CreatorEconomics />} />
 
       <Route path="/AITalentBoard" element={<AITalentBoard />} />
+      <Route
+        path="/jobs"
+        element={
+          <ProtectedRoute
+            allowedRoles={["creator", "talent", "agency", "ai_artist"]}
+          >
+            <JobsBoard />
+          </ProtectedRoute>
+        }
+      />
 
       <Route
         path="/talentportal"
