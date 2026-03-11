@@ -796,7 +796,9 @@ export default function BrandDashboard() {
                 contracts.map(async (contract: any) => {
                   const contractId = String(contract?.id || "").trim();
                   if (!contractId) return contract;
-                  if (!contract?.docuseal_submission_id) return contract;
+                  if (!contract?.docuseal_submission_id && !contract?.docuseal_slug) {
+                    return contract;
+                  }
                   try {
                     const refreshed = await base44.post<{ contract?: any }>(
                       `/api/campaign-offers/${offerId}/contracts/${contractId}/refresh`,
