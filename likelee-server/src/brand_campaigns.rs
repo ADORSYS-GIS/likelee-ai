@@ -278,9 +278,65 @@ async fn resolve_offer_assignment_for_creator(
     }
     let text = resp.text().await.unwrap_or_default();
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
-    rows.first()
-        .cloned()
-        .ok_or((StatusCode::FORBIDDEN, "no assigned talent for this offer".to_string()))
+    if let Some(row) = rows.first().cloned() {
+        return Ok(row);
+    }
+
+    // Fallback: resolve agency user (talent) id for this creator, then match by talent_id.
+    let talent_resp = state
+        .pg
+        .from("agency_users")
+        .select("id")
+        .or(format!(
+            "creator_id.eq.{},user_id.eq.{}",
+            creator_id, creator_id
+        ))
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !talent_resp.status().is_success() {
+        return Err(sanitize_db_error(
+            talent_resp.status().as_u16(),
+            talent_resp.text().await.unwrap_or_default(),
+        ));
+    }
+    let talent_text = talent_resp.text().await.unwrap_or_default();
+    let talent_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&talent_text).unwrap_or_default();
+    let talent_id = talent_rows
+        .first()
+        .and_then(|row| row.get("id"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if !talent_id.is_empty() {
+        let resp = state
+            .pg
+            .from("offer_talent_assignments")
+            .select("*")
+            .eq("offer_id", offer_id)
+            .eq("talent_id", &talent_id)
+            .eq("status", "assigned")
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !resp.status().is_success() {
+            return Err(sanitize_db_error(
+                resp.status().as_u16(),
+                resp.text().await.unwrap_or_default(),
+            ));
+        }
+        let text = resp.text().await.unwrap_or_default();
+        let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+        if let Some(row) = rows.first().cloned() {
+            return Ok(row);
+        }
+    }
+
+    Err((StatusCode::FORBIDDEN, "no assigned talent for this offer".to_string()))
 }
 async fn resolve_effective_creator_id(state: &AppState, user: &AuthUser) -> String {
     let resp = state
@@ -3208,7 +3264,10 @@ pub async fn create_offer_talent_assignment(
         .get("status")
         .and_then(|v| v.as_str())
         .unwrap_or("");
-    if offer_status != "contract_fully_signed" {
+    if offer_status != "contract_fully_signed"
+        && offer_status != "signed"
+        && offer_status != "completed"
+    {
         return Err((
             StatusCode::BAD_REQUEST,
             "offer must be fully signed before assigning talent".to_string(),
@@ -3585,13 +3644,36 @@ pub async fn submit_offer_deliverable(
         (Some(tid.to_string()), creator)
     } else {
         let resolved_creator = resolve_effective_creator_id(&state, &user).await;
-        let assignment =
-            resolve_offer_assignment_for_creator(&state, &offer_id, &resolved_creator).await?;
-        let tid = assignment
-            .get("talent_id")
+        let target_type = _offer
+            .get("target_type")
             .and_then(|v| v.as_str())
-            .map(|s| s.to_string());
-        (tid, Some(resolved_creator))
+            .unwrap_or("")
+            .to_lowercase();
+        let target_id = _offer
+            .get("target_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        let has_asset_request = payload
+            .asset_request_id
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .is_some();
+        let is_direct_creator_offer =
+            target_type == "creator" && target_id == resolved_creator;
+        if !has_asset_request && is_direct_creator_offer {
+            (None, Some(resolved_creator))
+        } else {
+            let assignment =
+                resolve_offer_assignment_for_creator(&state, &offer_id, &resolved_creator).await?;
+            let tid = assignment
+                .get("talent_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            (tid, Some(resolved_creator))
+        }
     };
 
     let insert_payload = json!({
@@ -4263,13 +4345,35 @@ pub async fn upload_offer_deliverable_form(
         (Some(tid.to_string()), creator)
     } else {
         let resolved_creator = resolve_effective_creator_id(&state, &user).await;
-        let assignment =
-            resolve_offer_assignment_for_creator(&state, &offer_id, &resolved_creator).await?;
-        let tid = assignment
-            .get("talent_id")
+        let target_type = _offer
+            .get("target_type")
             .and_then(|v| v.as_str())
-            .map(|s| s.to_string());
-        (tid, Some(resolved_creator))
+            .unwrap_or("")
+            .to_lowercase();
+        let target_id = _offer
+            .get("target_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        let has_asset_request = asset_request_id
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .is_some();
+        let is_direct_creator_offer =
+            target_type == "creator" && target_id == resolved_creator;
+        if !has_asset_request && is_direct_creator_offer {
+            (None, Some(resolved_creator))
+        } else {
+            let assignment =
+                resolve_offer_assignment_for_creator(&state, &offer_id, &resolved_creator).await?;
+            let tid = assignment
+                .get("talent_id")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            (tid, Some(resolved_creator))
+        }
     };
     let status_value = desired_status
         .as_deref()
