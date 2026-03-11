@@ -426,14 +426,14 @@ export default function BrandCampaignDashboard({
     const targetId = String(offer?.target_id || "").trim();
     const shortId = targetId ? targetId.slice(0, 8) : "";
     if (targetType === "creator" || targetType === "talent") {
-      if (targetName) return targetName;
+      if (targetName) return `Creator • ${targetName}`;
       return shortId ? `Creator ${shortId}` : "Creator";
     }
     if (targetType === "agency") {
-      if (targetName) return targetName;
+      if (targetName) return `Agency • ${targetName}`;
       return shortId ? `Agency ${shortId}` : "Agency";
     }
-    if (targetName) return targetName;
+    if (targetName) return `Collaborator • ${targetName}`;
     return shortId ? `Collaborator ${shortId}` : "Collaborator";
   };
   const extractFirstNumber = (value: unknown): number => {
@@ -583,6 +583,23 @@ export default function BrandCampaignDashboard({
             const offers = Array.isArray(offersResp?.offers)
               ? offersResp.offers
               : [];
+            const offerBrief =
+              (offers[0]?.brief_snapshot &&
+              typeof offers[0].brief_snapshot === "object"
+                ? offers[0].brief_snapshot
+                : offers[0]?.brand_campaigns?.brief_snapshot) || {};
+            const campaignBrief =
+              campaign?.brief_snapshot && typeof campaign.brief_snapshot === "object"
+                ? campaign.brief_snapshot
+                : {};
+            const mergedBrief =
+              Object.keys(offerBrief || {}).length > 0
+                ? { ...campaignBrief, ...offerBrief }
+                : campaignBrief;
+            const campaignWithBrief =
+              Object.keys(mergedBrief || {}).length > 0
+                ? { ...campaign, brief_snapshot: mergedBrief }
+                : campaign;
             const deliverablesByOffer = await Promise.all(
               offers.map(async (offer: any) => {
                 const offerId = String(offer?.id || "").trim();
@@ -605,7 +622,7 @@ export default function BrandCampaignDashboard({
                 String(d?.status || "").toLowerCase(),
               ),
             ).length;
-            return normalizeCampaignCard(campaign, offers, {
+            return normalizeCampaignCard(campaignWithBrief, offers, {
               total: flatDeliverables.length,
               approved: approvedCount,
             });
@@ -638,6 +655,26 @@ export default function BrandCampaignDashboard({
         `/api/brand/campaigns/${campaignId}/offers`,
       );
       const offers = Array.isArray(offersResp?.offers) ? offersResp.offers : [];
+      {
+        const offerBrief =
+          (offers[0]?.brief_snapshot &&
+          typeof offers[0].brief_snapshot === "object"
+            ? offers[0].brief_snapshot
+            : offers[0]?.brand_campaigns?.brief_snapshot) || {};
+        const campaignBrief =
+          campaign?.brief_snapshot && typeof campaign.brief_snapshot === "object"
+            ? campaign.brief_snapshot
+            : {};
+        const mergedBrief =
+          Object.keys(offerBrief || {}).length > 0
+            ? { ...campaignBrief, ...offerBrief }
+            : campaignBrief;
+        if (Object.keys(mergedBrief || {}).length > 0) {
+          setSelectedCampaign((prev) =>
+            prev ? { ...prev, brief_snapshot: mergedBrief } : prev,
+          );
+        }
+      }
       const collaborators = Array.from(
         new Set(
           offers
@@ -1604,6 +1641,21 @@ export default function BrandCampaignDashboard({
       event.target.value = "";
     }
   };
+
+  const selectedCampaignExpectedDeliverables = selectedCampaign
+    ? expectedDeliverablesFromBrief(selectedCampaign)
+    : 0;
+  const selectedCampaignApprovedCount = selectedCampaignDeliverables.filter(
+    (deliverable: any) =>
+      ["approved", "accepted", "brand_approved"].includes(
+        String(deliverable?.status || "").toLowerCase(),
+      ),
+  ).length;
+  const selectedCampaignSubmittedCount = selectedCampaignDeliverables.length;
+  const selectedCampaignTotalExpected =
+    selectedCampaignExpectedDeliverables > 0
+      ? selectedCampaignExpectedDeliverables
+      : selectedCampaignSubmittedCount;
 
   return (
     <div className={`${embedded ? "bg-gray-50" : "min-h-screen bg-gray-50"}`}>
@@ -3286,8 +3338,11 @@ export default function BrandCampaignDashboard({
                 <Card className="p-4 border-2 border-gray-200 rounded-none">
                   <p className="text-sm text-gray-600 mb-1">Deliverables</p>
                   <p className="text-xl font-bold text-gray-900">
-                    {selectedCampaign.approved} /{" "}
-                    {selectedCampaign.deliverables}
+                    {selectedCampaignApprovedCount} /{" "}
+                    {selectedCampaignTotalExpected}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {selectedCampaignSubmittedCount} submitted
                   </p>
                 </Card>
                 <Card className="p-4 border-2 border-gray-200 rounded-none">
