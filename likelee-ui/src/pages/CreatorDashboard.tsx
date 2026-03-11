@@ -923,14 +923,11 @@ export default function CreatorDashboard() {
       });
       const jobs = Array.isArray(res?.jobs) ? res.jobs : [];
       const invites = jobs.filter((job) => {
-        if (!job?.confidential) return false;
         const invitedCreators = Array.isArray(job?.invited_creator_ids)
-          ? job.invited_creator_ids.length
-          : 0;
-        const invitedAgencies = Array.isArray(job?.invited_agency_ids)
-          ? job.invited_agency_ids.length
-          : 0;
-        return invitedCreators > 0 || invitedAgencies > 0;
+          ? job.invited_creator_ids
+          : [];
+        // Only show if the current creator is explicitly invited
+        return invitedCreators.includes(user?.id);
       });
       return invites;
     } finally {

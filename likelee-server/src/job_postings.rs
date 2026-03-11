@@ -534,6 +534,9 @@ pub async fn list_jobs(
                 }
             }
         }
+    } else if user.role == "brand" {
+        // If they are a brand, they are always an invited viewer of their own jobs
+        // This is handled in the enrichment loop below
     } else if user.role == "creator" || user.role == "talent" {
         let resp = state
             .pg
@@ -671,11 +674,16 @@ pub async fn list_jobs(
     agency_ids.sort();
     agency_ids.dedup();
     if !agency_ids.is_empty() {
+        let agency_filter_ids = agency_ids
+            .iter()
+            .map(|id| format!("\"{}\"", id))
+            .collect::<Vec<String>>()
+            .join(",");
         let resp = state
             .pg
             .from("agencies")
-            .select("id,agency_name,display_name,logo_url")
-            .in_("id", agency_ids.clone())
+            .select("id,agency_name,display_name,contact_name,logo_url")
+            .or(format!("id.in.({})", agency_filter_ids))
             .execute()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -694,11 +702,16 @@ pub async fn list_jobs(
     creator_ids.sort();
     creator_ids.dedup();
     if !creator_ids.is_empty() {
+        let creator_filter_ids = creator_ids
+            .iter()
+            .map(|id| format!("\"{}\"", id))
+            .collect::<Vec<String>>()
+            .join(",");
         let resp = state
             .pg
             .from("creators")
             .select("id,full_name,profile_photo_url,email")
-            .in_("id", creator_ids.clone())
+            .or(format!("id.in.({})", creator_filter_ids))
             .execute()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -795,6 +808,11 @@ pub async fn list_jobs(
                         .unwrap_or(false)
                 };
                 row["is_invited_viewer"] = serde_json::Value::Bool(invited);
+            }
+        } else if user.role == "brand" {
+            let brand_id = row.get("brand_id").and_then(|v| v.as_str()).unwrap_or("");
+            if brand_id == user.id {
+                row["is_invited_viewer"] = serde_json::Value::Bool(true);
             }
         }
     }
@@ -905,11 +923,16 @@ pub async fn list_my_jobs(
     agency_ids.sort();
     agency_ids.dedup();
     if !agency_ids.is_empty() {
+        let agency_filter_ids = agency_ids
+            .iter()
+            .map(|id| format!("\"{}\"", id))
+            .collect::<Vec<String>>()
+            .join(",");
         let resp = state
             .pg
             .from("agencies")
-            .select("id,agency_name,display_name,logo_url")
-            .in_("id", agency_ids.clone())
+            .select("id,agency_name,display_name,contact_name,logo_url")
+            .or(format!("id.in.({})", agency_filter_ids))
             .execute()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -928,11 +951,16 @@ pub async fn list_my_jobs(
     creator_ids.sort();
     creator_ids.dedup();
     if !creator_ids.is_empty() {
+        let creator_filter_ids = creator_ids
+            .iter()
+            .map(|id| format!("\"{}\"", id))
+            .collect::<Vec<String>>()
+            .join(",");
         let resp = state
             .pg
             .from("creators")
             .select("id,full_name,profile_photo_url,email")
-            .in_("id", creator_ids.clone())
+            .or(format!("id.in.({})", creator_filter_ids))
             .execute()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -998,6 +1026,7 @@ pub async fn list_my_jobs(
                 row["declined_creators"] = serde_json::Value::Array(out);
             }
         }
+        row["is_invited_viewer"] = serde_json::Value::Bool(true);
     }
     Ok(Json(json!({ "jobs": rows })))
 }
@@ -1178,11 +1207,16 @@ pub async fn list_job_applications(
 
     let mut creator_name_map: HashMap<String, (String, Option<String>)> = HashMap::new();
     if !creator_ids.is_empty() {
+        let creator_filter_ids = creator_ids
+            .iter()
+            .map(|id| format!("\"{}\"", id))
+            .collect::<Vec<String>>()
+            .join(",");
         let resp = state
             .pg
             .from("creators")
             .select("id,full_name,profile_photo_url,email")
-            .in_("id", creator_ids.clone())
+            .or(format!("id.in.({})", creator_filter_ids))
             .execute()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -1268,8 +1302,8 @@ pub async fn list_job_applications(
             .from("agency_users")
             .select("id,user_id,creator_id,stage_name,full_legal_name,profile_photo_url,agency_id")
             .or(format!(
-                "id.in.({}),user_id.in.({}),creator_id.in.({})",
-                agency_filter_ids, agency_filter_ids, agency_filter_ids
+                "id.in.({}),user_id.in.({}),creator_id.in.({}),agency_id.in.({})",
+                agency_filter_ids, agency_filter_ids, agency_filter_ids, agency_filter_ids
             ))
             .execute()
             .await
@@ -1302,18 +1336,27 @@ pub async fn list_job_applications(
                     .and_then(|v| v.as_str())
                     .filter(|v| !v.trim().is_empty())
                     .map(|v| v.to_string());
+                // Only use agency_users names as secondary fallback;
+                // primary name comes from agencies table (agency_entity_map)
                 if !id.is_empty() && !name.is_empty() {
-                    agency_name_map.insert(id.to_string(), (name.to_string(), photo.clone()));
+                    agency_name_map
+                        .entry(id.to_string())
+                        .or_insert((name.to_string(), photo.clone()));
                 }
                 if !user_id.is_empty() && !name.is_empty() {
-                    agency_name_map.insert(user_id.to_string(), (name.to_string(), photo.clone()));
+                    agency_name_map
+                        .entry(user_id.to_string())
+                        .or_insert((name.to_string(), photo.clone()));
                 }
                 if !creator_id.is_empty() && !name.is_empty() {
                     agency_name_map
-                        .insert(creator_id.to_string(), (name.to_string(), photo.clone()));
+                        .entry(creator_id.to_string())
+                        .or_insert((name.to_string(), photo.clone()));
                 }
                 if !agency_id.is_empty() && !name.is_empty() {
-                    agency_name_map.insert(agency_id.to_string(), (name.to_string(), photo));
+                    agency_name_map
+                        .entry(agency_id.to_string())
+                        .or_insert((name.to_string(), photo));
                 }
             }
         }

@@ -1,14 +1,19 @@
 import React, { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
 import { Link2Off, Eye } from "lucide-react";
+import { useAuth } from "@/auth/AuthProvider";
+import { createPageUrl } from "@/utils";
 
 const BrandConnectionsView = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { user, profile } = useAuth();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<
     | "connections"
@@ -59,6 +64,25 @@ const BrandConnectionsView = () => {
     },
   });
 
+  const jobInvitesQuery = useQuery({
+    queryKey: ["agency", "job-invites"],
+    queryFn: async () => {
+      const resp = await base44.get<{ jobs?: any[] }>("/api/jobs", {
+        params: { limit: 100 },
+      });
+      const jobs = Array.isArray(resp?.jobs) ? resp.jobs : [];
+      return jobs.filter((job) => {
+        const invitedAgencies = Array.isArray(job?.invited_agency_ids)
+          ? job.invited_agency_ids
+          : [];
+        return (
+          invitedAgencies.includes(profile?.id) ||
+          invitedAgencies.includes(user?.id)
+        );
+      });
+    },
+  });
+
   const feedbackQuery = useQuery({
     queryKey: ["agency", "package-feedback"],
     queryFn: async () => {
@@ -104,6 +128,10 @@ const BrandConnectionsView = () => {
     if (!Array.isArray(offersQuery.data)) return [];
     return offersQuery.data;
   }, [offersQuery.data]);
+  const jobInvites = useMemo(() => {
+    if (!Array.isArray(jobInvitesQuery.data)) return [];
+    return jobInvitesQuery.data;
+  }, [jobInvitesQuery.data]);
   const feedbackItems = useMemo(() => {
     if (!Array.isArray(feedbackQuery.data)) return [];
     return feedbackQuery.data;
@@ -489,7 +517,51 @@ const BrandConnectionsView = () => {
 
       {activeTab === "offers" && (
         <Card className="p-6 border border-gray-200 rounded-xl space-y-4">
-          <h3 className="text-lg font-bold text-gray-900">Brand Offers</h3>
+          <h3 className="text-lg font-bold text-gray-900">Job Invites</h3>
+          {jobInvitesQuery.isLoading && (
+            <p className="text-sm text-gray-500">Loading job invites...</p>
+          )}
+          {!jobInvitesQuery.isLoading && jobInvites.length === 0 && (
+            <p className="text-sm text-gray-500">No job invites yet.</p>
+          )}
+          {jobInvites.map((job: any) => {
+            const jobId = String(job?.id || "");
+            const companyName = String(job?.company_name || "Brand");
+            const jobTitle = String(job?.job_title || "Job invite");
+            return (
+              <div
+                key={jobId}
+                className="border border-green-200 bg-green-50 rounded-lg p-4 space-y-3"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-gray-900">{companyName}</p>
+                    <p className="text-xs text-gray-600">{jobTitle}</p>
+                  </div>
+                  <Badge className="bg-green-100 text-green-700 hover:bg-green-200 border-none">
+                    Job Invite
+                  </Badge>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    className="bg-black hover:bg-gray-800 text-white"
+                    onClick={() => {
+                      navigate(
+                        `${createPageUrl("Jobs")}?jobId=${encodeURIComponent(jobId)}`,
+                      );
+                    }}
+                  >
+                    View Job Requirements
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+
+          <div className="h-px bg-gray-200 my-6" />
+
+          <h3 className="text-lg font-bold text-gray-900">Campaign Offers</h3>
           {offersQuery.isLoading && (
             <p className="text-sm text-gray-500">Loading offers...</p>
           )}

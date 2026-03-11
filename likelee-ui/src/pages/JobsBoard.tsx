@@ -17,11 +17,21 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Briefcase, Building2, Search } from "lucide-react";
+import {
+  Briefcase,
+  Building2,
+  Search,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Maximize2,
+  FileText,
+} from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 const callTypeOptions = [
@@ -67,6 +77,9 @@ export default function JobsBoard() {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [resumeUploading, setResumeUploading] = useState(false);
   const [resumeMeta, setResumeMeta] = useState<any | null>(null);
+  const [selectedAssetIndex, setSelectedAssetIndex] = useState<number | null>(
+    null,
+  );
 
   const resolveAssetUrl = (asset: any) => {
     if (!asset) return "";
@@ -492,6 +505,9 @@ export default function JobsBoard() {
               <DialogTitle className="text-lg font-semibold">
                 Apply to {selectedJob?.title}
               </DialogTitle>
+              <DialogDescription>
+                Provide your details and resume to apply for this position.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 pt-3">
               <div className="space-y-2">
@@ -550,6 +566,9 @@ export default function JobsBoard() {
             <DialogTitle className="text-2xl font-bold text-gray-900">
               Job Details
             </DialogTitle>
+            <DialogDescription>
+              In-depth information about the selected job posting.
+            </DialogDescription>
           </DialogHeader>
           {selectedJob ? (
             <div className="space-y-6">
@@ -809,8 +828,9 @@ export default function JobsBoard() {
                                     </div>
                                   )}
                                   <span>
-                                    {agency?.agency_name ||
-                                      agency?.display_name ||
+                                    {agency?.display_name ||
+                                      agency?.agency_name ||
+                                      agency?.contact_name ||
                                       "Agency"}
                                   </span>
                                 </div>
@@ -868,10 +888,15 @@ export default function JobsBoard() {
                 selectedJob.brand_assets.length > 0 &&
                 (!selectedJob.confidential ||
                   selectedJob.is_invited_viewer) && (
-                  <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <h3 className="text-sm font-semibold text-gray-900">
-                      Brand Assets
-                    </h3>
+                  <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-semibold text-gray-900">
+                        Brand Assets
+                      </h3>
+                      <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
+                        {selectedJob.brand_assets.length} Assets
+                      </span>
+                    </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {selectedJob.brand_assets.map(
                         (asset: any, idx: number) => {
@@ -895,24 +920,28 @@ export default function JobsBoard() {
                           return (
                             <div
                               key={`${url || asset?.name || idx}`}
-                              className="border border-slate-200 rounded-lg overflow-hidden bg-white"
+                              className="group relative cursor-pointer border border-slate-200 rounded-lg overflow-hidden bg-slate-50 transition-all hover:ring-2 hover:ring-blue-500 hover:ring-offset-2"
+                              onClick={() => {
+                                if (isImage && url) setSelectedAssetIndex(idx);
+                              }}
                             >
                               {isImage && url ? (
-                                <a
-                                  href={url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="block"
-                                >
+                                <>
                                   <img
                                     src={url}
                                     alt={asset?.name || "Brand asset"}
-                                    className="h-28 w-full object-cover"
+                                    className="h-28 w-full object-cover transition-transform duration-300 group-hover:scale-110"
                                   />
-                                </a>
+                                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 flex items-center justify-center transition-colors">
+                                    <Maximize2 className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md" />
+                                  </div>
+                                </>
                               ) : (
-                                <div className="h-28 flex items-center justify-center text-xs text-slate-600 bg-slate-50 text-center px-2">
-                                  {asset?.name || "File"}
+                                <div className="h-28 flex flex-col items-center justify-center text-xs text-slate-500 bg-slate-50 text-center px-2 gap-1.5">
+                                  <FileText className="w-5 h-5 text-slate-300" />
+                                  <span className="truncate w-full font-medium">
+                                    {asset?.name || "File"}
+                                  </span>
                                 </div>
                               )}
                             </div>
@@ -922,6 +951,119 @@ export default function JobsBoard() {
                     </div>
                   </section>
                 )}
+
+              <Dialog
+                open={selectedAssetIndex !== null}
+                onOpenChange={(open) => !open && setSelectedAssetIndex(null)}
+              >
+                <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[95vh] p-0 overflow-hidden bg-white border-none shadow-2xl rounded-2xl flex flex-col">
+                  <DialogHeader className="sr-only">
+                    <DialogTitle>
+                      Brand Asset{" "}
+                      {selectedAssetIndex !== null
+                        ? selectedAssetIndex + 1
+                        : ""}
+                    </DialogTitle>
+                    <DialogDescription>
+                      View brand asset reference image in detail.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  {selectedAssetIndex !== null &&
+                    Array.isArray(selectedJob?.brand_assets) &&
+                    selectedJob.brand_assets[selectedAssetIndex] && (
+                      <div className="relative w-full h-full flex flex-col">
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white">
+                          <h3 className="text-base font-bold text-gray-900">
+                            Brand Asset {selectedAssetIndex + 1} of{" "}
+                            {selectedJob.brand_assets.length}
+                          </h3>
+                        </div>
+
+                        {/* Image Container */}
+                        <div className="flex-1 overflow-auto bg-slate-50 flex items-center justify-center p-4 min-h-[400px]">
+                          {(() => {
+                            const asset =
+                              selectedJob.brand_assets[selectedAssetIndex];
+                            let url = String(resolveAssetUrl(asset) || "");
+                            const assetName = String(asset?.name || "");
+                            if (!url && assetName) {
+                              const safeName = assetName.replace(
+                                /[^\w.\-]+/g,
+                                "_",
+                              );
+                              url =
+                                supabase.storage
+                                  .from("likelee-public")
+                                  .getPublicUrl(
+                                    `job-assets/${selectedJob.brand_id}/${safeName}`,
+                                  ).data?.publicUrl || "";
+                            }
+
+                            return (
+                              <img
+                                src={url}
+                                alt={assetName}
+                                className="max-w-full max-h-[60vh] object-contain shadow-lg rounded-lg"
+                              />
+                            );
+                          })()}
+                        </div>
+
+                        {/* Footer Navigation */}
+                        <div className="px-6 py-4 border-t border-slate-100 bg-white flex items-center justify-between">
+                          <Button
+                            variant="outline"
+                            className="border-slate-200 text-slate-700 font-medium px-6 py-2 h-auto"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedAssetIndex((prev) => {
+                                const assets = selectedJob?.brand_assets;
+                                if (
+                                  !Array.isArray(assets) ||
+                                  assets.length === 0
+                                )
+                                  return null;
+                                return prev !== null && prev > 0
+                                  ? prev - 1
+                                  : assets.length - 1;
+                              });
+                            }}
+                          >
+                            Previous
+                          </Button>
+
+                          <div className="text-slate-400 text-sm font-medium">
+                            {selectedAssetIndex + 1} /{" "}
+                            {selectedJob.brand_assets.length}
+                          </div>
+
+                          <Button
+                            variant="outline"
+                            className="border-slate-200 text-slate-700 font-medium px-6 py-2 h-auto"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedAssetIndex((prev) => {
+                                const assets = selectedJob?.brand_assets;
+                                if (
+                                  !Array.isArray(assets) ||
+                                  assets.length === 0
+                                )
+                                  return null;
+                                return prev !== null && prev < assets.length - 1
+                                  ? prev + 1
+                                  : 0;
+                              });
+                            }}
+                          >
+                            Next
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                </DialogContent>
+              </Dialog>
             </div>
           ) : (
             <div className="text-sm text-gray-600">Select a job to view.</div>

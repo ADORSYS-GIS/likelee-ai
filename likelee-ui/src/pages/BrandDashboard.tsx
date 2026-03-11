@@ -54,12 +54,17 @@ import {
   ChevronDown,
   Mail,
   RefreshCw,
+  ChevronLeft,
+  ChevronRight,
+  Maximize2,
+  Trash2,
 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -665,6 +670,9 @@ export default function BrandDashboard() {
   );
   const [loadingJobApplications, setLoadingJobApplications] = useState(false);
   const [applicationRoleFilter, setApplicationRoleFilter] = useState("all");
+  const [selectedAssetIndex, setSelectedAssetIndex] = useState<number | null>(
+    null,
+  );
 
   const resolveMissingJobAssetUrls = async (job: any) => {
     if (!supabase || !job?.brand_id) return;
@@ -6890,6 +6898,9 @@ export default function BrandDashboard() {
             <DialogTitle className="text-2xl font-bold text-gray-900">
               Hire {selectedCreator?.name}
             </DialogTitle>
+            <DialogDescription>
+              Define contract terms before hiring this creator.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="py-4">
@@ -6970,6 +6981,9 @@ export default function BrandDashboard() {
             <DialogTitle className="text-2xl font-bold text-gray-900">
               Campaign Contract
             </DialogTitle>
+            <DialogDescription>
+              View the campaign contract details.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="py-4 space-y-6">
@@ -7067,6 +7081,10 @@ export default function BrandDashboard() {
                 ? "Job Details"
                 : "Applications"}
             </DialogTitle>
+            <DialogDescription>
+              View details for this job posting or review submitted
+              applications.
+            </DialogDescription>
           </DialogHeader>
           {selectedJobForApplications?._showDetailsOnly ? (
             <div className="space-y-6">
@@ -7293,162 +7311,175 @@ export default function BrandDashboard() {
                 )}
               </section>
 
-              {(selectedJobForApplications.work_with_agency ||
-                selectedJobForApplications.invite_creator ||
-                (selectedJobForApplications.invited_agency_ids || []).length >
-                  0 ||
-                (selectedJobForApplications.invited_creator_ids || []).length >
-                  0 ||
-                (selectedJobForApplications.invited_agencies || []).length >
-                  0 ||
-                (selectedJobForApplications.invited_creators || []).length >
-                  0) && (
-                <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <h4 className="text-sm font-semibold text-gray-900">
-                    Collaboration Preferences
-                  </h4>
-                  <div className="text-sm text-gray-600">
-                    <span className="font-medium text-gray-900">
-                      Work with agency:
-                    </span>{" "}
-                    {selectedJobForApplications.work_with_agency ? "Yes" : "No"}
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    <span className="font-medium text-gray-900">
-                      Invite creator:
-                    </span>{" "}
-                    {selectedJobForApplications.invite_creator ? "Yes" : "No"}
-                  </div>
-                  {Array.isArray(selectedJobForApplications.invited_agencies) &&
-                    selectedJobForApplications.invited_agencies.length > 0 && (
-                      <div className="pt-1">
-                        <p className="text-xs font-semibold text-gray-700 mb-2">
-                          Invited agencies
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedJobForApplications.invited_agencies.map(
-                            (agency: any, idx: number) => (
-                              <div
-                                key={`${agency?.id || idx}`}
-                                className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-gray-700"
-                              >
-                                {agency?.logo_url ? (
-                                  <img
-                                    src={agency.logo_url}
-                                    alt={agency?.agency_name || "Agency"}
-                                    className="h-5 w-5 rounded-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="h-5 w-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] font-semibold text-gray-600">
-                                    {String(
+              {(!selectedJobForApplications.confidential ||
+                selectedJobForApplications.is_invited_viewer) &&
+                (selectedJobForApplications.work_with_agency ||
+                  selectedJobForApplications.invite_creator ||
+                  (selectedJobForApplications.invited_agency_ids || []).length >
+                    0 ||
+                  (selectedJobForApplications.invited_creator_ids || [])
+                    .length > 0 ||
+                  (selectedJobForApplications.invited_agencies || []).length >
+                    0 ||
+                  (selectedJobForApplications.invited_creators || []).length >
+                    0) && (
+                  <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <h4 className="text-sm font-semibold text-gray-900">
+                      Collaboration Preferences
+                    </h4>
+                    <div className="text-sm text-gray-600">
+                      <span className="font-medium text-gray-900">
+                        Work with agency:
+                      </span>{" "}
+                      {selectedJobForApplications.work_with_agency
+                        ? "Yes"
+                        : "No"}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      <span className="font-medium text-gray-900">
+                        Invite creator:
+                      </span>{" "}
+                      {selectedJobForApplications.invite_creator ? "Yes" : "No"}
+                    </div>
+                    {Array.isArray(
+                      selectedJobForApplications.invited_agencies,
+                    ) &&
+                      selectedJobForApplications.invited_agencies.length >
+                        0 && (
+                        <div className="pt-1">
+                          <p className="text-xs font-semibold text-gray-700 mb-2">
+                            Invited agencies
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedJobForApplications.invited_agencies.map(
+                              (agency: any, idx: number) => (
+                                <div
+                                  key={`${agency?.id || idx}`}
+                                  className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-gray-700"
+                                >
+                                  {agency?.logo_url ? (
+                                    <img
+                                      src={agency.logo_url}
+                                      alt={agency?.agency_name || "Agency"}
+                                      className="h-5 w-5 rounded-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="h-5 w-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] font-semibold text-gray-600">
+                                      {String(
+                                        agency?.agency_name ||
+                                          agency?.display_name ||
+                                          "A",
+                                      )
+                                        .trim()
+                                        .slice(0, 1)
+                                        .toUpperCase()}
+                                    </div>
+                                  )}
+                                  <span>
+                                    {agency?.display_name ||
                                       agency?.agency_name ||
-                                        agency?.display_name ||
-                                        "A",
-                                    )
-                                      .trim()
-                                      .slice(0, 1)
-                                      .toUpperCase()}
-                                  </div>
-                                )}
-                                <span>
-                                  {agency?.agency_name ||
-                                    agency?.display_name ||
-                                    "Agency"}
-                                </span>
-                              </div>
-                            ),
-                          )}
+                                      agency?.contact_name ||
+                                      "Agency"}
+                                  </span>
+                                </div>
+                              ),
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  {Array.isArray(
-                    selectedJobForApplications.declined_agencies,
-                  ) &&
-                    selectedJobForApplications.declined_agencies.length > 0 && (
-                      <div className="pt-3">
-                        <p className="text-xs font-semibold text-amber-700 mb-2">
-                          Declined agencies
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedJobForApplications.declined_agencies.map(
-                            (agency: any, idx: number) => (
-                              <div
-                                key={`${agency?.id || idx}`}
-                                className="flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-800"
-                              >
-                                {agency?.logo_url ? (
-                                  <img
-                                    src={agency.logo_url}
-                                    alt={agency?.agency_name || "Agency"}
-                                    className="h-5 w-5 rounded-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="h-5 w-5 rounded-full bg-white border border-amber-200 flex items-center justify-center text-[10px] font-semibold text-amber-700">
-                                    {String(
+                      )}
+                    {Array.isArray(
+                      selectedJobForApplications.declined_agencies,
+                    ) &&
+                      selectedJobForApplications.declined_agencies.length >
+                        0 && (
+                        <div className="pt-3">
+                          <p className="text-xs font-semibold text-amber-700 mb-2">
+                            Declined agencies
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedJobForApplications.declined_agencies.map(
+                              (agency: any, idx: number) => (
+                                <div
+                                  key={`${agency?.id || idx}`}
+                                  className="flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-800"
+                                >
+                                  {agency?.logo_url ? (
+                                    <img
+                                      src={agency.logo_url}
+                                      alt={agency?.agency_name || "Agency"}
+                                      className="h-5 w-5 rounded-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="h-5 w-5 rounded-full bg-white border border-amber-200 flex items-center justify-center text-[10px] font-semibold text-amber-700">
+                                      {String(
+                                        agency?.agency_name ||
+                                          agency?.display_name ||
+                                          "A",
+                                      )
+                                        .trim()
+                                        .slice(0, 1)
+                                        .toUpperCase()}
+                                    </div>
+                                  )}
+                                  <span>
+                                    {agency?.display_name ||
                                       agency?.agency_name ||
-                                        agency?.display_name ||
-                                        "A",
-                                    )
-                                      .trim()
-                                      .slice(0, 1)
-                                      .toUpperCase()}
-                                  </div>
-                                )}
-                                <span>
-                                  {agency?.agency_name ||
-                                    agency?.display_name ||
-                                    "Agency"}
-                                </span>
-                              </div>
-                            ),
-                          )}
+                                      agency?.contact_name ||
+                                      "Agency"}
+                                  </span>
+                                </div>
+                              ),
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  {Array.isArray(selectedJobForApplications.invited_creators) &&
-                    selectedJobForApplications.invited_creators.length > 0 && (
-                      <div className="pt-1">
-                        <p className="text-xs font-semibold text-gray-700 mb-2">
-                          Invited creators
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedJobForApplications.invited_creators.map(
-                            (creator: any, idx: number) => (
-                              <div
-                                key={`${creator?.id || idx}`}
-                                className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-gray-700"
-                              >
-                                {creator?.profile_photo_url ? (
-                                  <img
-                                    src={creator.profile_photo_url}
-                                    alt={creator?.full_name || "Creator"}
-                                    className="h-5 w-5 rounded-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="h-5 w-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] font-semibold text-gray-600">
-                                    {String(
-                                      creator?.full_name ||
-                                        creator?.display_name ||
-                                        "C",
-                                    )
-                                      .trim()
-                                      .slice(0, 1)
-                                      .toUpperCase()}
-                                  </div>
-                                )}
-                                <span>
-                                  {creator?.full_name ||
-                                    creator?.display_name ||
-                                    "Creator"}
-                                </span>
-                              </div>
-                            ),
-                          )}
+                      )}
+                    {Array.isArray(
+                      selectedJobForApplications.invited_creators,
+                    ) &&
+                      selectedJobForApplications.invited_creators.length >
+                        0 && (
+                        <div className="pt-1">
+                          <p className="text-xs font-semibold text-gray-700 mb-2">
+                            Invited creators
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedJobForApplications.invited_creators.map(
+                              (creator: any, idx: number) => (
+                                <div
+                                  key={`${creator?.id || idx}`}
+                                  className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-gray-700"
+                                >
+                                  {creator?.profile_photo_url ? (
+                                    <img
+                                      src={creator.profile_photo_url}
+                                      alt={creator?.full_name || "Creator"}
+                                      className="h-5 w-5 rounded-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="h-5 w-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] font-semibold text-gray-600">
+                                      {String(
+                                        creator?.full_name ||
+                                          creator?.display_name ||
+                                          "C",
+                                      )
+                                        .trim()
+                                        .slice(0, 1)
+                                        .toUpperCase()}
+                                    </div>
+                                  )}
+                                  <span>
+                                    {creator?.full_name ||
+                                      creator?.display_name ||
+                                      "Creator"}
+                                  </span>
+                                </div>
+                              ),
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                </section>
-              )}
+                      )}
+                  </section>
+                )}
 
               {Array.isArray(selectedJobForApplications.declined_creators) &&
                 selectedJobForApplications.declined_creators.length > 0 && (
@@ -7495,10 +7526,15 @@ export default function BrandDashboard() {
 
               {Array.isArray(selectedJobForApplications.brand_assets) &&
                 selectedJobForApplications.brand_assets.length > 0 && (
-                  <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <h4 className="text-sm font-semibold text-gray-900">
-                      Brand Assets
-                    </h4>
+                  <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-semibold text-gray-900">
+                        Brand Assets
+                      </h4>
+                      <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
+                        {selectedJobForApplications.brand_assets.length} Assets
+                      </span>
+                    </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {selectedJobForApplications.brand_assets.map(
                         (asset: any, idx: number) => {
@@ -7522,24 +7558,28 @@ export default function BrandDashboard() {
                           return (
                             <div
                               key={`${url || asset?.name || idx}`}
-                              className="border border-slate-200 rounded-lg overflow-hidden bg-white"
+                              className="group relative cursor-pointer border border-slate-200 rounded-lg overflow-hidden bg-slate-50 transition-all hover:ring-2 hover:ring-blue-500 hover:ring-offset-2"
+                              onClick={() => {
+                                if (isImage && url) setSelectedAssetIndex(idx);
+                              }}
                             >
                               {isImage && url ? (
-                                <a
-                                  href={url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="block"
-                                >
+                                <>
                                   <img
                                     src={url}
                                     alt={asset?.name || "Brand asset"}
-                                    className="h-28 w-full object-cover"
+                                    className="h-28 w-full object-cover transition-transform duration-300 group-hover:scale-110"
                                   />
-                                </a>
+                                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 flex items-center justify-center transition-colors">
+                                    <Maximize2 className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md" />
+                                  </div>
+                                </>
                               ) : (
-                                <div className="h-28 flex items-center justify-center text-xs text-slate-600 bg-slate-50 text-center px-2">
-                                  {asset?.name || "File"}
+                                <div className="h-28 flex flex-col items-center justify-center text-xs text-slate-500 bg-slate-50 text-center px-2 gap-1.5">
+                                  <FileText className="w-5 h-5 text-slate-300" />
+                                  <span className="truncate w-full font-medium">
+                                    {asset?.name || "File"}
+                                  </span>
                                 </div>
                               )}
                             </div>
@@ -7549,6 +7589,127 @@ export default function BrandDashboard() {
                     </div>
                   </section>
                 )}
+
+              <Dialog
+                open={selectedAssetIndex !== null}
+                onOpenChange={(open) => !open && setSelectedAssetIndex(null)}
+              >
+                <DialogContent className="max-w-[95vw] md:max-w-4xl max-h-[95vh] p-0 overflow-hidden bg-white border-none shadow-2xl rounded-2xl flex flex-col">
+                  <DialogHeader className="sr-only">
+                    <DialogTitle>
+                      Brand Asset{" "}
+                      {selectedAssetIndex !== null
+                        ? selectedAssetIndex + 1
+                        : ""}
+                    </DialogTitle>
+                    <DialogDescription>
+                      View brand asset reference image in detail.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  {selectedAssetIndex !== null &&
+                    Array.isArray(selectedJobForApplications?.brand_assets) &&
+                    selectedJobForApplications.brand_assets[
+                      selectedAssetIndex
+                    ] && (
+                      <div className="relative w-full h-full flex flex-col">
+                        {/* Header */}
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white">
+                          <h3 className="text-base font-bold text-gray-900">
+                            Brand Asset {selectedAssetIndex + 1} of{" "}
+                            {selectedJobForApplications.brand_assets.length}
+                          </h3>
+                        </div>
+
+                        {/* Image Container */}
+                        <div className="flex-1 overflow-auto bg-slate-50 flex items-center justify-center p-4 min-h-[400px]">
+                          {(() => {
+                            const assets =
+                              selectedJobForApplications?.brand_assets;
+                            const asset = Array.isArray(assets)
+                              ? assets[selectedAssetIndex]
+                              : null;
+                            if (!asset) return null;
+                            let url = String(resolveJobAssetUrl(asset) || "");
+                            const assetName = String(asset?.name || "");
+                            if (!url && assetName) {
+                              const safeName = assetName.replace(
+                                /[^\w.\-]+/g,
+                                "_",
+                              );
+                              url =
+                                supabase.storage
+                                  .from("likelee-public")
+                                  .getPublicUrl(
+                                    `job-assets/${selectedJobForApplications.brand_id}/${safeName}`,
+                                  ).data?.publicUrl || "";
+                            }
+
+                            return (
+                              <img
+                                src={url}
+                                alt={assetName}
+                                className="max-w-full max-h-[60vh] object-contain shadow-lg rounded-lg"
+                              />
+                            );
+                          })()}
+                        </div>
+
+                        {/* Footer Navigation */}
+                        <div className="px-6 py-4 border-t border-slate-100 bg-white flex items-center justify-between">
+                          <Button
+                            variant="outline"
+                            className="border-slate-200 text-slate-700 font-medium px-6 py-2 h-auto"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedAssetIndex((prev) => {
+                                const assets =
+                                  selectedJobForApplications?.brand_assets;
+                                if (
+                                  !Array.isArray(assets) ||
+                                  assets.length === 0
+                                )
+                                  return null;
+                                return prev !== null && prev > 0
+                                  ? prev - 1
+                                  : assets.length - 1;
+                              });
+                            }}
+                          >
+                            Previous
+                          </Button>
+
+                          <div className="text-slate-400 text-sm font-medium">
+                            {selectedAssetIndex + 1} /{" "}
+                            {selectedJobForApplications.brand_assets.length}
+                          </div>
+
+                          <Button
+                            variant="outline"
+                            className="border-slate-200 text-slate-700 font-medium px-6 py-2 h-auto"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedAssetIndex((prev) => {
+                                const assets =
+                                  selectedJobForApplications?.brand_assets;
+                                if (
+                                  !Array.isArray(assets) ||
+                                  assets.length === 0
+                                )
+                                  return null;
+                                return prev !== null && prev < assets.length - 1
+                                  ? prev + 1
+                                  : 0;
+                              });
+                            }}
+                          >
+                            Next
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                </DialogContent>
+              </Dialog>
             </div>
           ) : loadingJobApplications ? (
             <div className="text-sm text-gray-600">Loading applications...</div>
@@ -7655,6 +7816,9 @@ export default function BrandDashboard() {
             <DialogTitle className="text-2xl font-bold text-gray-900">
               Request Contract Update
             </DialogTitle>
+            <DialogDescription>
+              Select how to proceed with the contract update request.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="py-4">
@@ -7723,6 +7887,9 @@ export default function BrandDashboard() {
             <DialogTitle className="text-2xl font-bold text-gray-900">
               Contract Builder - {selectedCreator?.name}
             </DialogTitle>
+            <DialogDescription>
+              Create a new contract for this project.
+            </DialogDescription>
             <p className="text-gray-600">Step {contractStep} of 5</p>
           </DialogHeader>
 

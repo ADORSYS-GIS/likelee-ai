@@ -1535,7 +1535,7 @@ export default function PostJob() {
                       <div className="space-y-2">
                         {filteredAgencies.map((agency) => {
                           const agencyId = String(
-                            agency?.agency_id || agency?.id || "",
+                            agency?.id || agency?.agency_id || "",
                           );
                           const label =
                             agency?.display_name ||
