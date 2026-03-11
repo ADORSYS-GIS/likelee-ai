@@ -601,7 +601,7 @@ export default function BrandCampaignDashboard({
             );
             const flatDeliverables = deliverablesByOffer.flat();
             const approvedCount = flatDeliverables.filter((d: any) =>
-              ["approved", "accepted"].includes(
+              ["approved", "accepted", "brand_approved"].includes(
                 String(d?.status || "").toLowerCase(),
               ),
             ).length;
@@ -3342,11 +3342,14 @@ export default function BrandCampaignDashboard({
                       const status = String(
                         deliverable?.status || "pending_review",
                       ).toLowerCase();
+                      const displayStatus =
+                        status === "brand_approved" ? "approved" : status;
                       const statusClass =
-                        status === "approved" || status === "accepted"
+                        displayStatus === "approved" ||
+                        displayStatus === "accepted"
                           ? "bg-emerald-100 text-emerald-700"
-                          : status === "changes_requested" ||
-                              status === "rejected"
+                          : displayStatus === "changes_requested" ||
+                              displayStatus === "rejected"
                             ? "bg-red-100 text-red-700"
                             : "bg-yellow-100 text-yellow-800";
                       const uploadedAtRaw = String(
@@ -3395,7 +3398,7 @@ export default function BrandCampaignDashboard({
                                     )}
                                   </p>
                                   <Badge className={statusClass}>
-                                    {status.replace(/_/g, " ")}
+                                    {displayStatus.replace(/_/g, " ")}
                                   </Badge>
                                 </div>
                                 <div className="flex gap-2">
