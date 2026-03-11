@@ -145,6 +145,11 @@ export function AgencyDeliverablesView() {
     deliverableId: "",
     submitting: false,
   });
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [galleryItems, setGalleryItems] = useState<
+    { url: string; type: "image" | "video" | "file"; caption: string }[]
+  >([]);
+  const [galleryIndex, setGalleryIndex] = useState(0);
   const { toast } = useToast();
 
   const rosterOptions = useMemo(
@@ -284,26 +289,55 @@ export function AgencyDeliverablesView() {
     return "bg-blue-600 text-white";
   };
 
+  const resolveDeliverableUrl = (deliverable: any, offerIdOverride?: string) => {
+    const assetUrl = String(deliverable?.asset_url || "");
+    if (!assetUrl) return "";
+    if (assetUrl.startsWith("http")) return assetUrl;
+    const offerId = String(
+      deliverable?.offer_id || offerIdOverride || "",
+    ).trim();
+    const deliverableId = String(deliverable?.id || "").trim();
+    if (offerId && deliverableId) {
+      const proxyUrl = `/api/campaign-offers/${offerId}/deliverables/${deliverableId}/file`;
+      return authToken ? `${proxyUrl}?token=${authToken}` : proxyUrl;
+    }
+    return assetUrl;
+  };
+
+  const buildGalleryItems = (rows: any[], offerId?: string) =>
+    rows
+      .map((deliverable) => {
+        const url = resolveDeliverableUrl(deliverable, offerId);
+        if (!url) return null;
+        const caption =
+          String(deliverable?.caption || "").trim() ||
+          String(deliverable?.meta?.original_name || "").trim() ||
+          "Deliverable";
+        const type = deliverableIsImage(deliverable)
+          ? "image"
+          : deliverableIsVideo(deliverable)
+            ? "video"
+            : "file";
+        return { url, type, caption };
+      })
+      .filter(Boolean) as {
+      url: string;
+      type: "image" | "video" | "file";
+      caption: string;
+    }[];
+
   const renderDeliverableCard = (
     deliverable: any,
     options?: {
       showActions?: boolean;
       offerId?: string;
       layout?: "creator" | "agency";
+      galleryItems?: { url: string; type: "image" | "video" | "file"; caption: string }[];
+      galleryIndex?: number;
     },
   ) => {
     const assetUrl = String(deliverable?.asset_url || "");
-    const resolvedUrl = (() => {
-      if (!assetUrl) return "";
-      if (assetUrl.startsWith("http")) return assetUrl;
-      const offerId = String(deliverable?.offer_id || options?.offerId || "");
-      const deliverableId = String(deliverable?.id || "");
-      if (offerId && deliverableId) {
-        const proxyUrl = `/api/campaign-offers/${offerId}/deliverables/${deliverableId}/file`;
-        return authToken ? `${proxyUrl}?token=${authToken}` : proxyUrl;
-      }
-      return assetUrl;
-    })();
+    const resolvedUrl = resolveDeliverableUrl(deliverable, options?.offerId);
     const caption =
       String(deliverable?.caption || "").trim() ||
       String(deliverable?.meta?.original_name || "").trim();
@@ -322,7 +356,13 @@ export function AgencyDeliverablesView() {
     return (
       <Card
         key={String(deliverable?.id || deliverable?.asset_url || "deliverable")}
-        className="group relative overflow-hidden bg-white border-gray-200 rounded-2xl transition-all hover:shadow-xl hover:-translate-y-1"
+        className="group relative overflow-hidden bg-white border-gray-200 rounded-2xl transition-all hover:shadow-xl hover:-translate-y-1 cursor-zoom-in"
+        onClick={() => {
+          if (!resolvedUrl || !options?.galleryItems?.length) return;
+          setGalleryItems(options.galleryItems);
+          setGalleryIndex(options.galleryIndex || 0);
+          setGalleryOpen(true);
+        }}
       >
         <div className="aspect-[4/5] bg-gray-100 relative overflow-hidden">
           {assetUrl && deliverableIsImage(deliverable) ? (
@@ -342,49 +382,38 @@ export function AgencyDeliverablesView() {
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-            {assetUrl && (
-              <>
+          {assetUrl && (
+            <div className="absolute top-3 right-3 flex items-center gap-2">
+              <a
+                href={resolvedUrl}
+                download
+                target="_blank"
+                rel="noreferrer"
+                className="h-8 w-8 rounded-full bg-white/90 text-gray-900 flex items-center justify-center shadow-sm hover:bg-white"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <Download className="w-4 h-4" />
+              </a>
+              {canDelete && (
                 <Button
                   variant="secondary"
-                  size="sm"
-                  className="rounded-full h-8 font-semibold bg-white/90 text-gray-900"
-                  asChild
+                  size="icon"
+                  className="h-8 w-8 rounded-full bg-rose-50 text-rose-600 hover:bg-rose-100"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setDeleteDialog({
+                      open: true,
+                      offerId: options?.offerId || "",
+                      deliverableId: String(deliverable?.id || ""),
+                      submitting: false,
+                    });
+                  }}
                 >
-                  <a href={resolvedUrl} target="_blank" rel="noreferrer">
-                    <Eye className="w-3 h-3 mr-1.5" /> View
-                  </a>
+                  <Trash2 className="w-4 h-4" />
                 </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="rounded-full h-8 font-semibold bg-white/90 text-gray-900"
-                  asChild
-                >
-                  <a href={resolvedUrl} download target="_blank" rel="noreferrer">
-                    <Download className="w-3 h-3" />
-                  </a>
-                </Button>
-                {canDelete && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="rounded-full h-8 font-semibold bg-rose-50 text-rose-600 hover:bg-rose-100"
-                    onClick={() =>
-                      setDeleteDialog({
-                        open: true,
-                        offerId: options?.offerId || "",
-                        deliverableId: String(deliverable?.id || ""),
-                        submitting: false,
-                      })
-                    }
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </Button>
-                )}
-              </>
-            )}
-          </div>
+              )}
+            </div>
+          )}
           <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
             <Badge className={`rounded-full border-0 ${deliverableStatusClass(deliverable?.status)}`}>
               {deliverableStatusLabel(deliverable?.status)}
@@ -417,7 +446,8 @@ export function AgencyDeliverablesView() {
               <Button
                 size="sm"
                 className="h-9 rounded-full font-semibold bg-emerald-500 hover:bg-emerald-600 text-white"
-                onClick={() => {
+                onClick={(event) => {
+                  event.stopPropagation();
                   if (isBrandApproved) {
                     setReviewDialog({
                       open: true,
@@ -449,7 +479,8 @@ export function AgencyDeliverablesView() {
                 variant="outline"
                 size="sm"
                 className="h-9 rounded-full font-semibold border-amber-300 text-amber-700 hover:bg-amber-50"
-                onClick={() =>
+                onClick={(event) => {
+                  event.stopPropagation();
                   setReviewDialog({
                     open: true,
                     offerId: options.offerId || "",
@@ -457,8 +488,8 @@ export function AgencyDeliverablesView() {
                     action: "changes_requested",
                     note: "",
                     submitting: false,
-                  })
-                }
+                  });
+                }}
                 disabled={isFinalized}
               >
                 Revise
@@ -467,7 +498,8 @@ export function AgencyDeliverablesView() {
                 variant="ghost"
                 size="sm"
                 className="col-span-2 h-8 rounded-full font-semibold text-rose-600 hover:bg-rose-50"
-                onClick={() =>
+                onClick={(event) => {
+                  event.stopPropagation();
                   setReviewDialog({
                     open: true,
                     offerId: options.offerId || "",
@@ -475,8 +507,8 @@ export function AgencyDeliverablesView() {
                     action: "reject",
                     note: "",
                     submitting: false,
-                  })
-                }
+                  });
+                }}
                 disabled={isFinalized}
               >
                 Reject
@@ -489,14 +521,15 @@ export function AgencyDeliverablesView() {
               <Button
                 size="sm"
                 className="w-full h-9 rounded-full font-semibold bg-emerald-500 hover:bg-emerald-600 text-white"
-                onClick={() =>
+                onClick={(event) => {
+                  event.stopPropagation();
                   setConfirmSendDialog({
                     open: true,
                     offerId: options.offerId || "",
                     mode: "agency",
                     submitting: false,
-                  })
-                }
+                  });
+                }}
               >
                 Send to Brand
               </Button>
@@ -1015,10 +1048,15 @@ export function AgencyDeliverablesView() {
                                     <p className="text-xs text-gray-400">None yet.</p>
                                   ) : (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
-                                      {creatorDeliverables.map((d: any) =>
+                                      {creatorDeliverables.map((d: any, idx: number) =>
                                         renderDeliverableCard(d, {
                                           showActions: true,
                                           offerId,
+                                          galleryItems: buildGalleryItems(
+                                            creatorDeliverables,
+                                            offerId,
+                                          ),
+                                          galleryIndex: idx,
                                         }),
                                       )}
                                     </div>
@@ -1030,10 +1068,15 @@ export function AgencyDeliverablesView() {
                                     <p className="text-xs text-gray-400">None yet.</p>
                                   ) : (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
-                                      {agencyDeliverables.map((d: any) =>
+                                      {agencyDeliverables.map((d: any, idx: number) =>
                                         renderDeliverableCard(d, {
                                           offerId,
                                           layout: "agency",
+                                          galleryItems: buildGalleryItems(
+                                            agencyDeliverables,
+                                            offerId,
+                                          ),
+                                          galleryIndex: idx,
                                         }),
                                       )}
                                     </div>
@@ -1442,6 +1485,74 @@ export function AgencyDeliverablesView() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={galleryOpen} onOpenChange={setGalleryOpen}>
+        <DialogContent className="max-w-5xl w-[95vw] p-0 overflow-hidden border border-gray-900 bg-black text-white">
+          {galleryItems[galleryIndex] ? (
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 pr-16">
+                <div className="text-sm font-semibold truncate">
+                  {galleryItems[galleryIndex].caption}
+                </div>
+                <div className="flex items-center gap-2 mr-4">
+                  <a
+                    href={galleryItems[galleryIndex].url}
+                    download
+                    target="_blank"
+                    rel="noreferrer"
+                    className="h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
+                  >
+                    <Download className="w-4 h-4" />
+                  </a>
+                </div>
+              </div>
+              <div className="bg-black flex items-center justify-center min-h-[60vh] relative">
+                <button
+                  type="button"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
+                  onClick={() =>
+                    setGalleryIndex((idx) =>
+                      idx <= 0 ? galleryItems.length - 1 : idx - 1,
+                    )
+                  }
+                  disabled={galleryItems.length <= 1}
+                >
+                  <ChevronDown className="w-4 h-4 rotate-90" />
+                </button>
+                {galleryItems[galleryIndex].type === "image" ? (
+                  <img
+                    src={galleryItems[galleryIndex].url}
+                    alt={galleryItems[galleryIndex].caption}
+                    className="max-h-[75vh] w-auto object-contain"
+                  />
+                ) : galleryItems[galleryIndex].type === "video" ? (
+                  <video
+                    src={galleryItems[galleryIndex].url}
+                    controls
+                    className="max-h-[75vh] w-auto bg-black"
+                  />
+                ) : (
+                  <div className="text-sm text-white/70">
+                    This file cannot be previewed. Use download to open it.
+                  </div>
+                )}
+                <button
+                  type="button"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 h-9 w-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
+                  onClick={() =>
+                    setGalleryIndex((idx) =>
+                      idx >= galleryItems.length - 1 ? 0 : idx + 1,
+                    )
+                  }
+                  disabled={galleryItems.length <= 1}
+                >
+                  <ChevronDown className="w-4 h-4 -rotate-90" />
+                </button>
+              </div>
+            </div>
+          ) : null}
         </DialogContent>
       </Dialog>
     </motion.div>
