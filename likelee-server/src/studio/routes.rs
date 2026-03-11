@@ -963,12 +963,13 @@ pub async fn list_presets(
     State(_state): State<AppState>,
     _auth_user: AuthUser,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let all_presets = providers::fetch_fal_presets()
-        .await
-        .map_err(|e| {
-            error!(error = %e, "failed to fetch fal presets");
-            (StatusCode::INTERNAL_SERVER_ERROR, "Failed to fetch presets".to_string())
-        })?;
+    let all_presets = providers::fetch_fal_presets().await.map_err(|e| {
+        error!(error = %e, "failed to fetch fal presets");
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to fetch presets".to_string(),
+        )
+    })?;
 
     let mut all_presets = all_presets;
 

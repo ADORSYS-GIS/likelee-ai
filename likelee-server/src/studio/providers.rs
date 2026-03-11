@@ -344,14 +344,70 @@ pub async fn fetch_fal_presets() -> Result<Vec<StylePreset>> {
     // 1. Curated Image Styles (Presets)
     // Categories: Cinematic, Anime, Digital Art, Photorealistic, Cyberpunk, Aesthetic
     let image_styles = vec![
-        ("flux-pro-cinematic", "Cinematic Pro", "Masterful cinematic lighting and composition.", "Cinematic", "masterpiece, cinematic lighting, highly detailed, professional photography", "https://fal.media/files/monkey/1.png"),
-        ("flux-dev-anime", "Anime Dream", "High-fidelity anime style with vibrant colors.", "Anime", "anime style, high quality, masterpiece, vivid colors", "https://fal.media/files/elephant/1.png"),
-        ("flux-pro-cyberpunk", "Neon Cyberpunk", "Futuristic cyberpunk aesthetic with neon accents.", "Cyberpunk", "cyberpunk style, neon lights, futuristic city, highly detailed", "https://fal.media/files/lion/1.png"),
-        ("flux-dev-3d", "3D Render", "Clean 3D render look with soft shadows.", "Digital Art", "3d render, octane render, soft lighting, masterpiece", "https://fal.media/files/tiger/1.png"),
-        ("flux-pro-pencil", "Pencil Sketch", "Hand-drawn pencil sketch with fine lines.", "Aesthetic", "pencil sketch, hand drawn, artistic, charcoal style", "https://fal.media/files/bear/1.png"),
-        ("flux-dev-vaporwave", "Vaporwave", "Retro 80s aesthetic with pink and blue hues.", "Aesthetic", "vaporwave aesthetic, retro 80s, synthwave, pink and blue lighting", "https://fal.media/files/koala/1.png"),
-        ("flux-pro-minimal", "Minimalist", "Clean, minimalist composition for a modern look.", "Aesthetic", "minimalist style, clean lines, simple background, modern aesthetic", "https://fal.media/files/panda/1.png"),
-        ("flux-dev-ink", "Ink Wash", "Traditional Japanese ink wash painting style.", "Digital Art", "ink wash painting, traditional japanese style, artistic, sumi-e", "https://fal.media/files/wolf/1.png"),
+        (
+            "flux-pro-cinematic",
+            "Cinematic Pro",
+            "Masterful cinematic lighting and composition.",
+            "Cinematic",
+            "masterpiece, cinematic lighting, highly detailed, professional photography",
+            "https://fal.media/files/monkey/1.png",
+        ),
+        (
+            "flux-dev-anime",
+            "Anime Dream",
+            "High-fidelity anime style with vibrant colors.",
+            "Anime",
+            "anime style, high quality, masterpiece, vivid colors",
+            "https://fal.media/files/elephant/1.png",
+        ),
+        (
+            "flux-pro-cyberpunk",
+            "Neon Cyberpunk",
+            "Futuristic cyberpunk aesthetic with neon accents.",
+            "Cyberpunk",
+            "cyberpunk style, neon lights, futuristic city, highly detailed",
+            "https://fal.media/files/lion/1.png",
+        ),
+        (
+            "flux-dev-3d",
+            "3D Render",
+            "Clean 3D render look with soft shadows.",
+            "Digital Art",
+            "3d render, octane render, soft lighting, masterpiece",
+            "https://fal.media/files/tiger/1.png",
+        ),
+        (
+            "flux-pro-pencil",
+            "Pencil Sketch",
+            "Hand-drawn pencil sketch with fine lines.",
+            "Aesthetic",
+            "pencil sketch, hand drawn, artistic, charcoal style",
+            "https://fal.media/files/bear/1.png",
+        ),
+        (
+            "flux-dev-vaporwave",
+            "Vaporwave",
+            "Retro 80s aesthetic with pink and blue hues.",
+            "Aesthetic",
+            "vaporwave aesthetic, retro 80s, synthwave, pink and blue lighting",
+            "https://fal.media/files/koala/1.png",
+        ),
+        (
+            "flux-pro-minimal",
+            "Minimalist",
+            "Clean, minimalist composition for a modern look.",
+            "Aesthetic",
+            "minimalist style, clean lines, simple background, modern aesthetic",
+            "https://fal.media/files/panda/1.png",
+        ),
+        (
+            "flux-dev-ink",
+            "Ink Wash",
+            "Traditional Japanese ink wash painting style.",
+            "Digital Art",
+            "ink wash painting, traditional japanese style, artistic, sumi-e",
+            "https://fal.media/files/wolf/1.png",
+        ),
     ];
 
     for (id, name, desc, cat, prompt, preview) in image_styles {
@@ -370,11 +426,46 @@ pub async fn fetch_fal_presets() -> Result<Vec<StylePreset>> {
     // 2. Curated Video Templates (Templates)
     // Categories: High Motion, Cinematic, Abstract, Social Media
     let video_templates = vec![
-        ("kling-1.5-cinematic", "Cinematic Motion", "Professional cinematic camera work and fluid motion.", "Cinematic", "cinematic camera movement, masterpiece, professional video quality", "https://fal.media/files/penguin/1.png"),
-        ("ltx-video-fast", "Fast Action", "High-energy motion for dynamic commercial results.", "High Motion", "fast action, dynamic movement, energetic pace", "https://fal.media/files/zebra/1.png"),
-        ("mochi-v1-abstract", "Abstract Flow", "Dreamy, flowing abstract visuals.", "Abstract", "abstract motion, flowing colors, satisfying visuals, masterpiece", "https://fal.media/files/deer/1.png"),
-        ("minimax-video-v2", "Social Portrait", "Optimized for social media vertical formats.", "Social Media", "portrait video, professional social media style, inviting lighting", "https://fal.media/files/fox/1.png"),
-        ("sora-2-epic", "Epic Landscape", "Grand-scale landscape transitions and vistas.", "Epic Landscape", "epic landscape, sweeping camera drone shot, grand scale", "https://fal.media/files/eagle/1.png"),
+        (
+            "kling-1.5-cinematic",
+            "Cinematic Motion",
+            "Professional cinematic camera work and fluid motion.",
+            "Cinematic",
+            "cinematic camera movement, masterpiece, professional video quality",
+            "https://fal.media/files/penguin/1.png",
+        ),
+        (
+            "ltx-video-fast",
+            "Fast Action",
+            "High-energy motion for dynamic commercial results.",
+            "High Motion",
+            "fast action, dynamic movement, energetic pace",
+            "https://fal.media/files/zebra/1.png",
+        ),
+        (
+            "mochi-v1-abstract",
+            "Abstract Flow",
+            "Dreamy, flowing abstract visuals.",
+            "Abstract",
+            "abstract motion, flowing colors, satisfying visuals, masterpiece",
+            "https://fal.media/files/deer/1.png",
+        ),
+        (
+            "minimax-video-v2",
+            "Social Portrait",
+            "Optimized for social media vertical formats.",
+            "Social Media",
+            "portrait video, professional social media style, inviting lighting",
+            "https://fal.media/files/fox/1.png",
+        ),
+        (
+            "sora-2-epic",
+            "Epic Landscape",
+            "Grand-scale landscape transitions and vistas.",
+            "Epic Landscape",
+            "epic landscape, sweeping camera drone shot, grand scale",
+            "https://fal.media/files/eagle/1.png",
+        ),
     ];
 
     for (id, name, desc, cat, prompt, preview) in video_templates {
