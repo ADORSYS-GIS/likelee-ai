@@ -4146,20 +4146,26 @@ export default function BrandDashboard() {
             {/* Talent Info */}
             <Card className="p-6 bg-white border border-gray-200">
               <h3 className="text-xl font-bold text-gray-900 mb-4">
-                Assigned Talent
+                Assigned Collaborators
               </h3>
-              <div className="flex items-center gap-3 mb-4">
-                <img
-                  src={campaign.creatorAvatars[0]}
-                  alt={campaign.creators[0]}
-                  className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
-                />
-                <div>
-                  <p className="font-semibold text-gray-900">
-                    {campaign.creators[0]}
-                  </p>
+              {campaign.creators.length === 0 ? (
+                <p className="text-sm text-gray-500">No collaborators yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {campaign.creators.map((creator: string, idx: number) => (
+                    <div key={`${creator}-${idx}`} className="flex items-center gap-3">
+                      <img
+                        src={campaign.creatorAvatars[idx] || "/favicon.svg"}
+                        alt={creator}
+                        className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
+                      />
+                      <div>
+                        <p className="font-semibold text-gray-900">{creator}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
+              )}
             </Card>
           </div>
 
