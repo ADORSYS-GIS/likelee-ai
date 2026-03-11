@@ -296,6 +296,27 @@ const BrandConnectionsView = () => {
     }
   };
 
+  const declineJobInvite = async (jobId: string) => {
+    try {
+      setBusyIds((prev) => new Set(prev).add(jobId));
+      await base44.post(`/api/jobs/${jobId}/decline`);
+      toast({ title: "Job invite declined" });
+      jobInvitesQuery.refetch();
+    } catch (err: any) {
+      toast({
+        title: "Error declining job invite",
+        description: err.message,
+        variant: "destructive",
+      });
+    } finally {
+      setBusyIds((prev) => {
+        const next = new Set(prev);
+        next.delete(jobId);
+        return next;
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -528,6 +549,7 @@ const BrandConnectionsView = () => {
             const jobId = String(job?.id || "");
             const companyName = String(job?.company_name || "Brand");
             const jobTitle = String(job?.job_title || "Job invite");
+            const isBusy = busyIds.has(jobId);
             return (
               <div
                 key={jobId}
@@ -545,14 +567,23 @@ const BrandConnectionsView = () => {
                 <div className="flex flex-wrap gap-2">
                   <Button
                     size="sm"
-                    className="bg-black hover:bg-gray-800 text-white"
+                    className="bg-white text-black border border-gray-200 hover:bg-gray-100"
                     onClick={() => {
                       navigate(
                         `${createPageUrl("Jobs")}?jobId=${encodeURIComponent(jobId)}`,
                       );
                     }}
                   >
-                    View Job Requirements
+                    View job details
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-red-300 text-red-600 bg-white hover:bg-red-50"
+                    disabled={isBusy}
+                    onClick={() => declineJobInvite(jobId)}
+                  >
+                    Decline
                   </Button>
                 </div>
               </div>

@@ -725,58 +725,61 @@ pub async fn list_jobs(
     }
 
     for row in rows.iter_mut() {
-        if let Some(arr) = row.get("invited_agency_ids").and_then(|v| v.as_array()) {
-            let mut out: Vec<serde_json::Value> = Vec::new();
-            for id in arr {
-                if let Some(id) = id.as_str() {
-                    if let Some(detail) = agency_map.get(id) {
-                        out.push(detail.clone());
+        if user.role == "brand" {
+            if let Some(arr) = row.get("invited_agency_ids").and_then(|v| v.as_array()) {
+                let mut out: Vec<serde_json::Value> = Vec::new();
+                for id in arr {
+                    if let Some(id) = id.as_str() {
+                        if let Some(detail) = agency_map.get(id) {
+                            out.push(detail.clone());
+                        }
                     }
                 }
-            }
-            if !out.is_empty() {
-                row["invited_agencies"] = serde_json::Value::Array(out);
-            }
-        }
-        if let Some(arr) = row.get("invited_creator_ids").and_then(|v| v.as_array()) {
-            let mut out: Vec<serde_json::Value> = Vec::new();
-            for id in arr {
-                if let Some(id) = id.as_str() {
-                    if let Some(detail) = creator_map.get(id) {
-                        out.push(detail.clone());
-                    }
+                if !out.is_empty() {
+                    row["invited_agencies"] = serde_json::Value::Array(out);
                 }
             }
-            if !out.is_empty() {
-                row["invited_creators"] = serde_json::Value::Array(out);
-            }
-        }
-        if let Some(arr) = row.get("declined_agency_ids").and_then(|v| v.as_array()) {
-            let mut out: Vec<serde_json::Value> = Vec::new();
-            for id in arr {
-                if let Some(id) = id.as_str() {
-                    if let Some(detail) = agency_map.get(id) {
-                        out.push(detail.clone());
+            if let Some(arr) = row.get("invited_creator_ids").and_then(|v| v.as_array()) {
+                let mut out: Vec<serde_json::Value> = Vec::new();
+                for id in arr {
+                    if let Some(id) = id.as_str() {
+                        if let Some(detail) = creator_map.get(id) {
+                            out.push(detail.clone());
+                        }
                     }
                 }
-            }
-            if !out.is_empty() {
-                row["declined_agencies"] = serde_json::Value::Array(out);
-            }
-        }
-        if let Some(arr) = row.get("declined_creator_ids").and_then(|v| v.as_array()) {
-            let mut out: Vec<serde_json::Value> = Vec::new();
-            for id in arr {
-                if let Some(id) = id.as_str() {
-                    if let Some(detail) = creator_map.get(id) {
-                        out.push(detail.clone());
-                    }
+                if !out.is_empty() {
+                    row["invited_creators"] = serde_json::Value::Array(out);
                 }
             }
-            if !out.is_empty() {
-                row["declined_creators"] = serde_json::Value::Array(out);
+            if let Some(arr) = row.get("declined_agency_ids").and_then(|v| v.as_array()) {
+                let mut out: Vec<serde_json::Value> = Vec::new();
+                for id in arr {
+                    if let Some(id) = id.as_str() {
+                        if let Some(detail) = agency_map.get(id) {
+                            out.push(detail.clone());
+                        }
+                    }
+                }
+                if !out.is_empty() {
+                    row["declined_agencies"] = serde_json::Value::Array(out);
+                }
+            }
+            if let Some(arr) = row.get("declined_creator_ids").and_then(|v| v.as_array()) {
+                let mut out: Vec<serde_json::Value> = Vec::new();
+                for id in arr {
+                    if let Some(id) = id.as_str() {
+                        if let Some(detail) = creator_map.get(id) {
+                            out.push(detail.clone());
+                        }
+                    }
+                }
+                if !out.is_empty() {
+                    row["declined_creators"] = serde_json::Value::Array(out);
+                }
             }
         }
+
         if user.role != "brand" {
             let confidential = row
                 .get("confidential")
@@ -1262,7 +1265,7 @@ pub async fn list_job_applications(
         let resp = state
             .pg
             .from("agencies")
-            .select("id,agency_name,display_name,logo_url")
+            .select("id,agency_name,logo_url")
             .or(format!("id.in.({})", agency_filter_ids))
             .execute()
             .await
@@ -1281,11 +1284,6 @@ pub async fn list_job_applications(
                     .get("agency_name")
                     .and_then(|v| v.as_str())
                     .filter(|v| !v.trim().is_empty())
-                    .or_else(|| {
-                        row.get("display_name")
-                            .and_then(|v| v.as_str())
-                            .filter(|v| !v.trim().is_empty())
-                    })
                     .unwrap_or("");
                 let photo = row
                     .get("logo_url")
