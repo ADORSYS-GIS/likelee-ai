@@ -52,6 +52,7 @@ import {
   Copy,
   CheckSquare,
   X,
+  Briefcase,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -858,9 +859,24 @@ export default function BrandDashboard() {
           { params: { limit: 120 } },
         );
         if (!mounted) return;
-        setBrandOfferItems(
-          Array.isArray(response?.offers) ? response.offers : [],
+        const offers = Array.isArray(response?.offers) ? response.offers : [];
+        const withDeliverables = await Promise.all(
+          offers.map(async (offer: any) => {
+            const offerId = String(offer?.id || "").trim();
+            if (!offerId) return offer;
+            try {
+              const delResp = await listOfferDeliverables(offerId);
+              const deliverables = Array.isArray(delResp?.deliverables)
+                ? delResp.deliverables
+                : [];
+              return { ...offer, offer_deliverables: deliverables };
+            } catch {
+              return offer;
+            }
+          }),
         );
+        if (!mounted) return;
+        setBrandOfferItems(withDeliverables);
       } catch {
         if (!mounted) return;
         setBrandOfferItems([]);
@@ -3200,8 +3216,11 @@ export default function BrandDashboard() {
         {brandOfferItems.map((offer: any) => {
           const offerId = String(offer?.id || "");
           const expanded = selectedOfferHubId === offerId;
-          const offerDeliverables =
-            selectedOfferHubId === offerId ? selectedOfferHubDeliverables : [];
+          const offerDeliverables = Array.isArray(offer?.offer_deliverables)
+            ? offer.offer_deliverables
+            : selectedOfferHubId === offerId
+              ? selectedOfferHubDeliverables
+              : [];
           const reviewedCount = offerDeliverables.filter((d: any) => {
             const st = String(d?.status || "").toLowerCase();
             return st !== "" && st !== "submitted" && st !== "draft";
@@ -3238,8 +3257,8 @@ export default function BrandDashboard() {
                 }}
               >
                 <div className="flex items-center gap-4">
-                  <div className="bg-gray-100 p-2.5 rounded-none border border-gray-200">
-                    <Users className="w-5 h-5 text-gray-600" />
+                  <div className="p-3 rounded-xl bg-gray-100 text-gray-600">
+                    <Briefcase className="w-5 h-5" />
                   </div>
                   <div>
                     <h3 className="font-bold text-gray-900">
@@ -3252,13 +3271,13 @@ export default function BrandDashboard() {
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <Badge variant="outline" className="rounded-none capitalize">
+                  <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 shadow-sm">
                     {String(offer?.status || "sent").replace(/_/g, " ")}
                   </Badge>
-                  <Badge className="bg-gray-100 text-gray-700 border border-gray-200">
+                  <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-sky-100 text-sky-700 border border-sky-200 shadow-sm">
                     {reviewedCount} reviewed
                   </Badge>
-                  <Badge className="bg-emerald-100 text-emerald-700 border border-emerald-200">
+                  <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm">
                     {approvedCount} approved
                   </Badge>
                   {expanded ? (
