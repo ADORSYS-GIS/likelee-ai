@@ -876,11 +876,25 @@ export default function BrandDashboard() {
             const offerId = String(offer?.id || "").trim();
             if (!offerId) return offer;
             try {
-              const delResp = await listOfferDeliverables(offerId);
+              const [delResp, contractsResp] = await Promise.all([
+                listOfferDeliverables(offerId),
+                base44
+                  .get<{ contracts?: any[] }>(
+                    `/api/campaign-offers/${offerId}/contracts`,
+                  )
+                  .catch(() => ({ contracts: [] })),
+              ]);
               const deliverables = Array.isArray(delResp?.deliverables)
                 ? delResp.deliverables
                 : [];
-              return { ...offer, offer_deliverables: deliverables };
+              const contracts = Array.isArray(contractsResp?.contracts)
+                ? contractsResp.contracts
+                : [];
+              return {
+                ...offer,
+                offer_deliverables: deliverables,
+                offer_contracts: contracts,
+              };
             } catch {
               return offer;
             }
@@ -3480,8 +3494,22 @@ export default function BrandDashboard() {
 
     const campaignsForOffers = brandOfferItems.map((offer: any) => {
       const statusRaw = String(offer?.status || "sent").toLowerCase();
-      const fullySignedStatuses = new Set(["contract_fully_signed", "signed"]);
-      const isFullySigned = fullySignedStatuses.has(statusRaw);
+      const fullySignedStatuses = new Set([
+        "contract_fully_signed",
+        "signed",
+        "completed",
+      ]);
+      const contractStatuses = Array.isArray(offer?.offer_contracts)
+        ? offer.offer_contracts
+        : [];
+      const hasCompletedContract = contractStatuses.some((contract: any) => {
+        const st = String(
+          contract?.docuseal_status || contract?.status || "",
+        ).toLowerCase();
+        return st === "completed" || st === "signed";
+      });
+      const isFullySigned =
+        fullySignedStatuses.has(statusRaw) || hasCompletedContract;
       const startDateRaw = String(
         offer?.brand_campaigns?.start_date || "",
       ).trim();
