@@ -226,6 +226,13 @@ pub struct ServerConfig {
 
     #[envconfig(from = "FAL_API_URL", default = "https://queue.fal.run")]
     pub fal_api_url: String,
+
+    // Calendly Integration (IRL Booking)
+    #[envconfig(from = "CALENDLY_BOOKING_URL", default = "")]
+    pub calendly_booking_url: String,
+
+    #[envconfig(from = "CALENDLY_WEBHOOK_SIGNING_KEY", default = "")]
+    pub calendly_webhook_signing_key: String,
 }
 
 #[derive(Clone)]
@@ -308,4 +315,8 @@ pub struct AppState {
     // Studio Provider API Keys
     pub fal_api_key: String,
     pub fal_api_url: String,
+
+    // Calendly Integration (IRL Booking)
+    pub calendly_booking_url: String,
+    pub calendly_webhook_signing_key: String,
 }

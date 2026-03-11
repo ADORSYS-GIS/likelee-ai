@@ -48,6 +48,10 @@ export const fetchGoogleJobs = (params: any) =>
 export const fetchJoobleJobs = (params: any) =>
   base44Client.get("/jobs/jooble", { params });
 
+// Calendly Integration
+export const getCalendlyBookingUrl = () =>
+  base44Client.get<{ status: string; data?: { booking_url: string }; error?: string }>("/booking/calendly-url");
+
 export const testJobApis = () => base44Client.get("/jobs/test");
 
 export const expandJobDescription = (data: any) =>

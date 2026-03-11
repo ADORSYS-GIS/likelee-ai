@@ -174,6 +174,10 @@ async fn main() {
         // Studio Provider API Keys
         fal_api_key: cfg.fal_api_key.clone(),
         fal_api_url: cfg.fal_api_url.clone(),
+
+        // Calendly Integration (IRL Booking)
+        calendly_booking_url: cfg.calendly_booking_url.clone(),
+        calendly_webhook_signing_key: cfg.calendly_webhook_signing_key.clone(),
     };
 
     // Start background jobs

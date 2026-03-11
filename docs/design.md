@@ -344,6 +344,17 @@ The licensing flow has been simplified to use a single "License Fee" source of t
 - **Backend Resolution**: All licensing-related views (Licensing Requests, Active Licenses, Talent View) now fetch the fee directly from the linked `license_submissions` table.
 - **UI Representation**: The frontend displays a single `License Fee` instead of a `Budget Range`.
 
+### Calendly Integration (IRL Booking)
+
+- `CALENDLY_BOOKING_URL`
+  - The Calendly scheduling link displayed in the IRL mode booking section.
+  - Example: `https://calendly.com/likelee/demo`
+  - Default: empty (feature disabled if not set).
+- `CALENDLY_WEBHOOK_SIGNING_KEY`
+  - Secret used to verify Calendly webhook signatures.
+  - Obtained from Calendly integrations settings.
+  - Default: empty (webhook verification skipped if not set, not recommended for production).
+
 ## Studio Wallet & Transactions
 
 The Studio Wallet system manages virtual credits used for AI image and video generation. It provides a detailed ledger for all credit movements and integrates with Stripe for purchasing credit packs.

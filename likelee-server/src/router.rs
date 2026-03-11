@@ -644,6 +644,10 @@ pub fn build_router(state: AppState) -> Router {
         )
         // --- Bookings & Availability ---
         .route(
+            "/api/booking/calendly-url",
+            get(crate::calendly::get_calendly_url),
+        )
+        .route(
             "/api/bookings",
             get(crate::bookings::list).post(crate::bookings::create),
         )
@@ -836,6 +840,7 @@ pub fn build_router(state: AppState) -> Router {
         // --- Webhooks ---
         .route("/webhooks/stripe", post(crate::payouts::stripe_webhook))
         .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))
+        .route("/webhooks/calendly", post(crate::calendly::handle_calendly_webhook))
         .route("/webhooks/docuseal", post(crate::scouting::handle_webhook))
         .route(
             "/api/webhooks/licenseContract",
