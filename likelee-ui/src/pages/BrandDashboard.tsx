@@ -3929,10 +3929,6 @@ export default function BrandDashboard() {
                     {briefValue("budget_creator_payment")}
                   </p>
                   <p className="text-slate-900">
-                    <span className="font-semibold">Platform Fee:</span>{" "}
-                    {briefValue("budget_platform_fee")}
-                  </p>
-                  <p className="text-slate-900">
                     <span className="font-semibold">Submission Deadline:</span>{" "}
                     {briefValue("budget_submission_deadline")}
                   </p>
@@ -4156,8 +4152,8 @@ export default function BrandDashboard() {
                       {selectedBriefValue("budget_creator_payment", "N/A")}
                     </p>
                     <p className="text-sm text-gray-600">
-                      Likelee Fee:{" "}
-                      {selectedBriefValue("budget_platform_fee", "N/A")}
+                      Submission Deadline:{" "}
+                      {selectedBriefValue("budget_submission_deadline", "N/A")}
                     </p>
                   </div>
                 </div>

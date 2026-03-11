@@ -6850,10 +6850,6 @@ export default function CreatorDashboard() {
                           {briefValue("budget_creator_payment")}
                         </p>
                         <p className="text-slate-900">
-                          <span className="font-semibold">Platform Fee:</span>{" "}
-                          {briefValue("budget_platform_fee")}
-                        </p>
-                        <p className="text-slate-900">
                           <span className="font-semibold">
                             Submission Deadline:
                           </span>{" "}

@@ -1160,7 +1160,7 @@ const BrandConnectionsView = () => {
                   const deadlineDate = briefVal("budget_submission_deadline");
                   const budgetTotal = briefVal("budget_total");
                   const budgetCreator = briefVal("budget_creator_payment");
-                  const budgetFee = briefVal("budget_platform_fee");
+                  
 
                   return (
                     <div key={offerId} className="rounded-xl border-2 border-blue-200 bg-white shadow-sm overflow-hidden cursor-pointer hover:border-blue-400 hover:shadow-md transition-all" onClick={() => setSelectedOfferId(offerId)}>
@@ -1302,8 +1302,7 @@ const BrandConnectionsView = () => {
                             <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Budget</p>
                             {budgetTotal && <p className="text-sm font-bold text-gray-900">Total: {budgetTotal}</p>}
                             {budgetCreator && <p className="text-sm text-gray-700">Creator: {budgetCreator}</p>}
-                            {budgetFee && <p className="text-sm text-gray-500">Likelee Fee: {budgetFee}</p>}
-                            {!budgetTotal && !budgetCreator && !budgetFee && (
+                            {!budgetTotal && !budgetCreator && (
                               <p className="text-sm text-gray-400">Not specified</p>
                             )}
                           </div>

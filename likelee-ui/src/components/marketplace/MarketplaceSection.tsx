@@ -733,7 +733,11 @@ export function MarketplaceSection({
                       ))}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-1.5 mt-2">
+                    <div
+                      className={`grid gap-1.5 mt-2 ${
+                        entityType === "agency" ? "grid-cols-2" : "grid-cols-1"
+                      }`}
+                    >
                       <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1">
                         <p className="text-slate-500 text-[11px] font-medium">
                           {entityType === "agency"
@@ -748,18 +752,16 @@ export function MarketplaceSection({
                               : "N/A"}
                         </p>
                       </div>
-                      <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1">
-                        <p className="text-slate-500 text-[11px] font-medium">
-                          {entityType === "agency" ? "Services" : "Engagement"}
-                        </p>
-                        <p className="text-slate-900 text-sm font-bold mt-0.5 leading-none">
-                          {entityType === "agency"
-                            ? (profile.skills || []).length || "N/A"
-                            : engagement > 0
-                              ? `${engagement.toFixed(1)}%`
-                              : "N/A"}
-                        </p>
-                      </div>
+                      {entityType === "agency" && (
+                        <div className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1">
+                          <p className="text-slate-500 text-[11px] font-medium">
+                            Services
+                          </p>
+                          <p className="text-slate-900 text-sm font-bold mt-0.5 leading-none">
+                            {(profile.skills || []).length || "N/A"}
+                          </p>
+                        </div>
+                      )}
                     </div>
 
                     {connectionStatus !== "connected" && (
@@ -1063,7 +1065,13 @@ export function MarketplaceSection({
                           selectedProfile?.bio ||
                           "No profile summary available yet."}
                       </p>
-                      <div className="grid grid-cols-2 gap-3 mt-4 text-xs">
+                      <div
+                        className={`grid gap-3 mt-4 text-xs ${
+                          selectedProfile?.profile_type === "agency"
+                            ? "grid-cols-2"
+                            : "grid-cols-1"
+                        }`}
+                      >
                         <div className="rounded-lg border border-slate-100 bg-white/80 px-3 py-2">
                           <p className="text-slate-500 font-medium">
                             {selectedProfile?.profile_type === "agency"
@@ -1080,21 +1088,14 @@ export function MarketplaceSection({
                                 : "N/A"}
                           </p>
                         </div>
-                        <div className="rounded-lg border border-slate-100 bg-white/80 px-3 py-2">
-                          <p className="text-slate-500 font-medium">
-                            {selectedProfile?.profile_type === "agency"
-                              ? "Services"
-                              : "Engagement"}
-                          </p>
-                          <p className="text-slate-900 font-bold mt-0.5">
-                            {selectedProfile?.profile_type === "agency"
-                              ? (selectedProfile?.skills || []).length || "N/A"
-                              : Number(selectedProfile?.engagement_rate || 0) >
-                                  0
-                                ? `${Number(selectedProfile?.engagement_rate || 0).toFixed(1)}%`
-                                : "N/A"}
-                          </p>
-                        </div>
+                        {selectedProfile?.profile_type === "agency" && (
+                          <div className="rounded-lg border border-slate-100 bg-white/80 px-3 py-2">
+                            <p className="text-slate-500 font-medium">Services</p>
+                            <p className="text-slate-900 font-bold mt-0.5">
+                              {(selectedProfile?.skills || []).length || "N/A"}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="md:col-span-5 relative min-h-[260px]">

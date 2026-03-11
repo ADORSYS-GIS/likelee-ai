@@ -221,7 +221,6 @@ export default function BrandCampaignDashboard({
     overview_launch_date: "",
     budget_total: "",
     budget_creator_payment: "",
-    budget_platform_fee: "",
     budget_submission_deadline: "",
     budget_renewal_terms: "",
     revision_included: "",
@@ -891,9 +890,6 @@ export default function BrandCampaignDashboard({
         message: "Creator payment must be a valid amount.",
       };
     }
-    if (!parsePositiveNumber(campaignBrief.budget_platform_fee)) {
-      return { ok: false, message: "Platform fee must be a valid amount." };
-    }
     return { ok: true };
   };
 
@@ -1138,7 +1134,6 @@ export default function BrandCampaignDashboard({
       overview_launch_date: "",
       budget_total: "",
       budget_creator_payment: "",
-      budget_platform_fee: "",
       budget_submission_deadline: "",
       budget_renewal_terms: "",
       revision_included: "",

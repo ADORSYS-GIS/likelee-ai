@@ -214,7 +214,6 @@ export async function generateBriefPDF(brief: any, brandName: string, campaignNa
     await renderSection("Budget & Terms", [
         { label: "Total Budget", key: "budget_total" },
         { label: "Creator Payment", key: "budget_creator_payment" },
-        { label: "Platform Fee", key: "budget_platform_fee" },
         { label: "Submission Deadline", key: "budget_submission_deadline" },
         { label: "Renewal Terms", key: "budget_renewal_terms" }
     ]);

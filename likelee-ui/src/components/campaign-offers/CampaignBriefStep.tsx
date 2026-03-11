@@ -521,24 +521,6 @@ export default function CampaignBriefStep({
             />
           </div>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">Platform Fee</p>
-            <Input
-              type="number"
-              min={1}
-              step={1}
-              inputMode="numeric"
-              value={campaignBrief.budget_platform_fee}
-              onChange={(e) =>
-                setCampaignBrief((prev) => ({
-                  ...prev,
-                  budget_platform_fee: e.target.value,
-                }))
-              }
-              placeholder="500"
-              className="border-2 border-gray-300 rounded-none"
-            />
-          </div>
-          <div className="space-y-2">
             <p className="text-sm font-medium text-gray-700">
               Submission Deadline
             </p>
