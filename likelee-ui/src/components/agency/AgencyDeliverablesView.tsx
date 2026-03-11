@@ -920,20 +920,14 @@ export function AgencyDeliverablesView() {
                     </Button>
                     <Button
                       size="sm"
+                      className="bg-white/10 text-slate-700 border border-slate-200/70 backdrop-blur hover:bg-white/20 hover:text-slate-900"
                       onClick={(e) => {
                         e.stopPropagation();
                         setAssignDialog({ open: true, offerId, talentId: "" });
                       }}
-                      disabled={
-                        !new Set([
-                          "contract_fully_signed",
-                          "signed",
-                          "fully_signed",
-                          "completed",
-                        ]).has(String(offer?.status || "").toLowerCase())
-                      }
                     >
-                      <Plus className="w-4 h-4 mr-2" /> Assign Talent
+                      <Plus className="w-4 h-4 mr-2" />
+                      {assignments.length === 0 ? "Assign Talent" : "Add Talent"}
                     </Button>
                   </div>
                 </div>
