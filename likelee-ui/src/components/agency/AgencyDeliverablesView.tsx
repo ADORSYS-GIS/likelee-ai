@@ -278,15 +278,47 @@ export function AgencyDeliverablesView() {
     return status.replace(/_/g, " ");
   };
 
+  const offerStatusLabel = (statusRaw: unknown) => {
+    const status = String(statusRaw || "").toLowerCase().trim();
+    if (!status) return "";
+    if (status === "contract_fully_signed") return "Contract Signed";
+    if (status === "contract_sent") return "Contract Sent";
+    if (status === "sent") return "Sent";
+    if (status === "accepted") return "Accepted";
+    if (status === "open") return "Open";
+    return status.replace(/_/g, " ");
+  };
+
+  const offerStatusClass = (statusRaw: unknown) => {
+    const status = String(statusRaw || "").toLowerCase().trim();
+    if (!status) return "bg-gray-100 text-gray-700 border border-gray-200";
+    if (status === "contract_fully_signed") {
+      return "bg-emerald-100 text-emerald-800 border border-emerald-200";
+    }
+    if (status === "contract_sent") {
+      return "bg-amber-100 text-amber-800 border border-amber-200";
+    }
+    if (status === "accepted") {
+      return "bg-teal-100 text-teal-800 border border-teal-200";
+    }
+    if (status === "sent") {
+      return "bg-sky-100 text-sky-800 border border-sky-200";
+    }
+    if (status === "open") {
+      return "bg-indigo-100 text-indigo-800 border border-indigo-200";
+    }
+    return "bg-gray-100 text-gray-700 border border-gray-200";
+  };
+
   const deliverableStatusClass = (statusRaw: unknown) => {
     const status = String(statusRaw || "submitted").toLowerCase();
-    if (status === "draft") return "bg-gray-600 text-white";
-    if (status === "brand_review") return "bg-amber-600 text-white";
-    if (status === "brand_approved") return "bg-emerald-600 text-white";
-    if (status === "approved") return "bg-emerald-600 text-white";
-    if (status === "changes_requested") return "bg-rose-600 text-white";
-    if (status === "rejected") return "bg-gray-700 text-white";
-    return "bg-blue-600 text-white";
+    if (status === "draft") return "bg-slate-600 text-white";
+    if (status === "brand_review") return "bg-amber-500 text-white";
+    if (status === "brand_approved") return "bg-emerald-500 text-white";
+    if (status === "approved") return "bg-emerald-500 text-white";
+    if (status === "changes_requested") return "bg-rose-500 text-white";
+    if (status === "rejected") return "bg-slate-700 text-white";
+    return "bg-gradient-to-r from-blue-600 to-cyan-600 text-white";
   };
 
   const resolveDeliverableUrl = (deliverable: any, offerIdOverride?: string) => {
@@ -502,7 +534,7 @@ export function AgencyDeliverablesView() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 rounded-full font-semibold border-amber-300 text-amber-700 hover:bg-amber-50"
+                className="h-9 rounded-full font-semibold border-blue-400/70 text-blue-700 hover:bg-blue-50"
                 onClick={(event) => {
                   event.stopPropagation();
                   setReviewDialog({
@@ -835,7 +867,7 @@ export function AgencyDeliverablesView() {
           <Button
             variant="outline"
             size="sm"
-            className="border-white/20 text-white bg-white/10 hover:bg-white/20"
+            className="border-purple-300/50 text-white bg-white/10 hover:bg-white/20"
             onClick={() => {
               setExpandedOfferId("");
               setSelectedTalentId("");
@@ -901,8 +933,10 @@ export function AgencyDeliverablesView() {
                           {offer?.brands?.company_name || "Brand"}
                         </span>
                         <span className="w-1 h-1 rounded-full bg-gray-300" />
-                        <Badge variant="outline" className="text-[10px] py-0">
-                          {String(offer?.status || "")}
+                        <Badge
+                          className={`text-[10px] py-0 ${offerStatusClass(offer?.status)}`}
+                        >
+                          {offerStatusLabel(offer?.status) || String(offer?.status || "")}
                         </Badge>
                       </div>
                     </div>
@@ -911,6 +945,7 @@ export function AgencyDeliverablesView() {
                     <Button
                       size="sm"
                       variant="outline"
+                      className="border-blue-400/70 text-blue-700 hover:bg-blue-50"
                       onClick={(e) => {
                         e.stopPropagation();
                         openOffer(offerId);
@@ -920,7 +955,7 @@ export function AgencyDeliverablesView() {
                     </Button>
                     <Button
                       size="sm"
-                      className="bg-white/10 text-slate-700 border border-slate-200/70 backdrop-blur hover:bg-white/20 hover:text-slate-900"
+                      className="border-0 bg-gradient-to-r from-gray-900 to-slate-800 text-white hover:from-gray-800 hover:to-slate-700"
                       onClick={(e) => {
                         e.stopPropagation();
                         setAssignDialog({ open: true, offerId, talentId: "" });
@@ -976,6 +1011,7 @@ export function AgencyDeliverablesView() {
                                     <Button
                                       size="sm"
                                       variant="outline"
+                                      className="border-blue-400/70 text-blue-700 hover:bg-blue-50"
                                       onClick={() => {
                                         setSelectedTalentId(
                                           selectedTalentId === tid ? "" : tid,
@@ -991,6 +1027,7 @@ export function AgencyDeliverablesView() {
                                     <Button
                                       size="sm"
                                       variant="outline"
+                                      className="border-blue-400/70 text-blue-700 hover:bg-blue-50"
                                       onClick={() =>
                                         setRequestDialog({
                                           open: true,
@@ -1029,6 +1066,7 @@ export function AgencyDeliverablesView() {
                                 <Button
                                   size="sm"
                                   variant="outline"
+                                  className="border-blue-400/70 text-blue-700 hover:bg-blue-50"
                                   disabled={
                                     !hasDraftAgencyDeliverables ||
                                     submittingDrafts[offerId]
@@ -1191,7 +1229,7 @@ export function AgencyDeliverablesView() {
                       </h6>
                       <div className="mt-1 flex items-center gap-2 flex-wrap">
                         {alreadyAssigned && (
-                          <Badge className="bg-gray-100 text-gray-600 border-gray-200 text-[10px] uppercase tracking-widest font-black px-2 py-0.5">
+                          <Badge className="bg-slate-100 text-slate-700 border-slate-200 text-[10px] uppercase tracking-widest font-black px-2 py-0.5">
                             Assigned
                           </Badge>
                         )}
@@ -1222,7 +1260,7 @@ export function AgencyDeliverablesView() {
           <Button
             onClick={handleAssignTalents}
             disabled={assignSelectedIds.length === 0 || assignSubmitting}
-            className="w-full mt-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg h-12 font-bold tracking-wider text-sm shadow-md shadow-indigo-200"
+            className="w-full mt-8 border-0 bg-gradient-to-r from-gray-900 to-slate-800 hover:from-gray-800 hover:to-slate-700 text-white rounded-lg h-12 font-bold tracking-wider text-sm shadow-md"
           >
             {assignSubmitting ? (
               <Loader2 className="w-5 h-5 animate-spin mr-3" />
@@ -1349,22 +1387,11 @@ export function AgencyDeliverablesView() {
                         {requestDialog.file?.name || "No file selected"}
                       </span>
                     </div>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-3 pt-2">
+
                     <Button
-                      variant="outline"
-                      className="flex-1 h-12 rounded-lg border-gray-200 hover:bg-gray-50 font-bold"
-                      onClick={() =>
-                        setRequestDialog((prev) => ({ ...prev, open: false }))
-                      }
-                      disabled={requestDialog.sending}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      className="flex-1 h-12 rounded-lg bg-black hover:bg-gray-800 text-white font-bold shadow-lg shadow-black/10 transition-all active:scale-[0.98]"
                       onClick={handleRequestAsset}
                       disabled={requestDialog.sending}
+                      className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold"
                     >
                       {requestDialog.sending ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -1508,7 +1535,7 @@ export function AgencyDeliverablesView() {
             <div className="flex flex-col sm:flex-row gap-3 pt-4">
               <Button
                 variant="outline"
-                className="flex-1 h-12 rounded-none border-gray-200 hover:bg-gray-50 font-bold"
+                className="flex-1 h-12 rounded-none border-blue-300/70 text-blue-700 hover:bg-blue-50 font-bold"
                 onClick={() =>
                   setReviewDialog((prev) => ({ ...prev, open: false }))
                 }
@@ -1563,7 +1590,7 @@ export function AgencyDeliverablesView() {
             <div className="flex flex-col sm:flex-row gap-3">
               <Button
                 variant="outline"
-                className="flex-1 h-11 rounded-none border-gray-200"
+                className="flex-1 h-11 rounded-none border-blue-300/70 text-blue-700 hover:bg-blue-50"
                 onClick={() =>
                   setConfirmSendDialog((prev) => ({ ...prev, open: false }))
                 }
@@ -1605,7 +1632,7 @@ export function AgencyDeliverablesView() {
             <div className="flex flex-col sm:flex-row gap-3">
               <Button
                 variant="outline"
-                className="flex-1 h-11 rounded-none border-gray-200"
+                className="flex-1 h-11 rounded-none border-blue-300/70 text-blue-700 hover:bg-blue-50"
                 onClick={() => setDeleteDialog((prev) => ({ ...prev, open: false }))}
               >
                 Cancel
