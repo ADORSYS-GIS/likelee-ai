@@ -53,6 +53,7 @@ import {
   CheckSquare,
   X,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   Mail,
   Loader2,
@@ -674,6 +675,7 @@ export default function BrandDashboard() {
   >([]);
   const [contractHubRows, setContractHubRows] = useState<any[]>([]);
   const [loadingContractHubRows, setLoadingContractHubRows] = useState(false);
+  const [loadingOfferHubDetails, setLoadingOfferHubDetails] = useState(false);
   const [selectedOfferHubDeliverables, setSelectedOfferHubDeliverables] =
     useState<any[]>([]);
   const [usageRightsTab, setUsageRightsTab] = useState("licenses");
@@ -691,6 +693,8 @@ export default function BrandDashboard() {
     note: "",
   });
   const [previewImage, setPreviewImage] = useState<any>(null);
+  const [previewItems, setPreviewItems] = useState<any[]>([]);
+  const [previewIndex, setPreviewIndex] = useState(0);
   const [reviewing, setReviewing] = useState<string | null>(null);
 
   useEffect(() => {
@@ -2658,6 +2662,7 @@ export default function BrandDashboard() {
       setSelectedOfferHubDeliverables([]);
       return;
     }
+    setLoadingOfferHubDetails(true);
     try {
       const [contractsResp, deliverablesResp] = await Promise.all([
         base44.get<{ contracts?: any[] }>(
@@ -2697,6 +2702,8 @@ export default function BrandDashboard() {
     } catch {
       setSelectedOfferHubContracts([]);
       setSelectedOfferHubDeliverables([]);
+    } finally {
+      setLoadingOfferHubDetails(false);
     }
   };
   const loadCampaignContractsForOffer = async (offerId: string) => {
@@ -3199,9 +3206,24 @@ export default function BrandDashboard() {
             const st = String(d?.status || "").toLowerCase();
             return st !== "" && st !== "submitted" && st !== "draft";
           }).length;
-          const approvedCount = offerDeliverables.filter(
-            (d: any) => String(d?.status || "").toLowerCase() === "approved",
-          ).length;
+          const approvedCount = offerDeliverables.filter((d: any) => {
+            const st = String(d?.status || "").toLowerCase();
+            return st === "approved" || st === "brand_approved";
+          }).length;
+          const expectedDeliverables = (() => {
+            const brief =
+              offer?.brief_snapshot ||
+              offer?.brand_campaigns?.brief_snapshot ||
+              offer?.brand_campaigns?.brief ||
+              {};
+            const raw = Number(brief?.total_expected_deliverables);
+            if (!Number.isNaN(raw) && raw > 0) return raw;
+            return 0;
+          })();
+          const completionPct =
+            expectedDeliverables > 0
+              ? Math.round((approvedCount / expectedDeliverables) * 100)
+              : 0;
           return (
             <div
               key={offerId}
@@ -3249,7 +3271,50 @@ export default function BrandDashboard() {
 
               {expanded && (
                 <div className="border-t border-gray-200 bg-gray-50/50 p-6">
-                  {selectedOfferHubDeliverables.length === 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
+                    <div className="bg-white border border-gray-200 p-4">
+                      <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
+                        Campaign
+                      </p>
+                      <p className="text-sm font-bold text-gray-900 mt-1">
+                        {offer?.brand_campaigns?.name || "Campaign"}
+                      </p>
+                    </div>
+                    <div className="bg-white border border-gray-200 p-4">
+                      <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
+                        Progress
+                      </p>
+                      <p className="text-sm font-bold text-gray-900 mt-1">
+                        {approvedCount}/{expectedDeliverables || 0}
+                      </p>
+                    </div>
+                    <div className="bg-white border border-gray-200 p-4">
+                      <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
+                        Completion
+                      </p>
+                      <p className="text-sm font-bold text-gray-900 mt-1">
+                        {completionPct}%
+                      </p>
+                    </div>
+                  </div>
+                  <div className="bg-white border border-gray-200 p-4 mb-5">
+                    <p className="text-xs font-semibold text-gray-700 mb-2">
+                      Progress
+                    </p>
+                    <Progress value={completionPct} className="h-2" />
+                    <p className="text-[11px] text-gray-500 mt-2">
+                      {approvedCount}/{expectedDeliverables || 0} deliverables
+                      approved
+                    </p>
+                  </div>
+                  {loadingOfferHubDetails && selectedOfferHubId === offerId ? (
+                    <div className="py-12 text-center">
+                      <Loader2 className="w-8 h-8 text-gray-300 mx-auto mb-3 animate-spin" />
+                      <p className="text-sm text-gray-500 font-medium">
+                        Loading deliverables...
+                      </p>
+                    </div>
+                  ) : selectedOfferHubDeliverables.length === 0 ? (
                     <div className="py-12 text-center">
                       <ImageIcon className="w-12 h-12 text-gray-200 mx-auto mb-3" />
                       <p className="text-sm text-gray-400 font-medium italic">
@@ -3257,13 +3322,18 @@ export default function BrandDashboard() {
                       </p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {selectedOfferHubDeliverables.map((del: any) => (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      {selectedOfferHubDeliverables.map((del: any, idx: number) => (
                         <Card
                           key={String(del.id)}
-                          className="overflow-hidden border-gray-300 rounded-none bg-white shadow-sm"
+                          className="group overflow-hidden rounded-2xl border border-white/70 bg-white/70 backdrop-blur-lg shadow-lg hover:shadow-2xl transition-all cursor-zoom-in"
+                          onClick={() => {
+                            setPreviewItems(selectedOfferHubDeliverables);
+                            setPreviewIndex(idx);
+                            setPreviewImage(del);
+                          }}
                         >
-                          <div className="aspect-[4/3] bg-gray-100 relative group">
+                          <div className="aspect-[4/5] bg-gray-100 relative overflow-hidden">
                             {del.asset_type === "image" ? (
                               <img
                                 src={getPublicUrl(del)}
@@ -3275,29 +3345,18 @@ export default function BrandDashboard() {
                                 <Video className="w-12 h-12 text-white/20" />
                               </div>
                             )}
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                            <div className="absolute top-3 right-3">
                               <Button
                                 variant="secondary"
-                                size="sm"
-                                className="rounded-none h-8 font-bold"
-                                onClick={() => setPreviewImage(del)}
+                                size="icon"
+                                className="h-8 w-8 rounded-full bg-white/90 text-gray-900 hover:bg-white shadow-sm"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  window.open(getPublicUrl(del), "_blank");
+                                }}
+                                title="Download"
                               >
-                                <Eye className="w-3 h-3 mr-1.5" /> View
-                              </Button>
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                className="rounded-none h-8 font-bold"
-                                asChild
-                              >
-                                <a
-                                  href={getPublicUrl(del)}
-                                  download
-                                  target="_blank"
-                                  rel="noreferrer"
-                                >
-                                  <Download className="w-3 h-3" />
-                                </a>
+                                <Download className="w-4 h-4" />
                               </Button>
                             </div>
                             <div className="absolute top-2 left-2">
@@ -3306,7 +3365,7 @@ export default function BrandDashboard() {
                                 del.status === 'changes_requested' ? 'bg-rose-600 text-white' : 
                                 'bg-blue-600 text-white'
                               }`}>
-                                {del.status === 'submitted' ? 'New' : del.status.replace(/_/g, " ")}
+                                {del.status === 'submitted' ? 'New' : (del.status === 'brand_approved' ? 'approved' : del.status.replace(/_/g, " "))}
                               </Badge>
                             </div>
                           </div>
@@ -7940,10 +7999,17 @@ export default function BrandDashboard() {
       </AlertDialog>
 
       {/* Image Preview Dialog */}
-      <Dialog open={!!previewImage} onOpenChange={() => setPreviewImage(null)}>
+      <Dialog
+        open={!!previewImage}
+        onOpenChange={() => {
+          setPreviewImage(null);
+          setPreviewItems([]);
+          setPreviewIndex(0);
+        }}
+      >
         <DialogContent className="max-w-[95vw] sm:max-w-[700px] p-0 overflow-hidden border-none bg-black/90 shadow-2xl rounded-none">
           <div className="relative w-full h-full flex flex-col items-center justify-center p-0">
-            <div className="w-full aspect-[4/3] relative flex items-center justify-center bg-gray-900">
+            <div className="w-full aspect-[4/5] relative flex items-center justify-center bg-gray-900">
               {previewImage?.asset_type === "video" ? (
                 <video
                   src={getPublicUrl(previewImage)}
@@ -7957,7 +8023,35 @@ export default function BrandDashboard() {
                   alt="Preview"
                 />
               )}
-              <div className="absolute top-4 right-4 flex gap-2">
+              {previewItems.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/10 text-white hover:bg-white/20 backdrop-blur-md flex items-center justify-center"
+                    onClick={() => {
+                      const nextIndex =
+                        previewIndex > 0 ? previewIndex - 1 : previewItems.length - 1;
+                      setPreviewIndex(nextIndex);
+                      setPreviewImage(previewItems[nextIndex]);
+                    }}
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <button
+                    type="button"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/10 text-white hover:bg-white/20 backdrop-blur-md flex items-center justify-center"
+                    onClick={() => {
+                      const nextIndex =
+                        previewIndex < previewItems.length - 1 ? previewIndex + 1 : 0;
+                      setPreviewIndex(nextIndex);
+                      setPreviewImage(previewItems[nextIndex]);
+                    }}
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </>
+              )}
+              <div className="absolute top-4 right-4 flex gap-3">
                 <Button
                   variant="secondary"
                   size="sm"
