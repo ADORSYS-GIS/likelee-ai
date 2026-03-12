@@ -671,6 +671,8 @@ export default function BrandDashboard() {
   const [selectedOfferHubId, setSelectedOfferHubId] = useState<string>("");
   const [expandedCampaignHubId, setExpandedCampaignHubId] =
     useState<string>("");
+  const [expandedMyOffersCampaignId, setExpandedMyOffersCampaignId] =
+    useState<string>("");
   const [selectedOfferHubContracts, setSelectedOfferHubContracts] = useState<
     any[]
   >([]);
@@ -3844,11 +3846,50 @@ export default function BrandDashboard() {
       };
     });
 
-    const filteredCampaigns = campaignsForOffers.filter((c) => {
+    const groupedCampaigns = Object.values(
+      campaignsForOffers.reduce<Record<string, any>>((acc, row: any) => {
+        const campaignId = String(row?.brand_campaign_id || "").trim();
+        const key = campaignId || String(row?.id || "");
+        if (!acc[key]) {
+          acc[key] = {
+            campaignId: key,
+            name: row?.name || "Campaign Offer",
+            offers: [],
+          };
+        }
+        acc[key].offers.push(row);
+        return acc;
+      }, {}),
+    ).map((group: any) => {
+      const offers = Array.isArray(group?.offers) ? group.offers : [];
+      const statuses = new Set(offers.map((o: any) => String(o?.status || "")));
+
+      const groupStatus: "pending_approval" | "in_progress" | "completed" | "draft" =
+        statuses.has("in_progress")
+          ? "in_progress"
+          : statuses.has("pending_approval")
+            ? "pending_approval"
+            : statuses.has("completed")
+              ? "completed"
+              : "draft";
+
+      const representative = offers[0] || {};
+      return {
+        ...group,
+        status: groupStatus,
+        objective: representative?.objective || "Campaign offer",
+        budget: Number(representative?.budget || 0),
+        due_date: representative?.due_date,
+        assets_delivered: Number(representative?.assets_delivered || 0),
+        last_update: representative?.last_update,
+      };
+    });
+
+    const filteredCampaigns = groupedCampaigns.filter((c: any) => {
       if (campaignView === "active") return c.status === "in_progress";
       if (campaignView === "pending") return c.status === "pending_approval";
       if (campaignView === "completed") return c.status === "completed";
-      return true;
+      return c.status === "draft";
     });
 
     if (selectedCampaign) {
@@ -4496,7 +4537,7 @@ export default function BrandDashboard() {
           >
             Active (
             {
-              campaignsForOffers.filter((c) => c.status === "in_progress")
+              groupedCampaigns.filter((c: any) => c.status === "in_progress")
                 .length
             }
             )
@@ -4511,8 +4552,9 @@ export default function BrandDashboard() {
           >
             Pending Approval (
             {
-              campaignsForOffers.filter((c) => c.status === "pending_approval")
-                .length
+              groupedCampaigns.filter(
+                (c: any) => c.status === "pending_approval",
+              ).length
             }
             )
           </button>
@@ -4525,7 +4567,7 @@ export default function BrandDashboard() {
             }`}
           >
             Completed (
-            {campaignsForOffers.filter((c) => c.status === "completed").length})
+            {groupedCampaigns.filter((c: any) => c.status === "completed").length})
           </button>
           <button
             onClick={() => setCampaignView("drafts")}
@@ -4536,97 +4578,164 @@ export default function BrandDashboard() {
             }`}
           >
             Drafts (
-            {campaignsForOffers.filter((c) => c.status === "draft").length})
+            {groupedCampaigns.filter((c: any) => c.status === "draft").length})
           </button>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
           {loadingBrandOfferItems && (
             <Card className="p-6 bg-white border border-gray-200">
               <p className="text-sm text-gray-600">Loading campaigns...</p>
             </Card>
           )}
-          {filteredCampaigns.map((campaign) => (
-            <Card
-              key={campaign.id}
-              className="p-6 bg-white border border-gray-200 hover:shadow-lg transition-all cursor-pointer"
-              onClick={() => setSelectedCampaign(campaign.id)}
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="font-bold text-gray-900 text-lg mb-1">
-                    {campaign.name}
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {campaign.creators.join(", ")}
-                  </p>
-                </div>
-                <Badge
-                  className={
-                    campaign.status === "in_progress"
-                      ? "bg-blue-100 text-blue-700 border border-blue-300"
-                      : campaign.status === "pending_approval"
-                        ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
-                        : campaign.status === "completed"
-                          ? "bg-green-100 text-green-700 border border-green-300"
-                          : "bg-gray-100 text-gray-700 border border-gray-300"
-                  }
-                >
-                  {campaign.status.replace("_", " ")}
-                </Badge>
-              </div>
+          {filteredCampaigns.map((campaign: any) => {
+            const groupId = String(campaign?.campaignId || campaign?.id || "");
+            const expanded = expandedMyOffersCampaignId === groupId;
+            const offers = Array.isArray(campaign?.offers) ? campaign.offers : [];
 
-              <div className="space-y-3 text-sm mb-4">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Budget:</span>
-                  <span className="font-bold text-gray-900">
-                    ${campaign.budget.toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Due Date:</span>
-                  <span className="font-medium text-gray-900">
-                    {new Date(campaign.due_date).toLocaleDateString()}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Assets:</span>
-                  <span className="font-medium text-gray-900">
-                    {campaign.assets_delivered} delivered
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Last Update:</span>
-                  <span className="font-medium text-gray-900">
-                    {campaign.last_update}
-                  </span>
-                </div>
-              </div>
+            const statusBadgeClass =
+              campaign.status === "in_progress"
+                ? "bg-blue-100 text-blue-700 border border-blue-300"
+                : campaign.status === "pending_approval"
+                  ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
+                  : campaign.status === "completed"
+                    ? "bg-green-100 text-green-700 border border-green-300"
+                    : "bg-gray-100 text-gray-700 border border-gray-300";
 
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant="outline"
-                  className="w-full border-2 border-gray-300"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setSelectedCampaign(campaign.id);
-                  }}
+            return (
+              <div
+                key={groupId}
+                className="rounded-2xl border border-gray-200 bg-white overflow-hidden"
+              >
+                <div
+                  className="p-6 flex items-start justify-between"
                 >
-                  View Details
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full border-2 border-gray-300"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    openAddCollaboratorFlow(campaign);
-                  }}
-                >
-                  Add Collaborator
-                </Button>
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-lg mb-1">
+                      {campaign.name}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      {offers.length} collaborators
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge className={statusBadgeClass}>
+                      {String(campaign.status).replace(/_/g, " ")}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="px-6 pb-6">
+                  <div className="space-y-3 text-sm mb-4">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Budget:</span>
+                      <span className="font-bold text-gray-900">
+                        ${Number(campaign.budget || 0).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Due Date:</span>
+                      <span className="font-medium text-gray-900">
+                        {campaign.due_date
+                          ? new Date(String(campaign.due_date)).toLocaleDateString()
+                          : "—"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Assets:</span>
+                      <span className="font-medium text-gray-900">
+                        {Number(campaign.assets_delivered || 0)} delivered
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Last Update:</span>
+                      <span className="font-medium text-gray-900">
+                        {campaign.last_update || "—"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="outline"
+                      className="w-full border-2 border-gray-300"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setExpandedMyOffersCampaignId(expanded ? "" : groupId);
+                      }}
+                    >
+                      Offers
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full border-2 border-gray-300"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        const first = offers[0];
+                        if (first) openAddCollaboratorFlow(first);
+                      }}
+                    >
+                      Add Collaborator
+                    </Button>
+                  </div>
+                </div>
+
+                {expanded && (
+                  <div className="border-t border-gray-200 bg-gray-50/50 px-6 py-4 space-y-3">
+                    {offers.map((offer: any) => {
+                      const collaboratorName = Array.isArray(offer?.creators)
+                        ? String(offer.creators[0] || "Collaborator")
+                        : "Collaborator";
+                      const avatarSrc = Array.isArray(offer?.creatorAvatars)
+                        ? String(offer.creatorAvatars[0] || "")
+                        : "";
+                      const initial = collaboratorName
+                        .trim()
+                        .slice(0, 1)
+                        .toUpperCase();
+
+                      return (
+                        <div
+                          key={String(offer?.id || "")}
+                          className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Avatar className="w-9 h-9">
+                              <AvatarImage src={avatarSrc} />
+                              <AvatarFallback className="bg-indigo-50 text-indigo-600 font-bold text-xs uppercase">
+                                {initial || "C"}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="text-sm font-bold text-gray-900">
+                                {collaboratorName}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {String(offer?.status || "").replace(/_/g, " ")}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="border border-gray-300"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                if (offer?.id) setSelectedCampaign(offer.id);
+                              }}
+                            >
+                              View
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            </Card>
-          ))}
+            );
+          })}
         </div>
 
         {!loadingBrandOfferItems && filteredCampaigns.length === 0 && (
