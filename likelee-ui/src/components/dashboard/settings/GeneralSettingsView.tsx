@@ -42,6 +42,14 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Activity,
+  ShieldCheck,
+  ExternalLink,
+  Key,
+  Check,
+  Info,
+} from "lucide-react";
 import { ensureHexColor } from "@/utils/color";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -415,6 +423,99 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Calendly State
+  const [calendlySettings, setCalendlySettings] = useState({
+    calendly_api_token: "",
+    is_enabled: false,
+    mappings: {} as Record<string, string>,
+  });
+  const [calendlyEventTypes, setCalendlyEventTypes] = useState<any[]>([]);
+  const [isFetchingCalendlyEventTypes, setIsFetchingCalendlyEventTypes] =
+    useState(false);
+  const [isSavingCalendlySettings, setIsSavingCalendlySettings] =
+    useState(false);
+  const [isFetchingCalendlySettings, setIsFetchingCalendlySettings] =
+    useState(false);
+
+  const fetchCalendlySettings = async () => {
+    try {
+      setIsFetchingCalendlySettings(true);
+      const { data, error } = await supabase
+        .from("agency_calendly_settings")
+        .select("*")
+        .eq("agency_id", profile?.id)
+        .maybeSingle();
+      if (error) throw error;
+      if (data) {
+        setCalendlySettings({
+          calendly_api_token: data.calendly_api_token || "",
+          is_enabled: data.is_enabled ?? false,
+          mappings: data.mappings || {},
+        });
+      }
+    } catch (err: any) {
+      console.error("Error fetching Calendly settings:", err);
+    } finally {
+      setIsFetchingCalendlySettings(false);
+    }
+  };
+
+  const fetchCalendlyEventTypes = async () => {
+    try {
+      setIsFetchingCalendlyEventTypes(true);
+      const resp = await fetch("/api/calendly/event-types", {
+        headers: {
+          Authorization: `Bearer ${(supabase.auth as any).session?.()?.access_token || ""}`,
+        },
+      });
+      const data = await resp.json();
+      if (data.status === "success" && Array.isArray(data.data)) {
+        setCalendlyEventTypes(data.data);
+      } else {
+        // If not configured, it might return an error
+        setCalendlyEventTypes([]);
+      }
+    } catch (err: any) {
+      console.error("Error fetching Calendly event types:", err);
+      setCalendlyEventTypes([]);
+    } finally {
+      setIsFetchingCalendlyEventTypes(false);
+    }
+  };
+
+  const handleSaveCalendlySettings = async () => {
+    try {
+      setIsSavingCalendlySettings(true);
+      const resp = await fetch("/api/calendly/settings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${(supabase.auth as any).session?.()?.access_token || ""}`,
+        },
+        body: JSON.stringify(calendlySettings),
+      });
+      const data = await resp.json();
+      if (data.status === "success") {
+        toast({
+          title: "Settings Saved",
+          description: "Calendly integration settings have been updated.",
+        });
+        // Refetch event types in case token changed
+        fetchCalendlyEventTypes();
+      } else {
+        throw new Error(data.message || "Failed to save Calendly settings");
+      }
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description: err.message || "Failed to save Calendly settings",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingCalendlySettings(false);
+    }
+  };
+
   const [bankStatusLoading, setBankStatusLoading] = useState(false);
   const [bankStatus, setBankStatus] = useState<{
     connected: boolean;
@@ -458,6 +559,13 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
       mounted = false;
     };
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === "Integrations" && profile?.id) {
+      fetchCalendlySettings();
+      fetchCalendlyEventTypes();
+    }
+  }, [activeTab, profile?.id]);
 
   const defaultNotificationPrefs = [
     {
@@ -2744,28 +2852,179 @@ const GeneralSettingsView = ({ kycStatus }: { kycStatus?: string }) => {
               </div>
             </Card>
 
-            <Card className="p-6 bg-white border border-gray-200 shadow-sm rounded-2xl">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
-                    <Globe className="w-5 h-5 text-gray-600" />
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-bold text-gray-900 tracking-tight">
-                      Coming Soon
-                    </h4>
-                    <p className="text-sm text-gray-500 font-medium mt-1">
-                      Integrations are not available yet.
-                    </p>
-                    <p className="text-xs text-gray-500 font-medium mt-3">
-                      You’ll be able to connect tools like accounting, payments,
-                      and calendars from this page.
-                    </p>
+            {/* Calendly Integration */}
+            <Card className="p-4 sm:p-6 bg-white border border-gray-200 shadow-sm rounded-2xl overflow-hidden relative">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
+                  <Calendar className="w-5 h-5 text-orange-600" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+                        Calendly Integration
+                      </h3>
+                      <p className="text-sm text-gray-500 font-medium">
+                        Automate meeting scheduling with your clients
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-gray-500 uppercase tracking-widest mr-1">
+                        {calendlySettings.is_enabled ? "Active" : "Disabled"}
+                      </span>
+                      <Switch
+                        checked={calendlySettings.is_enabled}
+                        onCheckedChange={(checked) =>
+                          setCalendlySettings((p) => ({
+                            ...p,
+                            is_enabled: checked,
+                          }))
+                        }
+                      />
+                    </div>
                   </div>
                 </div>
-                <Badge className="bg-gray-50 text-gray-600 border-gray-200 font-bold text-[10px] h-6">
-                  Coming Soon
-                </Badge>
+              </div>
+
+              <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                      <Key className="w-4 h-4 text-gray-400" />
+                      Calendly Personal Access Token
+                    </Label>
+                    <a
+                      href="https://calendly.com/integrations/api_webhooks"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 transition-colors"
+                    >
+                      Get Token
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                  <div className="relative group">
+                    <Input
+                      type="password"
+                      placeholder="calendly_v2_..."
+                      value={calendlySettings.calendly_api_token}
+                      onChange={(e) =>
+                        setCalendlySettings((p) => ({
+                          ...p,
+                          calendly_api_token: e.target.value,
+                        }))
+                      }
+                      className="bg-gray-50/50 border-gray-200 h-11 text-gray-900 font-medium rounded-xl pr-10 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                    />
+                    {calendlySettings.calendly_api_token && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-green-50 text-green-600">
+                        <Check className="w-4 h-4" />
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-400 font-medium leading-relaxed flex items-start gap-2 italic">
+                    <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                    Your token is stored securely. This allows us to fetch your
+                    available event types and schedule meetings automatically.
+                  </p>
+                </div>
+
+                {calendlySettings.is_enabled && (
+                  <div className="space-y-6 pt-4 border-t border-gray-100 animate-in zoom-in-95 duration-500">
+                    <div>
+                      <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2 mb-1">
+                        <Activity className="w-4 h-4 text-gray-400" />
+                        Event Type Mappings
+                      </h4>
+                      <p className="text-xs text-gray-500 font-medium">
+                        Map platform booking categories to specific Calendly
+                        event types
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {[
+                        { key: "default", label: "Default Meeting" },
+                        { key: "agency_discovery", label: "Agency Discovery" },
+                        { key: "talent_interview", label: "Interview" },
+                        { key: "photo_shoot", label: "Photo Shoot" },
+                      ].map((type) => (
+                        <div
+                          key={type.key}
+                          className="space-y-2 p-4 bg-gray-50/50 border border-gray-100 rounded-xl group hover:border-indigo-100 transition-colors"
+                        >
+                          <Label className="text-[11px] font-black uppercase tracking-wider text-gray-400 group-hover:text-indigo-600 transition-colors">
+                            {type.label}
+                          </Label>
+                          {isFetchingCalendlyEventTypes ? (
+                            <div className="h-10 flex items-center justify-center bg-white border border-gray-100 rounded-lg animate-pulse">
+                              <RefreshCw className="w-4 h-4 animate-spin text-gray-300" />
+                            </div>
+                          ) : calendlyEventTypes.length > 0 ? (
+                            <Select
+                              value={calendlySettings.mappings[type.key] || ""}
+                              onValueChange={(val) =>
+                                setCalendlySettings((p) => ({
+                                  ...p,
+                                  mappings: { ...p.mappings, [type.key]: val },
+                                }))
+                              }
+                            >
+                              <SelectTrigger className="h-10 bg-white border-gray-200 rounded-lg text-xs font-bold shadow-sm">
+                                <SelectValue placeholder="Select Calendly Event" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-xl border-gray-200 shadow-xl">
+                                <SelectItem
+                                  value=""
+                                  className="text-xs font-bold text-gray-400 italic"
+                                >
+                                  Use System Default
+                                </SelectItem>
+                                {calendlyEventTypes.map((et: any) => (
+                                  <SelectItem
+                                    key={et.slug}
+                                    value={et.slug}
+                                    className="text-xs font-bold py-2.5"
+                                  >
+                                    <div className="flex flex-col gap-0.5">
+                                      <span>{et.name}</span>
+                                      {et.duration && (
+                                        <span className="text-[10px] text-gray-400">
+                                          {et.duration} mins
+                                        </span>
+                                      )}
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <div className="p-3 bg-white border border-gray-100 rounded-lg text-[10px] text-gray-400 font-bold flex items-center justify-center text-center">
+                              Enter API Token to load event types
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end pt-4">
+                  <Button
+                    onClick={handleSaveCalendlySettings}
+                    disabled={isSavingCalendlySettings}
+                    className="h-11 px-8 bg-indigo-600 hover:bg-slate-900 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 flex items-center gap-2 transition-all transform hover:-translate-y-0.5"
+                  >
+                    {isSavingCalendlySettings ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    {isSavingCalendlySettings
+                      ? "Saving..."
+                      : "Save Calendly Configuration"}
+                  </Button>
+                </div>
               </div>
             </Card>
           </div>

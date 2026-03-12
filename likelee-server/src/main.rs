@@ -123,8 +123,22 @@ async fn main() {
         stripe_licensing_success_url: cfg.stripe_licensing_success_url.clone(),
         stripe_licensing_cancel_url: cfg.stripe_licensing_cancel_url.clone(),
 
-        stripe_studio_success_url: cfg.stripe_studio_success_url.clone(),
-        stripe_studio_cancel_url: cfg.stripe_studio_cancel_url.clone(),
+        stripe_studio_success_url: if cfg.stripe_studio_success_url.trim().is_empty() {
+            format!(
+                "{}/studiosubscribe?success=1&session_id={{CHECKOUT_SESSION_ID}}",
+                cfg.frontend_url.trim_end_matches('/')
+            )
+        } else {
+            cfg.stripe_studio_success_url.clone()
+        },
+        stripe_studio_cancel_url: if cfg.stripe_studio_cancel_url.trim().is_empty() {
+            format!(
+                "{}/studiosubscribe?canceled=1",
+                cfg.frontend_url.trim_end_matches('/')
+            )
+        } else {
+            cfg.stripe_studio_cancel_url.clone()
+        },
         stripe_studio_price_ids: cfg.stripe_studio_price_ids.clone(),
         stripe_studio_lite_price_ids: cfg.stripe_studio_lite_price_ids.clone(),
         stripe_studio_pro_price_ids: cfg.stripe_studio_pro_price_ids.clone(),
@@ -178,6 +192,7 @@ async fn main() {
         // Calendly Integration (IRL Booking)
         calendly_booking_url: cfg.calendly_booking_url.clone(),
         calendly_webhook_signing_key: cfg.calendly_webhook_signing_key.clone(),
+        calendly_api_token: cfg.calendly_api_token.clone(),
     };
 
     // Start background jobs
