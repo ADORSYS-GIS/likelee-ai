@@ -233,6 +233,9 @@ pub struct ServerConfig {
 
     #[envconfig(from = "CALENDLY_WEBHOOK_SIGNING_KEY", default = "")]
     pub calendly_webhook_signing_key: String,
+
+    #[envconfig(from = "CALENDLY_API_TOKEN", default = "")]
+    pub calendly_api_token: String,
 }
 
 #[derive(Clone)]
@@ -319,4 +322,5 @@ pub struct AppState {
     // Calendly Integration (IRL Booking)
     pub calendly_booking_url: String,
     pub calendly_webhook_signing_key: String,
+    pub calendly_api_token: String,
 }

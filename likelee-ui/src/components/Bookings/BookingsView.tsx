@@ -1,13 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Calendar, Video } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import React from "react";
+import { Calendar } from "lucide-react";
 
 import { CalendarScheduleTab } from "./Tabs/CalendarScheduleTab";
 import { BookingRequestsTab } from "./Tabs/BookingRequestsTab";
@@ -16,7 +8,7 @@ import { TalentAvailabilityTab } from "./Tabs/TalentAvailabilityTab";
 import { ManagementAnalyticsView } from "./ManagementAnalyticsView";
 import { NotificationsTab } from "./Tabs/NotificationsTab";
 import { CampaignsTab } from "./Tabs/CampaignsTab";
-import { getCalendlyBookingUrl } from "@/api/functions";
+// getCalendlyBookingUrl removed
 
 // We keep PlaceholderView for fallback
 const PlaceholderView = ({ activeSubTab }: { activeSubTab: string }) => (
@@ -60,29 +52,9 @@ export const BookingsView = ({
     ? "Athlete Availability"
     : "Talent Availability";
 
-  // Calendly integration state for IRL mode
-  const [showCalendlyModal, setShowCalendlyModal] = useState(false);
-  const [calendlyUrl, setCalendlyUrl] = useState<string | null>(null);
-  const [calendlyLoading, setCalendlyLoading] = useState(false);
-
-  useEffect(() => {
-    if (agencyMode === "IRL" && !calendlyUrl && !calendlyLoading) {
-      setCalendlyLoading(true);
-      getCalendlyBookingUrl()
-        .then((res) => {
-          if (res.status === "success" && res.data?.booking_url) {
-            setCalendlyUrl(res.data.booking_url);
-          }
-        })
-        .catch(() => {
-          // Silently fail - Calendly not configured
-        })
-        .finally(() => setCalendlyLoading(false));
-    }
-  }, [agencyMode, calendlyUrl, calendlyLoading]);
-
-  if (activeSubTab === "Calendar & Schedule")
-    return (
+  let content;
+  if (activeSubTab === "Calendar & Schedule") {
+    content = (
       <CalendarScheduleTab
         bookings={bookings}
         onAddBooking={onAddBooking}
@@ -96,14 +68,16 @@ export const BookingsView = ({
         isSportsAgency={isSportsAgency}
       />
     );
-  if (activeSubTab === "Booking Requests") return <BookingRequestsTab />;
-  if (activeSubTab === "Client Database") return <ClientDatabaseTab />;
-  if (
+  } else if (activeSubTab === "Booking Requests") {
+    content = <BookingRequestsTab />;
+  } else if (activeSubTab === "Client Database") {
+    content = <ClientDatabaseTab />;
+  } else if (
     activeSubTab === "Talent Availability" ||
     activeSubTab === "Athlete Availability" ||
     activeSubTab === availabilitySubTab
-  )
-    return (
+  ) {
+    content = (
       <TalentAvailabilityTab
         bookOuts={bookOuts}
         onAddBookOut={onAddBookOut}
@@ -112,54 +86,17 @@ export const BookingsView = ({
         isSportsAgency={isSportsAgency}
       />
     );
-  if (activeSubTab === "Notifications")
-    return (
+  } else if (activeSubTab === "Notifications") {
+    content = (
       <NotificationsTab bookings={bookings} isSportsAgency={isSportsAgency} />
     );
-  if (activeSubTab === "Management & Analytics")
-    return <ManagementAnalyticsView bookings={bookings} />;
-  if (activeSubTab === "Campaigns") return <CampaignsTab />;
+  } else if (activeSubTab === "Management & Analytics") {
+    content = <ManagementAnalyticsView bookings={bookings} />;
+  } else if (activeSubTab === "Campaigns") {
+    content = <CampaignsTab />;
+  } else {
+    content = <PlaceholderView activeSubTab={activeSubTab} />;
+  }
 
-  return (
-    <>
-      <PlaceholderView activeSubTab={activeSubTab} />
-
-      {/* IRL Mode: Book a Demo CTA */}
-      {agencyMode === "IRL" && calendlyUrl && (
-        <div className="fixed bottom-6 right-6 z-40">
-          <Button
-            onClick={() => setShowCalendlyModal(true)}
-            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg rounded-full px-6 py-3 font-bold flex items-center gap-2"
-          >
-            <Video className="w-5 h-5" />
-            Book a Demo
-          </Button>
-        </div>
-      )}
-
-      {/* Calendly Modal */}
-      <Dialog open={showCalendlyModal} onOpenChange={setShowCalendlyModal}>
-        <DialogContent className="max-w-4xl h-[80vh] p-0 overflow-hidden">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Schedule a Demo</DialogTitle>
-            <DialogDescription>
-              Book a demo session with our team using Calendly.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="w-full h-full bg-white">
-            {calendlyUrl && (
-              <iframe
-                src={calendlyUrl}
-                width="100%"
-                height="100%"
-                frameBorder="0"
-                title="Schedule a Demo"
-                style={{ minHeight: "100%" }}
-              />
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
+  return <>{content}</>;
 };

@@ -178,6 +178,7 @@ async fn main() {
         // Calendly Integration (IRL Booking)
         calendly_booking_url: cfg.calendly_booking_url.clone(),
         calendly_webhook_signing_key: cfg.calendly_webhook_signing_key.clone(),
+        calendly_api_token: cfg.calendly_api_token.clone(),
     };
 
     // Start background jobs

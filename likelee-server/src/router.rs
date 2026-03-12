@@ -644,10 +644,6 @@ pub fn build_router(state: AppState) -> Router {
         )
         // --- Bookings & Availability ---
         .route(
-            "/api/booking/calendly-url",
-            get(crate::calendly::get_calendly_url),
-        )
-        .route(
             "/api/bookings",
             get(crate::bookings::list).post(crate::bookings::create),
         )
