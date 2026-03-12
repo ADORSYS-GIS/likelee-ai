@@ -1409,6 +1409,9 @@ export function CreatePackageWizard({
                   const isSelected = formData.items.some(
                     (i) => i.talent_id === talent.id,
                   );
+                  const isConnectedCreator = Boolean(
+                    (talent as any)?.is_connected_creator,
+                  );
                   return (
                     <Card
                       key={talent.id}
@@ -1428,6 +1431,13 @@ export function CreatePackageWizard({
                         <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5">
                           {talent.categories?.[0] || "Member"}
                         </p>
+                        {isConnectedCreator && (
+                          <div className="mt-2">
+                            <Badge className="bg-sky-100 text-sky-700 hover:bg-sky-100 border border-sky-200 px-2 py-0.5 text-[10px] font-black tracking-widest uppercase">
+                              Connected
+                            </Badge>
+                          </div>
+                        )}
                       </div>
                       {isSelected && (
                         <div className="bg-indigo-600 rounded-full p-1 shadow-md shadow-indigo-200">
