@@ -4,13 +4,14 @@ use axum::{
     routing::{delete, get, post},
     Router,
 };
+use axum::http::header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use tower_http::cors::{Any, CorsLayer};
 
 pub fn build_router(state: AppState) -> Router {
     let cors = CorsLayer::new()
         .allow_origin(Any)
         .allow_methods(Any)
-        .allow_headers(Any);
+        .allow_headers([AUTHORIZATION, CONTENT_TYPE, ACCEPT]);
 
     Router::new()
         .route("/api/health", get(crate::health::health))
