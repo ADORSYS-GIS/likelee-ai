@@ -574,7 +574,7 @@ const BrandConnectionsView = () => {
                       );
                     }}
                   >
-                    View job details
+                    View job details and apply
                   </Button>
                   <Button
                     size="sm"

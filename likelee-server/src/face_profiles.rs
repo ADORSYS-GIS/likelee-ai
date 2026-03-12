@@ -1907,7 +1907,6 @@ pub async fn create_marketplace_connection_request(
         .from("agencies")
         .select("id")
         .eq("id", &agency_id)
-        .eq("kyc_status", "approved")
         .limit(1)
         .execute()
         .await

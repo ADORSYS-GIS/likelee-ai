@@ -6151,7 +6151,7 @@ export default function CreatorDashboard() {
                               )
                             }
                           >
-                            View job details
+                            View job details and apply
                           </Button>
                           <Button
                             variant="outline"
@@ -7604,7 +7604,7 @@ export default function CreatorDashboard() {
               <div className="flex gap-2 mt-6">
                 <Button variant="outline" className="flex-1">
                   <Eye className="w-4 h-4 mr-2" />
-                  {t("creatorDashboard.campaigns.actions.viewDetails")}
+                  View job details and apply
                 </Button>
                 <Button
                   variant="outline"
