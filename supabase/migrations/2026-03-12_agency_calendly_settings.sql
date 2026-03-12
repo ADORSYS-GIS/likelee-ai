@@ -19,12 +19,12 @@ CREATE POLICY "Agencies can manage their own calendly settings"
     TO authenticated
     USING (
         agency_id IN (
-            SELECT id FROM public.agencies WHERE user_id = auth.uid()
+            SELECT id FROM public.agencies WHERE id = auth.uid()
         )
     )
     WITH CHECK (
         agency_id IN (
-            SELECT id FROM public.agencies WHERE user_id = auth.uid()
+            SELECT id FROM public.agencies WHERE id = auth.uid()
         )
     );
 

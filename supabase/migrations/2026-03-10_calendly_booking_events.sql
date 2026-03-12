@@ -58,7 +58,7 @@ CREATE POLICY "Agencies can view their own calendly booking events"
     TO authenticated
     USING (
         agency_id IN (
-            SELECT id FROM public.agencies WHERE user_id = auth.uid()
+            SELECT id FROM public.agencies WHERE id = auth.uid()
         )
     );
 
