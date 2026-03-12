@@ -346,14 +346,34 @@ The licensing flow has been simplified to use a single "License Fee" source of t
 
 ### Calendly Integration (IRL Booking)
 
-- `CALENDLY_BOOKING_URL`
-  - The Calendly scheduling link displayed in the IRL mode booking section.
-  - Example: `https://calendly.com/likelee/demo`
-  - Default: empty (feature disabled if not set).
-- `CALENDLY_WEBHOOK_SIGNING_KEY`
-  - Secret used to verify Calendly webhook signatures.
-  - Obtained from Calendly integrations settings.
-  - Default: empty (webhook verification skipped if not set, not recommended for production).
+#### System Configuration
+- `CALENDLY_BOOKING_URL`: The system-wide fallback scheduling link.
+- `CALENDLY_WEBHOOK_SIGNING_KEY`: Secret used to verify Calendly webhook signatures.
+
+#### Agency-Specific Configuration
+Agencies can override the system default Calendly settings with their own API tokens and event mappings.
+
+##### Data Model: `agency_calendly_settings`
+- `agency_id` (uuid, PK): Link to `public.agencies(id)`.
+- `calendly_api_token` (text, nullable): The agency's personal access token.
+- `is_enabled` (boolean): Whether the custom integration is active.
+- `mappings` (jsonb): A map of platform booking types to Calendly event slugs.
+  - Keys: `default`, `agency_discovery`, `talent_interview`, `photo_shoot`.
+- `updated_at` (timestamptz)
+
+##### Resolution Logic
+When scheduling a meeting for an agency:
+1. Check if the agency has `agency_calendly_settings` with `is_enabled = true`.
+2. If so, use their `calendly_api_token`.
+3. Resolve the target event slug:
+   - Check `mappings` for the specific booking type.
+   - Fall back to the `default` mapping if the specific type is missing.
+   - Fall back to system defaults if no agency mapping is found.
+
+#### API Endpoints
+- `GET /api/calendly/settings`: Fetch the authenticated agency's settings.
+- `POST /api/calendly/settings`: Update settings (JSON payload matching the data model).
+- `GET /api/calendly/event-types`: Fetch available event types for the agency (uses agency token or system fallback).
 
 ## Studio Wallet & Transactions
 

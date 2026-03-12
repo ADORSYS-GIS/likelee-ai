@@ -6,12 +6,14 @@ use axum::{
 };
 use hmac::{Hmac, Mac};
 use reqwest::header::{AUTHORIZATION, CONTENT_TYPE};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sha2::Sha256;
 use tracing::{error, info, warn};
 
+use crate::auth::AuthUser;
 use crate::config::AppState;
+use uuid::Uuid;
 
 // get_calendly_url removed
 
@@ -179,7 +181,231 @@ pub async fn handle_calendly_webhook(
     }
 }
 
-// --- Calendly API Integration ---
+// --- Calendly Agency Settings ---
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct AgencyCalendlySettings {
+    pub agency_id: Uuid,
+    pub calendly_api_token: Option<String>,
+    pub is_enabled: bool,
+    pub mappings: serde_json::Value,
+    pub updated_at: chrono::DateTime<chrono::Utc>,
+}
+
+/// GET /api/calendly/settings
+pub async fn get_agency_calendly_settings(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> (StatusCode, Json<serde_json::Value>) {
+    let resp = state
+        .pg
+        .from("agency_calendly_settings")
+        .select("*")
+        .eq("agency_id", &user.id)
+        .single()
+        .execute()
+        .await;
+
+    match resp {
+        Ok(r) if r.status().is_success() => {
+            let txt = r.text().await.unwrap_or_default();
+            let data: serde_json::Value = serde_json::from_str(&txt).unwrap_or_default();
+            (
+                StatusCode::OK,
+                Json(json!({"status": "success", "data": data})),
+            )
+        }
+        Ok(r) if r.status().as_u16() == 404 => {
+            // Return default empty settings if not found
+            (
+                StatusCode::OK,
+                Json(json!({
+                    "status": "success",
+                    "data": {
+                        "agency_id": user.id,
+                        "calendly_api_token": null,
+                        "is_enabled": false,
+                        "mappings": {}
+                    }
+                })),
+            )
+        }
+        Ok(r) => {
+            let status_code = r.status();
+            let txt = r.text().await.unwrap_or_default();
+            error!(status = %status_code, response = %txt, "Failed to fetch Calendly settings");
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status": "error", "error": "database_error"})),
+            )
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to fetch Calendly settings");
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status": "error", "error": "database_error"})),
+            )
+        }
+    }
+}
+
+/// POST /api/calendly/settings
+pub async fn update_agency_calendly_settings(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Json(payload): Json<serde_json::Value>,
+) -> (StatusCode, Json<serde_json::Value>) {
+    let mut insert_payload = payload;
+    insert_payload["agency_id"] = json!(user.id);
+    insert_payload["updated_at"] = json!(chrono::Utc::now().to_rfc3339());
+
+    let resp = state
+        .pg
+        .from("agency_calendly_settings")
+        .upsert(insert_payload.to_string())
+        .on_conflict("agency_id")
+        .execute()
+        .await;
+
+    match resp {
+        Ok(r) if r.status().is_success() => (StatusCode::OK, Json(json!({"status": "success"}))),
+        Ok(r) => {
+            let status_code = r.status();
+            let txt = r.text().await.unwrap_or_default();
+            error!(status = %status_code, response = %txt, "Failed to update Calendly settings");
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status": "error", "message": "Failed to save settings"})),
+            )
+        }
+        Err(e) => {
+            error!(error = %e, "Failed to update Calendly settings");
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status": "error", "error": "database_error"})),
+            )
+        }
+    }
+}
+
+/// GET /api/calendly/event-types
+pub async fn get_calendly_event_types(
+    State(state): State<AppState>,
+    user: AuthUser,
+) -> (StatusCode, Json<serde_json::Value>) {
+    // 1. Fetch agency settings to get the token
+    let resp = state
+        .pg
+        .from("agency_calendly_settings")
+        .select("calendly_api_token")
+        .eq("agency_id", &user.id)
+        .single()
+        .execute()
+        .await;
+
+    let token = match resp {
+        Ok(r) if r.status().is_success() => {
+            let txt = r.text().await.unwrap_or_default();
+            let v: serde_json::Value = serde_json::from_str(&txt).unwrap_or(json!({}));
+            v.get("calendly_api_token")
+                .and_then(|t| t.as_str())
+                .map(|s| s.to_string())
+        }
+        _ => None,
+    };
+
+    let token = match token {
+        Some(t) if !t.trim().is_empty() => t,
+        _ => {
+            // Fallback to system token if configured
+            let system_token = state.calendly_api_token.trim();
+            if system_token.is_empty() {
+                return (
+                    StatusCode::PRECONDITION_FAILED,
+                    Json(
+                        json!({"status": "error", "error": "not_configured", "message": "Calendly API token is not configured."}),
+                    ),
+                );
+            }
+            system_token.to_string()
+        }
+    };
+
+    let client = reqwest::Client::new();
+
+    // 1. Get user URI (mandatory in V2 to list event_types)
+    let user_resp = match client
+        .get("https://api.calendly.com/users/me")
+        .header(AUTHORIZATION, format!("Bearer {}", token))
+        .send()
+        .await
+    {
+        Ok(r) => r,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status": "error", "error": "api_error", "message": e.to_string()})),
+            )
+        }
+    };
+
+    if !user_resp.status().is_success() {
+        return (
+            StatusCode::BAD_GATEWAY,
+            Json(json!({"status": "error", "error": "calendly_api_error"})),
+        );
+    }
+
+    let user_data: CalendlyUserResponse = match user_resp.json().await {
+        Ok(d) => d,
+        Err(_) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status": "error", "error": "parse_error"})),
+            )
+        }
+    };
+    let user_uri = user_data.resource.uri;
+
+    // 2. Get event types
+    let et_resp = match client
+        .get("https://api.calendly.com/event_types")
+        .query(&[("user", &user_uri)])
+        .header(AUTHORIZATION, format!("Bearer {}", token))
+        .send()
+        .await
+    {
+        Ok(r) => r,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status": "error", "error": "api_error", "message": e.to_string()})),
+            )
+        }
+    };
+
+    if !et_resp.status().is_success() {
+        return (
+            StatusCode::BAD_GATEWAY,
+            Json(json!({"status": "error", "error": "calendly_api_error"})),
+        );
+    }
+
+    let et_data: CalendlyEventTypesResponse = match et_resp.json().await {
+        Ok(d) => d,
+        Err(_) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"status": "error", "error": "parse_error"})),
+            )
+        }
+    };
+
+    (
+        StatusCode::OK,
+        Json(json!({"status": "success", "data": et_data.collection})),
+    )
+}
 
 #[derive(Debug, Deserialize)]
 struct CalendlyUserResponse {
@@ -191,20 +417,21 @@ struct CalendlyUser {
     uri: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct CalendlyEventTypesResponse {
     collection: Vec<CalendlyEventType>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct CalendlyEventType {
     uri: String,
     slug: String,
+    name: String,
     active: bool,
     locations: Option<Vec<CalendlyLocation>>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct CalendlyLocation {
     kind: String,
 }
@@ -221,37 +448,75 @@ pub async fn schedule_calendly_invitee(
     target_slug_override: Option<&str>,
     location: Option<&str>,
     agency_name: Option<&str>,
+    agency_id: Option<&str>,
 ) -> Result<String, String> {
-    let token = state.calendly_api_token.trim();
+    let mut token = state.calendly_api_token.trim().to_string();
+    let mut target_slug_final = target_slug_override.map(|s| s.to_string());
+
+    // If we have an agency_id, check for custom token and mappings
+    if let Some(aid) = agency_id {
+        if let Ok(resp) = state
+            .pg
+            .from("agency_calendly_settings")
+            .select("*")
+            .eq("agency_id", aid)
+            .single()
+            .execute()
+            .await
+        {
+            if resp.status().is_success() {
+                if let Ok(txt) = resp.text().await {
+                    if let Ok(v) = serde_json::from_str::<serde_json::Value>(&txt) {
+                        // Use agency token if provided
+                        if let Some(t) = v.get("calendly_api_token").and_then(|t| t.as_str()) {
+                            if !t.trim().is_empty() {
+                                token = t.to_string();
+                            }
+                        }
+
+                        // Use mapping if target_slug_override is present and matches a mapping key
+                        // (e.g. mapping "confirmed" to an event slug)
+                        if let (Some(slug), Some(mappings)) = (
+                            &target_slug_final,
+                            v.get("mappings").and_then(|m| m.as_object()),
+                        ) {
+                            if let Some(mapped_slug) = mappings.get(slug).and_then(|s| s.as_str()) {
+                                target_slug_final = Some(mapped_slug.to_string());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     if token.is_empty() {
-        return Err("CALENDLY_API_TOKEN not configured".to_string());
+        return Err("Calendly API token not configured".to_string());
     }
-
-    let booking_url = state.calendly_booking_url.trim();
-    if booking_url.is_empty() {
-        return Err("CALENDLY_BOOKING_URL not configured".to_string());
-    }
-
-    // Extract slug from booking_url (e.g. "https://calendly.com/user/slug" -> "slug")
-    // Handle trailing slashes by trimming them before splitting
-    let trimmed_url = booking_url.trim_end_matches('/');
-    let url_parts: Vec<&str> = trimmed_url.split('/').collect();
 
     // Determine the target slug:
-    // 1. If override is provided, use it.
-    // 2. If the URL has more than 3 parts (schema // host / user / slug), the last part is the slug.
-    // 3. Otherwise, use a default if no override.
-
-    let slug_from_url = if url_parts.len() > 4 {
-        url_parts.last().map(|s| s.to_string())
+    let target_slug = if let Some(s) = target_slug_final {
+        s
     } else {
-        None
-    };
+        // Fallback to legacy behavior using CALENDLY_BOOKING_URL if no slug provided
+        let booking_url = state.calendly_booking_url.trim();
+        if booking_url.is_empty() {
+            return Err("CALENDLY_BOOKING_URL not configured and no slug provided".to_string());
+        }
 
-    let target_slug = target_slug_override
-        .map(|s| s.to_string())
-        .or(slug_from_url)
-        .ok_or_else(|| "No slug provided and CALENDLY_BOOKING_URL appears to be a user-level URL (missing event slug)".to_string())?;
+        let trimmed_url = booking_url.trim_end_matches('/');
+        let url_parts: Vec<&str> = trimmed_url.split('/').collect();
+
+        let slug_from_url = if url_parts.len() > 4 {
+            url_parts.last().map(|s| s.to_string())
+        } else {
+            None
+        };
+
+        slug_from_url.ok_or_else(|| {
+            "No slug provided and CALENDLY_BOOKING_URL is a user-level URL".to_string()
+        })?
+    };
 
     info!(target_slug = %target_slug, "Scheduling Calendly meeting with slug");
 

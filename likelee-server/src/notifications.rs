@@ -435,6 +435,8 @@ pub async fn booking_created_email(
             };
             let agency_name_clone = agency_name.clone();
 
+            let agency_id_clone = Some(user.id.to_string());
+
             tokio::spawn(async move {
                 match calendly::schedule_calendly_invitee(
                     &state_clone,
@@ -445,6 +447,7 @@ pub async fn booking_created_email(
                     booking_type_clone.as_deref(),
                     location_clone.as_deref(),
                     agency_name_clone.as_deref(),
+                    agency_id_clone.as_deref(),
                 )
                 .await
                 {
