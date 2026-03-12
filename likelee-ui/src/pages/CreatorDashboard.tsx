@@ -6345,19 +6345,6 @@ export default function CreatorDashboard() {
           </Button>
           <Button
             variant={
-              brandConnectionSubTab === "contract_hub" ? "default" : "outline"
-            }
-            className={
-              brandConnectionSubTab === "contract_hub"
-                ? "bg-[#32C8D1] hover:bg-[#2AB8C1] text-white"
-                : "border-gray-300"
-            }
-            onClick={() => setBrandConnectionSubTab("contract_hub")}
-          >
-            Contract Hub
-          </Button>
-          <Button
-            variant={
               brandConnectionSubTab === "deliverables" ? "default" : "outline"
             }
             className={
@@ -7121,71 +7108,6 @@ export default function CreatorDashboard() {
                       >
                         View brief
                       </Button>
-                    </div>
-                  );
-                })}
-            </div>
-          </Card>
-        )}
-
-        {brandConnectionSubTab === "contract_hub" && (
-          <Card className="p-6">
-            <div className="space-y-4">
-              <div className="text-lg font-semibold text-gray-900">
-                Contract Hub
-              </div>
-              {creatorContractHubRows.filter((row: any) =>
-                directOfferIds.has(String(row?.offer_id || "")),
-              ).length === 0 && (
-                <p className="text-sm text-gray-600">
-                  No contracts available yet.
-                </p>
-              )}
-              {creatorContractHubRows
-                .filter((row: any) =>
-                  directOfferIds.has(String(row?.offer_id || "")),
-                )
-                .map((row: any) => {
-                  const status = String(row?.docuseal_status || "draft");
-                  const slug = String(row?.docuseal_slug || "").trim();
-                  const submissionId = String(
-                    row?.docuseal_submission_id || "",
-                  ).trim();
-                  const signUrl = slug
-                    ? `https://docuseal.com/s/${slug}`
-                    : submissionId
-                      ? `https://docuseal.com/s/${submissionId}`
-                      : "";
-                  return (
-                    <div
-                      key={String(row?.id)}
-                      className="border border-gray-200 rounded-lg p-4 bg-white space-y-2"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <div className="font-semibold text-gray-900">
-                            {String(row?.campaign_name || "Campaign offer")}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {String(row?.title || "Contract")} •{" "}
-                            {status.replace(/_/g, " ")}
-                          </div>
-                        </div>
-                        <Badge variant="outline" className="capitalize">
-                          {status.replace(/_/g, " ")}
-                        </Badge>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {signUrl && (
-                          <Button
-                            variant="outline"
-                            className="border-gray-200"
-                            onClick={() => window.open(signUrl, "_blank")}
-                          >
-                            Open DocuSeal
-                          </Button>
-                        )}
-                      </div>
                     </div>
                   );
                 })}
