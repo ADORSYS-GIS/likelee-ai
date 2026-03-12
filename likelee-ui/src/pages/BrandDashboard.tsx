@@ -2912,13 +2912,20 @@ export default function BrandDashboard() {
         <p className="text-gray-600">Campaign contracts and signing status.</p>
       </div>
       <div className="space-y-3">
-        {brandOfferItems.length === 0 && (
+        {loadingBrandOfferItems ? (
+          <Card className="p-6 bg-white border border-gray-300 rounded-none">
+            <div className="flex items-center gap-3">
+              <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />
+              <p className="text-sm text-gray-500">Loading offers...</p>
+            </div>
+          </Card>
+        ) : brandOfferItems.length === 0 ? (
           <Card className="p-6 bg-white border border-gray-300 rounded-none">
             <p className="text-sm text-gray-500">
               No offer contracts available yet.
             </p>
           </Card>
-        )}
+        ) : null}
         {brandOfferItems.map((offer: any) => {
           const offerId = String(offer?.id || "");
           const expanded = selectedOfferHubId === offerId;
@@ -3281,13 +3288,18 @@ export default function BrandDashboard() {
         </p>
       </div>
       <div className="space-y-4">
-        {brandOfferItems.length === 0 && (
+        {loadingBrandOfferItems ? (
+          <Card className="p-12 bg-white border border-gray-300 rounded-none text-center">
+            <Loader2 className="w-8 h-8 text-gray-300 mx-auto mb-3 animate-spin" />
+            <p className="text-sm text-gray-500">Loading campaigns...</p>
+          </Card>
+        ) : brandOfferItems.length === 0 ? (
           <Card className="p-12 bg-white border border-gray-300 rounded-none text-center">
             <p className="text-sm text-gray-500">
               No active campaigns available.
             </p>
           </Card>
-        )}
+        ) : null}
         {(() => {
           const offers = Array.isArray(brandOfferItems) ? brandOfferItems : [];
           const groups = offers.reduce<Record<string, any>>((acc, offer: any) => {
