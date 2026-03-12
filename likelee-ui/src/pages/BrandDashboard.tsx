@@ -4387,9 +4387,22 @@ export default function BrandDashboard() {
                       <Input
                         value={jobSearch}
                         onChange={(e) => setJobSearch(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Escape") setJobSearch("");
+                        }}
                         placeholder="Search job title, call type, or role"
-                        className="pl-9"
+                        className="pl-9 pr-9"
                       />
+                      {jobSearch && (
+                        <button
+                          type="button"
+                          onClick={() => setJobSearch("")}
+                          className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                          aria-label="Clear search"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
                   <Select
@@ -4429,8 +4442,14 @@ export default function BrandDashboard() {
                 </Card>
               )}
               {!loadingBrandJobs && brandJobs.length === 0 && (
-                <Card className="p-6 text-sm text-gray-600">
-                  No job postings yet.
+                <Card className="p-8 text-center">
+                  <Search className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                  <p className="font-semibold text-gray-800">
+                    No job postings yet.
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Post your first job to start receiving applications.
+                  </p>
                 </Card>
               )}
               {!loadingBrandJobs &&
@@ -4587,6 +4606,46 @@ export default function BrandDashboard() {
                       </div>
                     </Card>
                   ))}
+              {!loadingBrandJobs &&
+                brandJobs.length > 0 &&
+                brandJobs.filter((job) => {
+                  const status = String(job?.status || "").toLowerCase();
+                  const callType = String(job?.call_type || "").toLowerCase();
+                  const haystack =
+                    `${job?.job_title || ""} ${job?.about_role || ""} ${callType}`.toLowerCase();
+                  if (
+                    jobSearch.trim() &&
+                    !haystack.includes(jobSearch.trim().toLowerCase())
+                  )
+                    return false;
+                  if (jobStatusFilter !== "all" && status !== jobStatusFilter)
+                    return false;
+                  if (
+                    jobCallTypeFilter !== "all" &&
+                    callType !== jobCallTypeFilter
+                  )
+                    return false;
+                  return true;
+                }).length === 0 && (
+                  <Card className="p-8 text-center">
+                    <Search className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                    <p className="font-semibold text-gray-800">
+                      No results found
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Try different keywords or adjust your filters.
+                    </p>
+                    {jobSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setJobSearch("")}
+                        className="mt-3 text-sm text-blue-600 hover:underline"
+                      >
+                        Clear search
+                      </button>
+                    )}
+                  </Card>
+                )}
             </div>
           ) : (
             <div className="space-y-4">
@@ -8816,9 +8875,22 @@ export default function BrandDashboard() {
                     <Input
                       value={jobSearch}
                       onChange={(e) => setJobSearch(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Escape") setJobSearch("");
+                      }}
                       placeholder="Search job title or campaign name"
-                      className="pl-9"
+                      className="pl-9 pr-9"
                     />
+                    {jobSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setJobSearch("")}
+                        className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                        aria-label="Clear search"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </Card>
                 {loadingBrandJobs && (
@@ -8827,8 +8899,14 @@ export default function BrandDashboard() {
                   </Card>
                 )}
                 {!loadingBrandJobs && brandJobs.length === 0 && (
-                  <Card className="p-6 text-sm text-gray-600">
-                    No job postings yet.
+                  <Card className="p-8 text-center text-sm text-gray-600">
+                    <Search className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                    <p className="font-semibold text-gray-800">
+                      No job postings yet.
+                    </p>
+                    <p className="text-gray-500 mt-1">
+                      Post your first job to start receiving applications.
+                    </p>
                   </Card>
                 )}
                 {brandJobs
@@ -8973,6 +9051,38 @@ export default function BrandDashboard() {
                       </div>
                     </Card>
                   ))}
+                {!loadingBrandJobs &&
+                  brandJobs.length > 0 &&
+                  brandJobs.filter((job) => {
+                    const haystack =
+                      `${job?.job_title || ""} ${job?.about_role || ""}`.toLowerCase();
+                    if (
+                      jobSearch.trim() &&
+                      !haystack.includes(jobSearch.trim().toLowerCase())
+                    ) {
+                      return false;
+                    }
+                    return true;
+                  }).length === 0 && (
+                    <Card className="p-8 text-center">
+                      <Search className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                      <p className="font-semibold text-gray-800">
+                        No results found
+                      </p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Try different keywords or adjust your filters.
+                      </p>
+                      {jobSearch && (
+                        <button
+                          type="button"
+                          onClick={() => setJobSearch("")}
+                          className="mt-3 text-sm text-blue-600 hover:underline"
+                        >
+                          Clear search
+                        </button>
+                      )}
+                    </Card>
+                  )}
               </div>
             ) : (
               <BrandCampaignDashboard
