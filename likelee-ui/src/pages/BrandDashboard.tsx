@@ -3368,10 +3368,10 @@ export default function BrandDashboard() {
             return (
               <div
                 key={`campaign-${campaignId}`}
-                className="border border-gray-300 bg-white overflow-hidden"
+                className="rounded-2xl border-2 border-sky-300/80 bg-white/70 backdrop-blur-xl shadow-sm ring-1 ring-sky-100/70 overflow-hidden transition-shadow hover:shadow-md"
               >
                 <div
-                  className="p-5 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
+                  className="p-5 flex items-center justify-between cursor-pointer hover:bg-white/80 transition-colors"
                   onClick={() => {
                     setExpandedCampaignHubId(
                       campaignExpanded ? "" : campaignId,
@@ -3410,7 +3410,7 @@ export default function BrandDashboard() {
                 </div>
 
                 {campaignExpanded && (
-                  <div className="border-t border-gray-200 bg-gray-50/50">
+                  <div className="border-t border-sky-200/60 bg-white/30">
                     <div className="p-4 space-y-3">
                       {group.offers.map((offer: any) => {
                         const offerId = String(offer?.id || "");
@@ -3471,10 +3471,10 @@ export default function BrandDashboard() {
                         return (
                           <div
                             key={`offer-${offerId}`}
-                            className="border border-gray-200 bg-white"
+                            className="rounded-xl border border-sky-200/60 bg-white/60 backdrop-blur-lg shadow-sm overflow-hidden transition-shadow hover:shadow-md"
                           >
                             <div
-                              className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
+                              className="p-4 flex items-center justify-between cursor-pointer hover:bg-white/80 transition-colors"
                               onClick={async (event) => {
                                 event.stopPropagation();
                                 const next = expanded ? "" : offerId;
@@ -3525,7 +3525,7 @@ export default function BrandDashboard() {
                             </div>
 
                             {expanded && (
-                              <div className="border-t border-gray-200 bg-gray-50/50 p-6">
+                              <div className="border-t border-sky-200/60 bg-white/30 p-6">
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
                                   <div className="bg-white border border-gray-200 p-4">
                                     <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
