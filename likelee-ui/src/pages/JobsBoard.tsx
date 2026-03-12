@@ -373,129 +373,106 @@ export default function JobsBoard() {
             </div>
           </Card>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-1 space-y-3">
-              {loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {loading && (
+              <div className="col-span-full">
                 <Card className="p-4 text-sm text-gray-600">
                   Loading jobs...
                 </Card>
-              )}
-              {!loading && jobs.length === 0 && (
+              </div>
+            )}
+            {!loading && jobs.length === 0 && (
+              <div className="col-span-full">
                 <Card className="p-6 text-center text-gray-600">
                   No jobs found. Try adjusting filters.
                 </Card>
-              )}
-              {jobs.map((job) => (
-                <Card
-                  key={job.id}
-                  className={`p-4 cursor-pointer border ${selectedJob?.id === job.id ? "border-blue-500" : "border-gray-200"}`}
-                  onClick={() => setSelectedJob(job)}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h3 className="font-semibold text-gray-900">
+              </div>
+            )}
+            {jobs.map((job) => (
+              <Card
+                key={job.id}
+                className="flex flex-col h-full border border-gray-200 bg-white overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => {
+                  setSelectedJob(job);
+                  setDetailsOpen(true);
+                }}
+              >
+                <div className="p-5 flex-grow">
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-lg text-gray-900 truncate">
                         {job.job_title || job.title}
                       </h3>
-                      <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
-                        <Building2 className="w-4 h-4" />
-                        <span>{job?.brands?.company_name || "Brand"}</span>
+                      <div className="flex items-center gap-1.5 text-sm font-medium text-gray-600 mt-1">
+                        <Building2 className="w-4 h-4 flex-shrink-0" />
+                        <span className="truncate">
+                          {job?.brands?.company_name || "Brand"}
+                        </span>
                       </div>
                     </div>
-                    <Badge
-                      variant="outline"
-                      className="bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-100"
-                    >
-                      {(job.call_type || "call").replace("_", " ")}
-                    </Badge>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {job.location || "Remote"} • {job.job_type || "Project"}
-                  </p>
-                  <div className="mt-3 flex justify-end">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedJob(job);
-                        setDetailsOpen(true);
-                      }}
-                    >
-                      View Details
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-            </div>
 
-            <div className="lg:col-span-2">
-              {selectedJob ? (
-                <Card className="p-6 border border-gray-200 bg-white space-y-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900">
-                        {selectedJob.job_title || selectedJob.title}
-                      </h2>
-                      <p className="text-base font-semibold text-gray-800">
-                        {selectedJob?.brands?.company_name || "Brand"}
-                      </p>
+                  <div className="space-y-3 mt-4">
+                    <div className="flex flex-wrap gap-2">
+                      <Badge
+                        variant="secondary"
+                        className="bg-blue-50 text-blue-700 hover:bg-blue-50"
+                      >
+                        {(job.call_type || "call").replace("_", " ")}
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className="bg-gray-50 text-gray-600 border-gray-200"
+                      >
+                        {formatLabel(job.job_type || "Project")}
+                      </Badge>
                     </div>
-                    <Badge
-                      variant="outline"
-                      className="bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-100"
-                    >
-                      {(selectedJob.call_type || "call").replace("_", " ")}
-                    </Badge>
-                  </div>
 
-                  <div className="text-sm text-gray-600">
-                    <span className="font-medium text-gray-900">Location:</span>{" "}
-                    {formatLabel(selectedJob.location || "Remote")}
-                    <span className="mx-2">•</span>
-                    <span className="font-medium text-gray-900">
-                      Job type:
-                    </span>{" "}
-                    {formatLabel(selectedJob.job_type || "Project")}
-                  </div>
-
-                  {selectedJob.budget ? (
-                    <div className="text-sm text-gray-600">
-                      <span className="font-medium text-gray-900">Budget:</span>{" "}
-                      {selectedJob.budget}
-                      {selectedJob.currency ? ` ${selectedJob.currency}` : ""}
+                    <div className="text-sm text-gray-600 flex items-center gap-2">
+                      <span className="truncate">
+                        {formatLabel(job.location || "Remote")}
+                      </span>
+                      {job.budget && (
+                        <>
+                          <span>•</span>
+                          <span className="font-medium text-gray-900">
+                            {job.budget} {job.currency || "USD"}
+                          </span>
+                        </>
+                      )}
                     </div>
-                  ) : null}
 
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">
-                      Job Description
-                    </h3>
-                    <p className="text-gray-700 whitespace-pre-line">
-                      {selectedJob.about_role || selectedJob.description}
+                    <p className="text-sm text-gray-500 line-clamp-3">
+                      {job.about_role || job.description}
                     </p>
                   </div>
+                </div>
 
-                  <div className="flex gap-3">
-                    <Button
-                      variant="outline"
-                      onClick={() => setDetailsOpen(true)}
-                    >
-                      View Details
-                    </Button>
-                    <Button
-                      className="bg-black text-white"
-                      onClick={() => setApplyOpen(true)}
-                    >
-                      Apply
-                    </Button>
-                  </div>
-                </Card>
-              ) : (
-                <Card className="p-6 text-center text-gray-600">
-                  Select a job to view details.
-                </Card>
-              )}
-            </div>
+                <div className="p-4 border-t border-gray-100 bg-gray-50 flex gap-3">
+                  <Button
+                    className="w-full bg-white text-gray-900 border border-gray-200 hover:bg-gray-50"
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedJob(job);
+                      setDetailsOpen(true);
+                    }}
+                  >
+                    View Details
+                  </Button>
+                  <Button
+                    className="w-full bg-black text-white hover:bg-gray-800"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedJob(job);
+                      setApplyOpen(true);
+                    }}
+                  >
+                    Apply Now
+                  </Button>
+                </div>
+              </Card>
+            ))}
           </div>
         </div>
 

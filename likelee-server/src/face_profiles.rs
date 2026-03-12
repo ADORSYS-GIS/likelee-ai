@@ -964,6 +964,32 @@ pub(crate) async fn resolve_effective_agency_id(
         }
     }
 
+    if let Ok(by_member_resp) = state
+        .pg
+        .from("agency_users")
+        .select("agency_id")
+        .eq("user_id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+    {
+        if by_member_resp.status().is_success() {
+            if let Ok(by_member_text) = by_member_resp.text().await {
+                let rows: Vec<serde_json::Value> =
+                    serde_json::from_str(&by_member_text).unwrap_or_default();
+                if let Some(org_id) = rows
+                    .first()
+                    .and_then(|r| r.get("agency_id"))
+                    .and_then(|v| v.as_str())
+                {
+                    if !org_id.is_empty() {
+                        return Ok(org_id.to_string());
+                    }
+                }
+            }
+        }
+    }
+
     Ok(user.id.clone())
 }
 

@@ -686,7 +686,7 @@ pub async fn list_jobs(
         let resp = state
             .pg
             .from("agencies")
-            .select("id,agency_name,display_name,contact_name,logo_url")
+            .select("id,agency_name,contact_name,logo_url")
             .or(format!("id.in.({})", agency_filter_ids))
             .execute()
             .await
@@ -952,7 +952,7 @@ pub async fn list_my_jobs(
         let resp = state
             .pg
             .from("agencies")
-            .select("id,agency_name,display_name,contact_name,logo_url")
+            .select("id,agency_name,contact_name,logo_url")
             .or(format!("id.in.({})", agency_filter_ids))
             .execute()
             .await

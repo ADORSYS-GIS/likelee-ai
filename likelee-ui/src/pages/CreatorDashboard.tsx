@@ -900,8 +900,8 @@ export default function CreatorDashboard() {
     };
   };
 
-  const loadBrandOffers = async () => {
-    setLoadingBrandOffers(true);
+  const loadBrandOffers = async (silent = false) => {
+    if (!silent) setLoadingBrandOffers(true);
     try {
       const offersResp = await base44.get<{ offers?: any[] }>(
         "/api/campaign-offers/my",
@@ -911,12 +911,12 @@ export default function CreatorDashboard() {
       );
       return Array.isArray(offersResp?.offers) ? offersResp.offers : [];
     } finally {
-      setLoadingBrandOffers(false);
+      if (!silent) setLoadingBrandOffers(false);
     }
   };
 
-  const loadJobInvites = async () => {
-    setLoadingJobInvites(true);
+  const loadJobInvites = async (silent = false) => {
+    if (!silent) setLoadingJobInvites(true);
     try {
       const res = await base44.get<{ jobs?: any[] }>("/api/jobs", {
         params: { status: "open", limit: 200 },
@@ -931,7 +931,7 @@ export default function CreatorDashboard() {
       });
       return invites;
     } finally {
-      setLoadingJobInvites(false);
+      if (!silent) setLoadingJobInvites(false);
     }
   };
 
@@ -1099,8 +1099,8 @@ export default function CreatorDashboard() {
       try {
         const { requests, connections } = await loadBrandConnectionData();
         const [offers, jobInvitesRes] = await Promise.all([
-          loadBrandOffers().catch(() => []),
-          loadJobInvites().catch(() => []),
+          loadBrandOffers(true).catch(() => []),
+          loadJobInvites(true).catch(() => []),
         ]);
         if (!active) return;
         setBrandConnectionRequests(requests);
@@ -2067,6 +2067,23 @@ export default function CreatorDashboard() {
   }).length;
   const totalBrandConnectionUnseen =
     brandPendingRequestsUnseen + brandOfferNotificationsUnseen;
+
+  useEffect(() => {
+    if (activeSection === "brand-connection") {
+      setSeenBrandRequestIds((prev) => {
+        const next = new Set(prev);
+        brandConnectionRequests.forEach((r: any) =>
+          next.add(String(r?.id || "")),
+        );
+        return next;
+      });
+      setSeenOfferNotificationIds((prev) => {
+        const next = new Set(prev);
+        brandOffers.forEach((o: any) => next.add(String(o?.id || "")));
+        return next;
+      });
+    }
+  }, [activeSection, brandConnectionRequests, brandOffers]);
 
   const navigationItems: Array<{
     id: string;
