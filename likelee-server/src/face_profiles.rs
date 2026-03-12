@@ -2153,14 +2153,6 @@ pub async fn list_brand_connected_agencies(
         let Some(agency) = row.get("agencies") else {
             continue;
         };
-        let kyc_status = agency
-            .get("kyc_status")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_lowercase();
-        if kyc_status != "approved" {
-            continue;
-        }
 
         let city = agency.get("city").and_then(|v| v.as_str()).unwrap_or("");
         let state = agency.get("state").and_then(|v| v.as_str()).unwrap_or("");

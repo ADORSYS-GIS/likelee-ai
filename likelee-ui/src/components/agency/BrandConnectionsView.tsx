@@ -29,6 +29,11 @@ const BrandConnectionsView = () => {
     Record<string, { title: string; message: string; packageId?: string }>
   >({});
 
+  const [seenCounts, setSeenCounts] = useState<Record<string, number>>(() => {
+    const saved = localStorage.getItem("brand_connections_seen_counts");
+    return saved ? JSON.parse(saved) : {};
+  });
+
   const requestsQuery = useQuery({
     queryKey: ["agency", "brand-connection-requests"],
     queryFn: async () => {
@@ -317,6 +322,45 @@ const BrandConnectionsView = () => {
     }
   };
 
+  const pendingRequests = requests.length;
+  const pendingOffers =
+    jobInvites.length +
+    offers.filter((o) => ["sent", "viewed"].includes(o.status)).length;
+  const pendingFeedback = feedbackItems.length;
+
+  React.useEffect(() => {
+    setSeenCounts((prev) => {
+      const next = { ...prev };
+      let changed = false;
+
+      if (activeTab === "requests" && prev.requests !== pendingRequests) {
+        next.requests = pendingRequests;
+        changed = true;
+      }
+      if (activeTab === "offers" && prev.offers !== pendingOffers) {
+        next.offers = pendingOffers;
+        changed = true;
+      }
+      if (activeTab === "feedback" && prev.feedback !== pendingFeedback) {
+        next.feedback = pendingFeedback;
+        changed = true;
+      }
+
+      if (changed) {
+        localStorage.setItem(
+          "brand_connections_seen_counts",
+          JSON.stringify(next),
+        );
+        return next;
+      }
+      return prev;
+    });
+  }, [activeTab, pendingRequests, pendingOffers, pendingFeedback]);
+
+  const showRequestsBadge = pendingRequests > (seenCounts.requests || 0);
+  const showOffersBadge = pendingOffers > (seenCounts.offers || 0);
+  const showFeedbackBadge = pendingFeedback > (seenCounts.feedback || 0);
+
   return (
     <div className="space-y-6">
       <div>
@@ -336,14 +380,26 @@ const BrandConnectionsView = () => {
         <Button
           variant={activeTab === "requests" ? "default" : "outline"}
           onClick={() => setActiveTab("requests")}
+          className="relative"
         >
           Requests
+          {showRequestsBadge && (
+            <Badge className="absolute -top-2 -right-2 bg-red-600 border-none text-[10px] h-5 min-w-[20px] flex items-center justify-center">
+              {pendingRequests - (seenCounts.requests || 0)}
+            </Badge>
+          )}
         </Button>
         <Button
           variant={activeTab === "offers" ? "default" : "outline"}
           onClick={() => setActiveTab("offers")}
+          className="relative"
         >
           Brand Offers
+          {showOffersBadge && (
+            <Badge className="absolute -top-2 -right-2 bg-red-600 border-none text-[10px] h-5 min-w-[20px] flex items-center justify-center">
+              {pendingOffers - (seenCounts.offers || 0)}
+            </Badge>
+          )}
         </Button>
         <Button
           variant={activeTab === "contract_hub" ? "default" : "outline"}
@@ -360,8 +416,14 @@ const BrandConnectionsView = () => {
         <Button
           variant={activeTab === "feedback" ? "default" : "outline"}
           onClick={() => setActiveTab("feedback")}
+          className="relative"
         >
           Package Feedback
+          {showFeedbackBadge && (
+            <Badge className="absolute -top-2 -right-2 bg-red-600 border-none text-[10px] h-5 min-w-[20px] flex items-center justify-center">
+              {pendingFeedback - (seenCounts.feedback || 0)}
+            </Badge>
+          )}
         </Button>
       </div>
 

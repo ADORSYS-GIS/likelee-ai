@@ -17256,12 +17256,91 @@ export default function AgencyDashboard() {
     refetchInterval: 15 * 1000,
   });
 
+  const brandConnectionOffersQuery = useQuery({
+    queryKey: ["agency-campaign-offers-my", user?.id],
+    queryFn: async () => {
+      const resp = await base44.get<{ offers?: any[] }>(
+        "/api/campaign-offers/my",
+        { params: { limit: 50 } },
+      );
+      return Array.isArray(resp?.offers) ? resp.offers : [];
+    },
+    enabled: !!user?.id,
+    staleTime: 60 * 1000,
+  });
+
+  const brandConnectionJobInvitesQuery = useQuery({
+    queryKey: ["agency-job-invites", user?.id],
+    queryFn: async () => {
+      const resp = await base44.get<{ jobs?: any[] }>("/api/jobs", {
+        params: { limit: 100 },
+      });
+      const jobs = Array.isArray(resp?.jobs) ? resp.jobs : [];
+      return jobs.filter((job) => {
+        const invitedAgencies = Array.isArray(job?.invited_agency_ids)
+          ? job.invited_agency_ids
+          : [];
+        return (
+          invitedAgencies.includes(profile?.id) ||
+          invitedAgencies.includes(user?.id)
+        );
+      });
+    },
+    enabled: !!user?.id,
+    staleTime: 60 * 1000,
+  });
+
+  const brandConnectionFeedbackQuery = useQuery({
+    queryKey: ["agency-package-feedback", user?.id],
+    queryFn: async () => {
+      const resp = await base44.get<{ items?: any[] }>(
+        "/api/agency/brand-offers/package-feedback",
+      );
+      return Array.isArray(resp?.items) ? resp.items : [];
+    },
+    enabled: !!user?.id,
+    staleTime: 60 * 1000,
+  });
+
   const pendingBrandConnectionCount = useMemo(() => {
     const requests = Array.isArray(brandConnectionRequestsCountQuery.data)
-      ? brandConnectionRequestsCountQuery.data
-      : [];
-    return requests.length;
-  }, [brandConnectionRequestsCountQuery.data]);
+      ? brandConnectionRequestsCountQuery.data.length
+      : 0;
+    const offers =
+      (Array.isArray(brandConnectionOffersQuery.data)
+        ? brandConnectionOffersQuery.data.filter((o) =>
+            ["sent", "viewed"].includes(o.status),
+          ).length
+        : 0) +
+      (Array.isArray(brandConnectionJobInvitesQuery.data)
+        ? brandConnectionJobInvitesQuery.data.length
+        : 0);
+    const feedback = Array.isArray(brandConnectionFeedbackQuery.data)
+      ? brandConnectionFeedbackQuery.data.length
+      : 0;
+
+    // Subtract seen counts
+    const saved = localStorage.getItem("brand_connections_seen_counts");
+    const seen = saved ? JSON.parse(saved) : {};
+
+    const diffRequests = Math.max(0, requests - (seen.requests || 0));
+    const diffOffers = Math.max(0, offers - (seen.offers || 0));
+    const diffFeedback = Math.max(0, feedback - (seen.feedback || 0));
+
+    // If currently on the brand-connections tab, we don't want the badge to persist if viewed
+    if (activeTab === "brand-connections") {
+      return 0; // Or return the total if we want it to stay until they switch sub-tabs.
+      // But the user said "when the notification is opened the 2 shouldn't be showing".
+    }
+
+    return diffRequests + diffOffers + diffFeedback;
+  }, [
+    brandConnectionRequestsCountQuery.data,
+    brandConnectionOffersQuery.data,
+    brandConnectionJobInvitesQuery.data,
+    brandConnectionFeedbackQuery.data,
+    activeTab,
+  ]);
 
   const rosterTalents = useMemo(() => {
     const d: any = rosterQuery.data;
