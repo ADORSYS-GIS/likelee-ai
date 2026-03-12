@@ -336,6 +336,104 @@ export default function PostJob() {
   }, []);
 
   const handleNext = () => {
+    if (currentStep === 1) {
+      if (!formData.job_title.trim()) {
+        toast({
+          title: "Required Field",
+          description: "Job Title is required.",
+        });
+        return;
+      }
+      if (!formData.contact_email.trim()) {
+        toast({
+          title: "Required Field",
+          description: "Contact Email is required.",
+        });
+        return;
+      }
+      if (!formData.category) {
+        toast({
+          title: "Required Field",
+          description: "Category is required.",
+        });
+        return;
+      }
+      if (!formData.call_type) {
+        toast({
+          title: "Required Field",
+          description: "Call Type is required.",
+        });
+        return;
+      }
+    }
+
+    if (currentStep === 2) {
+      if (!formData.job_type) {
+        toast({
+          title: "Required Field",
+          description: "Job Type is required.",
+        });
+        return;
+      }
+      if (!formData.description.trim()) {
+        toast({
+          title: "Required Field",
+          description: "Description (About the role) is required.",
+        });
+        return;
+      }
+    }
+
+    if (currentStep === 3) {
+      if (!formData.talent_types || formData.talent_types.length === 0) {
+        toast({
+          title: "Required Field",
+          description: "Please select at least one Talent Type.",
+        });
+        return;
+      }
+    }
+
+    if (currentStep === 4 && formData.needs_licensing) {
+      if (!formData.usage_type) {
+        toast({
+          title: "Required Field",
+          description: "Usage Type is required for licensing.",
+        });
+        return;
+      }
+      if (!formData.license_duration) {
+        toast({
+          title: "Required Field",
+          description: "License Duration is required.",
+        });
+        return;
+      }
+      if (!formData.territories) {
+        toast({
+          title: "Required Field",
+          description: "Territories are required.",
+        });
+        return;
+      }
+    }
+
+    // Step 4 (Budget) if NO licensing, or Step 5 if HAS licensing
+    const budgetStep = formData.needs_licensing ? 5 : 4;
+    if (currentStep === budgetStep) {
+      if (!formData.budget) {
+        toast({ title: "Required Field", description: "Budget is required." });
+        return;
+      }
+      if (!formData.payment_type) {
+        toast({
+          title: "Required Field",
+          description: "Payment Type is required.",
+        });
+        return;
+      }
+    }
+
     if (currentStep < totalSteps) setCurrentStep(currentStep + 1);
   };
 
@@ -869,7 +967,6 @@ export default function PostJob() {
               <div className="flex justify-end pt-6">
                 <Button
                   onClick={handleNext}
-                  disabled={!formData.job_title || !formData.contact_email}
                   className="bg-blue-600 hover:bg-blue-700 text-white rounded-none"
                 >
                   Next: Project Overview
@@ -1037,7 +1134,6 @@ export default function PostJob() {
                 </Button>
                 <Button
                   onClick={handleNext}
-                  disabled={!formData.description || !formData.job_type}
                   className="bg-blue-600 hover:bg-blue-700 text-white rounded-none"
                 >
                   Next: Talent Requirements
@@ -1463,7 +1559,6 @@ export default function PostJob() {
                 </Button>
                 <Button
                   onClick={handleNext}
-                  disabled={!formData.budget || !formData.payment_type}
                   className="bg-blue-600 hover:bg-blue-700 text-white rounded-none"
                 >
                   Next: Collaboration

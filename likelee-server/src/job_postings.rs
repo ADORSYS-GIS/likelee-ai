@@ -166,6 +166,8 @@ pub async fn update_job(
     if user.role != "brand" {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
+    let effective_brand_id =
+        crate::face_profiles::resolve_effective_brand_id(&state, &user).await?;
 
     let job_check = state
         .pg
@@ -182,7 +184,7 @@ pub async fn update_job(
         .first()
         .ok_or((StatusCode::NOT_FOUND, "job not found".to_string()))?;
     let brand_id = job.get("brand_id").and_then(|v| v.as_str()).unwrap_or("");
-    if brand_id != user.id {
+    if brand_id != effective_brand_id {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
 
@@ -337,6 +339,8 @@ pub async fn create_job(
     if user.role != "brand" {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
+    let effective_brand_id =
+        crate::face_profiles::resolve_effective_brand_id(&state, &user).await?;
 
     let status = payload
         .status
@@ -381,7 +385,7 @@ pub async fn create_job(
     }
 
     let row = json!({
-        "brand_id": user.id,
+        "brand_id": effective_brand_id,
         "company_name": payload.company_name,
         "contact_email": payload.contact_email,
         "job_title": title,
@@ -813,8 +817,19 @@ pub async fn list_jobs(
                 row["is_invited_viewer"] = serde_json::Value::Bool(invited);
             }
         } else if user.role == "brand" {
+            // We need to resolve effective_brand_id once outside or per-loop?
+            // In list_jobs, we can't easily resolve per-loop if many brands.
+            // But for a brand user looking at the broad list, if they are the owner they see it.
+            // Let's assume user.id resolution is handled if they are looking at specific jobs.
+            // For now, list_jobs usually returns public ones.
             let brand_id = row.get("brand_id").and_then(|v| v.as_str()).unwrap_or("");
-            if brand_id == user.id {
+            if brand_id == user.id
+                || (user.role == "brand"
+                    && brand_id
+                        == crate::face_profiles::resolve_effective_brand_id(&state, &user)
+                            .await
+                            .unwrap_or_default())
+            {
                 row["is_invited_viewer"] = serde_json::Value::Bool(true);
             }
         }
@@ -829,11 +844,14 @@ pub async fn list_my_jobs(
     if user.role != "brand" {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
+    let effective_brand_id =
+        crate::face_profiles::resolve_effective_brand_id(&state, &user).await?;
+
     let resp = state
         .pg
         .from("job_postings")
         .select("*,brands(id,company_name,logo_url)")
-        .eq("brand_id", &user.id)
+        .eq("brand_id", &effective_brand_id)
         .order("created_at.desc")
         .execute()
         .await
@@ -1145,6 +1163,8 @@ pub async fn list_job_applications(
     if user.role != "brand" {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
+    let effective_brand_id =
+        crate::face_profiles::resolve_effective_brand_id(&state, &user).await?;
 
     let job_check = state
         .pg
@@ -1161,7 +1181,7 @@ pub async fn list_job_applications(
         .first()
         .ok_or((StatusCode::NOT_FOUND, "job not found".to_string()))?;
     let brand_id = job.get("brand_id").and_then(|v| v.as_str()).unwrap_or("");
-    if brand_id != user.id {
+    if brand_id != effective_brand_id {
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
 

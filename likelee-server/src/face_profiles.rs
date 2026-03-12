@@ -908,7 +908,7 @@ pub async fn search_marketplace_profiles(
     Ok(Json(serde_json::Value::Array(results)))
 }
 
-async fn resolve_effective_agency_id(
+pub(crate) async fn resolve_effective_agency_id(
     state: &AppState,
     user: &AuthUser,
 ) -> Result<String, (StatusCode, String)> {
@@ -967,7 +967,7 @@ async fn resolve_effective_agency_id(
     Ok(user.id.clone())
 }
 
-async fn resolve_effective_brand_id(
+pub(crate) async fn resolve_effective_brand_id(
     state: &AppState,
     user: &AuthUser,
 ) -> Result<String, (StatusCode, String)> {
@@ -1026,7 +1026,7 @@ async fn resolve_effective_brand_id(
     Ok(user.id.clone())
 }
 
-async fn resolve_effective_creator_id(
+pub(crate) async fn resolve_effective_creator_id(
     state: &AppState,
     user: &AuthUser,
 ) -> Result<String, (StatusCode, String)> {
