@@ -3338,10 +3338,17 @@ export default function BrandDashboard() {
                         "Campaign Asset Submission"}
                     </h3>
                     <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5">
-                      {offer.talent_name || "Creator"} •{" "}
-                      {offer.offer_title ||
-                        offer.brand_campaigns?.name ||
-                        "Offer"}
+                      {(() => {
+                        const targetType = String(
+                          offer?.target_type || "",
+                        ).toLowerCase();
+                        const targetName = String(offer?.target_name || "").trim();
+                        if (targetType === "agency") {
+                          return `Creator • ${targetName || "Agency"}`;
+                        }
+                        const creatorName = String(offer?.talent_name || "").trim();
+                        return `Creator • ${creatorName || targetName || "Creator"}`;
+                      })()}
                     </p>
                   </div>
                 </div>
