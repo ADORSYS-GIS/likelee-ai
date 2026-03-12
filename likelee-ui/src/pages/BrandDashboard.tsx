@@ -106,6 +106,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 // Mock data
 const mockBrand = {
@@ -668,6 +669,8 @@ export default function BrandDashboard() {
   const [brandOfferItems, setBrandOfferItems] = useState<any[]>([]);
   const [loadingBrandOfferItems, setLoadingBrandOfferItems] = useState(false);
   const [selectedOfferHubId, setSelectedOfferHubId] = useState<string>("");
+  const [expandedCampaignHubId, setExpandedCampaignHubId] =
+    useState<string>("");
   const [selectedOfferHubContracts, setSelectedOfferHubContracts] = useState<
     any[]
   >([]);
@@ -3285,262 +3288,414 @@ export default function BrandDashboard() {
             </p>
           </Card>
         )}
-        {brandOfferItems.map((offer: any) => {
-          const offerId = String(offer?.id || "");
-          const expanded = selectedOfferHubId === offerId;
-          const offerDeliverables = Array.isArray(offer?.offer_deliverables)
-            ? offer.offer_deliverables
-            : selectedOfferHubId === offerId
-              ? selectedOfferHubDeliverables
-              : [];
-          const reviewedCount = offerDeliverables.filter((d: any) => {
-            const st = String(d?.status || "").toLowerCase();
-            return st !== "" && st !== "submitted" && st !== "draft";
-          }).length;
-          const approvedCount = offerDeliverables.filter((d: any) => {
-            const st = String(d?.status || "").toLowerCase();
-            return st === "approved" || st === "brand_approved";
-          }).length;
-          const expectedDeliverables = (() => {
-            const brief =
-              offer?.brief_snapshot ||
-              offer?.brand_campaigns?.brief_snapshot ||
-              offer?.brand_campaigns?.brief ||
-              {};
-            const raw = Number(brief?.total_expected_deliverables);
-            if (!Number.isNaN(raw) && raw > 0) return raw;
-            return 0;
-          })();
-          const completionPct =
-            expectedDeliverables > 0
-              ? Math.round((approvedCount / expectedDeliverables) * 100)
-              : 0;
-          return (
-            <div
-              key={offerId}
-              className="border border-gray-300 bg-white overflow-hidden"
-            >
+        {(() => {
+          const offers = Array.isArray(brandOfferItems) ? brandOfferItems : [];
+          const groups = offers.reduce<Record<string, any>>((acc, offer: any) => {
+            const campaignId = String(
+              offer?.brand_campaigns?.id || offer?.campaign_id || "",
+            ).trim();
+            const key = campaignId || String(offer?.id || "");
+            const name =
+              offer?.brand_campaigns?.name ||
+              offer?.campaign_name ||
+              "Campaign Asset Submission";
+            if (!acc[key]) {
+              acc[key] = {
+                campaignId: key,
+                campaignName: name,
+                offers: [],
+              };
+            }
+            acc[key].offers.push(offer);
+            return acc;
+          }, {});
+
+          const groupRows = Object.values(groups);
+
+          return groupRows.map((group: any) => {
+            const campaignId = String(group?.campaignId || "");
+            const campaignExpanded = expandedCampaignHubId === campaignId;
+
+            const aggregate = group.offers.reduce(
+              (
+                acc: {
+                  reviewed: number;
+                  approved: number;
+                  expected: number;
+                },
+                offer: any,
+              ) => {
+                const offerId = String(offer?.id || "");
+                const isExpandedOffer = selectedOfferHubId === offerId;
+                const offerDeliverables = Array.isArray(offer?.offer_deliverables)
+                  ? offer.offer_deliverables
+                  : isExpandedOffer
+                    ? selectedOfferHubDeliverables
+                    : [];
+                const reviewedCount = offerDeliverables.filter((d: any) => {
+                  const st = String(d?.status || "").toLowerCase();
+                  return st !== "" && st !== "submitted" && st !== "draft";
+                }).length;
+                const approvedCount = offerDeliverables.filter((d: any) => {
+                  const st = String(d?.status || "").toLowerCase();
+                  return st === "approved" || st === "brand_approved";
+                }).length;
+                const expectedDeliverables = (() => {
+                  const brief =
+                    offer?.brief_snapshot ||
+                    offer?.brand_campaigns?.brief_snapshot ||
+                    offer?.brand_campaigns?.brief ||
+                    {};
+                  const raw = Number(brief?.total_expected_deliverables);
+                  if (!Number.isNaN(raw) && raw > 0) return raw;
+                  return 0;
+                })();
+
+                return {
+                  reviewed: acc.reviewed + reviewedCount,
+                  approved: acc.approved + approvedCount,
+                  expected: acc.expected + expectedDeliverables,
+                };
+              },
+              { reviewed: 0, approved: 0, expected: 0 },
+            );
+
+            const completionPct =
+              aggregate.expected > 0
+                ? Math.round((aggregate.approved / aggregate.expected) * 100)
+                : 0;
+
+            return (
               <div
-                className="p-5 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
-                onClick={async () => {
-                  const next = expanded ? "" : offerId;
-                  setSelectedOfferHubId(next);
-                  await loadOfferHubDetails(next);
-                }}
+                key={`campaign-${campaignId}`}
+                className="border border-gray-300 bg-white overflow-hidden"
               >
-                <div className="flex items-center gap-4">
-                  <div className="p-3 rounded-xl bg-gray-100 text-gray-600">
-                    <Briefcase className="w-5 h-5" />
+                <div
+                  className="p-5 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => {
+                    setExpandedCampaignHubId(
+                      campaignExpanded ? "" : campaignId,
+                    );
+                  }}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-xl bg-gray-100 text-gray-600">
+                      <Briefcase className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-900">
+                        {group?.campaignName || "Campaign"}
+                      </h3>
+                      <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5">
+                        {group?.offers?.length || 0} collaborators
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900">
-                      {offer?.brand_campaigns?.name ||
-                        "Campaign Asset Submission"}
-                    </h3>
-                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5">
-                      {(() => {
-                        const targetType = String(
-                          offer?.target_type || "",
-                        ).toLowerCase();
-                        const targetName = String(offer?.target_name || "").trim();
-                        if (targetType === "agency") {
-                          return `Creator • ${targetName || "Agency"}`;
-                        }
-                        const creatorName = String(offer?.talent_name || "").trim();
-                        return `Creator • ${creatorName || targetName || "Creator"}`;
-                      })()}
-                    </p>
+                  <div className="flex items-center gap-4">
+                    <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-sky-100 text-sky-700 border border-sky-200 shadow-sm">
+                      {aggregate.reviewed} reviewed
+                    </Badge>
+                    <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm">
+                      {aggregate.approved} approved
+                    </Badge>
+                    <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 shadow-sm">
+                      {completionPct}%
+                    </Badge>
+                    {campaignExpanded ? (
+                      <ChevronDown className="w-5 h-5 text-gray-400" />
+                    ) : (
+                      <ChevronRight className="w-5 h-5 text-gray-400" />
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 shadow-sm">
-                    {String(offer?.status || "sent").replace(/_/g, " ")}
-                  </Badge>
-                  <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-sky-100 text-sky-700 border border-sky-200 shadow-sm">
-                    {reviewedCount} reviewed
-                  </Badge>
-                  <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm">
-                    {approvedCount} approved
-                  </Badge>
-                  {expanded ? (
-                    <ChevronDown className="w-5 h-5 text-gray-400" />
-                  ) : (
-                    <ChevronRight className="w-5 h-5 text-gray-400" />
-                  )}
-                </div>
-              </div>
 
-              {expanded && (
-                <div className="border-t border-gray-200 bg-gray-50/50 p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
-                    <div className="bg-white border border-gray-200 p-4">
-                      <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
-                        Campaign
-                      </p>
-                      <p className="text-sm font-bold text-gray-900 mt-1">
-                        {offer?.brand_campaigns?.name || "Campaign"}
-                      </p>
-                    </div>
-                    <div className="bg-white border border-gray-200 p-4">
-                      <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
-                        Progress
-                      </p>
-                      <p className="text-sm font-bold text-gray-900 mt-1">
-                        {approvedCount}/{expectedDeliverables || 0}
-                      </p>
-                    </div>
-                    <div className="bg-white border border-gray-200 p-4">
-                      <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
-                        Completion
-                      </p>
-                      <p className="text-sm font-bold text-gray-900 mt-1">
-                        {completionPct}%
-                      </p>
-                    </div>
-                  </div>
-                  <div className="bg-white border border-gray-200 p-4 mb-5">
-                    <p className="text-xs font-semibold text-gray-700 mb-2">
-                      Progress
-                    </p>
-                    <Progress value={completionPct} className="h-2" />
-                    <p className="text-[11px] text-gray-500 mt-2">
-                      {approvedCount}/{expectedDeliverables || 0} deliverables
-                      approved
-                    </p>
-                  </div>
-                  {loadingOfferHubDetails && selectedOfferHubId === offerId ? (
-                    <div className="py-12 text-center">
-                      <Loader2 className="w-8 h-8 text-gray-300 mx-auto mb-3 animate-spin" />
-                      <p className="text-sm text-gray-500 font-medium">
-                        Loading deliverables...
-                      </p>
-                    </div>
-                  ) : selectedOfferHubDeliverables.length === 0 ? (
-                    <div className="py-12 text-center">
-                      <ImageIcon className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-                      <p className="text-sm text-gray-400 font-medium italic">
-                        No content has been submitted yet.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                      {selectedOfferHubDeliverables.map(
-                        (del: any, idx: number) => (
-                          <Card
-                            key={String(del.id)}
-                            className="group overflow-hidden rounded-2xl border border-white/70 bg-white/70 backdrop-blur-lg shadow-lg hover:shadow-2xl transition-all cursor-zoom-in"
-                            onClick={() => {
-                              setPreviewItems(selectedOfferHubDeliverables);
-                              setPreviewIndex(idx);
-                              setPreviewImage(del);
-                            }}
+                {campaignExpanded && (
+                  <div className="border-t border-gray-200 bg-gray-50/50">
+                    <div className="p-4 space-y-3">
+                      {group.offers.map((offer: any) => {
+                        const offerId = String(offer?.id || "");
+                        const expanded = selectedOfferHubId === offerId;
+                        const offerDeliverables = Array.isArray(
+                          offer?.offer_deliverables,
+                        )
+                          ? offer.offer_deliverables
+                          : selectedOfferHubId === offerId
+                            ? selectedOfferHubDeliverables
+                            : [];
+
+                        const reviewedCount = offerDeliverables.filter((d: any) => {
+                          const st = String(d?.status || "").toLowerCase();
+                          return st !== "" && st !== "submitted" && st !== "draft";
+                        }).length;
+                        const approvedCount = offerDeliverables.filter((d: any) => {
+                          const st = String(d?.status || "").toLowerCase();
+                          return st === "approved" || st === "brand_approved";
+                        }).length;
+                        const expectedDeliverables = (() => {
+                          const brief =
+                            offer?.brief_snapshot ||
+                            offer?.brand_campaigns?.brief_snapshot ||
+                            offer?.brand_campaigns?.brief ||
+                            {};
+                          const raw = Number(brief?.total_expected_deliverables);
+                          if (!Number.isNaN(raw) && raw > 0) return raw;
+                          return 0;
+                        })();
+                        const completionPct =
+                          expectedDeliverables > 0
+                            ? Math.round(
+                                (approvedCount / expectedDeliverables) * 100,
+                              )
+                            : 0;
+
+                        const collaboratorName = (() => {
+                          const targetType = String(
+                            offer?.target_type || "",
+                          ).toLowerCase();
+                          const targetName = String(offer?.target_name || "").trim();
+                          if (targetType === "agency") {
+                            return targetName || "Agency";
+                          }
+                          const creatorName = String(offer?.talent_name || "").trim();
+                          return creatorName || targetName || "Creator";
+                        })();
+
+                        const collaboratorAvatar =
+                          String(offer?.target_avatar_url || "").trim() ||
+                          String(offer?.talent_avatar_url || "").trim() ||
+                          String(offer?.avatar_url || "").trim();
+                        const collaboratorInitial =
+                          collaboratorName.trim().slice(0, 1).toUpperCase() ||
+                          "C";
+
+                        return (
+                          <div
+                            key={`offer-${offerId}`}
+                            className="border border-gray-200 bg-white"
                           >
-                            <div className="aspect-[4/5] bg-gray-100 relative overflow-hidden">
-                              {del.asset_type === "image" ? (
-                                <img
-                                  src={getPublicUrl(del)}
-                                  alt={del.caption || "Deliverable"}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center bg-gray-900">
-                                  <Video className="w-12 h-12 text-white/20" />
+                            <div
+                              className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
+                              onClick={async (event) => {
+                                event.stopPropagation();
+                                const next = expanded ? "" : offerId;
+                                setSelectedOfferHubId(next);
+                                await loadOfferHubDetails(next);
+                              }}
+                            >
+                              <div className="flex items-center gap-3">
+                                <Avatar className="w-9 h-9">
+                                  <AvatarImage src={collaboratorAvatar} />
+                                  <AvatarFallback className="bg-indigo-50 text-indigo-600 font-bold text-xs uppercase">
+                                    {collaboratorInitial}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <p className="text-sm font-bold text-gray-900">
+                                    {collaboratorName}
+                                  </p>
+                                  <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-0.5">
+                                    {(() => {
+                                      const targetType = String(
+                                        offer?.target_type || "",
+                                      ).toLowerCase();
+                                      if (targetType === "agency") {
+                                        return "Creator • Agency";
+                                      }
+                                      return "Creator • Creator";
+                                    })()}
+                                  </p>
                                 </div>
-                              )}
-                              <div className="absolute top-3 right-3">
-                                <Button
-                                  variant="secondary"
-                                  size="icon"
-                                  className="h-8 w-8 rounded-full bg-white/90 text-gray-900 hover:bg-white shadow-sm"
-                                  onClick={(event) => {
-                                    event.stopPropagation();
-                                    window.open(getPublicUrl(del), "_blank");
-                                  }}
-                                  title="Download"
-                                >
-                                  <Download className="w-4 h-4" />
-                                </Button>
                               </div>
-                              <div className="absolute top-2 left-2">
-                                <Badge
-                                  className={`rounded-none border-0 ${
-                                    del.status === "approved" ||
-                                    del.status === "brand_approved"
-                                      ? "bg-emerald-600 text-white"
-                                      : del.status === "changes_requested"
-                                        ? "bg-rose-600 text-white"
-                                        : "bg-blue-600 text-white"
-                                  }`}
-                                >
-                                  {del.status === "submitted"
-                                    ? "New"
-                                    : del.status === "brand_approved"
-                                      ? "approved"
-                                      : del.status.replace(/_/g, " ")}
+                              <div className="flex items-center gap-3">
+                                <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-sky-100 text-sky-700 border border-sky-200 shadow-sm">
+                                  {reviewedCount} reviewed
                                 </Badge>
-                              </div>
-                            </div>
-                            <div className="p-4 space-y-4">
-                              <p className="text-xs text-gray-600 font-medium leading-relaxed line-clamp-2">
-                                {del.caption || (
-                                  <span className="text-gray-300 italic">
-                                    No caption
-                                  </span>
+                                <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-sm">
+                                  {approvedCount} approved
+                                </Badge>
+                                <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200 shadow-sm">
+                                  {completionPct}%
+                                </Badge>
+                                {expanded ? (
+                                  <ChevronDown className="w-5 h-5 text-gray-400" />
+                                ) : (
+                                  <ChevronRight className="w-5 h-5 text-gray-400" />
                                 )}
-                              </p>
-
-                              <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
-                                <Button
-                                  size="sm"
-                                  className="flex-1 h-8 rounded-none font-bold bg-gray-900"
-                                  onClick={() =>
-                                    handleDeliverableReview(
-                                      offerId,
-                                      del.id,
-                                      "approve",
-                                    )
-                                  }
-                                  disabled={
-                                    del.status === "approved" ||
-                                    del.status === "brand_approved"
-                                  }
-                                >
-                                  Approve
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="flex-1 h-8 rounded-none font-bold border-gray-300"
-                                  onClick={() => {
-                                    setReviewDialog({
-                                      open: true,
-                                      offerId,
-                                      delId: del.id,
-                                      note: del.brand_review_note || "",
-                                    });
-                                  }}
-                                >
-                                  Feedback
-                                </Button>
                               </div>
-
-                              {del.brand_review_note && (
-                                <div className="p-2 bg-gray-50 border border-gray-200 text-[10px] text-gray-600">
-                                  <strong>Your feedback:</strong>{" "}
-                                  {del.brand_review_note}
-                                </div>
-                              )}
                             </div>
-                          </Card>
-                        ),
-                      )}
+
+                            {expanded && (
+                              <div className="border-t border-gray-200 bg-gray-50/50 p-6">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
+                                  <div className="bg-white border border-gray-200 p-4">
+                                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
+                                      Campaign
+                                    </p>
+                                    <p className="text-sm font-bold text-gray-900 mt-1">
+                                      {group?.campaignName || "Campaign"}
+                                    </p>
+                                  </div>
+                                  <div className="bg-white border border-gray-200 p-4">
+                                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
+                                      Progress
+                                    </p>
+                                    <p className="text-sm font-bold text-gray-900 mt-1">
+                                      {approvedCount}/{expectedDeliverables || 0}
+                                    </p>
+                                  </div>
+                                  <div className="bg-white border border-gray-200 p-4">
+                                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">
+                                      Completion
+                                    </p>
+                                    <p className="text-sm font-bold text-gray-900 mt-1">
+                                      {completionPct}%
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="bg-white border border-gray-200 p-4 mb-5">
+                                  <p className="text-xs font-semibold text-gray-700 mb-2">
+                                    Progress
+                                  </p>
+                                  <Progress value={completionPct} className="h-2" />
+                                  <p className="text-[11px] text-gray-500 mt-2">
+                                    {approvedCount}/{expectedDeliverables || 0} deliverables
+                                    approved
+                                  </p>
+                                </div>
+                                {loadingOfferHubDetails &&
+                                selectedOfferHubId === offerId ? (
+                                  <div className="py-12 text-center">
+                                    <Loader2 className="w-8 h-8 text-gray-300 mx-auto mb-3 animate-spin" />
+                                    <p className="text-sm text-gray-500 font-medium">
+                                      Loading deliverables...
+                                    </p>
+                                  </div>
+                                ) : selectedOfferHubDeliverables.length === 0 ? (
+                                  <div className="py-12 text-center">
+                                    <ImageIcon className="w-12 h-12 text-gray-200 mx-auto mb-3" />
+                                    <p className="text-sm text-gray-400 font-medium italic">
+                                      No content has been submitted yet.
+                                    </p>
+                                  </div>
+                                ) : (
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                    {selectedOfferHubDeliverables.map(
+                                      (del: any, idx: number) => (
+                                        <Card
+                                          key={String(del.id)}
+                                          className="group overflow-hidden rounded-2xl border border-white/70 bg-white/70 backdrop-blur-lg shadow-lg hover:shadow-2xl transition-all cursor-zoom-in"
+                                          onClick={() => {
+                                            setPreviewItems(
+                                              selectedOfferHubDeliverables,
+                                            );
+                                            setPreviewIndex(idx);
+                                            setPreviewImage(del);
+                                          }}
+                                        >
+                                          <div className="aspect-[4/5] bg-gray-100 relative overflow-hidden">
+                                            {del.asset_type === "image" ? (
+                                              <img
+                                                src={getPublicUrl(del)}
+                                                alt={del.caption || "Deliverable"}
+                                                className="w-full h-full object-cover"
+                                              />
+                                            ) : (
+                                              <div className="w-full h-full flex items-center justify-center bg-gray-900">
+                                                <Video className="w-12 h-12 text-white/20" />
+                                              </div>
+                                            )}
+                                            <div className="absolute top-3 right-3">
+                                              <Button
+                                                variant="secondary"
+                                                size="icon"
+                                                className="h-8 w-8 rounded-full bg-white/90 text-gray-900 hover:bg-white shadow-sm"
+                                                onClick={(event) => {
+                                                  event.stopPropagation();
+                                                  window.open(
+                                                    getPublicUrl(del),
+                                                    "_blank",
+                                                  );
+                                                }}
+                                                title="Download"
+                                              >
+                                                <Download className="w-4 h-4" />
+                                              </Button>
+                                            </div>
+                                            <div className="absolute top-2 left-2">
+                                              <Badge
+                                                className={`rounded-none border-0 ${
+                                                  del.status === "approved" ||
+                                                  del.status === "brand_approved"
+                                                    ? "bg-emerald-600 text-white"
+                                                    : del.status === "changes_requested"
+                                                      ? "bg-rose-600 text-white"
+                                                      : "bg-blue-600 text-white"
+                                                }`}
+                                              >
+                                                {del.status === "submitted"
+                                                  ? "New"
+                                                  : del.status === "brand_approved"
+                                                    ? "approved"
+                                                    : del.status.replace(/_/g, " ")}
+                                              </Badge>
+                                            </div>
+                                          </div>
+                                          <div className="p-4 space-y-4">
+                                            <p className="text-xs text-gray-600 font-medium leading-relaxed line-clamp-2">
+                                              {del.caption || (
+                                                <span className="text-gray-300 italic">
+                                                  No caption
+                                                </span>
+                                              )}
+                                            </p>
+
+                                            <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+                                              <Button
+                                                size="sm"
+                                                className="flex-1 h-8 rounded-none font-bold bg-gray-900"
+                                                onClick={() =>
+                                                  handleDeliverableReview(
+                                                    offerId,
+                                                    del.id,
+                                                    "approve",
+                                                  )
+                                                }
+                                              >
+                                                Approve
+                                              </Button>
+                                              <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="flex-1 h-8 rounded-none font-bold"
+                                                onClick={() =>
+                                                  handleDeliverableReview(
+                                                    offerId,
+                                                    del.id,
+                                                    "changes_requested",
+                                                  )
+                                                }
+                                              >
+                                                Request changes
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        </Card>
+                                      ),
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
+                  </div>
+                )}
+              </div>
+            );
+          });
+        })()}
       </div>
     </div>
   );
