@@ -1,11 +1,208 @@
-use crate::auth::AuthUser;
-use crate::config::AppState;
+use crate::{auth::AuthUser, config::AppState};
 use axum::{
     extract::{Path, Query, State},
     http::{HeaderMap, StatusCode},
     Json,
 };
 use serde::{Deserialize, Serialize};
+
+async fn resolve_effective_agency_id(
+    state: &AppState,
+    user: &AuthUser,
+) -> Result<String, (StatusCode, String)> {
+    let by_id_resp = state
+        .pg
+        .from("agencies")
+        .select("id")
+        .eq("id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let by_id_status = by_id_resp.status();
+    let by_id_text = by_id_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !by_id_status.is_success() {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, by_id_text));
+    }
+    let by_id_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&by_id_text).unwrap_or_default();
+    if !by_id_rows.is_empty() {
+        return Ok(user.id.clone());
+    }
+
+    let by_user_resp = state
+        .pg
+        .from("agencies")
+        .select("id")
+        .eq("user_id", &user.id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let by_user_status = by_user_resp.status();
+    let by_user_text = by_user_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !by_user_status.is_success() {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, by_user_text));
+    }
+    let by_user_rows: Vec<serde_json::Value> =
+        serde_json::from_str(&by_user_text).unwrap_or_default();
+    let agency_id = by_user_rows
+        .first()
+        .and_then(|r| r.get("id"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    if agency_id.is_empty() {
+        return Err((StatusCode::FORBIDDEN, "Agency profile not found".to_string()));
+    }
+    Ok(agency_id)
+}
+
+async fn resolve_effective_agency_talent_id(
+    state: &AppState,
+    agency_id: &str,
+    input_id: &str,
+) -> Result<String, (StatusCode, String)> {
+    // Direct agency_users.id for this agency
+    let resp = state
+        .pg
+        .from("agency_users")
+        .select("id")
+        .eq("agency_id", agency_id)
+        .eq("id", input_id)
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let status = resp.status();
+    let text = resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !status.is_success() {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, text));
+    }
+    let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
+    if let Some(id) = rows
+        .first()
+        .and_then(|r| r.get("id"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+    {
+        return Ok(id);
+    }
+
+    // Connected relationship: input may be relationship.talent_id or relationship.creator_id
+    let rel_resp = state
+        .pg
+        .from("agency_talent_relationships")
+        .select("talent_id,creator_id")
+        .eq("agency_id", agency_id)
+        .eq("status", "active")
+        .or(format!("talent_id.eq.{},creator_id.eq.{}", input_id, input_id))
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let rel_status = rel_resp.status();
+    let rel_text = rel_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !rel_status.is_success() {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, rel_text));
+    }
+    let rel_rows: Vec<serde_json::Value> = serde_json::from_str(&rel_text).unwrap_or_default();
+    let rel = match rel_rows.first() {
+        Some(r) => r,
+        None => {
+            return Err((StatusCode::FORBIDDEN, "Access denied".to_string()));
+        }
+    };
+
+    // Prefer relationship.talent_id but only if it belongs to this agency
+    let rel_talent_id = rel
+        .get("talent_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if !rel_talent_id.is_empty() {
+        let verify_resp = state
+            .pg
+            .from("agency_users")
+            .select("id")
+            .eq("agency_id", agency_id)
+            .eq("id", &rel_talent_id)
+            .limit(1)
+            .execute()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        let verify_status = verify_resp.status();
+        let verify_text = verify_resp
+            .text()
+            .await
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        if !verify_status.is_success() {
+            return Err((StatusCode::INTERNAL_SERVER_ERROR, verify_text));
+        }
+        let verify_rows: Vec<serde_json::Value> =
+            serde_json::from_str(&verify_text).unwrap_or_default();
+        if !verify_rows.is_empty() {
+            return Ok(rel_talent_id);
+        }
+    }
+
+    let creator_id = rel
+        .get("creator_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if creator_id.is_empty() {
+        return Err((StatusCode::FORBIDDEN, "Access denied".to_string()));
+    }
+
+    let au_resp = state
+        .pg
+        .from("agency_users")
+        .select("id")
+        .eq("agency_id", agency_id)
+        .eq("creator_id", &creator_id)
+        .eq("role", "talent")
+        .order("updated_at.desc")
+        .limit(1)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let au_status = au_resp.status();
+    let au_text = au_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !au_status.is_success() {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, au_text));
+    }
+    let au_rows: Vec<serde_json::Value> = serde_json::from_str(&au_text).unwrap_or_default();
+    if let Some(id) = au_rows
+        .first()
+        .and_then(|r| r.get("id"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+    {
+        return Ok(id);
+    }
+
+    Err((StatusCode::BAD_REQUEST, "Invalid talent selection".to_string()))
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TalentPackage {
@@ -121,9 +318,11 @@ pub async fn create_package(
     // Helper to treat empty strings as None
     let sanitize = |s: &Option<String>| s.as_ref().filter(|v| !v.trim().is_empty()).cloned();
 
+    let agency_id = resolve_effective_agency_id(&state, &user).await?;
+
     // 1. Insert Package metadata
     let package_insert = serde_json::json!({
-        "agency_id": user.id,
+        "agency_id": agency_id,
         "title": payload.title,
         "description": sanitize(&payload.description),
         "cover_image_url": sanitize(&payload.cover_image_url),
@@ -211,78 +410,37 @@ pub async fn create_package(
         payload.items.iter().map(|i| i.talent_id.clone()).collect();
 
     if !supplied_talent_ids.is_empty() {
-        tracing::info!(
-            "Verifying ownership for talents: {:?} by user/agency: {}",
-            supplied_talent_ids,
-            user.id
-        );
-
-        let verify_resp = state
-            .pg
-            .from("agency_users")
-            .select("id,agency_id")
-            .in_("id", supplied_talent_ids.clone())
-            .execute()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-        if !verify_resp.status().is_success() {
-            let err_text = verify_resp.text().await.unwrap_or_default();
-            tracing::error!("Ownership verification query failed: {}", err_text);
-            return Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Failed to verify talent ownership: {}", err_text),
-            ));
-        }
-
-        let verify_text = verify_resp
-            .text()
-            .await
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let verified_rows: Vec<serde_json::Value> = serde_json::from_str(&verify_text)
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-        use std::collections::HashSet;
-        let mut found_ids = HashSet::new();
-
-        for row in verified_rows {
-            if let Some(resp_id) = row["id"].as_str() {
-                // Verify this talent belongs to the current user (agency)
-                let row_agency_id = row["agency_id"].as_str().unwrap_or("");
-                if row_agency_id != user.id {
-                    tracing::error!(
-                        "Security Alert: User {} tried to access talent {} belonging to agency {}",
-                        user.id,
-                        resp_id,
-                        row_agency_id
-                    );
-                    return Err((
-                        StatusCode::FORBIDDEN,
-                        format!(
-                            "Access denied: Talent {} does not belong to your agency",
-                            resp_id
-                        ),
-                    ));
-                }
-                found_ids.insert(resp_id.to_string());
-            }
-        }
-
         for requested_id in &supplied_talent_ids {
-            if !found_ids.contains(requested_id) {
-                tracing::error!("Talent ID {} not found in database", requested_id);
-                return Err((
-                    StatusCode::BAD_REQUEST,
-                    format!("Talent ID {} not found", requested_id),
-                ));
+            if let Err((code, _msg)) =
+                resolve_effective_agency_talent_id(&state, &agency_id, requested_id).await
+            {
+                tracing::error!(
+                    "Invalid talent_id on package create agency_id={} talent_id={} status={}",
+                    agency_id,
+                    requested_id,
+                    code
+                );
+                return Err((StatusCode::BAD_REQUEST, "Invalid talent selection".to_string()));
             }
         }
     }
 
     for (item_idx, item_req) in payload.items.iter().enumerate() {
+        let effective_talent_id =
+            resolve_effective_agency_talent_id(&state, &agency_id, &item_req.talent_id).await
+                .map_err(|(code, msg)| {
+                    tracing::error!(
+                        "Failed to resolve talent id during package create agency_id={} talent_id={} status={} msg={}",
+                        agency_id,
+                        item_req.talent_id,
+                        code,
+                        msg
+                    );
+                    (StatusCode::BAD_REQUEST, "Invalid talent selection".to_string())
+                })?;
         let item_insert = serde_json::json!({
             "package_id": package_id,
-            "talent_id": item_req.talent_id,
+            "talent_id": effective_talent_id,
             "sort_order": item_idx,
         });
         // ... insert item
@@ -341,10 +499,7 @@ pub async fn create_package(
                     .await
                     .unwrap_or_else(|_| "Unknown error".to_string());
                 tracing::error!("Failed to insert package asset: {}", error_text);
-                return Err((
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Failed to insert package asset: {}", error_text),
-                ));
+                return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to save package".to_string()));
             }
         }
     }
@@ -428,13 +583,15 @@ pub async fn update_package(
     Path(id): Path<String>,
     Json(payload): Json<CreatePackageRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    let agency_id = resolve_effective_agency_id(&state, &user).await?;
+
     // 1. Verify ownership and existence
     let exists_resp = state
         .pg
         .from("agency_talent_packages")
         .select("id")
         .eq("id", &id)
-        .eq("agency_id", &user.id)
+        .eq("agency_id", &agency_id)
         .single()
         .execute()
         .await
@@ -489,9 +646,10 @@ pub async fn update_package(
 
     if !resp.status().is_success() {
         let err_text = resp.text().await.unwrap_or_default();
+        tracing::error!("Failed to update package {} agency_id={} err={}", id, agency_id, err_text);
         return Err((
             StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Failed to update package: {}", err_text),
+            "Failed to update package".to_string(),
         ));
     }
 
@@ -540,10 +698,37 @@ pub async fn update_package(
     // No, RLS/FK checks existence but ownership check is robust.
     // We proceed with insertion logic.
 
+    // Validate + normalize talent ids before writing
+    for item_req in payload.items.iter() {
+        if let Err((code, _msg)) =
+            resolve_effective_agency_talent_id(&state, &agency_id, &item_req.talent_id).await
+        {
+            tracing::error!(
+                "Invalid talent_id on package update agency_id={} talent_id={} status={}",
+                agency_id,
+                item_req.talent_id,
+                code
+            );
+            return Err((StatusCode::BAD_REQUEST, "Invalid talent selection".to_string()));
+        }
+    }
+
     for (item_idx, item_req) in payload.items.iter().enumerate() {
+        let effective_talent_id =
+            resolve_effective_agency_talent_id(&state, &agency_id, &item_req.talent_id).await
+                .map_err(|(code, msg)| {
+                    tracing::error!(
+                        "Failed to resolve talent id during package update agency_id={} talent_id={} status={} msg={}",
+                        agency_id,
+                        item_req.talent_id,
+                        code,
+                        msg
+                    );
+                    (StatusCode::BAD_REQUEST, "Invalid talent selection".to_string())
+                })?;
         let item_insert = serde_json::json!({
             "package_id": id,
-            "talent_id": item_req.talent_id,
+            "talent_id": effective_talent_id,
             "sort_order": item_idx,
         });
 
