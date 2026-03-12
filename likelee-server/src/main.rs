@@ -119,22 +119,34 @@ async fn main() {
         stripe_agency_basic_base_price_id: cfg.stripe_agency_basic_base_price_id.clone(),
         stripe_agency_pro_base_price_id: cfg.stripe_agency_pro_base_price_id.clone(),
         stripe_checkout_success_url: if cfg.stripe_checkout_success_url.trim().is_empty() {
-            format!("{}/payment-success?session_id={{CHECKOUT_SESSION_ID}}", cfg.frontend_url.trim().trim_end_matches('/'))
+            format!(
+                "{}/payment-success?session_id={{CHECKOUT_SESSION_ID}}",
+                cfg.frontend_url.trim().trim_end_matches('/')
+            )
         } else {
             cfg.stripe_checkout_success_url.trim().to_string()
         },
         stripe_checkout_cancel_url: if cfg.stripe_checkout_cancel_url.trim().is_empty() {
-            format!("{}/payment-cancelled", cfg.frontend_url.trim().trim_end_matches('/'))
+            format!(
+                "{}/payment-cancelled",
+                cfg.frontend_url.trim().trim_end_matches('/')
+            )
         } else {
             cfg.stripe_checkout_cancel_url.trim().to_string()
         },
         stripe_licensing_success_url: if cfg.stripe_licensing_success_url.trim().is_empty() {
-            format!("{}/licensing/success?session_id={{CHECKOUT_SESSION_ID}}", cfg.frontend_url.trim().trim_end_matches('/'))
+            format!(
+                "{}/licensing/success?session_id={{CHECKOUT_SESSION_ID}}",
+                cfg.frontend_url.trim().trim_end_matches('/')
+            )
         } else {
             cfg.stripe_licensing_success_url.trim().to_string()
         },
         stripe_licensing_cancel_url: if cfg.stripe_licensing_cancel_url.trim().is_empty() {
-            format!("{}/licensing/cancel", cfg.frontend_url.trim().trim_end_matches('/'))
+            format!(
+                "{}/licensing/cancel",
+                cfg.frontend_url.trim().trim_end_matches('/')
+            )
         } else {
             cfg.stripe_licensing_cancel_url.trim().to_string()
         },
