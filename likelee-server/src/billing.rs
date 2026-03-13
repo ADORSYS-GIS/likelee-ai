@@ -87,6 +87,22 @@ pub async fn create_checkout_session_legacy(
         ));
     }
 
+    // Validate that URLs are absolute (must have http:// or https://) to avoid Stripe rejecting them
+    let success_url = state.stripe_studio_success_url.trim().to_string();
+    let cancel_url = state.stripe_studio_cancel_url.trim().to_string();
+    if !success_url.starts_with("http://") && !success_url.starts_with("https://") {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            format!("stripe_studio_success_url is not an absolute URL: {success_url}"),
+        ));
+    }
+    if !cancel_url.starts_with("http://") && !cancel_url.starts_with("https://") {
+        return Err((
+            StatusCode::PRECONDITION_FAILED,
+            format!("stripe_studio_cancel_url is not an absolute URL: {cancel_url}"),
+        ));
+    }
+
     if payload.credits <= 0 {
         return Err((StatusCode::BAD_REQUEST, "invalid_credits".to_string()));
     }
@@ -133,8 +149,14 @@ pub async fn create_checkout_session_legacy(
     };
 
     let mut cs_params = stripe_sdk::CreateCheckoutSession::new();
-    cs_params.success_url = Some(state.stripe_studio_success_url.as_str());
-    cs_params.cancel_url = Some(state.stripe_studio_cancel_url.as_str());
+    cs_params.success_url = Some(success_url.as_str());
+    cs_params.cancel_url = Some(cancel_url.as_str());
+    info!(
+        user_id = %user.id,
+        success_url = %success_url,
+        cancel_url = %cancel_url,
+        "Creating Stripe checkout session"
+    );
     cs_params.mode = Some(mode);
     cs_params.subscription_data = sub_data;
     cs_params.client_reference_id = Some(user.id.as_str());
