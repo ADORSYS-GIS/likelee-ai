@@ -2,29 +2,62 @@
 BEGIN;
 
 -- Enum types for booking fields
-CREATE TYPE public.booking_type AS ENUM (
-  'casting',
-  'option',
-  'confirmed',
-  'test-shoot',
-  'fitting',
-  'rehearsal'
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_type t
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE t.typname = 'booking_type' AND n.nspname = 'public'
+  ) THEN
+    CREATE TYPE public.booking_type AS ENUM (
+      'casting',
+      'option',
+      'confirmed',
+      'test-shoot',
+      'fitting',
+      'rehearsal'
+    );
+  END IF;
+END
+$$;
 
-CREATE TYPE public.booking_status AS ENUM (
-  'pending',
-  'confirmed',
-  'completed',
-  'cancelled'
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_type t
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE t.typname = 'booking_status' AND n.nspname = 'public'
+  ) THEN
+    CREATE TYPE public.booking_status AS ENUM (
+      'pending',
+      'confirmed',
+      'completed',
+      'cancelled'
+    );
+  END IF;
+END
+$$;
 
 -- Rate type enum
-CREATE TYPE public.booking_rate_type AS ENUM (
-  'day',
-  'hourly',
-  'flat',
-  'tbd'
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_type t
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE t.typname = 'booking_rate_type' AND n.nspname = 'public'
+  ) THEN
+    CREATE TYPE public.booking_rate_type AS ENUM (
+      'day',
+      'hourly',
+      'flat',
+      'tbd'
+    );
+  END IF;
+END
+$$;
 
 CREATE TABLE IF NOT EXISTS public.bookings (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -77,7 +110,7 @@ DROP POLICY IF EXISTS "bookings update own" ON public.bookings;
 CREATE POLICY "bookings update own" ON public.bookings
   FOR UPDATE USING (auth.uid() = agency_user_id);
 
--- Booking files attached to a booking (private bucket paths)
+-- Booking files attached to a particular  booking (private bucket paths)
 CREATE TABLE IF NOT EXISTS public.booking_files (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   booking_id uuid NOT NULL REFERENCES public.bookings(id) ON DELETE CASCADE,

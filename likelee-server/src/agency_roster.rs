@@ -149,6 +149,7 @@ pub struct TalentRow {
     pub projected: String,
     pub projected_val: i64,
     pub is_verified: bool,
+    pub has_creator_account: bool,
     pub img: String,
     pub photo_urls: Vec<String>,
     pub bio: String,
@@ -252,12 +253,13 @@ pub async fn get_roster(
     State(state): State<AppState>,
     user: AuthUser,
 ) -> Result<Json<AgencyRosterResponse>, (StatusCode, String)> {
+    let agency_id = resolve_effective_agency_id(&state, &user).await?;
     // Fetch all talents linked to this agency
     let resp = state
         .pg
         .from("agency_talent_relationships")
         .select("id,agency_id,talent_id,creator_id,status,licensing_rate_weekly_cents,accept_negotiations,rate_currency,agency_users(*)")
-        .eq("agency_id", &user.id)
+        .eq("agency_id", &agency_id)
         .execute()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -523,6 +525,12 @@ pub async fn get_roster(
                 .and_then(|v| v.as_str())
                 .unwrap_or("USD")
                 .to_string();
+            let creator_id_str = item
+                .get("creator_id")
+                .or_else(|| get_field("creator_id"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
 
             let roster_row = TalentRow {
                 id: id.clone(),
@@ -543,6 +551,7 @@ pub async fn get_roster(
                 projected,
                 projected_val,
                 is_verified,
+                has_creator_account: !creator_id_str.trim().is_empty(),
                 img,
                 photo_urls,
                 bio,
@@ -578,14 +587,8 @@ pub async fn get_roster(
             if !id.is_empty() {
                 talent_ids.push(id.clone());
             }
-            if let Some(creator_id) = item
-                .get("creator_id")
-                .or_else(|| get_field("creator_id"))
-                .and_then(|v| v.as_str())
-            {
-                if !creator_id.trim().is_empty() && !id.is_empty() {
-                    creator_id_by_talent.insert(id.clone(), creator_id.to_string());
-                }
+            if !creator_id_str.trim().is_empty() && !id.is_empty() {
+                creator_id_by_talent.insert(id.clone(), creator_id_str);
             }
         }
     }
@@ -1100,6 +1103,7 @@ pub async fn get_roster(
                 .map(|s| s.as_str())
                 .unwrap_or("");
             t.is_verified = !creator_id.is_empty() && verified_creator_ids.contains(creator_id);
+            t.has_creator_account = !creator_id.is_empty();
         }
     }
 

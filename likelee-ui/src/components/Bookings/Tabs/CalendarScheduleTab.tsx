@@ -72,9 +72,15 @@ export const CalendarScheduleTab = ({
 
   useEffect(() => {
     if (fixedTalent?.id) {
-      setTalents([{ id: fixedTalent.id, name: fixedTalent.name }]);
-      setSelectedTalentId(fixedTalent.id);
-      setTalentViewMode("single");
+      if (fixedTalent.id === "all") {
+        setTalents([]);
+        setSelectedTalentId("");
+        setTalentViewMode("all");
+      } else {
+        setTalents([{ id: fixedTalent.id, name: fixedTalent.name }]);
+        setSelectedTalentId(fixedTalent.id);
+        setTalentViewMode("single");
+      }
       return;
     }
 

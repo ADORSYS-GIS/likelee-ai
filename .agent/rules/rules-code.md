@@ -98,3 +98,7 @@ trigger: always_on
     - `likelee-server/src/config.rs` (Envconfig fields & defaults)
     - `likelee-server/.env.example` to match `ServerConfig`
     - `docs/design.md` under “Configuration Management”
+
+## Milestones
+
+- [x] **Campaign Deliverables & Secure Media Authentication (2026-03-08)**: Implemented multi-stage deliverable review workflow (draft -> submitted -> approved) and secure media proxy with JWT token fallback in query parameters for browser-native media elements.

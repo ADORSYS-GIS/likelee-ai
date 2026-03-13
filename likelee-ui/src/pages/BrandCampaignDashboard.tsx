@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Card } from "@/components/ui/card";
@@ -48,12 +49,15 @@ import {
   Building2,
   UserPlus,
   Edit3,
+  Trash2,
+  Settings,
   Clock,
   TrendingUp,
   Zap,
   Shield,
   Briefcase,
   User,
+  Loader2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { DocuSealBuilderModal } from "@/components/licensing/DocuSealBuilderModal";
@@ -113,6 +117,8 @@ export default function BrandCampaignDashboard({
   };
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, supabase } = useAuth();
+
   const [showNewCampaignModal, setShowNewCampaignModal] = useState(false);
   const [showInviteAgencyModal, setShowInviteAgencyModal] = useState(false);
   const [showInviteCreatorModal, setShowInviteCreatorModal] = useState(false);
@@ -167,6 +173,7 @@ export default function BrandCampaignDashboard({
     Set<string>
   >(new Set());
   const [savingCampaign, setSavingCampaign] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(false);
   const creatorFetchRequestIdRef = useRef(0);
   const connectedCreatorCacheRef = useRef<Record<string, any[]>>({});
   const agencyTalentCacheRef = useRef<Record<string, any[]>>({});
@@ -214,7 +221,6 @@ export default function BrandCampaignDashboard({
     overview_launch_date: "",
     budget_total: "",
     budget_creator_payment: "",
-    budget_platform_fee: "",
     budget_submission_deadline: "",
     budget_renewal_terms: "",
     revision_included: "",
@@ -419,14 +425,14 @@ export default function BrandCampaignDashboard({
     const targetId = String(offer?.target_id || "").trim();
     const shortId = targetId ? targetId.slice(0, 8) : "";
     if (targetType === "creator" || targetType === "talent") {
-      if (targetName) return targetName;
+      if (targetName) return `Creator • ${targetName}`;
       return shortId ? `Creator ${shortId}` : "Creator";
     }
     if (targetType === "agency") {
-      if (targetName) return targetName;
+      if (targetName) return `Agency • ${targetName}`;
       return shortId ? `Agency ${shortId}` : "Agency";
     }
-    if (targetName) return targetName;
+    if (targetName) return `Collaborator • ${targetName}`;
     return shortId ? `Collaborator ${shortId}` : "Collaborator";
   };
   const extractFirstNumber = (value: unknown): number => {
@@ -576,6 +582,24 @@ export default function BrandCampaignDashboard({
             const offers = Array.isArray(offersResp?.offers)
               ? offersResp.offers
               : [];
+            const offerBrief =
+              (offers[0]?.brief_snapshot &&
+              typeof offers[0].brief_snapshot === "object"
+                ? offers[0].brief_snapshot
+                : offers[0]?.brand_campaigns?.brief_snapshot) || {};
+            const campaignBrief =
+              campaign?.brief_snapshot &&
+              typeof campaign.brief_snapshot === "object"
+                ? campaign.brief_snapshot
+                : {};
+            const mergedBrief =
+              Object.keys(offerBrief || {}).length > 0
+                ? { ...campaignBrief, ...offerBrief }
+                : campaignBrief;
+            const campaignWithBrief =
+              Object.keys(mergedBrief || {}).length > 0
+                ? { ...campaign, brief_snapshot: mergedBrief }
+                : campaign;
             const deliverablesByOffer = await Promise.all(
               offers.map(async (offer: any) => {
                 const offerId = String(offer?.id || "").trim();
@@ -594,11 +618,11 @@ export default function BrandCampaignDashboard({
             );
             const flatDeliverables = deliverablesByOffer.flat();
             const approvedCount = flatDeliverables.filter((d: any) =>
-              ["approved", "accepted"].includes(
+              ["approved", "accepted", "brand_approved"].includes(
                 String(d?.status || "").toLowerCase(),
               ),
             ).length;
-            return normalizeCampaignCard(campaign, offers, {
+            return normalizeCampaignCard(campaignWithBrief, offers, {
               total: flatDeliverables.length,
               approved: approvedCount,
             });
@@ -631,6 +655,27 @@ export default function BrandCampaignDashboard({
         `/api/brand/campaigns/${campaignId}/offers`,
       );
       const offers = Array.isArray(offersResp?.offers) ? offersResp.offers : [];
+      {
+        const offerBrief =
+          (offers[0]?.brief_snapshot &&
+          typeof offers[0].brief_snapshot === "object"
+            ? offers[0].brief_snapshot
+            : offers[0]?.brand_campaigns?.brief_snapshot) || {};
+        const campaignBrief =
+          campaign?.brief_snapshot &&
+          typeof campaign.brief_snapshot === "object"
+            ? campaign.brief_snapshot
+            : {};
+        const mergedBrief =
+          Object.keys(offerBrief || {}).length > 0
+            ? { ...campaignBrief, ...offerBrief }
+            : campaignBrief;
+        if (Object.keys(mergedBrief || {}).length > 0) {
+          setSelectedCampaign((prev) =>
+            prev ? { ...prev, brief_snapshot: mergedBrief } : prev,
+          );
+        }
+      }
       const collaborators = Array.from(
         new Set(
           offers
@@ -846,9 +891,6 @@ export default function BrandCampaignDashboard({
         ok: false,
         message: "Creator payment must be a valid amount.",
       };
-    }
-    if (!parsePositiveNumber(campaignBrief.budget_platform_fee)) {
-      return { ok: false, message: "Platform fee must be a valid amount." };
     }
     return { ok: true };
   };
@@ -1094,7 +1136,6 @@ export default function BrandCampaignDashboard({
       overview_launch_date: "",
       budget_total: "",
       budget_creator_payment: "",
-      budget_platform_fee: "",
       budget_submission_deadline: "",
       budget_renewal_terms: "",
       revision_included: "",
@@ -1220,19 +1261,37 @@ export default function BrandCampaignDashboard({
     }
   };
 
-  const handleReferenceImageUpload = (
+  const handleReferenceImageUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
-    void (async () => {
-      try {
-        setSavingCampaign(true);
-        const session = supabase
-          ? await supabase.auth.getSession()
-          : { data: { session: null } };
-        const userId = String(session.data.session?.user?.id || "brand");
-        const uploaded = await Promise.all(
+    setUploadingImages(true);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const uploadWithApi = async () =>
+        Promise.all(
+          files.map(async (file) => {
+            const formData = new FormData();
+            formData.append("file", file);
+            const res = await fetch(api("/api/brand/brief-assets/upload"), {
+              method: "POST",
+              headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+              body: formData,
+            });
+            if (!res.ok) throw new Error(await res.text());
+            const data = await res.json();
+            return { name: file.name, url: data.url };
+          }),
+        );
+
+      const uploadWithStorage = async () => {
+        const userId = String(session?.user?.id || "brand");
+        return Promise.all(
           files.map(async (file) => {
             const safeName = file.name.replace(/[^\w.\-]+/g, "_");
             const path = `campaign-brief/reference-images/${userId}/${Date.now()}_${Math.random()
@@ -1251,40 +1310,65 @@ export default function BrandCampaignDashboard({
             };
           }),
         );
-        const valid = uploaded.filter(
-          (x) => String(x.url || "").trim().length > 0,
-        );
-        setCampaignBrief((prev) => ({
-          ...prev,
-          reference_images: [...prev.reference_images, ...valid],
-        }));
-      } catch (e: any) {
-        toast({
-          title: "Reference image upload failed",
-          description:
-            e?.message || "We could not upload one or more reference images.",
-          variant: "destructive" as any,
-        });
-      } finally {
-        setSavingCampaign(false);
-        event.target.value = "";
+      };
+
+      let uploaded: { name: string; url: string }[] = [];
+      try {
+        uploaded = await uploadWithApi();
+      } catch {
+        uploaded = await uploadWithStorage();
       }
-    })();
+      const valid = uploaded.filter(
+        (x) => String(x.url || "").trim().length > 0,
+      );
+      setCampaignBrief((prev) => ({
+        ...prev,
+        reference_images: [...prev.reference_images, ...valid],
+      }));
+    } catch (e: any) {
+      toast({
+        title: "Reference image upload failed",
+        description:
+          e?.message || "We could not upload one or more reference images.",
+        variant: "destructive" as any,
+      });
+    } finally {
+      setUploadingImages(false);
+      event.target.value = "";
+    }
   };
 
-  const handleBrandAssetsUpload = (
+  const handleBrandAssetsUpload = async (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
-    void (async () => {
-      try {
-        setSavingCampaign(true);
-        const session = supabase
-          ? await supabase.auth.getSession()
-          : { data: { session: null } };
-        const userId = String(session.data.session?.user?.id || "brand");
-        const uploaded = await Promise.all(
+    setUploadingImages(true);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const uploadWithApi = async () =>
+        Promise.all(
+          files.map(async (file) => {
+            const formData = new FormData();
+            formData.append("file", file);
+            const res = await fetch(api("/api/brand/brief-assets/upload"), {
+              method: "POST",
+              headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+              body: formData,
+            });
+            if (!res.ok) throw new Error(await res.text());
+            const data = await res.json();
+            return { name: file.name, size: file.size, url: data.url };
+          }),
+        );
+
+      const uploadWithStorage = async () => {
+        const userId = String(session?.user?.id || "brand");
+        return Promise.all(
           files.map(async (file) => {
             const safeName = file.name.replace(/[^\w.\-]+/g, "_");
             const path = `campaign-brief/brand-assets/${userId}/${Date.now()}_${Math.random()
@@ -1304,25 +1388,31 @@ export default function BrandCampaignDashboard({
             };
           }),
         );
-        const valid = uploaded.filter(
-          (x) => String(x.url || "").trim().length > 0,
-        );
-        setCampaignBrief((prev) => ({
-          ...prev,
-          brand_assets: [...prev.brand_assets, ...valid],
-        }));
-      } catch (e: any) {
-        toast({
-          title: "Brand asset upload failed",
-          description:
-            e?.message || "We could not upload one or more PDF files.",
-          variant: "destructive" as any,
-        });
-      } finally {
-        setSavingCampaign(false);
-        event.target.value = "";
+      };
+
+      let uploaded: { name: string; size: number; url: string }[] = [];
+      try {
+        uploaded = await uploadWithApi();
+      } catch {
+        uploaded = await uploadWithStorage();
       }
-    })();
+      const valid = uploaded.filter(
+        (x) => String(x.url || "").trim().length > 0,
+      );
+      setCampaignBrief((prev) => ({
+        ...prev,
+        brand_assets: [...prev.brand_assets, ...valid],
+      }));
+    } catch (e: any) {
+      toast({
+        title: "Brand asset upload failed",
+        description: e?.message || "We could not upload one or more PDF files.",
+        variant: "destructive" as any,
+      });
+    } finally {
+      setUploadingImages(false);
+      event.target.value = "";
+    }
   };
 
   const handleSendOffer = async () => {
@@ -1548,6 +1638,21 @@ export default function BrandCampaignDashboard({
       event.target.value = "";
     }
   };
+
+  const selectedCampaignExpectedDeliverables = selectedCampaign
+    ? expectedDeliverablesFromBrief(selectedCampaign)
+    : 0;
+  const selectedCampaignApprovedCount = selectedCampaignDeliverables.filter(
+    (deliverable: any) =>
+      ["approved", "accepted", "brand_approved"].includes(
+        String(deliverable?.status || "").toLowerCase(),
+      ),
+  ).length;
+  const selectedCampaignSubmittedCount = selectedCampaignDeliverables.length;
+  const selectedCampaignTotalExpected =
+    selectedCampaignExpectedDeliverables > 0
+      ? selectedCampaignExpectedDeliverables
+      : selectedCampaignSubmittedCount;
 
   return (
     <div className={`${embedded ? "bg-gray-50" : "min-h-screen bg-gray-50"}`}>
@@ -1779,6 +1884,17 @@ export default function BrandCampaignDashboard({
                 }`}
               >
                 Completed
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setCampaignListTab("inbox")}
+                className={`border-2 rounded-none ${
+                  campaignListTab === "inbox"
+                    ? "border-black bg-black text-white"
+                    : "border-gray-300"
+                }`}
+              >
+                Inbox
               </Button>
             </div>
           </div>
@@ -2258,6 +2374,7 @@ export default function BrandCampaignDashboard({
                   onBrandAssetsUpload={handleBrandAssetsUpload}
                   onBack={() => setNewCampaignStep(1)}
                   onNext={handleStep2Next}
+                  uploading={uploadingImages}
                 />
               )}
 
@@ -2454,6 +2571,23 @@ export default function BrandCampaignDashboard({
                                   ? "Talent"
                                   : "Creator"),
                             );
+                            const baseRateWeeklyCents = Number(
+                              creator?.base_rate_weekly_cents ??
+                                creator?.base_weekly_price_cents ??
+                                creator?.licensing_rate_weekly_cents ??
+                                0,
+                            );
+                            const hasBaseRate =
+                              Number.isFinite(baseRateWeeklyCents) &&
+                              baseRateWeeklyCents > 0;
+                            const rateCurrency = String(
+                              creator?.rate_currency ||
+                                creator?.currency_code ||
+                                "USD",
+                            );
+                            const canNegotiate = isNegotiationEnabled(
+                              creator?.accept_negotiations,
+                            );
 
                             return (
                               <div
@@ -2646,6 +2780,23 @@ export default function BrandCampaignDashboard({
                             creator?.display_name ||
                               creator?.full_name ||
                               creator?.name,
+                          );
+                          const baseRateWeeklyCents = Number(
+                            creator?.base_rate_weekly_cents ??
+                              creator?.base_weekly_price_cents ??
+                              creator?.licensing_rate_weekly_cents ??
+                              0,
+                          );
+                          const hasBaseRate =
+                            Number.isFinite(baseRateWeeklyCents) &&
+                            baseRateWeeklyCents > 0;
+                          const rateCurrency = String(
+                            creator?.rate_currency ||
+                              creator?.currency_code ||
+                              "USD",
+                          );
+                          const canNegotiate = isNegotiationEnabled(
+                            creator?.accept_negotiations,
                           );
 
                           return (
@@ -3192,8 +3343,11 @@ export default function BrandCampaignDashboard({
                 <Card className="p-4 border-2 border-gray-200 rounded-none">
                   <p className="text-sm text-gray-600 mb-1">Deliverables</p>
                   <p className="text-xl font-bold text-gray-900">
-                    {selectedCampaign.approved} /{" "}
-                    {selectedCampaign.deliverables}
+                    {selectedCampaignApprovedCount} /{" "}
+                    {selectedCampaignTotalExpected}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {selectedCampaignSubmittedCount} submitted
                   </p>
                 </Card>
                 <Card className="p-4 border-2 border-gray-200 rounded-none">
@@ -3248,11 +3402,14 @@ export default function BrandCampaignDashboard({
                       const status = String(
                         deliverable?.status || "pending_review",
                       ).toLowerCase();
+                      const displayStatus =
+                        status === "brand_approved" ? "approved" : status;
                       const statusClass =
-                        status === "approved" || status === "accepted"
+                        displayStatus === "approved" ||
+                        displayStatus === "accepted"
                           ? "bg-emerald-100 text-emerald-700"
-                          : status === "changes_requested" ||
-                              status === "rejected"
+                          : displayStatus === "changes_requested" ||
+                              displayStatus === "rejected"
                             ? "bg-red-100 text-red-700"
                             : "bg-yellow-100 text-yellow-800";
                       const uploadedAtRaw = String(
@@ -3301,7 +3458,7 @@ export default function BrandCampaignDashboard({
                                     )}
                                   </p>
                                   <Badge className={statusClass}>
-                                    {status.replace(/_/g, " ")}
+                                    {displayStatus.replace(/_/g, " ")}
                                   </Badge>
                                 </div>
                                 <div className="flex gap-2">

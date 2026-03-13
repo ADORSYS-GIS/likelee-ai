@@ -10,6 +10,7 @@ pub mod analytics;
 pub mod auth;
 pub mod billing;
 pub mod book_outs;
+pub mod booking_deliverables;
 pub mod bookings;
 pub mod bookings_campaigns;
 pub mod brand_campaigns;
