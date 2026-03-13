@@ -661,6 +661,7 @@ export default function BrandDashboard() {
   const [contractDetailTab, setContractDetailTab] = useState("summary");
   const [showSettings, setShowSettings] = useState(false);
   const [inboxPackages, setInboxPackages] = useState<any[]>([]);
+  const [inboxPendingCount, setInboxPendingCount] = useState(0);
   const [confirmingDonePkg, setConfirmingDonePkg] = useState<any>(null);
   const { toast } = useToast();
   const [loadingInboxPackages, setLoadingInboxPackages] = useState(false);
@@ -776,12 +777,15 @@ export default function BrandDashboard() {
           "/api/brand/inbox/packages",
         );
         if (!mounted) return;
-        setInboxPackages(
-          Array.isArray(response?.packages) ? response.packages : [],
+        const pkgs = Array.isArray(response?.packages) ? response.packages : [];
+        setInboxPackages(pkgs);
+        setInboxPendingCount(
+          pkgs.filter((p: any) => String(p?.status || "") === "sent").length,
         );
       } catch (e) {
         if (!mounted) return;
         setInboxPackages([]);
+        setInboxPendingCount(0);
       } finally {
         if (!mounted) return;
         setLoadingInboxPackages(false);
@@ -794,6 +798,32 @@ export default function BrandDashboard() {
       clearInterval(timer);
     };
   }, [activeSection]);
+
+  useEffect(() => {
+    if (!authToken) return;
+    let mounted = true;
+    const loadInboxCount = async () => {
+      try {
+        const response = await base44.get<{ packages?: any[] }>(
+          "/api/brand/inbox/packages",
+        );
+        if (!mounted) return;
+        const pkgs = Array.isArray(response?.packages) ? response.packages : [];
+        setInboxPendingCount(
+          pkgs.filter((p: any) => String(p?.status || "") === "sent").length,
+        );
+      } catch {
+        if (!mounted) return;
+        setInboxPendingCount(0);
+      }
+    };
+    loadInboxCount();
+    const timer = setInterval(loadInboxCount, 30000);
+    return () => {
+      mounted = false;
+      clearInterval(timer);
+    };
+  }, [authToken]);
 
   useEffect(() => {
     if (activeSection !== "campaigns-contract-hub") return;
@@ -8264,9 +8294,11 @@ export default function BrandDashboard() {
                       >
                         <Mail className="w-4 h-4" />
                         <span className="flex-1 text-left">Inbox</span>
-                        <Badge className="bg-gray-200 text-gray-700">
-                          {mockActivities.length}
-                        </Badge>
+                        {inboxPendingCount > 0 && (
+                          <Badge className="bg-gray-200 text-gray-700">
+                            {inboxPendingCount}
+                          </Badge>
+                        )}
                       </button>
                       <button
                         onClick={() => {
