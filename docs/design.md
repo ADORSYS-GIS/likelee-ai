@@ -190,7 +190,7 @@ See [Architecture Overview](./knowledge/architecture.md) for full details.
 
 ### UI (likelee-ui)
 
-- Add “Accounting & Invoicing” section under the Agency Dashboard.
+- Add "Accounting & Invoicing" section under the Agency Dashboard.
 - Invoice Generation page supports:
   - Create from Existing Booking
   - Manual Entry
@@ -281,7 +281,7 @@ See [Architecture Overview](./knowledge/architecture.md) for full details.
 - `EMAIL_FROM_SALES`
   - Sales/Contact sender address (default `operations@likelee.ai`).
 - `EMAIL_SALES_TO`
-  - Internal recipient address used by the backend to classify “sales/contact” emails (default `operations@likelee.ai`).
+  - Internal recipient address used by the backend to classify "sales/contact" emails (default `operations@likelee.ai`).
 
 ### KYC / Veriff
 
@@ -302,9 +302,9 @@ See [Architecture Overview](./knowledge/architecture.md) for full details.
 - `STRIPE_SCALE_PRICE_ID`
   - Stripe Price ID for scale tier.
 - `STRIPE_AGENCY_BASIC_BASE_PRICE_ID`
-  - Stripe Price ID for Agency Basic plan (new pricing page).
+  - Stripe Price ID for Agency Basic plan (new pricing pages).
 - `STRIPE_AGENCY_PRO_BASE_PRICE_ID`
-  - Stripe Price ID for Agency Pro plan (new pricing page).
+  - Stripe Price ID for Agency Pro plan (new pricing pages).
 - `STRIPE_CHECKOUT_SUCCESS_URL`
   - URL Stripe redirects to after successful checkout.
 - `STRIPE_CHECKOUT_CANCEL_URL`
@@ -884,5 +884,3 @@ Automated scheduling of agency payouts.
 - **Configuration**: `AGENCY_PAYOUT_SCHEDULER_ENABLED`
 
 ### Implementation
-
-- **Backend Logic**: `likelee-server/src/jobs.rs`

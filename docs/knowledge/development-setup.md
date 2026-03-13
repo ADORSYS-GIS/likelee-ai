@@ -4,7 +4,7 @@
 
 | Tool | Minimum Version | Installation |
 |------|----------------|--------------|
-| Rust | 1.75+ | `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \| sh` |
+| Rust | 1.75+ | `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh` |
 | Cargo | Included with Rust | - |
 | Supabase CLI | Latest | `npm install -g supabase` or `brew install supabase/tap/supabase` |
 | Git | 2.40+ | `brew install git` or package manager |
