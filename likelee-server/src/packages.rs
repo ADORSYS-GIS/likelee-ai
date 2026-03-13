@@ -27,8 +27,7 @@ async fn resolve_effective_agency_id(
     if !by_id_status.is_success() {
         return Err((StatusCode::INTERNAL_SERVER_ERROR, by_id_text));
     }
-    let by_id_rows: Vec<serde_json::Value> =
-        serde_json::from_str(&by_id_text).unwrap_or_default();
+    let by_id_rows: Vec<serde_json::Value> = serde_json::from_str(&by_id_text).unwrap_or_default();
     if !by_id_rows.is_empty() {
         return Ok(user.id.clone());
     }
@@ -59,7 +58,10 @@ async fn resolve_effective_agency_id(
         .unwrap_or("")
         .to_string();
     if agency_id.is_empty() {
-        return Err((StatusCode::FORBIDDEN, "Agency profile not found".to_string()));
+        return Err((
+            StatusCode::FORBIDDEN,
+            "Agency profile not found".to_string(),
+        ));
     }
     Ok(agency_id)
 }
@@ -106,7 +108,10 @@ async fn resolve_effective_agency_talent_id(
         .select("talent_id,creator_id")
         .eq("agency_id", agency_id)
         .eq("status", "active")
-        .or(format!("talent_id.eq.{},creator_id.eq.{}", input_id, input_id))
+        .or(format!(
+            "talent_id.eq.{},creator_id.eq.{}",
+            input_id, input_id
+        ))
         .limit(1)
         .execute()
         .await
@@ -201,7 +206,10 @@ async fn resolve_effective_agency_talent_id(
         return Ok(id);
     }
 
-    Err((StatusCode::BAD_REQUEST, "Invalid talent selection".to_string()))
+    Err((
+        StatusCode::BAD_REQUEST,
+        "Invalid talent selection".to_string(),
+    ))
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -420,7 +428,10 @@ pub async fn create_package(
                     requested_id,
                     code
                 );
-                return Err((StatusCode::BAD_REQUEST, "Invalid talent selection".to_string()));
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    "Invalid talent selection".to_string(),
+                ));
             }
         }
     }
@@ -499,7 +510,10 @@ pub async fn create_package(
                     .await
                     .unwrap_or_else(|_| "Unknown error".to_string());
                 tracing::error!("Failed to insert package asset: {}", error_text);
-                return Err((StatusCode::INTERNAL_SERVER_ERROR, "Failed to save package".to_string()));
+                return Err((
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Failed to save package".to_string(),
+                ));
             }
         }
     }
@@ -646,7 +660,12 @@ pub async fn update_package(
 
     if !resp.status().is_success() {
         let err_text = resp.text().await.unwrap_or_default();
-        tracing::error!("Failed to update package {} agency_id={} err={}", id, agency_id, err_text);
+        tracing::error!(
+            "Failed to update package {} agency_id={} err={}",
+            id,
+            agency_id,
+            err_text
+        );
         return Err((
             StatusCode::INTERNAL_SERVER_ERROR,
             "Failed to update package".to_string(),
@@ -709,7 +728,10 @@ pub async fn update_package(
                 item_req.talent_id,
                 code
             );
-            return Err((StatusCode::BAD_REQUEST, "Invalid talent selection".to_string()));
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "Invalid talent selection".to_string(),
+            ));
         }
     }
 

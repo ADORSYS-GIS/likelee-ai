@@ -28,8 +28,7 @@ async fn resolve_effective_agency_id(
     if !by_id_status.is_success() {
         return Err((StatusCode::INTERNAL_SERVER_ERROR, by_id_text));
     }
-    let by_id_rows: Vec<serde_json::Value> =
-        serde_json::from_str(&by_id_text).unwrap_or_default();
+    let by_id_rows: Vec<serde_json::Value> = serde_json::from_str(&by_id_text).unwrap_or_default();
     if !by_id_rows.is_empty() {
         return Ok(user.id.clone());
     }
@@ -108,7 +107,10 @@ async fn resolve_effective_agency_talent_id(
         .select("talent_id,creator_id")
         .eq("agency_id", agency_id)
         .eq("status", "active")
-        .or(format!("talent_id.eq.{},creator_id.eq.{}", input_id, input_id))
+        .or(format!(
+            "talent_id.eq.{},creator_id.eq.{}",
+            input_id, input_id
+        ))
         .limit(1)
         .execute()
         .await
@@ -1786,8 +1788,7 @@ pub async fn list_talents(
         .text()
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    let rel_rows: Vec<serde_json::Value> =
-        serde_json::from_str(&rel_text).unwrap_or_default();
+    let rel_rows: Vec<serde_json::Value> = serde_json::from_str(&rel_text).unwrap_or_default();
 
     let mut connected_talent_ids: Vec<String> = vec![];
     let mut connected_creator_ids: Vec<String> = vec![];
@@ -1829,8 +1830,7 @@ pub async fn list_talents(
             .text()
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-        let au_rows: Vec<serde_json::Value> =
-            serde_json::from_str(&au_text).unwrap_or_default();
+        let au_rows: Vec<serde_json::Value> = serde_json::from_str(&au_text).unwrap_or_default();
         for r in au_rows.iter() {
             let id = r
                 .get("id")
@@ -1861,10 +1861,8 @@ pub async fn list_talents(
 
     // If we couldn't resolve some connected creators through agency_users, best-effort
     // include them using creators table (still marked connected).
-    let known_ids: std::collections::HashSet<String> = connected_items
-        .iter()
-        .map(|t| t.id.clone())
-        .collect();
+    let known_ids: std::collections::HashSet<String> =
+        connected_items.iter().map(|t| t.id.clone()).collect();
     let missing_creator_ids: Vec<String> = connected_creator_ids
         .into_iter()
         .filter(|cid| !cid.is_empty())
