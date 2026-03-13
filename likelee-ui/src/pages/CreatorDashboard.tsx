@@ -5591,15 +5591,15 @@ export default function CreatorDashboard() {
                           <Button
                             size="sm"
                             onClick={async () => {
-                            if (!offerId) {
-                              toast({
-                                title: "Campaign offer missing",
-                                description:
-                                  "We could not find the campaign offer for this request. Please refresh and try again.",
-                                variant: "destructive",
-                              });
-                              return;
-                            }
+                              if (!offerId) {
+                                toast({
+                                  title: "Campaign offer missing",
+                                  description:
+                                    "We could not find the campaign offer for this request. Please refresh and try again.",
+                                  variant: "destructive",
+                                });
+                                return;
+                              }
                               setSendDeliverableBrandId(
                                 String(offer?.brand_id || ""),
                               );
@@ -5792,9 +5792,7 @@ export default function CreatorDashboard() {
     [deliverableEligibleOffers, sendDeliverableBrandId],
   );
 
-  const pending = brandConnectionRequests.filter(
-    (i) => i.status === "pending",
-  );
+  const pending = brandConnectionRequests.filter((i) => i.status === "pending");
   const directBrandOffers = brandOffers.filter(isDirectCreatorOffer);
   const directOfferIds = new Set(
     directBrandOffers.map((offer: any) => String(offer?.id || "")),
@@ -5976,7 +5974,9 @@ export default function CreatorDashboard() {
             .replace(/\s+/g, "") === "secondparty",
       )?.status || "",
     ).toLowerCase();
-    const contractStatus = String(contract?.docuseal_status || "").toLowerCase();
+    const contractStatus = String(
+      contract?.docuseal_status || "",
+    ).toLowerCase();
     return (
       creatorStatus === "completed" ||
       creatorStatus === "signed" ||
@@ -5988,7 +5988,11 @@ export default function CreatorDashboard() {
   const resolveStoredUrl = (value: unknown): string => {
     const raw = String(value || "").trim();
     if (!raw) return "";
-    if (raw.startsWith("http://") || raw.startsWith("https://") || raw.startsWith("blob:")) {
+    if (
+      raw.startsWith("http://") ||
+      raw.startsWith("https://") ||
+      raw.startsWith("blob:")
+    ) {
       return raw;
     }
     const cleaned = raw.replace(/^\/+/, "");
@@ -6026,71 +6030,71 @@ export default function CreatorDashboard() {
     }
   };
 
-    const onRespond = async (id: string, action: "accept" | "decline") => {
-      try {
-        setAgencyConnectionLoading(true);
-        await base44.post(
-          `/api/creator/brand-connection-requests/${id}/${action}`,
-          {},
-        );
-        await refreshBrandConnections();
-        toast({
-          title:
-            action === "accept" ? "Connection accepted" : "Connection declined",
-        });
-      } catch (e: any) {
-        toast({
-          variant: "destructive",
-          title: "Failed to update request",
-          description: e?.message || String(e),
-        });
-      } finally {
-        setAgencyConnectionLoading(false);
-      }
-    };
+  const onRespond = async (id: string, action: "accept" | "decline") => {
+    try {
+      setAgencyConnectionLoading(true);
+      await base44.post(
+        `/api/creator/brand-connection-requests/${id}/${action}`,
+        {},
+      );
+      await refreshBrandConnections();
+      toast({
+        title:
+          action === "accept" ? "Connection accepted" : "Connection declined",
+      });
+    } catch (e: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to update request",
+        description: e?.message || String(e),
+      });
+    } finally {
+      setAgencyConnectionLoading(false);
+    }
+  };
 
-    const onDisconnect = async (brandId: string) => {
-      try {
-        setAgencyConnectionLoading(true);
-        await base44.post(
-          `/api/creator/brand-connections/${brandId}/disconnect`,
-          {},
-        );
-        await refreshBrandConnections();
-        toast({ title: "Disconnected from brand" });
-      } catch (e: any) {
-        toast({
-          variant: "destructive",
-          title: "Failed to disconnect",
-          description: e?.message || String(e),
-        });
-      } finally {
-        setAgencyConnectionLoading(false);
-      }
-    };
+  const onDisconnect = async (brandId: string) => {
+    try {
+      setAgencyConnectionLoading(true);
+      await base44.post(
+        `/api/creator/brand-connections/${brandId}/disconnect`,
+        {},
+      );
+      await refreshBrandConnections();
+      toast({ title: "Disconnected from brand" });
+    } catch (e: any) {
+      toast({
+        variant: "destructive",
+        title: "Failed to disconnect",
+        description: e?.message || String(e),
+      });
+    } finally {
+      setAgencyConnectionLoading(false);
+    }
+  };
 
-    const openOfferBrief = async (offerId: string) => {
-      const next = selectedBrandOfferId === offerId ? "" : offerId;
-      setSelectedBrandOfferId(next);
-      if (next) {
-        setSeenOfferNotificationIds((prev) => {
-          const nextSet = new Set(prev);
-          nextSet.add(next);
-          return nextSet;
-        });
-      }
-      if (!next) {
-        setSelectedOfferContracts([]);
-        setSelectedOfferDeliverables([]);
-        return;
-      }
-      try {
-        await loadOfferDetails(next);
-      } catch {
-        setSelectedOfferContracts([]);
-        setSelectedOfferDeliverables([]);
-      }
-    };
+  const openOfferBrief = async (offerId: string) => {
+    const next = selectedBrandOfferId === offerId ? "" : offerId;
+    setSelectedBrandOfferId(next);
+    if (next) {
+      setSeenOfferNotificationIds((prev) => {
+        const nextSet = new Set(prev);
+        nextSet.add(next);
+        return nextSet;
+      });
+    }
+    if (!next) {
+      setSelectedOfferContracts([]);
+      setSelectedOfferDeliverables([]);
+      return;
+    }
+    try {
+      await loadOfferDetails(next);
+    } catch {
+      setSelectedOfferContracts([]);
+      setSelectedOfferDeliverables([]);
+    }
+  };
 
   const openOfferBriefPage = async (offerId: string) => {
     setSelectedOfferBriefId(offerId);

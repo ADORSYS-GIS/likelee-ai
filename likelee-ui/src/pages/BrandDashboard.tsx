@@ -3334,25 +3334,28 @@ export default function BrandDashboard() {
         ) : null}
         {(() => {
           const offers = Array.isArray(brandOfferItems) ? brandOfferItems : [];
-          const groups = offers.reduce<Record<string, any>>((acc, offer: any) => {
-            const campaignId = String(
-              offer?.brand_campaigns?.id || offer?.campaign_id || "",
-            ).trim();
-            const key = campaignId || String(offer?.id || "");
-            const name =
-              offer?.brand_campaigns?.name ||
-              offer?.campaign_name ||
-              "Campaign Asset Submission";
-            if (!acc[key]) {
-              acc[key] = {
-                campaignId: key,
-                campaignName: name,
-                offers: [],
-              };
-            }
-            acc[key].offers.push(offer);
-            return acc;
-          }, {});
+          const groups = offers.reduce<Record<string, any>>(
+            (acc, offer: any) => {
+              const campaignId = String(
+                offer?.brand_campaigns?.id || offer?.campaign_id || "",
+              ).trim();
+              const key = campaignId || String(offer?.id || "");
+              const name =
+                offer?.brand_campaigns?.name ||
+                offer?.campaign_name ||
+                "Campaign Asset Submission";
+              if (!acc[key]) {
+                acc[key] = {
+                  campaignId: key,
+                  campaignName: name,
+                  offers: [],
+                };
+              }
+              acc[key].offers.push(offer);
+              return acc;
+            },
+            {},
+          );
 
           const groupRows = Object.values(groups);
 
@@ -3371,7 +3374,9 @@ export default function BrandDashboard() {
               ) => {
                 const offerId = String(offer?.id || "");
                 const isExpandedOffer = selectedOfferHubId === offerId;
-                const offerDeliverables = Array.isArray(offer?.offer_deliverables)
+                const offerDeliverables = Array.isArray(
+                  offer?.offer_deliverables,
+                )
                   ? offer.offer_deliverables
                   : isExpandedOffer
                     ? selectedOfferHubDeliverables
@@ -3467,21 +3472,29 @@ export default function BrandDashboard() {
                             ? selectedOfferHubDeliverables
                             : [];
 
-                        const reviewedCount = offerDeliverables.filter((d: any) => {
-                          const st = String(d?.status || "").toLowerCase();
-                          return st !== "" && st !== "submitted" && st !== "draft";
-                        }).length;
-                        const approvedCount = offerDeliverables.filter((d: any) => {
-                          const st = String(d?.status || "").toLowerCase();
-                          return st === "approved" || st === "brand_approved";
-                        }).length;
+                        const reviewedCount = offerDeliverables.filter(
+                          (d: any) => {
+                            const st = String(d?.status || "").toLowerCase();
+                            return (
+                              st !== "" && st !== "submitted" && st !== "draft"
+                            );
+                          },
+                        ).length;
+                        const approvedCount = offerDeliverables.filter(
+                          (d: any) => {
+                            const st = String(d?.status || "").toLowerCase();
+                            return st === "approved" || st === "brand_approved";
+                          },
+                        ).length;
                         const expectedDeliverables = (() => {
                           const brief =
                             offer?.brief_snapshot ||
                             offer?.brand_campaigns?.brief_snapshot ||
                             offer?.brand_campaigns?.brief ||
                             {};
-                          const raw = Number(brief?.total_expected_deliverables);
+                          const raw = Number(
+                            brief?.total_expected_deliverables,
+                          );
                           if (!Number.isNaN(raw) && raw > 0) return raw;
                           return 0;
                         })();
@@ -3496,11 +3509,15 @@ export default function BrandDashboard() {
                           const targetType = String(
                             offer?.target_type || "",
                           ).toLowerCase();
-                          const targetName = String(offer?.target_name || "").trim();
+                          const targetName = String(
+                            offer?.target_name || "",
+                          ).trim();
                           if (targetType === "agency") {
                             return targetName || "Agency";
                           }
-                          const creatorName = String(offer?.talent_name || "").trim();
+                          const creatorName = String(
+                            offer?.talent_name || "",
+                          ).trim();
                           return creatorName || targetName || "Creator";
                         })();
 
@@ -3584,7 +3601,8 @@ export default function BrandDashboard() {
                                       Progress
                                     </p>
                                     <p className="text-sm font-bold text-gray-900 mt-1">
-                                      {approvedCount}/{expectedDeliverables || 0}
+                                      {approvedCount}/
+                                      {expectedDeliverables || 0}
                                     </p>
                                   </div>
                                   <div className="bg-white border border-gray-200 p-4">
@@ -3600,10 +3618,13 @@ export default function BrandDashboard() {
                                   <p className="text-xs font-semibold text-gray-700 mb-2">
                                     Progress
                                   </p>
-                                  <Progress value={completionPct} className="h-2" />
+                                  <Progress
+                                    value={completionPct}
+                                    className="h-2"
+                                  />
                                   <p className="text-[11px] text-gray-500 mt-2">
-                                    {approvedCount}/{expectedDeliverables || 0} deliverables
-                                    approved
+                                    {approvedCount}/{expectedDeliverables || 0}{" "}
+                                    deliverables approved
                                   </p>
                                 </div>
                                 {loadingOfferHubDetails &&
@@ -3614,7 +3635,8 @@ export default function BrandDashboard() {
                                       Loading deliverables...
                                     </p>
                                   </div>
-                                ) : selectedOfferHubDeliverables.length === 0 ? (
+                                ) : selectedOfferHubDeliverables.length ===
+                                  0 ? (
                                   <div className="py-12 text-center">
                                     <ImageIcon className="w-12 h-12 text-gray-200 mx-auto mb-3" />
                                     <p className="text-sm text-gray-400 font-medium italic">
@@ -3640,7 +3662,9 @@ export default function BrandDashboard() {
                                             {del.asset_type === "image" ? (
                                               <img
                                                 src={getPublicUrl(del)}
-                                                alt={del.caption || "Deliverable"}
+                                                alt={
+                                                  del.caption || "Deliverable"
+                                                }
                                                 className="w-full h-full object-cover"
                                               />
                                             ) : (
@@ -3669,18 +3693,24 @@ export default function BrandDashboard() {
                                               <Badge
                                                 className={`rounded-none border-0 ${
                                                   del.status === "approved" ||
-                                                  del.status === "brand_approved"
+                                                  del.status ===
+                                                    "brand_approved"
                                                     ? "bg-emerald-600 text-white"
-                                                    : del.status === "changes_requested"
+                                                    : del.status ===
+                                                        "changes_requested"
                                                       ? "bg-rose-600 text-white"
                                                       : "bg-blue-600 text-white"
                                                 }`}
                                               >
                                                 {del.status === "submitted"
                                                   ? "New"
-                                                  : del.status === "brand_approved"
+                                                  : del.status ===
+                                                      "brand_approved"
                                                     ? "approved"
-                                                    : del.status.replace(/_/g, " ")}
+                                                    : del.status.replace(
+                                                        /_/g,
+                                                        " ",
+                                                      )}
                                               </Badge>
                                             </div>
                                           </div>
@@ -3894,14 +3924,17 @@ export default function BrandDashboard() {
       const offers = Array.isArray(group?.offers) ? group.offers : [];
       const statuses = new Set(offers.map((o: any) => String(o?.status || "")));
 
-      const groupStatus: "pending_approval" | "in_progress" | "completed" | "draft" =
-        statuses.has("in_progress")
-          ? "in_progress"
-          : statuses.has("pending_approval")
-            ? "pending_approval"
-            : statuses.has("completed")
-              ? "completed"
-              : "draft";
+      const groupStatus:
+        | "pending_approval"
+        | "in_progress"
+        | "completed"
+        | "draft" = statuses.has("in_progress")
+        ? "in_progress"
+        : statuses.has("pending_approval")
+          ? "pending_approval"
+          : statuses.has("completed")
+            ? "completed"
+            : "draft";
 
       const representative = offers[0] || {};
       return {
@@ -4597,7 +4630,11 @@ export default function BrandDashboard() {
             }`}
           >
             Completed (
-            {groupedCampaigns.filter((c: any) => c.status === "completed").length})
+            {
+              groupedCampaigns.filter((c: any) => c.status === "completed")
+                .length
+            }
+            )
           </button>
           <button
             onClick={() => setCampaignView("drafts")}
@@ -4621,7 +4658,9 @@ export default function BrandDashboard() {
           {filteredCampaigns.map((campaign: any) => {
             const groupId = String(campaign?.campaignId || campaign?.id || "");
             const expanded = expandedMyOffersCampaignId === groupId;
-            const offers = Array.isArray(campaign?.offers) ? campaign.offers : [];
+            const offers = Array.isArray(campaign?.offers)
+              ? campaign.offers
+              : [];
 
             const statusBadgeClass =
               campaign.status === "in_progress"
@@ -4637,9 +4676,7 @@ export default function BrandDashboard() {
                 key={groupId}
                 className="rounded-2xl border border-gray-200 bg-white overflow-hidden"
               >
-                <div
-                  className="p-6 flex items-start justify-between"
-                >
+                <div className="p-6 flex items-start justify-between">
                   <div>
                     <h3 className="font-bold text-gray-900 text-lg mb-1">
                       {campaign.name}
@@ -4667,7 +4704,9 @@ export default function BrandDashboard() {
                       <span className="text-gray-600">Due Date:</span>
                       <span className="font-medium text-gray-900">
                         {campaign.due_date
-                          ? new Date(String(campaign.due_date)).toLocaleDateString()
+                          ? new Date(
+                              String(campaign.due_date),
+                            ).toLocaleDateString()
                           : "—"}
                       </span>
                     </div>
