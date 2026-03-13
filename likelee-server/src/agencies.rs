@@ -1922,15 +1922,12 @@ pub async fn list_talents(
 
     if let Some(q) = params.q.as_ref().filter(|s| !s.trim().is_empty()) {
         let ql = q.trim().to_lowercase();
-        combined = combined
-            .into_iter()
-            .filter(|t| {
-                t.full_name
-                    .as_ref()
-                    .map(|n| n.to_lowercase().contains(&ql))
-                    .unwrap_or(false)
-            })
-            .collect();
+        combined.retain(|t| {
+            t.full_name
+                .as_ref()
+                .map(|n| n.to_lowercase().contains(&ql))
+                .unwrap_or(false)
+        });
     }
 
     Ok(Json(json!(combined)))
