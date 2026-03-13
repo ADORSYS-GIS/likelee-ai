@@ -77,7 +77,7 @@ DROP POLICY IF EXISTS "bookings update own" ON public.bookings;
 CREATE POLICY "bookings update own" ON public.bookings
   FOR UPDATE USING (auth.uid() = agency_user_id);
 
--- Booking files attached to a booking (private bucket paths)
+-- Booking files attached to a particular  booking (private bucket paths)
 CREATE TABLE IF NOT EXISTS public.booking_files (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   booking_id uuid NOT NULL REFERENCES public.bookings(id) ON DELETE CASCADE,
