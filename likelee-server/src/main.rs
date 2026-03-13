@@ -33,6 +33,18 @@ async fn main() {
         "payout_config_loaded"
     );
 
+    // Validate FRONTEND_URL is an absolute URL – required for Stripe redirect URLs
+    {
+        let fu = cfg.frontend_url.trim();
+        if !fu.starts_with("http://") && !fu.starts_with("https://") {
+            warn!(
+                frontend_url = %fu,
+                "FRONTEND_URL is not an absolute URL (must start with http:// or https://). \
+                Stripe checkout success/cancel URLs will be invalid!"
+            );
+        }
+    }
+
     let pg_url =
         if cfg.supabase_url.ends_with("/rest/v1") || cfg.supabase_url.ends_with("/rest/v1/") {
             cfg.supabase_url.clone()
