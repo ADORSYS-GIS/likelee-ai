@@ -228,11 +228,14 @@ pub async fn accept_invite(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    // Ensure a global agency_users talent identity row exists for this creator.
+    // Ensure an agency-scoped agency_users talent identity row exists for this creator.
+    // This MUST be per agency to avoid cross-agency asset visibility and to make agency
+    // asset endpoints authorize correctly.
     let au_resp = state
         .pg
         .from("agency_users")
         .select("id")
+        .eq("agency_id", &invite.agency_id)
         .eq("creator_id", &creator_id)
         .eq("role", "talent")
         .limit(1)
@@ -286,6 +289,7 @@ pub async fn accept_invite(
             "full_legal_name": full_legal_name,
             "email": user.email,
             "status": "active",
+            "role": "talent",
             "updated_at": chrono::Utc::now().to_rfc3339(),
         });
 
@@ -300,7 +304,9 @@ pub async fn accept_invite(
         state
             .pg
             .from("agency_users")
+            .eq("agency_id", &invite.agency_id)
             .eq("creator_id", &creator_id)
+            .eq("role", "talent")
             .update(
                 json!({
                     "status": "active",
@@ -318,6 +324,7 @@ pub async fn accept_invite(
         .pg
         .from("agency_users")
         .select("id")
+        .eq("agency_id", &invite.agency_id)
         .eq("creator_id", &creator_id)
         .eq("role", "talent")
         .order("updated_at.desc")

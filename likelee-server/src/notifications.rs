@@ -5,9 +5,11 @@ use axum::{
 };
 use serde::Deserialize;
 use serde_json::json;
+use tracing::{info, warn};
 
 use crate::{
     auth::AuthUser,
+    calendly,
     config::AppState,
     email,
     email_templates::{load_active_email_template, render_placeholders},
@@ -66,7 +68,7 @@ pub async fn booking_created_email(
     let resp = state
         .pg
         .from("bookings")
-        .select("id,agency_user_id,client_name,talent_name,talent_id,date,call_time,wrap_time,location,rate_cents,rate_type")
+        .select("id,agency_user_id,client_name,client_id,talent_name,talent_id,date,call_time,wrap_time,location,rate_cents,rate_type,notify_calendar,type")
         .eq("id", &payload.booking_id)
         .eq("agency_user_id", &user.id)
         .single()
@@ -102,6 +104,12 @@ pub async fn booking_created_email(
     let location = b.get("location").and_then(|v| v.as_str()).unwrap_or("");
     let rate_cents = b.get("rate_cents").and_then(|v| v.as_i64()).unwrap_or(0);
     let rate_type = b.get("rate_type").and_then(|v| v.as_str()).unwrap_or("");
+    let notify_calendar = b
+        .get("notify_calendar")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let booking_type = b.get("type").and_then(|v| v.as_str()).unwrap_or("");
+    let client_id_opt = b.get("client_id").and_then(|v| v.as_str());
 
     // Defaults (fallback if no active template)
     let fallback_subject = format!("New Booking: {} on {}", client_name, date_str);
@@ -344,6 +352,113 @@ pub async fn booking_created_email(
                         .map(|s| s.to_string());
                 }
             }
+        }
+    }
+
+    // Schedule Calendly meeting if requested — register client email so Calendly sends reminders
+    if notify_calendar {
+        // Fetch client email for Calendly registration (so the client gets reminders)
+        let mut client_email: Option<String> = None;
+        let mut client_contact_name = client_name.to_string();
+        if let Some(cid) = client_id_opt {
+            if let Ok(resp) = state
+                .pg
+                .from("agency_clients")
+                .select("email,contact_name")
+                .eq("id", cid)
+                .single()
+                .execute()
+                .await
+            {
+                if resp.status().is_success() {
+                    if let Ok(txt) = resp.text().await {
+                        if let Ok(v) = serde_json::from_str::<serde_json::Value>(&txt) {
+                            if let Some(e) = v.get("email").and_then(|x| x.as_str()) {
+                                client_email = Some(e.to_string());
+                            }
+                            if let Some(cn) = v.get("contact_name").and_then(|x| x.as_str()) {
+                                client_contact_name = cn.to_string();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fetch agency timezone for Calendly
+        let mut agency_timezone = "UTC".to_string();
+        if let Ok(resp) = state
+            .pg
+            .from("agencies")
+            .select("time_zone")
+            .eq("id", &user.id)
+            .single()
+            .execute()
+            .await
+        {
+            if resp.status().is_success() {
+                if let Ok(txt) = resp.text().await {
+                    if let Ok(v) = serde_json::from_str::<serde_json::Value>(&txt) {
+                        if let Some(tz) = v.get("time_zone").and_then(|x| x.as_str()) {
+                            agency_timezone = tz.to_string();
+                        }
+                    }
+                }
+            }
+        }
+
+        // Parse start time (date + call_time)
+        // date is YYYY-MM-DD, call_time is HH:MM
+        let start_time_str = if call_time.is_empty() {
+            format!("{}T09:00:00Z", date_str)
+        } else {
+            format!("{}T{}:00Z", date_str, call_time)
+        };
+
+        if let Ok(start_dt) = chrono::DateTime::parse_from_rfc3339(&start_time_str) {
+            let start_utc = start_dt.with_timezone(&chrono::Utc);
+
+            // Use the client email for Calendly (so they receive the invite + reminders)
+            // Fall back to talent email if client email is unavailable
+            let calendly_email = client_email.unwrap_or_else(|| dest.clone());
+
+            let state_clone = state.clone();
+            let booking_type_clone = if booking_type.is_empty() {
+                None
+            } else {
+                Some(booking_type.to_string())
+            };
+            let location_clone = if location.is_empty() {
+                None
+            } else {
+                Some(location.to_string())
+            };
+            let agency_name_clone = agency_name.clone();
+
+            let agency_id_clone = Some(user.id.to_string());
+
+            tokio::spawn(async move {
+                match calendly::schedule_calendly_invitee(
+                    &state_clone,
+                    &calendly_email,
+                    &client_contact_name,
+                    start_utc,
+                    &agency_timezone,
+                    booking_type_clone.as_deref(),
+                    location_clone.as_deref(),
+                    agency_name_clone.as_deref(),
+                    agency_id_clone.as_deref(),
+                )
+                .await
+                {
+                    Ok(uri) => {
+                        info!(invitee_uri = %uri, invitee_email = %calendly_email, "Calendly invitee registered — reminders will be sent")
+                    }
+                    Err(e) => {
+                        warn!(error = %e, "Calendly invitee registration skipped — check Calendly event type location settings (e.g. Google Meet integration)")
+                    }
+                }
+            });
         }
     }
 

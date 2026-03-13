@@ -85,6 +85,8 @@ export const NewBookingModal = ({
   const [allDay, setAllDay] = useState(false);
   const [callTime, setCallTime] = useState("09:00");
   const [wrapTime, setWrapTime] = useState("17:00");
+  const [location, setLocation] = useState("");
+  const [locationNotes, setLocationNotes] = useState("");
   const [rate, setRate] = useState(0);
   const [currency, setCurrency] = useState("USD");
   const [rateType, setRateType] = useState("day");
@@ -304,9 +306,45 @@ export const NewBookingModal = ({
 
   const commission = rate * 0.2;
 
+  const hasTimeMismatch =
+    !allDay &&
+    Boolean(callTime) &&
+    Boolean(wrapTime) &&
+    String(callTime) >= String(wrapTime);
+
+  const missingInputs = (() => {
+    const missing: string[] = [];
+    if (selectedTalents.length === 0) missing.push(`${entitySingularTitle}`);
+    if (!selectedClient) missing.push("Client");
+    if (!selectedCampaign) missing.push("Campaign");
+    return missing;
+  })();
+
+  const validationIssues = (() => {
+    const issues: string[] = [];
+    if (missingInputs.length > 0) {
+      issues.push(`Select: ${missingInputs.join(", ")}`);
+    }
+    if (hasTimeMismatch) {
+      issues.push("Wrap time must be after call time");
+    }
+    return issues;
+  })();
+
+  const canSubmit = !saving && validationIssues.length === 0;
+
   // Shared submit routine for Save button and Preview -> Confirm
   const submitBookings = async () => {
-    if (selectedTalents.length === 0 || !selectedClient || saving) return;
+    if (!canSubmit) {
+      if (validationIssues.length > 0) {
+        toast({
+          title: "Fix required fields",
+          description: validationIssues.join(" • "),
+          variant: "destructive" as any,
+        });
+      }
+      return;
+    }
 
     // Require campaign selection
     if (!selectedCampaign) {
@@ -333,8 +371,8 @@ export const NewBookingModal = ({
           all_day: allDay,
           call_time: allDay ? "00:00" : callTime,
           wrap_time: allDay ? "23:59" : wrapTime,
-          location: undefined,
-          location_notes: undefined,
+          location: location.trim() || undefined,
+          location_notes: locationNotes.trim() || undefined,
           rate_cents: rate > 0 ? Math.round(rate * 100) : undefined,
           currency: currency,
           rate_type: rateType,
@@ -436,6 +474,7 @@ export const NewBookingModal = ({
                   variant="outline"
                   className="text-green-600 border-green-200 bg-green-50"
                   onClick={() => setPreviewOpen(true)}
+                  disabled={!canSubmit}
                 >
                   Preview
                 </Button>
@@ -856,16 +895,25 @@ export const NewBookingModal = ({
             </div>
 
             <div className="space-y-2">
-              <Label>Location *</Label>
+              <Label>Location</Label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input className="pl-9" placeholder="Enter address..." />
+                <Input
+                  className="pl-9"
+                  placeholder="Enter address..."
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                />
               </div>
             </div>
 
             <div className="space-y-2">
               <Label>Location Notes</Label>
-              <Input placeholder="e.g., Studio B, 3rd floor" />
+              <Input
+                placeholder="e.g., Studio B, 3rd floor"
+                value={locationNotes}
+                onChange={(e) => setLocationNotes(e.target.value)}
+              />
             </div>
 
             <div className="grid grid-cols-3 gap-4 pb-1">
@@ -1089,17 +1137,25 @@ export const NewBookingModal = ({
             <Button variant="ghost" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <div className="flex gap-2">
+            <div className="flex flex-col items-end gap-1">
+              {validationIssues.length > 0 && !saving && (
+                <div className="text-xs text-rose-600 font-medium text-right">
+                  {validationIssues.join(" • ")}
+                </div>
+              )}
+              {saving && (
+                <div className="text-xs text-gray-500 font-medium text-right">
+                  Saving...
+                </div>
+              )}
               <Button
                 className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-2 rounded-xl transition-all ${
-                  selectedTalents.length === 0 || !selectedClient
+                  !canSubmit
                     ? "opacity-50 cursor-not-allowed grayscale-[0.5]"
                     : ""
                 }`}
                 onClick={submitBookings}
-                disabled={
-                  selectedTalents.length === 0 || !selectedClient || saving
-                }
+                disabled={!canSubmit}
               >
                 {saving
                   ? "Saving..."
@@ -1204,6 +1260,7 @@ export const NewBookingModal = ({
                 await submitBookings();
                 setPreviewOpen(false);
               }}
+              disabled={!canSubmit}
             >
               Confirm & Save
             </Button>

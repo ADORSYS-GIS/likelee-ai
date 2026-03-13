@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Calendar } from "lucide-react";
 
 import { CalendarScheduleTab } from "./Tabs/CalendarScheduleTab";
@@ -8,6 +8,7 @@ import { TalentAvailabilityTab } from "./Tabs/TalentAvailabilityTab";
 import { ManagementAnalyticsView } from "./ManagementAnalyticsView";
 import { NotificationsTab } from "./Tabs/NotificationsTab";
 import { CampaignsTab } from "./Tabs/CampaignsTab";
+// getCalendlyBookingUrl removed
 
 // We keep PlaceholderView for fallback
 const PlaceholderView = ({ activeSubTab }: { activeSubTab: string }) => (
@@ -32,6 +33,7 @@ export const BookingsView = ({
   fixedTalent,
   disableBookingEdits,
   isSportsAgency = false,
+  agencyMode = "AI",
 }: {
   activeSubTab: string;
   bookings: any[];
@@ -44,13 +46,15 @@ export const BookingsView = ({
   fixedTalent?: { id: string; name: string };
   disableBookingEdits?: boolean;
   isSportsAgency?: boolean;
+  agencyMode?: "AI" | "IRL";
 }) => {
   const availabilitySubTab = isSportsAgency
     ? "Athlete Availability"
     : "Talent Availability";
 
-  if (activeSubTab === "Calendar & Schedule")
-    return (
+  let content;
+  if (activeSubTab === "Calendar & Schedule") {
+    content = (
       <CalendarScheduleTab
         bookings={bookings}
         onAddBooking={onAddBooking}
@@ -64,14 +68,16 @@ export const BookingsView = ({
         isSportsAgency={isSportsAgency}
       />
     );
-  if (activeSubTab === "Booking Requests") return <BookingRequestsTab />;
-  if (activeSubTab === "Client Database") return <ClientDatabaseTab />;
-  if (
+  } else if (activeSubTab === "Booking Requests") {
+    content = <BookingRequestsTab />;
+  } else if (activeSubTab === "Client Database") {
+    content = <ClientDatabaseTab />;
+  } else if (
     activeSubTab === "Talent Availability" ||
     activeSubTab === "Athlete Availability" ||
     activeSubTab === availabilitySubTab
-  )
-    return (
+  ) {
+    content = (
       <TalentAvailabilityTab
         bookOuts={bookOuts}
         onAddBookOut={onAddBookOut}
@@ -80,13 +86,17 @@ export const BookingsView = ({
         isSportsAgency={isSportsAgency}
       />
     );
-  if (activeSubTab === "Notifications")
-    return (
+  } else if (activeSubTab === "Notifications") {
+    content = (
       <NotificationsTab bookings={bookings} isSportsAgency={isSportsAgency} />
     );
-  if (activeSubTab === "Management & Analytics")
-    return <ManagementAnalyticsView bookings={bookings} />;
-  if (activeSubTab === "Campaigns") return <CampaignsTab />;
+  } else if (activeSubTab === "Management & Analytics") {
+    content = <ManagementAnalyticsView bookings={bookings} />;
+  } else if (activeSubTab === "Campaigns") {
+    content = <CampaignsTab />;
+  } else {
+    content = <PlaceholderView activeSubTab={activeSubTab} />;
+  }
 
-  return <PlaceholderView activeSubTab={activeSubTab} />;
+  return <>{content}</>;
 };

@@ -48,6 +48,14 @@ export const fetchGoogleJobs = (params: any) =>
 export const fetchJoobleJobs = (params: any) =>
   base44Client.get("/jobs/jooble", { params });
 
+// Calendly Integration
+export const getCalendlyBookingUrl = () =>
+  base44Client.get<{
+    status: string;
+    data?: { booking_url: string };
+    error?: string;
+  }>("/booking/calendly-url");
+
 export const testJobApis = () => base44Client.get("/jobs/test");
 
 export const expandJobDescription = (data: any) =>
@@ -749,3 +757,169 @@ export const updateBookingsCampaign = (id: string, data: any) =>
 
 export const deleteBookingsCampaign = (id: string) =>
   base44Client.delete(`/bookings-campaigns/${id}`);
+
+// Deliverables
+export const listOfferDeliverables = (offerId: string) =>
+  base44Client.get(`/api/campaign-offers/${offerId}/deliverables`);
+
+export const uploadOfferDeliverable = (
+  offerId: string,
+  data: {
+    file: File;
+    caption?: string;
+    talent_id?: string;
+    asset_request_id?: string;
+    status?: string;
+  },
+) => {
+  const fd = new FormData();
+  fd.append("file", data.file);
+  if (data.caption) fd.append("caption", data.caption);
+  if (data.talent_id) fd.append("talent_id", data.talent_id);
+  if (data.asset_request_id)
+    fd.append("asset_request_id", data.asset_request_id);
+  if (data.status) fd.append("status", data.status);
+  return base44Client.post(
+    `/api/campaign-offers/${offerId}/deliverables/upload-form`,
+    fd,
+  );
+};
+
+export const submitAllDraftDeliverables = (offerId: string) =>
+  base44Client.post(`/api/campaign-offers/${offerId}/deliverables/submit`);
+
+export const submitOfferDeliverable = (
+  offerId: string,
+  data: {
+    asset_url: string;
+    asset_type?: string;
+    caption?: string;
+    talent_id?: string;
+    asset_request_id?: string;
+    meta?: any;
+  },
+) => base44Client.post(`/api/campaign-offers/${offerId}/deliverables`, data);
+
+export const listOfferTalentAssignments = (offerId: string) =>
+  base44Client.get(`/api/campaign-offers/${offerId}/assignments`);
+
+export const createOfferTalentAssignment = (
+  offerId: string,
+  talentId: string,
+) =>
+  base44Client.post(`/api/campaign-offers/${offerId}/assignments`, {
+    talent_id: talentId,
+  });
+
+export const deleteOfferTalentAssignment = (
+  offerId: string,
+  assignmentId: string,
+) =>
+  base44Client.delete(
+    `/api/campaign-offers/${offerId}/assignments/${assignmentId}`,
+  );
+
+export const uploadOfferAssetRequestFile = (offerId: string, file: File) =>
+  base44Client.post(
+    `/api/campaign-offers/${offerId}/asset-requests/upload`,
+    file,
+    {
+      headers: { "Content-Type": file.type || "application/pdf" },
+    },
+  );
+
+export const listOfferAssetRequests = (offerId: string) =>
+  base44Client.get(`/api/campaign-offers/${offerId}/asset-requests`);
+
+export const createOfferAssetRequest = (
+  offerId: string,
+  data: {
+    talent_id: string;
+    title?: string;
+    message?: string;
+    file_url?: string;
+  },
+) => base44Client.post(`/api/campaign-offers/${offerId}/asset-requests`, data);
+
+export const listTalentAssetRequests = () =>
+  base44Client.get("/api/talent/offer-asset-requests");
+
+export const markTalentAssetRequestViewed = (requestId: string) =>
+  base44Client.post(`/api/talent/offer-asset-requests/${requestId}/viewed`, {});
+
+export const reviewOfferDeliverable = (
+  offerId: string,
+  deliverableId: string,
+  data: {
+    action: string;
+    note?: string;
+  },
+) =>
+  base44Client.post(
+    `/api/campaign-offers/${offerId}/deliverables/${deliverableId}/review`,
+    data,
+  );
+
+export const deleteOfferDeliverable = (
+  offerId: string,
+  deliverableId: string,
+) =>
+  base44Client.delete(
+    `/api/campaign-offers/${offerId}/deliverables/${deliverableId}`,
+  );
+
+export const listMyCampaignOffers = () =>
+  base44Client.get(`/api/campaign-offers/my`);
+
+export const listAgencyOfferPackages = () =>
+  base44Client.get(`/api/agency/brand-offers/packages`);
+
+// ── Booking Deliverables (rooted in bookings_campaigns) ──────────────────────
+
+export const listBookingDeliverables = (campaignId: string) =>
+  base44Client.get(`/api/bookings-campaigns/${campaignId}/deliverables`);
+
+export const uploadBookingDeliverable = (
+  campaignId: string,
+  data: { file: File; caption?: string },
+) => {
+  const form = new FormData();
+  form.append("file", data.file);
+  if (data.caption) form.append("caption", data.caption);
+  return base44Client.post(
+    `/api/bookings-campaigns/${campaignId}/deliverables`,
+    form,
+  );
+};
+
+export const submitBookingDeliverables = (campaignId: string) =>
+  base44Client.post(
+    `/api/bookings-campaigns/${campaignId}/deliverables/submit`,
+  );
+
+export const reviewBookingDeliverable = (
+  campaignId: string,
+  deliverableId: string,
+  payload: { status: string; note?: string },
+) =>
+  base44Client.post(
+    `/api/bookings-campaigns/${campaignId}/deliverables/${deliverableId}/review`,
+    payload,
+  );
+
+export const deleteBookingDeliverable = (
+  campaignId: string,
+  deliverableId: string,
+) =>
+  base44Client.delete(
+    `/api/bookings-campaigns/${campaignId}/deliverables/${deliverableId}`,
+  );
+
+export const submitToBrand = (
+  campaignId: string,
+  payload: { deliverable_ids: string[]; brand_offer_id: string },
+) =>
+  base44Client.post(
+    `/api/bookings-campaigns/${campaignId}/deliverables/submit-to-brand`,
+    payload,
+  );

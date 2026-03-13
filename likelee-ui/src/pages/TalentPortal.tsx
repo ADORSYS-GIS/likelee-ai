@@ -48,29 +48,35 @@ import {
   getTalentIrlEarningsSummary,
   listTalentIrlPayments,
   createTalentIrlPayoutRequest,
+  listMyCampaignOffers,
+  listOfferDeliverables,
+  uploadOfferDeliverable,
 } from "@/api/functions";
 import { BookingsView } from "@/components/Bookings/BookingsView";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import {
   BarChart3,
   Briefcase,
+  Building2,
   Calendar,
   CheckCircle2,
   DollarSign,
+  FileText,
   FolderArchive,
+  Image as LucideImage,
+  LayoutGrid,
+  Loader2,
   MessageSquare,
   Settings,
-  Sparkles,
-  FileText,
-  LayoutGrid,
   ShieldCheck,
-  Image,
+  Sparkles,
+  Star,
+  Upload,
   User,
-  Loader2,
-  Building2,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+
 import {
   acceptCreatorAgencyInvite,
   declineCreatorAgencyInvite,
@@ -267,6 +273,20 @@ export default function TalentPortal({
     enabled: !!talentId,
   });
 
+  const addBookOutMutation = useMutation({
+    mutationFn: async (payload: any) => await createTalentBookOut(payload),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["talentBookOuts"] });
+    },
+  });
+
+  const deleteBookOutMutation = useMutation({
+    mutationFn: async (id: string) => await deleteTalentBookOut(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["talentBookOuts"] });
+    },
+  });
+
   const { data: bookingPreferences } = useQuery({
     queryKey: ["talentBookingPreferences", profileAgencyId || "all"],
     queryFn: async () =>
@@ -405,6 +425,14 @@ export default function TalentPortal({
       .slice(0, 6);
   }, [bookings, todayStr]);
 
+  const { data: myCampaignOffersData } = useQuery({
+    queryKey: ["myCampaignOffers"],
+    queryFn: async () => {
+      const r = await listMyCampaignOffers();
+      return r?.offers || [];
+    },
+  });
+
   const activeProjects = React.useMemo(() => {
     if (!Array.isArray(bookings)) return [];
     return bookings
@@ -415,6 +443,20 @@ export default function TalentPortal({
       })
       .sort((a: any, b: any) => safeStr(a.date).localeCompare(safeStr(b.date)));
   }, [bookings, todayStr]);
+
+  const activeCampaignOffers = React.useMemo(() => {
+    if (!Array.isArray(myCampaignOffersData)) return [];
+    return myCampaignOffersData.filter((b: any) => {
+      const s = safeStr(b.status).toLowerCase();
+      // Assume "accepted", "approved", "confirmed" mean active.
+      return (
+        s === "accepted" ||
+        s === "approved" ||
+        s === "confirmed" ||
+        s === "pending"
+      );
+    });
+  }, [myCampaignOffersData]);
 
   const jobHistory = React.useMemo(() => {
     if (!Array.isArray(bookings)) return [];
@@ -988,7 +1030,7 @@ export default function TalentPortal({
                     label: "Availability",
                     icon: CheckCircle2,
                   },
-                  { id: "portfolio", label: "Portfolio", icon: Image },
+                  { id: "portfolio", label: "Portfolio", icon: LucideImage },
                   { id: "earnings", label: "Earnings", icon: DollarSign },
                   { id: "messages", label: "Messages", icon: MessageSquare },
                   { id: "settings", label: "Settings", icon: Settings },
@@ -1085,7 +1127,9 @@ export default function TalentPortal({
                         Total Earnings
                       </div>
                       <div className="text-4xl font-bold text-gray-900 mt-3">
-                        $0
+                        {fmtCents(
+                          (irlEarningsSummary as any)?.total_paid_cents,
+                        )}
                       </div>
                     </div>
                     <div className="h-10 w-10 rounded-lg bg-green-50 flex items-center justify-center">
@@ -1254,44 +1298,34 @@ export default function TalentPortal({
               </div>
 
               <Card className="p-6 rounded-xl shadow-sm">
-                <div className="mt-2 border rounded-xl border-dashed border-gray-200 p-12 bg-gray-50/50">
-                  {activeProjects.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center text-center">
-                      <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                        <Calendar className="h-8 w-8 text-gray-400" />
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        No Upcoming Bookings
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        Your agency will add bookings to your calendar
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {activeProjects.map((b: any) => (
-                        <div
-                          key={b.id || `${b.date}-${b.client_name}`}
-                          className="flex items-center justify-between rounded-lg border bg-white px-4 py-3"
-                        >
-                          <div>
-                            <div className="text-sm font-semibold text-gray-900">
-                              {b.client_name || b.clientName || "Booking"}
-                            </div>
-                            <div className="text-xs text-gray-500 mt-1">
-                              {b.date}
-                              {b.location ? ` • ${b.location}` : ""}
-                            </div>
-                          </div>
-                          <Badge variant="secondary" className="capitalize">
-                            {safeStr(b.status || "pending").toLowerCase() ||
-                              "pending"}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <BookingsView
+                  activeSubTab="Calendar & Schedule"
+                  bookings={Array.isArray(bookings) ? (bookings as any[]) : []}
+                  onAddBooking={() => {}}
+                  onUpdateBooking={() => {}}
+                  onCancelBooking={() => {}}
+                  bookOuts={Array.isArray(bookOuts) ? (bookOuts as any[]) : []}
+                  onAddBookOut={(bo: any) => {
+                    const payload: any = {
+                      start_date: bo.startDate || bo.start_date,
+                      end_date: bo.endDate || bo.end_date,
+                      reason: bo.reason,
+                      notes: bo.notes,
+                      notify_agency: !!bo.notifyAgency,
+                    };
+                    if (fixedTalent?.id) payload.agency_id = fixedTalent.id;
+                    addBookOutMutation.mutate(payload);
+                  }}
+                  onRemoveBookOut={(id: string) => {
+                    deleteBookOutMutation.mutate(id);
+                  }}
+                  fixedTalent={
+                    selectedAgencyId === "all"
+                      ? { id: "all", name: String(talentName || "My Profile") }
+                      : fixedTalent
+                  }
+                  disableBookingEdits
+                />
               </Card>
             </div>
           )}
@@ -1659,7 +1693,7 @@ export default function TalentPortal({
                             className="rounded-xl overflow-hidden border border-dashed bg-gray-50"
                           >
                             <div className="aspect-[4/3] flex items-center justify-center">
-                              <Image className="h-8 w-8 text-gray-400" />
+                              <LucideImage className="h-8 w-8 text-gray-400" />
                             </div>
                           </div>
                         ))}
@@ -2597,7 +2631,7 @@ export default function TalentPortal({
                         </div>
                       </div>
                       <div className="h-10 w-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                        <Image className="h-5 w-5 text-[#32C8D1]" />
+                        <LucideImage className="h-5 w-5 text-[#32C8D1]" />
                       </div>
                     </div>
                     <div className="mt-4">
@@ -2649,7 +2683,7 @@ export default function TalentPortal({
                       })
                     }
                   >
-                    <Image className="h-4 w-4 mr-2" />
+                    <LucideImage className="h-4 w-4 mr-2" />
                     Manage Photos
                   </Button>
                   <Button

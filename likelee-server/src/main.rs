@@ -33,6 +33,18 @@ async fn main() {
         "payout_config_loaded"
     );
 
+    // Validate FRONTEND_URL is an absolute URL – required for Stripe redirect URLs
+    {
+        let fu = cfg.frontend_url.trim();
+        if !fu.starts_with("http://") && !fu.starts_with("https://") {
+            warn!(
+                frontend_url = %fu,
+                "FRONTEND_URL is not an absolute URL (must start with http:// or https://). \
+                Stripe checkout success/cancel URLs will be invalid!"
+            );
+        }
+    }
+
     let pg_url =
         if cfg.supabase_url.ends_with("/rest/v1") || cfg.supabase_url.ends_with("/rest/v1/") {
             cfg.supabase_url.clone()
@@ -118,10 +130,66 @@ async fn main() {
         stripe_licensing_enterprise_price_id: cfg.stripe_licensing_enterprise_price_id.clone(),
         stripe_agency_basic_base_price_id: cfg.stripe_agency_basic_base_price_id.clone(),
         stripe_agency_pro_base_price_id: cfg.stripe_agency_pro_base_price_id.clone(),
-        stripe_checkout_success_url: cfg.stripe_checkout_success_url.clone(),
-        stripe_checkout_cancel_url: cfg.stripe_checkout_cancel_url.clone(),
-        stripe_licensing_success_url: cfg.stripe_licensing_success_url.clone(),
-        stripe_licensing_cancel_url: cfg.stripe_licensing_cancel_url.clone(),
+        stripe_checkout_success_url: if cfg.stripe_checkout_success_url.trim().is_empty() {
+            format!(
+                "{}/payment-success?session_id={{CHECKOUT_SESSION_ID}}",
+                cfg.frontend_url.trim().trim_end_matches('/')
+            )
+        } else {
+            cfg.stripe_checkout_success_url.trim().to_string()
+        },
+        stripe_checkout_cancel_url: if cfg.stripe_checkout_cancel_url.trim().is_empty() {
+            format!(
+                "{}/payment-cancelled",
+                cfg.frontend_url.trim().trim_end_matches('/')
+            )
+        } else {
+            cfg.stripe_checkout_cancel_url.trim().to_string()
+        },
+        stripe_licensing_success_url: if cfg.stripe_licensing_success_url.trim().is_empty() {
+            format!(
+                "{}/licensing/success?session_id={{CHECKOUT_SESSION_ID}}",
+                cfg.frontend_url.trim().trim_end_matches('/')
+            )
+        } else {
+            cfg.stripe_licensing_success_url.trim().to_string()
+        },
+        stripe_licensing_cancel_url: if cfg.stripe_licensing_cancel_url.trim().is_empty() {
+            format!(
+                "{}/licensing/cancel",
+                cfg.frontend_url.trim().trim_end_matches('/')
+            )
+        } else {
+            cfg.stripe_licensing_cancel_url.trim().to_string()
+        },
+
+        stripe_studio_success_url: {
+            let url = if cfg.stripe_studio_success_url.trim().is_empty() {
+                format!(
+                    "{}/studiosubscribe?success=1&session_id={{CHECKOUT_SESSION_ID}}",
+                    cfg.frontend_url.trim().trim_end_matches('/')
+                )
+            } else {
+                cfg.stripe_studio_success_url.trim().to_string()
+            };
+            info!("Stripe Studio Success URL: {}", url);
+            url
+        },
+        stripe_studio_cancel_url: {
+            let url = if cfg.stripe_studio_cancel_url.trim().is_empty() {
+                format!(
+                    "{}/studiosubscribe?canceled=1",
+                    cfg.frontend_url.trim().trim_end_matches('/')
+                )
+            } else {
+                cfg.stripe_studio_cancel_url.trim().to_string()
+            };
+            info!("Stripe Studio Cancel URL: {}", url);
+            url
+        },
+        stripe_studio_price_ids: cfg.stripe_studio_price_ids.clone(),
+        stripe_studio_lite_price_ids: cfg.stripe_studio_lite_price_ids.clone(),
+        stripe_studio_pro_price_ids: cfg.stripe_studio_pro_price_ids.clone(),
         payouts_enabled: cfg.payouts_enabled,
         payout_auto_approve_threshold_cents: cfg.payout_auto_approve_threshold_cents,
         min_payout_amount_cents: cfg.min_payout_amount_cents,
@@ -164,6 +232,15 @@ async fn main() {
         kyc_bypass_veriff_limit: cfg.kyc_bypass_veriff_limit,
 
         frontend_url: cfg.frontend_url.clone(),
+
+        // Studio Provider API Keys
+        fal_api_key: cfg.fal_api_key.clone(),
+        fal_api_url: cfg.fal_api_url.clone(),
+
+        // Calendly Integration (IRL Booking)
+        calendly_booking_url: cfg.calendly_booking_url.clone(),
+        calendly_webhook_signing_key: cfg.calendly_webhook_signing_key.clone(),
+        calendly_api_token: cfg.calendly_api_token.clone(),
     };
 
     // Start background jobs

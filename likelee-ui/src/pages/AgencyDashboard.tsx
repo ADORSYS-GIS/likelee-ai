@@ -93,14 +93,17 @@ import {
   MapPin,
   Star,
   Menu,
-  Image as ImageIcon,
+  ImageIcon,
   Loader2,
   Mic,
   Link as LinkIcon,
   Pencil,
   Play,
   Library,
+  FolderCheck,
 } from "lucide-react";
+import { AgencyDeliverablesView } from "@/components/agency/AgencyDeliverablesView";
+
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { Button } from "@/components/ui/button";
 
@@ -17117,6 +17120,21 @@ export default function AgencyDashboard() {
       getDefaultSubTab(searchParams.get("tab") || "dashboard"),
   );
 
+  useEffect(() => {
+    const nextTab = String(searchParams.get("tab") || "").trim();
+    if (nextTab && nextTab !== activeTab) {
+      setActiveTabState(nextTab);
+      const nextSubTab =
+        normalizeSubTab(searchParams.get("subTab")) ||
+        getDefaultSubTab(nextTab);
+      setActiveSubTabState(nextSubTab);
+      setExpandedItems((prev) => {
+        if (prev.includes(nextTab)) return prev;
+        return [...prev, nextTab];
+      });
+    }
+  }, [searchParams, activeTab]);
+
   const [expandedItems, setExpandedItems] = useState<string[]>(() => {
     const tabFromUrl = searchParams.get("tab");
     return tabFromUrl ? [tabFromUrl] : ["dashboard"];
@@ -17897,17 +17915,45 @@ export default function AgencyDashboard() {
 
   const setActiveTab = (tab: string) => {
     setActiveTabState(tab);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("tab", tab);
+        if (!next.get("subTab")) {
+          next.set("subTab", getDefaultSubTab(tab));
+        }
+        return next;
+      },
+      { replace: true, preventScrollReset: true },
+    );
   };
 
   const setActiveSubTab = (subTab: string) => {
     const normalizedSubTab = normalizeSubTab(subTab);
     setActiveSubTabState(normalizedSubTab);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("subTab", normalizedSubTab);
+        return next;
+      },
+      { replace: true, preventScrollReset: true },
+    );
   };
 
   const setActiveView = (tab: string, subTab?: string) => {
     const resolvedSubTab = normalizeSubTab(subTab) || getDefaultSubTab(tab);
     setActiveTabState(tab);
     setActiveSubTabState(resolvedSubTab);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("tab", tab);
+        next.set("subTab", resolvedSubTab);
+        return next;
+      },
+      { replace: true, preventScrollReset: true },
+    );
   };
 
   const setActiveScoutingTab = (tab: string) => {
@@ -18097,6 +18143,7 @@ export default function AgencyDashboard() {
             },
           },
           { id: "packages", label: packagesTabLabel, icon: Package },
+          { id: "deliverables", label: "Deliverables", icon: FolderCheck },
           { id: "catalogs", label: "Catalogs", icon: Library },
           {
             id: "settings",
@@ -18169,6 +18216,7 @@ export default function AgencyDashboard() {
             },
           },
           { id: "packages", label: packagesTabLabel, icon: Package },
+          { id: "deliverables", label: "Deliverables", icon: FolderCheck },
           { id: "catalogs", label: "Catalogs", icon: Library },
           {
             id: "settings",
@@ -18923,6 +18971,8 @@ export default function AgencyDashboard() {
             activeSubTab === "Royalties & Payouts" && (
               <RoyaltiesPayoutsView isSportsAgency={isSportsAgency} />
             )}
+          {activeTab === "deliverables" && <AgencyDeliverablesView />}
+
           {activeTab === "packages" && (
             <PackagesView isSportsAgency={isSportsAgency} />
           )}
@@ -18969,6 +19019,7 @@ export default function AgencyDashboard() {
               onAddBookOut={onAddBookOut}
               onRemoveBookOut={onRemoveBookOut}
               isSportsAgency={isSportsAgency}
+              agencyMode={agencyMode}
             />
           )}
           {activeTab === "accounting" && (

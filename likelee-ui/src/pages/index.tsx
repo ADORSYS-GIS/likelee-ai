@@ -41,6 +41,8 @@ import StudioSubscribe from "./StudioSubscribe";
 import StudioVideoOptions from "./StudioVideoOptions";
 
 import StudioImageOptions from "./StudioImageOptions";
+import StudioTemplates from "./StudioTemplates";
+import StudioPresets from "./StudioPresets";
 
 import StudioImageToVideo from "./StudioImageToVideo";
 
@@ -172,6 +174,10 @@ const PAGES = {
   StudioVideoOptions: StudioVideoOptions,
 
   StudioImageOptions: StudioImageOptions,
+
+  StudioTemplates: StudioTemplates,
+
+  StudioPresets: StudioPresets,
 
   StudioImageToVideo: StudioImageToVideo,
 
@@ -312,6 +318,12 @@ function AppRoutes() {
       <Route path="/StudioVideoOptions" element={<StudioVideoOptions />} />
 
       <Route path="/StudioImageOptions" element={<StudioImageOptions />} />
+
+      <Route path="/studiotemplates" element={<StudioTemplates />} />
+      <Route path="/StudioTemplates" element={<StudioTemplates />} />
+
+      <Route path="/studiopresets" element={<StudioPresets />} />
+      <Route path="/StudioPresets" element={<StudioPresets />} />
 
       <Route path="/StudioImageToVideo" element={<StudioImageToVideo />} />
 

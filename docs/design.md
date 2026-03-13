@@ -172,6 +172,27 @@
   - Keep `likelee-server/.env.example` in sync.
   - Document the variables here under this section.
 
+### Studio Providers (AI Generation)
+
+- `FAL_API_KEY`
+  - API key used by the backend to submit/poll Fal Studio generation jobs.
+  - Default: empty.
+- `FAL_API_URL`
+  - Base URL for Fal API.
+  - Default: `https://api.fal.ai`.
+- `HIGGSFIELD_API_KEY`
+  - API key used by the backend to submit/poll Higgsfield generation jobs.
+  - Default: empty.
+- `HIGGSFIELD_API_URL`
+  - Base URL for Higgsfield API.
+  - Default: `https://api.higgsfield.ai`.
+- `KIVE_API_KEY`
+  - API key used by the backend to submit/poll Kive generation jobs.
+  - Default: empty.
+- `KIVE_API_URL`
+  - Base URL for Kive API.
+  - Default: `https://api.kive.ai`.
+
 ### SMTP (Admin + Sales/Contact)
 
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`
@@ -197,6 +218,27 @@
   - URL Stripe redirects to after successful checkout.
 - `STRIPE_CHECKOUT_CANCEL_URL`
   - URL Stripe redirects to after checkout is canceled.
+
+### Stripe (Studio credit packs)
+
+- `STRIPE_STUDIO_SUCCESS_URL`
+  - URL Stripe redirects to after a successful Studio credits checkout.
+  - Should include `{CHECKOUT_SESSION_ID}` so the frontend can show status.
+- `STRIPE_STUDIO_CANCEL_URL`
+  - URL Stripe redirects to after a canceled Studio credits checkout.
+
+- `STRIPE_STUDIO_LITE_PRICE_IDS`
+  - Mapping of credit amounts to Stripe Price IDs for the Lite plan.
+  - Format: `credits:price_id` pairs separated by commas.
+  - Example: `300:price_123`.
+
+- `STRIPE_STUDIO_PRO_PRICE_IDS`
+  - Mapping of credit amounts to Stripe Price IDs for the Pro plan.
+  - Format: `credits:price_id` pairs separated by commas.
+  - Example: `2000:price_123,5000:price_456,10000:price_789`.
+
+- `STRIPE_STUDIO_PRICE_IDS`
+  - Backwards-compatible fallback mapping (used if the plan-specific mapping is not set).
 
 ### Stripe Subscriptions (Client Licensing / Package Paywall)
 
@@ -301,3 +343,135 @@ The licensing flow has been simplified to use a single "License Fee" source of t
 - **Redundancy Removal**: The `budget_min` and `budget_max` columns in `public.licensing_requests` have been removed.
 - **Backend Resolution**: All licensing-related views (Licensing Requests, Active Licenses, Talent View) now fetch the fee directly from the linked `license_submissions` table.
 - **UI Representation**: The frontend displays a single `License Fee` instead of a `Budget Range`.
+
+## Campaign Deliverables
+
+### Goals
+- Allow creators to upload media assets (images/videos) as deliverables for campaign offers.
+- Support a multi-stage review workflow: Creator -> Agency -> Brand.
+- Ensure assets are stored securely and accessed only by authorized parties.
+
+### Workflow
+1. **Draft Stage**: Creators upload assets to their "Asset Library". These assets stay in a `draft` state and are only visible to the creator.
+2. **Submission**: Creators explicitly "Submit to Agency". This updates the deliverable status to `submitted` and notifies the agency.
+3. **Agency Review**: Agencies can `approve` or `request_changes` on deliverables.
+4. **Brand Review**: Once approved by the agency, deliverables are visible to the Brand for final approval.
+
+### Secure Media Authentication
+To protect private assets stored in Supabase, all deliverable media is accessed via a backend proxy:
+- **Proxy Endpoint**: `/api/campaign-offers/:offer_id/deliverables/:id/file`
+- **Authentication**: Since browser `<img />` and `<video />` tags do not natively support custom headers (like `Authorization: Bearer <token>`), the backend supports a fallback authentication mechanism.
+- **Token Fallback**: If the `Authorization` header is missing, the server extracts the JWT from the `token` query parameter. This allows secure, authenticated access to private media files directly within HTML media elements.
+### Calendly Integration (IRL Booking)
+
+#### System Configuration
+- `CALENDLY_BOOKING_URL`: The system-wide fallback scheduling link.
+- `CALENDLY_WEBHOOK_SIGNING_KEY`: Secret used to verify Calendly webhook signatures.
+
+#### Agency-Specific Configuration
+Agencies can override the system default Calendly settings with their own API tokens and event mappings.
+
+##### Data Model: `agency_calendly_settings`
+- `agency_id` (uuid, PK): Link to `public.agencies(id)`.
+- `calendly_api_token` (text, nullable): The agency's personal access token.
+- `is_enabled` (boolean): Whether the custom integration is active.
+- `mappings` (jsonb): A map of platform booking types to Calendly event slugs.
+  - Keys: `default`, `agency_discovery`, `talent_interview`, `photo_shoot`.
+- `updated_at` (timestamptz)
+
+##### Resolution Logic
+When scheduling a meeting for an agency:
+1. Check if the agency has `agency_calendly_settings` with `is_enabled = true`.
+2. If so, use their `calendly_api_token`.
+3. Resolve the target event slug:
+   - Check `mappings` for the specific booking type.
+   - Fall back to the `default` mapping if the specific type is missing.
+   - Fall back to system defaults if no agency mapping is found.
+
+#### API Endpoints
+- `GET /api/calendly/settings`: Fetch the authenticated agency's settings.
+- `POST /api/calendly/settings`: Update settings (JSON payload matching the data model).
+- `GET /api/calendly/event-types`: Fetch available event types for the agency (uses agency token or system fallback).
+
+## Studio Wallet & Transactions
+
+The Studio Wallet system manages virtual credits used for AI image and video generation. It provides a detailed ledger for all credit movements and integrates with Stripe for purchasing credit packs.
+
+### Data Model (Supabase)
+
+#### `studio_wallets`
+
+Stores the current credit balance and subscription plan for each user.
+
+- `id` (uuid, PK)
+- `user_id` (uuid, Unique): Link to the platform user.
+- `balance` (bigint): Current available credits (defaults to 0).
+- `current_plan` (text): The user's active plan (e.g., `lite`, `pro`).
+- `created_at`, `updated_at` (timestamptz)
+
+#### `studio_credit_transactions`
+
+Atomic ledger tracking every credit delta.
+
+- `id` (uuid, PK)
+- `wallet_id` (uuid, FK to `studio_wallets`): The affected wallet.
+- `delta` (bigint): Credit change (negative for deductions, positive for adds/refunds).
+- `balance_after` (bigint): The balance immediately following the transaction.
+- `reason` (text): Transaction category (`purchase`, `generation_deduction`, `generation_refund`, `generation_refund_reconcile`, `generation_extra_deduction`).
+- `provider` (text, optional): The AI provider involved.
+- `generation_id` (uuid, optional): Link to the specific generation job.
+- `stripe_session_id` (text, optional): Stripe checkout session ID for purchase transactions.
+- `metadata` (jsonb): Additional context for the transaction.
+- `created_at` (timestamptz)
+
+#### `studio_provider_costs`
+
+Pricing configuration for different AI models and providers.
+
+- `id` (uuid, PK)
+- `provider` (text): e.g., `fal`, `kling`.
+- `generation_type` (text): `image`, `video`.
+- `model` (text): Specific model identifier.
+- `cost_per_generation` (bigint): Base credit cost.
+- `cost_modifiers` (jsonb): Advanced pricing rules (e.g., duration-based).
+- `enabled` (boolean): Whether the model is available for use.
+
+### Core Workflows
+
+#### 1. Wallet Lifecycle
+
+Wallets are created automatically the first time a user interacts with the Studio or checks their balance. If no wallet exists for a `user_id`, a new one is initialized with 0 credits.
+
+#### 2. Purchasing Credits
+
+1. **Initiation**: User selects a credit pack in the UI. Frontend calls `POST /api/stripe/create-checkout-session` (`billing.rs`).
+2. **Checkout**: Backend creates a Stripe Checkout Session with `billing_domain: studio` and `credits` in metadata.
+3. **Completion**: Stripe sends a `checkout.session.completed` webhook.
+4. **Provisioning**: The webhook handler (`payouts.rs`) verifies the metadata and calls `add_credits` (`wallet.rs`), which:
+   - Increments the wallet balance.
+   - Records a `purchase` transaction with the `stripe_session_id`.
+   - Updates the `current_plan` based on the purchased tier.
+
+#### 3. Generation Flow & Deductions
+
+1. **Pre-check**: Before submitting a job to a provider, the backend checks if the user has enough credits (`check_balance`).
+2. **Deduction**: The estimated cost is deducted immediately (`deduct_credits`). A `generation_deduction` transaction is logged.
+3. **Failure Handling**: If the job fails locally or at the provider, credits are fully refunded (`refund_credits`) with a `generation_refund` reason.
+4. **Reconciliation**: When a job completes, if the provider returns actual billing data (e.g., exact seconds of video generated), the backend adjusts the balance (`reconcile_credits`):
+   - Overcharged: `generation_refund_reconcile` (surplus returned).
+   - Undercharged: `generation_extra_deduction` (additional credits taken).
+
+### Persistence & Identity
+
+The Studio Wallet is tied directly to the user's permanent `user_id` in the database.
+
+- **Session Independence**: Credits and transaction history are persistent. Logging out or clearing browser sessions has no effect on the wallet balance.
+- **Identity Matching**: When a user logs back in, the system uses the unique `user_id` from their authentication token to fetch the corresponding record in `studio_wallets`.
+- **Atomic Reliability**: All credit movements are recorded as atomic deltas in `studio_credit_transactions`, ensuring that the balance remains accurate and verifiable regardless of user activity or session state.
+
+### Implementation
+
+- **Backend Logic**: `likelee-server/src/studio/wallet.rs`
+- **Pricing Configuration**: `public.studio_provider_costs` (DB)
+- **Routes**: `likelee-server/src/studio/routes.rs` (generation endpoints)
+- **Billing Integration**: `likelee-server/src/billing.rs` and `likelee-server/src/payouts.rs` (webhooks)

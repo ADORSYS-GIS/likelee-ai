@@ -33,3 +33,7 @@ unclear or have a better proposal.
 - Keep [.env.example](likelee-server/.env.example) in sync with [ServerConfig](likelee-server/src/config.rs) fields and defaults.
 - Document new/changed environment variables in [docs/design.md](docs/design.md) under “Configuration Management”.
 EOF
+
+### MCP usage scope
+- Never use the supabase mcp server to query or act on the likelee project only access the likelee-dev project
+- This is the dev supabase project(himyrgwyrsmltmzlbuxm)

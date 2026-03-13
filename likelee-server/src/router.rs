@@ -1,4 +1,5 @@
 use crate::config::AppState;
+use axum::http::header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use axum::{
     extract::DefaultBodyLimit,
     routing::{delete, get, post, put},
@@ -10,7 +11,7 @@ pub fn build_router(state: AppState) -> Router {
     let cors = CorsLayer::new()
         .allow_origin(Any)
         .allow_methods(Any)
-        .allow_headers(Any);
+        .allow_headers([AUTHORIZATION, CONTENT_TYPE, ACCEPT]);
 
     Router::new()
         .route("/api/health", get(crate::health::health))
@@ -648,6 +649,15 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::bookings::list).post(crate::bookings::create),
         )
         .route(
+            "/api/calendly/settings",
+            get(crate::calendly::get_agency_calendly_settings)
+                .post(crate::calendly::update_agency_calendly_settings),
+        )
+        .route(
+            "/api/calendly/event-types",
+            get(crate::calendly::get_calendly_event_types),
+        )
+        .route(
             "/api/bookings/with-files",
             post(crate::bookings::create_with_files),
         )
@@ -659,6 +669,31 @@ pub fn build_router(state: AppState) -> Router {
             "/api/bookings-campaigns/:id",
             post(crate::bookings_campaigns::update)
                 .delete(crate::bookings_campaigns::delete_campaign),
+        )
+        .route(
+            "/api/bookings-campaigns/:campaign_id/deliverables",
+            get(crate::booking_deliverables::list_deliverables)
+                .post(crate::booking_deliverables::upload_deliverable),
+        )
+        .route(
+            "/api/bookings-campaigns/:campaign_id/deliverables/submit",
+            post(crate::booking_deliverables::submit_deliverables),
+        )
+        .route(
+            "/api/bookings-campaigns/:campaign_id/deliverables/submit-to-brand",
+            post(crate::booking_deliverables::submit_to_brand),
+        )
+        .route(
+            "/api/bookings-campaigns/:campaign_id/deliverables/:deliverable_id/review",
+            post(crate::booking_deliverables::review_deliverable),
+        )
+        .route(
+            "/api/bookings-campaigns/:campaign_id/deliverables/:deliverable_id",
+            delete(crate::booking_deliverables::delete_deliverable),
+        )
+        .route(
+            "/api/bookings-campaigns/:campaign_id/deliverables/:deliverable_id/file",
+            get(crate::booking_deliverables::serve_deliverable_file),
         )
         .route("/api/bookings/:id", post(crate::bookings::update))
         .route(
@@ -714,6 +749,18 @@ pub fn build_router(state: AppState) -> Router {
                 .get(crate::brand_campaigns::list_offer_contracts),
         )
         .route(
+            "/api/campaign-offers/:offer_id/contracts/upload",
+            post(crate::brand_campaigns::upload_offer_contract),
+        )
+        .route(
+            "/api/campaign-offers/:offer_id/contracts/:contract_id/builder-token",
+            get(crate::brand_campaigns::get_offer_contract_builder_token),
+        )
+        .route(
+            "/api/campaign-offers/:offer_id/contracts/:contract_id",
+            delete(crate::brand_campaigns::delete_offer_contract),
+        )
+        .route(
             "/api/campaign-offers/:offer_id/contracts/send",
             post(crate::brand_campaigns::send_offer_contract),
         )
@@ -750,13 +797,51 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::brand_campaigns::list_agency_package_feedback),
         )
         .route(
+            "/api/agency/brand-offers/packages",
+            get(crate::brand_campaigns::list_agency_offer_packages),
+        )
+        .route(
             "/api/campaign-offers/:offer_id/deliverables",
             post(crate::brand_campaigns::submit_offer_deliverable)
                 .get(crate::brand_campaigns::list_offer_deliverables),
         )
         .route(
+            "/api/campaign-offers/:offer_id/assignments",
+            get(crate::brand_campaigns::list_offer_talent_assignments)
+                .post(crate::brand_campaigns::create_offer_talent_assignment),
+        )
+        .route(
+            "/api/campaign-offers/:offer_id/assignments/:assignment_id",
+            delete(crate::brand_campaigns::delete_offer_talent_assignment),
+        )
+        .route(
+            "/api/campaign-offers/:offer_id/asset-requests",
+            get(crate::brand_campaigns::list_offer_asset_requests)
+                .post(crate::brand_campaigns::create_offer_asset_request),
+        )
+        .route(
+            "/api/campaign-offers/:offer_id/asset-requests/upload",
+            post(crate::brand_campaigns::upload_offer_asset_request_file),
+        )
+        .route(
             "/api/campaign-offers/:offer_id/deliverables/upload",
             post(crate::brand_campaigns::upload_offer_deliverable),
+        )
+        .route(
+            "/api/campaign-offers/:offer_id/deliverables/upload-form",
+            post(crate::brand_campaigns::upload_offer_deliverable_form),
+        )
+        .route(
+            "/api/campaign-offers/:offer_id/deliverables/submit",
+            post(crate::brand_campaigns::submit_draft_deliverables),
+        )
+        .route(
+            "/api/campaign-offers/:offer_id/deliverables/:deliverable_id",
+            delete(crate::brand_campaigns::delete_offer_deliverable),
+        )
+        .route(
+            "/api/campaign-offers/:offer_id/deliverables/:deliverable_id/file",
+            get(crate::brand_campaigns::serve_offer_deliverable),
         )
         .route(
             "/api/campaign-offers/:offer_id/deliverables/:deliverable_id/review",
@@ -769,6 +854,14 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/campaign-offers/:offer_id/deliverables/:deliverable_id/comments",
             post(crate::brand_campaigns::comment_offer_deliverable),
+        )
+        .route(
+            "/api/talent/offer-asset-requests",
+            get(crate::brand_campaigns::list_creator_asset_requests),
+        )
+        .route(
+            "/api/talent/offer-asset-requests/:request_id/viewed",
+            post(crate::brand_campaigns::mark_creator_asset_request_viewed),
         )
         .route(
             "/api/brand/campaigns/:campaign_id/license-requests",
@@ -916,9 +1009,44 @@ pub fn build_router(state: AppState) -> Router {
             "/api/invites/agency-talent/:token/magic-link",
             get(crate::agency_talent_invites::get_magic_link_by_token),
         )
+        // --- Studio (AI Generation) ---
+        .route("/api/studio/generate", post(crate::studio::generate))
+        .route("/api/studio/jobs/:id", get(crate::studio::job_status))
+        .route("/api/studio/wallet", get(crate::studio::get_wallet))
+        .route(
+            "/api/studio/generations",
+            get(crate::studio::list_generations),
+        )
+        .route(
+            "/api/studio/transactions",
+            get(crate::studio::list_transactions),
+        )
+        .route("/api/studio/presets", get(crate::studio::list_presets))
+        .route(
+            "/api/studio/campaigns/:campaign_id/generations",
+            get(crate::studio::list_campaign_generations),
+        )
+        .route("/api/studio/upload", post(crate::studio::upload_file))
+        .route(
+            "/api/studio/licensed-assets",
+            get(crate::studio::list_licensed_assets),
+        )
+        // --- Legacy Stripe endpoint used by some UI flows ---
+        .route(
+            "/stripe/create-checkout-session",
+            post(crate::billing::create_checkout_session_legacy),
+        )
+        .route(
+            "/api/stripe/create-checkout-session",
+            post(crate::billing::create_checkout_session_legacy),
+        )
         // --- Webhooks ---
         .route("/webhooks/stripe", post(crate::payouts::stripe_webhook))
         .route("/webhooks/kyc/veriff", post(crate::kyc::veriff_webhook))
+        .route(
+            "/webhooks/calendly",
+            post(crate::calendly::handle_calendly_webhook),
+        )
         .route("/webhooks/docuseal", post(crate::scouting::handle_webhook))
         .route(
             "/webhooks/docuseal/campaign-contracts",
@@ -927,6 +1055,10 @@ pub fn build_router(state: AppState) -> Router {
         .route(
             "/api/webhooks/licenseContract",
             post(crate::license_submissions::handle_webhook),
+        )
+        .route(
+            "/api/webhooks/brand-contracts",
+            post(crate::brand_campaigns::handle_webhook),
         )
         // --- Integrations & Misc ---
         .route(

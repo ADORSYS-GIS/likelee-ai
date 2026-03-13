@@ -36,27 +36,38 @@ where
             .await
             .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "State error".to_string()))?;
 
-        // 1. Get token from Authorization header
-        let auth_header = parts
+        // 1. Get token from Authorization header or query parameter
+        let token = if let Some(auth_header) = parts
             .headers
             .get("Authorization")
             .and_then(|v| v.to_str().ok())
-            .ok_or((
+        {
+            if !auth_header.starts_with("Bearer ") {
+                return Err((StatusCode::UNAUTHORIZED, "Invalid token format".to_string()));
+            }
+            auth_header[7..].to_string()
+        } else if let Some(query) = parts.uri.query() {
+            let token_param = query
+                .split('&')
+                .find(|s| s.starts_with("token="))
+                .map(|s| s[6..].to_string());
+
+            token_param.ok_or((
+                StatusCode::UNAUTHORIZED,
+                "Missing Authorization header or token query parameter".to_string(),
+            ))?
+        } else {
+            return Err((
                 StatusCode::UNAUTHORIZED,
                 "Missing Authorization header".to_string(),
-            ))?;
-
-        if !auth_header.starts_with("Bearer ") {
-            return Err((StatusCode::UNAUTHORIZED, "Invalid token format".to_string()));
-        }
-
-        let token = &auth_header[7..];
+            ));
+        };
 
         // 2. Verify JWT
         let decoding_key = DecodingKey::from_secret(app_state.supabase_jwt_secret.as_bytes());
         let mut validation = Validation::default();
         validation.set_audience(&["authenticated"]);
-        let token_data = decode::<Claims>(token, &decoding_key, &validation)
+        let token_data = decode::<Claims>(&token, &decoding_key, &validation)
             .map_err(|e| (StatusCode::UNAUTHORIZED, format!("Invalid token: {e}")))?;
 
         let user_id = token_data.claims.sub;
