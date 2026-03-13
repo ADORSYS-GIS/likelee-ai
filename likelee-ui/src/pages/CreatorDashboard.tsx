@@ -826,6 +826,11 @@ export default function CreatorDashboard() {
   const [loadingBrandOffers, setLoadingBrandOffers] = useState(false);
   const [loadingJobInvites, setLoadingJobInvites] = useState(false);
   const [jobInvites, setJobInvites] = useState<any[]>([]);
+  const [jobInviteConfirmOpen, setJobInviteConfirmOpen] = useState(false);
+  const [jobInviteConfirmId, setJobInviteConfirmId] = useState("");
+  const [jobInviteConfirmAction, setJobInviteConfirmAction] = useState<
+    "accept" | "decline" | ""
+  >("");
   const [loadingOfferDetails, setLoadingOfferDetails] = useState(false);
   const [sendDeliverableOpen, setSendDeliverableOpen] = useState(false);
   const [sendDeliverableBrandId, setSendDeliverableBrandId] = useState("");
@@ -926,12 +931,71 @@ export default function CreatorDashboard() {
         const invitedCreators = Array.isArray(job?.invited_creator_ids)
           ? job.invited_creator_ids
           : [];
-        // Only show if the current creator is explicitly invited
-        return invitedCreators.includes(user?.id);
+        const acceptedCreators = Array.isArray(job?.accepted_creator_ids)
+          ? job.accepted_creator_ids
+          : [];
+        // Show if explicitly invited OR already accepted
+        return (
+          invitedCreators.includes(user?.id) ||
+          acceptedCreators.includes(user?.id)
+        );
       });
       return invites;
     } finally {
       if (!silent) setLoadingJobInvites(false);
+    }
+  };
+
+  const declineJobInvite = async (jobId: string) => {
+    try {
+      setOfferActionLoading(true);
+      await base44.post(`/api/jobs/${encodeURIComponent(jobId)}/decline`, {});
+      toast({
+        title: "Invite declined",
+        description: "The brand will see your response in job details.",
+      });
+      const jobInvitesRes = await loadJobInvites().catch(() => []);
+      setJobInvites(Array.isArray(jobInvitesRes) ? jobInvitesRes : []);
+    } catch (e: any) {
+      toast({
+        variant: "destructive",
+        title: "Decline failed",
+        description: e?.message || String(e),
+      });
+    } finally {
+      setOfferActionLoading(false);
+      setJobInviteConfirmOpen(false);
+    }
+  };
+
+  const acceptJobInvite = async (jobId: string) => {
+    try {
+      setOfferActionLoading(true);
+      await base44.post(`/api/jobs/${encodeURIComponent(jobId)}/accept`, {});
+      toast({
+        title: "Invite accepted",
+        description: "The job is now accepted.",
+      });
+      const jobInvitesRes = await loadJobInvites().catch(() => []);
+      setJobInvites(Array.isArray(jobInvitesRes) ? jobInvitesRes : []);
+    } catch (e: any) {
+      toast({
+        variant: "destructive",
+        title: "Accept failed",
+        description: e?.message || String(e),
+      });
+    } finally {
+      setOfferActionLoading(false);
+      setJobInviteConfirmOpen(false);
+    }
+  };
+
+  const confirmJobInviteAction = () => {
+    if (!jobInviteConfirmId || !jobInviteConfirmAction) return;
+    if (jobInviteConfirmAction === "accept") {
+      acceptJobInvite(jobInviteConfirmId);
+    } else {
+      declineJobInvite(jobInviteConfirmId);
     }
   };
 
@@ -6140,53 +6204,60 @@ export default function CreatorDashboard() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            className="border-gray-300"
-                            onClick={() =>
-                              navigate(
-                                `${createPageUrl("Jobs")}?jobId=${encodeURIComponent(
-                                  String(job?.id || ""),
-                                )}`,
-                              )
-                            }
-                          >
-                            View job details and apply
-                          </Button>
-                          <Button
-                            variant="outline"
-                            className="border-red-200 text-red-600 hover:bg-red-50"
-                            onClick={async () => {
-                              try {
-                                await base44.post(
-                                  `/api/jobs/${encodeURIComponent(
+                          {!(job?.accepted_creator_ids || []).includes(
+                            user?.id,
+                          ) ? (
+                            <>
+                              <Button
+                                variant="outline"
+                                className="border-gray-300"
+                                onClick={() =>
+                                  navigate(
+                                    `${createPageUrl("Jobs")}?jobId=${encodeURIComponent(
+                                      String(job?.id || ""),
+                                    )}`,
+                                  )
+                                }
+                              >
+                                View job details
+                              </Button>
+                              <Button
+                                variant="outline"
+                                className="bg-[#32C8D1] hover:bg-[#2AB8C1] text-white border-none"
+                                onClick={() => {
+                                  setJobInviteConfirmId(String(job?.id || ""));
+                                  setJobInviteConfirmAction("accept");
+                                  setJobInviteConfirmOpen(true);
+                                }}
+                              >
+                                Accept
+                              </Button>
+                              <Button
+                                variant="outline"
+                                className="border-red-200 text-red-600 hover:bg-red-50"
+                                onClick={() => {
+                                  setJobInviteConfirmId(String(job?.id || ""));
+                                  setJobInviteConfirmAction("decline");
+                                  setJobInviteConfirmOpen(true);
+                                }}
+                              >
+                                Decline
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              className="bg-black text-white"
+                              onClick={() =>
+                                navigate(
+                                  `${createPageUrl("Jobs")}?jobId=${encodeURIComponent(
                                     String(job?.id || ""),
-                                  )}/decline`,
-                                  {},
-                                );
-                                const jobInvitesRes =
-                                  await loadJobInvites().catch(() => []);
-                                setJobInvites(
-                                  Array.isArray(jobInvitesRes)
-                                    ? jobInvitesRes
-                                    : [],
-                                );
-                                toast({
-                                  title: "Invite declined",
-                                  description:
-                                    "The brand will see your response in job details.",
-                                });
-                              } catch (e: any) {
-                                toast({
-                                  variant: "destructive",
-                                  title: "Decline failed",
-                                  description: e?.message || String(e),
-                                });
+                                  )}&apply=true`,
+                                )
                               }
-                            }}
-                          >
-                            Decline
-                          </Button>
+                            >
+                              Apply
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -11954,6 +12025,46 @@ export default function CreatorDashboard() {
             )}
             <div id="veriff-kyc-embedded-creator" className="w-full h-full" />
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={jobInviteConfirmOpen}
+        onOpenChange={setJobInviteConfirmOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Confirm{" "}
+              {jobInviteConfirmAction === "accept" ? "Acceptance" : "Decline"}
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to {jobInviteConfirmAction} this job invite?
+              This action cannot be undone. Please ensure you have viewed the
+              job details first.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setJobInviteConfirmOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              className={
+                jobInviteConfirmAction === "accept"
+                  ? "bg-green-600 hover:bg-green-700 text-white"
+                  : "bg-red-600 hover:bg-red-700 text-white"
+              }
+              onClick={confirmJobInviteAction}
+              disabled={offerActionLoading}
+            >
+              {offerActionLoading
+                ? "Processing..."
+                : `Yes, ${jobInviteConfirmAction}`}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

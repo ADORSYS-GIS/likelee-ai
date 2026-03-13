@@ -1050,33 +1050,20 @@ export default function PostJob() {
                 <Label className="text-sm font-medium text-gray-700 mb-3 block">
                   Goals & KPIs
                 </Label>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    "Awareness",
-                    "Sales",
-                    "Social Reach",
-                    "AI R&D",
-                    "Film Production",
-                    "Brand Building",
-                  ].map((goal) => (
-                    <div
-                      key={goal}
-                      className="flex items-center space-x-2 p-3 border-2 border-gray-200 rounded-none hover:bg-gray-50"
-                    >
-                      <Checkbox
-                        id={goal}
-                        checked={formData.goals.includes(goal)}
-                        onCheckedChange={() => toggleArrayItem("goals", goal)}
-                        className="border-2 border-gray-400"
-                      />
-                      <label
-                        htmlFor={goal}
-                        className="text-sm text-gray-700 cursor-pointer flex-1"
-                      >
-                        {goal}
-                      </label>
-                    </div>
-                  ))}
+                <div className="grid grid-cols-1 gap-3">
+                  <Textarea
+                    value={formData.goals.join("\\n")}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        goals: e.target.value
+                          ? e.target.value.split("\\n")
+                          : [],
+                      })
+                    }
+                    placeholder="Enter your goals & KPIs (one per line)..."
+                    className="border-2 border-gray-300 rounded-none w-full min-h-[100px]"
+                  />
                 </div>
               </div>
 

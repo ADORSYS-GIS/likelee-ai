@@ -84,14 +84,22 @@ export default function JobsBoard() {
   const [category, setCategory] = useState("");
   const [applyOpen, setApplyOpen] = useState(false);
   const [applyMessage, setApplyMessage] = useState("");
+  const [portfolioLink, setPortfolioLink] = useState("");
+  const [githubLink, setGithubLink] = useState("");
+  const [linkedinLink, setLinkedinLink] = useState("");
   const [applyLoading, setApplyLoading] = useState(false);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [resumeUploading, setResumeUploading] = useState(false);
   const [resumeMeta, setResumeMeta] = useState<any | null>(null);
+  const [compCardFile, setCompCardFile] = useState<File | null>(null);
+  const [compCardUploading, setCompCardUploading] = useState(false);
+  const [compCardMeta, setCompCardMeta] = useState<any | null>(null);
   const [selectedAssetIndex, setSelectedAssetIndex] = useState<number | null>(
     null,
   );
   const resumeInputRef = useRef<HTMLInputElement>(null);
+  const compCardInputRef = useRef<HTMLInputElement>(null);
+  const loadMoreSentinelRef = useRef<HTMLDivElement>(null);
 
   const resolveAssetUrl = (asset: any) => {
     if (!asset) return "";
@@ -234,6 +242,21 @@ export default function JobsBoard() {
     location !== "all" ||
     category !== "";
 
+  // Auto-load next batch when sentinel enters viewport
+  useEffect(() => {
+    if (!loadMoreSentinelRef.current) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasMore && !revealingMore) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(loadMoreSentinelRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, revealingMore, loadMore]);
+
   useEffect(() => {
     if (!detailsOpen || !selectedJob) return;
     resolveMissingJobAssetUrls(selectedJob);
@@ -241,12 +264,18 @@ export default function JobsBoard() {
 
   useEffect(() => {
     const jobIdParam = searchParams.get("jobId");
+    const shouldApply = searchParams.get("apply") === "true";
     if (!jobIdParam || jobs.length === 0) return;
     if (autoOpenedJobId === jobIdParam) return;
     const match = jobs.find((job) => String(job?.id || "") === jobIdParam);
     if (match) {
       setSelectedJob(match);
-      setDetailsOpen(true);
+      if (shouldApply) {
+        setApplyOpen(true);
+        setDetailsOpen(false);
+      } else {
+        setDetailsOpen(true);
+      }
       setAutoOpenedJobId(jobIdParam);
     }
   }, [searchParams, jobs, autoOpenedJobId]);
@@ -262,6 +291,12 @@ export default function JobsBoard() {
         resume_path: resumeMeta?.path,
         resume_mime: resumeMeta?.mime_type,
         resume_size: resumeMeta?.size,
+        comp_card_name: compCardMeta?.name,
+        comp_card_url: compCardMeta?.url,
+        comp_card_path: compCardMeta?.path,
+        portfolio_link: portfolioLink || undefined,
+        github_link: githubLink || undefined,
+        linkedin_link: linkedinLink || undefined,
       });
       toast({
         title: "Application sent",
@@ -269,8 +304,13 @@ export default function JobsBoard() {
       });
       setApplyOpen(false);
       setApplyMessage("");
+      setPortfolioLink("");
+      setGithubLink("");
+      setLinkedinLink("");
       setResumeFile(null);
       setResumeMeta(null);
+      setCompCardFile(null);
+      setCompCardMeta(null);
     } catch (e: any) {
       toast({
         title: "Apply failed",
@@ -333,6 +373,57 @@ export default function JobsBoard() {
     } finally {
       setResumeUploading(false);
     }
+  };
+
+  const handleCompCardUpload = async (file: File | null) => {
+    setCompCardFile(file);
+    setCompCardMeta(null);
+    if (!file) return;
+    if (!supabase) {
+      toast({
+        title: "Upload unavailable",
+        description: "Storage is not configured for this environment.",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      setCompCardUploading(true);
+      const session = await supabase.auth.getSession();
+      const userId = String(session.data.session?.user?.id || "applicant");
+      const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+      const path = `job-comp-cards/${userId}/${Date.now()}_${Math.random()
+        .toString(36)
+        .slice(2, 8)}_${safeName}`;
+      const { error: uploadError } = await supabase.storage
+        .from("likelee-public")
+        .upload(path, file);
+      if (uploadError) throw uploadError;
+      const { data } = supabase.storage
+        .from("likelee-public")
+        .getPublicUrl(path);
+      setCompCardMeta({
+        name: file.name,
+        size: file.size,
+        url: String(data?.publicUrl || ""),
+        path,
+        mime_type: file.type,
+      });
+    } catch (e: any) {
+      toast({
+        title: "Comp card upload failed",
+        description: e?.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setCompCardUploading(false);
+    }
+  };
+
+  const handleRemoveCompCard = () => {
+    setCompCardFile(null);
+    setCompCardMeta(null);
+    if (compCardInputRef.current) compCardInputRef.current.value = "";
   };
 
   const handleRemoveResume = () => {
@@ -540,19 +631,15 @@ export default function JobsBoard() {
               </Card>
             ))}
 
-            {/* Progressive load-more */}
+            {/* Progressive auto-load sentinel (invisible, triggers IntersectionObserver) */}
             {!loading && hasMore && (
-              <div className="col-span-full flex flex-col items-center gap-3 py-4">
-                {revealingMore ? (
-                  <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
-                ) : (
-                  <Button
-                    variant="outline"
-                    className="border-gray-200 text-gray-600 hover:bg-gray-50"
-                    onClick={loadMore}
-                  >
-                    Load more jobs ({jobs.length - visibleCount} remaining)
-                  </Button>
+              <div
+                ref={loadMoreSentinelRef}
+                className="col-span-full flex justify-center py-4"
+                aria-hidden
+              >
+                {revealingMore && (
+                  <Loader2 className="w-5 h-5 animate-spin text-gray-300" />
                 )}
               </div>
             )}
@@ -579,48 +666,136 @@ export default function JobsBoard() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 pt-3">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-900">
-                  Upload resume (CV)
-                </label>
-                <input
-                  ref={resumeInputRef}
-                  id="job-resume-upload"
-                  type="file"
-                  accept=".pdf"
-                  className="hidden"
-                  onChange={(e) =>
-                    handleResumeUpload(e.target.files?.[0] || null)
-                  }
-                />
-                <div className="space-y-2">
-                  {!resumeMeta?.name && (
-                    <label
-                      htmlFor="job-resume-upload"
-                      className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:border-gray-400 cursor-pointer"
-                    >
-                      Browse resume
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Resume upload */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-900">
+                      Upload resume (CV)
                     </label>
-                  )}
-                  {resumeUploading && (
-                    <p className="text-xs text-gray-500">Uploading resume...</p>
-                  )}
-                  {!resumeUploading && resumeMeta?.name && (
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                      <span className="text-xs text-gray-700 truncate max-w-[240px]">
-                        {resumeMeta.name}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={handleRemoveResume}
-                        className="p-0.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700 flex-shrink-0"
-                        aria-label="Remove resume"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
+                    <input
+                      ref={resumeInputRef}
+                      id="job-resume-upload"
+                      type="file"
+                      accept=".pdf"
+                      className="hidden"
+                      onChange={(e) =>
+                        handleResumeUpload(e.target.files?.[0] || null)
+                      }
+                    />
+                    <div className="space-y-2">
+                      {!resumeMeta?.name && (
+                        <label
+                          htmlFor="job-resume-upload"
+                          className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:border-gray-400 cursor-pointer"
+                        >
+                          Browse resume
+                        </label>
+                      )}
+                      {resumeUploading && (
+                        <p className="text-xs text-gray-500">
+                          Uploading resume...
+                        </p>
+                      )}
+                      {!resumeUploading && resumeMeta?.name && (
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                          <span className="text-xs text-gray-700 truncate max-w-[180px]">
+                            {resumeMeta.name}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleRemoveResume}
+                            className="p-0.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700 flex-shrink-0"
+                            aria-label="Remove resume"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
+                  {/* Comp card upload */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-900">
+                      Upload comp card
+                    </label>
+                    <input
+                      ref={compCardInputRef}
+                      id="job-comp-card-upload"
+                      type="file"
+                      accept="image/*,.pdf"
+                      className="hidden"
+                      onChange={(e) =>
+                        handleCompCardUpload(e.target.files?.[0] || null)
+                      }
+                    />
+                    <div className="space-y-2">
+                      {!compCardMeta?.name && (
+                        <label
+                          htmlFor="job-comp-card-upload"
+                          className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:border-gray-400 cursor-pointer"
+                        >
+                          Browse comp card
+                        </label>
+                      )}
+                      {compCardUploading && (
+                        <p className="text-xs text-gray-500">
+                          Uploading comp card...
+                        </p>
+                      )}
+                      {!compCardUploading && compCardMeta?.name && (
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                          <span className="text-xs text-gray-700 truncate max-w-[180px]">
+                            {compCardMeta.name}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleRemoveCompCard}
+                            className="p-0.5 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-700 flex-shrink-0"
+                            aria-label="Remove comp card"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-900">
+                      Portfolio Link
+                    </label>
+                    <Input
+                      placeholder="https://yourportfolio.com"
+                      value={portfolioLink}
+                      onChange={(e) => setPortfolioLink(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-900">
+                      LinkedIn Profile
+                    </label>
+                    <Input
+                      placeholder="https://linkedin.com/in/..."
+                      value={linkedinLink}
+                      onChange={(e) => setLinkedinLink(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-900">
+                    GitHub Profile
+                  </label>
+                  <Input
+                    placeholder="https://github.com/..."
+                    value={githubLink}
+                    onChange={(e) => setGithubLink(e.target.value)}
+                  />
                 </div>
               </div>
               <Textarea

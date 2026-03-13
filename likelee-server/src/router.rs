@@ -793,6 +793,10 @@ pub fn build_router(state: AppState) -> Router {
             post(crate::job_postings::decline_job_invite),
         )
         .route(
+            "/api/jobs/:job_id/accept",
+            post(crate::job_postings::accept_job_invite),
+        )
+        .route(
             "/api/jobs/:job_id/applications",
             get(crate::job_postings::list_job_applications),
         )

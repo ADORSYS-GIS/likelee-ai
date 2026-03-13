@@ -1,4 +1,7 @@
-use crate::{auth::AuthUser, config::AppState};
+use crate::{
+    auth::{AuthUser, RoleGuard},
+    config::AppState,
+};
 use axum::{extract::State, http::StatusCode, Json};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -123,6 +126,7 @@ pub async fn configure_performance_tiers(
     auth_user: AuthUser,
     Json(payload): Json<ConfigurePerformanceRequest>,
 ) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
     let mut commission_config = serde_json::Map::new();
     let config_obj = payload.config.as_object().ok_or((
         StatusCode::BAD_REQUEST,
@@ -212,6 +216,7 @@ pub async fn get_performance_tiers(
     State(state): State<AppState>,
     auth_user: AuthUser,
 ) -> Result<Json<PerformanceTiersResponse>, (StatusCode, String)> {
+    RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
     let start_total = Instant::now();
     let agency_id = &auth_user.id;
 
@@ -488,6 +493,7 @@ pub async fn update_talent_commission(
     auth_user: AuthUser,
     Json(payload): Json<UpdateTalentCommissionRequest>,
 ) -> Result<StatusCode, (StatusCode, String)> {
+    RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
     let agency_id = &auth_user.id;
 
     let (resp_user, resp_tiers_db, resp_agency, resp_stats) = tokio::try_join!(
@@ -604,6 +610,7 @@ pub async fn get_commission_history(
     State(state): State<AppState>,
     auth_user: AuthUser,
 ) -> Result<Json<Vec<CommissionHistoryLog>>, (StatusCode, String)> {
+    RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
     let resp = state
         .pg
         .from("licensing_payouts")
@@ -657,6 +664,7 @@ pub async fn get_commission_breakdowns(
     State(state): State<AppState>,
     auth_user: AuthUser,
 ) -> Result<Json<Vec<CommissionBreakdown>>, (StatusCode, String)> {
+    RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
     let agency_id = &auth_user.id;
     let resp = state.pg.from("payments").eq("agency_id", agency_id).eq("status", "succeeded").select("id, created_at, gross_cents, talent_earnings_cents, agency_users:talent_id(full_legal_name), brands:brand_id(name)").order("created_at.desc").limit(50).execute().await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
@@ -721,6 +729,7 @@ pub async fn get_agency_payout_weights(
     State(state): State<AppState>,
     auth_user: AuthUser,
 ) -> Result<Json<AgencyPayoutWeightsResponse>, (StatusCode, String)> {
+    RoleGuard::new(vec!["agency"]).check(&auth_user.role)?;
     let agency_id = &auth_user.id;
     let (resp_talents, resp_stats, resp_tiers) = tokio::try_join!(
         state.pg.from("agency_users").select("id, full_legal_name, stage_name, profile_photo_url, performance_tier_name").eq("agency_id", agency_id).eq("role", "talent").execute(),

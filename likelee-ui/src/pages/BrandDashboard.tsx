@@ -93,6 +93,16 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+const ensureProtocol = (url: string | null | undefined) => {
+  if (!url) return "";
+  const trimmed = url.trim();
+  if (!trimmed) return "";
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
+  }
+  return `https://${trimmed}`;
+};
+
 // Mock data
 const mockBrand = {
   name: "Urban Apparel Co.",
@@ -7393,6 +7403,11 @@ export default function BrandDashboard() {
                       selectedJobForApplications.declined_agencies,
                     ) &&
                       selectedJobForApplications.declined_agencies.length >
+                        0) ||
+                    (Array.isArray(
+                      selectedJobForApplications.accepted_agencies,
+                    ) &&
+                      selectedJobForApplications.accepted_agencies.length >
                         0) ? (
                       <div className="pt-1">
                         <p className="text-xs font-semibold text-gray-700 mb-2">
@@ -7402,6 +7417,8 @@ export default function BrandDashboard() {
                           {/* Show Accepted/Pending first, then Declined */}
                           {[
                             ...(selectedJobForApplications.invited_agencies ||
+                              []),
+                            ...(selectedJobForApplications.accepted_agencies ||
                               []),
                             ...(selectedJobForApplications.declined_agencies ||
                               []),
@@ -7416,10 +7433,18 @@ export default function BrandDashboard() {
                                 (agency?.id || agency?.agency_id),
                             );
                             const isAccepted =
-                              Array.isArray(selectedJobApplications) &&
-                              selectedJobApplications.some(
+                              (Array.isArray(selectedJobApplications) &&
+                                selectedJobApplications.some(
+                                  (a: any) =>
+                                    a.agency_id ===
+                                    (agency?.id || agency?.agency_id),
+                                )) ||
+                              (
+                                selectedJobForApplications.accepted_agencies ||
+                                []
+                              ).some(
                                 (a: any) =>
-                                  a.agency_id ===
+                                  (a?.id || a?.agency_id) ===
                                   (agency?.id || agency?.agency_id),
                               );
 
@@ -7485,6 +7510,11 @@ export default function BrandDashboard() {
                       selectedJobForApplications.declined_creators,
                     ) &&
                       selectedJobForApplications.declined_creators.length >
+                        0) ||
+                    (Array.isArray(
+                      selectedJobForApplications.accepted_creators,
+                    ) &&
+                      selectedJobForApplications.accepted_creators.length >
                         0) ? (
                       <div className="pt-3">
                         <p className="text-xs font-semibold text-gray-700 mb-2">
@@ -7494,6 +7524,8 @@ export default function BrandDashboard() {
                           {[
                             ...(selectedJobForApplications.invited_creators ||
                               []),
+                            ...(selectedJobForApplications.accepted_creators ||
+                              []),
                             ...(selectedJobForApplications.declined_creators ||
                               []),
                           ].map((creator: any, idx: number) => {
@@ -7502,13 +7534,17 @@ export default function BrandDashboard() {
                               selectedJobForApplications.declined_creators || []
                             ).some((d: any) => d?.id === creator?.id);
                             const isAccepted =
-                              Array.isArray(selectedJobApplications) &&
-                              selectedJobApplications.some(
-                                (a: any) =>
-                                  a.applicant_id === creator?.id &&
-                                  (a.applicant_role === "creator" ||
-                                    a.applicant_role === "talent"),
-                              );
+                              (Array.isArray(selectedJobApplications) &&
+                                selectedJobApplications.some(
+                                  (a: any) =>
+                                    a.applicant_id === creator?.id &&
+                                    (a.applicant_role === "creator" ||
+                                      a.applicant_role === "talent"),
+                                )) ||
+                              (
+                                selectedJobForApplications.accepted_creators ||
+                                []
+                              ).some((c: any) => c?.id === creator?.id);
 
                             let statusLabel = "Pending";
                             let statusColor =
@@ -7801,8 +7837,8 @@ export default function BrandDashboard() {
                           {app.message}
                         </p>
                       )}
-                      {resolveResumeUrl(app) && (
-                        <div className="mt-3">
+                      <div className="mt-3 flex flex-wrap gap-3">
+                        {resolveResumeUrl(app) && (
                           <a
                             href={resolveResumeUrl(app)}
                             target="_blank"
@@ -7810,10 +7846,51 @@ export default function BrandDashboard() {
                             download={app.resume_name || "resume"}
                             className="text-sm font-medium text-blue-600 hover:text-blue-700"
                           >
-                            View resume
+                            📄 View resume
                           </a>
-                        </div>
-                      )}
+                        )}
+                        {app.comp_card_url && (
+                          <a
+                            href={app.comp_card_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            download={app.comp_card_name || "comp_card"}
+                            className="text-sm font-medium text-purple-600 hover:text-purple-700"
+                          >
+                            🖼️ Comp card
+                          </a>
+                        )}
+                        {app.portfolio_link && (
+                          <a
+                            href={ensureProtocol(app.portfolio_link)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-sm font-medium text-emerald-600 hover:text-emerald-700"
+                          >
+                            🌐 Portfolio
+                          </a>
+                        )}
+                        {app.github_link && (
+                          <a
+                            href={ensureProtocol(app.github_link)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-sm font-medium text-gray-700 hover:text-gray-900"
+                          >
+                            💻 GitHub
+                          </a>
+                        )}
+                        {app.linkedin_link && (
+                          <a
+                            href={ensureProtocol(app.linkedin_link)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-sm font-medium text-blue-700 hover:text-blue-800"
+                          >
+                            🔗 LinkedIn
+                          </a>
+                        )}
+                      </div>
                     </Card>
                   ))}
                 </div>
