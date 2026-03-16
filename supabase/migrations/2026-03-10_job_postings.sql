@@ -64,13 +64,7 @@ create table if not exists public.job_postings (
     )
   ),
   constraint job_postings_status_check check (status in ('open','closed','draft'))
-
--- Track declined job invites for confidential postings.
-  declined_agency_ids uuid[] default '{}',
-  declined_creator_ids uuid[] default '{}'
 );
-
-
 
 create table if not exists public.job_applications (
   id uuid primary key default gen_random_uuid(),
