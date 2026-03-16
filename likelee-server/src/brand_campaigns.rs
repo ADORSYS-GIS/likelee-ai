@@ -58,6 +58,11 @@ pub struct ListCampaignQuery {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct CampaignMetricsQuery {
+    pub month: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct CreateCampaignOffersRequest {
     pub target_type: String,
     pub target_ids: Vec<String>,
@@ -737,6 +742,190 @@ pub async fn list_campaigns(
     }
     let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap_or_default();
     Ok(Json(json!({ "campaigns": rows })))
+}
+
+pub async fn get_campaign_metrics(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Query(q): Query<CampaignMetricsQuery>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+
+    let _ = q.month; // accepted but not used (no monthly scope)
+
+    // 1) Load all offers for the brand with campaign timing info.
+    let offers_resp = state
+        .pg
+        .from("campaign_offers")
+        .select("id,brand_campaign_id,status,brand_campaigns(start_date,duration_days,status)")
+        .eq("brand_id", &user.id)
+        .limit(5000)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let offers_status = offers_resp.status();
+    let offers_text = offers_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !offers_status.is_success() {
+        return Err(sanitize_db_error(offers_status.as_u16(), offers_text));
+    }
+    let offers: Vec<serde_json::Value> = serde_json::from_str(&offers_text).unwrap_or_default();
+
+    if offers.is_empty() {
+        return Ok(Json(json!({
+            "active_projects_count": 0,
+            "pending_approvals_count": 0,
+            "action_needed": false
+        })));
+    }
+
+    // 2) Fetch "completed" contracts (both parties signed).
+    let offer_ids: Vec<String> = offers
+        .iter()
+        .filter_map(|o| o.get("id").and_then(|v| v.as_str()).map(|s| s.to_string()))
+        .collect();
+    let offer_refs: Vec<&str> = offer_ids.iter().map(|s| s.as_str()).collect();
+
+    let contracts_resp = state
+        .pg
+        .from("campaign_offer_contracts")
+        .select("id,offer_id,docuseal_status")
+        .eq("brand_id", &user.id)
+        .in_("offer_id", offer_refs)
+        .eq("docuseal_status", "completed")
+        .limit(5000)
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let contracts_status = contracts_resp.status();
+    let contracts_text = contracts_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !contracts_status.is_success() {
+        return Err(sanitize_db_error(contracts_status.as_u16(), contracts_text));
+    }
+    let contracts: Vec<serde_json::Value> =
+        serde_json::from_str(&contracts_text).unwrap_or_default();
+    let mut signed_offer_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
+    for row in &contracts {
+        if let Some(offer_id) = row.get("offer_id").and_then(|v| v.as_str()) {
+            let offer_id = offer_id.trim();
+            if !offer_id.is_empty() {
+                signed_offer_ids.insert(offer_id.to_string());
+            }
+        }
+    }
+
+    let fully_signed_offer_statuses: std::collections::HashSet<&'static str> =
+        ["contract_fully_signed", "signed", "completed"]
+            .into_iter()
+            .collect();
+    let terminal_offer_statuses: std::collections::HashSet<&'static str> =
+        ["cancelled", "declined", "expired", "completed"]
+            .into_iter()
+            .collect();
+
+    let today = chrono::Utc::now().date_naive();
+    let mut grouped_statuses: std::collections::HashMap<String, std::collections::HashSet<String>> =
+        std::collections::HashMap::new();
+
+    for offer in &offers {
+        let offer_id = offer
+            .get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        if offer_id.is_empty() {
+            continue;
+        }
+        let group_id = offer
+            .get("brand_campaign_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_string();
+        let group_key = if group_id.is_empty() {
+            offer_id.clone()
+        } else {
+            group_id
+        };
+        let status_raw = offer
+            .get("status")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .trim()
+            .to_lowercase();
+        if terminal_offer_statuses.contains(status_raw.as_str()) {
+            continue;
+        }
+        let has_completed_contract = signed_offer_ids.contains(&offer_id);
+        let is_fully_signed =
+            has_completed_contract || fully_signed_offer_statuses.contains(status_raw.as_str());
+
+        let (start_date, duration_days) = offer
+            .get("brand_campaigns")
+            .and_then(|v| v.as_object())
+            .map(|obj| {
+                let start = obj
+                    .get("start_date")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .trim()
+                    .to_string();
+                let duration = obj
+                    .get("duration_days")
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(30);
+                (start, duration)
+            })
+            .unwrap_or_else(|| ("".to_string(), 30));
+
+        let is_after_end = if !start_date.is_empty() {
+            if let Ok(start) = chrono::NaiveDate::parse_from_str(&start_date, "%Y-%m-%d") {
+                let end = start + chrono::Duration::days(duration_days.saturating_sub(1));
+                today > end
+            } else {
+                false
+            }
+        } else {
+            false
+        };
+        if is_after_end {
+            continue;
+        }
+
+        let mapped = if is_fully_signed {
+            "in_progress"
+        } else {
+            "pending_approval"
+        };
+        grouped_statuses
+            .entry(group_key)
+            .or_default()
+            .insert(mapped.to_string());
+    }
+
+    let mut active_projects_count = 0usize;
+    let mut pending_approvals_count = 0usize;
+    for statuses in grouped_statuses.values() {
+        if statuses.contains("in_progress") {
+            active_projects_count += 1;
+        } else if statuses.contains("pending_approval") {
+            pending_approvals_count += 1;
+        }
+    }
+
+    Ok(Json(json!({
+        "active_projects_count": active_projects_count,
+        "pending_approvals_count": pending_approvals_count,
+        "action_needed": pending_approvals_count > 0
+    })))
 }
 
 pub async fn get_campaign(
@@ -2438,12 +2627,13 @@ pub async fn refresh_offer_contract_status(
     let updated_contract: serde_json::Value =
         serde_json::from_str(&update_text).unwrap_or_default();
 
-    let mapped_offer_status = match (brand_is_signed, derived_status) {
-        (true, _) => Some("contract_fully_signed"),
-        (_, "completed") => Some("contract_fully_signed"),
-        (_, "opened") => Some("contract_partially_signed"),
-        (_, "sent") => Some("contract_sent"),
-        (_, "declined") => Some("changes_requested"),
+    // Only consider an offer "fully signed" when BOTH parties have signed.
+    // We treat all in-flight signature states as "sent"/"partially signed".
+    let mapped_offer_status = match derived_status {
+        "completed" => Some("contract_fully_signed"),
+        "opened" => Some("contract_partially_signed"),
+        "sent" | "agency_pending" => Some("contract_sent"),
+        "declined" => Some("changes_requested"),
         _ => None,
     };
     if let Some(status_value) = mapped_offer_status {
@@ -4243,12 +4433,12 @@ pub async fn handle_campaign_contract_webhook(
             .execute()
             .await;
 
-        let mapped_offer_status = match (brand_is_signed, derived_status) {
-            (true, _) => Some("contract_fully_signed"),
-            (_, "completed") => Some("contract_fully_signed"),
-            (_, "opened") => Some("contract_partially_signed"),
-            (_, "sent") => Some("contract_sent"),
-            (_, "declined") => Some("changes_requested"),
+        // Only consider an offer "fully signed" when BOTH parties have signed.
+        let mapped_offer_status = match derived_status {
+            "completed" => Some("contract_fully_signed"),
+            "opened" => Some("contract_partially_signed"),
+            "sent" | "agency_pending" => Some("contract_sent"),
+            "declined" => Some("changes_requested"),
             _ => None,
         };
         if let Some(status_value) = mapped_offer_status {

@@ -335,11 +335,11 @@ export default function BrandCampaignDashboard({
 
   const budgetParts = parseBudgetRange(campaignForm.budget_range);
   const dashboardMetrics = useMemo(() => {
-    const activeCount = campaignCards.filter(
+    const activeCampaigns = campaignCards.filter(
       (c) => String(c?.status || "") === "active",
-    ).length;
+    );
     const uniqueCollaborators = new Set<string>();
-    campaignCards.forEach((campaign: any) => {
+    activeCampaigns.forEach((campaign: any) => {
       const collaborators = Array.isArray(campaign?.collaborators)
         ? campaign.collaborators
         : [];
@@ -348,12 +348,17 @@ export default function BrandCampaignDashboard({
         if (value) uniqueCollaborators.add(value);
       });
     });
+    const campaignsLaunched = campaignCards.reduce((sum, campaign: any) => {
+      const offersCount = Number(campaign?.offers_count);
+      if (Number.isFinite(offersCount)) return sum + offersCount;
+      return sum + 1;
+    }, 0);
     return {
       totalSpend: 0,
       activeCollaborators: uniqueCollaborators.size,
-      campaignsLaunched: campaignCards.length,
+      campaignsLaunched,
       avgRoi: 0,
-      activeCount,
+      activeCount: activeCampaigns.length,
     };
   }, [campaignCards]);
 
@@ -557,6 +562,8 @@ export default function BrandCampaignDashboard({
       ),
       budget,
       collaborators: collaboratorLabels,
+      collaborator_count: collaboratorLabels.length,
+      offers_count: safeOffers.length,
       deliverables: totalDeliverables,
       approved: Number(deliverableStats?.approved || 0),
       start_date: String(campaign?.start_date || "N/A"),
@@ -1893,18 +1900,7 @@ export default function BrandCampaignDashboard({
                     : "border-gray-300"
                 }`}
               >
-                Completed
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setCampaignListTab("inbox")}
-                className={`border-2 rounded-none ${
-                  campaignListTab === "inbox"
-                    ? "border-black bg-black text-white"
-                    : "border-gray-300"
-                }`}
-              >
-                Inbox
+                Expired
               </Button>
             </div>
           </div>
@@ -1928,7 +1924,7 @@ export default function BrandCampaignDashboard({
                       ? "No active campaigns yet."
                       : campaignListTab === "pending_approval"
                         ? "No campaigns pending approval."
-                        : "No completed campaigns yet."}
+                        : "No expired campaigns yet."}
                   </p>
                 </Card>
               );
@@ -1953,7 +1949,9 @@ export default function BrandCampaignDashboard({
                               : "bg-gray-100 text-gray-800"
                         }
                       >
-                        {campaign.status.replace("_", " ")}
+                        {campaign.status === "completed"
+                          ? "expired"
+                          : campaign.status.replace("_", " ")}
                       </Badge>
                       <span className="text-sm text-gray-600">
                         {campaign.objective}

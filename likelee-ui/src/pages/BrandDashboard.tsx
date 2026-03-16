@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
@@ -648,11 +648,65 @@ export default function BrandDashboard() {
   const [campaignHubTab, setCampaignHubTab] = useState<
     "active" | "pending_approval" | "completed" | "inbox" | "jobs"
   >("active");
+  const activeSectionRef = useRef(activeSection);
+  const campaignHubTabRef = useRef(campaignHubTab);
+  const pendingSectionOverrideRef = useRef<string | null>(null);
   const [brandJobs, setBrandJobs] = useState<any[]>([]);
   const [loadingBrandJobs, setLoadingBrandJobs] = useState(false);
   const [jobSearch, setJobSearch] = useState("");
   const [jobStatusFilter, setJobStatusFilter] = useState("all");
   const [jobCallTypeFilter, setJobCallTypeFilter] = useState("all");
+
+  useEffect(() => {
+    activeSectionRef.current = activeSection;
+  }, [activeSection]);
+
+  useEffect(() => {
+    campaignHubTabRef.current = campaignHubTab;
+  }, [campaignHubTab]);
+
+  const [campaignMetrics, setCampaignMetrics] = useState<{
+    active_projects_count: number;
+    pending_approvals_count: number;
+    action_needed: boolean;
+    loading: boolean;
+  }>({
+    active_projects_count: 0,
+    pending_approvals_count: 0,
+    action_needed: false,
+    loading: true,
+  });
+
+  const navigateToSection = (
+    nextSection: string,
+    options?: {
+      campaignHubTab?: "active" | "pending_approval" | "completed" | "jobs";
+      campaignView?: "active" | "pending" | "completed";
+      replace?: boolean;
+    },
+  ) => {
+    pendingSectionOverrideRef.current = nextSection;
+    setActiveSection(nextSection);
+    if (options?.campaignHubTab) {
+      setCampaignHubTab(options.campaignHubTab);
+    }
+    if (options?.campaignView) {
+      setCampaignView(options.campaignView);
+    }
+    const params = new URLSearchParams(location.search);
+    params.set(
+      "section",
+      nextSection === "campaigns-hub" ? "campaigns" : nextSection,
+    );
+    setSearchParams(params, { replace: options?.replace ?? false });
+  };
+
+  const goToCampaignsSection = () => {
+    navigateToSection("campaigns-hub", {
+      campaignHubTab: "active",
+      replace: false,
+    });
+  };
 
   const resolveJobAssetUrl = (asset: any) => {
     if (!asset) return "";
@@ -859,11 +913,26 @@ export default function BrandDashboard() {
   });
 
   useEffect(() => {
-    const sectionFromQuery = String(searchParams.get("section") || "").trim();
-    if (sectionFromQuery) {
-      const targetSection =
-        sectionFromQuery === "campaigns" ? "campaigns-hub" : sectionFromQuery;
-      if (activeSection !== targetSection) {
+    const sectionFromQuery = String(
+      new URLSearchParams(location.search).get("section") || "",
+    ).trim();
+    const mappedSectionFromQuery =
+      sectionFromQuery === "campaigns" ? "campaigns-hub" : sectionFromQuery;
+    if (pendingSectionOverrideRef.current) {
+      if (mappedSectionFromQuery === pendingSectionOverrideRef.current) {
+        pendingSectionOverrideRef.current = null;
+      }
+      return;
+    }
+    if (mappedSectionFromQuery) {
+      const targetSection = mappedSectionFromQuery;
+      if (
+        targetSection === "campaigns-hub" &&
+        campaignHubTabRef.current !== "active"
+      ) {
+        setCampaignHubTab("active");
+      }
+      if (activeSectionRef.current !== targetSection) {
         setActiveSection(targetSection);
       }
       return;
@@ -873,22 +942,62 @@ export default function BrandDashboard() {
     if (typeof sectionFromState === "string" && sectionFromState.length > 0) {
       const targetSection =
         sectionFromState === "campaigns" ? "campaigns-hub" : sectionFromState;
-      if (activeSection !== targetSection) {
+      if (
+        targetSection === "campaigns-hub" &&
+        campaignHubTabRef.current !== "active"
+      ) {
+        setCampaignHubTab("active");
+      }
+      if (activeSectionRef.current !== targetSection) {
         setActiveSection(targetSection);
       }
     }
-  }, [location.state, searchParams]);
+  }, [location.search, location.state]);
 
   useEffect(() => {
-    const nextSection =
-      activeSection === "campaigns-hub" ? "campaigns" : activeSection;
-    const currentSection = String(searchParams.get("section") || "").trim();
-    if (nextSection && nextSection !== currentSection) {
-      const params = new URLSearchParams(searchParams);
-      params.set("section", nextSection);
-      setSearchParams(params, { replace: true });
+    let mounted = true;
+    const loadMetrics = async () => {
+      try {
+        setCampaignMetrics((prev) => ({ ...prev, loading: true }));
+        const res = await base44.get<{
+          active_projects_count?: number;
+          pending_approvals_count?: number;
+          action_needed?: boolean;
+        }>("/api/brand/campaigns/metrics", {});
+        if (!mounted) return;
+        setCampaignMetrics((prev) => ({
+          ...prev,
+          active_projects_count: Number(res?.active_projects_count || 0),
+          pending_approvals_count: Number(res?.pending_approvals_count || 0),
+          action_needed: Boolean(res?.action_needed),
+          loading: false,
+        }));
+      } catch {
+        if (!mounted) return;
+        setCampaignMetrics((prev) => ({
+          ...prev,
+          active_projects_count: 0,
+          pending_approvals_count: 0,
+          action_needed: false,
+          loading: false,
+        }));
+      }
+    };
+
+    loadMetrics();
+    const onFocus = () => {
+      loadMetrics();
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("focus", onFocus);
     }
-  }, [activeSection, searchParams, setSearchParams]);
+    return () => {
+      mounted = false;
+      if (typeof window !== "undefined") {
+        window.removeEventListener("focus", onFocus);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const pkgId = String(searchParams.get("package_id") || "").trim();
@@ -1719,10 +1828,10 @@ export default function BrandDashboard() {
               <Target className="w-5 h-5 text-gray-400" />
             </div>
             <p className="text-4xl font-bold text-gray-900">
-              {mockCampaigns.filter((c) => c.status === "in_progress").length}
+              {campaignMetrics.active_projects_count}
             </p>
             <p className="text-sm text-gray-600 mt-1">
-              {pendingApprovalCount} awaiting approval
+              {campaignMetrics.pending_approvals_count} awaiting approval
             </p>
           </Card>
 
@@ -1750,9 +1859,9 @@ export default function BrandDashboard() {
               <AlertCircle className="w-5 h-5 text-yellow-600" />
             </div>
             <p className="text-4xl font-bold text-gray-900">
-              {pendingApprovalCount}
+              {campaignMetrics.pending_approvals_count}
             </p>
-            {pendingApprovalCount > 0 && (
+            {campaignMetrics.pending_approvals_count > 0 && (
               <Badge className="mt-1 bg-yellow-100 text-yellow-700 border border-yellow-300">
                 Action needed
               </Badge>
@@ -1789,7 +1898,9 @@ export default function BrandDashboard() {
           </h2>
           <div className="grid md:grid-cols-5 gap-4">
             <Button
-              onClick={() => navigate(createPageUrl("BrandCampaignDashboard"))}
+              onClick={() => {
+                goToCampaignsSection();
+              }}
               className="h-24 bg-[#F7B750] hover:bg-[#E6A640] text-white border-2 border-gray-300 flex-col gap-2"
             >
               <Plus className="w-6 h-6" />
@@ -1803,13 +1914,20 @@ export default function BrandDashboard() {
               <span>Browse Creators</span>
             </Button>
             <Button
-              onClick={() => navigate(createPageUrl("BrandCampaignDashboard"))}
+              onClick={() => {
+                goToCampaignsSection();
+              }}
               className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
             >
               <CheckCircle2 className="w-6 h-6" />
               <span>View Active Campaigns</span>
             </Button>
-            <Button className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2">
+            <Button
+              onClick={() => {
+                goToCampaignsSection();
+              }}
+              className="h-24 bg-white hover:bg-gray-50 text-gray-900 border-2 border-gray-300 flex-col gap-2"
+            >
               <Users className="w-6 h-6" />
               <span>Invite Agency</span>
             </Button>
@@ -4160,7 +4278,7 @@ export default function BrandDashboard() {
       if (campaignView === "active") return c.status === "in_progress";
       if (campaignView === "pending") return c.status === "pending_approval";
       if (campaignView === "completed") return c.status === "completed";
-      return c.status === "draft";
+      return c.status === "in_progress";
     });
 
     if (selectedCampaign) {
@@ -4837,23 +4955,12 @@ export default function BrandDashboard() {
                 : "border-transparent text-gray-600 hover:text-gray-900"
             }`}
           >
-            Completed (
+            Expired (
             {
               groupedCampaigns.filter((c: any) => c.status === "completed")
                 .length
             }
             )
-          </button>
-          <button
-            onClick={() => setCampaignView("drafts")}
-            className={`px-6 py-3 font-semibold border-b-2 transition-colors ${
-              campaignView === "drafts"
-                ? "border-[#F7B750] text-[#F7B750]"
-                : "border-transparent text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Drafts (
-            {groupedCampaigns.filter((c: any) => c.status === "draft").length})
           </button>
         </div>
 
@@ -4895,7 +5002,9 @@ export default function BrandDashboard() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge className={statusBadgeClass}>
-                      {String(campaign.status).replace(/_/g, " ")}
+                      {campaign.status === "completed"
+                        ? "expired"
+                        : String(campaign.status).replace(/_/g, " ")}
                     </Badge>
                   </div>
                 </div>
@@ -5023,7 +5132,7 @@ export default function BrandDashboard() {
                 ? "No active campaigns"
                 : campaignView === "pending"
                   ? "No pending approval campaigns"
-                  : "No completed campaigns"}
+                  : "No expired campaigns"}
             </h3>
             <p className="text-gray-600 mb-6">
               Start a new campaign to get creators working on your content
@@ -5078,7 +5187,12 @@ export default function BrandDashboard() {
             <h3 className="text-lg font-bold text-gray-900 mb-2">
               Collaborate with Agency
             </h3>
-            <Button className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none">
+            <Button
+              onClick={() => {
+                goToCampaignsSection();
+              }}
+              className="w-full bg-[#F7B750] hover:bg-[#E6A640] text-white rounded-none"
+            >
               Invite Agency
             </Button>
           </Card>
@@ -5152,14 +5266,7 @@ export default function BrandDashboard() {
                 onClick={() => setCampaignHubTab("completed")}
                 className={`border-2 rounded-none ${campaignHubTab === "completed" ? "border-black bg-black text-white" : "border-gray-300"}`}
               >
-                Completed
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setCampaignHubTab("inbox")}
-                className={`border-2 rounded-none ${campaignHubTab === "inbox" ? "border-black bg-black text-white" : "border-gray-300"}`}
-              >
-                Inbox
+                Expired
               </Button>
               <Button
                 variant="outline"
@@ -5170,9 +5277,7 @@ export default function BrandDashboard() {
               </Button>
             </div>
           </div>
-          {campaignHubTab === "inbox" ? (
-            renderInboxSubtab()
-          ) : campaignHubTab === "jobs" ? (
+          {campaignHubTab === "jobs" ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -9546,12 +9651,13 @@ export default function BrandDashboard() {
                     <button
                       onClick={() => {
                         if (item.id === "campaigns") {
-                          setActiveSection("campaigns-hub");
-                          setCampaignHubTab("active");
+                          navigateToSection("campaigns-hub", {
+                            campaignHubTab: "active",
+                          });
                           setSelectedCampaign(null);
                           return;
                         }
-                        setActiveSection(item.id);
+                        navigateToSection(item.id);
                         setShowEscrowDetails(false);
                         setShowBriefDetails(false);
                         setShowCreatorProfile(false);
@@ -9620,8 +9726,9 @@ export default function BrandDashboard() {
                     <div className="mt-1 ml-11 space-y-1">
                       <button
                         onClick={() => {
-                          setActiveSection("campaign-offers");
-                          setCampaignView("active");
+                          navigateToSection("campaign-offers", {
+                            campaignView: "active",
+                          });
                         }}
                         className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
                           activeSection === "campaign-offers"
@@ -9634,7 +9741,7 @@ export default function BrandDashboard() {
                       </button>
                       <button
                         onClick={() => {
-                          setActiveSection("campaigns-inbox");
+                          navigateToSection("campaigns-inbox");
                         }}
                         className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
                           activeSection === "campaigns-inbox"
@@ -9652,7 +9759,7 @@ export default function BrandDashboard() {
                       </button>
                       <button
                         onClick={() => {
-                          setActiveSection("campaigns-contract-hub");
+                          navigateToSection("campaigns-contract-hub");
                         }}
                         className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
                           activeSection === "campaigns-contract-hub"
@@ -9665,7 +9772,7 @@ export default function BrandDashboard() {
                       </button>
                       <button
                         onClick={() => {
-                          setActiveSection("campaigns-deliverables");
+                          navigateToSection("campaigns-deliverables");
                         }}
                         className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
                           activeSection === "campaigns-deliverables"
@@ -9678,8 +9785,9 @@ export default function BrandDashboard() {
                       </button>
                       <button
                         onClick={() => {
-                          setActiveSection("campaigns-hub");
-                          setCampaignHubTab("jobs");
+                          navigateToSection("campaigns-hub", {
+                            campaignHubTab: "jobs",
+                          });
                         }}
                         className={`w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-all ${
                           activeSection === "campaigns-hub" &&
