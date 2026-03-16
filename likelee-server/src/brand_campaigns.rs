@@ -11,6 +11,7 @@ use axum::{
     Json,
 };
 use base64::{engine::general_purpose, Engine as _};
+use chrono::Datelike;
 use postgrest::Postgrest;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -869,7 +870,11 @@ pub async fn get_campaign_metrics(
         return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
     }
 
-    let _ = q.month; // accepted but not used (no monthly scope)
+    let month_start = q
+        .month
+        .as_deref()
+        .and_then(|value| chrono::NaiveDate::parse_from_str(value, "%Y-%m").ok())
+        .unwrap_or_else(|| chrono::Utc::now().date_naive().with_day(1).unwrap());
 
     // 1) Load all offers for the brand with campaign timing info.
     let offers_resp = state
@@ -1052,10 +1057,34 @@ pub async fn get_campaign_metrics(
         }
     }
 
+    let avg_turnaround_hours = match state
+        .pg
+        .rpc(
+            "brand_avg_turnaround_hours",
+            json!({
+                "p_brand_id": user.id,
+                "p_month": month_start.to_string()
+            })
+            .to_string(),
+        )
+        .execute()
+        .await
+    {
+        Ok(resp) => {
+            let text = resp.text().await.unwrap_or_default();
+            serde_json::from_str::<serde_json::Value>(&text)
+                .ok()
+                .and_then(|value| value.get(0).and_then(|v| v.as_i64()))
+                .unwrap_or(0)
+        }
+        Err(_) => 0,
+    };
+
     Ok(Json(json!({
         "active_projects_count": active_projects_count,
         "pending_approvals_count": pending_approvals_count,
-        "action_needed": pending_approvals_count > 0
+        "action_needed": pending_approvals_count > 0,
+        "avg_turnaround_hours": avg_turnaround_hours
     })))
 }
 

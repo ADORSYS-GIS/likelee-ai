@@ -669,11 +669,13 @@ export default function BrandDashboard() {
     active_projects_count: number;
     pending_approvals_count: number;
     action_needed: boolean;
+    avg_turnaround_hours: number;
     loading: boolean;
   }>({
     active_projects_count: 0,
     pending_approvals_count: 0,
     action_needed: false,
+    avg_turnaround_hours: 0,
     loading: true,
   });
 
@@ -963,6 +965,7 @@ export default function BrandDashboard() {
           active_projects_count?: number;
           pending_approvals_count?: number;
           action_needed?: boolean;
+          avg_turnaround_hours?: number;
         }>("/api/brand/campaigns/metrics", {});
         if (!mounted) return;
         setCampaignMetrics((prev) => ({
@@ -970,6 +973,7 @@ export default function BrandDashboard() {
           active_projects_count: Number(res?.active_projects_count || 0),
           pending_approvals_count: Number(res?.pending_approvals_count || 0),
           action_needed: Boolean(res?.action_needed),
+          avg_turnaround_hours: Number(res?.avg_turnaround_hours || 0),
           loading: false,
         }));
       } catch {
@@ -979,6 +983,7 @@ export default function BrandDashboard() {
           active_projects_count: 0,
           pending_approvals_count: 0,
           action_needed: false,
+          avg_turnaround_hours: 0,
           loading: false,
         }));
       }
@@ -1886,7 +1891,11 @@ export default function BrandDashboard() {
               </p>
               <Clock className="w-5 h-5 text-gray-400" />
             </div>
-            <p className="text-4xl font-bold text-gray-900">14h</p>
+            <p className="text-4xl font-bold text-gray-900">
+              {campaignMetrics.avg_turnaround_hours > 0
+                ? `${campaignMetrics.avg_turnaround_hours}h`
+                : "—"}
+            </p>
             <p className="text-sm text-gray-600 mt-1">Industry: 48h</p>
           </Card>
         </div>
@@ -5820,7 +5829,11 @@ export default function BrandDashboard() {
         </Card>
         <Card className="p-6 bg-white border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Avg Turnaround</p>
-          <p className="text-3xl font-bold text-gray-900">14h</p>
+          <p className="text-3xl font-bold text-gray-900">
+            {campaignMetrics.avg_turnaround_hours > 0
+              ? `${campaignMetrics.avg_turnaround_hours}h`
+              : "—"}
+          </p>
           <p className="text-xs text-gray-500 mt-1">Industry: 48h</p>
         </Card>
         <Card className="p-6 bg-white border border-gray-200">
