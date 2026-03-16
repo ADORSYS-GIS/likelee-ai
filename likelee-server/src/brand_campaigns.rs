@@ -700,6 +700,122 @@ pub async fn update_campaign(
     Ok(Json(row))
 }
 
+pub async fn mark_campaign_done(
+    State(state): State<AppState>,
+    user: AuthUser,
+    Path(campaign_id): Path<String>,
+) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+    if user.role != "brand" {
+        return Err((StatusCode::FORBIDDEN, "Forbidden".to_string()));
+    }
+
+    let fetch_resp = state
+        .pg
+        .from("brand_campaigns")
+        .select("id, name, status, completed_at")
+        .eq("id", &campaign_id)
+        .eq("brand_id", &user.id)
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let fetch_status = fetch_resp.status();
+    let fetch_text = fetch_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !fetch_status.is_success() {
+        return Err(sanitize_db_error(fetch_status.as_u16(), fetch_text));
+    }
+    let row: serde_json::Value = serde_json::from_str(&fetch_text).unwrap_or_else(|_| json!({}));
+    let status_raw = row
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_lowercase();
+    let completed_at_exists = row
+        .get("completed_at")
+        .and_then(|v| v.as_str())
+        .map(|v| !v.trim().is_empty())
+        .unwrap_or(false);
+    if completed_at_exists {
+        return Ok(Json(row));
+    }
+    if status_raw == "archived" {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            "campaign cannot be marked done".to_string(),
+        ));
+    }
+
+    let completed_at = chrono::Utc::now().to_rfc3339();
+    let mut update = serde_json::Map::new();
+    update.insert("status".to_string(), json!("completed"));
+    update.insert("completed_at".to_string(), json!(completed_at));
+    update.insert("updated_at".to_string(), json!(completed_at));
+
+    let update_resp = state
+        .pg
+        .from("brand_campaigns")
+        .eq("id", &campaign_id)
+        .eq("brand_id", &user.id)
+        .update(serde_json::Value::Object(update).to_string())
+        .select("*")
+        .single()
+        .execute()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    let update_status = update_resp.status();
+    let update_text = update_resp
+        .text()
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+    if !update_status.is_success() {
+        return Err(sanitize_db_error(update_status.as_u16(), update_text));
+    }
+    let updated_row: serde_json::Value =
+        serde_json::from_str(&update_text).unwrap_or_else(|_| json!({}));
+
+    let terminal_offer_statuses = "(cancelled,declined,expired,completed)";
+    let _ = state
+        .pg
+        .from("campaign_offers")
+        .eq("brand_campaign_id", &campaign_id)
+        .eq("brand_id", &user.id)
+        .not("status", "in", terminal_offer_statuses)
+        .update(
+            json!({
+                "status": "completed",
+                "updated_at": chrono::Utc::now().to_rfc3339(),
+            })
+            .to_string(),
+        )
+        .execute()
+        .await;
+
+    let campaign_name = row
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("campaign");
+    let _ = state
+        .pg
+        .from("brand_activity_events")
+        .insert(
+            json!({
+                "brand_id": user.id,
+                "type": "campaign.completed",
+                "subject_table": "brand_campaigns",
+                "subject_id": campaign_id,
+                "title": format!("Brand marked {} as done.", campaign_name),
+            })
+            .to_string(),
+        )
+        .execute()
+        .await;
+
+    Ok(Json(updated_row))
+}
+
 pub async fn list_campaigns(
     State(state): State<AppState>,
     user: AuthUser,
@@ -759,7 +875,7 @@ pub async fn get_campaign_metrics(
     let offers_resp = state
         .pg
         .from("campaign_offers")
-        .select("id,brand_campaign_id,status,brand_campaigns(start_date,duration_days,status)")
+        .select("id,brand_campaign_id,status,brand_campaigns(start_date,duration_days,status,completed_at)")
         .eq("brand_id", &user.id)
         .limit(5000)
         .execute()
@@ -868,7 +984,7 @@ pub async fn get_campaign_metrics(
         let is_fully_signed =
             has_completed_contract || fully_signed_offer_statuses.contains(status_raw.as_str());
 
-        let (start_date, duration_days) = offer
+        let (start_date, duration_days, campaign_status, completed_at) = offer
             .get("brand_campaigns")
             .and_then(|v| v.as_object())
             .map(|obj| {
@@ -882,9 +998,24 @@ pub async fn get_campaign_metrics(
                     .get("duration_days")
                     .and_then(|v| v.as_i64())
                     .unwrap_or(30);
-                (start, duration)
+                let status = obj
+                    .get("status")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .trim()
+                    .to_lowercase();
+                let completed_at = obj
+                    .get("completed_at")
+                    .and_then(|v| v.as_str())
+                    .map(|v| v.trim().to_string())
+                    .filter(|v| !v.is_empty());
+                (start, duration, status, completed_at)
             })
-            .unwrap_or_else(|| ("".to_string(), 30));
+            .unwrap_or_else(|| ("".to_string(), 30, String::new(), None));
+
+        if campaign_status == "completed" || completed_at.is_some() {
+            continue;
+        }
 
         let is_after_end = if !start_date.is_empty() {
             if let Ok(start) = chrono::NaiveDate::parse_from_str(&start_date, "%Y-%m-%d") {
@@ -1457,7 +1588,7 @@ pub async fn list_my_campaign_offers(
         .pg
         .from("campaign_offers")
         .select(
-            "id,brand_campaign_id,brand_id,target_type,target_id,status,offer_title,message,expires_at,decided_at,brief_snapshot,budget_snapshot,meta,created_at,updated_at,brand_campaigns(id,name,objective,category,description,usage_scope,duration_days,territory,exclusivity,budget_range,start_date,custom_terms),brands(id,company_name,email,logo_url)",
+            "id,brand_campaign_id,brand_id,target_type,target_id,status,offer_title,message,expires_at,decided_at,brief_snapshot,budget_snapshot,meta,created_at,updated_at,brand_campaigns(id,name,objective,category,description,usage_scope,duration_days,territory,exclusivity,budget_range,start_date,custom_terms,completed_at),brands(id,company_name,email,logo_url)",
         )
         .order("created_at.desc")
         .limit(limit);

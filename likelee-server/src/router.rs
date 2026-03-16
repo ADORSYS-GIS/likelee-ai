@@ -727,6 +727,10 @@ pub fn build_router(state: AppState) -> Router {
             get(crate::brand_campaigns::get_campaign).post(crate::brand_campaigns::update_campaign),
         )
         .route(
+            "/api/brand/campaigns/:campaign_id/mark-done",
+            post(crate::brand_campaigns::mark_campaign_done),
+        )
+        .route(
             "/api/brand/campaigns/:campaign_id/offer-options",
             get(crate::brand_campaigns::list_offer_options),
         )

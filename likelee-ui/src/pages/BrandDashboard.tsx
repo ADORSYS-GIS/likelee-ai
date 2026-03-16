@@ -4200,6 +4200,10 @@ export default function BrandDashboard() {
           : offer?.target_type === "creator"
             ? "Creator"
             : "Collaborator");
+      const brandCampaigns =
+        offer?.brand_campaigns && typeof offer.brand_campaigns === "object"
+          ? offer.brand_campaigns
+          : {};
       return {
         id: String(offer?.id || Math.random()),
         offer_id: String(offer?.id || ""),
@@ -4208,6 +4212,9 @@ export default function BrandDashboard() {
         ).trim(),
         name: campaignName,
         status: mappedStatus,
+        brand_campaigns: brandCampaigns,
+        completed_at: brandCampaigns?.completed_at || null,
+        campaign_status: String(brandCampaigns?.status || "").toLowerCase(),
         objective:
           String(offer?.brand_campaigns?.objective || "").trim() ||
           "Campaign offer",
@@ -4249,23 +4256,62 @@ export default function BrandDashboard() {
     ).map((group: any) => {
       const offers = Array.isArray(group?.offers) ? group.offers : [];
       const statuses = new Set(offers.map((o: any) => String(o?.status || "")));
+      const campaignMeta =
+        offers[0]?.brand_campaigns &&
+        typeof offers[0].brand_campaigns === "object"
+          ? offers[0].brand_campaigns
+          : {};
+      const completedAt =
+        offers.find((o: any) => o?.completed_at)?.completed_at || null;
+      const campaignStatus = String(
+        offers.find((o: any) => o?.campaign_status)?.campaign_status || "",
+      ).toLowerCase();
+      const startDateRaw = String(campaignMeta?.start_date || "").trim();
+      const startDate = /^\d{4}-\d{2}-\d{2}$/.test(startDateRaw)
+        ? new Date(`${startDateRaw}T00:00:00`)
+        : null;
+      const durationDaysRaw = Number(campaignMeta?.duration_days || 0);
+      const durationDays =
+        Number.isFinite(durationDaysRaw) && durationDaysRaw > 0
+          ? durationDaysRaw
+          : 30;
+      const endDate = startDate
+        ? new Date(
+            startDate.getTime() + (durationDays - 1) * 24 * 60 * 60 * 1000,
+          )
+        : null;
+      const today = new Date();
+      const todayOnly = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate(),
+      );
+      const isAfterEnd = Boolean(
+        endDate && todayOnly.getTime() > endDate.getTime(),
+      );
+      const isExpired =
+        Boolean(completedAt) ||
+        campaignStatus === "completed" ||
+        statuses.has("completed") ||
+        isAfterEnd;
 
       const groupStatus:
         | "pending_approval"
         | "in_progress"
         | "completed"
-        | "draft" = statuses.has("in_progress")
-        ? "in_progress"
-        : statuses.has("pending_approval")
-          ? "pending_approval"
-          : statuses.has("completed")
-            ? "completed"
+        | "draft" = isExpired
+        ? "completed"
+        : statuses.has("in_progress")
+          ? "in_progress"
+          : statuses.has("pending_approval")
+            ? "pending_approval"
             : "draft";
 
       const representative = offers[0] || {};
       return {
         ...group,
         status: groupStatus,
+        completed_at: completedAt,
         objective: representative?.objective || "Campaign offer",
         budget: Number(representative?.budget || 0),
         due_date: representative?.due_date,
@@ -5003,7 +5049,9 @@ export default function BrandDashboard() {
                   <div className="flex items-center gap-2">
                     <Badge className={statusBadgeClass}>
                       {campaign.status === "completed"
-                        ? "expired"
+                        ? campaign.completed_at
+                          ? "completed"
+                          : "incomplete"
                         : String(campaign.status).replace(/_/g, " ")}
                     </Badge>
                   </div>
