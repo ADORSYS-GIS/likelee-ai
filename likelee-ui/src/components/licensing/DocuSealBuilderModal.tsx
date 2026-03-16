@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { DocusealBuilder } from "@docuseal/react";
 import {
   Dialog,
@@ -94,12 +94,6 @@ export const DocuSealBuilderModal: React.FC<DocuSealBuilderModalProps> = ({
 
     return fields.length > 0 ? fields : undefined;
   }, [prefillValues]);
-
-  console.log("DocuSeal Designer [Render]:", {
-    hasToken: !!token,
-    fieldsCount: prefillFields?.length,
-    prefillFields,
-  });
 
   useEffect(() => {
     if (open) {

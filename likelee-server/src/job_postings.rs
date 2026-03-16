@@ -637,6 +637,28 @@ pub async fn list_jobs(
                 }
             }
         }
+        if agency_parent_id.is_none() {
+            if let Ok(resp) = state
+                .pg
+                .from("agencies")
+                .select("id")
+                .eq("user_id", &user.id)
+                .limit(1)
+                .execute()
+                .await
+            {
+                if resp.status().is_success() {
+                    let text = resp.text().await.unwrap_or_default();
+                    let rows: Vec<serde_json::Value> =
+                        serde_json::from_str(&text).unwrap_or_default();
+                    if let Some(row) = rows.first() {
+                        if let Some(id) = row.get("id").and_then(|v| v.as_str()) {
+                            agency_parent_id = Some(id.to_string());
+                        }
+                    }
+                }
+            }
+        }
     } else if user.role == "brand" {
         // If they are a brand, they are always an invited viewer of their own jobs
         // This is handled in the enrichment loop below
@@ -645,6 +667,7 @@ pub async fn list_jobs(
             .pg
             .from("creators")
             .select("id,email")
+            .eq("user_id", &user.id)
             .limit(1)
             .execute()
             .await;
@@ -655,6 +678,35 @@ pub async fn list_jobs(
                 if let Some(row) = rows.first() {
                     if let Some(id) = row.get("id").and_then(|v| v.as_str()) {
                         creator_match_id = Some(id.to_string());
+                    }
+                }
+            }
+        }
+        if creator_match_id.is_none() {
+            if let Some(email) = user
+                .email
+                .as_ref()
+                .map(|e| e.trim())
+                .filter(|e| !e.is_empty())
+            {
+                if let Ok(resp) = state
+                    .pg
+                    .from("creators")
+                    .select("id")
+                    .eq("email", email)
+                    .limit(1)
+                    .execute()
+                    .await
+                {
+                    if resp.status().is_success() {
+                        let text = resp.text().await.unwrap_or_default();
+                        let rows: Vec<serde_json::Value> =
+                            serde_json::from_str(&text).unwrap_or_default();
+                        if let Some(row) = rows.first() {
+                            if let Some(id) = row.get("id").and_then(|v| v.as_str()) {
+                                creator_match_id = Some(id.to_string());
+                            }
+                        }
                     }
                 }
             }
@@ -671,6 +723,30 @@ pub async fn list_jobs(
                 return true;
             }
             if user.role == "agency" {
+                let invited = row
+                    .get("invited_agency_ids")
+                    .and_then(|v| v.as_array())
+                    .map(|arr| {
+                        arr.iter().any(|id| {
+                            let id = id.as_str().unwrap_or("");
+                            id == user.id
+                                || agency_match_id.as_ref().map(|x| x == id).unwrap_or(false)
+                                || agency_parent_id.as_ref().map(|x| x == id).unwrap_or(false)
+                        })
+                    })
+                    .unwrap_or(false);
+                let accepted = row
+                    .get("accepted_agency_ids")
+                    .and_then(|v| v.as_array())
+                    .map(|arr| {
+                        arr.iter().any(|id| {
+                            let id = id.as_str().unwrap_or("");
+                            id == user.id
+                                || agency_match_id.as_ref().map(|x| x == id).unwrap_or(false)
+                                || agency_parent_id.as_ref().map(|x| x == id).unwrap_or(false)
+                        })
+                    })
+                    .unwrap_or(false);
                 let declined = row
                     .get("declined_agency_ids")
                     .and_then(|v| v.as_array())
@@ -683,8 +759,28 @@ pub async fn list_jobs(
                         })
                     })
                     .unwrap_or(false);
-                return !declined;
+                return invited || accepted || declined;
             }
+            let invited = row
+                .get("invited_creator_ids")
+                .and_then(|v| v.as_array())
+                .map(|arr| {
+                    arr.iter().any(|id| {
+                        let id = id.as_str().unwrap_or("");
+                        id == user.id || creator_match_id.as_ref().map(|x| x == id).unwrap_or(false)
+                    })
+                })
+                .unwrap_or(false);
+            let accepted = row
+                .get("accepted_creator_ids")
+                .and_then(|v| v.as_array())
+                .map(|arr| {
+                    arr.iter().any(|id| {
+                        let id = id.as_str().unwrap_or("");
+                        id == user.id || creator_match_id.as_ref().map(|x| x == id).unwrap_or(false)
+                    })
+                })
+                .unwrap_or(false);
             let declined = row
                 .get("declined_creator_ids")
                 .and_then(|v| v.as_array())
@@ -695,7 +791,7 @@ pub async fn list_jobs(
                     })
                 })
                 .unwrap_or(false);
-            !declined
+            invited || accepted || declined
         });
     }
     for row in rows.iter_mut() {

@@ -181,6 +181,27 @@ export default function JobsBoard() {
           .join(" ")
       : "";
 
+  const isConfidentialBrandPlaceholder = (value: unknown) =>
+    String(value || "")
+      .trim()
+      .toLowerCase() === "confidential brand";
+
+  const resolveJobCompanyName = (job: any) => {
+    const brandName = String(job?.brands?.company_name || "").trim();
+    const companyName = String(job?.company_name || "").trim();
+    if (brandName && !isConfidentialBrandPlaceholder(brandName))
+      return brandName;
+    if (companyName && !isConfidentialBrandPlaceholder(companyName))
+      return companyName;
+    return brandName || companyName || "Brand";
+  };
+
+  const formatYesNo = (value: unknown) => {
+    if (value === true) return "Yes";
+    if (value === false) return "No";
+    return "Not specified";
+  };
+
   const queryParams = useMemo(
     () => ({
       search: search || undefined,
@@ -563,7 +584,7 @@ export default function JobsBoard() {
                       <div className="flex items-center gap-1.5 text-sm font-medium text-gray-600 mt-1">
                         <Building2 className="w-4 h-4 flex-shrink-0" />
                         <span className="truncate">
-                          {job?.brands?.company_name || "Brand"}
+                          {resolveJobCompanyName(job)}
                         </span>
                       </div>
                     </div>
@@ -838,9 +859,7 @@ export default function JobsBoard() {
                     {selectedJob.job_title || selectedJob.title}
                   </h2>
                   <p className="text-base font-semibold text-gray-800 mt-1">
-                    {selectedJob.company_name ||
-                      selectedJob?.brands?.company_name ||
-                      "Brand"}
+                    {resolveJobCompanyName(selectedJob)}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -1035,114 +1054,110 @@ export default function JobsBoard() {
                 )}
               </section>
 
-              {(!selectedJob.confidential || selectedJob.is_invited_viewer) &&
-                (selectedJob.work_with_agency ||
-                  selectedJob.invite_creator ||
-                  (selectedJob.invited_agency_ids || []).length > 0 ||
-                  (selectedJob.invited_creator_ids || []).length > 0) && (
-                  <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <h3 className="text-sm font-semibold text-gray-900">
-                      Collaboration Preferences
-                    </h3>
-                    <div className="text-sm text-gray-600">
-                      <span className="font-medium text-gray-900">
-                        Work with agency:
-                      </span>{" "}
-                      {selectedJob.work_with_agency ? "Yes" : "No"}
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      <span className="font-medium text-gray-900">
-                        Invite creator:
-                      </span>{" "}
-                      {selectedJob.invite_creator ? "Yes" : "No"}
-                    </div>
-                    {Array.isArray(selectedJob.invited_agencies) &&
-                      selectedJob.invited_agencies.length > 0 && (
-                        <div className="pt-1">
-                          <p className="text-xs font-semibold text-gray-700 mb-2">
-                            Invited agencies
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {selectedJob.invited_agencies.map(
-                              (agency: any, idx: number) => (
-                                <div
-                                  key={`${agency?.id || idx}`}
-                                  className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-gray-700"
-                                >
-                                  {agency?.logo_url ? (
-                                    <img
-                                      src={agency.logo_url}
-                                      alt={agency?.agency_name || "Agency"}
-                                      className="h-5 w-5 rounded-full object-cover"
-                                    />
-                                  ) : (
-                                    <div className="h-5 w-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] font-semibold text-gray-600">
-                                      {String(
-                                        agency?.agency_name ||
-                                          agency?.display_name ||
-                                          "A",
-                                      )
-                                        .trim()
-                                        .slice(0, 1)
-                                        .toUpperCase()}
-                                    </div>
-                                  )}
-                                  <span>
-                                    {agency?.display_name ||
+              {(!selectedJob.confidential || selectedJob.is_invited_viewer) && (
+                <section className="space-y-2 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <h3 className="text-sm font-semibold text-gray-900">
+                    Collaboration Preferences
+                  </h3>
+                  <div className="text-sm text-gray-600">
+                    <span className="font-medium text-gray-900">
+                      Work with agency:
+                    </span>{" "}
+                    {formatYesNo(selectedJob.work_with_agency)}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    <span className="font-medium text-gray-900">
+                      Invite creator:
+                    </span>{" "}
+                    {formatYesNo(selectedJob.invite_creator)}
+                  </div>
+                  {Array.isArray(selectedJob.invited_agencies) &&
+                    selectedJob.invited_agencies.length > 0 && (
+                      <div className="pt-1">
+                        <p className="text-xs font-semibold text-gray-700 mb-2">
+                          Invited agencies
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedJob.invited_agencies.map(
+                            (agency: any, idx: number) => (
+                              <div
+                                key={`${agency?.id || idx}`}
+                                className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-gray-700"
+                              >
+                                {agency?.logo_url ? (
+                                  <img
+                                    src={agency.logo_url}
+                                    alt={agency?.agency_name || "Agency"}
+                                    className="h-5 w-5 rounded-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="h-5 w-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] font-semibold text-gray-600">
+                                    {String(
                                       agency?.agency_name ||
-                                      agency?.contact_name ||
-                                      "Agency"}
-                                  </span>
-                                </div>
-                              ),
-                            )}
-                          </div>
+                                        agency?.display_name ||
+                                        "A",
+                                    )
+                                      .trim()
+                                      .slice(0, 1)
+                                      .toUpperCase()}
+                                  </div>
+                                )}
+                                <span>
+                                  {agency?.display_name ||
+                                    agency?.agency_name ||
+                                    agency?.contact_name ||
+                                    "Agency"}
+                                </span>
+                              </div>
+                            ),
+                          )}
                         </div>
-                      )}
-                    {Array.isArray(selectedJob.invited_creators) &&
-                      selectedJob.invited_creators.length > 0 && (
-                        <div className="pt-1">
-                          <p className="text-xs font-semibold text-gray-700 mb-2">
-                            Invited creators
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {selectedJob.invited_creators.map(
-                              (creator: any, idx: number) => (
-                                <div
-                                  key={`${creator?.id || idx}`}
-                                  className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-gray-700"
-                                >
-                                  {creator?.profile_photo_url ? (
-                                    <img
-                                      src={creator.profile_photo_url}
-                                      alt={creator?.full_name || "Creator"}
-                                      className="h-5 w-5 rounded-full object-cover"
-                                    />
-                                  ) : (
-                                    <div className="h-5 w-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] font-semibold text-gray-600">
-                                      {String(
-                                        creator?.full_name ||
-                                          creator?.display_name ||
-                                          "C",
-                                      )
-                                        .trim()
-                                        .slice(0, 1)
-                                        .toUpperCase()}
-                                    </div>
-                                  )}
-                                  <span>
-                                    {creator?.full_name ||
-                                      creator?.display_name ||
-                                      "Creator"}
-                                  </span>
-                                </div>
-                              ),
-                            )}
-                          </div>
+                      </div>
+                    )}
+                  {Array.isArray(selectedJob.invited_creators) &&
+                    selectedJob.invited_creators.length > 0 && (
+                      <div className="pt-1">
+                        <p className="text-xs font-semibold text-gray-700 mb-2">
+                          Invited creators
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedJob.invited_creators.map(
+                            (creator: any, idx: number) => (
+                              <div
+                                key={`${creator?.id || idx}`}
+                                className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-gray-700"
+                              >
+                                {creator?.profile_photo_url ? (
+                                  <img
+                                    src={creator.profile_photo_url}
+                                    alt={creator?.full_name || "Creator"}
+                                    className="h-5 w-5 rounded-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="h-5 w-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] font-semibold text-gray-600">
+                                    {String(
+                                      creator?.full_name ||
+                                        creator?.display_name ||
+                                        "C",
+                                    )
+                                      .trim()
+                                      .slice(0, 1)
+                                      .toUpperCase()}
+                                  </div>
+                                )}
+                                <span>
+                                  {creator?.full_name ||
+                                    creator?.display_name ||
+                                    "Creator"}
+                                </span>
+                              </div>
+                            ),
+                          )}
                         </div>
-                      )}
-                  </section>
-                )}
+                      </div>
+                    )}
+                </section>
+              )}
 
               {Array.isArray(selectedJob.brand_assets) &&
                 selectedJob.brand_assets.length > 0 &&

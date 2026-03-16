@@ -61,8 +61,6 @@ import {
   Loader2,
   MessageSquare,
   RefreshCw,
-  ChevronLeft,
-  ChevronRight,
   Maximize2,
   Trash2,
 } from "lucide-react";
@@ -82,7 +80,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { supabase } from "@/lib/supabase";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -796,7 +793,6 @@ export default function BrandDashboard() {
   const [inboxPackages, setInboxPackages] = useState<any[]>([]);
   const [inboxPendingCount, setInboxPendingCount] = useState(0);
   const [confirmingDonePkg, setConfirmingDonePkg] = useState<any>(null);
-  const { toast } = useToast();
   const [loadingInboxPackages, setLoadingInboxPackages] = useState(false);
   const [expandedInboxPackageId, setExpandedInboxPackageId] =
     useState<string>("");
@@ -865,21 +861,21 @@ export default function BrandDashboard() {
   useEffect(() => {
     const sectionFromQuery = String(searchParams.get("section") || "").trim();
     if (sectionFromQuery) {
-      if (sectionFromQuery === "campaigns") {
-        setActiveSection("campaigns-hub");
-      } else {
-        setActiveSection(sectionFromQuery);
+      const targetSection =
+        sectionFromQuery === "campaigns" ? "campaigns-hub" : sectionFromQuery;
+      if (activeSection !== targetSection) {
+        setActiveSection(targetSection);
       }
       return;
     }
 
     const sectionFromState = (location.state as any)?.activeSection;
     if (typeof sectionFromState === "string" && sectionFromState.length > 0) {
-      if (sectionFromState === "campaigns") {
-        setActiveSection("campaigns-hub");
-        return;
+      const targetSection =
+        sectionFromState === "campaigns" ? "campaigns-hub" : sectionFromState;
+      if (activeSection !== targetSection) {
+        setActiveSection(targetSection);
       }
-      setActiveSection(sectionFromState);
     }
   }, [location.state, searchParams]);
 
@@ -1010,6 +1006,8 @@ export default function BrandDashboard() {
     }
     navigate(createPageUrl("PostJob"));
   };
+
+  useEffect(() => {
     if (!authToken) return;
     let mounted = true;
     const loadInboxCount = async () => {
