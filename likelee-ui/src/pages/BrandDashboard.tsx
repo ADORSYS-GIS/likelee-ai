@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
@@ -1214,6 +1214,7 @@ export default function BrandDashboard() {
 
   useEffect(() => {
     if (
+      activeSection !== "home" &&
       activeSection !== "campaign-offers" &&
       activeSection !== "campaigns-contract-hub" &&
       activeSection !== "campaigns-deliverables"
@@ -1405,6 +1406,166 @@ export default function BrandDashboard() {
       (c) => c.status === "in_progress" || c.status === "pending_approval",
     )
     .reduce((sum, c) => sum + c.escrow_amount, 0);
+
+  const recentProjects = useMemo(() => {
+    const parseDate = (value?: string | null) => {
+      if (!value) return null;
+      const date = new Date(String(value));
+      return Number.isNaN(date.getTime()) ? null : date;
+    };
+    const extractLatest = (dates: Array<Date | null>) =>
+      dates.reduce<Date | null>((latest, current) => {
+        if (!current) return latest;
+        if (!latest || current.getTime() > latest.getTime()) return current;
+        return latest;
+      }, null);
+    const fullySignedStatuses = new Set([
+      "contract_fully_signed",
+      "signed",
+      "completed",
+    ]);
+
+    const grouped = new Map<string, any>();
+
+    brandOfferItems.forEach((offer: any) => {
+      const offerId = String(offer?.id || "");
+      if (!offerId) return;
+      const campaignId = String(
+        offer?.brand_campaign_id || offer?.brand_campaigns?.id || "",
+      ).trim();
+      const key = campaignId || offerId;
+      const campaignMeta =
+        offer?.brand_campaigns && typeof offer.brand_campaigns === "object"
+          ? offer.brand_campaigns
+          : {};
+      const startDateRaw = String(campaignMeta?.start_date || "").trim();
+      const startDate = /^\d{4}-\d{2}-\d{2}$/.test(startDateRaw)
+        ? new Date(`${startDateRaw}T00:00:00`)
+        : null;
+      const durationDaysRaw = Number(campaignMeta?.duration_days || 0);
+      const durationDays =
+        Number.isFinite(durationDaysRaw) && durationDaysRaw > 0
+          ? durationDaysRaw
+          : 30;
+      const endDate = startDate
+        ? new Date(
+            startDate.getTime() + (durationDays - 1) * 24 * 60 * 60 * 1000,
+          )
+        : null;
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const isAfterEnd = Boolean(
+        endDate && today.getTime() > endDate.getTime(),
+      );
+      const statusRaw = String(offer?.status || "").toLowerCase();
+      const contractStatuses = Array.isArray(offer?.offer_contracts)
+        ? offer.offer_contracts
+        : [];
+      const hasCompletedContract = contractStatuses.some((contract: any) => {
+        const st = String(
+          contract?.docuseal_status || contract?.status || "",
+        ).toLowerCase();
+        return st === "completed" || st === "signed";
+      });
+      const isFullySigned =
+        fullySignedStatuses.has(statusRaw) || hasCompletedContract;
+      const completedAt =
+        campaignMeta?.completed_at || offer?.completed_at || null;
+      const campaignStatus = String(campaignMeta?.status || "").toLowerCase();
+      const offerStatus =
+        completedAt || campaignStatus === "completed" || isAfterEnd
+          ? "completed"
+          : isFullySigned
+            ? "in_progress"
+            : "pending_approval";
+      const deliverables = Array.isArray(offer?.offer_deliverables)
+        ? offer.offer_deliverables
+        : [];
+      const deliverableDates = deliverables.flatMap((deliverable: any) => {
+        const commentDates = Array.isArray(deliverable?.meta?.feedback_comments)
+          ? deliverable.meta.feedback_comments.map((comment: any) =>
+              parseDate(comment?.created_at),
+            )
+          : [];
+        return [
+          parseDate(deliverable?.created_at),
+          parseDate(deliverable?.updated_at),
+          parseDate(deliverable?.submitted_at),
+          ...commentDates,
+        ];
+      });
+      const contractDates = contractStatuses.map((contract: any) =>
+        parseDate(contract?.updated_at || contract?.created_at),
+      );
+      const activityDates = [
+        parseDate(offer?.updated_at),
+        parseDate(offer?.created_at),
+        parseDate(campaignMeta?.updated_at),
+        parseDate(campaignMeta?.created_at),
+        parseDate(completedAt),
+        ...deliverableDates,
+        ...contractDates,
+      ];
+      const lastActivity = extractLatest(activityDates);
+      const creatorName =
+        String(offer?.target_name || "").trim() ||
+        (offer?.target_type === "agency"
+          ? "Agency"
+          : offer?.target_type === "creator"
+            ? "Creator"
+            : "Collaborator");
+      const campaignName =
+        String(campaignMeta?.name || "").trim() ||
+        String(offer?.offer_title || "").trim() ||
+        "Campaign";
+      const dueDate = endDate || startDate || now;
+      const existing = grouped.get(key);
+      if (!existing) {
+        grouped.set(key, {
+          id: key,
+          offer_id: offerId,
+          name: campaignName,
+          creator_name: creatorName,
+          due_date: dueDate,
+          status: offerStatus,
+          completed_at: completedAt,
+          last_activity_at: lastActivity || now,
+        });
+        return;
+      }
+      const latestActivity = extractLatest([
+        existing.last_activity_at,
+        lastActivity,
+      ]);
+      existing.last_activity_at = latestActivity || existing.last_activity_at;
+      existing.due_date =
+        dueDate && dueDate.getTime() > existing.due_date.getTime()
+          ? dueDate
+          : existing.due_date;
+      if (offerStatus === "completed") {
+        existing.status = "completed";
+      } else if (
+        offerStatus === "in_progress" &&
+        existing.status !== "completed"
+      ) {
+        existing.status = "in_progress";
+      } else if (
+        offerStatus === "pending_approval" &&
+        existing.status === "pending_approval"
+      ) {
+        existing.status = "pending_approval";
+      }
+      if (!existing.completed_at && completedAt) {
+        existing.completed_at = completedAt;
+      }
+    });
+
+    return Array.from(grouped.values())
+      .sort(
+        (a, b) => b.last_activity_at.getTime() - a.last_activity_at.getTime(),
+      )
+      .slice(0, 6);
+  }, [brandOfferItems]);
 
   const pendingApprovalCount = mockCampaigns.filter(
     (c) => c.status === "pending_approval",
@@ -1957,7 +2118,7 @@ export default function BrandDashboard() {
               Recent Projects
             </h3>
             <div className="space-y-3">
-              {mockCampaigns.slice(0, 5).map((campaign) => (
+              {recentProjects.map((campaign: any) => (
                 <Card
                   key={campaign.id}
                   className="p-4 bg-gray-50 border border-gray-200 hover:shadow-md transition-all cursor-pointer"
@@ -1968,7 +2129,7 @@ export default function BrandDashboard() {
                         {campaign.name}
                       </p>
                       <p className="text-sm text-gray-600">
-                        {campaign.creators.join(", ")}
+                        {campaign.creator_name}
                       </p>
                     </div>
                     <Badge
@@ -1978,26 +2139,53 @@ export default function BrandDashboard() {
                           : campaign.status === "pending_approval"
                             ? "bg-yellow-100 text-yellow-700 border border-yellow-300"
                             : campaign.status === "completed"
-                              ? "bg-green-100 text-green-700 border border-green-300"
+                              ? campaign.completed_at
+                                ? "bg-green-100 text-green-700 border border-green-300"
+                                : "bg-gray-100 text-gray-700 border border-gray-300"
                               : "bg-gray-100 text-gray-700 border border-gray-300"
                       }
                     >
-                      {campaign.status.replace("_", " ")}
+                      {campaign.status === "completed"
+                        ? campaign.completed_at
+                          ? "completed"
+                          : "incomplete"
+                        : String(campaign.status).replace(/_/g, " ")}
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-600">
-                      Due: {new Date(campaign.due_date).toLocaleDateString()}
+                      Due: {campaign.due_date.toLocaleDateString()}
                     </span>
                     <Button
                       variant="link"
                       className="text-[#F7B750] p-0 h-auto"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        if (campaign.offer_id) {
+                          setSelectedCampaign(campaign.offer_id);
+                        }
+                        navigateToSection("campaign-offers", {
+                          campaignView:
+                            campaign.status === "pending_approval"
+                              ? "pending"
+                              : campaign.status === "completed"
+                                ? "completed"
+                                : "active",
+                        });
+                      }}
                     >
                       View Project →
                     </Button>
                   </div>
                 </Card>
               ))}
+              {recentProjects.length === 0 && (
+                <Card className="p-4 bg-gray-50 border border-gray-200">
+                  <p className="text-sm text-gray-600">
+                    No recent projects yet.
+                  </p>
+                </Card>
+              )}
             </div>
           </Card>
 
