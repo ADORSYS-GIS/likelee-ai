@@ -1,5 +1,36 @@
 # Likelee AI — Design
 
+> **Technical Documentation**: See [`docs/knowledge/`](./knowledge/) for detailed technical docs:
+> - [Architecture Overview](./knowledge/architecture.md) - System architecture, components, data flow
+> - [API Reference](./knowledge/api-reference.md) - All API endpoints and webhooks
+> - [Coding Conventions](./knowledge/coding-conventions.md) - Naming, formatting, and code review checklist
+> - [Development Setup](./knowledge/development-setup.md) - Local development environment setup
+
+## Overview
+
+Likelee AI is a comprehensive talent management and licensing platform that connects agencies, brands, and creators (faces/talents). The system supports:
+
+- **Agency Portal**: Manage talent rosters, licensing requests, invoices, bookings, and payouts
+- **Talent Portal**: Creators manage their profiles, approve licenses, track earnings, and receive payouts
+- **Brand Portal**: Brands discover talent, create campaigns, make offers, and manage deliverables
+- **Studio**: AI-powered image and video generation using Fal and other providers
+- **Marketplace**: Public-facing talent discovery and connection requests
+
+## Architecture Summary
+
+| Component | Technology | Location |
+|-----------|------------|----------|
+| Backend | Rust + Axum | `likelee-server/` |
+| Frontend | React SPA | `likelee-ui/` |
+| Database | Supabase (PostgreSQL) | `supabase/migrations/` |
+| Storage | Supabase Storage | Buckets: `likelee-private`, `likelee-public`, `likelee-temp` |
+| Auth | Supabase JWT | `likelee-server/src/auth.rs` |
+| Config | envconfig | `likelee-server/src/config.rs` |
+
+See [Architecture Overview](./knowledge/architecture.md) for full details.
+
+---
+
 ## Accounting & Invoicing (Agency Dashboard)
 
 ### Goals
@@ -159,7 +190,7 @@
 
 ### UI (likelee-ui)
 
-- Add “Accounting & Invoicing” section under the Agency Dashboard.
+- Add "Accounting & Invoicing" section under the Agency Dashboard.
 - Invoice Generation page supports:
   - Create from Existing Booking
   - Manual Entry
@@ -172,14 +203,58 @@
   - Keep `likelee-server/.env.example` in sync.
   - Document the variables here under this section.
 
+### Core Supabase
+
+- `SUPABASE_URL`
+  - Supabase project URL (required).
+- `SUPABASE_SERVICE_KEY`
+  - Service role key for backend operations (required).
+- `SUPABASE_JWT_SECRET`
+  - JWT secret for token verification (required).
+- `SUPABASE_BUCKET_PRIVATE`
+  - Private storage bucket name (default `likelee-private`).
+- `SUPABASE_BUCKET_PUBLIC`
+  - Public storage bucket name (default `likelee-public`).
+- `SUPABASE_BUCKET_TEMP`
+  - Temporary storage bucket name (default `likelee-temp`).
+
+### Server Configuration
+
+- `PORT`
+  - Server port (default `8787`).
+- `FRONTEND_URL`
+  - Frontend URL for Stripe redirects and email links (default `http://localhost:5173`).
+  - Must be an absolute URL starting with `http://` or `https://`.
+
+### AWS & Moderation
+
+- `AWS_REGION`
+  - AWS region for Rekognition (default `us-east-1`).
+- `MODERATION_ENABLED`
+  - Enable content moderation via AWS Rekognition (default `1`).
+  - Set to `0` to disable.
+
+### Liveness Detection
+
+- `LIVENESS_ENABLED`
+  - Enable face liveness detection via AWS Rekognition (default `0`).
+  - Requires Rekognition client initialization.
+- `LIVENESS_MIN_SCORE`
+  - Minimum confidence score for liveness check (default `0.90`).
+
+### Voice & Audio
+
+- `ELEVENLABS_API_KEY`
+  - API key for ElevenLabs text-to-speech synthesis (optional).
+
 ### Studio Providers (AI Generation)
 
 - `FAL_API_KEY`
   - API key used by the backend to submit/poll Fal Studio generation jobs.
   - Default: empty.
 - `FAL_API_URL`
-  - Base URL for Fal API.
-  - Default: `https://api.fal.ai`.
+  - Base URL for Fal API queue endpoint.
+  - Default: `https://queue.fal.run`.
 - `HIGGSFIELD_API_KEY`
   - API key used by the backend to submit/poll Higgsfield generation jobs.
   - Default: empty.
@@ -199,21 +274,37 @@
   - Admin/default SMTP transport used for all existing server-sent emails.
 - `EMAIL_FROM`
   - Admin/default sender address.
+- `EMAIL_CONTACT_TO`
+  - Contact email recipient (optional).
 - `SMTP_SALES_HOST`, `SMTP_SALES_PORT`, `SMTP_SALES_USER`, `SMTP_SALES_PASSWORD`
   - Sales/Contact SMTP transport (separate account/credentials).
 - `EMAIL_FROM_SALES`
   - Sales/Contact sender address (default `operations@likelee.ai`).
 - `EMAIL_SALES_TO`
-  - Internal recipient address used by the backend to classify “sales/contact” emails (default `operations@likelee.ai`).
+  - Internal recipient address used by the backend to classify "sales/contact" emails (default `operations@likelee.ai`).
 
 ### KYC / Veriff
 
+- `VERIFF_BASE_URL`
+  - Veriff API base URL.
+- `VERIFF_API_KEY`
+  - Veriff API key.
+- `VERIFF_SHARED_SECRET`
+  - Veriff webhook signing secret.
 - `KYC_BYPASS_VERIFF_LIMIT` (bool, default `false`)
   - Temporary testing flag to bypass the agency Veriff monthly session limit.
   - Must remain disabled in normal environments.
 
 ### Stripe Subscriptions (Agency Billing)
 
+- `STRIPE_AGENCY_PRICE_ID`
+  - Stripe Price ID for legacy agency subscription.
+- `STRIPE_SCALE_PRICE_ID`
+  - Stripe Price ID for scale tier.
+- `STRIPE_AGENCY_BASIC_BASE_PRICE_ID`
+  - Stripe Price ID for Agency Basic plan (new pricing pages).
+- `STRIPE_AGENCY_PRO_BASE_PRICE_ID`
+  - Stripe Price ID for Agency Pro plan (new pricing pages).
 - `STRIPE_CHECKOUT_SUCCESS_URL`
   - URL Stripe redirects to after successful checkout.
 - `STRIPE_CHECKOUT_CANCEL_URL`
@@ -278,6 +369,38 @@
   - Enables the background job that schedules agency payouts based on payout settings.
 - `AGENCY_PAYOUT_SCHEDULER_INTERVAL_SECS` (u64, default `3600`)
   - The interval at which the scheduler wakes up to check due payouts.
+
+### Payout Settings
+
+- `PAYOUT_AUTO_APPROVE_THRESHOLD_CENTS` (u32, default `500000`)
+  - Amount below which payouts are auto-approved.
+- `MIN_PAYOUT_AMOUNT_CENTS` (u32, default `1000`)
+  - Minimum payout amount.
+- `INSTANT_PAYOUTS_ENABLED` (bool, default `true`)
+  - Enable instant payouts via Stripe Connect.
+- `PAYOUT_FEE_BPS` (u32, default `100`)
+  - Payout fee in basis points (1% = 100 bps).
+- `PAYOUT_CURRENCY` (String, default `USD`)
+  - Default payout currency.
+- `PAYOUT_ALLOWED_CURRENCIES` (String, default `USD,EUR`)
+  - Comma-separated list of allowed currencies.
+
+### DocuSeal (Contract Management)
+
+- `DOCUSEAL_API_KEY`
+  - API key for DocuSeal document signing.
+- `DOCUSEAL_API_URL`
+  - DocuSeal API base URL (default `https://api.docuseal.com`).
+- `DOCUSEAL_APP_URL`
+  - DocuSeal app URL for document viewing (default `https://docuseal.co`).
+- `DOCUSEAL_WEBHOOK_URL`
+  - Webhook URL for DocuSeal callbacks.
+- `DOCUSEAL_USER_EMAIL`
+  - DocuSeal account email.
+- `DOCUSEAL_MASTER_TEMPLATE_ID`
+  - Master template ID for license contracts.
+- `DOCUSEAL_MASTER_TEMPLATE_NAME`
+  - Master template name for license contracts.
 
 ## Supabase ER Diagram (Migrations 0035-0037)
 
@@ -475,3 +598,307 @@ The Studio Wallet is tied directly to the user's permanent `user_id` in the data
 - **Pricing Configuration**: `public.studio_provider_costs` (DB)
 - **Routes**: `likelee-server/src/studio/routes.rs` (generation endpoints)
 - **Billing Integration**: `likelee-server/src/billing.rs` and `likelee-server/src/payouts.rs` (webhooks)
+
+---
+
+## Liveness Detection
+
+Face liveness detection prevents spoofing during identity verification using AWS Rekognition.
+
+### Configuration
+
+- `LIVENESS_ENABLED`: Set to `1` to enable (default `0`).
+- `LIVENESS_MIN_SCORE`: Minimum confidence threshold (default `0.90`).
+
+### API Endpoints
+
+- `POST /api/liveness/session` - Create a liveness detection session
+- `POST /api/liveness/result` - Get liveness check results
+
+### Implementation
+
+- **Backend Logic**: `likelee-server/src/liveness.rs`
+- **AWS Service**: Rekognition Face Liveness
+- **Initialization**: Rekognition client initializes when `MODERATION_ENABLED` or `LIVENESS_ENABLED` is set.
+
+---
+
+## Voice & Audio
+
+Voice recording and cloning capabilities for talent profiles.
+
+### Data Model
+
+#### `voice_recordings`
+
+- `id` (uuid, PK)
+- `user_id` (uuid, FK to auth.users)
+- `label` (text): Recording name/description
+- `file_path` (text): Storage path
+- `duration_secs` (numeric, nullable)
+- `created_at` (timestamptz)
+
+#### `voice_models`
+
+- `id` (uuid, PK)
+- `user_id` (uuid, FK to auth.users)
+- `name` (text): Model name
+- `provider` (text): Voice cloning provider
+- `provider_model_id` (text): External model ID
+- `source_recording_id` (uuid, FK to voice_recordings, nullable)
+- `is_active` (boolean)
+- `created_at` (timestamptz)
+
+### API Endpoints
+
+- `GET /api/voice/recordings` - List voice recordings
+- `POST /api/voice/recordings` - Upload a voice recording
+- `GET /api/voice/recordings/signed-url` - Get signed URL for recording
+- `DELETE /api/voice/recordings/:id` - Delete a recording
+- `POST /api/voice/models` - Register a voice model
+- `POST /api/voice/models/clone` - Create a voice clone from recording
+
+### Implementation
+
+- **Backend Logic**: `likelee-server/src/voice.rs`
+- **TTS Provider**: ElevenLabs (`ELEVENLABS_API_KEY`)
+
+---
+
+## Brand Campaigns & Offers
+
+Brands can create campaigns, make offers to talent, and manage deliverables.
+
+### Campaign Workflow
+
+1. **Campaign Creation**: Brand creates a campaign with requirements and budget.
+2. **Offer Creation**: Brand makes offers to specific talent or agencies.
+3. **Offer Response**: Agency/talent accepts or declines the offer.
+4. **Contract Signing**: DocuSeal integration for contract management.
+5. **Package Delivery**: Agency uploads deliverables via packages.
+6. **Review & Approval**: Brand reviews and approves deliverables.
+
+### Data Model
+
+#### `brand_campaigns`
+
+- `id` (uuid, PK)
+- `brand_id` (uuid, FK to brands)
+- `title`, `description` (text)
+- `status` (text): `draft`, `active`, `paused`, `completed`, `cancelled`
+- `budget_cents` (bigint, nullable)
+- `start_date`, `end_date` (date, nullable)
+- `created_at`, `updated_at` (timestamptz)
+
+#### `campaign_offers`
+
+- `id` (uuid, PK)
+- `campaign_id` (uuid, FK to campaigns)
+- `agency_id`, `talent_id` (uuid, FK)
+- `status` (text): `pending`, `accepted`, `declined`, `withdrawn`
+- `offer_details` (jsonb)
+- `created_at`, `updated_at` (timestamptz)
+
+### API Endpoints
+
+- `POST /api/brand/campaigns` - Create campaign
+- `GET /api/brand/campaigns` - List brand's campaigns
+- `GET /api/brand/campaigns/:campaign_id` - Get campaign details
+- `POST /api/brand/campaigns/:campaign_id/offers` - Create offers
+- `GET /api/campaign-offers/my` - List user's offers
+- `POST /api/campaign-offers/:offer_id/respond` - Accept/decline offer
+- `POST /api/campaign-offers/:offer_id/contracts` - Manage contracts
+- `POST /api/campaign-offers/:offer_id/deliverables` - Submit deliverables
+- `POST /api/campaign-offers/:offer_id/deliverables/:id/review` - Review deliverable
+
+### Implementation
+
+- **Backend Logic**: `likelee-server/src/brand_campaigns.rs`
+- **Contract Integration**: DocuSeal webhooks at `/webhooks/docuseal/campaign-contracts`
+
+---
+
+## Creator/Agency Connections
+
+Creators can connect with agencies through invites and connection requests.
+
+### Agency Talent Invites
+
+Agencies can invite talent to join their roster:
+
+- `POST /api/agency/talent-invites` - Create invite
+- `GET /api/agency/talent-invites` - List invites (agency view)
+- `POST /api/agency/talent-invites/:id/revoke` - Revoke invite
+- `GET /api/invites/agency-talent/:token` - Get invite by token
+- `POST /api/invites/agency-talent/:token/accept` - Accept invite
+- `POST /api/invites/agency-talent/:token/decline` - Decline invite
+
+### Creator Agency Connections
+
+- `GET /api/creator/agency-invites` - List creator's agency invites
+- `POST /api/creator/agency-invites/:id/accept` - Accept agency invite
+- `POST /api/creator/agency-invites/:id/decline` - Decline agency invite
+- `GET /api/creator/agency-connections` - List agency connections
+- `POST /api/creator/agency-connections/:agency_id/disconnect` - Disconnect from agency
+
+### Implementation
+
+- **Backend Logic**: `likelee-server/src/agency_talent_invites.rs`, `likelee-server/src/creator_agency_connection.rs`
+
+---
+
+## Brand Connections
+
+Agencies and creators can connect with brands for licensing and campaigns.
+
+### Agency Brand Connections
+
+- `GET /api/agency/brand-connection-requests` - List incoming brand requests
+- `POST /api/agency/brand-connection-requests/:id/accept` - Accept brand connection
+- `POST /api/agency/brand-connection-requests/:id/decline` - Decline brand connection
+- `GET /api/agency/brand-connections` - List brand connections
+- `POST /api/agency/brand-connections/:brand_id/disconnect` - Disconnect from brand
+
+### Creator Brand Connections
+
+- `GET /api/creator/brand-connection-requests` - List incoming brand requests
+- `POST /api/creator/brand-connection-requests/:id/accept` - Accept brand connection
+- `POST /api/creator/brand-connection-requests/:id/decline` - Decline brand connection
+- `GET /api/creator/brand-connections` - List brand connections
+- `POST /api/creator/brand-connections/:brand_id/disconnect` - Disconnect from brand
+
+### Implementation
+
+- **Backend Logic**: `likelee-server/src/face_profiles.rs`
+
+---
+
+## Talent Portal
+
+The Talent Portal allows creators to manage their profiles, approve licenses, and track earnings.
+
+### Profile Management
+
+- `GET /api/talent/me` - Get talent profile
+- `POST /api/talent/profile` - Update profile
+- `GET /api/talent/settings` - Get portal settings
+- `POST /api/talent/settings` - Update portal settings
+
+### Licensing
+
+- `GET /api/talent/licensing-requests` - List pending licensing requests
+- `POST /api/talent/licensing-requests/:id/approve` - Approve license
+- `POST /api/talent/licensing-requests/:id/decline` - Decline license
+- `GET /api/talent/licenses` - List active licenses
+- `GET /api/talent/licensing/revenue` - Get revenue summary
+- `GET /api/talent/licensing/earnings-by-campaign` - Earnings breakdown by campaign
+- `GET /api/talent/licensing/earnings-by-agency` - Earnings breakdown by agency
+
+### Bookings
+
+- `GET /api/talent/bookings` - List bookings
+- `GET /api/talent/book-outs` - List book-outs
+- `POST /api/talent/book-outs` - Create book-out
+- `DELETE /api/talent/book-outs/:id` - Delete book-out
+- `GET /api/talent/booking-preferences` - Get booking preferences
+- `POST /api/talent/booking-preferences` - Update booking preferences
+
+### Portfolio
+
+- `GET /api/talent/portfolio-items` - List portfolio items
+- `POST /api/talent/portfolio-items` - Create portfolio item
+- `DELETE /api/talent/portfolio-items/:id` - Delete portfolio item
+- `POST /api/talent/portfolio-items/upload` - Upload portfolio file
+
+### Earnings & Payouts
+
+- `GET /api/talent/irl/earnings/summary` - IRL earnings summary
+- `GET /api/talent/irl/earnings/payments` - IRL payment history
+- `POST /api/talent/irl/earnings/payout-request` - Request payout
+- `GET /api/talent/payouts/account-status` - Stripe Connect account status
+- `POST /api/talent/payouts/onboarding-link` - Get Stripe onboarding link
+- `GET /api/talent/payouts/balance` - Get available balance
+- `POST /api/talent/payouts/request` - Request payout
+
+### Analytics
+
+- `GET /api/talent/analytics` - Get talent analytics
+
+### Notifications
+
+- `GET /api/talent/notifications` - List notifications
+- `POST /api/talent/notifications/:id/read` - Mark notification as read
+
+### Tax Documents
+
+- `GET /api/talent/tax-documents/latest` - Get latest tax document
+
+### Implementation
+
+- **Backend Logic**: `likelee-server/src/talent.rs`
+
+---
+
+## Marketplace
+
+Public marketplace for talent discovery.
+
+### API Endpoints
+
+- `GET /api/marketplace/search` - Search marketplace profiles
+- `GET /api/marketplace/:profile_type/:id/details` - Get profile details
+- `POST /api/marketplace/connect` - Request connection
+
+### Implementation
+
+- **Backend Logic**: `likelee-server/src/face_profiles.rs`
+
+---
+
+## KYC (Know Your Customer)
+
+Identity verification via Veriff integration.
+
+### Configuration
+
+- `VERIFF_BASE_URL`: Veriff API base URL
+- `VERIFF_API_KEY`: Veriff API key
+- `VERIFF_SHARED_SECRET`: Veriff webhook signing secret
+- `KYC_BYPASS_VERIFF_LIMIT`: Bypass monthly session limit (testing only, default `false`)
+
+### API Endpoints
+
+- `POST /api/kyc/session` - Create Veriff session
+- `GET /api/kyc/status` - Get KYC status
+- `POST /api/kyc/organization/session` - Create organization KYC session
+- `GET /api/kyc/organization/status` - Get organization KYC status
+
+### Webhooks
+
+- `POST /webhooks/kyc/veriff` - Veriff callback handler
+
+### Implementation
+
+- **Backend Logic**: `likelee-server/src/kyc.rs`
+
+---
+
+## Background Jobs
+
+### Payment Reminders
+
+Automated invoice payment reminder emails.
+
+- **Trigger**: `likelee_server::jobs::start_payment_reminders`
+- **Interval**: Daily
+- **Logic**: Sends reminders for overdue invoices
+
+### Agency Payout Scheduler
+
+Automated scheduling of agency payouts.
+
+- **Trigger**: `likelee_server::jobs::start_agency_payout_scheduler`
+- **Interval**: Configurable via `AGENCY_PAYOUT_SCHEDULER_INTERVAL_SECS`
+- **Configuration**: `AGENCY_PAYOUT_SCHEDULER_ENABLED`
+
+### Implementation
